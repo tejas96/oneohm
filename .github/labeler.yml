@@ -1,0 +1,30 @@
+# Automatically label PRs based on changed files
+
+'documentation':
+  - '**/*.md'
+  - 'docs/**/*'
+
+'dependencies':
+  - 'package.json'
+  - 'package-lock.json'
+  - 'npm-shrinkwrap.json'
+
+'ci/cd':
+  - '.github/**/*'
+  - 'Dockerfile'
+  - 'docker-compose.yml'
+  - '.dockerignore'
+
+'tests':
+  - '**/*.spec.ts'
+  - '**/*.test.ts'
+  - 'test/**/*'
+
+'source':
+  - 'src/**/*'
+
+'config':
+  - '*.config.*'
+  - '.*rc'
+  - '.editorconfig'
+  - 'tsconfig*.json'

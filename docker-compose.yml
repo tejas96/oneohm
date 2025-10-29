@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: oneohm-epc-app
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    restart: unless-stopped
+    networks:
+      - oneohm-network
+    # volumes:
+    #   - ./dist:/app/dist:ro
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+        ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: oneohm-epc-db
+    environment:
+      POSTGRES_USER: oneohm
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: oneohm_epc
+    ports:
+      - '5436:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - oneohm-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U oneohm']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Uncomment if you need Redis
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: oneohm-epc-redis
+  #   ports:
+  #     - '6379:6379'
+  #   volumes:
+  #     - redis_data:/data
+  #   networks:
+  #     - oneohm-network
+  #   healthcheck:
+  #     test: ['CMD', 'redis-cli', 'ping']
+  #     interval: 10s
+  #     timeout: 3s
+  #     retries: 5
+
+networks:
+  oneohm-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
