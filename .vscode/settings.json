@@ -5,7 +5,8 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit",
-    "source.organizeImports": "never"
+    "source.organizeImports": "explicit",
+    "source.sortImports": "never"
   },
   "editor.tabSize": 2,
   "editor.insertSpaces": true,
@@ -20,6 +21,9 @@
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "typescript.preferences.importModuleSpecifier": "relative",
   "typescript.updateImportsOnFileMove.enabled": "always",
+  "typescript.preferences.organizeImportsIgnoreCase": true,
+  "typescript.preferences.organizeImportsCollation": "unicode",
+  "typescript.preferences.organizeImportsNumericCollation": true,
 
   // Language-specific formatting
   "[typescript]": {

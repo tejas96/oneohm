@@ -28,10 +28,12 @@
 This project includes:
 
 - ✅ **ESLint & Prettier** - Industry-standard code quality and formatting
+- ✅ **Auto Import Sorting** - Imports automatically organized and grouped on save
 - ✅ **CI/CD Pipelines** - Automated testing, building, and deployment
+- ✅ **Node.js 22** - Latest LTS with .nvmrc support
 - ✅ **Docker Support** - Containerized deployment ready
 - ✅ **Security Scanning** - CodeQL and dependency review
-- ✅ **VS Code Integration** - Auto-formatting on save
+- ✅ **VS Code Integration** - Auto-formatting, debugging, and import organization
 
 ## Project setup
 
@@ -41,7 +43,7 @@ $ npm install
 
 ## Code Quality
 
-This project uses ESLint and Prettier with industry-standard configurations.
+This project uses ESLint and Prettier with industry-standard configurations, including automatic import sorting and grouping.
 
 ```bash
 # Format code
@@ -50,14 +52,21 @@ $ npm run format
 # Check formatting
 $ npm run format:check
 
-# Lint code
+# Lint code (includes import sorting)
 $ npm run lint
 
 # Lint without auto-fixing
 $ npm run lint:check
 ```
 
-**VS Code** users will benefit from automatic formatting on save. Make sure to install the recommended extensions.
+**VS Code** users will benefit from:
+
+- ✅ Automatic formatting on save
+- ✅ Automatic import sorting and grouping
+- ✅ Auto-removal of unused imports
+- ✅ ESLint auto-fix on save
+
+Make sure to install the recommended extensions. See [IMPORT_SORTING_GUIDE.md](IMPORT_SORTING_GUIDE.md) for details.
 
 ## Compile and run the project
 

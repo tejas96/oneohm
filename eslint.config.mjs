@@ -1,5 +1,6 @@
 // @ts-check
 import eslint from '@eslint/js';
+import importPlugin from 'eslint-plugin-import';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
@@ -20,6 +21,15 @@ export default tseslint.config(
   ...tseslint.configs.recommendedTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
   eslintPluginPrettierRecommended,
+  importPlugin.flatConfigs.recommended,
+  {
+    settings: {
+      'import/resolver': {
+        typescript: true,
+        node: true,
+      },
+    },
+  },
   {
     languageOptions: {
       globals: {
@@ -65,6 +75,58 @@ export default tseslint.config(
       '@typescript-eslint/prefer-optional-chain': 'warn',
       '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
 
+      // Import sorting and organization rules
+      'import/order': [
+        'error',
+        {
+          groups: [
+            'builtin', // Node.js built-in modules
+            'external', // External packages
+            'internal', // Internal modules
+            ['parent', 'sibling'], // Parent and sibling imports
+            'index', // Index imports
+            'object', // Object imports
+            'type', // Type imports
+          ],
+          'newlines-between': 'always',
+          alphabetize: {
+            order: 'asc',
+            caseInsensitive: true,
+          },
+          pathGroups: [
+            {
+              pattern: '@nestjs/**',
+              group: 'external',
+              position: 'before',
+            },
+            {
+              pattern: '@/**',
+              group: 'internal',
+              position: 'before',
+            },
+          ],
+          pathGroupsExcludedImportTypes: ['builtin', 'type'],
+        },
+      ],
+      'import/first': 'error',
+      'import/newline-after-import': 'error',
+      'import/no-duplicates': 'error',
+      'import/no-unresolved': 'off', // TypeScript handles this
+      'import/named': 'off', // TypeScript handles this
+      'import/namespace': 'off', // TypeScript handles this
+      'import/default': 'off', // TypeScript handles this
+      'import/no-named-as-default-member': 'off', // TypeScript handles this
+      'sort-imports': [
+        'error',
+        {
+          ignoreCase: true,
+          ignoreDeclarationSort: true, // We use import/order for this
+          ignoreMemberSort: false,
+          memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
+          allowSeparatedGroups: true,
+        },
+      ],
+
       // General JavaScript/TypeScript rules
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-debugger': 'error',
@@ -74,7 +136,7 @@ export default tseslint.config(
       'prefer-arrow-callback': 'warn',
       'prefer-template': 'warn',
       'object-shorthand': 'warn',
-      'no-duplicate-imports': 'error',
+      'no-duplicate-imports': 'off', // Handled by import/no-duplicates
       'no-else-return': 'warn',
       'no-useless-return': 'warn',
       eqeqeq: ['error', 'always', { null: 'ignore' }],
