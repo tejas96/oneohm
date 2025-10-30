@@ -1,22 +1,21 @@
-# name: Deploy UX to GitHub Pages
+name: Deploy UX to GitHub Pages
 
-# on:
-#   push:
-#     branches: [main]
-#     paths:
-#       - 'apps/ux/**'
-#       - '.github/workflows/ux-deploy.yml'
-#   workflow_dispatch:
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/ux/**'
+      - '.github/workflows/ux-deploy.yml'
+  workflow_dispatch:
 
-# permissions:
-#   contents: read
-#   pages: write
-#   id-token: write
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
-# concurrency:
-#   group: 'pages'
-#   cancel-in-progress: false
-
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
 # jobs:
 #   deploy:
 #     environment:
