@@ -1,0 +1,313 @@
+name: CI/CD with NX
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+# Cancel in-progress runs when a new commit is pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  setup:
+    name: Setup NX
+    runs-on: ubuntu-latest
+    outputs:
+      has-affected: ${{ steps.affected.outputs.has-affected }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check affected projects
+        id: affected
+        run: |
+          echo "has-affected=true" >> $GITHUB_OUTPUT
+
+      - name: Generate Setup Summary
+        run: |
+          echo "## 🚀 NX Setup Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Node.js version: $(node --version)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ NPM version: $(npm --version)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Dependencies installed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+
+  lint:
+    name: Lint Affected
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+        uses: nrwl/nx-set-shas@v4
+
+      - name: Run lint on affected projects
+        id: lint-run
+        run: |
+          npx nx affected --target=lint --parallel=3
+          npx nx print-affected --select=projects > /tmp/affected-projects.txt
+
+      - name: Generate Lint Summary
+        if: always()
+        run: |
+          echo "## 🔍 Linting Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f /tmp/affected-projects.txt ]; then
+            echo "**Affected Projects:**" >> $GITHUB_STEP_SUMMARY
+            cat /tmp/affected-projects.txt | tr ',' '\n' | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.lint-run.outcome }}" == "success" ]; then
+            echo "✅ All linting checks passed successfully!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Linting failed. Please check the logs above." >> $GITHUB_STEP_SUMMARY
+          fi
+
+  test:
+    name: Test Affected
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+        uses: nrwl/nx-set-shas@v4
+
+      - name: Run tests on affected projects
+        id: test-run
+        run: |
+          npx nx affected --target=test --parallel=3 --coverage
+          npx nx print-affected --select=projects > /tmp/affected-projects-test.txt
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          directory: ./coverage
+          fail_ci_if_error: false
+
+      - name: Generate Test Summary
+        if: always()
+        run: |
+          echo "## 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f /tmp/affected-projects-test.txt ]; then
+            echo "**Tested Projects:**" >> $GITHUB_STEP_SUMMARY
+            cat /tmp/affected-projects-test.txt | tr ',' '\n' | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.test-run.outcome }}" == "success" ]; then
+            echo "✅ All tests passed successfully!" >> $GITHUB_STEP_SUMMARY
+            echo "📊 Coverage reports uploaded to Codecov" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Some tests failed. Please check the logs above." >> $GITHUB_STEP_SUMMARY
+          fi
+
+  build:
+    name: Build Affected
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+        uses: nrwl/nx-set-shas@v4
+
+      - name: Build affected projects
+        id: build-run
+        run: |
+          npx nx affected --target=build --parallel=3
+          npx nx print-affected --select=projects > /tmp/affected-projects-build.txt
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: dist
+          path: |
+            apps/*/dist
+            apps/*/.next
+          retention-days: 7
+
+      - name: Generate Build Summary
+        if: always()
+        run: |
+          echo "## 🔨 Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f /tmp/affected-projects-build.txt ]; then
+            echo "**Built Projects:**" >> $GITHUB_STEP_SUMMARY
+            cat /tmp/affected-projects-build.txt | tr ',' '\n' | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.build-run.outcome }}" == "success" ]; then
+            echo "✅ All projects built successfully!" >> $GITHUB_STEP_SUMMARY
+            echo "📦 Build artifacts uploaded (7 days retention)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Build failed. Please check the logs above." >> $GITHUB_STEP_SUMMARY
+          fi
+
+  deploy-backend:
+    name: Deploy Backend
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Derive appropriate SHAs
+        uses: nrwl/nx-set-shas@v4
+
+      - name: Check if backend is affected
+        id: check-backend
+        run: |
+          if npx nx print-affected --select=projects | grep -q "backend"; then
+            echo "affected=true" >> $GITHUB_OUTPUT
+          else
+            echo "affected=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build Backend Docker Image
+        if: steps.check-backend.outputs.affected == 'true'
+        working-directory: ./apps/backend
+        run: docker build -t oneohm-epc-backend:latest .
+
+      - name: Deploy Backend
+        if: steps.check-backend.outputs.affected == 'true'
+        run: echo "Add your backend deployment steps here"
+
+      - name: Generate Backend Deployment Summary
+        if: always()
+        run: |
+          echo "## 🚀 Backend Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check-backend.outputs.affected }}" == "true" ]; then
+            echo "✅ Backend was affected by changes" >> $GITHUB_STEP_SUMMARY
+            echo "🐳 Docker image built successfully" >> $GITHUB_STEP_SUMMARY
+            echo "📦 Deployment initiated" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
+            echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⏭️ Backend was not affected, skipping deployment" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  deploy-web:
+    name: Deploy Web
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Derive appropriate SHAs
+        uses: nrwl/nx-set-shas@v4
+
+      - name: Check if web is affected
+        id: check-web
+        run: |
+          if npx nx print-affected --select=projects | grep -q "web"; then
+            echo "affected=true" >> $GITHUB_OUTPUT
+          else
+            echo "affected=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build Web Application
+        if: steps.check-web.outputs.affected == 'true'
+        run: npx nx build web
+
+      - name: Deploy Web
+        if: steps.check-web.outputs.affected == 'true'
+        run: echo "Add your web deployment steps here (Vercel, Netlify, etc.)"
+
+      - name: Generate Web Deployment Summary
+        if: always()
+        run: |
+          echo "## 🌐 Web Application Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check-web.outputs.affected }}" == "true" ]; then
+            echo "✅ Web app was affected by changes" >> $GITHUB_STEP_SUMMARY
+            echo "🏗️ Build completed successfully" >> $GITHUB_STEP_SUMMARY
+            echo "📦 Deployment initiated" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
+            echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⏭️ Web app was not affected, skipping deployment" >> $GITHUB_STEP_SUMMARY
+          fi

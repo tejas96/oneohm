@@ -1,0 +1,7 @@
+{
+  "name": "@oneohm-epc/shared-utils",
+  "version": "0.0.1",
+  "description": "Shared utility functions for OneOhm EPC",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts"
+}

@@ -42,4 +42,26 @@ jobs:
         uses: github/codeql-action/autobuild@v3
 
       - name: Perform CodeQL Analysis
+        id: codeql-analysis
         uses: github/codeql-action/analyze@v3
+
+      - name: Generate Security Scan Summary
+        if: always()
+        run: |
+          echo "## 🔒 CodeQL Security Scan Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.codeql-analysis.outcome }}" == "success" ]; then
+            echo "✅ Security scan completed successfully!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Language:** ${{ matrix.language }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Query Suite:** security-and-quality" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🔍 **Scan Details:**" >> $GITHUB_STEP_SUMMARY
+            echo "- Checked for security vulnerabilities" >> $GITHUB_STEP_SUMMARY
+            echo "- Analyzed code quality issues" >> $GITHUB_STEP_SUMMARY
+            echo "- Detected potential bugs and weaknesses" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📊 View detailed results in the Security tab of your repository" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Security scan encountered issues. Please review the logs." >> $GITHUB_STEP_SUMMARY
+          fi

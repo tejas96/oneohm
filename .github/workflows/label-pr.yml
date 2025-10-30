@@ -15,12 +15,14 @@ jobs:
 
     steps:
       - name: Label based on changed files
+        id: file-labeler
         uses: actions/labeler@v5
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           configuration-path: .github/labeler.yml
 
       - name: Label PR size
+        id: size-labeler
         uses: codelytv/pr-size-labeler@v1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -34,3 +36,18 @@ jobs:
           l_max_size: 1000
           xl_label: 'size/xl'
           fail_if_xl: false
+
+      - name: Generate PR Label Summary
+        if: always()
+        run: |
+          echo "## 🏷️ PR Auto-Labeling Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Labels have been automatically added to this PR based on:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- 📁 **File changes** - Labels added based on which files were modified" >> $GITHUB_STEP_SUMMARY
+          echo "- 📏 **PR size** - Size label added based on number of lines changed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**PR Number:** #${{ github.event.pull_request.number }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Author:** @${{ github.event.pull_request.user.login }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📖 Check the PR labels to see the categorization!" >> $GITHUB_STEP_SUMMARY

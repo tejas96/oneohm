@@ -1,0 +1,9 @@
+{
+  "name": "@oneohm-epc/ux",
+  "version": "0.0.1",
+  "description": "OneOhm EPC UX Design Assets",
+  "private": true,
+  "scripts": {
+    "build": "echo 'Building UX documentation for GitHub Pages'"
+  }
+}

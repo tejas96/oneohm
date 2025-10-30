@@ -1,26 +1,49 @@
-# compiled output
-/dist
-/node_modules
-/build
-
-# Logs
-logs
-*.log
+# Dependencies
+node_modules/
 npm-debug.log*
-pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+.pnpm-debug.log*
 
-# OS
-.DS_Store
+# Build outputs
+dist/
+build/
+.next/
+out/
+.turbo/
 
-# Tests
-/coverage
-/.nyc_output
+# NX
+.nx/
+.nx/cache
+
+# Testing
+coverage/
+*.lcov
+.nyc_output
+
+# Environment variables
+.env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.development
+.env.production
+!.env.example
+!**/.env.example
 
 # IDEs and editors
-/.idea
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+.DS_Store
 .project
 .classpath
 .c9/
@@ -28,29 +51,40 @@ lerna-debug.log*
 .settings/
 *.sublime-workspace
 
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+# OS
+Thumbs.db
 
-# dotenv environment variable files
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
+# Logs
+logs/
+*.log
 
-# temp directory
-.temp
-.tmp
+# Temporary files
+tmp/
+temp/
+*.tmp
 
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
+# React Native
+*.jsbundle
 
-# Diagnostic reports (https://nodejs.org/api/report.html)
-report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+# Android
+apps/mobile/android/app/build/
+apps/mobile/android/.gradle/
+apps/mobile/android/local.properties
+apps/mobile/android/app/release/
+
+# iOS
+apps/mobile/ios/Pods/
+apps/mobile/ios/build/
+apps/mobile/ios/*.xcworkspace
+!apps/mobile/ios/*.xcworkspace/contents.xcworkspacedata
+
+# Expo
+apps/mobile/.expo/
+apps/mobile/.expo-shared/
+
+# Docker
+*.dockerfile.swp
+
+# Package manager
+package-lock.json.backup
+yarn.lock.backup

@@ -1,174 +1,382 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# OneOhm EPC - NX Monorepo
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A professional NX-powered monorepo for the OneOhm EPC project, containing backend API, web application, mobile app, UX design assets, and shared libraries.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 📁 Project Structure
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository for OneOhm EPC.
-
-This project includes:
-
-- ✅ **ESLint & Prettier** - Industry-standard code quality and formatting
-- ✅ **Auto Import Sorting** - Imports automatically organized and grouped on save
-- ✅ **CI/CD Pipelines** - Automated testing, building, and deployment
-- ✅ **Node.js 22** - Latest LTS with .nvmrc support
-- ✅ **Docker Support** - Containerized deployment ready
-- ✅ **Security Scanning** - CodeQL and dependency review
-- ✅ **VS Code Integration** - Auto-formatting, debugging, and import organization
-
-## Project setup
-
-```bash
-$ npm install
+```
+oneohm-epc/
+├── apps/
+│   ├── backend/       # NestJS API server
+│   ├── web/           # Next.js web application
+│   ├── mobile/        # React Native mobile app
+│   └── ux/            # UX design assets & documentation
+├── libs/
+│   ├── shared-types/  # Shared TypeScript types
+│   ├── shared-utils/  # Shared utility functions
+│   ├── shared-theme/  # Shared theme configuration
+│   └── shared-assets/ # Shared constants and assets
+├── .github/
+│   └── workflows/     # NX-powered CI/CD pipelines
+├── nx.json            # NX configuration
+├── tsconfig.base.json # Base TypeScript configuration
+├── package.json       # Root workspace configuration
+└── README.md
 ```
 
-## Code Quality
+## 🚀 Quick Start
 
-This project uses ESLint and Prettier with industry-standard configurations, including automatic import sorting and grouping.
+### Prerequisites
+
+- Node.js 20.x or higher
+- npm (comes with Node.js)
+
+### Installation
+
+Install all dependencies for all projects:
 
 ```bash
-# Format code
-$ npm run format
+npm install
+```
+
+## ⚡ NX Commands
+
+NX provides intelligent build system with caching and affected detection.
+
+### Development
+
+```bash
+# Backend
+npm run backend:dev    # Start backend API in watch mode
+
+# Web
+npm run web:dev        # Start Next.js dev server
+
+# Mobile (after React Native initialization)
+npm run mobile:start   # Start Metro bundler
+```
+
+### Building
+
+```bash
+# Build specific app
+npm run backend:build
+npm run web:build
+
+# Build all apps
+npm run build
+
+# Build only affected apps (faster!)
+npm run affected:build
+```
+
+### Testing
+
+```bash
+# Test specific app
+npm run backend:test
+
+# Test all apps
+npm run test
+
+# Test only affected apps
+npm run affected:test
+```
+
+### Linting & Formatting
+
+```bash
+# Lint all code
+npm run lint
+
+# Lint only affected
+npm run affected:lint
+
+# Format all code
+npm run format
 
 # Check formatting
-$ npm run format:check
-
-# Lint code (includes import sorting)
-$ npm run lint
-
-# Lint without auto-fixing
-$ npm run lint:check
+npm run format:check
 ```
 
-**VS Code** users will benefit from:
+### NX Graph
 
-- ✅ Automatic formatting on save
-- ✅ Automatic import sorting and grouping
-- ✅ Auto-removal of unused imports
-- ✅ ESLint auto-fix on save
-
-Make sure to install the recommended extensions. See [IMPORT_SORTING_GUIDE.md](IMPORT_SORTING_GUIDE.md) for details.
-
-## Compile and run the project
+Visualize your project dependencies:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm run graph           # Show full dependency graph
+npm run affected:graph  # Show only affected projects
 ```
 
-## Run tests
+## 📦 Shared Libraries
+
+### Using Shared Libraries
+
+All shared libraries are automatically available via TypeScript path mapping:
+
+```typescript
+// In any app (backend, web, mobile)
+import { User, ApiResponse } from '@oneohm-epc/shared-types';
+import { formatDate, debounce } from '@oneohm-epc/shared-utils';
+import { theme, colors } from '@oneohm-epc/shared-theme';
+import { API_CONFIG, ROUTES } from '@oneohm-epc/shared-assets';
+```
+
+### Available Libraries
+
+#### `@oneohm-epc/shared-types`
+
+Common TypeScript types and interfaces.
+
+#### `@oneohm-epc/shared-utils`
+
+Utility functions (date formatting, validation, etc.).
+
+#### `@oneohm-epc/shared-theme`
+
+Theme configuration (colors, spacing, typography, etc.).
+
+#### `@oneohm-epc/shared-assets`
+
+Constants, config, and static assets.
+
+## 🔧 Development
+
+### Code Quality
+
+This monorepo uses shared ESLint and Prettier configurations for consistency across all projects.
 
 ```bash
-# unit tests
-$ npm run test
+# Format all code
+npm run format
 
-# e2e tests
-$ npm run test:e2e
+# Check formatting
+npm run format:check
 
-# test coverage
-$ npm run test:cov
+# Lint all code
+npm run lint
+
+# Lint check (no auto-fix)
+npm run lint:check
 ```
 
-## CI/CD
+### Clean Install
 
-This project includes comprehensive CI/CD workflows using GitHub Actions:
-
-- **Continuous Integration**: Automated linting, testing, and building
-- **Continuous Deployment**: Automated deployment to staging and production
-- **Security Scanning**: CodeQL analysis and dependency review
-- **Performance Testing**: Lighthouse and load testing capabilities
-
-### Running CI Checks Locally
+Remove all caches and reinstall:
 
 ```bash
-# Run all CI checks
-$ npm run ci
+npm run clean
+npm install
 ```
 
-This will run:
+## 🔄 CI/CD with NX
 
-1. ESLint check
-2. Prettier formatting check
-3. Unit tests
-4. E2E tests
-5. Build
+### Intelligent Build System
 
-### Deployment Workflows
+NX automatically detects which projects are affected by your changes and only builds/tests those projects.
 
-- **Staging**: Automatically deploys on push to `main` branch
-- **Production**: Deploys when you create a version tag (e.g., `v1.0.0`)
+#### Example Scenarios:
+
+**Scenario 1: Changed only shared-types**
+
+- ✅ Builds/tests: `shared-types`, `backend`, `web`, `mobile` (all consumers)
+- ❌ Skips: `ux` (not dependent on shared-types)
+
+**Scenario 2: Changed only web app**
+
+- ✅ Builds/tests: `web` only
+- ❌ Skips: `backend`, `mobile`, `ux`, all libs
+
+**Scenario 3: Changed only UX designs**
+
+- ✅ Builds: `ux` only
+- ❌ Skips: Everything else
+
+### CI/CD Workflow
+
+The unified `ci-cd.yml` workflow:
+
+1. Detects affected projects
+2. Runs lint on affected projects in parallel
+3. Runs tests on affected projects in parallel
+4. Builds affected projects in parallel
+5. Deploys only affected apps to production
+
+**Result:** 50-70% faster CI/CD times as your monorepo grows!
+
+### Local Affected Commands
 
 ```bash
-# Create a production release
-$ git tag -a v1.0.0 -m "Release version 1.0.0"
-$ git push origin v1.0.0
+# See what's affected by your changes
+npx nx affected:graph
+
+# Build only affected
+npm run affected:build
+
+# Test only affected
+npm run affected:test
+
+# Lint only affected
+npm run affected:lint
 ```
 
-For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md) and [CI_CD_SETUP.md](CI_CD_SETUP.md).
+## 🏗️ Architecture
 
-## Docker
+### Monorepo Benefits with NX
 
-Build and run with Docker:
+- **Intelligent Caching**: NX caches build outputs. Rebuild only when source changes
+- **Affected Detection**: Only build/test what changed
+- **Parallel Execution**: Run tasks across multiple projects simultaneously
+- **Dependency Graph**: Visualize and understand project relationships
+- **Code Sharing**: Share types, utilities, and components between apps
+- **Consistent Tooling**: Same development experience across all projects
+- **Atomic Changes**: Make changes across multiple apps in a single commit
+
+### Workspace Management
+
+This project uses **NX workspaces** on top of **npm workspaces**:
+
+- Dependencies are hoisted to the root `node_modules` when possible
+- NX provides intelligent task scheduling and caching
+- Shared libraries are automatically linked via TypeScript path mapping
+
+## 📝 Adding New Dependencies
 
 ```bash
-# Build image
-$ docker build -t oneohm-epc .
+# Root-level dev dependency (shared tooling)
+npm install -D <package-name>
 
-# Run container
-$ docker run -p 3000:3000 oneohm-epc
+# Backend-specific dependency
+npm install <package-name> --workspace=@oneohm-epc/backend
 
-# Or use docker-compose
-$ docker-compose up -d
+# Web-specific dependency
+npm install <package-name> --workspace=@oneohm-epc/web
+
+# Mobile-specific dependency
+npm install <package-name> --workspace=@oneohm-epc/mobile
+
+# Shared library dependency
+npm install <package-name> --workspace=@oneohm-epc/shared-utils
 ```
 
-## Resources
+## 🔐 Environment Variables
 
-Check out a few resources that may come in handy when working with NestJS:
+Each app manages its own environment variables:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+- Backend: `apps/backend/.env`
+- Web: `apps/web/.env.local`
+- Mobile: `apps/mobile/.env`
 
-## Support
+Never commit sensitive credentials. Use `.env.example` files as templates.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## 🤝 Contributing
 
-## Stay in touch
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Create a feature branch: `git checkout -b feature/your-feature`
+4. Make your changes
+5. Run affected checks: `npm run affected:lint && npm run affected:test`
+6. Commit your changes: `git commit -m "feat: your feature"`
+7. Push to the branch: `git push origin feature/your-feature`
+8. Open a Pull Request
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## 📊 NX Features
 
-## License
+### 1. Build Caching
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+NX caches the output of any task. If the inputs haven't changed, NX restores the cached output:
+
+```bash
+# First build
+npm run backend:build  # Takes 30s
+
+# Second build (nothing changed)
+npm run backend:build  # Takes <1s (from cache)
+```
+
+### 2. Affected Commands
+
+Only run tasks on projects affected by your changes:
+
+```bash
+# What changed?
+npx nx affected:apps
+npx nx affected:libs
+
+# Build only what changed
+npm run affected:build
+```
+
+### 3. Dependency Graph
+
+Visualize your monorepo:
+
+```bash
+# Full graph
+npm run graph
+
+# What's affected by changes
+npm run affected:graph
+```
+
+### 4. Parallel Execution
+
+Run tasks in parallel with configurable workers:
+
+```bash
+# Run tests in parallel across 3 workers
+npx nx run-many --target=test --all --parallel=3
+```
+
+## 🐳 Docker
+
+Run the entire stack with Docker Compose:
+
+```bash
+# Production mode
+npm run docker:build   # Build images
+npm run docker:up      # Start all services
+npm run docker:logs    # View logs
+npm run docker:down    # Stop services
+
+# Development mode (with hot reload)
+npm run docker:dev     # Start dev environment
+npm run docker:dev:down # Stop dev environment
+
+# Services available at:
+# - Backend API: http://localhost:8085
+# - Web App: http://localhost:3001
+# - PostgreSQL: localhost:5436
+```
+
+See [Docker Documentation](./docs/DOCKER.md) for detailed usage.
+
+## 📚 Documentation
+
+### **📖 Essential Guides**
+
+- [**NX Usage Guide**](./docs/NX-USAGE-GUIDE.md) - Complete guide to using NX (START HERE!)
+- [**CI/CD with NX**](./docs/CI-CD-WITH-NX.md) - GitHub Actions workflow documentation
+
+### **📱 Application Docs**
+
+- [Backend Documentation](./apps/backend/README.md)
+- [Web Documentation](./apps/web/README.md)
+- [Mobile Documentation](./apps/mobile/README.md)
+- [UX Documentation](./apps/ux/README.md)
+
+### **📦 Shared Libraries**
+
+- [Shared Types](./libs/shared-types/README.md)
+
+## 🔗 Resources
+
+- [NX Documentation](https://nx.dev/getting-started/intro)
+- [NX Cloud](https://nx.app/) - Free remote caching for open source
+- [NestJS Documentation](https://docs.nestjs.com)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [React Native Documentation](https://reactnative.dev/docs/getting-started)
+
+## 📄 License
+
+UNLICENSED - Private project

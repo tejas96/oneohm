@@ -1,0 +1,15 @@
+node_modules
+npm-debug.log*
+.next
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
+.git
+.gitignore
+README.md
+.env*.local
+coverage
+.nx
+dist
+build
+

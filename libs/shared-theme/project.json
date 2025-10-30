@@ -1,0 +1,27 @@
+{
+  "name": "shared-theme",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared-theme/src",
+  "projectType": "library",
+  "tags": ["type:lib", "scope:shared"],
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint libs/shared-theme/src/**/*.ts --config eslint.config.mjs"
+      }
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --write \"libs/shared-theme/**/*.{ts,tsx,js,jsx,json,css,md}\""
+      }
+    },
+    "format:check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --check \"libs/shared-theme/**/*.{ts,tsx,js,jsx,json,css,md}\""
+      }
+    }
+  }
+}

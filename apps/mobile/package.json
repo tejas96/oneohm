@@ -1,0 +1,11 @@
+{
+  "name": "@oneohm-epc/mobile",
+  "version": "0.0.1",
+  "description": "OneOhm EPC Mobile Application",
+  "private": true,
+  "scripts": {
+    "start": "echo 'React Native project not yet initialized'",
+    "android": "echo 'React Native project not yet initialized'",
+    "ios": "echo 'React Native project not yet initialized'"
+  }
+}

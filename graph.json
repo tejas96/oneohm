@@ -1,0 +1,986 @@
+{
+  "graph": {
+    "nodes": {
+      "shared-assets": {
+        "name": "shared-assets",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared-assets",
+          "name": "shared-assets",
+          "tags": [
+            "npm:public",
+            "type:lib",
+            "scope:shared"
+          ],
+          "metadata": {
+            "targetGroups": {},
+            "description": "Shared assets and constants for OneOhm EPC",
+            "js": {
+              "packageName": "@oneohm-epc/shared-assets",
+              "packageVersion": "0.0.1",
+              "packageMain": "./src/index.ts",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "targets": {
+            "nx-release-publish": {
+              "executor": "@nx/js:release-publish",
+              "dependsOn": [
+                "^nx-release-publish"
+              ],
+              "options": {},
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "eslint libs/shared-assets/src/**/*.ts --config eslint.config.mjs"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "cache": true
+            },
+            "format": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "prettier --write \"libs/shared-assets/**/*.{ts,tsx,js,jsx,json,css,md}\""
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.prettierrc"
+              ],
+              "cache": true
+            },
+            "format:check": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "prettier --check \"libs/shared-assets/**/*.{ts,tsx,js,jsx,json,css,md}\""
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.prettierrc"
+              ],
+              "cache": true
+            }
+          },
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/shared-assets/src",
+          "projectType": "library",
+          "implicitDependencies": []
+        }
+      },
+      "shared-theme": {
+        "name": "shared-theme",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared-theme",
+          "name": "shared-theme",
+          "tags": [
+            "npm:public",
+            "type:lib",
+            "scope:shared"
+          ],
+          "metadata": {
+            "targetGroups": {},
+            "description": "Shared theme configuration for OneOhm EPC",
+            "js": {
+              "packageName": "@oneohm-epc/shared-theme",
+              "packageVersion": "0.0.1",
+              "packageMain": "./src/index.ts",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "targets": {
+            "nx-release-publish": {
+              "executor": "@nx/js:release-publish",
+              "dependsOn": [
+                "^nx-release-publish"
+              ],
+              "options": {},
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "eslint libs/shared-theme/src/**/*.ts --config eslint.config.mjs"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "cache": true
+            },
+            "format": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "prettier --write \"libs/shared-theme/**/*.{ts,tsx,js,jsx,json,css,md}\""
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.prettierrc"
+              ],
+              "cache": true
+            },
+            "format:check": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "prettier --check \"libs/shared-theme/**/*.{ts,tsx,js,jsx,json,css,md}\""
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.prettierrc"
+              ],
+              "cache": true
+            }
+          },
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/shared-theme/src",
+          "projectType": "library",
+          "implicitDependencies": []
+        }
+      },
+      "shared-types": {
+        "name": "shared-types",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared-types",
+          "name": "shared-types",
+          "tags": [
+            "npm:public",
+            "type:lib",
+            "scope:shared"
+          ],
+          "metadata": {
+            "targetGroups": {},
+            "description": "Shared TypeScript types for OneOhm EPC",
+            "js": {
+              "packageName": "@oneohm-epc/shared-types",
+              "packageVersion": "0.0.1",
+              "packageMain": "./src/index.ts",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "targets": {
+            "nx-release-publish": {
+              "executor": "@nx/js:release-publish",
+              "dependsOn": [
+                "^nx-release-publish"
+              ],
+              "options": {},
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/js:tsc",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/libs/shared-types",
+                "main": "libs/shared-types/src/index.ts",
+                "tsConfig": "libs/shared-types/tsconfig.lib.json",
+                "assets": []
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "production",
+                "^production"
+              ],
+              "cache": true
+            },
+            "lint": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "eslint libs/shared-types/src/**/*.ts --config eslint.config.mjs"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "cache": true
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/shared-types/jest.config.ts",
+                "passWithNoTests": true
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "build"
+              ],
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.config.ts"
+              ],
+              "cache": true
+            },
+            "format": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "prettier --write \"libs/shared-types/**/*.{ts,tsx,js,jsx,json,css,md}\""
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.prettierrc"
+              ],
+              "cache": true
+            },
+            "format:check": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "prettier --check \"libs/shared-types/**/*.{ts,tsx,js,jsx,json,css,md}\""
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.prettierrc"
+              ],
+              "cache": true
+            }
+          },
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/shared-types/src",
+          "projectType": "library",
+          "implicitDependencies": []
+        }
+      },
+      "shared-utils": {
+        "name": "shared-utils",
+        "type": "lib",
+        "data": {
+          "root": "libs/shared-utils",
+          "name": "shared-utils",
+          "tags": [
+            "npm:public",
+            "type:lib",
+            "scope:shared"
+          ],
+          "metadata": {
+            "targetGroups": {},
+            "description": "Shared utility functions for OneOhm EPC",
+            "js": {
+              "packageName": "@oneohm-epc/shared-utils",
+              "packageVersion": "0.0.1",
+              "packageMain": "./src/index.ts",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "targets": {
+            "nx-release-publish": {
+              "executor": "@nx/js:release-publish",
+              "dependsOn": [
+                "^nx-release-publish"
+              ],
+              "options": {},
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/js:tsc",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "dist/libs/shared-utils",
+                "main": "libs/shared-utils/src/index.ts",
+                "tsConfig": "libs/shared-utils/tsconfig.lib.json",
+                "assets": []
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "production",
+                "^production"
+              ],
+              "cache": true
+            },
+            "lint": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "eslint libs/shared-utils/src/**/*.ts --config eslint.config.mjs"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "cache": true
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "libs/shared-utils/jest.config.ts",
+                "passWithNoTests": true
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "build"
+              ],
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.config.ts"
+              ],
+              "cache": true
+            },
+            "format": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "prettier --write \"libs/shared-utils/**/*.{ts,tsx,js,jsx,json,css,md}\""
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.prettierrc"
+              ],
+              "cache": true
+            },
+            "format:check": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "prettier --check \"libs/shared-utils/**/*.{ts,tsx,js,jsx,json,css,md}\""
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.prettierrc"
+              ],
+              "cache": true
+            }
+          },
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "libs/shared-utils/src",
+          "projectType": "library",
+          "implicitDependencies": []
+        }
+      },
+      "backend": {
+        "name": "backend",
+        "type": "app",
+        "data": {
+          "root": "apps/backend",
+          "name": "backend",
+          "tags": [
+            "npm:private",
+            "type:app",
+            "scope:backend"
+          ],
+          "metadata": {
+            "targetGroups": {
+              "NPM Scripts": [
+                "start",
+                "start:dev",
+                "start:debug",
+                "start:prod",
+                "lint:check",
+                "test:watch",
+                "test:cov",
+                "test:debug"
+              ]
+            },
+            "description": "OneOhm EPC Backend API",
+            "js": {
+              "packageName": "@oneohm-epc/backend",
+              "packageVersion": "0.0.1",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "targets": {
+            "start": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "start"
+              },
+              "metadata": {
+                "scriptContent": "nest start",
+                "runCommand": "npm run start"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "start:dev": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "start:dev"
+              },
+              "metadata": {
+                "scriptContent": "nest start --watch",
+                "runCommand": "npm run start:dev"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "start:debug": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "start:debug"
+              },
+              "metadata": {
+                "scriptContent": "nest start --debug --watch",
+                "runCommand": "npm run start:debug"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "start:prod": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "start:prod"
+              },
+              "metadata": {
+                "scriptContent": "node dist/main",
+                "runCommand": "npm run start:prod"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint:check": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "lint:check"
+              },
+              "metadata": {
+                "scriptContent": "eslint \"{src,apps,libs,test}/**/*.ts\"",
+                "runCommand": "npm run lint:check"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "test:watch": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "test:watch"
+              },
+              "metadata": {
+                "scriptContent": "jest --watch",
+                "runCommand": "npm run test:watch"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "test:cov": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "test:cov"
+              },
+              "metadata": {
+                "scriptContent": "jest --coverage",
+                "runCommand": "npm run test:cov"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "test:debug": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "test:debug"
+              },
+              "metadata": {
+                "scriptContent": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+                "runCommand": "npm run test:debug"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/js:tsc",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "apps/backend/dist",
+                "main": "apps/backend/src/main.ts",
+                "tsConfig": "apps/backend/tsconfig.build.json",
+                "assets": []
+              },
+              "configurations": {
+                "production": {
+                  "optimization": true,
+                  "sourceMap": false
+                },
+                "development": {
+                  "optimization": false,
+                  "sourceMap": true
+                }
+              },
+              "defaultConfiguration": "production",
+              "parallelism": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "production",
+                "^production"
+              ],
+              "cache": true
+            },
+            "serve": {
+              "executor": "@nx/js:node",
+              "options": {
+                "buildTarget": "backend:build",
+                "watch": true
+              },
+              "configurations": {
+                "development": {
+                  "buildTarget": "backend:build:development"
+                },
+                "production": {
+                  "buildTarget": "backend:build:production"
+                }
+              },
+              "defaultConfiguration": "development",
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "@nx/eslint:lint",
+              "outputs": [
+                "{options.outputFile}"
+              ],
+              "options": {
+                "lintFilePatterns": [
+                  "apps/backend/src/**/*.ts",
+                  "apps/backend/test/**/*.ts"
+                ]
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "cache": true
+            },
+            "test": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}"
+              ],
+              "options": {
+                "jestConfig": "apps/backend/jest.config.ts",
+                "passWithNoTests": true
+              },
+              "configurations": {
+                "ci": {
+                  "ci": true,
+                  "coverage": true
+                }
+              },
+              "parallelism": true,
+              "dependsOn": [
+                "build"
+              ],
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.config.ts"
+              ],
+              "cache": true
+            },
+            "test:e2e": {
+              "executor": "@nx/jest:jest",
+              "outputs": [
+                "{workspaceRoot}/coverage/{projectRoot}/e2e"
+              ],
+              "options": {
+                "jestConfig": "apps/backend/test/jest-e2e.json",
+                "passWithNoTests": true
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "build"
+              ],
+              "inputs": [
+                "default",
+                "^production"
+              ],
+              "cache": true
+            },
+            "format": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "prettier --write \"apps/backend/**/*.{ts,tsx,js,jsx,json,css,md}\""
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.prettierrc"
+              ],
+              "cache": true
+            },
+            "format:check": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "prettier --check \"apps/backend/**/*.{ts,tsx,js,jsx,json,css,md}\""
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.prettierrc"
+              ],
+              "cache": true
+            }
+          },
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "apps/backend/src",
+          "projectType": "application",
+          "implicitDependencies": []
+        }
+      },
+      "mobile": {
+        "name": "mobile",
+        "type": "app",
+        "data": {
+          "root": "apps/mobile",
+          "name": "mobile",
+          "tags": [
+            "npm:private",
+            "type:app",
+            "scope:mobile",
+            "platform:mobile"
+          ],
+          "metadata": {
+            "targetGroups": {},
+            "description": "OneOhm EPC Mobile Application",
+            "js": {
+              "packageName": "@oneohm-epc/mobile",
+              "packageVersion": "0.0.1",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "targets": {
+            "start": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "echo 'React Native project not yet initialized. Run: cd apps/mobile && npx react-native init'"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "android": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "echo 'React Native project not yet initialized'"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "ios": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "echo 'React Native project not yet initialized'"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "echo 'Linting will be available after React Native initialization'"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "cache": true
+            },
+            "test": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "echo 'Testing will be available after React Native initialization'"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "build"
+              ],
+              "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/jest.config.ts"
+              ],
+              "cache": true
+            }
+          },
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "apps/mobile",
+          "projectType": "application",
+          "implicitDependencies": []
+        }
+      },
+      "web": {
+        "name": "web",
+        "type": "app",
+        "data": {
+          "root": "apps/web",
+          "name": "web",
+          "tags": [
+            "npm:private",
+            "type:app",
+            "scope:web",
+            "platform:browser"
+          ],
+          "metadata": {
+            "targetGroups": {
+              "NPM Scripts": [
+                "dev",
+                "start",
+                "lint:fix"
+              ]
+            },
+            "description": "OneOhm EPC Web Application",
+            "js": {
+              "packageName": "@oneohm-epc/web",
+              "packageVersion": "0.1.0",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "targets": {
+            "dev": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "dev"
+              },
+              "metadata": {
+                "scriptContent": "next dev",
+                "runCommand": "npm run dev"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "start": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "start"
+              },
+              "metadata": {
+                "scriptContent": "next start",
+                "runCommand": "npm run start"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint:fix": {
+              "executor": "nx:run-script",
+              "options": {
+                "script": "lint:fix"
+              },
+              "metadata": {
+                "scriptContent": "eslint . --fix",
+                "runCommand": "npm run lint:fix"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "build": {
+              "executor": "@nx/next:build",
+              "outputs": [
+                "{options.outputPath}"
+              ],
+              "options": {
+                "outputPath": "apps/web/.next"
+              },
+              "configurations": {
+                "production": {},
+                "development": {
+                  "outputPath": "apps/web/.next"
+                }
+              },
+              "defaultConfiguration": "production",
+              "parallelism": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "production",
+                "^production"
+              ],
+              "cache": true
+            },
+            "serve": {
+              "executor": "@nx/next:server",
+              "options": {
+                "buildTarget": "web:build",
+                "dev": true,
+                "port": 3001
+              },
+              "configurations": {
+                "development": {
+                  "buildTarget": "web:build:development",
+                  "dev": true
+                },
+                "production": {
+                  "buildTarget": "web:build:production",
+                  "dev": false
+                }
+              },
+              "defaultConfiguration": "development",
+              "parallelism": true,
+              "continuous": true
+            },
+            "export": {
+              "executor": "@nx/next:export",
+              "options": {
+                "buildTarget": "web:build:production"
+              },
+              "configurations": {},
+              "parallelism": true
+            },
+            "lint": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "eslint apps/web/app --ext .ts,.tsx --config eslint.config.mjs"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.eslintrc.json",
+                "{workspaceRoot}/eslint.config.mjs"
+              ],
+              "cache": true
+            },
+            "format": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "prettier --write \"apps/web/**/*.{ts,tsx,js,jsx,json,css,md}\""
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.prettierrc"
+              ],
+              "cache": true
+            },
+            "format:check": {
+              "executor": "nx:run-commands",
+              "options": {
+                "command": "prettier --check \"apps/web/**/*.{ts,tsx,js,jsx,json,css,md}\""
+              },
+              "configurations": {},
+              "parallelism": true,
+              "inputs": [
+                "default",
+                "{workspaceRoot}/.prettierrc"
+              ],
+              "cache": true
+            }
+          },
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "apps/web",
+          "projectType": "application",
+          "implicitDependencies": []
+        }
+      },
+      "ux": {
+        "name": "ux",
+        "type": "app",
+        "data": {
+          "root": "apps/ux",
+          "name": "ux",
+          "tags": [
+            "npm:private",
+            "type:docs",
+            "scope:ux"
+          ],
+          "metadata": {
+            "targetGroups": {},
+            "description": "OneOhm EPC UX Design Assets",
+            "js": {
+              "packageName": "@oneohm-epc/ux",
+              "packageVersion": "0.0.1",
+              "isInPackageManagerWorkspaces": true
+            }
+          },
+          "targets": {
+            "build": {
+              "executor": "nx:run-commands",
+              "outputs": [
+                "{projectRoot}"
+              ],
+              "options": {
+                "command": "echo 'UX documentation ready for GitHub Pages deployment'"
+              },
+              "configurations": {},
+              "parallelism": true,
+              "dependsOn": [
+                "^build"
+              ],
+              "inputs": [
+                "production",
+                "^production"
+              ],
+              "cache": true
+            }
+          },
+          "$schema": "../../node_modules/nx/schemas/project-schema.json",
+          "sourceRoot": "apps/ux",
+          "projectType": "application",
+          "implicitDependencies": []
+        }
+      }
+    },
+    "dependencies": {
+      "shared-assets": [],
+      "shared-theme": [],
+      "shared-types": [],
+      "shared-utils": [],
+      "backend": [],
+      "mobile": [],
+      "web": [],
+      "ux": []
+    }
+  }
+}
