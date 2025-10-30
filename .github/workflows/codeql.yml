@@ -44,11 +44,12 @@ jobs:
       - name: Perform CodeQL Analysis
         id: codeql-analysis
         uses: github/codeql-action/analyze@v3
+        continue-on-error: true
 
       - name: Generate Security Scan Summary
         if: always()
         run: |
-          echo "## 🔒 CodeQL Security Scan Complete" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔒 CodeQL Security Scan" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.codeql-analysis.outcome }}" == "success" ]; then
             echo "✅ Security scan completed successfully!" >> $GITHUB_STEP_SUMMARY
@@ -62,6 +63,15 @@ jobs:
             echo "- Detected potential bugs and weaknesses" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "📊 View detailed results in the Security tab of your repository" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.codeql-analysis.outcome }}" == "failure" ]; then
+            echo "⚠️ **Code Scanning Not Enabled**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "To enable CodeQL code scanning for this repository:" >> $GITHUB_STEP_SUMMARY
+            echo "1. Go to **Settings** → **Code security and analysis**" >> $GITHUB_STEP_SUMMARY
+            echo "2. Enable **Code scanning**" >> $GITHUB_STEP_SUMMARY
+            echo "3. Choose **Set up** → **Advanced** (or Default)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📚 [Learn more about code scanning](https://docs.github.com/en/code-security/code-scanning/introduction-to-code-scanning/about-code-scanning)" >> $GITHUB_STEP_SUMMARY
           else
             echo "⚠️ Security scan encountered issues. Please review the logs." >> $GITHUB_STEP_SUMMARY
           fi

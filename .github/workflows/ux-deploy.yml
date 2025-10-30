@@ -29,21 +29,26 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Pages
+        id: setup-pages
         uses: actions/configure-pages@v4
+        continue-on-error: true
 
       - name: Upload artifact
+        if: steps.setup-pages.outcome == 'success'
         uses: actions/upload-pages-artifact@v3
         with:
           path: './apps/ux'
 
       - name: Deploy to GitHub Pages
         id: deployment
+        if: steps.setup-pages.outcome == 'success'
         uses: actions/deploy-pages@v4
+        continue-on-error: true
 
       - name: Generate Deployment Summary
         if: always()
         run: |
-          echo "## 🎨 UX Documentation Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "## 🎨 UX Documentation Deployment" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.deployment.outcome }}" == "success" ]; then
             echo "✅ Deployment completed successfully!" >> $GITHUB_STEP_SUMMARY
@@ -53,6 +58,15 @@ jobs:
             echo "📅 **Deployed:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
             echo "🔖 **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
             echo "👤 **Deployed by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.setup-pages.outcome }}" == "failure" ] || [ "${{ steps.deployment.outcome }}" == "failure" ]; then
+            echo "⚠️ **GitHub Pages Not Enabled**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "To enable GitHub Pages for this repository:" >> $GITHUB_STEP_SUMMARY
+            echo "1. Go to **Settings** → **Pages**" >> $GITHUB_STEP_SUMMARY
+            echo "2. Under **Source**, select **GitHub Actions**" >> $GITHUB_STEP_SUMMARY
+            echo "3. Save the settings" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📚 [Learn more about GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ Deployment failed. Please check the logs above." >> $GITHUB_STEP_SUMMARY
           fi

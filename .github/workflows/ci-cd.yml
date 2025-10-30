@@ -73,8 +73,16 @@ jobs:
       - name: Run lint on affected projects
         id: lint-run
         run: |
-          npx nx affected --target=lint --parallel=3
-          npx nx print-affected --select=projects > /tmp/affected-projects.txt
+          npx nx affected --target=lint --parallel=3 || {
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 0 ]; then
+              echo "No affected projects to lint"
+              exit 0
+            else
+              exit $EXIT_CODE
+            fi
+          }
+          npx nx print-affected --select=projects > /tmp/affected-projects.txt || echo "none" > /tmp/affected-projects.txt
 
       - name: Generate Lint Summary
         if: always()
@@ -117,8 +125,16 @@ jobs:
       - name: Run tests on affected projects
         id: test-run
         run: |
-          npx nx affected --target=test --parallel=3 --coverage
-          npx nx print-affected --select=projects > /tmp/affected-projects-test.txt
+          npx nx affected --target=test --parallel=3 --coverage || {
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 0 ]; then
+              echo "No affected projects to test"
+              exit 0
+            else
+              exit $EXIT_CODE
+            fi
+          }
+          npx nx print-affected --select=projects > /tmp/affected-projects-test.txt || echo "none" > /tmp/affected-projects-test.txt
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -169,8 +185,16 @@ jobs:
       - name: Build affected projects
         id: build-run
         run: |
-          npx nx affected --target=build --parallel=3
-          npx nx print-affected --select=projects > /tmp/affected-projects-build.txt
+          npx nx affected --target=build --parallel=3 || {
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 0 ]; then
+              echo "No affected projects to build"
+              exit 0
+            else
+              exit $EXIT_CODE
+            fi
+          }
+          npx nx print-affected --select=projects > /tmp/affected-projects-build.txt || echo "none" > /tmp/affected-projects-build.txt
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
