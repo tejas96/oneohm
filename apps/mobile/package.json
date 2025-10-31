@@ -1,11 +1,24 @@
 {
-  "name": "@oneohm-epc/mobile",
+  "name": "mobile",
   "version": "0.0.1",
-  "description": "OneOhm EPC Mobile Application",
   "private": true,
-  "scripts": {
-    "start": "echo 'React Native project not yet initialized'",
-    "android": "echo 'React Native project not yet initialized'",
-    "ios": "echo 'React Native project not yet initialized'"
-  }
+  "dependencies": {
+    "@react-native/metro-config": "*",
+    "react": "*",
+    "react-native": "*",
+    "react-native-svg": "*",
+    "metro-config": "*",
+    "@eslint/js": "*",
+    "typescript-eslint": "*",
+    "eslint-config-prettier": "*",
+    "metro-react-native-babel-transformer": "*",
+    "@react-navigation/native": "*",
+    "react-native-safe-area-context": "*",
+    "react-dom": "*",
+    "@react-navigation/native-stack": "*",
+    "@react-navigation/bottom-tabs": "*",
+    "@nx/webpack": "*",
+    "@nx/react": "*"
+  },
+  "devDependencies": {}
 }

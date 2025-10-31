@@ -1,39 +1,97 @@
 {
   "name": "mobile",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/mobile",
+  "sourceRoot": "apps/mobile/src",
   "projectType": "application",
-  "tags": ["type:app", "scope:mobile", "platform:mobile"],
+  "tags": ["type:app", "platform:mobile"],
   "targets": {
     "start": {
-      "executor": "nx:run-commands",
+      "executor": "@nx/react-native:start",
       "options": {
-        "command": "echo 'React Native project not yet initialized. Run: cd apps/mobile && npx react-native init'"
+        "port": 8081
       }
     },
-    "android": {
-      "executor": "nx:run-commands",
+    "run-ios": {
+      "executor": "@nx/react-native:run-ios",
+      "options": {}
+    },
+    "run-android": {
+      "executor": "@nx/react-native:run-android",
+      "options": {}
+    },
+    "bundle-ios": {
+      "executor": "@nx/react-native:bundle",
+      "outputs": ["{options.bundleOutput}"],
       "options": {
-        "command": "echo 'React Native project not yet initialized'"
+        "entryFile": "src/main.tsx",
+        "platform": "ios",
+        "bundleOutput": "dist/apps/mobile/ios/main.jsbundle"
       }
     },
-    "ios": {
-      "executor": "nx:run-commands",
+    "bundle-android": {
+      "executor": "@nx/react-native:bundle",
+      "outputs": ["{options.bundleOutput}"],
       "options": {
-        "command": "echo 'React Native project not yet initialized'"
+        "entryFile": "src/main.tsx",
+        "platform": "android",
+        "bundleOutput": "dist/apps/mobile/android/main.jsbundle"
       }
+    },
+    "build-ios": {
+      "executor": "@nx/react-native:build-ios",
+      "outputs": ["{projectRoot}/ios/build/Build"],
+      "options": {
+        "simulator": "iPhone 15"
+      }
+    },
+    "build-android": {
+      "executor": "@nx/react-native:build-android",
+      "outputs": [
+        "{projectRoot}/android/app/build/outputs/bundle",
+        "{projectRoot}/android/app/build/outputs/apk"
+      ],
+      "options": {}
     },
     "lint": {
       "executor": "nx:run-commands",
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "command": "echo 'Linting will be available after React Native initialization'"
+        "command": "eslint apps/mobile/src --ext .ts,.tsx,.js,.jsx --config apps/mobile/eslint.config.mjs"
       }
     },
     "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/mobile/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "coverage": true
+        }
+      }
+    },
+    "format": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "echo 'Testing will be available after React Native initialization'"
+        "command": "prettier --write \"apps/mobile/**/*.{ts,tsx,js,jsx,json,md}\""
       }
+    },
+    "format:check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --check \"apps/mobile/**/*.{ts,tsx,js,jsx,json,md}\""
+      }
+    },
+    "pod-install": {
+      "executor": "@nx/react-native:pod-install",
+      "options": {}
+    },
+    "sync-deps": {
+      "executor": "@nx/react-native:sync-deps",
+      "options": {}
     }
   }
 }

@@ -16,6 +16,18 @@ export const isValidEmail = (email: string): boolean => {
 };
 
 /**
+ * Validation utilities
+ */
+export const validators = {
+  email: (email: string): boolean => isValidEmail(email),
+  password: (password: string): boolean => password.length >= 8,
+  phone: (phone: string): boolean => /^\d{10}$/.test(phone.replace(/\D/g, '')),
+  required: (value: string): boolean => value.trim().length > 0,
+  minLength: (value: string, min: number): boolean => value.length >= min,
+  maxLength: (value: string, max: number): boolean => value.length <= max,
+};
+
+/**
  * Debounce function
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

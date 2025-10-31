@@ -205,6 +205,23 @@ jobs:
           }
           npx nx print-affected --select=projects > /tmp/affected-projects-build.txt || echo "none" > /tmp/affected-projects-build.txt
 
+      - name: Check if mobile is affected
+        id: check-mobile
+        run: |
+          if npx nx print-affected --select=projects | grep -q "mobile"; then
+            echo "affected=true" >> $GITHUB_OUTPUT
+          else
+            echo "affected=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Bundle Mobile iOS
+        if: steps.check-mobile.outputs.affected == 'true'
+        run: npx nx bundle-ios mobile
+
+      - name: Bundle Mobile Android
+        if: steps.check-mobile.outputs.affected == 'true'
+        run: npx nx bundle-android mobile
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         if: success()
@@ -213,6 +230,8 @@ jobs:
           path: |
             apps/*/dist
             apps/*/.next
+            apps/mobile/android/app/build
+            apps/mobile/ios/build
           retention-days: 7
 
       - name: Generate Build Summary
@@ -223,6 +242,10 @@ jobs:
           if [ -f /tmp/affected-projects-build.txt ]; then
             echo "**Built Projects:**" >> $GITHUB_STEP_SUMMARY
             cat /tmp/affected-projects-build.txt | tr ',' '\n' | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check-mobile.outputs.affected }}" == "true" ]; then
+            echo "📱 Mobile bundles created for iOS and Android" >> $GITHUB_STEP_SUMMARY
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.build-run.outcome }}" == "success" ]; then
@@ -350,3 +373,154 @@ jobs:
           else
             echo "⏭️ Web app was not affected, skipping deployment" >> $GITHUB_STEP_SUMMARY
           fi
+
+  # Mobile deployment jobs (commented for future use)
+  # Uncomment and configure when ready to deploy mobile apps
+
+  # deploy-mobile-ios:
+  #   name: Deploy iOS App
+  #   needs: build
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  #   runs-on: macos-latest
+  #   permissions:
+  #     contents: read
+  #     actions: read
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v5
+  #       with:
+  #         fetch-depth: 0
+  #
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '20'
+  #         cache: 'npm'
+  #
+  #     - name: Install dependencies
+  #       run: npm ci
+  #
+  #     - name: Derive appropriate SHAs
+  #       uses: nrwl/nx-set-shas@v4
+  #
+  #     - name: Check if mobile is affected
+  #       id: check-mobile
+  #       run: |
+  #         if npx nx print-affected --select=projects | grep -q "mobile"; then
+  #           echo "affected=true" >> $GITHUB_OUTPUT
+  #         else
+  #           echo "affected=false" >> $GITHUB_OUTPUT
+  #         fi
+  #
+  #     - name: Setup Ruby
+  #       if: steps.check-mobile.outputs.affected == 'true'
+  #       uses: ruby/setup-ruby@v1
+  #       with:
+  #         ruby-version: '3.0'
+  #
+  #     - name: Install CocoaPods dependencies
+  #       if: steps.check-mobile.outputs.affected == 'true'
+  #       run: npx nx pod-install mobile
+  #
+  #     - name: Build iOS App
+  #       if: steps.check-mobile.outputs.affected == 'true'
+  #       run: npx nx build-ios mobile
+  #       # TODO: Add signing certificates and provisioning profiles
+  #       # - Import signing certificate from secrets
+  #       # - Import provisioning profile from secrets
+  #       # - Configure Xcode build settings
+  #
+  #     - name: Upload to App Store Connect
+  #       if: steps.check-mobile.outputs.affected == 'true'
+  #       run: echo "Add App Store Connect upload steps here"
+  #       # TODO: Configure App Store Connect credentials
+  #       # - Add App Store Connect API key to secrets
+  #       # - Use fastlane or altool to upload IPA
+  #
+  #     - name: Generate iOS Deployment Summary
+  #       if: always()
+  #       run: |
+  #         echo "## 📱 iOS App Deployment" >> $GITHUB_STEP_SUMMARY
+  #         echo "" >> $GITHUB_STEP_SUMMARY
+  #         if [ "${{ steps.check-mobile.outputs.affected }}" == "true" ]; then
+  #           echo "✅ iOS app was affected by changes" >> $GITHUB_STEP_SUMMARY
+  #           echo "🍎 iOS build completed successfully" >> $GITHUB_STEP_SUMMARY
+  #           echo "📦 Uploaded to App Store Connect" >> $GITHUB_STEP_SUMMARY
+  #           echo "" >> $GITHUB_STEP_SUMMARY
+  #           echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
+  #           echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+  #         else
+  #           echo "⏭️ iOS app was not affected, skipping deployment" >> $GITHUB_STEP_SUMMARY
+  #         fi
+
+  # deploy-mobile-android:
+  #   name: Deploy Android App
+  #   needs: build
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: read
+  #     actions: read
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v5
+  #       with:
+  #         fetch-depth: 0
+  #
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '20'
+  #         cache: 'npm'
+  #
+  #     - name: Setup Java
+  #       uses: actions/setup-java@v4
+  #       with:
+  #         distribution: 'temurin'
+  #         java-version: '17'
+  #
+  #     - name: Install dependencies
+  #       run: npm ci
+  #
+  #     - name: Derive appropriate SHAs
+  #       uses: nrwl/nx-set-shas@v4
+  #
+  #     - name: Check if mobile is affected
+  #       id: check-mobile
+  #       run: |
+  #         if npx nx print-affected --select=projects | grep -q "mobile"; then
+  #           echo "affected=true" >> $GITHUB_OUTPUT
+  #         else
+  #           echo "affected=false" >> $GITHUB_OUTPUT
+  #         fi
+  #
+  #     - name: Build Android App
+  #       if: steps.check-mobile.outputs.affected == 'true'
+  #       run: npx nx build-android mobile --configuration=release
+  #       # TODO: Add signing configuration
+  #       # - Add keystore file to secrets
+  #       # - Configure signing in gradle.properties
+  #       # - Set up keystore password and alias
+  #
+  #     - name: Upload to Google Play Console
+  #       if: steps.check-mobile.outputs.affected == 'true'
+  #       run: echo "Add Google Play Console upload steps here"
+  #       # TODO: Configure Google Play Console credentials
+  #       # - Add service account JSON to secrets
+  #       # - Use fastlane or Google Play Publisher API
+  #
+  #     - name: Generate Android Deployment Summary
+  #       if: always()
+  #       run: |
+  #         echo "## 📱 Android App Deployment" >> $GITHUB_STEP_SUMMARY
+  #         echo "" >> $GITHUB_STEP_SUMMARY
+  #         if [ "${{ steps.check-mobile.outputs.affected }}" == "true" ]; then
+  #           echo "✅ Android app was affected by changes" >> $GITHUB_STEP_SUMMARY
+  #           echo "🤖 Android build completed successfully" >> $GITHUB_STEP_SUMMARY
+  #           echo "📦 Uploaded to Google Play Console" >> $GITHUB_STEP_SUMMARY
+  #           echo "" >> $GITHUB_STEP_SUMMARY
+  #           echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
+  #           echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+  #         else
+  #           echo "⏭️ Android app was not affected, skipping deployment" >> $GITHUB_STEP_SUMMARY
+  #         fi

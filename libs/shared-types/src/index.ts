@@ -44,8 +44,44 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
-  createdAt: Date;
-  updatedAt: Date;
+  avatar?: string;
+  phone?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+/**
+ * Authentication types
+ */
+export interface AuthState {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface SignupCredentials extends LoginCredentials {
+  name: string;
+  phone?: string;
+}
+
+/**
+ * Theme types
+ */
+export type ThemeMode = 'light' | 'dark';
+
+/**
+ * API Error type
+ */
+export interface ApiError {
+  message: string;
+  code?: string;
+  status?: number;
 }
 
 // Add more shared types as needed
