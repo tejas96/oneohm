@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Analytics - OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
+            <div class="p-6 border-b border-gray-700">
+                <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
+                <p class="text-gray-400 text-sm mt-1">Sales Analytics</p>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                <a href="../admin/admin-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="analytics-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <span>Analytics Dashboard</span>
+                </a>
+                <a href="sales-analytics.html" class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"></path>
+                    </svg>
+                    <span>Sales Analytics</span>
+                </a>
+                <a href="financial-analytics.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Financial Analytics</span>
+                </a>
+                <a href="project-analytics.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    <span>Project Analytics</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-gray-700">
+                <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
+                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">SA</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-sm truncate">Super Admin</p>
+                        <p class="text-xs text-gray-400 truncate">Administrator</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Bar -->
+            <header class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Sales Performance Analytics</h2>
+                        <p class="text-sm text-gray-600">Track sales metrics, pipeline, and team performance</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                            <option>This Quarter</option>
+                            <option>Last Quarter</option>
+                            <option>This Year</option>
+                            <option>Custom Range</option>
+                        </select>
+                        <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600">Export Report</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Sales KPIs -->
+            <div class="bg-white border-b border-gray-200 px-8 py-6">
+                <div class="grid grid-cols-6 gap-4">
+                    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white shadow-lg">
+                        <p class="text-2xl font-bold">₹2.8Cr</p>
+                        <p class="text-xs opacity-90">Total Sales</p>
+                        <p class="text-xs mt-1">↗ +22% vs last quarter</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4 text-white shadow-lg">
+                        <p class="text-2xl font-bold">168</p>
+                        <p class="text-xs opacity-90">Projects Won</p>
+                        <p class="text-xs mt-1">↗ +18 this month</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white shadow-lg">
+                        <p class="text-2xl font-bold">68%</p>
+                        <p class="text-xs opacity-90">Win Rate</p>
+                        <p class="text-xs mt-1">↗ +5% improvement</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl p-4 text-white shadow-lg">
+                        <p class="text-2xl font-bold">₹18L</p>
+                        <p class="text-xs opacity-90">Avg Deal Size</p>
+                        <p class="text-xs mt-1">↗ +₹3L increase</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-4 text-white shadow-lg">
+                        <p class="text-2xl font-bold">32 days</p>
+                        <p class="text-xs opacity-90">Avg Sales Cycle</p>
+                        <p class="text-xs mt-1">↘ -5 days faster</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl p-4 text-white shadow-lg">
+                        <p class="text-2xl font-bold">245</p>
+                        <p class="text-xs opacity-90">Active Leads</p>
+                        <p class="text-xs mt-1">↗ +45 new</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Content -->
+            <main class="flex-1 overflow-y-auto p-8">
+                <div class="grid grid-cols-2 gap-6 mb-6">
+                    <!-- Sales Trend -->
+                    <div class="bg-white rounded-xl border-2 border-gray-200 p-6">
+                        <h3 class="font-bold text-gray-900 text-lg mb-4">Monthly Sales Trend</h3>
+                        <div class="h-64 flex items-end justify-between space-x-2">
+                            <div class="flex-1 flex flex-col items-center">
+                                <div class="w-full bg-gradient-to-t from-green-500 to-green-400 rounded-t h-28 hover:from-green-600 hover:to-green-500 cursor-pointer"></div>
+                                <span class="text-xs text-gray-600 mt-2">Apr</span>
+                                <span class="text-xs font-bold text-gray-900">85</span>
+                            </div>
+                            <div class="flex-1 flex flex-col items-center">
+                                <div class="w-full bg-gradient-to-t from-green-500 to-green-400 rounded-t h-36 hover:from-green-600 hover:to-green-500 cursor-pointer"></div>
+                                <span class="text-xs text-gray-600 mt-2">May</span>
+                                <span class="text-xs font-bold text-gray-900">102</span>
+                            </div>
+                            <div class="flex-1 flex flex-col items-center">
+                                <div class="w-full bg-gradient-to-t from-green-500 to-green-400 rounded-t h-32 hover:from-green-600 hover:to-green-500 cursor-pointer"></div>
+                                <span class="text-xs text-gray-600 mt-2">Jun</span>
+                                <span class="text-xs font-bold text-gray-900">95</span>
+                            </div>
+                            <div class="flex-1 flex flex-col items-center">
+                                <div class="w-full bg-gradient-to-t from-green-500 to-green-400 rounded-t h-44 hover:from-green-600 hover:to-green-500 cursor-pointer"></div>
+                                <span class="text-xs text-gray-600 mt-2">Jul</span>
+                                <span class="text-xs font-bold text-gray-900">125</span>
+                            </div>
+                            <div class="flex-1 flex flex-col items-center">
+                                <div class="w-full bg-gradient-to-t from-green-500 to-green-400 rounded-t h-40 hover:from-green-600 hover:to-green-500 cursor-pointer"></div>
+                                <span class="text-xs text-gray-600 mt-2">Aug</span>
+                                <span class="text-xs font-bold text-gray-900">115</span>
+                            </div>
+                            <div class="flex-1 flex flex-col items-center">
+                                <div class="w-full bg-gradient-to-t from-green-500 to-green-400 rounded-t h-48 hover:from-green-600 hover:to-green-500 cursor-pointer"></div>
+                                <span class="text-xs text-gray-600 mt-2">Sep</span>
+                                <span class="text-xs font-bold text-gray-900">138</span>
+                            </div>
+                            <div class="flex-1 flex flex-col items-center">
+                                <div class="w-full bg-gradient-to-t from-primary to-orange-400 rounded-t h-56 hover:from-orange-600 hover:to-orange-500 cursor-pointer"></div>
+                                <span class="text-xs text-gray-600 mt-2">Oct</span>
+                                <span class="text-xs font-bold text-primary">168</span>
+                            </div>
+                        </div>
+                        <p class="text-center text-sm text-gray-600 mt-4">Projects Closed Per Month</p>
+                    </div>
+
+                    <!-- Pipeline Value -->
+                    <div class="bg-white rounded-xl border-2 border-gray-200 p-6">
+                        <h3 class="font-bold text-gray-900 text-lg mb-4">Sales Pipeline by Stage</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-700">Prospecting</span>
+                                    <span class="text-sm font-bold text-blue-600">₹42L (85 leads)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-4">
+                                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-4 rounded-full" style="width: 100%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-700">Qualification</span>
+                                    <span class="text-sm font-bold text-indigo-600">₹68L (62 leads)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-4">
+                                    <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 h-4 rounded-full" style="width: 73%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-700">Proposal</span>
+                                    <span class="text-sm font-bold text-purple-600">₹92L (48 leads)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-4">
+                                    <div class="bg-gradient-to-r from-purple-500 to-purple-600 h-4 rounded-full" style="width: 56%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-700">Negotiation</span>
+                                    <span class="text-sm font-bold text-yellow-600">₹1.2Cr (35 leads)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-4">
+                                    <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 h-4 rounded-full" style="width: 41%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-700">Closing</span>
+                                    <span class="text-sm font-bold text-green-600">₹85L (28 leads)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-4">
+                                    <div class="bg-gradient-to-r from-green-500 to-green-600 h-4 rounded-full" style="width: 33%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-gray-900">Total Pipeline Value:</span>
+                                <span class="font-bold text-2xl text-primary">₹4.07Cr</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Performance -->
+                <div class="bg-white rounded-xl border-2 border-gray-200 p-6 mb-6">
+                    <h3 class="font-bold text-gray-900 text-lg mb-4">Sales Team Performance</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 border-b-2 border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Rank</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Sales Person</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Projects Won</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Total Value</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Win Rate</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Avg Deal Size</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Target Achievement</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                <tr class="hover:bg-yellow-50 bg-gradient-to-r from-yellow-50 to-orange-50">
+                                    <td class="px-6 py-4">
+                                        <div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold">1</div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <p class="font-bold text-gray-900">Rajesh Sharma</p>
+                                        <p class="text-xs text-gray-500">Senior Sales Manager</p>
+                                    </td>
+                                    <td class="px-6 py-4"><span class="font-bold text-green-600">32</span></td>
+                                    <td class="px-6 py-4"><span class="font-bold text-gray-900">₹62L</span></td>
+                                    <td class="px-6 py-4"><span class="font-bold text-green-600">75%</span></td>
+                                    <td class="px-6 py-4"><span class="font-bold text-gray-900">₹19.4L</span></td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-24 bg-gray-200 rounded-full h-2">
+                                                <div class="bg-green-500 h-2 rounded-full" style="width: 124%"></div>
+                                            </div>
+                                            <span class="text-xs font-bold text-green-600">124%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4">
+                                        <div class="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold">2</div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <p class="font-bold text-gray-900">Priya Singh</p>
+                                        <p class="text-xs text-gray-500">Sales Manager</p>
+                                    </td>
+                                    <td class="px-6 py-4"><span class="font-bold text-green-600">28</span></td>
+                                    <td class="px-6 py-4"><span class="font-bold text-gray-900">₹52L</span></td>
+                                    <td class="px-6 py-4"><span class="font-bold text-green-600">72%</span></td>
+                                    <td class="px-6 py-4"><span class="font-bold text-gray-900">₹18.6L</span></td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-24 bg-gray-200 rounded-full h-2">
+                                                <div class="bg-green-500 h-2 rounded-full" style="width: 108%"></div>
+                                            </div>
+                                            <span class="text-xs font-bold text-green-600">108%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4">
+                                        <div class="w-8 h-8 bg-orange-400 rounded-full flex items-center justify-center text-white font-bold">3</div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <p class="font-bold text-gray-900">Amit Patel</p>
+                                        <p class="text-xs text-gray-500">Sales Executive</p>
+                                    </td>
+                                    <td class="px-6 py-4"><span class="font-bold text-green-600">24</span></td>
+                                    <td class="px-6 py-4"><span class="font-bold text-gray-900">₹42L</span></td>
+                                    <td class="px-6 py-4"><span class="font-bold text-yellow-600">68%</span></td>
+                                    <td class="px-6 py-4"><span class="font-bold text-gray-900">₹17.5L</span></td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-2">
+                                            <div class="w-24 bg-gray-200 rounded-full h-2">
+                                                <div class="bg-green-500 h-2 rounded-full" style="width: 98%"></div>
+                                            </div>
+                                            <span class="text-xs font-bold text-green-600">98%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Win/Loss Analysis -->
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl border-2 border-gray-200 p-6">
+                        <h3 class="font-bold text-gray-900 text-lg mb-4">Win/Loss Reasons</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                                <span class="text-sm font-semibold text-gray-900">✓ Competitive Pricing</span>
+                                <span class="text-sm font-bold text-green-600">42% Won</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                                <span class="text-sm font-semibold text-gray-900">✓ Quality & Service</span>
+                                <span class="text-sm font-bold text-green-600">35% Won</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                                <span class="text-sm font-semibold text-gray-900">✗ Price Too High</span>
+                                <span class="text-sm font-bold text-red-600">38% Lost</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                                <span class="text-sm font-semibold text-gray-900">✗ Competitor Chosen</span>
+                                <span class="text-sm font-bold text-red-600">28% Lost</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border-2 border-gray-200 p-6">
+                        <h3 class="font-bold text-gray-900 text-lg mb-4">Sales by Customer Segment</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-sm font-semibold text-gray-700">Residential</span>
+                                    <span class="text-sm font-bold text-blue-600">₹1.2Cr (45%)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div class="bg-blue-500 h-3 rounded-full" style="width: 45%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-sm font-semibold text-gray-700">Commercial</span>
+                                    <span class="text-sm font-bold text-green-600">₹1.0Cr (38%)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div class="bg-green-500 h-3 rounded-full" style="width: 38%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-sm font-semibold text-gray-700">Industrial</span>
+                                    <span class="text-sm font-bold text-purple-600">₹48L (17%)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div class="bg-purple-500 h-3 rounded-full" style="width: 17%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
+

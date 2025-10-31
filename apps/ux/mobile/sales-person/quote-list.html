@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote List - OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        secondary: '#0d74b8',
+                        tagline: '#025580',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl pb-20">
+        <div class="bg-gradient-to-r from-primary via-green-500 to-secondary px-6 py-6 pt-12">
+            <a href="dashboard-salesperson.html" class="inline-flex items-center text-white mb-6">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </a>
+            <h1 class="text-3xl font-bold text-white mb-2">My Quotes</h1>
+            <p class="text-green-100">15 total quotes</p>
+        </div>
+
+        <div class="px-6 py-6">
+            <!-- Filter Tabs -->
+            <div class="flex space-x-2 mb-6">
+                <button class="flex-1 py-2 px-3 bg-primary text-white rounded-lg font-semibold text-sm">All (15)</button>
+                <button class="flex-1 py-2 px-3 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm">Pending (5)</button>
+                <button class="flex-1 py-2 px-3 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm">Approved (8)</button>
+            </div>
+
+            <!-- Quotes List -->
+            <div class="space-y-4">
+                <!-- Pending Quote -->
+                <div class="bg-white border-2 border-yellow-200 rounded-2xl p-4">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <h3 class="font-bold text-gray-900 mb-1">QT-2025-1234</h3>
+                            <p class="text-sm text-gray-600">Ranjit Singh</p>
+                            <p class="text-xs text-gray-500 mt-1">Residential • 10 kW</p>
+                        </div>
+                        <span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full">Pending</span>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-lg p-3 mb-3">
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Amount</p>
+                                <p class="font-bold text-primary">₹5,45,000</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Valid Until</p>
+                                <p class="font-semibold text-gray-900">Nov 25</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
+                        <span>Created: Oct 23, 2025</span>
+                        <span class="text-yellow-600 font-semibold">Expires in 30 days</span>
+                    </div>
+
+                    <div class="flex space-x-2">
+                        <button class="flex-1 py-2 bg-primary text-white rounded-lg font-semibold text-sm">
+                            Follow Up
+                        </button>
+                        <button class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm">
+                            View
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Approved Quote -->
+                <div class="bg-white border-2 border-green-200 rounded-2xl p-4">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <h3 class="font-bold text-gray-900 mb-1">QT-2025-1233</h3>
+                            <p class="text-sm text-gray-600">Sunita Verma</p>
+                            <p class="text-xs text-gray-500 mt-1">Commercial • 25 kW</p>
+                        </div>
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">Approved</span>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-lg p-3 mb-3">
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Amount</p>
+                                <p class="font-bold text-primary">₹12,25,000</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Approved On</p>
+                                <p class="font-semibold text-gray-900">Oct 20</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-2 mb-3">
+                        <p class="text-xs text-green-800 font-semibold">✓ Project created - PRJ-2025-042</p>
+                    </div>
+
+                    <div class="flex space-x-2">
+                        <button class="flex-1 py-2 bg-green-600 text-white rounded-lg font-semibold text-sm">
+                            View Project
+                        </button>
+                        <button class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm">
+                            Download
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Rejected Quote -->
+                <div class="bg-white border-2 border-red-200 rounded-2xl p-4 opacity-75">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <h3 class="font-bold text-gray-900 mb-1">QT-2025-1230</h3>
+                            <p class="text-sm text-gray-600">Anil Kumar</p>
+                            <p class="text-xs text-gray-500 mt-1">Residential • 8 kW</p>
+                        </div>
+                        <span class="px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full">Rejected</span>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-lg p-3 mb-3">
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Amount</p>
+                                <p class="font-bold text-gray-600">₹4,80,000</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Rejected On</p>
+                                <p class="font-semibold text-gray-900">Oct 18</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-2 mb-3">
+                        <p class="text-xs text-red-800">Reason: Price too high</p>
+                    </div>
+
+                    <div class="flex space-x-2">
+                        <button class="flex-1 py-2 bg-primary text-white rounded-lg font-semibold text-sm">
+                            Revise Quote
+                        </button>
+                        <button class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm">
+                            View
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="w-full mt-6 py-4 bg-gradient-to-r from-primary via-green-500 to-secondary text-white rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all">
+                + Create New Quote
+            </button>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg max-w-md mx-auto">
+            <div class="flex items-center justify-around py-3 px-6">
+                <a href="dashboard-salesperson.html" class="flex flex-col items-center space-y-1 text-gray-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <span class="text-xs">Home</span>
+                </a>
+                <a href="lead-list.html" class="flex flex-col items-center space-y-1 text-gray-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    <span class="text-xs">Leads</span>
+                </a>
+                <a href="quote-list.html" class="flex flex-col items-center space-y-1 text-primary">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"></path>
+                        <path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"></path>
+                    </svg>
+                    <span class="text-xs font-semibold">Quotes</span>
+                </a>
+                <a href="performance.html" class="flex flex-col items-center space-y-1 text-gray-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <span class="text-xs">Performance</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

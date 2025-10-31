@@ -1,0 +1,208 @@
+{
+  "projects": [
+    {
+      "id": "PRJ-2025-042",
+      "projectNumber": "PRJ-2025-042",
+      "customer": {
+        "id": "CUST-001",
+        "name": "Rajesh Patel",
+        "phone": "+91 98765 43210",
+        "email": "rajesh.patel@gmail.com",
+        "address": "Andheri West, Mumbai, Maharashtra - 400058"
+      },
+      "type": "Residential",
+      "capacity": "10 kW",
+      "systemValue": 545000,
+      "status": "In Progress",
+      "currentPhase": "Installation",
+      "progress": 65,
+      "startDate": "2025-10-10",
+      "estimatedCompletion": "2025-11-15",
+      "actualCompletion": null,
+      "assignedTeam": {
+        "projectManager": "Amit Kumar",
+        "salesPerson": "Ravi Kumar",
+        "engineer": "Suresh Reddy"
+      },
+      "systemDetails": {
+        "panelType": "Monocrystalline",
+        "panelBrand": "Trina Solar",
+        "panelWattage": "540W",
+        "numberOfPanels": 19,
+        "inverterType": "Growatt 10kW",
+        "inverterBrand": "Growatt",
+        "warranty": "25 Years"
+      },
+      "payments": [
+        {
+          "phase": 1,
+          "amount": 272500,
+          "percentage": 50,
+          "status": "Paid",
+          "dueDate": "2025-10-10",
+          "paidDate": "2025-10-10",
+          "method": "Bank Transfer",
+          "transactionId": "TXN98765432"
+        },
+        {
+          "phase": 2,
+          "amount": 109000,
+          "percentage": 20,
+          "status": "Paid",
+          "dueDate": "2025-10-20",
+          "paidDate": "2025-10-20",
+          "method": "UPI",
+          "upiId": "rajesh@ybl"
+        },
+        {
+          "phase": 3,
+          "amount": 109000,
+          "percentage": 20,
+          "status": "Pending",
+          "dueDate": "2025-11-05",
+          "paidDate": null
+        },
+        {
+          "phase": 4,
+          "amount": 54500,
+          "percentage": 10,
+          "status": "Upcoming",
+          "dueDate": "2025-11-20",
+          "paidDate": null
+        }
+      ],
+      "timeline": [
+        {
+          "stage": "Quote Approval",
+          "status": "Completed",
+          "completedDate": "2025-10-08",
+          "completionPercentage": 100
+        },
+        {
+          "stage": "Site Survey",
+          "status": "Completed",
+          "completedDate": "2025-10-12",
+          "completionPercentage": 100
+        },
+        {
+          "stage": "Design Approval",
+          "status": "Completed",
+          "completedDate": "2025-10-15",
+          "completionPercentage": 100
+        },
+        {
+          "stage": "Installation",
+          "status": "In Progress",
+          "completedDate": null,
+          "completionPercentage": 65
+        },
+        {
+          "stage": "Testing & Commissioning",
+          "status": "Pending",
+          "completedDate": null,
+          "completionPercentage": 0
+        },
+        {
+          "stage": "Net Metering",
+          "status": "Pending",
+          "completedDate": null,
+          "completionPercentage": 0
+        },
+        {
+          "stage": "Handover",
+          "status": "Pending",
+          "completedDate": null,
+          "completionPercentage": 0
+        }
+      ]
+    },
+    {
+      "id": "PRJ-2025-038",
+      "projectNumber": "PRJ-2025-038",
+      "customer": {
+        "id": "CUST-002",
+        "name": "Sunita Sharma",
+        "phone": "+91 98765 12345",
+        "email": "sunita.sharma@company.com",
+        "address": "Baner, Pune, Maharashtra - 411045"
+      },
+      "type": "Commercial",
+      "capacity": "25 kW",
+      "systemValue": 1225000,
+      "status": "Completed",
+      "currentPhase": "Completed",
+      "progress": 100,
+      "startDate": "2025-09-01",
+      "estimatedCompletion": "2025-10-15",
+      "actualCompletion": "2025-10-20",
+      "assignedTeam": {
+        "projectManager": "Priya Reddy",
+        "salesPerson": "Priya Sharma",
+        "engineer": "Manoj Singh"
+      },
+      "systemDetails": {
+        "panelType": "Bifacial",
+        "panelBrand": "Longi Solar",
+        "panelWattage": "550W",
+        "numberOfPanels": 46,
+        "inverterType": "Growatt 25kW",
+        "inverterBrand": "Growatt",
+        "warranty": "25 Years"
+      },
+      "payments": [
+        {
+          "phase": 1,
+          "amount": 612500,
+          "percentage": 50,
+          "status": "Paid",
+          "dueDate": "2025-09-01",
+          "paidDate": "2025-09-01",
+          "method": "Bank Transfer"
+        },
+        {
+          "phase": 2,
+          "amount": 245000,
+          "percentage": 20,
+          "status": "Paid",
+          "dueDate": "2025-09-20",
+          "paidDate": "2025-09-18",
+          "method": "Cheque"
+        },
+        {
+          "phase": 3,
+          "amount": 245000,
+          "percentage": 20,
+          "status": "Paid",
+          "dueDate": "2025-10-10",
+          "paidDate": "2025-10-08",
+          "method": "Bank Transfer"
+        },
+        {
+          "phase": 4,
+          "amount": 122500,
+          "percentage": 10,
+          "status": "Paid",
+          "dueDate": "2025-10-25",
+          "paidDate": "2025-10-22",
+          "method": "UPI"
+        }
+      ]
+    }
+  ],
+  "projectStatuses": [
+    "New",
+    "In Progress",
+    "On Hold",
+    "Completed",
+    "Cancelled"
+  ],
+  "projectPhases": [
+    "Quote Approval",
+    "Site Survey",
+    "Design Approval",
+    "Installation",
+    "Testing & Commissioning",
+    "Net Metering",
+    "Handover"
+  ]
+}

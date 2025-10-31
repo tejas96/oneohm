@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resource Optimization - OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
+            <div class="p-6 border-b border-gray-700">
+                <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
+                <p class="text-gray-400 text-sm mt-1">Resource Optimization</p>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                <a href="../admin/admin-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="project-portfolio.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
+                    </svg>
+                    <span>Project Portfolio</span>
+                </a>
+                <a href="resource-optimization.html" class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
+                    </svg>
+                    <span>Resource Optimization</span>
+                </a>
+                <a href="risk-management.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    <span>Risk Management</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-gray-700">
+                <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
+                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">SA</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-sm truncate">Super Admin</p>
+                        <p class="text-xs text-gray-400 truncate">Administrator</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Bar -->
+            <header class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Resource Allocation & Optimization</h2>
+                        <p class="text-sm text-gray-600">Optimize team utilization across all active projects</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button class="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">Auto-Balance Resources</button>
+                        <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600">Export Allocation</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Resource Overview -->
+            <div class="bg-white border-b border-gray-200 px-8 py-6">
+                <div class="grid grid-cols-5 gap-4">
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 border-blue-200">
+                        <p class="text-sm text-gray-600 mb-1">Total Resources</p>
+                        <p class="text-3xl font-bold text-blue-600">82</p>
+                        <p class="text-xs text-gray-600 mt-1">Active team members</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200">
+                        <p class="text-sm text-gray-600 mb-1">Utilization Rate</p>
+                        <p class="text-3xl font-bold text-green-600">78%</p>
+                        <p class="text-xs text-gray-600 mt-1">Overall efficiency</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-red-50 to-pink-50 rounded-xl p-4 border-2 border-red-200">
+                        <p class="text-sm text-gray-600 mb-1">Over-allocated</p>
+                        <p class="text-3xl font-bold text-red-600">12</p>
+                        <p class="text-xs text-gray-600 mt-1">Need rebalancing</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 border-2 border-yellow-200">
+                        <p class="text-sm text-gray-600 mb-1">Available</p>
+                        <p class="text-3xl font-bold text-yellow-600">18</p>
+                        <p class="text-xs text-gray-600 mt-1">Can be assigned</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-4 border-2 border-purple-200">
+                        <p class="text-sm text-gray-600 mb-1">Projects Active</p>
+                        <p class="text-3xl font-bold text-purple-600">23</p>
+                        <p class="text-xs text-gray-600 mt-1">Requiring resources</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <main class="flex-1 overflow-y-auto p-8">
+                <!-- Resource Allocation by Person -->
+                <div class="bg-white rounded-xl border-2 border-gray-200 p-6 mb-6">
+                    <h3 class="font-bold text-gray-900 text-lg mb-4">Resource Allocation by Team Member</h3>
+                    <div class="space-y-4">
+                        <!-- Over-allocated Resource -->
+                        <div class="p-4 bg-red-50 rounded-xl border-2 border-red-200">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-white font-bold">RK</div>
+                                    <div>
+                                        <p class="font-bold text-gray-900">Rajesh Kumar</p>
+                                        <p class="text-sm text-gray-600">Senior Installation Engineer</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-2xl font-bold text-red-600">135%</p>
+                                    <p class="text-xs text-red-600">⚠️ Over-allocated</p>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="w-full bg-red-200 rounded-full h-4">
+                                    <div class="bg-red-600 h-4 rounded-full" style="width: 100%"></div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 text-sm">
+                                <div class="p-2 bg-white rounded border border-red-300">
+                                    <p class="text-xs text-gray-500">Project A</p>
+                                    <p class="font-bold">60%</p>
+                                </div>
+                                <div class="p-2 bg-white rounded border border-red-300">
+                                    <p class="text-xs text-gray-500">Project B</p>
+                                    <p class="font-bold">45%</p>
+                                </div>
+                                <div class="p-2 bg-white rounded border border-red-300">
+                                    <p class="text-xs text-gray-500">Project C</p>
+                                    <p class="font-bold">30%</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Optimally Allocated Resource -->
+                        <div class="p-4 bg-green-50 rounded-xl border-2 border-green-200">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">PS</div>
+                                    <div>
+                                        <p class="font-bold text-gray-900">Priya Sharma</p>
+                                        <p class="text-sm text-gray-600">Project Manager</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-2xl font-bold text-green-600">85%</p>
+                                    <p class="text-xs text-green-600">✓ Optimal</p>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="w-full bg-green-200 rounded-full h-4">
+                                    <div class="bg-green-500 h-4 rounded-full" style="width: 85%"></div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 text-sm">
+                                <div class="p-2 bg-white rounded border border-green-300">
+                                    <p class="text-xs text-gray-500">Project D</p>
+                                    <p class="font-bold">50%</p>
+                                </div>
+                                <div class="p-2 bg-white rounded border border-green-300">
+                                    <p class="text-xs text-gray-500">Project E</p>
+                                    <p class="font-bold">35%</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Under-utilized Resource -->
+                        <div class="p-4 bg-yellow-50 rounded-xl border-2 border-yellow-200">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold">AG</div>
+                                    <div>
+                                        <p class="font-bold text-gray-900">Amit Gupta</p>
+                                        <p class="text-sm text-gray-600">Electrician</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-2xl font-bold text-yellow-600">45%</p>
+                                    <p class="text-xs text-yellow-600">⚠️ Under-utilized</p>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="w-full bg-yellow-200 rounded-full h-4">
+                                    <div class="bg-yellow-500 h-4 rounded-full" style="width: 45%"></div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 gap-2 text-sm">
+                                <div class="p-2 bg-white rounded border border-yellow-300">
+                                    <p class="text-xs text-gray-500">Project F</p>
+                                    <p class="font-bold">45%</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resource Demand Forecast -->
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl border-2 border-gray-200 p-6">
+                        <h3 class="font-bold text-gray-900 text-lg mb-4">Resource Demand Forecast (Next 30 Days)</h3>
+                        <div class="h-64 flex items-end justify-between space-x-2">
+                            <div class="flex-1 flex flex-col items-center">
+                                <div class="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t" style="height: 75%"></div>
+                                <span class="text-xs text-gray-600 mt-2">Week 1</span>
+                                <span class="text-xs font-bold text-gray-900">60</span>
+                            </div>
+                            <div class="flex-1 flex flex-col items-center">
+                                <div class="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t" style="height: 85%"></div>
+                                <span class="text-xs text-gray-600 mt-2">Week 2</span>
+                                <span class="text-xs font-bold text-gray-900">68</span>
+                            </div>
+                            <div class="flex-1 flex flex-col items-center">
+                                <div class="w-full bg-gradient-to-t from-red-500 to-red-400 rounded-t" style="height: 100%"></div>
+                                <span class="text-xs text-gray-600 mt-2">Week 3</span>
+                                <span class="text-xs font-bold text-red-600">82</span>
+                            </div>
+                            <div class="flex-1 flex flex-col items-center">
+                                <div class="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t" style="height: 70%"></div>
+                                <span class="text-xs text-gray-600 mt-2">Week 4</span>
+                                <span class="text-xs font-bold text-gray-900">58</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
+                            <p class="text-sm text-red-700"><strong>⚠️ Alert:</strong> Week 3 shows 100% capacity utilization. Consider hiring temporary resources.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl border-2 border-gray-200 p-6">
+                        <h3 class="font-bold text-gray-900 text-lg mb-4">Resource Skills Distribution</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-sm font-semibold text-gray-700">Installation Engineers</span>
+                                    <span class="text-sm font-bold text-blue-600">28 (34%)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div class="bg-blue-500 h-3 rounded-full" style="width: 34%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-sm font-semibold text-gray-700">Electricians</span>
+                                    <span class="text-sm font-bold text-green-600">22 (27%)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div class="bg-green-500 h-3 rounded-full" style="width: 27%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-sm font-semibold text-gray-700">Project Managers</span>
+                                    <span class="text-sm font-bold text-purple-600">12 (15%)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div class="bg-purple-500 h-3 rounded-full" style="width: 15%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-sm font-semibold text-gray-700">Field Workers</span>
+                                    <span class="text-sm font-bold text-yellow-600">20 (24%)</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div class="bg-yellow-500 h-3 rounded-full" style="width: 24%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Details - OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        secondary: '#0d74b8',
+                        tagline: '#025580',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl pb-20">
+        <div class="bg-gradient-to-r from-primary via-green-500 to-secondary px-6 py-6 pt-12">
+            <a href="lead-list.html" class="inline-flex items-center text-white mb-6">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </a>
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-white mb-1">Pradeep Patil</h1>
+                    <p class="text-green-100 text-sm">LD-2025-123</p>
+                </div>
+                <span class="px-4 py-2 bg-yellow-500 text-white text-sm font-bold rounded-full">HOT</span>
+            </div>
+        </div>
+
+        <div class="px-6 py-6">
+            <!-- Quick Actions -->
+            <div class="grid grid-cols-3 gap-3 mb-6">
+                <button class="bg-green-500 text-white rounded-2xl p-3 text-center hover:bg-green-600">
+                    <svg class="w-6 h-6 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                    </svg>
+                    <p class="text-xs font-semibold">Call</p>
+                </button>
+                <button class="bg-blue-500 text-white rounded-2xl p-3 text-center hover:bg-blue-600">
+                    <svg class="w-6 h-6 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                    <p class="text-xs font-semibold">WhatsApp</p>
+                </button>
+                <button class="bg-purple-500 text-white rounded-2xl p-3 text-center hover:bg-purple-600">
+                    <svg class="w-6 h-6 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                    <p class="text-xs font-semibold">Email</p>
+                </button>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200 rounded-2xl p-5 mb-6">
+                <h3 class="font-bold text-gray-900 mb-4">Contact Information</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-xs text-gray-600">Phone</p>
+                            <p class="font-semibold text-gray-900">+91 98765 12345</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-xs text-gray-600">Email</p>
+                            <p class="font-semibold text-gray-900 text-sm">pradeep.patil@email.com</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-xs text-gray-600">Location</p>
+                            <p class="font-semibold text-gray-900">Viman Nagar, Pune</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Requirements -->
+            <div class="mb-6">
+                <h3 class="font-bold text-gray-900 mb-3">Project Requirements</h3>
+                <div class="bg-white border-2 border-gray-200 rounded-2xl p-5">
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <p class="text-xs text-gray-600 mb-1">System Size</p>
+                            <p class="text-lg font-bold text-primary">8 kW</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600 mb-1">Property Type</p>
+                            <p class="text-lg font-bold text-gray-900">Residential</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600 mb-1">Roof Type</p>
+                            <p class="font-semibold text-gray-900">RCC Flat</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600 mb-1">Budget</p>
+                            <p class="font-semibold text-green-600">₹5-6 Lakhs</p>
+                        </div>
+                    </div>
+                    <div class="pt-3 border-t border-gray-200">
+                        <p class="text-xs text-gray-600 mb-1">Monthly Bill</p>
+                        <p class="font-bold text-gray-900">₹8,500</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline & Activity -->
+            <div class="mb-6">
+                <h3 class="font-bold text-gray-900 mb-3">Activity Timeline</h3>
+                <div class="space-y-3">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-gray-900">Call Completed</p>
+                            <p class="text-xs text-gray-600">Discussed requirements, budget confirmed</p>
+                            <p class="text-xs text-gray-500 mt-1">Today, 2:30 PM</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-gray-900">Email Sent</p>
+                            <p class="text-xs text-gray-600">Product brochure and pricing</p>
+                            <p class="text-xs text-gray-500 mt-1">Yesterday, 4:15 PM</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <svg class="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-semibold text-gray-900">Lead Created</p>
+                            <p class="text-xs text-gray-600">From website inquiry form</p>
+                            <p class="text-xs text-gray-500 mt-1">Oct 20, 2025</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold text-gray-900">Notes</h3>
+                    <button class="text-primary font-semibold text-sm">+ Add Note</button>
+                </div>
+                <div class="space-y-3">
+                    <div class="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-4">
+                        <p class="text-sm text-gray-700 mb-2">Very interested. Looking to install by end of November. Has approval from society.</p>
+                        <p class="text-xs text-gray-500">Ravi Kumar • Oct 25, 2025</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="space-y-3">
+                <button class="w-full py-4 bg-gradient-to-r from-primary via-green-500 to-secondary text-white rounded-2xl font-bold shadow-lg">
+                    Create Quote
+                </button>
+                <button class="w-full py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-2xl font-bold">
+                    Schedule Site Visit
+                </button>
+                <button class="w-full py-3 bg-red-50 border-2 border-red-200 text-red-600 rounded-2xl font-bold">
+                    Mark as Lost
+                </button>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg max-w-md mx-auto">
+            <div class="flex items-center justify-around py-3 px-6">
+                <a href="dashboard-salesperson.html" class="flex flex-col items-center space-y-1 text-gray-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <span class="text-xs">Home</span>
+                </a>
+                <a href="lead-list.html" class="flex flex-col items-center space-y-1 text-primary">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
+                        <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="text-xs font-semibold">Leads</span>
+                </a>
+                <a href="quote-list.html" class="flex flex-col items-center space-y-1 text-gray-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span class="text-xs">Quotes</span>
+                </a>
+                <a href="performance.html" class="flex flex-col items-center space-y-1 text-gray-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <span class="text-xs">Stats</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Performance - OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
+            <div class="p-6 border-b border-gray-700">
+                <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
+                <p class="text-gray-400 text-sm mt-1">Performance Analytics</p>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                <a href="../admin/admin-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="vendor-database.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    <span>Vendor Database</span>
+                </a>
+                <a href="purchase-orders.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span>Purchase Orders</span>
+                </a>
+                <a href="vendor-payments.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    <span>Vendor Payments</span>
+                </a>
+                <a href="vendor-performance.html" class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"></path>
+                    </svg>
+                    <span>Performance</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-gray-700">
+                <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
+                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">SA</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-sm truncate">Super Admin</p>
+                        <p class="text-xs text-gray-400 truncate">Administrator</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Bar -->
+            <header class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Vendor Performance Dashboard</h2>
+                        <p class="text-sm text-gray-600">Analyze and compare vendor performance metrics</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                            <option>Last 6 Months</option>
+                            <option>Last 12 Months</option>
+                            <option>This Year</option>
+                        </select>
+                        <button class="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold hover:bg-gray-50">Export Report</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Overall Metrics -->
+            <div class="bg-white border-b border-gray-200 px-8 py-6">
+                <div class="grid grid-cols-5 gap-6">
+                    <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border-2 border-green-200">
+                        <p class="text-3xl font-bold text-green-600">92%</p>
+                        <p class="text-xs text-gray-600">Avg Delivery Rate</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border-2 border-blue-200">
+                        <p class="text-3xl font-bold text-blue-600">4.6/5</p>
+                        <p class="text-xs text-gray-600">Avg Quality Score</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-4 border-2 border-yellow-200">
+                        <p class="text-3xl font-bold text-yellow-600">15 days</p>
+                        <p class="text-xs text-gray-600">Avg Delivery Time</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border-2 border-purple-200">
+                        <p class="text-3xl font-bold text-purple-600">88%</p>
+                        <p class="text-xs text-gray-600">Payment Compliance</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 border-2 border-red-200">
+                        <p class="text-3xl font-bold text-red-600">2.3%</p>
+                        <p class="text-xs text-gray-600">Defect Rate</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Comparison -->
+            <main class="flex-1 overflow-y-auto p-8">
+                <div class="grid grid-cols-2 gap-6 mb-6">
+                    <!-- Top Performers -->
+                    <div class="bg-white rounded-xl border-2 border-gray-200 p-6">
+                        <h3 class="font-bold text-gray-900 text-lg mb-4">Top Performers (Last 6 Months)</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center space-x-4 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl border-2 border-yellow-300">
+                                <div class="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold text-xl">1</div>
+                                <div class="flex-1">
+                                    <p class="font-bold text-gray-900">Waaree Energies Ltd.</p>
+                                    <div class="flex items-center space-x-4 text-sm mt-1">
+                                        <span class="text-yellow-600 font-bold">⭐ 4.9/5</span>
+                                        <span class="text-green-600 font-bold">98% On-time</span>
+                                        <span class="text-blue-600 font-bold">₹1.2Cr Volume</span>
+                                    </div>
+                                </div>
+                                <div class="text-4xl">🏆</div>
+                            </div>
+                            <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                <div class="w-12 h-12 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold text-xl">2</div>
+                                <div class="flex-1">
+                                    <p class="font-bold text-gray-900">Tata Power Solar</p>
+                                    <div class="flex items-center space-x-4 text-sm mt-1">
+                                        <span class="text-yellow-600 font-bold">⭐ 4.8/5</span>
+                                        <span class="text-green-600 font-bold">95% On-time</span>
+                                        <span class="text-blue-600 font-bold">₹95L Volume</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                <div class="w-12 h-12 bg-orange-400 rounded-full flex items-center justify-center text-white font-bold text-xl">3</div>
+                                <div class="flex-1">
+                                    <p class="font-bold text-gray-900">Luminous Power Technologies</p>
+                                    <div class="flex items-center space-x-4 text-sm mt-1">
+                                        <span class="text-yellow-600 font-bold">⭐ 4.7/5</span>
+                                        <span class="text-green-600 font-bold">92% On-time</span>
+                                        <span class="text-blue-600 font-bold">₹68L Volume</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Key Performance Indicators -->
+                    <div class="bg-white rounded-xl border-2 border-gray-200 p-6">
+                        <h3 class="font-bold text-gray-900 text-lg mb-4">Performance Trends</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-700">On-Time Delivery Rate</span>
+                                    <span class="text-sm font-bold text-green-600">92% ↑ 5%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div class="bg-green-500 h-3 rounded-full" style="width: 92%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-700">Quality Acceptance Rate</span>
+                                    <span class="text-sm font-bold text-blue-600">95% ↑ 3%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div class="bg-blue-500 h-3 rounded-full" style="width: 95%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-700">Payment Terms Compliance</span>
+                                    <span class="text-sm font-bold text-purple-600">88% ↓ 2%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div class="bg-purple-500 h-3 rounded-full" style="width: 88%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-700">Response Time</span>
+                                    <span class="text-sm font-bold text-yellow-600">78% ↑ 8%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div class="bg-yellow-500 h-3 rounded-full" style="width: 78%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-semibold text-gray-700">Documentation Accuracy</span>
+                                    <span class="text-sm font-bold text-indigo-600">90% ↑ 4%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div class="bg-indigo-500 h-3 rounded-full" style="width: 90%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Vendor Comparison -->
+                <div class="bg-white rounded-xl border-2 border-gray-200 overflow-hidden mb-6">
+                    <div class="bg-gray-100 px-6 py-4 border-b-2 border-gray-200">
+                        <h3 class="font-bold text-gray-900 text-lg">Detailed Vendor Comparison</h3>
+                    </div>
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Vendor Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Rating</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">On-Time %</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Quality Score</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Total Orders</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Defect Rate</th>
+                                <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr class="hover:bg-green-50">
+                                <td class="px-6 py-4">
+                                    <p class="font-semibold text-gray-900">Waaree Energies Ltd.</p>
+                                    <p class="text-xs text-gray-500">Solar Panels</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="text-yellow-600 font-bold">⭐⭐⭐⭐⭐ 4.9</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-bold text-green-600">98%</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-bold text-blue-600">9.5/10</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-semibold text-gray-900">125</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-bold text-green-600">0.8%</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="text-green-600 font-bold">↗ Improving</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <p class="font-semibold text-gray-900">Tata Power Solar</p>
+                                    <p class="text-xs text-gray-500">Complete Solutions</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="text-yellow-600 font-bold">⭐⭐⭐⭐⭐ 4.8</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-bold text-green-600">95%</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-bold text-blue-600">9.3/10</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-semibold text-gray-900">98</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-bold text-green-600">1.2%</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="text-green-600 font-bold">↗ Improving</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <p class="font-semibold text-gray-900">Luminous Power</p>
+                                    <p class="text-xs text-gray-500">Inverters</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="text-yellow-600 font-bold">⭐⭐⭐⭐ 4.7</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-bold text-yellow-600">92%</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-bold text-blue-600">9.0/10</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-semibold text-gray-900">89</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-bold text-yellow-600">2.1%</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="text-blue-600 font-bold">→ Stable</span>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <p class="font-semibold text-gray-900">Exide Industries</p>
+                                    <p class="text-xs text-gray-500">Batteries</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="text-yellow-600 font-bold">⭐⭐⭐⭐ 4.5</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-bold text-green-600">90%</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-bold text-blue-600">8.8/10</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-semibold text-gray-900">64</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-bold text-yellow-600">2.8%</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="text-green-600 font-bold">↗ Improving</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Issues & Complaints -->
+                <div class="bg-white rounded-xl border-2 border-gray-200 p-6">
+                    <h3 class="font-bold text-gray-900 text-lg mb-4">Recent Issues & Resolution</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-start space-x-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <svg class="w-5 h-5 text-red-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                            </svg>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-gray-900">Quality Issue - Defective Inverters</p>
+                                <p class="text-xs text-gray-600">Vendor: Luminous Power • Reported: Oct 20, 2025</p>
+                                <p class="text-xs text-red-700 mt-1">Status: Under Investigation</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <svg class="w-5 h-5 text-green-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-gray-900">Late Delivery Resolved</p>
+                                <p class="text-xs text-gray-600">Vendor: Waaree Solar • Reported: Oct 15, 2025</p>
+                                <p class="text-xs text-green-700 mt-1">Status: ✓ Resolved - Compensated with discount</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
+

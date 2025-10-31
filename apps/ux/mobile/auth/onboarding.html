@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#76c044',
+              secondary: '#0d74b8',
+              tagline: '#025580',
+              success: '#76c044',
+              warning: '#EAB308',
+              error: '#DC2626',
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+
+      /* Slide transitions */
+      .slide {
+        transition:
+          transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+          opacity 0.4s ease;
+      }
+
+      /* Floating animation */
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-20px);
+        }
+      }
+
+      .float-animation {
+        animation: float 3s ease-in-out infinite;
+      }
+
+      /* Pulse animation */
+      @keyframes pulse-ring {
+        0% {
+          transform: scale(0.8);
+          opacity: 1;
+        }
+        100% {
+          transform: scale(1.4);
+          opacity: 0;
+        }
+      }
+
+      .pulse-ring {
+        animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      /* Slide in animation */
+      @keyframes slideInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .slide-in-up {
+        animation: slideInUp 0.6s ease-out forwards;
+      }
+
+      /* Bounce animation */
+      @keyframes bounce {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+
+      .bounce-animation {
+        animation: bounce 2s ease-in-out infinite;
+      }
+
+      /* Dashboard elements animation */
+      @keyframes slideInRight {
+        from {
+          opacity: 0;
+          transform: translateX(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .slide-in-right {
+        animation: slideInRight 0.8s ease-out forwards;
+      }
+
+      /* Notification bell animation */
+      @keyframes ring {
+        0%,
+        100% {
+          transform: rotate(0deg);
+        }
+        10%,
+        30% {
+          transform: rotate(-10deg);
+        }
+        20%,
+        40% {
+          transform: rotate(10deg);
+        }
+      }
+
+      .ring-animation {
+        animation: ring 2s ease-in-out infinite;
+        transform-origin: top center;
+      }
+
+      /* Glow effect */
+      @keyframes glow {
+        0%,
+        100% {
+          opacity: 0.6;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+
+      .glow-animation {
+        animation: glow 2s ease-in-out infinite;
+      }
+
+      /* Scroll animation for notifications */
+      @keyframes scrollNotifications {
+        0% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-20px);
+        }
+        100% {
+          transform: translateY(0);
+        }
+      }
+
+      .scroll-animation {
+        animation: scrollNotifications 4s ease-in-out infinite;
+      }
+    </style>
+  </head>
+  <body class="bg-gradient-to-br from-green-50 via-blue-50 to-cyan-50 min-h-screen">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl relative overflow-hidden">
+      <!-- Skip Button -->
+      <div class="absolute top-6 right-6 z-20">
+        <a
+          href="signup-selection.html"
+          class="text-sm font-semibold text-gray-500 hover:text-primary transition-colors"
+        >
+          Skip
+        </a>
+      </div>
+
+      <!-- Slides Container -->
+      <div class="relative h-screen overflow-hidden">
+        <!-- Slide 1: Real-time Project Tracking -->
+        <div
+          id="slide1"
+          class="slide absolute inset-0 flex flex-col items-center justify-center px-8"
+        >
+          <div class="flex-1 flex flex-col items-center justify-center">
+            <!-- Illustration -->
+            <div class="relative w-full max-w-xs mb-8">
+              <!-- Dashboard Card with Float Animation -->
+              <div class="float-animation relative">
+                <div class="bg-gradient-to-br from-primary to-green-600 rounded-3xl p-6 shadow-2xl">
+                  <!-- Progress Circle -->
+                  <div class="flex items-center justify-between mb-4">
+                    <div class="text-white">
+                      <p class="text-xs opacity-90">Project Progress</p>
+                      <p class="text-2xl font-bold">75%</p>
+                    </div>
+                    <div class="relative w-16 h-16">
+                      <svg class="transform -rotate-90 w-16 h-16">
+                        <circle
+                          cx="32"
+                          cy="32"
+                          r="28"
+                          stroke="white"
+                          stroke-opacity="0.2"
+                          stroke-width="4"
+                          fill="none"
+                        />
+                        <circle
+                          cx="32"
+                          cy="32"
+                          r="28"
+                          stroke="white"
+                          stroke-width="4"
+                          fill="none"
+                          stroke-dasharray="176"
+                          stroke-dashoffset="44"
+                          stroke-linecap="round"
+                        />
+                      </svg>
+                      <div
+                        class="absolute inset-0 flex items-center justify-center text-white text-sm font-bold"
+                      >
+                        75%
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Timeline Items -->
+                  <div class="space-y-2">
+                    <div class="flex items-center space-x-2 text-white text-sm">
+                      <div class="w-2 h-2 bg-white rounded-full"></div>
+                      <span class="opacity-90">Site Survey Complete</span>
+                      <span class="ml-auto">✓</span>
+                    </div>
+                    <div class="flex items-center space-x-2 text-white text-sm">
+                      <div class="w-2 h-2 bg-white rounded-full pulse-ring"></div>
+                      <span class="opacity-90">Installation In Progress</span>
+                      <span class="ml-auto">⏱</span>
+                    </div>
+                    <div class="flex items-center space-x-2 text-white text-sm opacity-50">
+                      <div class="w-2 h-2 bg-white rounded-full"></div>
+                      <span>Final Inspection</span>
+                      <span class="ml-auto">○</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Floating Status Badge -->
+                <div
+                  class="absolute -top-4 -right-4 bg-white rounded-full px-4 py-2 shadow-lg bounce-animation"
+                >
+                  <span class="text-xs font-bold text-primary">Live Updates</span>
+                </div>
+
+                <!-- Sun Icon -->
+                <div
+                  class="absolute -bottom-6 -left-6 w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-xl glow-animation"
+                >
+                  <svg
+                    class="w-8 h-8 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                    ></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Text Content -->
+            <div class="text-center">
+              <h2 class="text-3xl font-bold text-gray-900 mb-4">Track Your Solar Journey</h2>
+              <p class="text-gray-600 text-base leading-relaxed max-w-sm">
+                Monitor every step of your solar installation in real-time. Stay updated on
+                progress, milestones, and timelines.
+              </p>
+            </div>
+          </div>
+
+          <!-- Navigation Dots -->
+          <div class="pb-8 pt-6">
+            <div class="flex items-center justify-center space-x-2 mb-6">
+              <div class="w-8 h-2 bg-primary rounded-full"></div>
+              <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+              <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+            </div>
+
+            <!-- Next Button -->
+            <button
+              onclick="showSlide(2)"
+              class="w-64 bg-gradient-to-r from-primary via-green-500 to-secondary text-white font-bold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+
+        <!-- Slide 2: Manage Leads -->
+        <div
+          id="slide2"
+          class="slide absolute inset-0 flex flex-col items-center justify-center px-8"
+          style="transform: translateX(100%); opacity: 0"
+        >
+          <div class="flex-1 flex flex-col items-center justify-center">
+            <!-- Illustration -->
+            <div class="relative w-full max-w-xs mb-8">
+              <!-- Person with Device -->
+              <div class="relative">
+                <!-- Person Avatar -->
+                <div class="mx-auto w-48 h-48 relative">
+                  <!-- Head -->
+                  <div
+                    class="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-20 bg-gradient-to-br from-secondary to-blue-600 rounded-full"
+                  >
+                    <!-- Face -->
+                    <div class="absolute inset-0 flex items-center justify-center">
+                      <div class="space-y-2">
+                        <div class="flex space-x-2 justify-center">
+                          <div class="w-2 h-2 bg-white rounded-full"></div>
+                          <div class="w-2 h-2 bg-white rounded-full"></div>
+                        </div>
+                        <div class="w-6 h-1 bg-white rounded-full mx-auto"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Body -->
+                  <div
+                    class="absolute top-16 left-1/2 -translate-x-1/2 w-24 h-28 bg-gradient-to-br from-gray-700 to-gray-800 rounded-3xl"
+                  ></div>
+
+                  <!-- Arms -->
+                  <div
+                    class="absolute top-20 left-6 w-16 h-4 bg-gray-700 rounded-full transform -rotate-45"
+                  ></div>
+                  <div
+                    class="absolute top-20 right-6 w-16 h-4 bg-gray-700 rounded-full transform rotate-45"
+                  ></div>
+
+                  <!-- Phone in hand -->
+                  <div
+                    class="absolute top-28 right-2 w-12 h-20 bg-gradient-to-br from-primary to-green-600 rounded-xl shadow-xl bounce-animation"
+                    style="animation-delay: 0.5s"
+                  >
+                    <div class="p-2">
+                      <div class="bg-white/30 rounded h-2 mb-1"></div>
+                      <div class="bg-white/30 rounded h-2 mb-1 w-3/4"></div>
+                      <div class="bg-white/30 rounded h-2 w-1/2"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Floating Lead Cards -->
+                <div
+                  class="absolute -top-4 -left-4 bg-white rounded-2xl p-3 shadow-lg float-animation"
+                  style="animation-delay: 0.2s"
+                >
+                  <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-primary/20 rounded-full"></div>
+                    <div>
+                      <div class="w-16 h-2 bg-gray-200 rounded"></div>
+                      <div class="w-12 h-2 bg-gray-100 rounded mt-1"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  class="absolute top-8 -right-6 bg-white rounded-2xl p-3 shadow-lg float-animation"
+                  style="animation-delay: 0.4s"
+                >
+                  <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-secondary/20 rounded-full"></div>
+                    <div>
+                      <div class="w-16 h-2 bg-gray-200 rounded"></div>
+                      <div class="w-12 h-2 bg-gray-100 rounded mt-1"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Success Badge -->
+                <div
+                  class="absolute bottom-4 left-0 bg-success text-white rounded-full px-4 py-2 shadow-lg text-xs font-bold bounce-animation"
+                >
+                  +5 New Leads
+                </div>
+              </div>
+            </div>
+
+            <!-- Text Content -->
+            <div class="text-center">
+              <h2 class="text-3xl font-bold text-gray-900 mb-4">Manage Leads On-the-Go</h2>
+              <p class="text-gray-600 text-base leading-relaxed max-w-sm">
+                Access and update customer leads anytime, anywhere. Never miss an opportunity with
+                instant lead management.
+              </p>
+            </div>
+          </div>
+
+          <!-- Navigation -->
+          <div class="pb-8 pt-6">
+            <div class="flex items-center justify-center space-x-2 mb-6">
+              <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+              <div class="w-8 h-2 bg-primary rounded-full"></div>
+              <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+            </div>
+
+            <div class="flex space-x-3">
+              <button
+                onclick="showSlide(1)"
+                class="w-24 bg-gray-100 text-gray-700 font-semibold py-4 px-6 rounded-2xl hover:bg-gray-200 transition-all"
+              >
+                Back
+              </button>
+              <button
+                onclick="showSlide(3)"
+                class="flex-1 bg-gradient-to-r from-primary via-green-500 to-secondary text-white font-bold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 3: Instant Notifications -->
+        <div
+          id="slide3"
+          class="slide absolute inset-0 flex flex-col items-center justify-center px-8"
+          style="transform: translateX(100%); opacity: 0"
+        >
+          <div class="flex-1 flex flex-col items-center justify-center pt-8 pb-4">
+            <!-- Illustration -->
+            <div class="relative w-full max-w-xs mb-6">
+              <!-- Phone Device -->
+              <div class="mx-auto w-56 h-auto">
+                <div
+                  class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-[3rem] p-4 shadow-2xl relative"
+                >
+                  <!-- Screen -->
+                  <div
+                    class="bg-gradient-to-br from-blue-50 to-green-50 rounded-[2.5rem] p-4 h-80 overflow-hidden"
+                  >
+                    <!-- Status Bar -->
+                    <div class="flex justify-between items-center mb-3">
+                      <span class="text-xs text-gray-600">9:41</span>
+                      <div class="flex space-x-1">
+                        <div class="w-4 h-3 bg-gray-400 rounded-sm"></div>
+                        <div class="w-4 h-3 bg-gray-400 rounded-sm"></div>
+                        <div class="w-4 h-3 bg-gray-400 rounded-sm"></div>
+                      </div>
+                    </div>
+
+                    <!-- Notification Bell with Animation -->
+                    <div class="flex justify-center mb-4">
+                      <div class="relative">
+                        <div
+                          class="w-16 h-16 bg-gradient-to-br from-primary to-green-600 rounded-full flex items-center justify-center shadow-lg"
+                        >
+                          <svg
+                            class="w-8 h-8 text-white ring-animation"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                            ></path>
+                          </svg>
+                        </div>
+                        <!-- Notification Badge -->
+                        <div
+                          class="absolute -top-1 -right-1 w-6 h-6 bg-error rounded-full flex items-center justify-center text-white text-xs font-bold pulse-ring"
+                        >
+                          3
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Notification Cards with Scroll Animation -->
+                    <div class="relative h-48 overflow-hidden">
+                      <div class="space-y-2 scroll-animation">
+                        <div
+                          class="bg-white rounded-2xl p-2.5 shadow-md slide-in-right"
+                          style="animation-delay: 0.2s"
+                        >
+                          <div class="flex items-start space-x-2">
+                            <div class="w-8 h-8 bg-success/20 rounded-full flex-shrink-0"></div>
+                            <div class="flex-1 min-w-0">
+                              <p class="text-xs font-semibold text-gray-900">Payment Received</p>
+                              <p class="text-xs text-gray-600">₹1,50,000 credited</p>
+                            </div>
+                            <span class="text-xs text-gray-400">2m</span>
+                          </div>
+                        </div>
+
+                        <div
+                          class="bg-white rounded-2xl p-2.5 shadow-md slide-in-right"
+                          style="animation-delay: 0.4s"
+                        >
+                          <div class="flex items-start space-x-2">
+                            <div class="w-8 h-8 bg-secondary/20 rounded-full flex-shrink-0"></div>
+                            <div class="flex-1 min-w-0">
+                              <p class="text-xs font-semibold text-gray-900">Installation Update</p>
+                              <p class="text-xs text-gray-600">Team arriving tomorrow</p>
+                            </div>
+                            <span class="text-xs text-gray-400">1h</span>
+                          </div>
+                        </div>
+
+                        <div
+                          class="bg-white rounded-2xl p-2.5 shadow-md slide-in-right"
+                          style="animation-delay: 0.6s"
+                        >
+                          <div class="flex items-start space-x-2">
+                            <div class="w-8 h-8 bg-primary/20 rounded-full flex-shrink-0"></div>
+                            <div class="flex-1 min-w-0">
+                              <p class="text-xs font-semibold text-gray-900">New Document</p>
+                              <p class="text-xs text-gray-600">Subsidy form approved</p>
+                            </div>
+                            <span class="text-xs text-gray-400">3h</span>
+                          </div>
+                        </div>
+
+                        <div
+                          class="bg-white rounded-2xl p-2.5 shadow-md slide-in-right"
+                          style="animation-delay: 0.8s"
+                        >
+                          <div class="flex items-start space-x-2">
+                            <div class="w-8 h-8 bg-warning/20 rounded-full flex-shrink-0"></div>
+                            <div class="flex-1 min-w-0">
+                              <p class="text-xs font-semibold text-gray-900">Reminder</p>
+                              <p class="text-xs text-gray-600">Site inspection scheduled</p>
+                            </div>
+                            <span class="text-xs text-gray-400">5h</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Fade overlay at bottom -->
+                      <div
+                        class="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-green-50 to-transparent pointer-events-none"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <!-- Home Button -->
+                  <div
+                    class="absolute bottom-2 left-1/2 -translate-x-1/2 w-24 h-1 bg-gray-600 rounded-full"
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Text Content -->
+            <div class="text-center px-4">
+              <h2 class="text-2xl font-bold text-gray-900 mb-3">Stay Always Connected</h2>
+              <p class="text-gray-600 text-sm leading-relaxed max-w-xs mx-auto">
+                Receive instant notifications for payments, project updates, and important
+                milestones. Never miss a beat!
+              </p>
+            </div>
+          </div>
+
+          <!-- Navigation -->
+          <div class="pb-8 pt-6">
+            <div class="flex items-center justify-center space-x-2 mb-6">
+              <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+              <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+              <div class="w-8 h-2 bg-primary rounded-full"></div>
+            </div>
+
+            <div class="flex space-x-3">
+              <button
+                onclick="showSlide(2)"
+                class="w-24 bg-gray-100 text-gray-700 font-semibold py-4 px-6 rounded-2xl hover:bg-gray-200 transition-all"
+              >
+                Back
+              </button>
+              <a href="signup-selection.html" class="flex-1">
+                <button
+                  class="w-full bg-gradient-to-r from-primary via-green-500 to-secondary text-white font-bold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  Get Started
+                </button>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let currentSlide = 1;
+
+      function showSlide(slideNumber) {
+        const slides = {
+          1: document.getElementById('slide1'),
+          2: document.getElementById('slide2'),
+          3: document.getElementById('slide3'),
+        };
+
+        // Hide current slide
+        if (slides[currentSlide]) {
+          slides[currentSlide].style.transform =
+            slideNumber > currentSlide ? 'translateX(-100%)' : 'translateX(100%)';
+          slides[currentSlide].style.opacity = '0';
+        }
+
+        // Show new slide
+        if (slides[slideNumber]) {
+          slides[slideNumber].style.transform = 'translateX(0)';
+          slides[slideNumber].style.opacity = '1';
+        }
+
+        currentSlide = slideNumber;
+      }
+
+      // Touch/swipe support
+      let touchStartX = 0;
+      let touchEndX = 0;
+
+      const container = document.querySelector('.max-w-md');
+
+      container.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+      });
+
+      container.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+      });
+
+      function handleSwipe() {
+        if (touchEndX < touchStartX - 50 && currentSlide < 3) {
+          // Swipe left
+          showSlide(currentSlide + 1);
+        }
+        if (touchEndX > touchStartX + 50 && currentSlide > 1) {
+          // Swipe right
+          showSlide(currentSlide - 1);
+        }
+      }
+
+      // Keyboard navigation
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft' && currentSlide > 1) {
+          showSlide(currentSlide - 1);
+        }
+        if (e.key === 'ArrowRight' && currentSlide < 3) {
+          showSlide(currentSlide + 1);
+        }
+      });
+    </script>
+  </body>
+</html>

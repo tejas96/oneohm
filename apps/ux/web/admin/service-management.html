@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Management - OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
+            <div class="p-6 border-b border-gray-700">
+                <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
+                <p class="text-gray-400 text-sm mt-1">Admin Portal</p>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                <a href="admin-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="admin-projects.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    <span>Projects</span>
+                </a>
+                <a href="service-management.html" class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>Service Requests</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-gray-700">
+                <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
+                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
+                        SA
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-sm truncate">Super Admin</p>
+                        <p class="text-xs text-gray-400 truncate">Administrator</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Bar -->
+            <header class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Service Request Management</h2>
+                        <p class="text-sm text-gray-600">Track and resolve customer service requests</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button class="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold hover:bg-gray-50">
+                            Export Report
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Stats Overview -->
+            <div class="bg-white border-b border-gray-200 px-8 py-6">
+                <div class="grid grid-cols-5 gap-6">
+                    <div class="bg-blue-50 rounded-xl p-4 border-2 border-blue-200 text-center">
+                        <p class="text-3xl font-bold text-blue-600">45</p>
+                        <p class="text-sm text-gray-600">Total Requests</p>
+                    </div>
+                    <div class="bg-yellow-50 rounded-xl p-4 border-2 border-yellow-200 text-center">
+                        <p class="text-3xl font-bold text-yellow-600">18</p>
+                        <p class="text-sm text-gray-600">Open</p>
+                    </div>
+                    <div class="bg-purple-50 rounded-xl p-4 border-2 border-purple-200 text-center">
+                        <p class="text-3xl font-bold text-purple-600">12</p>
+                        <p class="text-sm text-gray-600">In Progress</p>
+                    </div>
+                    <div class="bg-green-50 rounded-xl p-4 border-2 border-green-200 text-center">
+                        <p class="text-3xl font-bold text-green-600">15</p>
+                        <p class="text-sm text-gray-600">Resolved</p>
+                    </div>
+                    <div class="bg-red-50 rounded-xl p-4 border-2 border-red-200 text-center">
+                        <p class="text-3xl font-bold text-red-600">5</p>
+                        <p class="text-sm text-gray-600">Urgent</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="flex items-center space-x-4">
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option>All Status</option>
+                        <option>Open</option>
+                        <option>In Progress</option>
+                        <option>Resolved</option>
+                        <option>Closed</option>
+                    </select>
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option>All Priority</option>
+                        <option>Urgent</option>
+                        <option>High</option>
+                        <option>Medium</option>
+                        <option>Low</option>
+                    </select>
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option>All Categories</option>
+                        <option>Maintenance</option>
+                        <option>Technical Issue</option>
+                        <option>Performance</option>
+                        <option>Other</option>
+                    </select>
+                    <div class="flex-1"></div>
+                    <input type="text" placeholder="Search requests..." class="px-4 py-2 border border-gray-300 rounded-lg w-64">
+                </div>
+            </div>
+
+            <!-- Service Requests List -->
+            <main class="flex-1 overflow-y-auto p-8">
+                <div class="space-y-4">
+                    <!-- Request 1 - Urgent -->
+                    <div class="bg-red-50 border-2 border-red-300 rounded-xl p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <h3 class="text-xl font-bold text-gray-900">System Not Generating Power</h3>
+                                    <span class="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">URGENT</span>
+                                    <span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full">OPEN</span>
+                                </div>
+                                <div class="grid grid-cols-4 gap-6 mb-4">
+                                    <div>
+                                        <p class="text-xs text-gray-600">Request ID</p>
+                                        <p class="font-semibold text-gray-900">SR-2025-145</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Customer</p>
+                                        <p class="font-semibold text-gray-900">Rajesh Kumar</p>
+                                        <p class="text-xs text-gray-600">+91 98765 11111</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Project</p>
+                                        <p class="font-semibold text-gray-900">PRJ-2025-085</p>
+                                        <p class="text-xs text-gray-600">8 kW System</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Submitted</p>
+                                        <p class="font-semibold text-red-600">2 hours ago</p>
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded-lg p-4 border border-red-200 mb-3">
+                                    <p class="text-sm text-gray-700 mb-2"><strong>Description:</strong></p>
+                                    <p class="text-sm text-gray-600">Solar system completely stopped generating power since morning. Inverter display shows error code E03. Need immediate attention as this is affecting business operations.</p>
+                                </div>
+                                <div class="flex items-center space-x-4 text-sm">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                                        </svg>
+                                        <span class="text-gray-700">Technical Issue</span>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        </svg>
+                                        <span class="text-gray-700">Viman Nagar, Pune</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex flex-col space-y-2 ml-4">
+                                <button class="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold text-sm hover:bg-red-700">
+                                    Assign Engineer
+                                </button>
+                                <button class="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-50">
+                                    View Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Request 2 - In Progress -->
+                    <div class="bg-white border-2 border-purple-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <h3 class="text-xl font-bold text-gray-900">Panel Cleaning & Inspection Required</h3>
+                                    <span class="px-3 py-1 bg-yellow-500 text-white text-xs font-bold rounded-full">MEDIUM</span>
+                                    <span class="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full">IN PROGRESS</span>
+                                </div>
+                                <div class="grid grid-cols-4 gap-6 mb-4">
+                                    <div>
+                                        <p class="text-xs text-gray-600">Request ID</p>
+                                        <p class="font-semibold text-gray-900">SR-2025-142</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Customer</p>
+                                        <p class="font-semibold text-gray-900">Sunita Reddy</p>
+                                        <p class="text-xs text-gray-600">+91 98765 22222</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Assigned To</p>
+                                        <p class="font-semibold text-gray-900">Ramesh Patil</p>
+                                        <p class="text-xs text-gray-600">Field Technician</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Scheduled</p>
+                                        <p class="font-semibold text-purple-600">Tomorrow 10 AM</p>
+                                    </div>
+                                </div>
+                                <div class="bg-purple-50 rounded-lg p-4 border border-purple-200 mb-3">
+                                    <p class="text-sm text-gray-700 mb-2"><strong>Description:</strong></p>
+                                    <p class="text-sm text-gray-600">Regular AMC service - Panel cleaning and system inspection. Customer reported 15% drop in generation efficiency.</p>
+                                </div>
+                                <div class="bg-white rounded-lg p-3 border border-purple-200">
+                                    <p class="text-xs text-purple-800 font-semibold mb-1">Latest Update:</p>
+                                    <p class="text-sm text-gray-700">Engineer confirmed appointment. Will visit tomorrow at 10 AM with cleaning equipment.</p>
+                                    <p class="text-xs text-gray-500 mt-1">Updated 1 hour ago by Ramesh Patil</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-col space-y-2 ml-4">
+                                <button class="px-6 py-2 bg-primary text-white rounded-lg font-semibold text-sm hover:bg-orange-600">
+                                    Update Status
+                                </button>
+                                <button class="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-50">
+                                    View Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Request 3 - Resolved -->
+                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <h3 class="text-xl font-bold text-gray-900">Inverter Display Issue</h3>
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">LOW</span>
+                                    <span class="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full">✓ RESOLVED</span>
+                                </div>
+                                <div class="grid grid-cols-4 gap-6 mb-4">
+                                    <div>
+                                        <p class="text-xs text-gray-600">Request ID</p>
+                                        <p class="font-semibold text-gray-900">SR-2025-138</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Customer</p>
+                                        <p class="font-semibold text-gray-900">Amit Patel</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Resolved By</p>
+                                        <p class="font-semibold text-gray-900">Suresh Kumar</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Resolution Time</p>
+                                        <p class="font-semibold text-green-600">24 hours</p>
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded-lg p-4 border border-green-200">
+                                    <p class="text-sm text-green-800 font-semibold mb-2">✓ Resolution Summary:</p>
+                                    <p class="text-sm text-gray-700">Display connection cable was loose. Reconnected and tested. System working normally. Customer satisfaction rating: 5/5</p>
+                                    <p class="text-xs text-gray-500 mt-2">Resolved on Oct 24, 2025 at 3:30 PM</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-col space-y-2 ml-4">
+                                <button class="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-50">
+                                    View Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Request 4 - Open -->
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <h3 class="text-xl font-bold text-gray-900">Annual Maintenance Check</h3>
+                                    <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">LOW</span>
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">OPEN</span>
+                                </div>
+                                <div class="grid grid-cols-4 gap-6 mb-4">
+                                    <div>
+                                        <p class="text-xs text-gray-600">Request ID</p>
+                                        <p class="font-semibold text-gray-900">SR-2025-148</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Customer</p>
+                                        <p class="font-semibold text-gray-900">Kavita Singh</p>
+                                        <p class="text-xs text-gray-600">+91 98765 44444</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">AMC Plan</p>
+                                        <p class="font-semibold text-gray-900">Standard</p>
+                                        <p class="text-xs text-gray-600">Valid till Dec 2025</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Submitted</p>
+                                        <p class="font-semibold text-gray-900">Yesterday</p>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-4 mb-3">
+                                    <p class="text-sm text-gray-700">Scheduled annual maintenance as per AMC agreement. System check, cleaning, and performance report required.</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-col space-y-2 ml-4">
+                                <button class="px-6 py-2 bg-primary text-white rounded-lg font-semibold text-sm hover:bg-orange-600">
+                                    Schedule Visit
+                                </button>
+                                <button class="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-50">
+                                    View Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="mt-8 flex items-center justify-between">
+                    <p class="text-sm text-gray-600">Showing 1 to 4 of 45 service requests</p>
+                    <div class="flex space-x-2">
+                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Previous</button>
+                        <button class="px-4 py-2 bg-primary text-white rounded-lg">1</button>
+                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">2</button>
+                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">3</button>
+                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Next</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
+

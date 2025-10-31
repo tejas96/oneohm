@@ -1,0 +1,112 @@
+{
+  "notifications": [
+    {
+      "id": "NOTIF-001",
+      "type": "payment_reminder",
+      "title": "Payment 2 Due Soon",
+      "message": "Your second payment of ₹1,85,250 is due by Nov 5, 2025. Please make the payment to continue with installation.",
+      "priority": "high",
+      "isRead": false,
+      "timestamp": "2025-10-24T10:30:00Z",
+      "actionUrl": null,
+      "icon": "alert"
+    },
+    {
+      "id": "NOTIF-002",
+      "type": "status_update",
+      "title": "Design Approved",
+      "message": "Great news! Your solar system design has been approved. We're ready to proceed once payment is received.",
+      "priority": "normal",
+      "isRead": false,
+      "timestamp": "2025-10-20T14:15:00Z",
+      "actionUrl": "project-timeline.html",
+      "icon": "check"
+    },
+    {
+      "id": "NOTIF-003",
+      "type": "milestone",
+      "title": "🎉 Phase 1 Complete!",
+      "message": "Congratulations! Phase 1 of your project is complete. DISCOM sanction received and design is ready.",
+      "priority": "normal",
+      "isRead": true,
+      "timestamp": "2025-10-18T09:00:00Z",
+      "actionUrl": null,
+      "icon": "success"
+    },
+    {
+      "id": "NOTIF-004",
+      "type": "document",
+      "title": "New Document Available",
+      "message": "Your GST invoice for Phase 1 payment is now available for download.",
+      "priority": "normal",
+      "isRead": true,
+      "timestamp": "2025-10-15T16:45:00Z",
+      "actionUrl": "documents-list.html",
+      "icon": "document"
+    },
+    {
+      "id": "NOTIF-005",
+      "type": "team_update",
+      "title": "Team Assigned",
+      "message": "Your project team has been assigned. Execution Engineer: Rahul Verma will be your point of contact.",
+      "priority": "normal",
+      "isRead": true,
+      "timestamp": "2025-10-12T11:20:00Z",
+      "actionUrl": null,
+      "icon": "team"
+    }
+  ],
+  "documents": [
+    {
+      "id": "DOC-001",
+      "documentType": "Quotation",
+      "fileName": "OneOhm_Quotation_PROJ-2025-001.pdf",
+      "fileSize": "245 KB",
+      "uploadedDate": "2025-10-10",
+      "category": "project",
+      "isDownloadable": true,
+      "thumbnail": null
+    },
+    {
+      "id": "DOC-002",
+      "documentType": "Purchase Order",
+      "fileName": "PO_PROJ-2025-001.pdf",
+      "fileSize": "128 KB",
+      "uploadedDate": "2025-10-12",
+      "category": "project",
+      "isDownloadable": true,
+      "thumbnail": null
+    },
+    {
+      "id": "DOC-003",
+      "documentType": "GST Invoice",
+      "fileName": "GST_Invoice_Phase1.pdf",
+      "fileSize": "156 KB",
+      "uploadedDate": "2025-10-15",
+      "category": "project",
+      "isDownloadable": true,
+      "thumbnail": null
+    },
+    {
+      "id": "DOC-004",
+      "documentType": "Electricity Bill",
+      "fileName": "Electricity_Bill_Sept_2025.pdf",
+      "fileSize": "892 KB",
+      "uploadedDate": "2025-10-10",
+      "category": "upload",
+      "isDownloadable": true,
+      "thumbnail": null
+    },
+    {
+      "id": "DOC-005",
+      "documentType": "Site Photos",
+      "fileName": "Site_Photos.zip",
+      "fileSize": "3.2 MB",
+      "uploadedDate": "2025-10-10",
+      "category": "upload",
+      "isDownloadable": true,
+      "thumbnail": null
+    }
+  ]
+}
+

@@ -5,6 +5,12 @@
   "projectType": "application",
   "tags": ["type:docs", "scope:ux"],
   "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx http-server apps/ux -p 3002 -c-1 --cors"
+      }
+    },
     "build": {
       "executor": "nx:run-commands",
       "outputs": ["{projectRoot}"],

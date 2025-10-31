@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Call Queue - OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        secondary: '#0d74b8',
+                        tagline: '#025580',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl pb-20">
+        <div class="bg-gradient-to-r from-primary via-green-500 to-secondary px-6 py-6 pt-12">
+            <a href="dashboard-telecaller.html" class="inline-flex items-center text-white mb-6">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </a>
+            <h1 class="text-3xl font-bold text-white mb-2">Call Queue</h1>
+            <p class="text-green-100">12 pending calls</p>
+        </div>
+
+        <div class="px-6 py-6">
+            <!-- Filter Tabs -->
+            <div class="flex space-x-2 mb-6">
+                <button class="flex-1 py-2 px-3 bg-primary text-white rounded-lg font-semibold text-sm">All (12)</button>
+                <button class="flex-1 py-2 px-3 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm">Priority (3)</button>
+                <button class="flex-1 py-2 px-3 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm">Callback (4)</button>
+            </div>
+
+            <!-- Call List -->
+            <div class="space-y-4">
+                <!-- Priority Call -->
+                <div class="bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-300 rounded-2xl p-5">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <h3 class="font-bold text-gray-900 text-lg">Deepak Rao</h3>
+                                <span class="px-2 py-0.5 bg-red-600 text-white text-xs font-bold rounded animate-pulse">PRIORITY</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-1">+91 98765 55555</p>
+                            <p class="text-xs text-gray-500">Hyderabad, Telangana</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 mb-3 p-3 bg-white rounded-lg">
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">Interest</p>
+                            <p class="text-sm font-semibold text-gray-900">Residential 5kW</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">Budget</p>
+                            <p class="text-sm font-semibold text-primary">₹3.5L</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-amber-50 border border-amber-300 rounded-lg p-2 mb-3">
+                        <p class="text-xs text-amber-900"><strong>Last Call:</strong> 2 days ago</p>
+                        <p class="text-xs text-amber-800 mt-1">Customer asked for detailed quote. Scheduled callback for today 2PM</p>
+                    </div>
+
+                    <div class="flex space-x-2">
+                        <button class="flex-1 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-all">
+                            Call Now
+                        </button>
+                        <button class="px-4 py-3 bg-white border-2 border-gray-300 rounded-lg hover:border-primary transition-all">
+                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Callback Required -->
+                <div class="bg-white border-2 border-yellow-200 rounded-2xl p-5">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <h3 class="font-bold text-gray-900">Meena Patel</h3>
+                                <span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-bold rounded">CALLBACK</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-1">+91 98765 88888</p>
+                            <p class="text-xs text-gray-500">Ahmedabad, Gujarat</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 mb-3 p-3 bg-gray-50 rounded-lg">
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">Interest</p>
+                            <p class="text-sm font-semibold text-gray-900">Commercial 15kW</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">Budget</p>
+                            <p class="text-sm font-semibold text-primary">₹8L</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-2 mb-3">
+                        <p class="text-xs text-blue-800">Requested callback after 4PM today</p>
+                    </div>
+
+                    <div class="flex space-x-2">
+                        <button class="flex-1 py-3 bg-primary text-white rounded-lg font-bold hover:bg-green-600 transition-all">
+                            Call Now
+                        </button>
+                        <button class="px-4 py-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all">
+                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- New Lead -->
+                <div class="bg-white border-2 border-green-200 rounded-2xl p-5">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <h3 class="font-bold text-gray-900">Ramesh Kumar</h3>
+                                <span class="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded">NEW</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-1">+91 98765 99999</p>
+                            <p class="text-xs text-gray-500">Jaipur, Rajasthan</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 mb-3 p-3 bg-gray-50 rounded-lg">
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">Interest</p>
+                            <p class="text-sm font-semibold text-gray-900">Residential 6kW</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">Source</p>
+                            <p class="text-sm font-semibold text-gray-900">Website Form</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-2 mb-3">
+                        <p class="text-xs text-green-800">New lead from website - First contact</p>
+                    </div>
+
+                    <div class="flex space-x-2">
+                        <button class="flex-1 py-3 bg-primary text-white rounded-lg font-bold hover:bg-green-600 transition-all">
+                            Call Now
+                        </button>
+                        <button class="px-4 py-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all">
+                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Follow-up Lead -->
+                <div class="bg-white border-2 border-gray-200 rounded-2xl p-5">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <h3 class="font-bold text-gray-900">Anjali Desai</h3>
+                                <span class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded">FOLLOW-UP</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mb-1">+91 98765 00000</p>
+                            <p class="text-xs text-gray-500">Surat, Gujarat</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 mb-3 p-3 bg-gray-50 rounded-lg">
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">Interest</p>
+                            <p class="text-sm font-semibold text-gray-900">Residential 10kW</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">Budget</p>
+                            <p class="text-sm font-semibold text-primary">₹5.5L</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-2 mb-3">
+                        <p class="text-xs text-gray-600"><strong>Last Call:</strong> 5 days ago</p>
+                        <p class="text-xs text-gray-500 mt-1">Interested but needs time to decide. Follow up this week.</p>
+                    </div>
+
+                    <div class="flex space-x-2">
+                        <button class="flex-1 py-3 bg-primary text-white rounded-lg font-bold hover:bg-green-600 transition-all">
+                            Call Now
+                        </button>
+                        <button class="px-4 py-3 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all">
+                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg max-w-md mx-auto">
+            <div class="flex items-center justify-around py-3 px-6">
+                <a href="dashboard-telecaller.html" class="flex flex-col items-center space-y-1 text-gray-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <span class="text-xs">Home</span>
+                </a>
+                <a href="call-queue.html" class="flex flex-col items-center space-y-1 text-primary">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"></path>
+                    </svg>
+                    <span class="text-xs font-semibold">Call Queue</span>
+                </a>
+                <a href="call-logs.html" class="flex flex-col items-center space-y-1 text-gray-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                    <span class="text-xs">Logs</span>
+                </a>
+                <a href="performance-telecaller.html" class="flex flex-col items-center space-y-1 text-gray-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <span class="text-xs">Stats</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

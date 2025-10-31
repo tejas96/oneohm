@@ -1,0 +1,47 @@
+{
+  "users": [
+    {
+      "id": "USR-001",
+      "name": "Raj Kumar",
+      "email": "raj.kumar@example.com",
+      "phone": "+91 98765 43210",
+      "role": "customer",
+      "profilePicture": "https://ui-avatars.com/api/?name=Raj+Kumar&background=F97316&color=fff",
+      "address": "123, MG Road, Pune, Maharashtra",
+      "city": "Pune",
+      "state": "Maharashtra",
+      "pincode": "411001"
+    },
+    {
+      "id": "USR-002",
+      "name": "Priya Sharma",
+      "email": "priya.sharma@oneohm.com",
+      "phone": "+91 98765 43211",
+      "role": "field_worker",
+      "profilePicture": "https://ui-avatars.com/api/?name=Priya+Sharma&background=0369A1&color=fff",
+      "department": "Sales",
+      "employeeId": "EMP-FW-001"
+    },
+    {
+      "id": "USR-003",
+      "name": "Amit Patel",
+      "email": "amit.patel@oneohm.com",
+      "phone": "+91 98765 43212",
+      "role": "sales_person",
+      "profilePicture": "https://ui-avatars.com/api/?name=Amit+Patel&background=16A34A&color=fff",
+      "department": "Sales",
+      "employeeId": "EMP-SP-001"
+    },
+    {
+      "id": "USR-004",
+      "name": "Sneha Desai",
+      "email": "sneha.desai@oneohm.com",
+      "phone": "+91 98765 43213",
+      "role": "admin",
+      "profilePicture": "https://ui-avatars.com/api/?name=Sneha+Desai&background=DC2626&color=fff",
+      "department": "Operations",
+      "employeeId": "EMP-ADM-001"
+    }
+  ]
+}
+

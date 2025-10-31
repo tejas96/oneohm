@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proposals - OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
+            <div class="p-6 border-b border-gray-700">
+                <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
+                <p class="text-gray-400 text-sm mt-1">Sales Dashboard</p>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                <a href="admin-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="sales-pipeline.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <span>Pipeline</span>
+                </a>
+                <a href="proposals.html" class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>Proposals</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-gray-700">
+                <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
+                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
+                        RK
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-sm truncate">Ravi Kumar</p>
+                        <p class="text-xs text-gray-400 truncate">Sales Manager</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Bar -->
+            <header class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Sales Proposals</h2>
+                        <p class="text-sm text-gray-600">Create and manage detailed proposals</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button class="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold hover:bg-gray-50">
+                            Templates
+                        </button>
+                        <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600">
+                            + New Proposal
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Stats Overview -->
+            <div class="bg-white border-b border-gray-200 px-8 py-6">
+                <div class="grid grid-cols-5 gap-6">
+                    <div class="text-center">
+                        <p class="text-3xl font-bold text-blue-600">42</p>
+                        <p class="text-sm text-gray-600">Total Proposals</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-3xl font-bold text-yellow-600">15</p>
+                        <p class="text-sm text-gray-600">Pending Review</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-3xl font-bold text-green-600">18</p>
+                        <p class="text-sm text-gray-600">Accepted</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-3xl font-bold text-red-600">9</p>
+                        <p class="text-sm text-gray-600">Rejected</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-3xl font-bold text-purple-600">43%</p>
+                        <p class="text-sm text-gray-600">Win Rate</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="flex items-center space-x-4">
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option>All Status</option>
+                        <option>Draft</option>
+                        <option>Sent</option>
+                        <option>Accepted</option>
+                        <option>Rejected</option>
+                    </select>
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option>All Team Members</option>
+                        <option>Ravi Kumar</option>
+                        <option>Priya Sharma</option>
+                    </select>
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option>This Month</option>
+                        <option>Last Month</option>
+                        <option>Last 3 Months</option>
+                    </select>
+                    <div class="flex-1"></div>
+                    <input type="text" placeholder="Search proposals..." class="px-4 py-2 border border-gray-300 rounded-lg w-64">
+                </div>
+            </div>
+
+            <!-- Proposals List -->
+            <main class="flex-1 overflow-y-auto p-8">
+                <div class="space-y-4">
+                    <!-- Proposal 1 - Accepted -->
+                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-3">
+                                    <h3 class="text-xl font-bold text-gray-900">10 kW Residential Solar System - Amit Patel</h3>
+                                    <span class="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full">ACCEPTED</span>
+                                </div>
+                                <div class="grid grid-cols-5 gap-6 mb-4">
+                                    <div>
+                                        <p class="text-xs text-gray-600">Proposal ID</p>
+                                        <p class="font-semibold text-gray-900">PROP-2025-148</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Value</p>
+                                        <p class="font-bold text-green-600">₹6.8L</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Created By</p>
+                                        <p class="font-semibold text-gray-900">Priya Sharma</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Sent On</p>
+                                        <p class="font-semibold text-gray-900">Oct 18, 2025</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Accepted On</p>
+                                        <p class="font-semibold text-green-600">Oct 24, 2025</p>
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded-lg p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-6">
+                                            <div>
+                                                <p class="text-xs text-gray-600">System Size</p>
+                                                <p class="font-semibold text-gray-900">10 kW</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-600">Panels</p>
+                                                <p class="font-semibold text-gray-900">25 x 400W</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-600">ROI</p>
+                                                <p class="font-semibold text-gray-900">3.5 years</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-600">Savings/Year</p>
+                                                <p class="font-semibold text-green-600">₹1.85L</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button class="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold text-sm hover:bg-green-700">
+                                                Convert to Project
+                                            </button>
+                                            <button class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-50">
+                                                View PDF
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Proposal 2 - Pending -->
+                    <div class="bg-white border-2 border-yellow-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-3">
+                                    <h3 class="text-xl font-bold text-gray-900">8 kW Residential Solar System - Neha Gupta</h3>
+                                    <span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full">PENDING REVIEW</span>
+                                </div>
+                                <div class="grid grid-cols-5 gap-6 mb-4">
+                                    <div>
+                                        <p class="text-xs text-gray-600">Proposal ID</p>
+                                        <p class="font-semibold text-gray-900">PROP-2025-152</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Value</p>
+                                        <p class="font-bold text-primary">₹5.5L</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Created By</p>
+                                        <p class="font-semibold text-gray-900">Ravi Kumar</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Sent On</p>
+                                        <p class="font-semibold text-gray-900">Oct 23, 2025</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Follow-up</p>
+                                        <p class="font-semibold text-yellow-600">Due Today</p>
+                                    </div>
+                                </div>
+                                <div class="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-6">
+                                            <div>
+                                                <p class="text-xs text-gray-600">System Size</p>
+                                                <p class="font-semibold text-gray-900">8 kW</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-600">Panels</p>
+                                                <p class="font-semibold text-gray-900">20 x 400W</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-600">ROI</p>
+                                                <p class="font-semibold text-gray-900">3.8 years</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-600">Savings/Year</p>
+                                                <p class="font-semibold text-green-600">₹1.48L</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold text-sm hover:bg-orange-600">
+                                                Follow Up
+                                            </button>
+                                            <button class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-50">
+                                                View PDF
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Proposal 3 - Draft -->
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-3">
+                                    <h3 class="text-xl font-bold text-gray-900">15 kW Commercial Solar System - TechCorp Ltd</h3>
+                                    <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-bold rounded-full">DRAFT</span>
+                                </div>
+                                <div class="grid grid-cols-5 gap-6 mb-4">
+                                    <div>
+                                        <p class="text-xs text-gray-600">Proposal ID</p>
+                                        <p class="font-semibold text-gray-900">PROP-2025-155</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Value</p>
+                                        <p class="font-bold text-primary">₹10.5L</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Created By</p>
+                                        <p class="font-semibold text-gray-900">Ravi Kumar</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Last Updated</p>
+                                        <p class="font-semibold text-gray-900">Oct 24, 2025</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Status</p>
+                                        <p class="font-semibold text-gray-600">80% Complete</p>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-6">
+                                            <div>
+                                                <p class="text-xs text-gray-600">System Size</p>
+                                                <p class="font-semibold text-gray-900">15 kW</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-600">Panels</p>
+                                                <p class="font-semibold text-gray-900">37 x 410W</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-600">ROI</p>
+                                                <p class="font-semibold text-gray-900">3.2 years</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-600">Savings/Year</p>
+                                                <p class="font-semibold text-green-600">₹3.15L</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold text-sm hover:bg-orange-600">
+                                                Continue Editing
+                                            </button>
+                                            <button class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-50">
+                                                Preview
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Proposal 4 - Rejected -->
+                    <div class="bg-red-50 border-2 border-red-200 rounded-xl p-6">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-3">
+                                    <h3 class="text-xl font-bold text-gray-900">12 kW Commercial Solar System - BuildMax Inc</h3>
+                                    <span class="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">REJECTED</span>
+                                </div>
+                                <div class="grid grid-cols-5 gap-6 mb-4">
+                                    <div>
+                                        <p class="text-xs text-gray-600">Proposal ID</p>
+                                        <p class="font-semibold text-gray-900">PROP-2025-145</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Value</p>
+                                        <p class="font-bold text-gray-900">₹8.5L</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Created By</p>
+                                        <p class="font-semibold text-gray-900">Priya Sharma</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Rejected On</p>
+                                        <p class="font-semibold text-red-600">Oct 20, 2025</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Reason</p>
+                                        <p class="font-semibold text-red-600">Budget Constraint</p>
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded-lg p-4 border border-red-200">
+                                    <p class="text-sm text-red-800 mb-3"><strong>Customer Feedback:</strong> "Great proposal but exceeds our current budget. May revisit next quarter."</p>
+                                    <div class="flex space-x-2">
+                                        <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold text-sm hover:bg-orange-600">
+                                            Create Revised Proposal
+                                        </button>
+                                        <button class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-50">
+                                            View Original
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="mt-8 flex items-center justify-between">
+                    <p class="text-sm text-gray-600">Showing 1 to 4 of 42 proposals</p>
+                    <div class="flex space-x-2">
+                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Previous</button>
+                        <button class="px-4 py-2 bg-primary text-white rounded-lg">1</button>
+                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">2</button>
+                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">3</button>
+                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Next</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
+

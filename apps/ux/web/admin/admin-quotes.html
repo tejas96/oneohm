@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote Management - OneOhm Solar ERP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar (same as before) -->
+        <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
+            <div class="p-6 border-b border-gray-700">
+                <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
+                <p class="text-gray-400 text-sm mt-1">ERP System</p>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                <a href="admin-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="admin-leads.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    <span>Leads</span>
+                </a>
+                <a href="admin-projects.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    <span>Projects</span>
+                </a>
+                <a href="admin-quotes.html" class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"></path>
+                        <path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"></path>
+                    </svg>
+                    <span>Quotes</span>
+                </a>
+                <a href="admin-payments.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Payments</span>
+                </a>
+                <a href="admin-users.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                    <span>Users & Teams</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-gray-700">
+                <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
+                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
+                        SA
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-sm truncate">Super Admin</p>
+                        <p class="text-xs text-gray-400 truncate">admin@oneohm.com</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Bar -->
+            <header class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Quotations</h2>
+                        <p class="text-sm text-gray-600">View and manage all quotations</p>
+                    </div>
+                    <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600">
+                        + Create Quote
+                    </button>
+                </div>
+            </header>
+
+            <!-- Stats -->
+            <div class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="grid grid-cols-5 gap-4">
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-gray-900">156</p>
+                        <p class="text-xs text-gray-600">Total Quotes</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-yellow-600">28</p>
+                        <p class="text-xs text-gray-600">Pending</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-green-600">89</p>
+                        <p class="text-xs text-gray-600">Approved</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-red-600">25</p>
+                        <p class="text-xs text-gray-600">Rejected</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-gray-600">14</p>
+                        <p class="text-xs text-gray-600">Expired</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="flex items-center space-x-4">
+                    <div class="flex-1">
+                        <input type="text" placeholder="Search by quote ID, customer name..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+                    </div>
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option>All Status</option>
+                        <option>Pending</option>
+                        <option>Approved</option>
+                        <option>Rejected</option>
+                    </select>
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option>Last 30 Days</option>
+                        <option>Last 7 Days</option>
+                        <option>This Month</option>
+                        <option>Custom Range</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Quotes List -->
+            <main class="flex-1 overflow-y-auto p-8">
+                <div class="grid grid-cols-1 gap-4">
+                    <!-- Quote Card -->
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-primary transition-all">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <h3 class="text-lg font-bold text-gray-900">QT-2025-1234</h3>
+                                    <span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full">PENDING</span>
+                                </div>
+                                <p class="text-gray-600">Rajesh Patel • +91 98765 43210</p>
+                                <p class="text-sm text-gray-500 mt-1">Residential • 10 kW System • Mumbai, Maharashtra</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-2xl font-bold text-primary">₹5,45,000</p>
+                                <p class="text-sm text-gray-500">Valid until Nov 25, 2025</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-4 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Panel Type</p>
+                                <p class="text-sm font-semibold text-gray-900">Monocrystalline</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Inverter</p>
+                                <p class="text-sm font-semibold text-gray-900">Growatt 10kW</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Warranty</p>
+                                <p class="text-sm font-semibold text-gray-900">25 Years</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Assigned To</p>
+                                <p class="text-sm font-semibold text-gray-900">Ravi Kumar</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2 text-sm text-gray-500">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <span>Created on Oct 25, 2025</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200">
+                                    Download PDF
+                                </button>
+                                <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600">
+                                    View Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quote Card 2 -->
+                    <div class="bg-white border-2 border-green-200 rounded-xl p-6">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <h3 class="text-lg font-bold text-gray-900">QT-2025-1233</h3>
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">APPROVED</span>
+                                </div>
+                                <p class="text-gray-600">Sunita Sharma • +91 98765 12345</p>
+                                <p class="text-sm text-gray-500 mt-1">Commercial • 25 kW System • Pune, Maharashtra</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-2xl font-bold text-primary">₹12,25,000</p>
+                                <p class="text-sm text-green-600 font-semibold">Approved on Oct 23</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-4 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Panel Type</p>
+                                <p class="text-sm font-semibold text-gray-900">Bifacial</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Inverter</p>
+                                <p class="text-sm font-semibold text-gray-900">Growatt 25kW</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Warranty</p>
+                                <p class="text-sm font-semibold text-gray-900">25 Years</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Assigned To</p>
+                                <p class="text-sm font-semibold text-gray-900">Priya Sharma</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2 text-sm text-gray-500">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <span>Created on Oct 15, 2025</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200">
+                                    Download PDF
+                                </button>
+                                <button class="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700">
+                                    Create Project
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quote Card 3 -->
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6 opacity-75">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <h3 class="text-lg font-bold text-gray-900">QT-2025-1232</h3>
+                                    <span class="px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full">REJECTED</span>
+                                </div>
+                                <p class="text-gray-600">Anil Verma • +91 98765 67890</p>
+                                <p class="text-sm text-gray-500 mt-1">Residential • 8 kW System • Delhi, Delhi</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-2xl font-bold text-gray-600">₹4,80,000</p>
+                                <p class="text-sm text-red-600 font-semibold">Rejected on Oct 18</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-4 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Panel Type</p>
+                                <p class="text-sm font-semibold text-gray-900">Polycrystalline</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Inverter</p>
+                                <p class="text-sm font-semibold text-gray-900">Growatt 8kW</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Warranty</p>
+                                <p class="text-sm font-semibold text-gray-900">20 Years</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Assigned To</p>
+                                <p class="text-sm font-semibold text-gray-900">Amit Patel</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2 text-sm text-gray-500">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <span>Created on Oct 10, 2025</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200">
+                                    View Details
+                                </button>
+                                <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600">
+                                    Revise Quote
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
+

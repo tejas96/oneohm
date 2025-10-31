@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance - OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        secondary: '#0d74b8',
+                        tagline: '#025580',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl pb-20">
+        <div class="bg-gradient-to-r from-primary via-green-500 to-secondary px-6 py-6 pt-12">
+            <a href="dashboard-salesperson.html" class="inline-flex items-center text-white mb-6">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </a>
+            <h1 class="text-3xl font-bold text-white mb-2">Performance</h1>
+            <p class="text-green-100">Your sales metrics</p>
+        </div>
+
+        <div class="px-6 py-6 space-y-6">
+            <!-- Monthly Target -->
+            <div class="bg-gradient-to-br from-primary via-green-500 to-secondary rounded-2xl p-6 text-white shadow-xl">
+                <p class="text-green-100 mb-2">Monthly Target</p>
+                <div class="flex items-end justify-between mb-4">
+                    <div>
+                        <p class="text-4xl font-bold">₹12.5L</p>
+                        <p class="text-green-100 text-sm">of ₹15L</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-3xl font-bold">83%</p>
+                        <p class="text-green-100 text-sm">Achieved</p>
+                    </div>
+                </div>
+                <div class="w-full bg-orange-300/30 rounded-full h-3">
+                    <div class="bg-white h-3 rounded-full" style="width: 83%"></div>
+                </div>
+                <p class="text-green-100 text-xs mt-2">5 days remaining in October</p>
+            </div>
+
+            <!-- Key Metrics -->
+            <div>
+                <h3 class="font-bold text-gray-900 mb-4">Key Metrics (Oct 2025)</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white border-2 border-gray-200 rounded-2xl p-4">
+                        <p class="text-gray-600 text-sm mb-2">Leads Generated</p>
+                        <p class="text-2xl font-bold text-gray-900">28</p>
+                        <p class="text-green-600 text-xs font-semibold mt-1">+12% vs last month</p>
+                    </div>
+                    <div class="bg-white border-2 border-gray-200 rounded-2xl p-4">
+                        <p class="text-gray-600 text-sm mb-2">Conversion Rate</p>
+                        <p class="text-2xl font-bold text-gray-900">29%</p>
+                        <p class="text-green-600 text-xs font-semibold mt-1">+5% vs last month</p>
+                    </div>
+                    <div class="bg-white border-2 border-gray-200 rounded-2xl p-4">
+                        <p class="text-gray-600 text-sm mb-2">Quotes Sent</p>
+                        <p class="text-2xl font-bold text-gray-900">15</p>
+                        <p class="text-gray-500 text-xs mt-1">8 approved</p>
+                    </div>
+                    <div class="bg-white border-2 border-gray-200 rounded-2xl p-4">
+                        <p class="text-gray-600 text-sm mb-2">Deals Closed</p>
+                        <p class="text-2xl font-bold text-gray-900">8</p>
+                        <p class="text-gray-500 text-xs mt-1">Worth ₹12.5L</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monthly Trend Chart -->
+            <div class="bg-white border-2 border-gray-200 rounded-2xl p-6">
+                <h3 class="font-bold text-gray-900 mb-4">Sales Trend (Last 6 Months)</h3>
+                <canvas id="salesChart" height="200"></canvas>
+            </div>
+
+            <!-- Lead Stage Breakdown -->
+            <div class="bg-white border-2 border-gray-200 rounded-2xl p-6">
+                <h3 class="font-bold text-gray-900 mb-4">Lead Stage Breakdown</h3>
+                <div class="space-y-3">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-semibold text-gray-700">New Leads</span>
+                            <span class="text-sm font-bold text-gray-900">12</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-500 h-2 rounded-full" style="width: 43%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-semibold text-gray-700">Quote Sent</span>
+                            <span class="text-sm font-bold text-gray-900">8</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-yellow-500 h-2 rounded-full" style="width: 29%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-semibold text-gray-700">Negotiation</span>
+                            <span class="text-sm font-bold text-gray-900">3</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-green-500 h-2 rounded-full" style="width: 11%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-semibold text-gray-700">Won</span>
+                            <span class="text-sm font-bold text-gray-900">5</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-green-500 h-2 rounded-full" style="width: 18%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Achievements -->
+            <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-bold">Top Performer!</p>
+                        <p class="text-purple-100 text-sm">Highest conversion rate this month</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaderboard -->
+            <div class="bg-white border-2 border-gray-200 rounded-2xl p-6">
+                <h3 class="font-bold text-gray-900 mb-4">Team Leaderboard</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center space-x-3 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
+                        <div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold">1</div>
+                        <div class="flex-1">
+                            <p class="font-bold text-gray-900">Ravi Kumar (You)</p>
+                            <p class="text-xs text-gray-600">₹12.5L • 8 deals</p>
+                        </div>
+                        <svg class="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                        </svg>
+                    </div>
+                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div class="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold">2</div>
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-900">Priya Sharma</p>
+                            <p class="text-xs text-gray-600">₹11.2L • 7 deals</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div class="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold">3</div>
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-900">Amit Patel</p>
+                            <p class="text-xs text-gray-600">₹9.8L • 6 deals</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg max-w-md mx-auto">
+            <div class="flex items-center justify-around py-3 px-6">
+                <a href="dashboard-salesperson.html" class="flex flex-col items-center space-y-1 text-gray-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <span class="text-xs">Home</span>
+                </a>
+                <a href="lead-list.html" class="flex flex-col items-center space-y-1 text-gray-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    <span class="text-xs">Leads</span>
+                </a>
+                <a href="quote-list.html" class="flex flex-col items-center space-y-1 text-gray-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span class="text-xs">Quotes</span>
+                </a>
+                <a href="performance.html" class="flex flex-col items-center space-y-1 text-primary">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"></path>
+                    </svg>
+                    <span class="text-xs font-semibold">Performance</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sales Trend Chart
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
+                datasets: [{
+                    label: 'Sales (₹L)',
+                    data: [8.5, 9.2, 10.5, 11.0, 10.8, 12.5],
+                    borderColor: '#F97316',
+                    backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+

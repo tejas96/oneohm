@@ -1,0 +1,120 @@
+{
+  "quotes": [
+    {
+      "id": "QT-2025-1234",
+      "quoteNumber": "QT-2025-1234",
+      "lead": {
+        "id": "LD-2025-245",
+        "name": "Ranjit Singh",
+        "phone": "+91 98765 11111",
+        "email": "ranjit.singh@email.com",
+        "location": "Gurgaon, Haryana"
+      },
+      "systemType": "Residential",
+      "capacity": "10 kW",
+      "totalAmount": 545000,
+      "gstAmount": 98100,
+      "grandTotal": 643100,
+      "status": "Pending",
+      "createdDate": "2025-10-23",
+      "validUntil": "2025-11-25",
+      "assignedTo": "Ravi Kumar",
+      "systemComponents": {
+        "panels": {
+          "brand": "Trina Solar",
+          "type": "Monocrystalline",
+          "wattage": "540W",
+          "quantity": 19,
+          "unitPrice": 16000,
+          "totalPrice": 304000
+        },
+        "inverter": {
+          "brand": "Growatt",
+          "model": "10kW Hybrid",
+          "quantity": 1,
+          "unitPrice": 85000,
+          "totalPrice": 85000
+        },
+        "structure": {
+          "type": "Galvanized Iron",
+          "totalPrice": 45000
+        },
+        "installation": {
+          "description": "Complete installation with wiring",
+          "totalPrice": 65000
+        },
+        "netMetering": {
+          "description": "Net metering approval & setup",
+          "totalPrice": 25000
+        },
+        "warranty": {
+          "panels": "25 Years",
+          "inverter": "10 Years",
+          "installation": "5 Years"
+        }
+      },
+      "paymentTerms": {
+        "phase1": {
+          "percentage": 50,
+          "amount": 272500,
+          "milestone": "Down Payment"
+        },
+        "phase2": {
+          "percentage": 20,
+          "amount": 109000,
+          "milestone": "Post Installation"
+        },
+        "phase3": {
+          "percentage": 20,
+          "amount": 109000,
+          "milestone": "Post Net Metering"
+        },
+        "phase4": {
+          "percentage": 10,
+          "amount": 54500,
+          "milestone": "Final Payment after Commissioning"
+        }
+      }
+    },
+    {
+      "id": "QT-2025-1233",
+      "quoteNumber": "QT-2025-1233",
+      "lead": {
+        "id": "LD-2025-244",
+        "name": "Sunita Verma",
+        "phone": "+91 98765 22222",
+        "email": "sunita.v@email.com",
+        "location": "Bangalore, Karnataka"
+      },
+      "systemType": "Commercial",
+      "capacity": "25 kW",
+      "totalAmount": 1225000,
+      "status": "Approved",
+      "createdDate": "2025-10-15",
+      "approvedDate": "2025-10-20",
+      "assignedTo": "Priya Sharma",
+      "projectCreated": true,
+      "projectId": "PRJ-2025-043"
+    },
+    {
+      "id": "QT-2025-1230",
+      "quoteNumber": "QT-2025-1230",
+      "lead": {
+        "id": "LD-2025-240",
+        "name": "Anil Kumar",
+        "phone": "+91 98765 33333",
+        "email": "anil.k@email.com",
+        "location": "Chennai, Tamil Nadu"
+      },
+      "systemType": "Residential",
+      "capacity": "8 kW",
+      "totalAmount": 480000,
+      "status": "Rejected",
+      "createdDate": "2025-10-10",
+      "rejectedDate": "2025-10-18",
+      "rejectionReason": "Price too high",
+      "assignedTo": "Amit Patel"
+    }
+  ]
+}
+

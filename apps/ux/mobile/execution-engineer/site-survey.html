@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Survey - OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        secondary: '#0d74b8',
+                        tagline: '#025580',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl pb-8">
+        <div class="bg-gradient-to-r from-primary via-green-500 to-secondary px-6 py-6 pt-12">
+            <a href="dashboard-engineer.html" class="inline-flex items-center text-white mb-6">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </a>
+            <h1 class="text-3xl font-bold text-white mb-2">Site Survey</h1>
+            <p class="text-green-100">Pradeep Patil • PRJ-2025-092</p>
+        </div>
+
+        <div class="px-6 py-6">
+            <!-- Project Info -->
+            <div class="bg-blue-50 border-2 border-blue-200 rounded-2xl p-4 mb-6">
+                <div class="flex items-start justify-between mb-3">
+                    <div>
+                        <h3 class="font-bold text-gray-900 mb-1">8 kW Residential System</h3>
+                        <p class="text-sm text-gray-600">Viman Nagar, Pune</p>
+                    </div>
+                    <span class="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">SURVEY</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-blue-200">
+                    <div>
+                        <p class="text-xs text-gray-600 mb-1">Contact</p>
+                        <p class="text-sm font-semibold text-gray-900">+91 98765 12345</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-600 mb-1">Scheduled</p>
+                        <p class="text-sm font-semibold text-gray-900">Today 11:00 AM</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GPS Location -->
+            <div class="mb-6">
+                <label class="block text-sm font-bold text-gray-900 mb-3">📍 Mark Location</label>
+                <button id="captureLocation" class="w-full py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-2xl font-semibold flex items-center justify-center space-x-2 hover:border-primary">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <span>Capture GPS Location</span>
+                </button>
+                <div id="locationDisplay" class="hidden mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p class="text-xs text-green-700 font-semibold mb-1">Location Captured ✓</p>
+                    <p class="text-xs text-gray-600" id="coordinates"></p>
+                </div>
+            </div>
+
+            <!-- Site Details -->
+            <div class="mb-6">
+                <label class="block text-sm font-bold text-gray-900 mb-3">Site Details</label>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Roof Type</label>
+                        <select class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:outline-none">
+                            <option>Select roof type</option>
+                            <option>RCC (Flat)</option>
+                            <option>Sloped Roof</option>
+                            <option>Tin Shed</option>
+                            <option>Asbestos</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Roof Area (sq ft)</label>
+                        <input type="number" placeholder="Enter available roof area" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Shadow Analysis</label>
+                        <select class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:outline-none">
+                            <option>Select shadow condition</option>
+                            <option>No Shadow (Ideal)</option>
+                            <option>Partial Shadow (Morning)</option>
+                            <option>Partial Shadow (Evening)</option>
+                            <option>Significant Shadow</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Roof Orientation</label>
+                        <select class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:outline-none">
+                            <option>Select orientation</option>
+                            <option>South (Best)</option>
+                            <option>South-East</option>
+                            <option>South-West</option>
+                            <option>East</option>
+                            <option>West</option>
+                            <option>North</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Structure Condition</label>
+                        <select class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:outline-none">
+                            <option>Select condition</option>
+                            <option>Excellent</option>
+                            <option>Good</option>
+                            <option>Fair (Needs Repair)</option>
+                            <option>Poor (Major Work Required)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Distance from Inverter Location (ft)</label>
+                        <input type="number" placeholder="Enter distance" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Electrical Details -->
+            <div class="mb-6">
+                <label class="block text-sm font-bold text-gray-900 mb-3">Electrical Details</label>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Existing Load (kW)</label>
+                        <input type="number" step="0.1" placeholder="Enter sanctioned load" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Meter Type</label>
+                        <select class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:outline-none">
+                            <option>Select meter type</option>
+                            <option>Net Meter (Already Installed)</option>
+                            <option>Regular Meter (Net Meter Required)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">DB Location</label>
+                        <select class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:outline-none">
+                            <option>Select location</option>
+                            <option>Ground Floor</option>
+                            <option>First Floor</option>
+                            <option>Terrace</option>
+                            <option>Basement</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Earthing Available</label>
+                        <div class="flex space-x-4">
+                            <label class="flex items-center">
+                                <input type="radio" name="earthing" value="yes" class="mr-2">
+                                <span class="text-sm text-gray-700">Yes</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="earthing" value="no" class="mr-2">
+                                <span class="text-sm text-gray-700">No</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Photo Upload -->
+            <div class="mb-6">
+                <label class="block text-sm font-bold text-gray-900 mb-3">📸 Site Photos</label>
+                
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div class="aspect-square bg-gray-100 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-primary">
+                        <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <p class="text-xs text-gray-600 font-semibold">Roof View</p>
+                    </div>
+
+                    <div class="aspect-square bg-gray-100 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-primary">
+                        <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <p class="text-xs text-gray-600 font-semibold">DB Panel</p>
+                    </div>
+
+                    <div class="aspect-square bg-gray-100 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-primary">
+                        <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <p class="text-xs text-gray-600 font-semibold">Meter Photo</p>
+                    </div>
+
+                    <div class="aspect-square bg-gray-100 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-primary">
+                        <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <p class="text-xs text-gray-600 font-semibold">Overall Site</p>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500">Upload at least 4 photos of the site</p>
+            </div>
+
+            <!-- Notes -->
+            <div class="mb-6">
+                <label class="block text-sm font-bold text-gray-900 mb-3">Additional Notes</label>
+                <textarea rows="4" placeholder="Add any observations, challenges, or recommendations..." class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:outline-none resize-none"></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <button class="w-full py-4 bg-gradient-to-r from-primary via-green-500 to-secondary text-white rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transition-all">
+                Submit Survey Report
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('captureLocation').addEventListener('click', function() {
+            if (navigator.geolocation) {
+                this.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><span>Capturing...</span>';
+                
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    document.getElementById('locationDisplay').classList.remove('hidden');
+                    document.getElementById('coordinates').textContent = 
+                        `Lat: ${position.coords.latitude.toFixed(6)}, Long: ${position.coords.longitude.toFixed(6)}`;
+                    document.getElementById('captureLocation').innerHTML = 
+                        '<svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg><span class="text-green-600">Location Captured</span>';
+                    document.getElementById('captureLocation').classList.add('border-green-500');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+

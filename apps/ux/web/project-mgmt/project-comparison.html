@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Comparison - OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
+            <div class="p-6 border-b border-gray-700">
+                <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
+                <p class="text-gray-400 text-sm mt-1">Project Comparison</p>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                <a href="../admin/admin-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="project-portfolio.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
+                    </svg>
+                    <span>Project Portfolio</span>
+                </a>
+                <a href="multi-project-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
+                    </svg>
+                    <span>Multi-Project Dashboard</span>
+                </a>
+                <a href="project-comparison.html" class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"></path>
+                    </svg>
+                    <span>Project Comparison</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-gray-700">
+                <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
+                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">SA</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-sm truncate">Super Admin</p>
+                        <p class="text-xs text-gray-400 truncate">Administrator</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Bar -->
+            <header class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Project Comparison Tool</h2>
+                        <p class="text-sm text-gray-600">Side-by-side comparison of project metrics and performance</p>
+                    </div>
+                    <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600">Export Comparison</button>
+                </div>
+            </header>
+
+            <!-- Project Selection -->
+            <div class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Project A</label>
+                        <select class="w-full px-4 py-2 border-2 border-blue-300 bg-blue-50 rounded-lg font-semibold">
+                            <option>Commercial Plaza 50kW - PRJ-458</option>
+                            <option>Industrial Unit 100kW - PRJ-495</option>
+                            <option>Hospital Wing 150kW - PRJ-512</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Project B</label>
+                        <select class="w-full px-4 py-2 border-2 border-green-300 bg-green-50 rounded-lg font-semibold">
+                            <option>Industrial Unit 100kW - PRJ-495</option>
+                            <option>Commercial Plaza 50kW - PRJ-458</option>
+                            <option>Hospital Wing 150kW - PRJ-512</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Project C</label>
+                        <select class="w-full px-4 py-2 border-2 border-purple-300 bg-purple-50 rounded-lg font-semibold">
+                            <option>Hospital Wing 150kW - PRJ-512</option>
+                            <option>Commercial Plaza 50kW - PRJ-458</option>
+                            <option>Industrial Unit 100kW - PRJ-495</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparison Content -->
+            <main class="flex-1 overflow-y-auto p-8">
+                <!-- Basic Info Comparison -->
+                <div class="bg-white rounded-xl border-2 border-gray-200 mb-6 overflow-hidden">
+                    <div class="bg-gray-50 px-6 py-3 border-b-2 border-gray-200">
+                        <h3 class="font-bold text-gray-900 text-lg">Project Overview</h3>
+                    </div>
+                    <table class="w-full">
+                        <thead class="bg-gray-100 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-sm font-bold text-gray-700">Metric</th>
+                                <th class="px-6 py-3 text-center text-sm font-bold text-blue-700 bg-blue-50">Project A</th>
+                                <th class="px-6 py-3 text-center text-sm font-bold text-green-700 bg-green-50">Project B</th>
+                                <th class="px-6 py-3 text-center text-sm font-bold text-purple-700 bg-purple-50">Project C</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Project Name</td>
+                                <td class="px-6 py-4 text-center bg-blue-50">Commercial Plaza 50kW</td>
+                                <td class="px-6 py-4 text-center bg-green-50">Industrial Unit 100kW</td>
+                                <td class="px-6 py-4 text-center bg-purple-50">Hospital Wing 150kW</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Project ID</td>
+                                <td class="px-6 py-4 text-center bg-blue-50">PRJ-2024-458</td>
+                                <td class="px-6 py-4 text-center bg-green-50">PRJ-2024-495</td>
+                                <td class="px-6 py-4 text-center bg-purple-50">PRJ-2024-512</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Project Manager</td>
+                                <td class="px-6 py-4 text-center bg-blue-50">Rajesh Kumar</td>
+                                <td class="px-6 py-4 text-center bg-green-50">Amit Singh</td>
+                                <td class="px-6 py-4 text-center bg-purple-50">Priya Sharma</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Capacity</td>
+                                <td class="px-6 py-4 text-center bg-blue-50 font-bold">50 kW</td>
+                                <td class="px-6 py-4 text-center bg-green-50 font-bold">100 kW</td>
+                                <td class="px-6 py-4 text-center bg-purple-50 font-bold">150 kW</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Customer Type</td>
+                                <td class="px-6 py-4 text-center bg-blue-50">Commercial</td>
+                                <td class="px-6 py-4 text-center bg-green-50">Industrial</td>
+                                <td class="px-6 py-4 text-center bg-purple-50">Commercial</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Performance Metrics Comparison -->
+                <div class="bg-white rounded-xl border-2 border-gray-200 mb-6 overflow-hidden">
+                    <div class="bg-gray-50 px-6 py-3 border-b-2 border-gray-200">
+                        <h3 class="font-bold text-gray-900 text-lg">Performance Metrics</h3>
+                    </div>
+                    <table class="w-full">
+                        <tbody class="divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Overall Progress</td>
+                                <td class="px-6 py-4 bg-blue-50">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-32 bg-blue-200 rounded-full h-3">
+                                            <div class="bg-blue-600 h-3 rounded-full" style="width: 65%"></div>
+                                        </div>
+                                        <span class="font-bold text-blue-700">65%</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 bg-green-50">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-32 bg-green-200 rounded-full h-3">
+                                            <div class="bg-green-600 h-3 rounded-full" style="width: 78%"></div>
+                                        </div>
+                                        <span class="font-bold text-green-700">78%</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 bg-purple-50">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-32 bg-purple-200 rounded-full h-3">
+                                            <div class="bg-purple-600 h-3 rounded-full" style="width: 85%"></div>
+                                        </div>
+                                        <span class="font-bold text-purple-700">85%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Budget Status</td>
+                                <td class="px-6 py-4 text-center bg-blue-50">
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-bold">On Budget</span>
+                                </td>
+                                <td class="px-6 py-4 text-center bg-green-50">
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-bold">Under Budget</span>
+                                </td>
+                                <td class="px-6 py-4 text-center bg-purple-50">
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-bold">Under Budget</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Schedule Status</td>
+                                <td class="px-6 py-4 text-center bg-blue-50">
+                                    <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-bold">-5 days</span>
+                                </td>
+                                <td class="px-6 py-4 text-center bg-green-50">
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-bold">On Time</span>
+                                </td>
+                                <td class="px-6 py-4 text-center bg-purple-50">
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-bold">+2 days</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Overall Status</td>
+                                <td class="px-6 py-4 text-center bg-blue-50">
+                                    <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-bold">🔴 Delayed</span>
+                                </td>
+                                <td class="px-6 py-4 text-center bg-green-50">
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-bold">🟢 On Track</span>
+                                </td>
+                                <td class="px-6 py-4 text-center bg-purple-50">
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-bold">🟢 Ahead</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Financial Comparison -->
+                <div class="bg-white rounded-xl border-2 border-gray-200 mb-6 overflow-hidden">
+                    <div class="bg-gray-50 px-6 py-3 border-b-2 border-gray-200">
+                        <h3 class="font-bold text-gray-900 text-lg">Financial Details</h3>
+                    </div>
+                    <table class="w-full">
+                        <tbody class="divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Total Budget</td>
+                                <td class="px-6 py-4 text-center bg-blue-50 font-bold text-blue-700">₹42,00,000</td>
+                                <td class="px-6 py-4 text-center bg-green-50 font-bold text-green-700">₹85,00,000</td>
+                                <td class="px-6 py-4 text-center bg-purple-50 font-bold text-purple-700">₹1,20,00,000</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Spent to Date</td>
+                                <td class="px-6 py-4 text-center bg-blue-50">₹28,50,000</td>
+                                <td class="px-6 py-4 text-center bg-green-50">₹62,00,000</td>
+                                <td class="px-6 py-4 text-center bg-purple-50">₹95,00,000</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Remaining Budget</td>
+                                <td class="px-6 py-4 text-center bg-blue-50 font-semibold">₹13,50,000</td>
+                                <td class="px-6 py-4 text-center bg-green-50 font-semibold">₹23,00,000</td>
+                                <td class="px-6 py-4 text-center bg-purple-50 font-semibold">₹25,00,000</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Cost per kW</td>
+                                <td class="px-6 py-4 text-center bg-blue-50 font-bold">₹84,000</td>
+                                <td class="px-6 py-4 text-center bg-green-50 font-bold">₹85,000</td>
+                                <td class="px-6 py-4 text-center bg-purple-50 font-bold">₹80,000</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Profit Margin</td>
+                                <td class="px-6 py-4 text-center bg-blue-50 font-bold text-green-600">22%</td>
+                                <td class="px-6 py-4 text-center bg-green-50 font-bold text-green-600">25%</td>
+                                <td class="px-6 py-4 text-center bg-purple-50 font-bold text-green-600">28%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Team & Resources Comparison -->
+                <div class="bg-white rounded-xl border-2 border-gray-200 mb-6 overflow-hidden">
+                    <div class="bg-gray-50 px-6 py-3 border-b-2 border-gray-200">
+                        <h3 class="font-bold text-gray-900 text-lg">Team & Resources</h3>
+                    </div>
+                    <table class="w-full">
+                        <tbody class="divide-y divide-gray-200">
+                            <tr>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Team Size</td>
+                                <td class="px-6 py-4 text-center bg-blue-50 font-bold">8 members</td>
+                                <td class="px-6 py-4 text-center bg-green-50 font-bold">12 members</td>
+                                <td class="px-6 py-4 text-center bg-purple-50 font-bold">15 members</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Project Duration</td>
+                                <td class="px-6 py-4 text-center bg-blue-50">45 days</td>
+                                <td class="px-6 py-4 text-center bg-green-50">35 days</td>
+                                <td class="px-6 py-4 text-center bg-purple-50">52 days</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Active Risks</td>
+                                <td class="px-6 py-4 text-center bg-blue-50"><span class="text-red-600 font-bold">5</span></td>
+                                <td class="px-6 py-4 text-center bg-green-50"><span class="text-yellow-600 font-bold">2</span></td>
+                                <td class="px-6 py-4 text-center bg-purple-50"><span class="text-green-600 font-bold">1</span></td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-semibold text-gray-900">Change Requests</td>
+                                <td class="px-6 py-4 text-center bg-blue-50">3</td>
+                                <td class="px-6 py-4 text-center bg-green-50">1</td>
+                                <td class="px-6 py-4 text-center bg-purple-50">2</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Winner Analysis -->
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-green-300 p-6">
+                    <h3 class="font-bold text-gray-900 text-lg mb-4">🏆 Best Performing Project: Hospital Wing 150kW (Project C)</h3>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="p-4 bg-white rounded-lg border border-green-200">
+                            <p class="text-sm text-gray-600 mb-1">Best Progress</p>
+                            <p class="text-2xl font-bold text-green-600">85%</p>
+                            <p class="text-xs text-gray-600 mt-1">Ahead of schedule</p>
+                        </div>
+                        <div class="p-4 bg-white rounded-lg border border-green-200">
+                            <p class="text-sm text-gray-600 mb-1">Best Cost Efficiency</p>
+                            <p class="text-2xl font-bold text-green-600">₹80,000/kW</p>
+                            <p class="text-xs text-gray-600 mt-1">Lowest cost per kW</p>
+                        </div>
+                        <div class="p-4 bg-white rounded-lg border border-green-200">
+                            <p class="text-sm text-gray-600 mb-1">Best Margin</p>
+                            <p class="text-2xl font-bold text-green-600">28%</p>
+                            <p class="text-xs text-gray-600 mt-1">Highest profitability</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
+

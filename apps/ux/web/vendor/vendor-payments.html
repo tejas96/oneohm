@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Payments - OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
+            <div class="p-6 border-b border-gray-700">
+                <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
+                <p class="text-gray-400 text-sm mt-1">Vendor Payments</p>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                <a href="../admin/admin-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="vendor-database.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    <span>Vendor Database</span>
+                </a>
+                <a href="purchase-orders.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span>Purchase Orders</span>
+                </a>
+                <a href="vendor-payments.html" class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>Vendor Payments</span>
+                </a>
+                <a href="vendor-performance.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <span>Performance</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-gray-700">
+                <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
+                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">SA</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-sm truncate">Super Admin</p>
+                        <p class="text-xs text-gray-400 truncate">Administrator</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Bar -->
+            <header class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Vendor Payment Management</h2>
+                        <p class="text-sm text-gray-600">Track and process vendor payments</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <button class="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold hover:bg-gray-50">Export Report</button>
+                        <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600">+ Make Payment</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Financial Summary -->
+            <div class="bg-white border-b border-gray-200 px-8 py-6">
+                <div class="grid grid-cols-5 gap-6">
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border-2 border-blue-200">
+                        <p class="text-3xl font-bold text-blue-600">₹2.4Cr</p>
+                        <p class="text-xs text-gray-600">Total Paid (YTD)</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 border-2 border-red-200">
+                        <p class="text-3xl font-bold text-red-600">₹28L</p>
+                        <p class="text-xs text-gray-600">Outstanding</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-4 border-2 border-yellow-200">
+                        <p class="text-3xl font-bold text-yellow-600">₹15L</p>
+                        <p class="text-xs text-gray-600">Due This Week</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border-2 border-purple-200">
+                        <p class="text-3xl font-bold text-purple-600">₹8L</p>
+                        <p class="text-xs text-gray-600">Overdue</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border-2 border-green-200">
+                        <p class="text-3xl font-bold text-green-600">42</p>
+                        <p class="text-xs text-gray-600">Completed (Month)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="flex items-center space-x-4">
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option>All Status</option>
+                        <option>Pending</option>
+                        <option>Processing</option>
+                        <option>Completed</option>
+                        <option>Overdue</option>
+                    </select>
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option>All Vendors</option>
+                        <option>Waaree Solar</option>
+                        <option>Luminous</option>
+                    </select>
+                    <input type="date" class="px-4 py-2 border border-gray-300 rounded-lg">
+                    <div class="flex-1"></div>
+                    <input type="text" placeholder="Search payments..." class="px-4 py-2 border border-gray-300 rounded-lg w-64">
+                </div>
+            </div>
+
+            <!-- Payment List -->
+            <main class="flex-1 overflow-y-auto p-8">
+                <div class="bg-white rounded-xl border-2 border-gray-200 overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-100 border-b-2 border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Payment ID</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Vendor</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">PO Reference</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Amount</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Due Date</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Payment Method</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Status</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <!-- Overdue Payment -->
+                            <tr class="hover:bg-red-50 bg-red-50">
+                                <td class="px-6 py-4"><span class="font-mono font-bold text-gray-900">PAY-2025-0485</span></td>
+                                <td class="px-6 py-4">
+                                    <p class="font-semibold text-gray-900">Waaree Solar</p>
+                                    <p class="text-xs text-gray-500">+91 98765 12345</p>
+                                </td>
+                                <td class="px-6 py-4"><span class="font-mono text-sm">PO-2025-0125</span></td>
+                                <td class="px-6 py-4"><span class="font-bold text-xl text-gray-900">₹8,50,000</span></td>
+                                <td class="px-6 py-4">
+                                    <p class="font-semibold text-red-600">Oct 20, 2025</p>
+                                    <p class="text-xs text-red-600">7 days overdue</p>
+                                </td>
+                                <td class="px-6 py-4"><span class="text-sm text-gray-700">NEFT</span></td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full flex items-center space-x-1 w-fit">
+                                        <span>⚠️</span>
+                                        <span>OVERDUE</span>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <button class="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700">Pay Now</button>
+                                </td>
+                            </tr>
+
+                            <!-- Pending Payment -->
+                            <tr class="hover:bg-yellow-50">
+                                <td class="px-6 py-4"><span class="font-mono font-bold text-gray-900">PAY-2025-0492</span></td>
+                                <td class="px-6 py-4">
+                                    <p class="font-semibold text-gray-900">Luminous Power</p>
+                                    <p class="text-xs text-gray-500">+91 98765 23456</p>
+                                </td>
+                                <td class="px-6 py-4"><span class="font-mono text-sm">PO-2025-0138</span></td>
+                                <td class="px-6 py-4"><span class="font-bold text-xl text-gray-900">₹4,62,500</span></td>
+                                <td class="px-6 py-4">
+                                    <p class="font-semibold text-yellow-600">Oct 30, 2025</p>
+                                    <p class="text-xs text-gray-600">Due in 3 days</p>
+                                </td>
+                                <td class="px-6 py-4"><span class="text-sm text-gray-700">RTGS</span></td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full">PENDING</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <button class="px-4 py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-orange-600">Process</button>
+                                </td>
+                            </tr>
+
+                            <!-- Completed Payment -->
+                            <tr class="hover:bg-green-50">
+                                <td class="px-6 py-4"><span class="font-mono font-bold text-gray-900">PAY-2025-0488</span></td>
+                                <td class="px-6 py-4">
+                                    <p class="font-semibold text-gray-900">Exide Industries</p>
+                                    <p class="text-xs text-gray-500">+91 98765 34567</p>
+                                </td>
+                                <td class="px-6 py-4"><span class="font-mono text-sm">PO-2025-0132</span></td>
+                                <td class="px-6 py-4"><span class="font-bold text-xl text-gray-900">₹3,70,000</span></td>
+                                <td class="px-6 py-4">
+                                    <p class="font-semibold text-gray-900">Oct 25, 2025</p>
+                                    <p class="text-xs text-gray-600">Paid on time</p>
+                                </td>
+                                <td class="px-6 py-4"><span class="text-sm text-gray-700">UPI</span></td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full">✓ COMPLETED</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <button class="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-50">View Receipt</button>
+                                </td>
+                            </tr>
+
+                            <!-- Processing Payment -->
+                            <tr class="hover:bg-blue-50">
+                                <td class="px-6 py-4"><span class="font-mono font-bold text-gray-900">PAY-2025-0495</span></td>
+                                <td class="px-6 py-4">
+                                    <p class="font-semibold text-gray-900">Tata Power Solar</p>
+                                    <p class="text-xs text-gray-500">+91 98765 45678</p>
+                                </td>
+                                <td class="px-6 py-4"><span class="font-mono text-sm">PO-2025-0145</span></td>
+                                <td class="px-6 py-4"><span class="font-bold text-xl text-gray-900">₹12,00,000</span></td>
+                                <td class="px-6 py-4">
+                                    <p class="font-semibold text-gray-900">Nov 5, 2025</p>
+                                    <p class="text-xs text-gray-600">Due in 9 days</p>
+                                </td>
+                                <td class="px-6 py-4"><span class="text-sm text-gray-700">Bank Transfer</span></td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">PROCESSING</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <button class="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700">Track</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="mt-6 flex items-center justify-between">
+                    <p class="text-sm text-gray-600">Showing 1 to 4 of 98 payments</p>
+                    <div class="flex space-x-2">
+                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Previous</button>
+                        <button class="px-4 py-2 bg-primary text-white rounded-lg">1</button>
+                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">2</button>
+                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">3</button>
+                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Next</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
+

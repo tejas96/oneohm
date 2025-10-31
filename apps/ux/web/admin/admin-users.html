@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - OneOhm Solar ERP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
+            <div class="p-6 border-b border-gray-700">
+                <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
+                <p class="text-gray-400 text-sm mt-1">ERP System</p>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                <a href="admin-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="admin-leads.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    <span>Leads</span>
+                </a>
+                <a href="admin-projects.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    <span>Projects</span>
+                </a>
+                <a href="admin-quotes.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span>Quotes</span>
+                </a>
+                <a href="admin-payments.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Payments</span>
+                </a>
+                <a href="admin-users.html" class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
+                    </svg>
+                    <span>Users & Teams</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-gray-700">
+                <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
+                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
+                        SA
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-sm truncate">Super Admin</p>
+                        <p class="text-xs text-gray-400 truncate">admin@oneohm.com</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Bar -->
+            <header class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">User Management</h2>
+                        <p class="text-sm text-gray-600">Manage team members and permissions</p>
+                    </div>
+                    <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600">
+                        + Add User
+                    </button>
+                </div>
+            </header>
+
+            <!-- Stats -->
+            <div class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="grid grid-cols-5 gap-4">
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-gray-900">45</p>
+                        <p class="text-xs text-gray-600">Total Users</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-green-600">42</p>
+                        <p class="text-xs text-gray-600">Active</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-blue-600">12</p>
+                        <p class="text-xs text-gray-600">Sales Team</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-purple-600">18</p>
+                        <p class="text-xs text-gray-600">Field Team</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-2xl font-bold text-gray-600">8</p>
+                        <p class="text-xs text-gray-600">Admin/Finance</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="flex items-center space-x-4">
+                    <input type="text" placeholder="Search users..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg">
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option>All Roles</option>
+                        <option>Super Admin</option>
+                        <option>Admin</option>
+                        <option>Sales Person</option>
+                        <option>Field Worker</option>
+                        <option>Telecaller</option>
+                        <option>Finance</option>
+                    </select>
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option>All Status</option>
+                        <option>Active</option>
+                        <option>Inactive</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Users List -->
+            <main class="flex-1 overflow-y-auto p-8">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">User</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Contact</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Role</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Team</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Joined</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
+                                            RK
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-gray-900">Ravi Kumar</p>
+                                            <p class="text-sm text-gray-500">ravi.kumar@oneohm.com</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <p class="text-sm text-gray-900">+91 98765 11111</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">Sales Person</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <p class="text-sm text-gray-900">Sales Team A</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <p class="text-sm text-gray-900">Jan 15, 2024</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">Active</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <button class="text-primary hover:text-orange-600 font-semibold text-sm">Edit</button>
+                                </td>
+                            </tr>
+
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                                            AK
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-gray-900">Amit Kumar</p>
+                                            <p class="text-sm text-gray-500">amit.kumar@oneohm.com</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <p class="text-sm text-gray-900">+91 98765 22222</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">Field Worker</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <p class="text-sm text-gray-900">Installation Team 1</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <p class="text-sm text-gray-900">Mar 20, 2024</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">Active</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <button class="text-primary hover:text-orange-600 font-semibold text-sm">Edit</button>
+                                </td>
+                            </tr>
+
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center text-white font-bold">
+                                            PS
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-gray-900">Priya Sharma</p>
+                                            <p class="text-sm text-gray-500">priya.sharma@oneohm.com</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <p class="text-sm text-gray-900">+91 98765 33333</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">Sales Person</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <p class="text-sm text-gray-900">Sales Team B</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <p class="text-sm text-gray-900">Feb 10, 2024</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">Active</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <button class="text-primary hover:text-orange-600 font-semibold text-sm">Edit</button>
+                                </td>
+                            </tr>
+
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold">
+                                            VJ
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-gray-900">Vijay Joshi</p>
+                                            <p class="text-sm text-gray-500">vijay.joshi@oneohm.com</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <p class="text-sm text-gray-900">+91 98765 44444</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full">Finance</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <p class="text-sm text-gray-900">Finance Team</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <p class="text-sm text-gray-900">Jan 5, 2024</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">Active</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <button class="text-primary hover:text-orange-600 font-semibold text-sm">Edit</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
+

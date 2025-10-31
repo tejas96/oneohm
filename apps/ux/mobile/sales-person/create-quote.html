@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Quote - OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        secondary: '#0d74b8',
+                        tagline: '#025580',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl pb-8">
+        <div class="bg-gradient-to-r from-primary via-green-500 to-secondary px-6 py-6 pt-12">
+            <a href="quote-list.html" class="inline-flex items-center text-white mb-6">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </a>
+            <h1 class="text-3xl font-bold text-white mb-2">Create Quote</h1>
+            <p class="text-green-100">Build custom solar quote</p>
+        </div>
+
+        <div class="px-6 py-6">
+            <!-- Customer Info -->
+            <div class="mb-6">
+                <label class="block text-sm font-bold text-gray-900 mb-3">Customer</label>
+                <select class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:outline-none">
+                    <option>Select lead/customer</option>
+                    <option>Pradeep Patil - LD-2025-123</option>
+                    <option>Sunita Reddy - LD-2025-156</option>
+                </select>
+            </div>
+
+            <!-- System Details -->
+            <div class="mb-6">
+                <label class="block text-sm font-bold text-gray-900 mb-3">System Configuration</label>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">System Capacity (kW)</label>
+                        <input type="number" step="0.5" value="8" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Solar Panels</label>
+                        <select class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:outline-none mb-2">
+                            <option>Tata Power 540W Mono-PERC</option>
+                            <option>Adani 550W Half-Cut</option>
+                            <option>Waaree 565W Bifacial</option>
+                        </select>
+                        <input type="number" placeholder="Quantity" value="15" class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Inverter</label>
+                        <select class="w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:outline-none">
+                            <option>Sungrow 8kW</option>
+                            <option>ABB 10kW</option>
+                            <option>Delta 8kW</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pricing -->
+            <div class="bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200 rounded-2xl p-6 mb-6">
+                <h3 class="font-bold text-gray-900 mb-4">Price Breakdown</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-700">Equipment</span>
+                        <input type="text" value="450000" class="w-32 px-3 py-2 border border-gray-300 rounded-lg text-right font-semibold">
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-700">Installation</span>
+                        <input type="text" value="75000" class="w-32 px-3 py-2 border border-gray-300 rounded-lg text-right font-semibold">
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm text-gray-700">Others</span>
+                        <input type="text" value="25000" class="w-32 px-3 py-2 border border-gray-300 rounded-lg text-right font-semibold">
+                    </div>
+                    <div class="border-t-2 border-blue-300 pt-3 flex justify-between items-center">
+                        <span class="font-bold text-gray-900">Total</span>
+                        <span class="text-2xl font-bold text-primary">₹5,50,000</span>
+                    </div>
+                    <div class="flex justify-between text-green-600">
+                        <span class="text-sm font-semibold">Subsidy</span>
+                        <span class="font-bold">- ₹78,000</span>
+                    </div>
+                    <div class="bg-white border-2 border-green-500 rounded-lg p-3 flex justify-between items-center">
+                        <span class="font-bold text-gray-900">Net Amount</span>
+                        <span class="text-xl font-bold text-green-600">₹4,72,000</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="space-y-3">
+                <button class="w-full py-4 bg-gradient-to-r from-primary via-green-500 to-secondary text-white rounded-2xl font-bold text-lg shadow-lg">
+                    Generate Quote
+                </button>
+                <button class="w-full py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-2xl font-bold">
+                    Save as Draft
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

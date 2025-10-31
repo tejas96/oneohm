@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Approval History - OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#F97316',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
+            <div class="p-6 border-b border-gray-700">
+                <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
+                <p class="text-gray-400 text-sm mt-1">Approval History</p>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+                <a href="../admin/admin-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="workflow-designer.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"></path>
+                    </svg>
+                    <span>Workflow Designer</span>
+                </a>
+                <a href="approval-queue.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                    <span>Approval Queue</span>
+                </a>
+                <a href="pending-approvals.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Pending Approvals</span>
+                </a>
+                <a href="approval-history.html" class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span>Approval History</span>
+                </a>
+                <a href="workflow-templates.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
+                    </svg>
+                    <span>Workflow Templates</span>
+                </a>
+            </nav>
+
+            <div class="p-4 border-t border-gray-700">
+                <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
+                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">SA</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold text-sm truncate">Super Admin</p>
+                        <p class="text-xs text-gray-400 truncate">Administrator</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Bar -->
+            <header class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Approval History & Audit Trail</h2>
+                        <p class="text-sm text-gray-600">Complete record of all approval decisions and workflows</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <input type="text" placeholder="Search by ID, user, or type..." class="px-4 py-2 border border-gray-300 rounded-lg w-72">
+                        <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600">Export History</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Filters -->
+            <div class="bg-white border-b border-gray-200 px-8 py-4">
+                <div class="flex items-center space-x-4">
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option>All Types</option>
+                        <option>Purchase Orders</option>
+                        <option>Quotes</option>
+                        <option>Expenses</option>
+                    </select>
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option>All Status</option>
+                        <option>Approved</option>
+                        <option>Rejected</option>
+                        <option>Cancelled</option>
+                    </select>
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option>Last 30 Days</option>
+                        <option>Last 7 Days</option>
+                        <option>Last 90 Days</option>
+                        <option>Custom Range</option>
+                    </select>
+                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                        <option>All Approvers</option>
+                        <option>Me</option>
+                        <option>My Team</option>
+                    </select>
+                    <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300">Reset Filters</button>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <main class="flex-1 overflow-y-auto p-8">
+                <!-- Timeline View -->
+                <div class="space-y-6">
+                    <!-- Today -->
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-lg mb-4">Today - Oct 28, 2024</h3>
+                        <div class="space-y-4">
+                            <!-- Approved Entry -->
+                            <div class="bg-white rounded-xl border-2 border-green-200 p-6 relative">
+                                <div class="absolute left-0 top-0 bottom-0 w-2 bg-green-500 rounded-l-xl"></div>
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1 ml-4">
+                                        <div class="flex items-center space-x-3 mb-2">
+                                            <h4 class="font-bold text-lg text-gray-900">Quote #QUO-2024-5690 APPROVED</h4>
+                                            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">✓ APPROVED</span>
+                                        </div>
+                                        <div class="grid grid-cols-4 gap-4 mb-3">
+                                            <div>
+                                                <p class="text-xs text-gray-500">Approved By</p>
+                                                <p class="font-semibold text-gray-900">Rajesh Kumar</p>
+                                                <p class="text-xs text-gray-500">Finance Head</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500">Amount</p>
+                                                <p class="font-bold text-gray-900">₹18,00,000</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500">Requestor</p>
+                                                <p class="font-semibold text-gray-900">Arjun Kapoor</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500">Timestamp</p>
+                                                <p class="font-semibold text-gray-900">2:45 PM</p>
+                                            </div>
+                                        </div>
+                                        <div class="bg-green-50 rounded-lg p-3">
+                                            <p class="text-sm text-gray-700"><strong>Comments:</strong> Approved. All documentation is complete and pricing is competitive.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Rejected Entry -->
+                            <div class="bg-white rounded-xl border-2 border-red-200 p-6 relative">
+                                <div class="absolute left-0 top-0 bottom-0 w-2 bg-red-500 rounded-l-xl"></div>
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1 ml-4">
+                                        <div class="flex items-center space-x-3 mb-2">
+                                            <h4 class="font-bold text-lg text-gray-900">Purchase Order #PO-2024-1247 REJECTED</h4>
+                                            <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">✗ REJECTED</span>
+                                        </div>
+                                        <div class="grid grid-cols-4 gap-4 mb-3">
+                                            <div>
+                                                <p class="text-xs text-gray-500">Rejected By</p>
+                                                <p class="font-semibold text-gray-900">Deepak Mehta</p>
+                                                <p class="text-xs text-gray-500">Sales Manager</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500">Amount</p>
+                                                <p class="font-bold text-gray-900">₹5,50,000</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500">Requestor</p>
+                                                <p class="font-semibold text-gray-900">Neha Singh</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500">Timestamp</p>
+                                                <p class="font-semibold text-gray-900">11:20 AM</p>
+                                            </div>
+                                        </div>
+                                        <div class="bg-red-50 rounded-lg p-3">
+                                            <p class="text-sm text-gray-700"><strong>Reason:</strong> Vendor pricing is 18% higher than market rate. Please renegotiate or find alternative vendor.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Approved Entry -->
+                            <div class="bg-white rounded-xl border-2 border-green-200 p-6 relative">
+                                <div class="absolute left-0 top-0 bottom-0 w-2 bg-green-500 rounded-l-xl"></div>
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1 ml-4">
+                                        <div class="flex items-center space-x-3 mb-2">
+                                            <h4 class="font-bold text-lg text-gray-900">Expense #EXP-2024-3418 APPROVED</h4>
+                                            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">✓ APPROVED</span>
+                                        </div>
+                                        <div class="grid grid-cols-4 gap-4 mb-3">
+                                            <div>
+                                                <p class="text-xs text-gray-500">Approved By</p>
+                                                <p class="font-semibold text-gray-900">Sanjay Verma</p>
+                                                <p class="text-xs text-gray-500">Team Lead</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500">Amount</p>
+                                                <p class="font-bold text-gray-900">₹3,200</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500">Requestor</p>
+                                                <p class="font-semibold text-gray-900">Vivek Gupta</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500">Timestamp</p>
+                                                <p class="font-semibold text-gray-900">9:15 AM</p>
+                                            </div>
+                                        </div>
+                                        <div class="bg-green-50 rounded-lg p-3">
+                                            <p class="text-sm text-gray-700"><strong>Comments:</strong> Travel expenses approved. All receipts verified.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Yesterday -->
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-lg mb-4">Yesterday - Oct 27, 2024</h3>
+                        <div class="space-y-4">
+                            <div class="bg-white rounded-xl border-2 border-green-200 p-6 relative">
+                                <div class="absolute left-0 top-0 bottom-0 w-2 bg-green-500 rounded-l-xl"></div>
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1 ml-4">
+                                        <div class="flex items-center space-x-3 mb-2">
+                                            <h4 class="font-bold text-lg text-gray-900">Purchase Order #PO-2024-1246 APPROVED</h4>
+                                            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">✓ APPROVED</span>
+                                        </div>
+                                        <div class="grid grid-cols-4 gap-4 mb-3">
+                                            <div>
+                                                <p class="text-xs text-gray-500">Approved By</p>
+                                                <p class="font-semibold text-gray-900">Rajesh Kumar</p>
+                                                <p class="text-xs text-gray-500">Finance Head</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500">Amount</p>
+                                                <p class="font-bold text-gray-900">₹12,50,000</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500">Requestor</p>
+                                                <p class="font-semibold text-gray-900">Amit Singh</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500">Timestamp</p>
+                                                <p class="font-semibold text-gray-900">4:30 PM</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-xl border-2 border-green-200 p-6 relative">
+                                <div class="absolute left-0 top-0 bottom-0 w-2 bg-green-500 rounded-l-xl"></div>
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1 ml-4">
+                                        <div class="flex items-center space-x-3 mb-2">
+                                            <h4 class="font-bold text-lg text-gray-900">Quote #QUO-2024-5688 APPROVED</h4>
+                                            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">✓ APPROVED</span>
+                                        </div>
+                                        <div class="grid grid-cols-4 gap-4 mb-3">
+                                            <div>
+                                                <p class="text-xs text-gray-500">Approved By</p>
+                                                <p class="font-semibold text-gray-900">Deepak Mehta</p>
+                                                <p class="text-xs text-gray-500">Sales Manager</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500">Amount</p>
+                                                <p class="font-bold text-gray-900">₹9,80,000</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500">Requestor</p>
+                                                <p class="font-semibold text-gray-900">Priya Sharma</p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs text-gray-500">Timestamp</p>
+                                                <p class="font-semibold text-gray-900">1:45 PM</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Load More -->
+                <div class="mt-8 text-center">
+                    <button class="px-8 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">Load More History</button>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
+
