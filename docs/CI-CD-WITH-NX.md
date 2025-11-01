@@ -148,10 +148,9 @@ NX detects:
 - shared-types (affected)
 - backend (depends on shared-types)
 - web (depends on shared-types)
-- mobile (depends on shared-types)
 
 CI runs:
-✓ Lint shared-types, backend, web, mobile (1m)
+✓ Lint shared-types, backend, web (1m)
 ✓ Test shared-types, backend, web (2m)
 ✓ Build shared-types, backend, web (5m)
 ✓ Deploy backend + web (4m)
@@ -547,7 +546,6 @@ Track performance in GitHub:
 ### Adding New Deployment Target
 
 ```yaml
-deploy-mobile:
   needs: build
   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
   runs-on: macos-latest # For iOS builds
@@ -564,19 +562,14 @@ deploy-mobile:
 
     - uses: nrwl/nx-set-shas@v4
 
-    - name: Check if mobile is affected
-      id: check-mobile
       run: |
-        if npx nx print-affected --select=projects | grep -q "mobile"; then
           echo "affected=true" >> $GITHUB_OUTPUT
         else
           echo "affected=false" >> $GITHUB_OUTPUT
         fi
 
     - name: Build iOS App
-      if: steps.check-mobile.outputs.affected == 'true'
       run: |
-        cd apps/mobile/ios
         pod install
         xcodebuild -workspace *.xcworkspace -scheme * build
 ```

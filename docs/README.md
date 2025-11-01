@@ -18,7 +18,6 @@ Complete documentation for the OneOhm EPC NX monorepo.
 
 - [Backend Documentation](../apps/backend/README.md) - NestJS API documentation
 - [Web Documentation](../apps/web/README.md) - Next.js web app documentation
-- [Mobile Documentation](../apps/mobile/README.md) - React Native app documentation
 - [UX Documentation](../apps/ux/README.md) - Design assets documentation
 
 ### Shared Libraries

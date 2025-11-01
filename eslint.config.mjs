@@ -37,7 +37,6 @@ export default [
           './tsconfig.base.json',
           './apps/web/tsconfig.json',
           './apps/backend/tsconfig.json',
-          './apps/mobile/tsconfig.json',
           './libs/shared-types/tsconfig.json',
           './libs/shared-utils/tsconfig.json',
         ],

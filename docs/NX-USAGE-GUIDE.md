@@ -79,7 +79,6 @@ oneohm-epc/
 ├── apps/                    # Applications
 │   ├── backend/            # NestJS API
 │   ├── web/                # Next.js web app
-│   ├── mobile/             # React Native app
 │   └── ux/                 # Design assets
 │
 ├── libs/                    # Shared libraries
@@ -99,7 +98,6 @@ oneohm-epc/
 | --------- | ------------ | -------------------- | ---- |
 | `backend` | NestJS       | REST API server      | 8085 |
 | `web`     | Next.js 16   | Web application      | 3001 |
-| `mobile`  | React Native | Mobile app           | -    |
 | `ux`      | Static HTML  | Design documentation | -    |
 
 ### Shared Libraries
@@ -124,8 +122,6 @@ npm run backend:dev
 # Terminal 2: Start web
 npm run web:dev
 
-# Terminal 3: Start mobile (after init)
-npm run mobile:start
 ```
 
 ### Making Changes
@@ -197,7 +193,7 @@ npm run format:check
 ### Importing from Shared Libraries
 
 ```typescript
-// In any app (backend, web, mobile)
+// In any app (backend, web)
 
 // Import types
 import { User, ApiResponse, UserRole } from '@oneohm-epc/shared-types';
@@ -454,7 +450,6 @@ backend ──► shared-types
         └─► shared-utils
         └─► shared-assets
 
-mobile ────► shared-types
        └───► shared-utils
        └───► shared-theme
        └───► shared-assets
@@ -462,9 +457,7 @@ mobile ────► shared-types
 
 **What this means:**
 
-- If you change `shared-types`, it affects `backend`, `web`, and `mobile`
 - If you change `backend`, only `backend` is affected
-- If you change `shared-theme`, it affects `web` and `mobile` only
 
 ---
 
@@ -548,7 +541,6 @@ $ npm run affected:build
 $ npx nx affected:apps
 > backend
 > web
-> mobile
 
 # All apps that depend on shared-types
 $ npm run affected:build
@@ -677,7 +669,7 @@ Total: 2.5 minutes
 Changes: libs/shared-types/src/index.ts
 
 CI runs:
-✓ Lint shared-types, backend, web, mobile (1m)
+✓ Lint shared-types, backend, web (1m)
 ✓ Test shared-types, backend, web (2m)
 ✓ Build shared-types, backend, web (4m)
 Total: 7 minutes

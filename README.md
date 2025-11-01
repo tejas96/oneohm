@@ -1,6 +1,6 @@
 # OneOhm EPC - NX Monorepo
 
-A professional NX-powered monorepo for the OneOhm EPC project, containing backend API, web application, mobile app, UX design assets, and shared libraries.
+A professional NX-powered monorepo for the OneOhm EPC project, containing backend API, web application, UX design assets, and shared libraries.
 
 ## 📁 Project Structure
 
@@ -9,7 +9,6 @@ oneohm-epc/
 ├── apps/
 │   ├── backend/       # NestJS API server
 │   ├── web/           # Next.js web application
-│   ├── mobile/        # React Native mobile app
 │   └── ux/            # UX design assets & documentation
 ├── libs/
 │   ├── shared-types/  # Shared TypeScript types
@@ -51,9 +50,6 @@ npm run backend:dev    # Start backend API in watch mode
 
 # Web
 npm run web:dev        # Start Next.js dev server
-
-# Mobile (after React Native initialization)
-npm run mobile:start   # Start Metro bundler
 ```
 
 ### Building
@@ -115,7 +111,7 @@ npm run affected:graph  # Show only affected projects
 All shared libraries are automatically available via TypeScript path mapping:
 
 ```typescript
-// In any app (backend, web, mobile)
+// In any app (backend, web)
 import { User, ApiResponse } from '@oneohm-epc/shared-types';
 import { formatDate, debounce } from '@oneohm-epc/shared-utils';
 import { theme, colors } from '@oneohm-epc/shared-theme';
@@ -179,13 +175,13 @@ NX automatically detects which projects are affected by your changes and only bu
 
 **Scenario 1: Changed only shared-types**
 
-- ✅ Builds/tests: `shared-types`, `backend`, `web`, `mobile` (all consumers)
+- ✅ Builds/tests: `shared-types`, `backend`, `web` (all consumers)
 - ❌ Skips: `ux` (not dependent on shared-types)
 
 **Scenario 2: Changed only web app**
 
 - ✅ Builds/tests: `web` only
-- ❌ Skips: `backend`, `mobile`, `ux`, all libs
+- ❌ Skips: `backend`, `ux`, all libs
 
 **Scenario 3: Changed only UX designs**
 
@@ -252,9 +248,6 @@ npm install <package-name> --workspace=@oneohm-epc/backend
 # Web-specific dependency
 npm install <package-name> --workspace=@oneohm-epc/web
 
-# Mobile-specific dependency
-npm install <package-name> --workspace=@oneohm-epc/mobile
-
 # Shared library dependency
 npm install <package-name> --workspace=@oneohm-epc/shared-utils
 ```
@@ -265,7 +258,6 @@ Each app manages its own environment variables:
 
 - Backend: `apps/backend/.env`
 - Web: `apps/web/.env.local`
-- Mobile: `apps/mobile/.env`
 
 Never commit sensitive credentials. Use `.env.example` files as templates.
 
@@ -362,7 +354,6 @@ See [Docker Documentation](./docs/DOCKER.md) for detailed usage.
 
 - [Backend Documentation](./apps/backend/README.md)
 - [Web Documentation](./apps/web/README.md)
-- [Mobile Documentation](./apps/mobile/README.md)
 - [UX Documentation](./apps/ux/README.md)
 
 ### **📦 Shared Libraries**
@@ -375,7 +366,6 @@ See [Docker Documentation](./docs/DOCKER.md) for detailed usage.
 - [NX Cloud](https://nx.app/) - Free remote caching for open source
 - [NestJS Documentation](https://docs.nestjs.com)
 - [Next.js Documentation](https://nextjs.org/docs)
-- [React Native Documentation](https://reactnative.dev/docs/getting-started)
 
 ## 📄 License
 

@@ -9,7 +9,6 @@
   "eslint.workingDirectories": [
     "./apps/backend",
     "./apps/web",
-    "./apps/mobile",
     "./libs/shared-types",
     "./libs/shared-utils",
     "./libs/shared-theme",
