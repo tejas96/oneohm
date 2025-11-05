@@ -50,7 +50,13 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: npm ci
+        run: |
+          echo "📦 Installing dependencies..."
+          npm ci --loglevel=verbose --prefer-offline --no-audit --ignore-scripts
+          echo "✅ Dependencies installed"
+          echo "🔧 Running postinstall scripts..."
+          npm rebuild --verbose
+          echo "✅ Postinstall complete"
 
       - name: Check affected projects
         id: affected
@@ -100,7 +106,15 @@ jobs:
             ${{ runner.os }}-node-modules-
 
       - name: Install dependencies (if cache miss)
-        run: npm ci --prefer-offline
+        run: |
+          if [ ! -d "node_modules" ]; then
+            echo "📦 Cache miss - installing dependencies..."
+            npm ci --prefer-offline --no-audit --ignore-scripts
+            npm rebuild
+            echo "✅ Dependencies installed"
+          else
+            echo "✅ Using cached dependencies"
+          fi
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v4
@@ -167,7 +181,15 @@ jobs:
             ${{ runner.os }}-node-modules-
 
       - name: Install dependencies (if cache miss)
-        run: npm ci --prefer-offline
+        run: |
+          if [ ! -d "node_modules" ]; then
+            echo "📦 Cache miss - installing dependencies..."
+            npm ci --prefer-offline --no-audit --ignore-scripts
+            npm rebuild
+            echo "✅ Dependencies installed"
+          else
+            echo "✅ Using cached dependencies"
+          fi
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v4
@@ -242,7 +264,15 @@ jobs:
             ${{ runner.os }}-node-modules-
 
       - name: Install dependencies (if cache miss)
-        run: npm ci --prefer-offline
+        run: |
+          if [ ! -d "node_modules" ]; then
+            echo "📦 Cache miss - installing dependencies..."
+            npm ci --prefer-offline --no-audit --ignore-scripts
+            npm rebuild
+            echo "✅ Dependencies installed"
+          else
+            echo "✅ Using cached dependencies"
+          fi
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         uses: nrwl/nx-set-shas@v4
@@ -321,7 +351,15 @@ jobs:
             ${{ runner.os }}-node-modules-
 
       - name: Install dependencies (if cache miss)
-        run: npm ci --prefer-offline
+        run: |
+          if [ ! -d "node_modules" ]; then
+            echo "📦 Cache miss - installing dependencies..."
+            npm ci --prefer-offline --no-audit --ignore-scripts
+            npm rebuild
+            echo "✅ Dependencies installed"
+          else
+            echo "✅ Using cached dependencies"
+          fi
 
       - name: Derive appropriate SHAs
         uses: nrwl/nx-set-shas@v4
@@ -393,7 +431,15 @@ jobs:
             ${{ runner.os }}-node-modules-
 
       - name: Install dependencies (if cache miss)
-        run: npm ci --prefer-offline
+        run: |
+          if [ ! -d "node_modules" ]; then
+            echo "📦 Cache miss - installing dependencies..."
+            npm ci --prefer-offline --no-audit --ignore-scripts
+            npm rebuild
+            echo "✅ Dependencies installed"
+          else
+            echo "✅ Using cached dependencies"
+          fi
 
       - name: Derive appropriate SHAs
         uses: nrwl/nx-set-shas@v4
