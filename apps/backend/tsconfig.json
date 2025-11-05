@@ -26,5 +26,7 @@
       "@oneohm-epc/shared-theme": ["../../libs/shared-theme/src/index.ts"],
       "@oneohm-epc/shared-assets": ["../../libs/shared-assets/src/index.ts"]
     }
-  }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
 }
