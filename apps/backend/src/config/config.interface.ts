@@ -4,7 +4,7 @@
  */
 
 export interface AppConfig {
-  nodeEnv: string;
+  nodeEnv: 'development' | 'production';
   port: number;
   host: string;
   apiPrefix: string;

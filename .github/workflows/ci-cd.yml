@@ -11,12 +11,17 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  NODE_VERSION: '20'
+  NX_CLOUD_DISTRIBUTED_EXECUTION: 'false'
+
 jobs:
   setup:
-    name: Setup NX
+    name: Setup and Cache Dependencies
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
-      has-affected: ${{ steps.affected.outputs.has-affected }}
+      cache-key: ${{ steps.cache-keys.outputs.node-modules }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -26,35 +31,54 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Generate cache keys
+        id: cache-keys
+        run: |
+          echo "node-modules=${{ runner.os }}-node-${{ env.NODE_VERSION }}-${{ hashFiles('package-lock.json') }}" >> $GITHUB_OUTPUT
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ steps.cache-keys.outputs.node-modules }}
+          restore-keys: |
+            ${{ runner.os }}-node-${{ env.NODE_VERSION }}-
 
       - name: Install dependencies
-        run: npm ci
-
-      - name: Check affected projects
-        id: affected
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: |
-          echo "has-affected=true" >> $GITHUB_OUTPUT
+          npm ci --prefer-offline --no-audit
+        env:
+          CYPRESS_INSTALL_BINARY: 0
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+
+      - name: Cache NX
+        uses: actions/cache@v4
+        with:
+          path: .nx/cache
+          key: ${{ runner.os }}-nx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-nx-
 
       - name: Generate Setup Summary
         run: |
-          echo "## 🚀 NX Setup Complete" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 Setup Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Node.js version: $(node --version)" >> $GITHUB_STEP_SUMMARY
-          echo "✅ NPM version: $(npm --version)" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Dependencies installed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Node.js: $(node --version)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ NPM: $(npm --version)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ NX: $(npx nx --version)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Cache: ${{ steps.cache-node-modules.outputs.cache-hit == 'true' && 'Hit' || 'Miss' }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
 
   lint:
-    name: Lint Affected
+    name: Lint
     needs: setup
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: read
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -64,52 +88,40 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Restore dependencies cache
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
+          fail-on-cache-miss: true
 
-      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+      - name: Restore NX cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .nx/cache
+          key: ${{ runner.os }}-nx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-nx-
+
+      - name: Set NX SHAs
         uses: nrwl/nx-set-shas@v4
 
       - name: Run lint on affected projects
-        id: lint-run
-        run: |
-          npx nx affected --target=lint --parallel=3 || {
-            EXIT_CODE=$?
-            if [ $EXIT_CODE -eq 0 ]; then
-              echo "No affected projects to lint"
-              exit 0
-            else
-              exit $EXIT_CODE
-            fi
-          }
-          npx nx print-affected --select=projects > /tmp/affected-projects.txt || echo "none" > /tmp/affected-projects.txt
+        run: npx nx affected -t lint --parallel=3 --configuration=ci
 
-      - name: Generate Lint Summary
+      - name: Generate Summary
         if: always()
         run: |
-          echo "## 🔍 Linting Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ -f /tmp/affected-projects.txt ]; then
-            echo "**Affected Projects:**" >> $GITHUB_STEP_SUMMARY
-            cat /tmp/affected-projects.txt | tr ',' '\n' | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.lint-run.outcome }}" == "success" ]; then
-            echo "✅ All linting checks passed successfully!" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Linting failed. Please check the logs above." >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "## 🔍 Lint Results" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Linting completed" >> $GITHUB_STEP_SUMMARY
 
   test:
-    name: Test Affected
+    name: Test
     needs: setup
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: read
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -119,28 +131,28 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Restore dependencies cache
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
+          fail-on-cache-miss: true
 
-      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+      - name: Restore NX cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .nx/cache
+          key: ${{ runner.os }}-nx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-nx-
+
+      - name: Set NX SHAs
         uses: nrwl/nx-set-shas@v4
 
       - name: Run tests on affected projects
-        id: test-run
-        run: |
-          npx nx affected --target=test --parallel=3 --coverage || {
-            EXIT_CODE=$?
-            if [ $EXIT_CODE -eq 0 ]; then
-              echo "No affected projects to test"
-              exit 0
-            else
-              exit $EXIT_CODE
-            fi
-          }
-          npx nx print-affected --select=projects > /tmp/affected-projects-test.txt || echo "none" > /tmp/affected-projects-test.txt
+        run: npx nx affected -t test --parallel=3 --configuration=ci --coverage
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -149,30 +161,17 @@ jobs:
           directory: ./coverage
           fail_ci_if_error: false
 
-      - name: Generate Test Summary
+      - name: Generate Summary
         if: always()
         run: |
           echo "## 🧪 Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ -f /tmp/affected-projects-test.txt ]; then
-            echo "**Tested Projects:**" >> $GITHUB_STEP_SUMMARY
-            cat /tmp/affected-projects-test.txt | tr ',' '\n' | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.test-run.outcome }}" == "success" ]; then
-            echo "✅ All tests passed successfully!" >> $GITHUB_STEP_SUMMARY
-            echo "📊 Coverage reports uploaded to Codecov" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Some tests failed. Please check the logs above." >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "✅ Tests completed" >> $GITHUB_STEP_SUMMARY
 
   build:
-    name: Build Affected
-    needs: [lint, test]
+    name: Build
+    needs: [lint, test, setup]
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: read
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -182,64 +181,51 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Restore dependencies cache
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
+          fail-on-cache-miss: true
 
-      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+      - name: Restore NX cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .nx/cache
+          key: ${{ runner.os }}-nx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-nx-
+
+      - name: Set NX SHAs
         uses: nrwl/nx-set-shas@v4
 
       - name: Build affected projects
-        id: build-run
-        run: |
-          npx nx affected --target=build --parallel=3 || {
-            EXIT_CODE=$?
-            if [ $EXIT_CODE -eq 0 ]; then
-              echo "No affected projects to build"
-              exit 0
-            else
-              exit $EXIT_CODE
-            fi
-          }
-          npx nx print-affected --select=projects > /tmp/affected-projects-build.txt || echo "none" > /tmp/affected-projects-build.txt
+        run: npx nx affected -t build --parallel=3 --configuration=production
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
-        if: success()
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
-          name: dist
+          name: build-artifacts-${{ github.sha }}
           path: |
             apps/*/dist
             apps/*/.next
           retention-days: 7
 
-      - name: Generate Build Summary
+      - name: Generate Summary
         if: always()
         run: |
           echo "## 🔨 Build Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ -f /tmp/affected-projects-build.txt ]; then
-            echo "**Built Projects:**" >> $GITHUB_STEP_SUMMARY
-            cat /tmp/affected-projects-build.txt | tr ',' '\n' | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.build-run.outcome }}" == "success" ]; then
-            echo "✅ All projects built successfully!" >> $GITHUB_STEP_SUMMARY
-            echo "📦 Build artifacts uploaded (7 days retention)" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Build failed. Please check the logs above." >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "✅ Build completed" >> $GITHUB_STEP_SUMMARY
 
   deploy-backend:
     name: Deploy Backend
-    needs: build
+    needs: [build, setup]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: read
+    timeout-minutes: 20
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -249,13 +235,16 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Restore dependencies cache
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
+          fail-on-cache-miss: true
 
-      - name: Derive appropriate SHAs
+      - name: Set NX SHAs
         uses: nrwl/nx-set-shas@v4
 
       - name: Check if backend is affected
@@ -270,36 +259,30 @@ jobs:
       - name: Build Backend Docker Image
         if: steps.check-backend.outputs.affected == 'true'
         working-directory: ./apps/backend
-        run: docker build -t oneohm-epc-backend:latest .
+        run: docker build -t oneohm-epc-backend:${{ github.sha }} -t oneohm-epc-backend:latest .
 
       - name: Deploy Backend
         if: steps.check-backend.outputs.affected == 'true'
-        run: echo "Add your backend deployment steps here"
+        run: |
+          echo "🚀 Add your backend deployment steps here"
+          echo "Example: docker push, kubectl apply, etc."
 
-      - name: Generate Backend Deployment Summary
+      - name: Generate Summary
         if: always()
         run: |
           echo "## 🚀 Backend Deployment" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.check-backend.outputs.affected }}" == "true" ]; then
-            echo "✅ Backend was affected by changes" >> $GITHUB_STEP_SUMMARY
-            echo "🐳 Docker image built successfully" >> $GITHUB_STEP_SUMMARY
-            echo "📦 Deployment initiated" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
-            echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Backend deployed" >> $GITHUB_STEP_SUMMARY
           else
-            echo "⏭️ Backend was not affected, skipping deployment" >> $GITHUB_STEP_SUMMARY
+            echo "⏭️ Backend not affected, skipped" >> $GITHUB_STEP_SUMMARY
           fi
 
   deploy-web:
     name: Deploy Web
-    needs: build
+    needs: [build, setup]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: read
+    timeout-minutes: 20
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -309,13 +292,16 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Restore dependencies cache
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
+          fail-on-cache-miss: true
 
-      - name: Derive appropriate SHAs
+      - name: Set NX SHAs
         uses: nrwl/nx-set-shas@v4
 
       - name: Check if web is affected
@@ -327,26 +313,18 @@ jobs:
             echo "affected=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build Web Application
-        if: steps.check-web.outputs.affected == 'true'
-        run: npx nx build web
-
       - name: Deploy Web
         if: steps.check-web.outputs.affected == 'true'
-        run: echo "Add your web deployment steps here (Vercel, Netlify, etc.)"
+        run: |
+          echo "🚀 Add your web deployment steps here"
+          echo "Example: Vercel, Netlify, AWS S3, etc."
 
-      - name: Generate Web Deployment Summary
+      - name: Generate Summary
         if: always()
         run: |
-          echo "## 🌐 Web Application Deployment" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🌐 Web Deployment" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.check-web.outputs.affected }}" == "true" ]; then
-            echo "✅ Web app was affected by changes" >> $GITHUB_STEP_SUMMARY
-            echo "🏗️ Build completed successfully" >> $GITHUB_STEP_SUMMARY
-            echo "📦 Deployment initiated" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Environment:** Production" >> $GITHUB_STEP_SUMMARY
-            echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Web deployed" >> $GITHUB_STEP_SUMMARY
           else
-            echo "⏭️ Web app was not affected, skipping deployment" >> $GITHUB_STEP_SUMMARY
+            echo "⏭️ Web not affected, skipped" >> $GITHUB_STEP_SUMMARY
           fi

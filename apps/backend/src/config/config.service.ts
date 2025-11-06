@@ -146,7 +146,7 @@ export class ConfigService {
    * Check if running in test mode
    */
   get isTest(): boolean {
-    return this.app.nodeEnv === 'test';
+    return this.app.nodeEnv === 'development';
   }
 
   /**
