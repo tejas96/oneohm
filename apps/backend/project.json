@@ -27,20 +27,11 @@
       "defaultConfiguration": "production"
     },
     "serve": {
-      "executor": "@nx/js:node",
+      "executor": "nx:run-commands",
       "options": {
-        "buildTarget": "backend:build",
-        "watch": true
-      },
-      "configurations": {
-        "development": {
-          "buildTarget": "backend:build:development"
-        },
-        "production": {
-          "buildTarget": "backend:build:production"
-        }
-      },
-      "defaultConfiguration": "development"
+        "command": "ts-node -r tsconfig-paths/register src/main.ts",
+        "cwd": "apps/backend"
+      }
     },
     "lint": {
       "executor": "@nx/eslint:lint",
