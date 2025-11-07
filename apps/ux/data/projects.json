@@ -189,13 +189,7 @@
       ]
     }
   ],
-  "projectStatuses": [
-    "New",
-    "In Progress",
-    "On Hold",
-    "Completed",
-    "Cancelled"
-  ],
+  "projectStatuses": ["New", "In Progress", "On Hold", "Completed", "Cancelled"],
   "projectPhases": [
     "Quote Approval",
     "Site Survey",

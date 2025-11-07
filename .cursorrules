@@ -1,0 +1,19 @@
+1. Always write modular and reusable code following the DRY principle.
+2. Maintain consistent naming conventions across files, folders, and variables.
+3. Keep the codebase clean, readable, and self-explanatory.
+4. Ensure all functions and classes follow the single responsibility principle.
+5. Organize code in a structured, predictable, and scalable directory layout.
+6. Separate business logic from controllers, views, and services for clarity.
+7. Use shared types, interfaces, and constants from centralized modules.
+8. Always follow linting and formatting rules (ESLint + Prettier).
+9. Remove unused imports, dead code, and commented-out blocks before committing.
+10. Enforce strict TypeScript checks and avoid using `any`.
+11. Keep configuration and secrets in environment variables, not hardcoded.
+12. Use dependency injection and modular patterns for better scalability.
+13. Ensure all new code aligns with existing project architecture and patterns.
+14. Propose any architectural or design improvements before refactoring.
+15. Review all AI-generated code for correctness and consistency.
+16. Keep dependencies minimal, stable, and well-maintained.
+17. Use consistent commit messages and maintain a changelog for version tracking.
+18. Collaborate openly — suggest improvements when better approaches are found.
+19. If The entity has updated_at or relevant field make sure write a trigger in migration to update the time stamp whenever the particular record update
