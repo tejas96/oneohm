@@ -196,53 +196,44 @@ export class OrganizationService {
   }
 
   /**
-   * Activate organization
+   * Update organization status (Generic method)
    * @param id - Organization UUID
+   * @param newStatus - New status to set
    * @param updatedBy - User ID performing the action
    * @returns Updated organization
    */
-  async activate(id: string, updatedBy?: string): Promise<OrganizationEntity> {
-    this.logger.log(`Activating organization: ${id}`);
+  async updateStatus(
+    id: string,
+    newStatus: OrganizationStatus,
+    updatedBy?: string,
+  ): Promise<OrganizationEntity> {
+    this.logger.log(`Updating organization status: ${id} -> ${newStatus}`);
 
-    // TODO: Add business rules for activation
-    // - Check subscription status
-    // - Verify payment information
-    // - Check compliance requirements
+    const organization = await this.findById(id);
 
-    return this.update(id, { status: OrganizationStatus.ACTIVE }, updatedBy);
-  }
+    // Business rules based on status transition
+    if (newStatus === OrganizationStatus.ACTIVE) {
+      // TODO: Add activation rules
+      // - Check subscription status
+      // - Verify payment information
+      // - Check compliance requirements
+    } else if (newStatus === OrganizationStatus.INACTIVE) {
+      // TODO: Add deactivation rules
+      // - Complete ongoing projects
+      // - Notify users
+      // - Handle data archival
+    } else if (newStatus === OrganizationStatus.SUSPENDED) {
+      // TODO: Add suspension rules
+      // - Check payment issues
+      // - Enforce compliance
+      // - Block access to resources
+    }
 
-  /**
-   * Deactivate organization
-   * @param id - Organization UUID
-   * @param updatedBy - User ID performing the action
-   * @returns Updated organization
-   */
-  async deactivate(id: string, updatedBy?: string): Promise<OrganizationEntity> {
-    this.logger.log(`Deactivating organization: ${id}`);
+    // Validate status transition
+    if (organization.status === newStatus) {
+      throw new BadRequestException(`Organization is already in '${newStatus}' status`);
+    }
 
-    // TODO: Add business rules for deactivation
-    // - Complete ongoing projects
-    // - Notify users
-    // - Handle data archival
-
-    return this.update(id, { status: OrganizationStatus.INACTIVE }, updatedBy);
-  }
-
-  /**
-   * Suspend organization
-   * @param id - Organization UUID
-   * @param updatedBy - User ID performing the action
-   * @returns Updated organization
-   */
-  async suspend(id: string, updatedBy?: string): Promise<OrganizationEntity> {
-    this.logger.log(`Suspending organization: ${id}`);
-
-    // TODO: Add business rules for suspension
-    // - Check payment issues
-    // - Enforce compliance
-    // - Block access to resources
-
-    return this.update(id, { status: OrganizationStatus.SUSPENDED }, updatedBy);
+    return this.update(id, { status: newStatus }, updatedBy);
   }
 }

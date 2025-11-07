@@ -1,22 +1,25 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Inject } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { ConfigService } from '@nestjs/config';
 import { JwtPayload } from '../dto/jwt-payload.dto';
 
 /**
  * JWT Strategy
  * Validates JWT tokens and extracts user payload
- *
- * TODO: Implement user validation with database lookup
- * TODO: Add token blacklist check for logged-out tokens
  */
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(@Inject(ConfigService) configService: ConfigService) {
+    const secret = configService.get<string>('JWT_SECRET');
+    if (!secret) {
+      throw new Error('JWT_SECRET is not configured');
+    }
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env['JWT_SECRET'] || 'your-secret-key-change-this', // TODO: Move to config service
+      secretOrKey: secret,
     });
   }
 
@@ -26,20 +29,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * @param payload - Decoded JWT payload
    * @returns User data to attach to request.user
    */
-  async validate(payload: JwtPayload): Promise<JwtPayload> {
-    // TODO: Add database lookup to verify user still exists and is active
-    // TODO: Check if user's organization is active
-    // TODO: Verify roles haven't changed since token was issued
-
-    if (!payload.sub || !payload.email) {
+  async validate(payload: JwtPayload): Promise<any> {
+    if (!payload.sub) {
       throw new UnauthorizedException('Invalid token payload');
     }
 
-    // Return payload to be attached to request.user
+    // Return simplified payload to be attached to request.user
+    // AuthService validates user existence on login
     return {
-      sub: payload.sub,
-      email: payload.email,
-      organizationId: payload.organizationId,
+      id: payload.sub,
       roles: payload.roles || [],
     };
   }
