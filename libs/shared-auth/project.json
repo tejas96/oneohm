@@ -1,0 +1,45 @@
+{
+  "name": "shared-auth",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared-auth/src",
+  "projectType": "library",
+  "tags": ["type:lib", "scope:shared"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/shared-auth",
+        "main": "libs/shared-auth/src/index.ts",
+        "tsConfig": "libs/shared-auth/tsconfig.lib.json",
+        "assets": []
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint libs/shared-auth/src/**/*.ts --config eslint.config.mjs"
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/shared-auth/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --write \"libs/shared-auth/**/*.{ts,tsx,js,jsx,json,css,md}\""
+      }
+    },
+    "format:check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --check \"libs/shared-auth/**/*.{ts,tsx,js,jsx,json,css,md}\""
+      }
+    }
+  }
+}

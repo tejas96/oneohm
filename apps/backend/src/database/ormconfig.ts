@@ -1,3 +1,5 @@
+import { resolve } from 'path';
+
 import { config } from 'dotenv';
 import { DataSource } from 'typeorm';
 
@@ -7,8 +9,8 @@ import { createDataSourceOptions } from '../database/datasource';
 import type { Configuration as ConfigInterface } from '../config/config.interface';
 import type { ConfigService } from '@nestjs/config';
 
-// Load environment variables
-config({ path: '.env' });
+// Load environment variables from apps/backend/.env
+config({ path: resolve(__dirname, '../../.env') });
 
 // Create configuration object
 const configObj = configuration();
