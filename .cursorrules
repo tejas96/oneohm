@@ -17,3 +17,7 @@
 17. Use consistent commit messages and maintain a changelog for version tracking.
 18. Collaborate openly — suggest improvements when better approaches are found.
 19. If The entity has updated_at or relevant field make sure write a trigger in migration to update the time stamp whenever the particular record update
+20. while implementing anything please do check if already whether we are missing anything, creating duplicate code or logic, do check this is very very important to avoid code duplication.
+21. always check existing codebase pattern
+22. for typeorm migration follow DDL query only.
+23. also dont follow wrong pattern if you see something not correct or aline with industry standards or design pattern just highlight that and refactor that e2e including testing.
