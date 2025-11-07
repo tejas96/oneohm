@@ -1,7 +1,7 @@
-import { Body, Controller, Param, ParseUUIDPipe, Query } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Param, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { Public } from '@oneohm-epc/shared-auth';
+import { CurrentUser, JwtAuthGuard, Role, RolesGuard } from '@oneohm-epc/shared-auth';
 import { OrganizationStatus } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
@@ -12,22 +12,22 @@ import {
   ApiUpdate,
 } from '@oneohm-epc/shared-utils';
 
-import { CreateOrganizationDto } from '../dto/create-organization.dto';
-import { OrganizationResponseDto } from '../dto/organization-response.dto';
-import { UpdateOrganizationDto } from '../dto/update-organization.dto';
+import {
+  CreateOrganizationDto,
+  OrganizationResponseDto,
+  UpdateOrganizationDto,
+  UpdateOrganizationStatusDto,
+} from '../dto';
 import { OrganizationService } from '../services/organization.service';
 
 /**
  * Organization Controller
  * Handles HTTP requests for organization management
- *
- * ⚠️ TEMP: Authentication bypassed for testing - @Public() decorator active
  */
 @ApiTags('Organizations')
-// @ApiBearerAuth() // TEMP: Disabled for testing
+@ApiBearerAuth()
 @Controller('api/v1/organizations')
-// @UseGuards(JwtAuthGuard, RolesGuard) // TEMP: Disabled for testing
-@Public() // TEMP: Added for testing without auth
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class OrganizationController {
   constructor(private readonly organizationService: OrganizationService) {}
 
@@ -38,7 +38,7 @@ export class OrganizationController {
     summary: 'Create a new organization',
     description: 'Creates a new organization in the system. Requires SUPER_ADMIN or ADMIN role.',
     responseType: OrganizationResponseDto,
-    // roles: [Role.SUPER_ADMIN, Role.ADMIN], // TEMP: Disabled for testing
+    roles: [Role.SUPER_ADMIN, Role.ADMIN],
     additionalErrors: [
       {
         status: 409,
@@ -48,10 +48,9 @@ export class OrganizationController {
   })
   async create(
     @Body() createDto: CreateOrganizationDto,
-    // @CurrentUser('sub') userId: string, // TEMP: Disabled for testing
+    @CurrentUser() currentUser: any,
   ): Promise<OrganizationResponseDto> {
-    const userId = '00000000-0000-0000-0000-000000000001'; // TEMP: Mock user ID for testing
-    const organization = await this.organizationService.create(createDto, userId);
+    const organization = await this.organizationService.create(createDto, currentUser.id);
     return organization as OrganizationResponseDto;
   }
 
@@ -62,7 +61,7 @@ export class OrganizationController {
     summary: 'Get all organizations',
     description: 'Retrieve all organizations with pagination and optional status filter.',
     responseType: OrganizationResponseDto,
-    // roles: [Role.SUPER_ADMIN, Role.ADMIN], // TEMP: Disabled for testing
+    roles: [Role.SUPER_ADMIN, Role.ADMIN],
     additionalQueries: [
       {
         name: 'status',
@@ -101,7 +100,7 @@ export class OrganizationController {
     summary: 'Get organization by ID',
     description: 'Retrieve a specific organization by its UUID.',
     responseType: OrganizationResponseDto,
-    // roles: [Role.SUPER_ADMIN, Role.ADMIN], // TEMP: Disabled for testing
+    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async findById(@Param('id', ParseUUIDPipe) id: string): Promise<OrganizationResponseDto> {
     const organization = await this.organizationService.findById(id);
@@ -115,7 +114,7 @@ export class OrganizationController {
     summary: 'Update organization',
     description: 'Update an existing organization by its UUID.',
     responseType: OrganizationResponseDto,
-    // roles: [Role.SUPER_ADMIN, Role.ADMIN], // TEMP: Disabled for testing
+    roles: [Role.SUPER_ADMIN, Role.ADMIN],
     additionalErrors: [
       {
         status: 409,
@@ -126,10 +125,9 @@ export class OrganizationController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateOrganizationDto,
-    // @CurrentUser('sub') userId: string, // TEMP: Disabled for testing
+    @CurrentUser() currentUser: any,
   ): Promise<OrganizationResponseDto> {
-    const userId = '00000000-0000-0000-0000-000000000001'; // TEMP: Mock user ID for testing
-    const organization = await this.organizationService.update(id, updateDto, userId);
+    const organization = await this.organizationService.update(id, updateDto, currentUser.id);
     return organization as OrganizationResponseDto;
   }
 
@@ -140,7 +138,7 @@ export class OrganizationController {
     summary: 'Delete organization',
     description:
       'Soft delete an organization by its UUID. Only SUPER_ADMIN can delete organizations.',
-    // roles: [Role.SUPER_ADMIN], // TEMP: Disabled for testing
+    roles: [Role.SUPER_ADMIN],
     additionalErrors: [
       {
         status: 400,
@@ -150,66 +148,32 @@ export class OrganizationController {
   })
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
-    // @CurrentUser('sub') userId: string, // TEMP: Disabled for testing
+    @CurrentUser() currentUser: any,
   ): Promise<void> {
-    const userId = '00000000-0000-0000-0000-000000000001'; // TEMP: Mock user ID for testing
-    await this.organizationService.delete(id, userId);
+    await this.organizationService.delete(id, currentUser.id);
   }
 
   /**
-   * Activate organization
+   * Update organization status (Generic endpoint)
    */
   @ApiAction({
-    path: 'activate',
-    summary: 'Activate organization',
-    description: 'Activate an inactive or suspended organization.',
+    path: 'status',
+    summary: 'Update organization status',
+    description:
+      'Update organization status to active, inactive, or suspended. Generic endpoint for all status transitions.',
     responseType: OrganizationResponseDto,
-    // roles: [Role.SUPER_ADMIN, Role.ADMIN], // TEMP: Disabled for testing
+    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
-  async activate(
+  async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
-    // @CurrentUser('sub') userId: string, // TEMP: Disabled for testing
+    @Body() statusDto: UpdateOrganizationStatusDto,
+    @CurrentUser() currentUser: any,
   ): Promise<OrganizationResponseDto> {
-    const userId = '00000000-0000-0000-0000-000000000001'; // TEMP: Mock user ID for testing
-    const organization = await this.organizationService.activate(id, userId);
-    return organization as OrganizationResponseDto;
-  }
-
-  /**
-   * Deactivate organization
-   */
-  @ApiAction({
-    path: 'deactivate',
-    summary: 'Deactivate organization',
-    description: 'Deactivate an active organization.',
-    responseType: OrganizationResponseDto,
-    // roles: [Role.SUPER_ADMIN, Role.ADMIN], // TEMP: Disabled for testing
-  })
-  async deactivate(
-    @Param('id', ParseUUIDPipe) id: string,
-    // @CurrentUser('sub') userId: string, // TEMP: Disabled for testing
-  ): Promise<OrganizationResponseDto> {
-    const userId = '00000000-0000-0000-0000-000000000001'; // TEMP: Mock user ID for testing
-    const organization = await this.organizationService.deactivate(id, userId);
-    return organization as OrganizationResponseDto;
-  }
-
-  /**
-   * Suspend organization
-   */
-  @ApiAction({
-    path: 'suspend',
-    summary: 'Suspend organization',
-    description: 'Suspend an organization. Only SUPER_ADMIN can suspend organizations.',
-    responseType: OrganizationResponseDto,
-    // roles: [Role.SUPER_ADMIN], // TEMP: Disabled for testing
-  })
-  async suspend(
-    @Param('id', ParseUUIDPipe) id: string,
-    // @CurrentUser('sub') userId: string, // TEMP: Disabled for testing
-  ): Promise<OrganizationResponseDto> {
-    const userId = '00000000-0000-0000-0000-000000000001'; // TEMP: Mock user ID for testing
-    const organization = await this.organizationService.suspend(id, userId);
+    const organization = await this.organizationService.updateStatus(
+      id,
+      statusDto.status,
+      currentUser.id,
+    );
     return organization as OrganizationResponseDto;
   }
 }
