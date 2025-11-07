@@ -168,3 +168,9 @@ node_modules/
 ## Nested node_modules
 
 node_modules/
+
+# Compiled TypeScript files in libs (should only be in dist/)
+libs/**/*.js
+libs/**/*.js.map
+libs/**/*.d.ts
+!libs/**/*.spec.js
