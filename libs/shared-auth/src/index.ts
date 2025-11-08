@@ -1,8 +1,8 @@
 // Enums
 export * from './enums/role.enum';
 
-// DTOs
-export * from './dto';
+// DTOs - Export types only
+export type { JwtPayload, CurrentUser as CurrentUserType } from './dto';
 
 // Decorators
 export * from './decorators';

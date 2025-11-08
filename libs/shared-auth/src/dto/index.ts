@@ -1,1 +1,1 @@
-export * from './jwt-payload.dto';
+export type { JwtPayload, CurrentUser, CurrentUser as CurrentUserType } from './jwt-payload.dto';

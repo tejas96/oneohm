@@ -1,15 +1,22 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
+import type { CurrentUser as CurrentUserType } from '../dto/jwt-payload.dto';
+
 /**
  * Current User Decorator
  * Extract the current user from the request object
- * @example getCurrentUser(@CurrentUser() user: JwtPayload)
+ * Returns the authenticated user with full type safety
+ * @example getCurrentUser(@CurrentUser() user: CurrentUserType)
  */
 export const CurrentUser = createParamDecorator(
-  (data: string | undefined, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
+  (_data: unknown, ctx: ExecutionContext): CurrentUserType => {
+    const request = ctx.switchToHttp().getRequest<{ user: CurrentUserType }>();
     const user = request.user;
 
-    return data ? user?.[data] : user;
+    if (!user) {
+      throw new Error('User not found in request');
+    }
+
+    return user;
   },
 );
