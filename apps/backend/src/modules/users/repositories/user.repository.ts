@@ -42,9 +42,12 @@ export class UserRepository {
     }
 
     const userEntity = user.entities[0];
-    userEntity.roles = user.raw.map((r: { ur_role: string }) => r.ur_role);
+    if (userEntity) {
+      userEntity.roles = user.raw.map((r: { ur_role: string }) => r.ur_role);
+      return userEntity;
+    }
 
-    return userEntity;
+    return null;
   }
 
   async findByIdWithRoles(id: string): Promise<UserEntity | null> {
@@ -62,9 +65,12 @@ export class UserRepository {
     }
 
     const userEntity = user.entities[0];
-    userEntity.roles = user.raw.map((r: { ur_role: string }) => r.ur_role);
+    if (userEntity) {
+      userEntity.roles = user.raw.map((r: { ur_role: string }) => r.ur_role);
+      return userEntity;
+    }
 
-    return userEntity;
+    return null;
   }
 
   async findByPhone(phone: string): Promise<UserEntity | null> {

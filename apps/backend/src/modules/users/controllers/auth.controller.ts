@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { CurrentUser, JwtAuthGuard, Public } from '@oneohm-epc/shared-auth';
+import { CurrentUser, CurrentUserType, JwtAuthGuard, Public } from '@oneohm-epc/shared-auth';
 import { plainToInstance } from 'class-transformer';
 
 import { LoginDto, LoginResponseDto } from '../dto/login.dto';
@@ -52,8 +52,8 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'User logout' })
   @ApiResponse({ status: 204, description: 'Logout successful' })
-  async logout(@CurrentUser() user: any): Promise<void> {
-    await this.authService.logout(user.id);
+  logout(@CurrentUser() user: CurrentUserType): void {
+    this.authService.logout(user.id);
   }
 
   @Get('me')
@@ -66,7 +66,7 @@ export class AuthController {
     type: UserResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getCurrentUser(@CurrentUser() user: any): Promise<UserResponseDto> {
+  async getCurrentUser(@CurrentUser() user: CurrentUserType): Promise<UserResponseDto> {
     const fullUser = await this.userService.findById(user.id);
     return plainToInstance(UserResponseDto, fullUser, {
       excludeExtraneousValues: true,

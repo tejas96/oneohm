@@ -28,6 +28,8 @@ import { plainToInstance } from 'class-transformer';
 import { CreateUserDto, UpdateUserDto, UpdateUserStatusDto, UserResponseDto } from '../dto';
 import { UserService } from '../services/user.service';
 
+import type { CurrentUserType } from '@oneohm-epc/shared-auth';
+
 @ApiTags('Users')
 @Controller('users')
 @ApiBearerAuth()
@@ -43,7 +45,7 @@ export class UserController {
   })
   async create(
     @Body() createDto: CreateUserDto,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<UserResponseDto> {
     const user = await this.userService.create(createDto, currentUser.id);
     return plainToInstance(UserResponseDto, user, {
@@ -66,7 +68,7 @@ export class UserController {
     example: UserStatus.ACTIVE,
   })
   async findAll(
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
     @Query('status') status?: UserStatus,
@@ -110,7 +112,7 @@ export class UserController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateUserDto,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<UserResponseDto> {
     const user = await this.userService.update(id, updateDto, currentUser.id);
     return plainToInstance(UserResponseDto, user, {
@@ -125,7 +127,7 @@ export class UserController {
   })
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
     await this.userService.delete(id, currentUser.id);
   }
@@ -142,7 +144,7 @@ export class UserController {
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateUserStatusDto,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<UserResponseDto> {
     const user = await this.userService.updateStatus(id, statusDto.status, currentUser.id);
     return plainToInstance(UserResponseDto, user, {
