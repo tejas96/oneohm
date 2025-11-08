@@ -16,8 +16,22 @@
 16. Keep dependencies minimal, stable, and well-maintained.
 17. Use consistent commit messages and maintain a changelog for version tracking.
 18. Collaborate openly — suggest improvements when better approaches are found.
-19. If The entity has updated_at or relevant field make sure write a trigger in migration to update the time stamp whenever the particular record update
-20. while implementing anything please do check if already whether we are missing anything, creating duplicate code or logic, do check this is very very important to avoid code duplication.
-21. always check existing codebase pattern
-22. for typeorm migration follow DDL query only.
-23. also dont follow wrong pattern if you see something not correct or aline with industry standards or design pattern just highlight that and refactor that e2e including testing.
+19. Always handle errors gracefully — ensure proper error messages, logging, and status codes; never leak internal details in responses.
+20. Implement proper logging using a centralized logger (e.g., Winston, Pino) with log levels (debug, info, warn, error).
+21. Validate all external input (DTOs, query params, request bodies) using class-validator or similar tools to prevent data corruption or injection attacks.
+22. Use async/await consistently and avoid unhandled promises.
+23. Follow SOLID + Clean Architecture principles — ensure that domain, infrastructure, and presentation layers are clearly separated.
+24. Follow repository pattern for all DB operations — keep TypeORM operations isolated from business logic.
+25. Encapsulate external service logic (e.g., APIs, queues, storage) in dedicated integration modules to make replacement or scaling easier.
+26. For shared libs, ensure proper versioning and backward compatibility to avoid breaking dependent apps.
+27. For feature modules, include a dedicated folder structure (controllers, services, repositories, dtos, entities, tests) for clarity and scalability.
+28. Sanitize and validate all user input at entry points.
+29. Implement proper authorization checks — ensure users can only access allowed data (RBAC/ABAC patterns).
+30. Avoid N+1 queries — use relations or joins efficiently in TypeORM.
+31. Paginate and filter data in queries instead of fetching large datasets.
+32. If an entity includes an `updated_at` or similar timestamp field, ensure a database trigger is created in the migration to automatically update this field whenever the corresponding record is modified.
+33. Before implementing any new functionality, thoroughly review the existing codebase to check for missing logic or potential duplication. It’s critical to avoid writing redundant code or re-implementing existing logic.
+34. Always follow the existing codebase patterns and conventions to maintain consistency across the project.
+35. For TypeORM migrations, strictly use **DDL (Data Definition Language)** queries only — avoid DML (Data Manipulation Language) statements unless absolutely necessary.
+36. Do not follow incorrect or non-standard patterns. If you identify code that doesn’t align with industry best practices or established design patterns, highlight it and refactor it end-to-end — including updating associated tests.
+37. In the NestJS controller layer, prefer using reusable decorators from the `@shared-utils` library. If you identify opportunities to improve reusability, enhance existing decorators or create new generic ones for current and future use cases. Always ensure controllers remain clean, maintainable, and fully documented in Swagger.
