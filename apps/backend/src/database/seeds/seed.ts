@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import * as bcrypt from 'bcrypt';
 
 import dataSource from '../ormconfig';
