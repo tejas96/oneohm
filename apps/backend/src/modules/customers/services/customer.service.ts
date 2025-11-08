@@ -31,7 +31,7 @@ export class CustomerService {
     createDto: CreateCustomerDto,
     createdBy?: string,
   ): Promise<CustomerEntity> {
-    this.logger.log(`Creating customer: ${createDto.firstName} ${createDto.lastName || ''}`);
+    this.logger.log(`Creating customer: ${createDto.firstName} ${createDto.lastName ?? ''}`);
 
     // Check if phone already exists for this organization
     const existingByPhone = await this.customerRepository.findByPhone(
@@ -85,7 +85,7 @@ export class CustomerService {
   async findById(id: string, organizationId: string): Promise<CustomerEntity> {
     const customer = await this.customerRepository.findById(id);
 
-    if (!customer || customer.organizationId !== organizationId) {
+    if (!customer?.organizationId || customer.organizationId !== organizationId) {
       throw new NotFoundException(`Customer with ID '${id}' not found`);
     }
 
