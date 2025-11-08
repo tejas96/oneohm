@@ -29,6 +29,8 @@ import {
 } from '../dto';
 import { ResellerCommissionService } from '../services/reseller-commission.service';
 
+import type { CurrentUserType } from '@oneohm-epc/shared-auth';
+
 /**
  * Reseller Commission Controller
  * Handles HTTP requests for commission management
@@ -57,7 +59,7 @@ export class ResellerCommissionController {
   })
   async create(
     @Body() createDto: CreateCommissionDto,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CommissionResponseDto> {
     const commission = await this.commissionService.create(
       currentUser.organizationId,
@@ -91,7 +93,7 @@ export class ResellerCommissionController {
     ],
   })
   async findAll(
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
     @Query('status') status?: CommissionStatus,
     @Query('resellerId') resellerId?: string,
   ): Promise<CommissionResponseDto[]> {
@@ -126,7 +128,7 @@ export class ResellerCommissionController {
   })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CommissionResponseDto> {
     const commission = await this.commissionService.findById(id, currentUser.organizationId);
     return commission as CommissionResponseDto;
@@ -150,7 +152,7 @@ export class ResellerCommissionController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateCommissionDto,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CommissionResponseDto> {
     const commission = await this.commissionService.update(
       id,
@@ -174,7 +176,7 @@ export class ResellerCommissionController {
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateCommissionStatusDto,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CommissionResponseDto> {
     const commission = await this.commissionService.updateStatus(
       id,
@@ -201,7 +203,7 @@ export class ResellerCommissionController {
   })
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
     await this.commissionService.delete(id, currentUser.organizationId);
   }
@@ -215,7 +217,7 @@ export class ResellerCommissionController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   async getTotalCommissionEarned(
     @Param('resellerId', ParseUUIDPipe) resellerId: string,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<{ resellerId: string; totalCommissionEarned: number }> {
     const total = await this.commissionService.getTotalCommissionEarned(
       resellerId,

@@ -212,7 +212,7 @@ export class OrganizationSettingService {
     try {
       const setting = await this.findByKey(organizationId, key);
       return setting.value;
-    } catch (_error) {
+    } catch {
       return defaultValue ?? null;
     }
   }

@@ -123,11 +123,11 @@ export class ResellerCommissionService {
 
     // Validate commission calculation if amounts are being updated
     if (updateDto.projectValue !== undefined || updateDto.commissionPercentage !== undefined) {
-      const projectValue = updateDto.projectValue || commission.projectValue;
-      const percentage = updateDto.commissionPercentage || commission.commissionPercentage;
+      const projectValue = updateDto.projectValue ?? commission.projectValue;
+      const percentage = updateDto.commissionPercentage ?? commission.commissionPercentage;
       const calculatedAmount = (projectValue * percentage) / 100;
 
-      const amountToCheck = updateDto.commissionAmount || commission.commissionAmount;
+      const amountToCheck = updateDto.commissionAmount ?? commission.commissionAmount;
       const tolerance = 0.01;
 
       if (Math.abs(calculatedAmount - amountToCheck) > tolerance) {
@@ -137,9 +137,7 @@ export class ResellerCommissionService {
       }
 
       // If amounts changed but commissionAmount not provided, calculate it
-      if (updateDto.commissionAmount === undefined) {
-        updateDto.commissionAmount = calculatedAmount;
-      }
+      updateDto.commissionAmount ??= calculatedAmount;
     }
 
     const updated = await this.commissionRepository.update(id, {

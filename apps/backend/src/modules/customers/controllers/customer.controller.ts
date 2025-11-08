@@ -20,6 +20,8 @@ import {
 } from '../dto';
 import { CustomerService } from '../services/customer.service';
 
+import type { CurrentUserType } from '@oneohm-epc/shared-auth';
+
 /**
  * Customer Controller
  * Handles HTTP requests for customer management
@@ -48,7 +50,7 @@ export class CustomerController {
   })
   async create(
     @Body() createDto: CreateCustomerDto,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
     const customer = await this.customerService.create(
       currentUser.organizationId,
@@ -67,7 +69,7 @@ export class CustomerController {
     responseType: CustomerResponseDto,
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
-  async findAll(@CurrentUser() currentUser: any): Promise<CustomerResponseDto[]> {
+  async findAll(@CurrentUser() currentUser: CurrentUserType): Promise<CustomerResponseDto[]> {
     const customers = await this.customerService.findAll(currentUser.organizationId);
     return customers as CustomerResponseDto[];
   }
@@ -83,7 +85,7 @@ export class CustomerController {
   })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
     const customer = await this.customerService.findById(id, currentUser.organizationId);
     return customer as CustomerResponseDto;
@@ -107,7 +109,7 @@ export class CustomerController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateCustomerDto,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
     const customer = await this.customerService.update(
       id,
@@ -131,7 +133,7 @@ export class CustomerController {
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateCustomerStatusDto,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
     const customer = await this.customerService.updateStatus(
       id,
@@ -152,7 +154,7 @@ export class CustomerController {
   })
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
     await this.customerService.delete(id, currentUser.organizationId);
   }
@@ -164,7 +166,9 @@ export class CustomerController {
   @ApiOperation({ summary: 'Get customer status statistics' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Customer statistics retrieved' })
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
-  async getStatusStatistics(@CurrentUser() currentUser: any): Promise<Record<string, number>> {
+  async getStatusStatistics(
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<Record<string, number>> {
     return this.customerService.getStatusStatistics(currentUser.organizationId);
   }
 }

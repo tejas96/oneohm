@@ -1,4 +1,4 @@
-import { Body, Controller, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser, JwtAuthGuard, Role, RolesGuard } from '@oneohm-epc/shared-auth';
@@ -19,6 +19,8 @@ import {
   UpdateResellerStatusDto,
 } from '../dto';
 import { ResellerService } from '../services/reseller.service';
+
+import type { CurrentUserType } from '@oneohm-epc/shared-auth';
 
 /**
  * Reseller Controller
@@ -48,7 +50,7 @@ export class ResellerController {
   })
   async create(
     @Body() createDto: CreateResellerDto,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<ResellerResponseDto> {
     const reseller = await this.resellerService.create(
       currentUser.organizationId,
@@ -67,7 +69,7 @@ export class ResellerController {
     responseType: ResellerResponseDto,
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
-  async findAll(@CurrentUser() currentUser: any): Promise<ResellerResponseDto[]> {
+  async findAll(@CurrentUser() currentUser: CurrentUserType): Promise<ResellerResponseDto[]> {
     const resellers = await this.resellerService.findAll(currentUser.organizationId);
     return resellers as ResellerResponseDto[];
   }
@@ -83,7 +85,7 @@ export class ResellerController {
   })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<ResellerResponseDto> {
     const reseller = await this.resellerService.findById(id, currentUser.organizationId);
     return reseller as ResellerResponseDto;
@@ -107,7 +109,7 @@ export class ResellerController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateResellerDto,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<ResellerResponseDto> {
     const reseller = await this.resellerService.update(
       id,
@@ -131,7 +133,7 @@ export class ResellerController {
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateResellerStatusDto,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<ResellerResponseDto> {
     const reseller = await this.resellerService.updateStatus(
       id,
@@ -152,7 +154,7 @@ export class ResellerController {
   })
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
     await this.resellerService.delete(id, currentUser.organizationId);
   }

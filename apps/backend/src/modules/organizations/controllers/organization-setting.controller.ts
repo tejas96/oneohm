@@ -8,6 +8,8 @@ import { CreateOrganizationSettingDto } from '../dto/create-organization-setting
 import { UpdateOrganizationSettingDto } from '../dto/update-organization-setting.dto';
 import { OrganizationSettingService } from '../services/organization-setting.service';
 
+import type { CurrentUserType } from '@oneohm-epc/shared-auth';
+
 /**
  * Organization Setting Controller
  * Handles HTTP requests for organization settings management
@@ -28,7 +30,10 @@ export class OrganizationSettingController {
     responseType: Object, // Generic response since we don't have a specific DTO
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
-  async create(@Body() createDto: CreateOrganizationSettingDto, @CurrentUser() currentUser: any) {
+  async create(
+    @Body() createDto: CreateOrganizationSettingDto,
+    @CurrentUser() currentUser: CurrentUserType,
+  ) {
     return this.organizationSettingService.create(createDto, currentUser.id);
   }
 
@@ -74,7 +79,7 @@ export class OrganizationSettingController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateOrganizationSettingDto,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ) {
     return this.organizationSettingService.update(id, updateDto, currentUser.id);
   }

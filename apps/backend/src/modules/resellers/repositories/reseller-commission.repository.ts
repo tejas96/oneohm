@@ -102,8 +102,8 @@ export class ResellerCommissionRepository {
       .where('commission.reseller_id = :resellerId', { resellerId })
       .andWhere('commission.status = :status', { status })
       .andWhere('commission.deleted_at IS NULL')
-      .getRawOne();
+      .getRawOne<{ total: string | null }>();
 
-    return parseFloat(result?.total || '0');
+    return parseFloat(result?.total ?? '0');
   }
 }

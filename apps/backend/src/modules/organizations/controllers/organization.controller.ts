@@ -20,6 +20,8 @@ import {
 } from '../dto';
 import { OrganizationService } from '../services/organization.service';
 
+import type { CurrentUserType } from '@oneohm-epc/shared-auth';
+
 /**
  * Organization Controller
  * Handles HTTP requests for organization management
@@ -48,7 +50,7 @@ export class OrganizationController {
   })
   async create(
     @Body() createDto: CreateOrganizationDto,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<OrganizationResponseDto> {
     const organization = await this.organizationService.create(createDto, currentUser.id);
     return organization as OrganizationResponseDto;
@@ -125,7 +127,7 @@ export class OrganizationController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateOrganizationDto,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<OrganizationResponseDto> {
     const organization = await this.organizationService.update(id, updateDto, currentUser.id);
     return organization as OrganizationResponseDto;
@@ -148,7 +150,7 @@ export class OrganizationController {
   })
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
     await this.organizationService.delete(id, currentUser.id);
   }
@@ -167,7 +169,7 @@ export class OrganizationController {
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateOrganizationStatusDto,
-    @CurrentUser() currentUser: any,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<OrganizationResponseDto> {
     const organization = await this.organizationService.updateStatus(
       id,

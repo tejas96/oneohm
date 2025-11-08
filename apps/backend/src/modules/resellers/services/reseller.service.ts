@@ -121,8 +121,8 @@ export class ResellerService {
 
     // Validate commission percentage range (if being updated)
     if (updateDto.commissionPercentage !== undefined) {
-      const min = updateDto.commissionMinPercentage || reseller.commissionMinPercentage;
-      const max = updateDto.commissionMaxPercentage || reseller.commissionMaxPercentage;
+      const min = updateDto.commissionMinPercentage ?? reseller.commissionMinPercentage;
+      const max = updateDto.commissionMaxPercentage ?? reseller.commissionMaxPercentage;
 
       if (updateDto.commissionPercentage < min || updateDto.commissionPercentage > max) {
         throw new BadRequestException(`Commission percentage must be between ${min}% and ${max}%`);
