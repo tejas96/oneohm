@@ -198,7 +198,8 @@ export class CreateResellerDto {
 
   // ==================== Status ====================
   @ApiPropertyOptional({
-    enum: ResellerStatus,
+    enum: Object.values(ResellerStatus),
+    enumName: 'ResellerStatus',
     example: ResellerStatus.ACTIVE,
     description: 'Reseller status',
   })

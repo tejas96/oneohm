@@ -59,7 +59,8 @@ export class CreateCommissionDto {
   notes?: string;
 
   @ApiPropertyOptional({
-    enum: CommissionStatus,
+    enum: Object.values(CommissionStatus),
+    enumName: 'CommissionStatus',
     example: CommissionStatus.PENDING,
     description: 'Initial status (defaults to pending)',
   })

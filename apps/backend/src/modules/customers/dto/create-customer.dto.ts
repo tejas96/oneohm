@@ -176,7 +176,8 @@ export class CreateCustomerDto {
 
   // ==================== Status ====================
   @ApiPropertyOptional({
-    enum: CustomerStatus,
+    enum: Object.values(CustomerStatus),
+    enumName: 'CustomerStatus',
     example: CustomerStatus.LEAD,
     description: 'Customer status',
   })

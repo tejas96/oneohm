@@ -71,7 +71,7 @@ export class OrganizationEntity extends BaseEntity {
   // Status
   @Column({
     type: 'enum',
-    enum: OrganizationStatus,
+    enum: OrganizationStatus, // TypeORM Column decorator accepts enum directly
     default: OrganizationStatus.ACTIVE,
   })
   status: OrganizationStatus;

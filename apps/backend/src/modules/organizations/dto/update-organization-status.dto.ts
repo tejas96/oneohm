@@ -5,7 +5,8 @@ import { IsEnum } from 'class-validator';
 
 export class UpdateOrganizationStatusDto {
   @ApiProperty({
-    enum: OrganizationStatus,
+    enum: Object.values(OrganizationStatus),
+    enumName: 'OrganizationStatus',
     example: OrganizationStatus.ACTIVE,
     description: 'New status for the organization',
   })

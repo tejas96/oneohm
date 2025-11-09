@@ -8,7 +8,8 @@ import { IsEnum } from 'class-validator';
  */
 export class UpdateResellerStatusDto {
   @ApiProperty({
-    enum: ResellerStatus,
+    enum: Object.values(ResellerStatus),
+    enumName: 'ResellerStatus',
     example: ResellerStatus.ACTIVE,
     description: 'New status for the reseller',
   })

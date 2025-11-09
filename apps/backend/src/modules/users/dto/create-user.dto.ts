@@ -124,7 +124,11 @@ export class CreateUserDto {
   @IsDateString()
   joiningDate?: string;
 
-  @ApiPropertyOptional({ enum: UserStatus, example: UserStatus.ACTIVE })
+  @ApiPropertyOptional({
+    enum: Object.values(UserStatus),
+    enumName: 'UserStatus',
+    example: UserStatus.ACTIVE,
+  })
   @IsOptional()
   @IsEnum(UserStatus)
   status?: UserStatus;
