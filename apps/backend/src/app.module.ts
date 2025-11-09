@@ -6,6 +6,7 @@ import { ConfigModule } from './config';
 import { DatabaseModule } from './database/database.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { ProductsModule } from './modules/products/products.module';
 import { ResellersModule } from './modules/resellers/resellers.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -17,6 +18,7 @@ import { UsersModule } from './modules/users/users.module';
     OrganizationsModule,
     CustomersModule,
     ResellersModule,
+    ProductsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
