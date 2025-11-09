@@ -18,8 +18,8 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Set global prefix
-  // app.setGlobalPrefix(configService.app.apiPrefix);
+  // Set global API prefix (e.g., /api/v1)
+  app.setGlobalPrefix('api/v1');
 
   // Global Validation Pipe
   app.useGlobalPipes(
