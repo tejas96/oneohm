@@ -218,4 +218,3 @@ export class CreateProductDto {
   @IsOptional()
   status?: ProductStatus;
 }
-
