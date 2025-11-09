@@ -2,13 +2,14 @@ import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
-import { JwtPayload } from '@oneohm-epc/shared-auth';
 import { UserStatus } from '@oneohm-epc/shared-types';
 
 import { LoginDto, LoginResponseDto } from '../dto/login.dto';
 import { RefreshTokenResponseDto } from '../dto/refresh-token.dto';
 import { UserRoleRepository } from '../repositories/user-role.repository';
 import { UserRepository } from '../repositories/user.repository';
+
+import type { CurrentUserType, JwtPayload } from '@oneohm-epc/shared-auth';
 
 @Injectable()
 export class AuthService {
@@ -49,7 +50,7 @@ export class AuthService {
     await this.userRepository.updateLastLogin(user.id);
 
     // Generate tokens
-    const tokens = await this.generateTokens(user.id, user.roles || []);
+    const tokens = await this.generateTokens(user.id, user.organizationId, user.roles ?? []);
 
     this.logger.log(`User logged in successfully: ${email}`);
 
@@ -60,7 +61,7 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        roles: user.roles || [],
+        roles: user.roles ?? [],
         organizationId: user.organizationId,
       },
     };
@@ -81,7 +82,7 @@ export class AuthService {
       }
 
       // Generate new tokens
-      const tokens = await this.generateTokens(user.id, user.roles || []);
+      const tokens = await this.generateTokens(user.id, user.organizationId, user.roles ?? []);
 
       this.logger.log(`Token refreshed for user: ${user.email}`);
 
@@ -92,7 +93,7 @@ export class AuthService {
     }
   }
 
-  async validateUser(userId: string): Promise<any> {
+  async validateUser(userId: string): Promise<CurrentUserType | null> {
     const user = await this.userRepository.findByIdWithRoles(userId);
 
     if (user?.status !== UserStatus.ACTIVE) {
@@ -101,29 +102,28 @@ export class AuthService {
 
     return {
       id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      roles: user.roles || [],
       organizationId: user.organizationId,
+      roles: user.roles ?? [],
     };
   }
 
   private async generateTokens(
     userId: string,
+    organizationId: string,
     roles: string[],
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const payload: JwtPayload = {
       sub: userId,
+      organizationId,
       roles,
     };
 
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload as Record<string, any>, {
+      this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('JWT_SECRET'),
         expiresIn: this.configService.get('JWT_EXPIRES_IN') || '15m',
       }),
-      this.jwtService.signAsync(payload as Record<string, any>, {
+      this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
         expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN') || '7d',
       }),
@@ -132,7 +132,7 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  async logout(userId: string): Promise<void> {
+  logout(userId: string): void {
     // In a real-world scenario, you might want to:
     // 1. Invalidate refresh tokens (store them in Redis/DB)
     // 2. Add access token to blacklist

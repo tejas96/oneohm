@@ -174,3 +174,4 @@ libs/**/*.js
 libs/**/*.js.map
 libs/**/*.d.ts
 !libs/**/*.spec.js
+schema

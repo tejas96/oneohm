@@ -61,6 +61,12 @@
       "options": {
         "command": "prettier --check \"apps/web/**/*.{ts,tsx,js,jsx,json,css,md}\""
       }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p apps/web/tsconfig.json"
+      }
     }
   }
 }

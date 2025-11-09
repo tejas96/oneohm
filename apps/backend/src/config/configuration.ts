@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-confusing-non-null-assertion */
 import type { Configuration } from './config.interface';
 
 /**

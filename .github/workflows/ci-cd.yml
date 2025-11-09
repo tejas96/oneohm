@@ -117,6 +117,49 @@ jobs:
           echo "## 🔍 Lint Results" >> $GITHUB_STEP_SUMMARY
           echo "✅ Linting completed" >> $GITHUB_STEP_SUMMARY
 
+  typecheck:
+    name: Type Check
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Restore dependencies cache
+        uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
+          fail-on-cache-miss: true
+
+      - name: Restore NX cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .nx/cache
+          key: ${{ runner.os }}-nx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-nx-
+
+      - name: Set NX SHAs
+        uses: nrwl/nx-set-shas@v4
+
+      - name: Run type check on affected projects
+        run: npx nx affected -t typecheck --parallel=3
+
+      - name: Generate Summary
+        if: always()
+        run: |
+          echo "## 🔎 Type Check Results" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Type checking completed" >> $GITHUB_STEP_SUMMARY
+
   test:
     name: Test
     needs: setup
@@ -169,7 +212,7 @@ jobs:
 
   build:
     name: Build
-    needs: [lint, test, setup]
+    needs: [lint, typecheck, test, setup]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

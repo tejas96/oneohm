@@ -1,0 +1,17 @@
+import { ApiProperty } from '@nestjs/swagger';
+
+import { CommissionStatus } from '@oneohm-epc/shared-types';
+import { IsEnum } from 'class-validator';
+
+/**
+ * DTO for updating commission status
+ */
+export class UpdateCommissionStatusDto {
+  @ApiProperty({
+    enum: CommissionStatus,
+    example: CommissionStatus.APPROVED,
+    description: 'New status for the commission',
+  })
+  @IsEnum(CommissionStatus)
+  status!: CommissionStatus;
+}
