@@ -512,6 +512,278 @@ async function seed() {
 
     console.log('✓ Reseller commissions seeded (2 commissions)');
 
+    // ============================================
+    // 7. SEED PRODUCT CATEGORIES
+    // ============================================
+    console.log('\n📂 Seeding Product Categories...');
+
+    await dataSource.query(`
+          -- Level 1: Top Categories
+          INSERT INTO product_categories (organization_id, name, code, description, parent_category_id, created_by)
+          SELECT 
+            org.id,
+            'Solar Panels',
+            'SOLAR_PANELS',
+            'Photovoltaic solar panels for electricity generation',
+            NULL,
+            u.id
+          FROM organizations org, users u
+          WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
+          ON CONFLICT (organization_id, code) DO NOTHING;
+
+          INSERT INTO product_categories (organization_id, name, code, description, parent_category_id, created_by)
+          SELECT 
+            org.id,
+            'Inverters',
+            'INVERTERS',
+            'Solar inverters for DC to AC conversion',
+            NULL,
+            u.id
+          FROM organizations org, users u
+          WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
+          ON CONFLICT (organization_id, code) DO NOTHING;
+
+          INSERT INTO product_categories (organization_id, name, code, description, parent_category_id, created_by)
+          SELECT 
+            org.id,
+            'Batteries',
+            'BATTERIES',
+            'Energy storage batteries',
+            NULL,
+            u.id
+          FROM organizations org, users u
+          WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
+          ON CONFLICT (organization_id, code) DO NOTHING;
+
+          INSERT INTO product_categories (organization_id, name, code, description, parent_category_id, created_by)
+          SELECT 
+            org.id,
+            'Mounting Structures',
+            'MOUNTING',
+            'Solar panel mounting and racking systems',
+            NULL,
+            u.id
+          FROM organizations org, users u
+          WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com'
+          ON CONFLICT (organization_id, code) DO NOTHING;
+
+          -- Level 2: Solar Panel Subcategories
+          INSERT INTO product_categories (organization_id, name, code, description, parent_category_id, created_by)
+          SELECT 
+            org.id,
+            'Monocrystalline Panels',
+            'MONO_PANELS',
+            'High-efficiency monocrystalline solar panels',
+            cat.id,
+            u.id
+          FROM organizations org, users u, product_categories cat
+          WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com' AND cat.code = 'SOLAR_PANELS' AND org.id = cat.organization_id
+          ON CONFLICT (organization_id, code) DO NOTHING;
+
+          INSERT INTO product_categories (organization_id, name, code, description, parent_category_id, created_by)
+          SELECT 
+            org.id,
+            'Polycrystalline Panels',
+            'POLY_PANELS',
+            'Cost-effective polycrystalline solar panels',
+            cat.id,
+            u.id
+          FROM organizations org, users u, product_categories cat
+          WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com' AND cat.code = 'SOLAR_PANELS' AND org.id = cat.organization_id
+          ON CONFLICT (organization_id, code) DO NOTHING;
+
+          -- Level 2: Inverter Subcategories
+          INSERT INTO product_categories (organization_id, name, code, description, parent_category_id, created_by)
+          SELECT 
+            org.id,
+            'String Inverters',
+            'STRING_INV',
+            'String inverters for residential and commercial use',
+            cat.id,
+            u.id
+          FROM organizations org, users u, product_categories cat
+          WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com' AND cat.code = 'INVERTERS' AND org.id = cat.organization_id
+          ON CONFLICT (organization_id, code) DO NOTHING;
+
+          INSERT INTO product_categories (organization_id, name, code, description, parent_category_id, created_by)
+          SELECT 
+            org.id,
+            'Hybrid Inverters',
+            'HYBRID_INV',
+            'Hybrid inverters with battery support',
+            cat.id,
+            u.id
+          FROM organizations org, users u, product_categories cat
+          WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com' AND cat.code = 'INVERTERS' AND org.id = cat.organization_id
+          ON CONFLICT (organization_id, code) DO NOTHING;
+        `);
+
+    console.log('✓ Product categories seeded (9 categories)');
+
+    // ============================================
+    // 8. SEED PRODUCTS
+    // ============================================
+    console.log('\n🔧 Seeding Products...');
+
+    await dataSource.query(`
+          -- Solar Panels
+          INSERT INTO products (
+            organization_id, category_id, name, code, description, type,
+            specifications, brand, manufacturer, model_number,
+            unit_of_measure, product_warranty_years, performance_warranty_years,
+            status, created_by
+          )
+          SELECT
+            org.id,
+            cat.id,
+            'Jinko Solar Tiger Neo 550W',
+            'JINKO-550W',
+            'High-efficiency monocrystalline solar panel with N-type TOPCon technology',
+            'solar_panel',
+            '{"common": {"wattage": 550, "efficiency": 21.5, "cellType": "Monocrystalline", "dimensions": "2278x1134x35mm", "weight": 27.5}}'::jsonb,
+            'Jinko Solar',
+            'Jinko Solar Co. Ltd',
+            'JKM550M-7RL4-V',
+            'pcs',
+            12,
+            25,
+            'active',
+            u.id
+          FROM organizations org, users u, product_categories cat
+          WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com' AND cat.code = 'MONO_PANELS' AND org.id = cat.organization_id
+          ON CONFLICT (organization_id, code) DO NOTHING;
+
+          INSERT INTO products (
+            organization_id, category_id, name, code, description, type,
+            specifications, brand, manufacturer, model_number,
+            unit_of_measure, product_warranty_years, performance_warranty_years,
+            status, created_by
+          )
+          SELECT
+            org.id,
+            cat.id,
+            'Trina Solar Vertex 535W',
+            'TRINA-535W',
+            'High power monocrystalline module with multi-busbar technology',
+            'solar_panel',
+            '{"common": {"wattage": 535, "efficiency": 20.9, "cellType": "Monocrystalline", "dimensions": "2187x1102x35mm", "weight": 27.3}}'::jsonb,
+            'Trina Solar',
+            'Trina Solar Limited',
+            'TSM-535DE18M',
+            'pcs',
+            12,
+            25,
+            'active',
+            u.id
+          FROM organizations org, users u, product_categories cat
+          WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com' AND cat.code = 'MONO_PANELS' AND org.id = cat.organization_id
+          ON CONFLICT (organization_id, code) DO NOTHING;
+
+          -- Inverters
+          INSERT INTO products (
+            organization_id, category_id, name, code, description, type,
+            specifications, brand, manufacturer, model_number,
+            unit_of_measure, product_warranty_years,
+            status, created_by
+          )
+          SELECT
+            org.id,
+            cat.id,
+            'Growatt 5kW On-Grid Inverter',
+            'GROWATT-5KW',
+            'Single-phase on-grid inverter with 2 MPPT',
+            'inverter',
+            '{"common": {"capacity": 5, "inputVoltage": "140-850V DC", "outputVoltage": "230V AC", "phases": 1, "mpptChannels": 2, "efficiency": 98.4}}'::jsonb,
+            'Growatt',
+            'Growatt New Energy Co. Ltd',
+            'MIN 5000TL-X',
+            'pcs',
+            5,
+            'active',
+            u.id
+          FROM organizations org, users u, product_categories cat
+          WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com' AND cat.code = 'STRING_INV' AND org.id = cat.organization_id
+          ON CONFLICT (organization_id, code) DO NOTHING;
+
+          INSERT INTO products (
+            organization_id, category_id, name, code, description, type,
+            specifications, brand, manufacturer, model_number,
+            unit_of_measure, product_warranty_years,
+            status, created_by
+          )
+          SELECT
+            org.id,
+            cat.id,
+            'Deye 8kW Hybrid Inverter',
+            'DEYE-8KW-HYB',
+            'Hybrid inverter with battery charging capability',
+            'inverter',
+            '{"common": {"capacity": 8, "inputVoltage": "125-550V DC", "outputVoltage": "230V AC", "phases": 1, "mpptChannels": 2, "efficiency": 97.6}}'::jsonb,
+            'Deye',
+            'Deye Inverter Technology Co. Ltd',
+            'SUN-8K-SG04LP3-EU',
+            'pcs',
+            5,
+            'active',
+            u.id
+          FROM organizations org, users u, product_categories cat
+          WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com' AND cat.code = 'HYBRID_INV' AND org.id = cat.organization_id
+          ON CONFLICT (organization_id, code) DO NOTHING;
+
+          -- Batteries
+          INSERT INTO products (
+            organization_id, category_id, name, code, description, type,
+            specifications, brand, manufacturer, model_number,
+            unit_of_measure, product_warranty_years,
+            status, created_by
+          )
+          SELECT
+            org.id,
+            cat.id,
+            'Pylontech US3000C 3.5kWh',
+            'PYLON-3.5KWH',
+            'Lithium-ion battery module for residential energy storage',
+            'battery',
+            '{"common": {"capacity": 3.5, "voltage": 48, "chemistry": "Lithium Iron Phosphate", "cycleLife": 6000, "depthOfDischarge": 95, "weight": 37}}'::jsonb,
+            'Pylontech',
+            'Pylontech Co. Ltd',
+            'US3000C',
+            'pcs',
+            10,
+            'active',
+            u.id
+          FROM organizations org, users u, product_categories cat
+          WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com' AND cat.code = 'BATTERIES' AND org.id = cat.organization_id
+          ON CONFLICT (organization_id, code) DO NOTHING;
+
+          -- Mounting Structures
+          INSERT INTO products (
+            organization_id, category_id, name, code, description, type,
+            specifications, brand, manufacturer,
+            unit_of_measure, product_warranty_years,
+            status, created_by
+          )
+          SELECT
+            org.id,
+            cat.id,
+            'Aluminum Rooftop Mounting Kit',
+            'MNT-ROOF-AL',
+            'Complete aluminum mounting structure for residential rooftops',
+            'mounting_structure',
+            '{"additional": {"material": "Aluminum 6005-T5", "panelsPerKit": 10, "tiltAngle": "10-30 degrees", "windLoad": "Up to 200 km/h"}}'::jsonb,
+            'Generic',
+            'Various',
+            'set',
+            10,
+            'active',
+            u.id
+          FROM organizations org, users u, product_categories cat
+          WHERE org.code = 'ONEOHM-TEST' AND u.email = 'admin@oneohm.com' AND cat.code = 'MOUNTING' AND org.id = cat.organization_id
+          ON CONFLICT (organization_id, code) DO NOTHING;
+        `);
+
+    console.log('✓ Products seeded (6 products)');
+
     console.log('\n✅ Database seeding completed successfully!\n');
     console.log('📊 Seeded Data Summary:');
     console.log('  - 1 Organization');
@@ -519,6 +791,8 @@ async function seed() {
     console.log('  - 2 Resellers');
     console.log('  - 5 Customers (2 leads, 1 prospect, 2 active)');
     console.log('  - 2 Reseller Commissions (1 pending, 1 approved)');
+    console.log('  - 9 Product Categories (hierarchical)');
+    console.log('  - 6 Products (panels, inverters, batteries, mounting)');
     console.log('');
   } catch (error) {
     console.error('\n❌ Error during seeding:', error);
