@@ -7,13 +7,10 @@
     "outDir": "./dist",
     "incremental": true,
 
-    /* Relax strict rules for NestJS compatibility */
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "strictPropertyInitialization": false,
-    "noFallthroughCasesInSwitch": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false
+    /* Relax only what's necessary for TypeORM entities and NestJS decorators */
+    "strictPropertyInitialization": false, // TypeORM entities don't initialize in constructor
+    "noUnusedLocals": false, // NestJS decorators sometimes create unused parameters
+    "noUnusedParameters": false // NestJS decorators use _ prefix pattern
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]

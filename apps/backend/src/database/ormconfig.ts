@@ -19,7 +19,8 @@ const configObj = configuration();
 const configService: ConfigService<ConfigInterface> = {
   get: <K extends keyof ConfigInterface>(key: K): ConfigInterface[K] => {
     const keys = key.split('.');
-    let value: unknown = configObj;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let value: any = configObj; // Need 'any' for dynamic property access
 
     for (const k of keys) {
       value = value?.[k];
