@@ -37,7 +37,7 @@ import type { CurrentUserType } from '@oneohm-epc/shared-auth';
  */
 @ApiTags('Reseller Commissions')
 @ApiBearerAuth()
-@Controller('api/v1/commissions')
+@Controller('commissions')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ResellerCommissionController {
   constructor(private readonly commissionService: ResellerCommissionService) {}

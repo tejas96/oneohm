@@ -155,7 +155,8 @@ export class CreateOrganizationDto {
 
   @ApiPropertyOptional({
     description: 'Organization status',
-    enum: OrganizationStatus,
+    enum: Object.values(OrganizationStatus),
+    enumName: 'OrganizationStatus',
     default: OrganizationStatus.ACTIVE,
   })
   @IsOptional()
