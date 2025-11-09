@@ -28,7 +28,7 @@ import type { CurrentUserType } from '@oneohm-epc/shared-auth';
  */
 @ApiTags('Organizations')
 @ApiBearerAuth()
-@Controller('api/v1/organizations')
+@Controller('organizations')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class OrganizationController {
   constructor(private readonly organizationService: OrganizationService) {}

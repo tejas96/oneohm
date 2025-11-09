@@ -28,7 +28,7 @@ import type { CurrentUserType } from '@oneohm-epc/shared-auth';
  */
 @ApiTags('Resellers')
 @ApiBearerAuth()
-@Controller('api/v1/resellers')
+@Controller('resellers')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ResellerController {
   constructor(private readonly resellerService: ResellerService) {}
