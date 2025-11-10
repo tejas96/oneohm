@@ -1,14 +1,13 @@
 import { Body, Controller, Param, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-
-import { CurrentUser, JwtAuthGuard, Role, RolesGuard } from '@oneohm-epc/shared-auth';
+import { type CurrentUserType, CurrentUser, JwtAuthGuard, Role, RolesGuard } from '@oneohm-epc/shared-auth';
 import { ApiCreate, ApiDelete, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
 
 import { CreateOrganizationSettingDto } from '../dto/create-organization-setting.dto';
 import { UpdateOrganizationSettingDto } from '../dto/update-organization-setting.dto';
+import type { OrganizationSettingEntity } from '../entities/organization-setting.entity';
 import { OrganizationSettingService } from '../services/organization-setting.service';
 
-import type { CurrentUserType } from '@oneohm-epc/shared-auth';
 
 /**
  * Organization Setting Controller
@@ -33,7 +32,7 @@ export class OrganizationSettingController {
   async create(
     @Body() createDto: CreateOrganizationSettingDto,
     @CurrentUser() currentUser: CurrentUserType,
-  ) {
+  ): Promise<OrganizationSettingEntity> {
     return this.organizationSettingService.create(createDto, currentUser.id);
   }
 
@@ -50,7 +49,7 @@ export class OrganizationSettingController {
   async findByOrganization(
     @Param('organizationId', ParseUUIDPipe) organizationId: string,
     @Query('category') category?: string,
-  ) {
+  ): Promise<OrganizationSettingEntity[]> {
     return this.organizationSettingService.findByOrganization(organizationId, category);
   }
 
@@ -63,7 +62,7 @@ export class OrganizationSettingController {
     responseType: Object,
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
-  async findById(@Param('id', ParseUUIDPipe) id: string) {
+  async findById(@Param('id', ParseUUIDPipe) id: string): Promise<OrganizationSettingEntity> {
     return this.organizationSettingService.findById(id);
   }
 
@@ -80,7 +79,7 @@ export class OrganizationSettingController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateOrganizationSettingDto,
     @CurrentUser() currentUser: CurrentUserType,
-  ) {
+  ): Promise<OrganizationSettingEntity> {
     return this.organizationSettingService.update(id, updateDto, currentUser.id);
   }
 

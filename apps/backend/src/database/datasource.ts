@@ -1,8 +1,7 @@
-import { DataSource } from 'typeorm';
+import type { ConfigService } from '@nestjs/config';
+import { type DataSourceOptions, DataSource } from 'typeorm';
 
 import type { Configuration } from '../config/config.interface';
-import type { ConfigService } from '@nestjs/config';
-import type { DataSourceOptions } from 'typeorm';
 
 /**
  * TypeORM DataSource Factory

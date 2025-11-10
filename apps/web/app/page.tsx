@@ -1,4 +1,5 @@
-export default function Home() {
+// eslint-disable-next-line import/no-default-export -- Next.js requires default export for pages
+export default function Home(): React.JSX.Element {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <main className="flex flex-col items-center gap-8 p-8 text-center">

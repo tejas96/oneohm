@@ -1,4 +1,5 @@
-export default function NotFound() {
+// eslint-disable-next-line import/no-default-export -- Next.js requires default export for special files
+export default function NotFound(): React.JSX.Element {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <div className="text-center">

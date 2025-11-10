@@ -5,9 +5,9 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 
+import type { CreateProductCategoryDto, UpdateProductCategoryDto } from '../dto/product-categories';
 import { ProductCategoryEntity } from '../entities/product-category.entity';
 import { ProductCategoryRepository } from '../repositories/product-category.repository';
-import type { CreateProductCategoryDto, UpdateProductCategoryDto } from '../dto/product-categories';
 
 /**
  * Product Category Service

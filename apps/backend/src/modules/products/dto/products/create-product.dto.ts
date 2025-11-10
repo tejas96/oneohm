@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProductStatus, ProductType, UnitOfMeasure } from '@oneohm-epc/shared-types';
+import { Type } from 'class-transformer';
 import {
   IsEnum,
   IsInt,
@@ -14,7 +15,6 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 
 /**
  * Common specifications DTO

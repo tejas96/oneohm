@@ -1,4 +1,4 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { type ExecutionContext, createParamDecorator } from '@nestjs/common';
 
 import type { CurrentUser as CurrentUserType } from '../dto/jwt-payload.dto';
 

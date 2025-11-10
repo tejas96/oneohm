@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- Console statements are appropriate for CLI seed scripts */
 import * as bcrypt from 'bcrypt';
 
 import dataSource from '../ormconfig';
@@ -8,7 +9,7 @@ import dataSource from '../ormconfig';
  *
  * Usage: npm run seed
  */
-async function seed() {
+async function seed(): Promise<void> {
   await dataSource.initialize();
 
   console.log('🌱 Starting database seeding...\n');
@@ -784,6 +785,429 @@ async function seed() {
 
     console.log('✓ Products seeded (6 products)');
 
+    // ============================================
+    // 7. SEED QUOTES & QUOTATIONS
+    // ============================================
+    console.log('\n💼 Seeding Quotes...');
+
+    // Quote 1: Draft quote for lead customer
+    await dataSource.query(`
+      INSERT INTO quotes (
+        organization_id, customer_id, quote_number, quote_date,
+        valid_until, system_type, system_size_kw, project_type,
+        installation_address, installation_city, installation_state,
+        installation_pincode, discount_amount, status,
+        created_by
+      )
+      SELECT
+        org.id,
+        c.id,
+        'QT-ONEOHM-TEST-2024-0001',
+        '2024-01-15'::date,
+        '2024-02-14'::date,
+        'on_grid',
+        10.0,
+        'residential',
+        '456 Residential Area, Koramangala',
+        'Bangalore',
+        'Karnataka',
+        '560034',
+        5000.00,
+        'draft',
+        u.id
+      FROM organizations org, customers c, users u
+      WHERE org.code = 'ONEOHM-TEST'
+        AND c.email = 'rajesh.kumar@example.com'
+        AND u.email = 'admin@oneohm.com'
+        AND org.id = c.organization_id
+      ON CONFLICT DO NOTHING;
+    `);
+
+    // Quote 2: Sent quote for prospect customer
+    await dataSource.query(`
+      INSERT INTO quotes (
+        organization_id, customer_id, quote_number, quote_date,
+        valid_until, system_type, system_size_kw, project_type,
+        installation_address, installation_city, installation_state,
+        installation_pincode, discount_amount, status,
+        created_by
+      )
+      SELECT
+        org.id,
+        c.id,
+        'QT-ONEOHM-TEST-2024-0002',
+        '2024-01-20'::date,
+        '2024-02-19'::date,
+        'on_grid',
+        15.0,
+        'commercial',
+        '789 Commercial Complex, Whitefield',
+        'Bangalore',
+        'Karnataka',
+        '560066',
+        10000.00,
+        'sent',
+        u.id
+      FROM organizations org, customers c, users u
+      WHERE org.code = 'ONEOHM-TEST'
+        AND c.email = 'anita.sharma@greentech.com'
+        AND u.email = 'admin@oneohm.com'
+        AND org.id = c.organization_id
+      ON CONFLICT DO NOTHING;
+    `);
+
+    // Quote 3: Accepted quote for active customer
+    await dataSource.query(`
+      INSERT INTO quotes (
+        organization_id, customer_id, quote_number, quote_date,
+        valid_until, system_type, system_size_kw, project_type,
+        installation_address, installation_city, installation_state,
+        installation_pincode, discount_amount, status,
+        created_by
+      )
+      SELECT
+        org.id,
+        c.id,
+        'QT-ONEOHM-TEST-2024-0003',
+        '2024-01-10'::date,
+        '2024-02-09'::date,
+        'hybrid',
+        20.0,
+        'commercial',
+        '321 Industrial Park, Peenya',
+        'Bangalore',
+        'Karnataka',
+        '560058',
+        15000.00,
+        'accepted',
+        u.id
+      FROM organizations org, customers c, users u
+      WHERE org.code = 'ONEOHM-TEST'
+        AND c.email = 'priya.verma@example.com'
+        AND u.email = 'admin@oneohm.com'
+        AND org.id = c.organization_id
+      ON CONFLICT DO NOTHING;
+    `);
+
+    console.log('✓ Quotes seeded (3 quotes)');
+
+    // ============================================
+    // 8. SEED QUOTE VERSIONS
+    // ============================================
+    console.log('\n📋 Seeding Quote Versions...');
+
+    // Version 1 for Quote 1 (Draft)
+    await dataSource.query(`
+      INSERT INTO quote_versions (
+        quote_id, version_number, system_type, system_size_kw,
+        base_price, gst_12_on_70_percent, gst_18_on_30_percent,
+        total_gst, total_price, subsidy_amount, discount_amount,
+        final_price, payment_milestones, is_current, created_by
+      )
+      SELECT
+        q.id,
+        1,
+        'on_grid',
+        10.0,
+        550000.00,
+        46200.00,
+        29700.00,
+        75900.00,
+        625900.00,
+        50000.00,
+        5000.00,
+        570900.00,
+        '[
+          {"stage": "booking", "percentage": 30, "amount": 171270.00, "dueDate": "2024-02-01"},
+          {"stage": "installation", "percentage": 40, "amount": 228360.00, "dueDate": "2024-03-01"},
+          {"stage": "commissioning", "percentage": 30, "amount": 171270.00, "dueDate": "2024-03-15"}
+        ]'::jsonb,
+        true,
+        u.id
+      FROM quotes q, users u
+      WHERE q.quote_number = 'QT-ONEOHM-TEST-2024-0001'
+        AND u.email = 'admin@oneohm.com'
+      ON CONFLICT DO NOTHING;
+    `);
+
+    // Version 1 for Quote 2 (Sent)
+    await dataSource.query(`
+      INSERT INTO quote_versions (
+        quote_id, version_number, system_type, system_size_kw,
+        base_price, gst_12_on_70_percent, gst_18_on_30_percent,
+        total_gst, total_price, subsidy_amount, discount_amount,
+        final_price, payment_milestones, is_current, created_by
+      )
+      SELECT
+        q.id,
+        1,
+        'on_grid',
+        15.0,
+        825000.00,
+        69300.00,
+        44550.00,
+        113850.00,
+        938850.00,
+        75000.00,
+        10000.00,
+        853850.00,
+        '[
+          {"stage": "booking", "percentage": 25, "amount": 213462.50, "dueDate": "2024-02-15"},
+          {"stage": "material_delivery", "percentage": 35, "amount": 298847.50, "dueDate": "2024-03-01"},
+          {"stage": "installation", "percentage": 30, "amount": 256155.00, "dueDate": "2024-03-20"},
+          {"stage": "commissioning", "percentage": 10, "amount": 85385.00, "dueDate": "2024-04-01"}
+        ]'::jsonb,
+        true,
+        u.id
+      FROM quotes q, users u
+      WHERE q.quote_number = 'QT-ONEOHM-TEST-2024-0002'
+        AND u.email = 'admin@oneohm.com'
+      ON CONFLICT DO NOTHING;
+    `);
+
+    // Version 1 for Quote 3 (Accepted)
+    await dataSource.query(`
+      INSERT INTO quote_versions (
+        quote_id, version_number, system_type, system_size_kw,
+        base_price, gst_12_on_70_percent, gst_18_on_30_percent,
+        total_gst, total_price, subsidy_amount, discount_amount,
+        final_price, payment_milestones, is_current, created_by
+      )
+      SELECT
+        q.id,
+        1,
+        'hybrid',
+        20.0,
+        1100000.00,
+        92400.00,
+        59400.00,
+        151800.00,
+        1251800.00,
+        100000.00,
+        15000.00,
+        1136800.00,
+        '[
+          {"stage": "booking", "percentage": 20, "amount": 227360.00, "dueDate": "2024-01-25"},
+          {"stage": "material_delivery", "percentage": 30, "amount": 341040.00, "dueDate": "2024-02-10"},
+          {"stage": "installation", "percentage": 30, "amount": 341040.00, "dueDate": "2024-03-05"},
+          {"stage": "commissioning", "percentage": 20, "amount": 227360.00, "dueDate": "2024-03-25"}
+        ]'::jsonb,
+        true,
+        u.id
+      FROM quotes q, users u
+      WHERE q.quote_number = 'QT-ONEOHM-TEST-2024-0003'
+        AND u.email = 'admin@oneohm.com'
+      ON CONFLICT DO NOTHING;
+    `);
+
+    console.log('✓ Quote Versions seeded (3 versions)');
+
+    // ============================================
+    // 9. SEED QUOTE LINE ITEMS
+    // ============================================
+    console.log('\n📦 Seeding Quote Line Items...');
+
+    // Line items for Quote 1 Version 1
+    await dataSource.query(`
+      INSERT INTO quote_line_items (
+        quote_version_id, product_id, item_category, item_name,
+        item_description, specifications, quantity, unit_price,
+        discount_percentage, net_price, tax_rate, tax_amount, display_order
+      )
+      SELECT
+        qv.id,
+        p.id,
+        'solar_panel',
+        p.name,
+        p.description,
+        p.specifications,
+        18,
+        28000.00,
+        5.0,
+        26600.00,
+        12.0,
+        3192.00,
+        1
+      FROM quote_versions qv, quotes q, products p
+      WHERE qv.quote_id = q.id
+        AND q.quote_number = 'QT-ONEOHM-TEST-2024-0001'
+        AND p.code = 'JINKO-550W'
+        AND qv.version_number = 1
+      ON CONFLICT DO NOTHING;
+    `);
+
+    await dataSource.query(`
+      INSERT INTO quote_line_items (
+        quote_version_id, product_id, item_category, item_name,
+        item_description, specifications, quantity, unit_price,
+        discount_percentage, net_price, tax_rate, tax_amount, display_order
+      )
+      SELECT
+        qv.id,
+        p.id,
+        'inverter',
+        p.name,
+        p.description,
+        p.specifications,
+        1,
+        85000.00,
+        5.0,
+        80750.00,
+        18.0,
+        14535.00,
+        2
+      FROM quote_versions qv, quotes q, products p
+      WHERE qv.quote_id = q.id
+        AND q.quote_number = 'QT-ONEOHM-TEST-2024-0001'
+        AND p.code = 'SUNGROW-10KW'
+        AND qv.version_number = 1
+      ON CONFLICT DO NOTHING;
+    `);
+
+    // Line items for Quote 2 Version 1
+    await dataSource.query(`
+      INSERT INTO quote_line_items (
+        quote_version_id, product_id, item_category, item_name,
+        item_description, specifications, quantity, unit_price,
+        discount_percentage, net_price, tax_rate, tax_amount, display_order
+      )
+      SELECT
+        qv.id,
+        p.id,
+        'solar_panel',
+        p.name,
+        p.description,
+        p.specifications,
+        27,
+        29000.00,
+        3.0,
+        28130.00,
+        12.0,
+        3375.60,
+        1
+      FROM quote_versions qv, quotes q, products p
+      WHERE qv.quote_id = q.id
+        AND q.quote_number = 'QT-ONEOHM-TEST-2024-0002'
+        AND p.code = 'ADANI-545W'
+        AND qv.version_number = 1
+      ON CONFLICT DO NOTHING;
+    `);
+
+    await dataSource.query(`
+      INSERT INTO quote_line_items (
+        quote_version_id, product_id, item_category, item_name,
+        item_description, specifications, quantity, unit_price,
+        discount_percentage, net_price, tax_rate, tax_amount, display_order
+      )
+      SELECT
+        qv.id,
+        p.id,
+        'inverter',
+        p.name,
+        p.description,
+        p.specifications,
+        1,
+        125000.00,
+        3.0,
+        121250.00,
+        18.0,
+        21825.00,
+        2
+      FROM quote_versions qv, quotes q, products p
+      WHERE qv.quote_id = q.id
+        AND q.quote_number = 'QT-ONEOHM-TEST-2024-0002'
+        AND p.code = 'GROWATT-15KW'
+        AND qv.version_number = 1
+      ON CONFLICT DO NOTHING;
+    `);
+
+    // Line items for Quote 3 Version 1 (more comprehensive with battery)
+    await dataSource.query(`
+      INSERT INTO quote_line_items (
+        quote_version_id, product_id, item_category, item_name,
+        item_description, specifications, quantity, unit_price,
+        discount_percentage, net_price, tax_rate, tax_amount, display_order
+      )
+      SELECT
+        qv.id,
+        p.id,
+        'solar_panel',
+        p.name,
+        p.description,
+        p.specifications,
+        36,
+        28000.00,
+        5.0,
+        26600.00,
+        12.0,
+        3192.00,
+        1
+      FROM quote_versions qv, quotes q, products p
+      WHERE qv.quote_id = q.id
+        AND q.quote_number = 'QT-ONEOHM-TEST-2024-0003'
+        AND p.code = 'JINKO-550W'
+        AND qv.version_number = 1
+      ON CONFLICT DO NOTHING;
+    `);
+
+    await dataSource.query(`
+      INSERT INTO quote_line_items (
+        quote_version_id, product_id, item_category, item_name,
+        item_description, specifications, quantity, unit_price,
+        discount_percentage, net_price, tax_rate, tax_amount, display_order
+      )
+      SELECT
+        qv.id,
+        p.id,
+        'inverter',
+        p.name,
+        p.description,
+        p.specifications,
+        1,
+        125000.00,
+        5.0,
+        118750.00,
+        18.0,
+        21375.00,
+        2
+      FROM quote_versions qv, quotes q, products p
+      WHERE qv.quote_id = q.id
+        AND q.quote_number = 'QT-ONEOHM-TEST-2024-0003'
+        AND p.code = 'GROWATT-15KW'
+        AND qv.version_number = 1
+      ON CONFLICT DO NOTHING;
+    `);
+
+    await dataSource.query(`
+      INSERT INTO quote_line_items (
+        quote_version_id, product_id, item_category, item_name,
+        item_description, specifications, quantity, unit_price,
+        discount_percentage, net_price, tax_rate, tax_amount, display_order
+      )
+      SELECT
+        qv.id,
+        p.id,
+        'battery',
+        p.name,
+        p.description,
+        p.specifications,
+        2,
+        95000.00,
+        5.0,
+        90250.00,
+        18.0,
+        16245.00,
+        3
+      FROM quote_versions qv, quotes q, products p
+      WHERE qv.quote_id = q.id
+        AND q.quote_number = 'QT-ONEOHM-TEST-2024-0003'
+        AND p.code = 'LUMINOUS-10KWH'
+        AND qv.version_number = 1
+      ON CONFLICT DO NOTHING;
+    `);
+
+    console.log('✓ Quote Line Items seeded (7 line items across 3 quotes)');
+
     console.log('\n✅ Database seeding completed successfully!\n');
     console.log('📊 Seeded Data Summary:');
     console.log('  - 1 Organization');
@@ -793,6 +1217,9 @@ async function seed() {
     console.log('  - 2 Reseller Commissions (1 pending, 1 approved)');
     console.log('  - 9 Product Categories (hierarchical)');
     console.log('  - 6 Products (panels, inverters, batteries, mounting)');
+    console.log('  - 3 Quotes (1 draft, 1 sent, 1 accepted)');
+    console.log('  - 3 Quote Versions (with GST calculations & payment milestones)');
+    console.log('  - 7 Quote Line Items (linked to products)');
     console.log('');
   } catch (error) {
     console.error('\n❌ Error during seeding:', error);

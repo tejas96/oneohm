@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-
 import { OrganizationStatus } from '@oneohm-epc/shared-types';
 import { IsEnum } from 'class-validator';
 
