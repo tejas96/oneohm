@@ -4,7 +4,10 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import type { Reflector } from '@nestjs/core';
+// NOTE: Reflector MUST be a regular import (not type-only) because it's injected in the constructor
+// Using 'import type' would remove it from the compiled JS, breaking dependency injection
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { Reflector } from '@nestjs/core';
 
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import type { JwtPayload } from '../dto/jwt-payload.dto';

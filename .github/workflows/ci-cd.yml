@@ -11,6 +11,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Required permissions for nx-set-shas to access workflow runs
+permissions:
+  contents: read
+  actions: read
+
 env:
   NODE_VERSION: '20'
   NX_CLOUD_DISTRIBUTED_EXECUTION: 'false'
@@ -107,6 +112,8 @@ jobs:
 
       - name: Set NX SHAs
         uses: nrwl/nx-set-shas@v4
+        with:
+          main-branch-name: 'main'
 
       - name: Run lint on affected projects
         run: npx nx affected -t lint --parallel=3 --configuration=ci
@@ -150,6 +157,8 @@ jobs:
 
       - name: Set NX SHAs
         uses: nrwl/nx-set-shas@v4
+        with:
+          main-branch-name: 'main'
 
       - name: Run type check on affected projects
         run: npx nx affected -t typecheck --parallel=3
@@ -193,6 +202,8 @@ jobs:
 
       - name: Set NX SHAs
         uses: nrwl/nx-set-shas@v4
+        with:
+          main-branch-name: 'main'
 
       - name: Run tests on affected projects
         run: npx nx affected -t test --parallel=3 --configuration=ci --coverage
@@ -243,6 +254,8 @@ jobs:
 
       - name: Set NX SHAs
         uses: nrwl/nx-set-shas@v4
+        with:
+          main-branch-name: 'main'
 
       - name: Build affected projects
         run: npx nx affected -t build --parallel=3 --configuration=production
@@ -289,6 +302,8 @@ jobs:
 
       - name: Set NX SHAs
         uses: nrwl/nx-set-shas@v4
+        with:
+          main-branch-name: 'main'
 
       - name: Check if backend is affected
         id: check-backend
@@ -346,6 +361,8 @@ jobs:
 
       - name: Set NX SHAs
         uses: nrwl/nx-set-shas@v4
+        with:
+          main-branch-name: 'main'
 
       - name: Check if web is affected
         id: check-web

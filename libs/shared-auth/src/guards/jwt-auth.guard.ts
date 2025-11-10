@@ -1,5 +1,7 @@
 import { type ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
-import type { Reflector } from '@nestjs/core';
+// NOTE: Reflector MUST be a regular import (not type-only) because it's injected in the constructor
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import type { Observable } from 'rxjs';
 
