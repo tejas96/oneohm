@@ -257,6 +257,7 @@ export class QuoteService {
       status?: QuoteStatus;
       customerId?: string;
       salesPersonId?: string;
+      resellerId?: string;
       fromDate?: string;
       toDate?: string;
       search?: string;
