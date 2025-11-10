@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { ProductStatus } from '@oneohm-epc/shared-types';
 
+import type { CreateProductDto, UpdateProductDto } from '../dto/products';
 import { ProductEntity } from '../entities/product.entity';
 import { ProductRepository } from '../repositories/product.repository';
-import type { CreateProductDto, UpdateProductDto } from '../dto/products';
 
 /**
  * Product Service

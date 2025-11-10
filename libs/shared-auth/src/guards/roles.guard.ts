@@ -1,8 +1,14 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { Role } from '../enums/role.enum';
+import {
+  type CanActivate,
+  type ExecutionContext,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
+import type { Reflector } from '@nestjs/core';
+
 import { ROLES_KEY } from '../decorators/roles.decorator';
-import { JwtPayload } from '../dto/jwt-payload.dto';
+import type { JwtPayload } from '../dto/jwt-payload.dto';
+import type { Role } from '../enums/role.enum';
 
 /**
  * Roles Guard

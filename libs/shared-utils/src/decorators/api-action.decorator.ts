@@ -1,6 +1,6 @@
-import { applyDecorators, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { type Type, applyDecorators, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
-import { Role, Roles } from '@oneohm-epc/shared-auth';
+import { type Role, Roles } from '@oneohm-epc/shared-auth';
 
 /**
  * API Action Decorator
@@ -14,14 +14,14 @@ import { Role, Roles } from '@oneohm-epc/shared-auth';
  *   roles: [Role.SUPER_ADMIN, Role.ADMIN],
  * })
  */
-export function ApiAction(options: {
+export function ApiAction<TResponse>(options: {
   path: string;
   summary: string;
   description?: string;
-  responseType: any;
+  responseType: Type<TResponse>;
   roles?: Role[];
   idParam?: string;
-}) {
+}): MethodDecorator & ClassDecorator {
   const decorators = [
     Post(`:${options.idParam || 'id'}/${options.path}`),
     HttpCode(HttpStatus.OK),

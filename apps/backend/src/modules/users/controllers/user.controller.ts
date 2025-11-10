@@ -12,8 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-
-import { CurrentUser, JwtAuthGuard, Role, RolesGuard } from '@oneohm-epc/shared-auth';
+import { type CurrentUserType, CurrentUser, JwtAuthGuard, Role, RolesGuard } from '@oneohm-epc/shared-auth';
 import { UserStatus } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
@@ -28,7 +27,6 @@ import { plainToInstance } from 'class-transformer';
 import { CreateUserDto, UpdateUserDto, UpdateUserStatusDto, UserResponseDto } from '../dto';
 import { UserService } from '../services/user.service';
 
-import type { CurrentUserType } from '@oneohm-epc/shared-auth';
 
 @ApiTags('Users')
 @Controller('users')

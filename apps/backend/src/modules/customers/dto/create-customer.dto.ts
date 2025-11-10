@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
 import { CustomerStatus } from '@oneohm-epc/shared-types';
 import {
   IsEmail,

@@ -127,4 +127,5 @@ export const theme = {
   breakpoints,
 };
 
+// eslint-disable-next-line import/no-default-export -- Theme conventionally uses default export
 export default theme;

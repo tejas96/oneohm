@@ -1,7 +1,6 @@
 import { Body, Controller, Get, HttpStatus, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-
-import { CurrentUser, JwtAuthGuard, Role, Roles, RolesGuard } from '@oneohm-epc/shared-auth';
+import { type CurrentUserType, CurrentUser, JwtAuthGuard, Role, Roles, RolesGuard } from '@oneohm-epc/shared-auth';
 import { CustomerStatus } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
@@ -20,7 +19,6 @@ import {
 } from '../dto';
 import { CustomerService } from '../services/customer.service';
 
-import type { CurrentUserType } from '@oneohm-epc/shared-auth';
 
 /**
  * Customer Controller

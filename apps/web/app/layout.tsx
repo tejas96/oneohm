@@ -6,11 +6,12 @@ export const metadata: Metadata = {
   description: 'OneOhm EPC Application',
 };
 
+// eslint-disable-next-line import/no-default-export -- Next.js requires default export for layouts
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) {
+}>): React.JSX.Element {
   return (
     <html lang="en">
       <body className="antialiased">{children}</body>

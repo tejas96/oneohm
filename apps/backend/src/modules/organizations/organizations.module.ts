@@ -23,6 +23,6 @@ import { OrganizationService } from './services/organization.service';
     OrganizationService,
     OrganizationSettingService,
   ],
-  exports: [OrganizationService, OrganizationSettingService],
+  exports: [OrganizationRepository, OrganizationService, OrganizationSettingService],
 })
 export class OrganizationsModule {}

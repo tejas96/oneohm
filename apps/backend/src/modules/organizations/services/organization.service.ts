@@ -5,7 +5,6 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-
 import { OrganizationStatus } from '@oneohm-epc/shared-types';
 
 import { CreateOrganizationDto } from '../dto/create-organization.dto';

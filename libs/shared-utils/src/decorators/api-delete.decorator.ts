@@ -1,6 +1,6 @@
 import { applyDecorators, Delete, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
-import { Role, Roles } from '@oneohm-epc/shared-auth';
+import { type Role, Roles } from '@oneohm-epc/shared-auth';
 
 /**
  * API Delete Decorator
@@ -18,7 +18,7 @@ export function ApiDelete(options: {
   roles?: Role[];
   idParam?: string;
   additionalErrors?: Array<{ status: HttpStatus; description: string }>;
-}) {
+}): MethodDecorator & ClassDecorator {
   const decorators = [
     Delete(`:${options.idParam || 'id'}`),
     HttpCode(HttpStatus.NO_CONTENT),

@@ -1,7 +1,7 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-
+import type { CurrentUserType, JwtPayload } from '@oneohm-epc/shared-auth';
 import { UserStatus } from '@oneohm-epc/shared-types';
 
 import { LoginDto, LoginResponseDto } from '../dto/login.dto';
@@ -9,7 +9,6 @@ import { RefreshTokenResponseDto } from '../dto/refresh-token.dto';
 import { UserRoleRepository } from '../repositories/user-role.repository';
 import { UserRepository } from '../repositories/user.repository';
 
-import type { CurrentUserType, JwtPayload } from '@oneohm-epc/shared-auth';
 
 @Injectable()
 export class AuthService {

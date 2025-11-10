@@ -1,6 +1,4 @@
-import { Table, TableForeignKey, TableIndex } from 'typeorm';
-
-import type { MigrationInterface, QueryRunner } from 'typeorm';
+import { type MigrationInterface, type QueryRunner, Table, TableForeignKey, TableIndex } from 'typeorm';
 
 /**
  * Migration: Create Organizations and Organization Settings Tables

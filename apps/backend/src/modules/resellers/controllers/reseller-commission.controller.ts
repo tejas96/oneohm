@@ -9,8 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-
-import { CurrentUser, JwtAuthGuard, Role, Roles, RolesGuard } from '@oneohm-epc/shared-auth';
+import { type CurrentUserType, CurrentUser, JwtAuthGuard, Role, Roles, RolesGuard } from '@oneohm-epc/shared-auth';
 import { CommissionStatus } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
@@ -29,7 +28,6 @@ import {
 } from '../dto';
 import { ResellerCommissionService } from '../services/reseller-commission.service';
 
-import type { CurrentUserType } from '@oneohm-epc/shared-auth';
 
 /**
  * Reseller Commission Controller
@@ -87,7 +85,7 @@ export class ResellerCommissionController {
       {
         name: 'resellerId',
         required: false,
-        type: 'string',
+        type: String,
         description: 'Filter by reseller ID',
       },
     ],
