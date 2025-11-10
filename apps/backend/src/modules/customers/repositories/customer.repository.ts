@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-
 import { CustomerStatus } from '@oneohm-epc/shared-types';
 import { Repository } from 'typeorm';
 

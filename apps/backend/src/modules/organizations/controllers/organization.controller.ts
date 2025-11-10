@@ -1,7 +1,6 @@
 import { Body, Controller, Param, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-
-import { CurrentUser, JwtAuthGuard, Role, RolesGuard } from '@oneohm-epc/shared-auth';
+import { type CurrentUserType, CurrentUser, JwtAuthGuard, Role, RolesGuard } from '@oneohm-epc/shared-auth';
 import { OrganizationStatus } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
@@ -20,7 +19,6 @@ import {
 } from '../dto';
 import { OrganizationService } from '../services/organization.service';
 
-import type { CurrentUserType } from '@oneohm-epc/shared-auth';
 
 /**
  * Organization Controller

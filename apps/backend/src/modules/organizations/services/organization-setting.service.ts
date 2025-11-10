@@ -1,5 +1,4 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-
 import { SettingDataType } from '@oneohm-epc/shared-types';
 
 import { CreateOrganizationSettingDto } from '../dto/create-organization-setting.dto';
@@ -229,12 +228,12 @@ export class OrganizationSettingService {
   ): Promise<Record<string, string | null>> {
     const settings = await this.findByOrganization(organizationId, category);
 
-    return settings.reduce(
+    return settings.reduce<Record<string, string | null>>(
       (map, setting) => {
         map[setting.key] = setting.value;
         return map;
       },
-      {} as Record<string, string | null>,
+      {},
     );
   }
 }

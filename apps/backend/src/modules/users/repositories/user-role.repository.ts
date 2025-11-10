@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-
 import { Role } from '@oneohm-epc/shared-auth';
 import { Repository } from 'typeorm';
 

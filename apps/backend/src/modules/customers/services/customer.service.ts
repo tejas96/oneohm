@@ -5,7 +5,6 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-
 import { CustomerStatus } from '@oneohm-epc/shared-types';
 
 import { CreateCustomerDto } from '../dto/create-customer.dto';
@@ -85,7 +84,7 @@ export class CustomerService {
   async findById(id: string, organizationId: string): Promise<CustomerEntity> {
     const customer = await this.customerRepository.findById(id);
 
-    if (!customer?.organizationId || customer.organizationId !== organizationId) {
+    if (customer?.organizationId !== organizationId) {
       throw new NotFoundException(`Customer with ID '${id}' not found`);
     }
 

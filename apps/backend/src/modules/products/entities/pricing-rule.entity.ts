@@ -1,10 +1,10 @@
 import { PricingRuleType, ProjectType } from '@oneohm-epc/shared-types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
+import { ProductEntity } from './product.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
-import { ProductEntity } from './product.entity';
 
 /**
  * Pricing Rule Entity

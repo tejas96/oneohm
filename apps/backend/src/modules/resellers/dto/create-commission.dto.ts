@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
 import { CommissionStatus } from '@oneohm-epc/shared-types';
 import { IsDecimal, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 

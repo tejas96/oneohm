@@ -3,7 +3,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
-
 import { JwtStrategy } from '@oneohm-epc/shared-auth';
 
 import { AuthController, UserController } from './controllers';

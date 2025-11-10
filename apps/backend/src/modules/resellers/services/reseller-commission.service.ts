@@ -1,5 +1,4 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-
 import { CommissionStatus } from '@oneohm-epc/shared-types';
 
 import { ResellerService } from './reseller.service';
