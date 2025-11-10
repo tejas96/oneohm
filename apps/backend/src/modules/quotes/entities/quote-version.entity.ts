@@ -1,7 +1,6 @@
 import { PaymentMilestone, SystemType } from '@oneohm-epc/shared-types';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
-
 import { QuoteLineItemEntity } from './quote-line-item.entity';
 import { QuoteEntity } from './quote.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';

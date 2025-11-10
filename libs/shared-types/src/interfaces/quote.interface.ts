@@ -65,4 +65,3 @@ export interface SubsidyConfiguration {
   /** Project type applicability */
   projectType?: string;
 }
-

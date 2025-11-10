@@ -40,5 +40,3 @@ export class QuoteLineItemRepository {
     await this.repository.delete({ quoteVersionId: versionId });
   }
 }
-
-

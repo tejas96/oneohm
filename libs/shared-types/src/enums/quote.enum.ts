@@ -55,4 +55,3 @@ export enum PaymentMilestoneStage {
   FINAL_PAYMENT = 'final_payment',
   POST_INSTALLATION = 'post_installation',
 }
-

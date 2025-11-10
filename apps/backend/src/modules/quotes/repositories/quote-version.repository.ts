@@ -54,5 +54,3 @@ export class QuoteVersionRepository {
     await this.repository.update({ quoteId, versionNumber }, { isCurrent: true });
   }
 }
-
-
