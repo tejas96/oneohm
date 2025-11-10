@@ -85,7 +85,7 @@ export class ResellerCommissionController {
       {
         name: 'resellerId',
         required: false,
-        type: 'string',
+        type: String,
         description: 'Filter by reseller ID',
       },
     ],
