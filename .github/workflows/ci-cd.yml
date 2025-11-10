@@ -198,7 +198,7 @@ jobs:
         run: npx nx affected -t test --parallel=3 --configuration=ci --coverage
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         if: always()
         with:
           directory: ./coverage
