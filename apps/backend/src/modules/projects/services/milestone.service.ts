@@ -259,7 +259,7 @@ export class MilestoneService {
 
       try {
         await this.milestoneRepository.findById(depId, projectId);
-      } catch (error) {
+      } catch {
         throw new BadRequestException(`Dependency milestone ${depId} not found`);
       }
     }
