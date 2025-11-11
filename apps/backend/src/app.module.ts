@@ -7,6 +7,7 @@ import { DatabaseModule } from './database/database.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { ProductsModule } from './modules/products/products.module';
+import { ProjectsModule } from './modules/projects/projects.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
 import { ResellersModule } from './modules/resellers/resellers.module';
 import { UsersModule } from './modules/users/users.module';
@@ -21,6 +22,7 @@ import { UsersModule } from './modules/users/users.module';
     ResellersModule,
     ProductsModule,
     QuotesModule,
+    ProjectsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
