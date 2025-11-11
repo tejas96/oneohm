@@ -100,7 +100,7 @@ export default [
       // ------------------------------
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-debugger': 'error',
-      'no-duplicate-imports': 'error',
+      'no-duplicate-imports': 'off', // Use import/no-duplicates instead for better auto-fix
       'no-else-return': 'warn',
       'no-return-await': 'error',
       'no-unused-expressions': 'error',
@@ -115,6 +115,7 @@ export default [
       // ------------------------------
       // 🧩 Imports & Monorepo Cleanliness
       // ------------------------------
+      'import/no-duplicates': ['error', { 'prefer-inline': true }], // Auto-fix duplicate imports, works with type imports
       'import/order': [
         'error',
         {
