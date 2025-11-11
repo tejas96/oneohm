@@ -5,3 +5,4 @@ export * from './reseller.enum';
 export * from './product.enum';
 export * from './project.enum';
 export * from './quote.enum';
+export * from './inventory.enum';
