@@ -6,16 +6,20 @@ import {
 } from '@oneohm-epc/shared-types';
 
 import { type CreateProjectTaskDto, type UpdateProjectTaskDto } from '../dto';
-import { type ProjectTaskEntity } from '../entities';
-import { ProjectTaskRepository } from '../repositories';
+import { type ProjectTaskEntity, type TaskTimeLogEntity, type TaskActivityLogEntity } from '../entities';
+import { ProjectTaskRepository, TaskTimeLogRepository, TaskActivityLogRepository } from '../repositories';
 
 /**
  * ProjectTaskService
- * Business logic for project tasks
+ * Business logic for project tasks with time tracking and activity logging
  */
 @Injectable()
 export class ProjectTaskService {
-  constructor(private readonly taskRepository: ProjectTaskRepository) {}
+  constructor(
+    private readonly taskRepository: ProjectTaskRepository,
+    private readonly timeLogRepository: TaskTimeLogRepository,
+    private readonly activityLogRepository: TaskActivityLogRepository,
+  ) {}
 
   /**
    * Create a new project task
@@ -106,8 +110,8 @@ export class ProjectTaskService {
     updateDto: UpdateProjectTaskDto,
     currentUserId: string,
   ): Promise<ProjectTaskEntity> {
-    // Check if task exists
-    await this.findById(id, projectId);
+    // Check if task exists and get current state for activity logging
+    const existingTask = await this.findById(id, projectId);
 
     // Check if code is being updated and already exists
     if (updateDto.code) {
@@ -130,7 +134,6 @@ export class ProjectTaskService {
     // Auto-set dates based on status
     const statusChanges: Record<string, unknown> = {};
     if (updateDto.status === TaskStatus.IN_PROGRESS) {
-      const existingTask = await this.findById(id, projectId);
       if (!existingTask.actualStartDate) {
         statusChanges.actualStartDate = new Date();
       }
@@ -138,7 +141,6 @@ export class ProjectTaskService {
     if (
       updateDto.status === TaskStatus.COMPLETED || updateDto.status === TaskStatus.CANCELLED
     ) {
-      const existingTask = await this.findById(id, projectId);
       if (!existingTask.actualEndDate) {
         statusChanges.actualEndDate = new Date();
       }
@@ -155,6 +157,45 @@ export class ProjectTaskService {
 
     if (!updated) {
       throw new NotFoundException(`Task with ID ${id} not found`);
+    }
+
+    // Log important field changes
+    if (updateDto.status && updateDto.status !== existingTask.status) {
+      await this.createActivityLog(
+        id,
+        'status_changed',
+        currentUserId,
+        'status',
+        existingTask.status,
+        updateDto.status,
+      );
+    }
+
+    if (updateDto.assignedToUserId && updateDto.assignedToUserId !== existingTask.assignedToUserId) {
+      await this.createActivityLog(
+        id,
+        'assigned',
+        currentUserId,
+        'assignedToUserId',
+        existingTask.assignedToUserId,
+        updateDto.assignedToUserId,
+      );
+    }
+
+    if (updateDto.priority && updateDto.priority !== existingTask.priority) {
+      await this.createActivityLog(
+        id,
+        'updated',
+        currentUserId,
+        'priority',
+        existingTask.priority,
+        updateDto.priority,
+      );
+    }
+
+    // Log general update if no specific field changes tracked
+    if (!updateDto.status && !updateDto.assignedToUserId && !updateDto.priority) {
+      await this.createActivityLog(id, 'updated', currentUserId);
     }
 
     return updated;
@@ -210,11 +251,15 @@ export class ProjectTaskService {
 
   /**
    * Log time for task
+   * Creates a time log entry and updates task's logged hours
    */
   async logTime(
     id: string,
     projectId: string,
     hoursToAdd: number,
+    workDescription: string | undefined,
+    isBillable: boolean | undefined,
+    workDate: Date | undefined,
     currentUserId: string,
   ): Promise<ProjectTaskEntity> {
     const task = await this.findById(id, projectId);
@@ -223,6 +268,18 @@ export class ProjectTaskService {
       throw new BadRequestException('Hours to add must be positive');
     }
 
+    // Create time log entry
+    await this.timeLogRepository.create({
+      taskId: id,
+      userId: currentUserId,
+      timeSpentHours: hoursToAdd,
+      workDate: workDate ?? new Date(),
+      workDescription,
+      isBillable: isBillable ?? true,
+      createdBy: currentUserId,
+    });
+
+    // Update task's logged hours
     const newLoggedHours = task.loggedHours + hoursToAdd;
 
     const updated = await this.taskRepository.update(id, projectId, {
@@ -234,7 +291,31 @@ export class ProjectTaskService {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
 
+    // Create activity log
+    await this.createActivityLog(
+      id,
+      'time_logged',
+      currentUserId,
+      'loggedHours',
+      task.loggedHours.toString(),
+      newLoggedHours.toString(),
+    );
+
     return updated;
+  }
+
+  /**
+   * Get all time logs for a task
+   */
+  async getTaskTimeLogs(taskId: string): Promise<TaskTimeLogEntity[]> {
+    return this.timeLogRepository.findByTaskId(taskId);
+  }
+
+  /**
+   * Get activity log for a task
+   */
+  async getTaskActivityLog(taskId: string, limit = 100): Promise<TaskActivityLogEntity[]> {
+    return this.activityLogRepository.findByTaskId(taskId, limit);
   }
 
   /**
@@ -274,6 +355,27 @@ export class ProjectTaskService {
    */
   async generateTaskCode(projectId: string): Promise<string> {
     return this.taskRepository.getNextTaskCode(projectId);
+  }
+
+  /**
+   * Create activity log entry (private helper)
+   */
+  private async createActivityLog(
+    taskId: string,
+    activityType: string,
+    userId: string,
+    fieldName?: string,
+    oldValue?: string,
+    newValue?: string,
+  ): Promise<void> {
+    await this.activityLogRepository.create({
+      taskId,
+      activityType,
+      userId,
+      fieldName,
+      oldValue,
+      newValue,
+    });
   }
 }
 
