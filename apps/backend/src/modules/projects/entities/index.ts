@@ -4,4 +4,5 @@ export * from './site-survey.entity';
 export * from './project-material.entity';
 export * from './task-template.entity';
 export * from './project-task.entity';
-
+export * from './task-time-log.entity';
+export * from './task-activity-log.entity';
