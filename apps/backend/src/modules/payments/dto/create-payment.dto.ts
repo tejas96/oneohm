@@ -2,8 +2,8 @@
 // IMPORTS
 // ============================================
 // Shared types
-import { PaymentMethod, PaymentTransactionStatus } from '@oneohm-epc/shared-types';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaymentMethod, PaymentTransactionStatus } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
   IsDate,
@@ -13,7 +13,6 @@ import {
   IsOptional,
   IsString,
   IsUUID,
-  Max,
   Min,
 } from 'class-validator';
 

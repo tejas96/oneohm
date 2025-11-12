@@ -2,11 +2,11 @@
 // IMPORTS
 // ============================================
 // Shared types
-import { PaymentTransactionStatus } from '@oneohm-epc/shared-types';
 
 // Third-party imports
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { PaymentTransactionStatus } from '@oneohm-epc/shared-types';
 import { Repository, IsNull } from 'typeorm';
 
 // Local imports
@@ -128,10 +128,10 @@ export class PaymentRepository {
       .addSelect('SUM(payment.paid_amount)', 'totalPaid')
       .where('payment.project_id = :projectId', { projectId })
       .andWhere('payment.deleted_at IS NULL')
-      .getRawOne();
+      .getRawOne<{ totalExpected: string | null; totalPaid: string | null }>();
 
-    const totalExpected = Number(result?.totalExpected || 0);
-    const totalPaid = Number(result?.totalPaid || 0);
+    const totalExpected = Number(result?.totalExpected ?? 0);
+    const totalPaid = Number(result?.totalPaid ?? 0);
 
     return {
       totalExpected,

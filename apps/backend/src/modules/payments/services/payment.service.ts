@@ -2,20 +2,20 @@
 // IMPORTS
 // ============================================
 // Shared types
-import { PaymentTransactionStatus } from '@oneohm-epc/shared-types';
-
-// Third-party imports
 import {
   Injectable,
   NotFoundException,
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
+import { PaymentTransactionStatus } from '@oneohm-epc/shared-types';
+
+// Third-party imports
 
 // Local imports
-import { PaymentRepository } from '../repositories/payment.repository';
-import { PaymentEntity } from '../entities/payment.entity';
 import { CreatePaymentDto, UpdatePaymentDto, ReconcilePaymentDto } from '../dto';
+import { PaymentEntity } from '../entities/payment.entity';
+import { PaymentRepository } from '../repositories/payment.repository';
 
 /**
  * Service for Payment operations
@@ -154,7 +154,7 @@ export class PaymentService {
     // Only cleared payments can be reconciled
     if (payment.status !== PaymentTransactionStatus.CLEARED) {
       throw new BadRequestException(
-        'Only cleared payments can be reconciled. Current status: ' + payment.status,
+        `Only cleared payments can be reconciled. Current status: ${  payment.status}`,
       );
     }
 
