@@ -232,7 +232,7 @@ export class VendorController {
   async getStatistics(
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<{
-    totalVendors: number;
+    total: number;
     byStatus: Record<VendorStatus, number>;
     byType: Record<VendorType, number>;
   }> {

@@ -20,13 +20,7 @@ import {
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
 import { PaymentStatus, PurchaseOrderStatus } from '@oneohm-epc/shared-types';
-import {
-  ApiCreate,
-  ApiDelete,
-  ApiReadAll,
-  ApiReadOne,
-  ApiUpdate,
-} from '@oneohm-epc/shared-utils';
+import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import {
@@ -322,11 +316,7 @@ export class PurchaseOrderController {
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<PurchaseOrderResponseDto> {
-    const po = await this.purchaseOrderService.send(
-      id,
-      currentUser.organizationId,
-      currentUser.id,
-    );
+    const po = await this.purchaseOrderService.send(id, currentUser.organizationId, currentUser.id);
 
     return plainToInstance(PurchaseOrderResponseDto, po, {
       excludeExtraneousValues: true,
@@ -394,13 +384,11 @@ export class PurchaseOrderController {
     summary: 'Get purchase order statistics',
     description: 'Get PO count by status and pending approvals',
   })
-  async getStatistics(
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<{
-    totalOrders: number;
+  async getStatistics(@CurrentUser() currentUser: CurrentUserType): Promise<{
+    total: number;
     byStatus: Record<PurchaseOrderStatus, number>;
-    totalValue: number;
-    pendingValue: number;
+    pendingApprovals: number;
+    overdueCount: number;
   }> {
     return this.purchaseOrderService.getStatistics(currentUser.organizationId);
   }
@@ -414,7 +402,9 @@ export class PurchaseOrderController {
     summary: 'Get overdue purchase orders',
     description: 'Get list of purchase orders past expected delivery date',
   })
-  async getOverdue(@CurrentUser() currentUser: CurrentUserType): Promise<PurchaseOrderResponseDto[]> {
+  async getOverdue(
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<PurchaseOrderResponseDto[]> {
     const pos = await this.purchaseOrderService.getOverduePurchaseOrders(
       currentUser.organizationId,
     );
@@ -424,4 +414,3 @@ export class PurchaseOrderController {
     });
   }
 }
-

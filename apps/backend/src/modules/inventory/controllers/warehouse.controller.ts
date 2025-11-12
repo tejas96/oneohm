@@ -240,9 +240,8 @@ export class WarehouseController {
   async getStatistics(
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<{
-    totalWarehouses: number;
+    total: number;
     byStatus: Record<WarehouseStatus, number>;
-    byType: Record<WarehouseType, number>;
   }> {
     return this.warehouseService.getStatistics(currentUser.organizationId);
   }

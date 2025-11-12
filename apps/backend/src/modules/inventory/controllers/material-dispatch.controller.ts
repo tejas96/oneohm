@@ -329,7 +329,7 @@ export class MaterialDispatchController {
   async getStatistics(
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<{
-    totalDispatches: number;
+    total: number;
     byStatus: Record<MaterialDispatchStatus, number>;
   }> {
     return this.materialDispatchService.getStatistics(currentUser.organizationId);

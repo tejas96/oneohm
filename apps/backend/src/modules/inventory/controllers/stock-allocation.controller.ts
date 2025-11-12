@@ -292,7 +292,7 @@ export class StockAllocationController {
   async getStatistics(
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<{
-    totalAllocations: number;
+    total: number;
     byStatus: Record<StockAllocationStatus, number>;
   }> {
     return this.stockAllocationService.getStatistics(currentUser.organizationId);

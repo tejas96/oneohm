@@ -284,8 +284,7 @@ export class InventoryStockController {
     Array<{
       warehouseId: string;
       warehouseName: string;
-      totalProducts: number;
-      totalQuantity: number;
+      totalItems: number;
       totalValue: number;
     }>
   > {
