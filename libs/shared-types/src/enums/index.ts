@@ -11,3 +11,4 @@ export * from './payment.enum';
 export * from './comment.enum';
 export * from './document.enum';
 export * from './service-maintenance.enum';
+export * from './customer-feedback.enum';
