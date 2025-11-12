@@ -98,4 +98,3 @@ export class CreatePaymentsTable1700000000012 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE IF EXISTS payments CASCADE;`);
   }
 }
-
