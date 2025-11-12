@@ -6,9 +6,7 @@ import { type MigrationInterface, type QueryRunner } from 'typeorm';
  * Tables: task_time_logs, task_activity_log
  * Purpose: Time tracking and detailed change history for project tasks
  */
-export class CreateTaskTimeLogsAndActivityLog1700000000011
-  implements MigrationInterface
-{
+export class CreateTaskTimeLogsAndActivityLog1700000000011 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     // ============================================
     // TABLE: task_time_logs (Time tracking)
@@ -98,4 +96,3 @@ export class CreateTaskTimeLogsAndActivityLog1700000000011
     await queryRunner.query(`DROP TABLE IF EXISTS task_time_logs CASCADE;`);
   }
 }
-
