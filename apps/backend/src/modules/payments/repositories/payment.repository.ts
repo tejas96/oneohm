@@ -98,10 +98,7 @@ export class PaymentRepository {
   // ============================================
   // UPDATE
   // ============================================
-  async update(
-    id: string,
-    data: Record<string, unknown>,
-  ): Promise<PaymentEntity | null> {
+  async update(id: string, data: Record<string, unknown>): Promise<PaymentEntity | null> {
     await this.repository.update({ id, deletedAt: IsNull() }, data);
     return this.findById(id);
   }
@@ -182,4 +179,3 @@ export class PaymentRepository {
     return `${prefix}-${nextNumber.toString().padStart(3, '0')}`;
   }
 }
-
