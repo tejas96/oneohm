@@ -10,3 +10,9 @@ export * from './surveys';
 // Material DTOs
 export * from './materials';
 
+// Task Template DTOs
+export * from './task-templates';
+
+// Project Task DTOs
+export * from './project-tasks';
+
