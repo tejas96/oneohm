@@ -7,3 +7,4 @@ export * from './project.enum';
 export * from './quote.enum';
 export * from './inventory.enum';
 export * from './approval.enum';
+export * from './payment.enum';
