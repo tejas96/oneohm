@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { type CurrentUserType, CurrentUser, JwtAuthGuard, Role, RolesGuard } from '@oneohm-epc/shared-auth';
-import { ProductStatus } from '@oneohm-epc/shared-types';
+import { type PaginatedResponse, ProductStatus } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
   ApiCreate,
@@ -106,12 +106,7 @@ export class ProductController {
     @Query('categoryId') categoryId?: string,
     @Query('brand') brand?: string,
     @Query('search') search?: string,
-  ): Promise<{
-    data: ProductResponseDto[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
+  ): Promise<PaginatedResponse<ProductResponseDto>> {
     const result = await this.productService.findAll(currentUser.organizationId, page, limit, {
       status,
       type,
@@ -121,10 +116,15 @@ export class ProductController {
     });
 
     return {
-      ...result,
       data: plainToInstance(ProductResponseDto, result.data, {
         excludeExtraneousValues: true,
       }),
+      meta: {
+        page,
+        limit,
+        total: result.total,
+        totalPages: Math.ceil(result.total / limit),
+      },
     };
   }
 
