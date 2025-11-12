@@ -7,6 +7,7 @@ import { DatabaseModule } from './database/database.module';
 import { ApprovalModule } from './modules/approvals/approval.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { CustomersModule } from './modules/customers/customers.module';
+import { DocumentsModule } from './modules/documents/documents.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { PaymentsModule } from './modules/payments/payments.module';
@@ -31,6 +32,7 @@ import { UsersModule } from './modules/users/users.module';
     ApprovalModule,
     PaymentsModule,
     CommentsModule,
+    DocumentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
