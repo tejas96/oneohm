@@ -106,3 +106,24 @@ export interface MaterialRequirement {
   unit: string;
   estimatedCost?: number;
 }
+
+/**
+ * Task Checklist Item
+ * Individual item in a task checklist
+ */
+export interface TaskChecklistItem {
+  id: string;
+  title: string;
+  isCompleted: boolean;
+  completedAt?: string;
+  completedBy?: string;
+  order: number;
+}
+
+/**
+ * Task Checklist
+ * Grouped checklist items for a task
+ */
+export interface TaskChecklist {
+  items: TaskChecklistItem[];
+}
