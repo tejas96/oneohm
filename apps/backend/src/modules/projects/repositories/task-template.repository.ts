@@ -20,14 +20,14 @@ export class TaskTemplateRepository {
    */
   async create(data: Partial<TaskTemplateEntity>): Promise<TaskTemplateEntity> {
     const template = this.repository.create(data);
-    return await this.repository.save(template);
+    return this.repository.save(template);
   }
 
   /**
    * Find task template by ID
    */
   async findById(id: string, organizationId: string): Promise<TaskTemplateEntity | null> {
-    return await this.repository.findOne({
+    return this.repository.findOne({
       where: {
         id,
         organizationId,
@@ -80,7 +80,7 @@ export class TaskTemplateRepository {
    * Find templates by milestone template ID
    */
   async findByMilestoneTemplate(milestoneTemplateId: string): Promise<TaskTemplateEntity[]> {
-    return await this.repository.find({
+    return this.repository.find({
       where: {
         milestoneTemplateId,
         deletedAt: IsNull(),
@@ -107,7 +107,7 @@ export class TaskTemplateRepository {
       },
       data,
     );
-    return await this.findById(id, organizationId);
+    return this.findById(id, organizationId);
   }
 
   /**

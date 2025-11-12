@@ -26,7 +26,6 @@ import {
   TaskStatus,
 } from '@oneohm-epc/shared-types';
 import {
-  ApiAction,
   ApiCreate,
   ApiDelete,
   ApiReadAll,
@@ -118,7 +117,7 @@ export class ProjectTaskController {
   async getStatistics(
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<StatisticsResponse<TaskStatus>> {
-    return await this.taskService.getStatistics(projectId);
+    return this.taskService.getStatistics(projectId);
   }
 
   @Get('overdue')

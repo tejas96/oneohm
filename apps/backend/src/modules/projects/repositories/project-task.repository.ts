@@ -21,14 +21,14 @@ export class ProjectTaskRepository {
    */
   async create(data: Partial<ProjectTaskEntity>): Promise<ProjectTaskEntity> {
     const task = this.repository.create(data);
-    return await this.repository.save(task);
+    return this.repository.save(task);
   }
 
   /**
    * Find project task by ID
    */
   async findById(id: string, projectId: string): Promise<ProjectTaskEntity | null> {
-    return await this.repository.findOne({
+    return this.repository.findOne({
       where: {
         id,
         projectId,
@@ -100,7 +100,7 @@ export class ProjectTaskRepository {
    * Find tasks by milestone
    */
   async findByMilestone(projectId: string, milestoneId: string): Promise<ProjectTaskEntity[]> {
-    return await this.repository.find({
+    return this.repository.find({
       where: {
         projectId,
         milestoneId,
@@ -117,7 +117,7 @@ export class ProjectTaskRepository {
    * Find tasks assigned to user
    */
   async findByAssignee(projectId: string, assignedToUserId: string): Promise<ProjectTaskEntity[]> {
-    return await this.repository.find({
+    return this.repository.find({
       where: {
         projectId,
         assignedToUserId,
@@ -147,7 +147,7 @@ export class ProjectTaskRepository {
       },
       data,
     );
-    return await this.findById(id, projectId);
+    return this.findById(id, projectId);
   }
 
   /**
@@ -195,7 +195,7 @@ export class ProjectTaskRepository {
    * Get overdue tasks
    */
   async findOverdue(projectId: string): Promise<ProjectTaskEntity[]> {
-    return await this.repository
+    return this.repository
       .createQueryBuilder('task')
       .leftJoinAndSelect('task.assignee', 'assignee')
       .leftJoinAndSelect('task.milestone', 'milestone')

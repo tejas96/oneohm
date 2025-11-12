@@ -14,8 +14,8 @@ import {
   ManyToOne,
 } from 'typeorm';
 
-import { ProjectEntity } from './project.entity';
 import { ProjectMilestoneEntity } from './project-milestone.entity';
+import { ProjectEntity } from './project.entity';
 import { TaskTemplateEntity } from './task-template.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { UserEntity } from '../../users/entities/user.entity';

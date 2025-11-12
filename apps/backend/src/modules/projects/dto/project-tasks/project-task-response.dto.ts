@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskPriority, TaskStatus, TaskType, type FileAttachment, type TaskChecklist } from '@oneohm-epc/shared-types';
-import { Expose, Type } from 'class-transformer';
+import { Expose } from 'class-transformer';
 
 export class ProjectTaskResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })

@@ -37,7 +37,7 @@ export class ProjectTaskService {
       }
     }
 
-    return await this.taskRepository.create({
+    return this.taskRepository.create({
       ...createDto,
       createdBy: currentUserId,
       updatedBy: currentUserId,
@@ -87,14 +87,14 @@ export class ProjectTaskService {
    * Find tasks by milestone
    */
   async findByMilestone(projectId: string, milestoneId: string): Promise<ProjectTaskEntity[]> {
-    return await this.taskRepository.findByMilestone(projectId, milestoneId);
+    return this.taskRepository.findByMilestone(projectId, milestoneId);
   }
 
   /**
    * Find tasks assigned to user
    */
   async findByAssignee(projectId: string, assignedToUserId: string): Promise<ProjectTaskEntity[]> {
-    return await this.taskRepository.findByAssignee(projectId, assignedToUserId);
+    return this.taskRepository.findByAssignee(projectId, assignedToUserId);
   }
 
   /**
@@ -169,7 +169,7 @@ export class ProjectTaskService {
     status: TaskStatus,
     currentUserId: string,
   ): Promise<ProjectTaskEntity> {
-    return await this.update(id, projectId, { status }, currentUserId);
+    return this.update(id, projectId, { status }, currentUserId);
   }
 
   /**
@@ -181,7 +181,7 @@ export class ProjectTaskService {
     assignedToUserId: string,
     currentUserId: string,
   ): Promise<ProjectTaskEntity> {
-    return await this.update(id, projectId, { assignedToUserId }, currentUserId);
+    return this.update(id, projectId, { assignedToUserId }, currentUserId);
   }
 
   /**
@@ -205,7 +205,7 @@ export class ProjectTaskService {
       statusUpdate.status = TaskStatus.COMPLETED;
     }
 
-    return await this.update(id, projectId, statusUpdate, currentUserId);
+    return this.update(id, projectId, statusUpdate, currentUserId);
   }
 
   /**
@@ -266,14 +266,14 @@ export class ProjectTaskService {
    * Get overdue tasks
    */
   async getOverdueTasks(projectId: string): Promise<ProjectTaskEntity[]> {
-    return await this.taskRepository.findOverdue(projectId);
+    return this.taskRepository.findOverdue(projectId);
   }
 
   /**
    * Generate next task code
    */
   async generateTaskCode(projectId: string): Promise<string> {
-    return await this.taskRepository.getNextTaskCode(projectId);
+    return this.taskRepository.getNextTaskCode(projectId);
   }
 }
 

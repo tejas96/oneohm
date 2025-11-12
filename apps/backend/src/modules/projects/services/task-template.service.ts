@@ -29,7 +29,7 @@ export class TaskTemplateService {
       throw new BadRequestException(`Task template with code ${createDto.code} already exists`);
     }
 
-    return await this.templateRepository.create({
+    return this.templateRepository.create({
       ...createDto,
       createdBy: currentUserId,
       updatedBy: currentUserId,
@@ -82,7 +82,7 @@ export class TaskTemplateService {
    * Find templates by milestone template
    */
   async findByMilestoneTemplate(milestoneTemplateId: string): Promise<TaskTemplateEntity[]> {
-    return await this.templateRepository.findByMilestoneTemplate(milestoneTemplateId);
+    return this.templateRepository.findByMilestoneTemplate(milestoneTemplateId);
   }
 
   /**
@@ -159,19 +159,13 @@ export class TaskTemplateService {
    * Get statistics
    */
   async getStatistics(organizationId: string): Promise<StatisticsResponse> {
-    const { total: totalActive } = await this.templateRepository.findAll(
-      organizationId,
-      1,
-      1,
-      { isActive: true },
-    );
+    const { total: totalActive } = await this.templateRepository.findAll(organizationId, 1, 1, {
+      isActive: true,
+    });
 
-    const { total: totalInactive } = await this.templateRepository.findAll(
-      organizationId,
-      1,
-      1,
-      { isActive: false },
-    );
+    const { total: totalInactive } = await this.templateRepository.findAll(organizationId, 1, 1, {
+      isActive: false,
+    });
 
     return {
       total: totalActive + totalInactive,
@@ -182,4 +176,3 @@ export class TaskTemplateService {
     };
   }
 }
-

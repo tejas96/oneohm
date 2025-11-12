@@ -100,7 +100,7 @@ export class TaskTemplateController {
   async getStatistics(
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<StatisticsResponse> {
-    return await this.templateService.getStatistics(currentUser.organizationId);
+    return this.templateService.getStatistics(currentUser.organizationId);
   }
 
   @Get(':id')
