@@ -16,3 +16,8 @@ export * from './task-templates';
 // Project Task DTOs
 export * from './project-tasks';
 
+// Task Time Log DTOs
+export * from './task-time-logs';
+
+// Task Activity Log DTOs
+export * from './task-activity-logs';

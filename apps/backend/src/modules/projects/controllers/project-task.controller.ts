@@ -25,18 +25,15 @@ import {
   TaskPriority,
   TaskStatus,
 } from '@oneohm-epc/shared-types';
-import {
-  ApiCreate,
-  ApiDelete,
-  ApiReadAll,
-  ApiReadOne,
-  ApiUpdate,
-} from '@oneohm-epc/shared-utils';
+import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import {
   CreateProjectTaskDto,
+  CreateTaskTimeLogDto,
   ProjectTaskResponseDto,
+  TaskActivityLogResponseDto,
+  TaskTimeLogResponseDto,
   UpdateProjectTaskDto,
 } from '../dto';
 import { ProjectTaskService } from '../services';
@@ -133,13 +130,7 @@ export class ProjectTaskController {
   }
 
   @Get('milestone/:milestoneId')
-  @Roles(
-    Role.SUPER_ADMIN,
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.EXECUTION_ENGINEER,
-    Role.FIELD_WORKER,
-  )
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get tasks by milestone' })
   async findByMilestone(
     @Param('projectId', ParseUUIDPipe) projectId: string,
@@ -152,13 +143,7 @@ export class ProjectTaskController {
   }
 
   @Get('assignee/:assigneeId')
-  @Roles(
-    Role.SUPER_ADMIN,
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.EXECUTION_ENGINEER,
-    Role.FIELD_WORKER,
-  )
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get tasks by assignee' })
   async findByAssignee(
     @Param('projectId', ParseUUIDPipe) projectId: string,
@@ -173,7 +158,9 @@ export class ProjectTaskController {
   @Get('generate-code')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Generate next task code' })
-  async generateCode(@Param('projectId', ParseUUIDPipe) projectId: string): Promise<{ code: string }> {
+  async generateCode(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+  ): Promise<{ code: string }> {
     const code = await this.taskService.generateTaskCode(projectId);
     return { code };
   }
@@ -214,13 +201,7 @@ export class ProjectTaskController {
   }
 
   @Patch(':id/status')
-  @Roles(
-    Role.SUPER_ADMIN,
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.EXECUTION_ENGINEER,
-    Role.FIELD_WORKER,
-  )
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Update task status' })
   async updateStatus(
     @CurrentUser() currentUser: CurrentUserType,
@@ -250,13 +231,7 @@ export class ProjectTaskController {
   }
 
   @Patch(':id/progress')
-  @Roles(
-    Role.SUPER_ADMIN,
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.EXECUTION_ENGINEER,
-    Role.FIELD_WORKER,
-  )
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Update task progress' })
   async updateProgress(
     @CurrentUser() currentUser: CurrentUserType,
@@ -275,23 +250,53 @@ export class ProjectTaskController {
     });
   }
 
-  @Post(':id/log-time')
-  @Roles(
-    Role.SUPER_ADMIN,
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.EXECUTION_ENGINEER,
-    Role.FIELD_WORKER,
-  )
+  @Post(':id/time-logs')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Log time for task' })
   async logTime(
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body('hours') hours: number,
+    @Body() timeLogDto: CreateTaskTimeLogDto,
   ): Promise<ProjectTaskResponseDto> {
-    const task = await this.taskService.logTime(id, projectId, hours, currentUser.id);
+    const task = await this.taskService.logTime(
+      id,
+      projectId,
+      timeLogDto.timeSpentHours,
+      timeLogDto.workDescription,
+      timeLogDto.isBillable,
+      timeLogDto.workDate,
+      currentUser.id,
+    );
     return plainToInstance(ProjectTaskResponseDto, task, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  @Get(':id/time-logs')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
+  @ApiOperation({ summary: 'Get all time logs for a task' })
+  async getTimeLogs(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<TaskTimeLogResponseDto[]> {
+    const timeLogs = await this.taskService.getTaskTimeLogs(id);
+    return plainToInstance(TaskTimeLogResponseDto, timeLogs, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  @Get(':id/activity-log')
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
+  @ApiOperation({ summary: 'Get activity history for a task' })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getActivityLog(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('limit') limit?: number,
+  ): Promise<TaskActivityLogResponseDto[]> {
+    const activityLog = await this.taskService.getTaskActivityLog(id, limit);
+    return plainToInstance(TaskActivityLogResponseDto, activityLog, {
       excludeExtraneousValues: true,
     });
   }
@@ -309,4 +314,3 @@ export class ProjectTaskController {
     await this.taskService.remove(id, projectId);
   }
 }
-
