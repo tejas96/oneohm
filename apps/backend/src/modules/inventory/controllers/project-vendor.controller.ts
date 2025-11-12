@@ -101,7 +101,7 @@ export class ProjectVendorController {
     summary: 'Get vendors by project',
     description: 'Retrieve all vendors assigned to a specific project',
   })
-  async findByProject(@Param('projectId', ParseUUIDPipe) projectId: string) {
+  async findByProject(@Param('projectId', ParseUUIDPipe) projectId: string): Promise<ProjectVendorResponseDto[]> {
     const projectVendors = await this.projectVendorService.findByProject(projectId);
 
     return plainToInstance(ProjectVendorResponseDto, projectVendors, {
@@ -145,7 +145,10 @@ export class ProjectVendorController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('status') status?: ProjectVendorStatus,
-  ) {
+  ): Promise<{
+    data: ProjectVendorResponseDto[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+  }> {
     const { projectVendors, total } = await this.projectVendorService.findByVendor(
       vendorId,
       page,
@@ -160,10 +163,10 @@ export class ProjectVendorController {
         excludeExtraneousValues: true,
       }),
       meta: {
-        page: page || 1,
-        limit: limit || 20,
+        page: page ?? 1,
+        limit: limit ?? 20,
         total,
-        totalPages: Math.ceil(total / (limit || 20)),
+        totalPages: Math.ceil(total / (limit ?? 20)),
       },
     };
   }
@@ -235,7 +238,7 @@ export class ProjectVendorController {
     summary: 'Get total contract value',
     description: 'Calculate total contract value for all active vendors in a project',
   })
-  async getTotalContractValue(@Param('projectId', ParseUUIDPipe) projectId: string) {
+  async getTotalContractValue(@Param('projectId', ParseUUIDPipe) projectId: string): Promise<{ totalValue: number }> {
     const totalValue =
       await this.projectVendorService.getTotalContractValueByProject(projectId);
 
@@ -251,7 +254,7 @@ export class ProjectVendorController {
     summary: 'Get active vendors',
     description: 'Retrieve all active vendors for a project',
   })
-  async getActiveVendors(@Param('projectId', ParseUUIDPipe) projectId: string) {
+  async getActiveVendors(@Param('projectId', ParseUUIDPipe) projectId: string): Promise<ProjectVendorResponseDto[]> {
     const projectVendors =
       await this.projectVendorService.getActiveVendorsByProject(projectId);
 

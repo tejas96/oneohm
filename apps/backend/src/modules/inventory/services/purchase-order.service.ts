@@ -63,7 +63,7 @@ export class PurchaseOrderService {
       subtotal += itemTotal;
     }
 
-    const taxAmount = createDto.taxAmount || 0;
+    const taxAmount = createDto.taxAmount ?? 0;
     const totalAmount = subtotal + taxAmount;
 
     // Create purchase order
@@ -83,7 +83,7 @@ export class PurchaseOrderService {
       totalAmount,
       paymentTerms: createDto.paymentTerms,
       paymentStatus: PaymentStatus.PENDING,
-      status: createDto.status || PurchaseOrderStatus.DRAFT,
+      status: createDto.status ?? PurchaseOrderStatus.DRAFT,
       notes: createDto.notes,
       termsConditions: createDto.termsConditions,
       createdBy,
@@ -323,7 +323,7 @@ export class PurchaseOrderService {
 
     return this.purchaseOrderRepository.update(id, organizationId, {
       status: PurchaseOrderStatus.CANCELLED,
-      notes: `${po.notes || ''}\nCancelled: ${reason}`,
+      notes: `${po.notes ?? ''}\nCancelled: ${reason}`,
       updatedBy,
     });
   }

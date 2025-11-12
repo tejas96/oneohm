@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -130,7 +129,10 @@ export class StockAllocationController {
     @Query('projectId') projectId?: string,
     @Query('warehouseId') warehouseId?: string,
     @Query('productId') productId?: string,
-  ) {
+  ): Promise<{
+    data: StockAllocationResponseDto[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+  }> {
     const { allocations, total } = await this.stockAllocationService.findAll(
       currentUser.organizationId,
       page,
@@ -148,10 +150,10 @@ export class StockAllocationController {
         excludeExtraneousValues: true,
       }),
       meta: {
-        page: page || 1,
-        limit: limit || 20,
+        page: page ?? 1,
+        limit: limit ?? 20,
         total,
-        totalPages: Math.ceil(total / (limit || 20)),
+        totalPages: Math.ceil(total / (limit ?? 20)),
       },
     };
   }
@@ -190,7 +192,7 @@ export class StockAllocationController {
     summary: 'Get allocations by project',
     description: 'Retrieve all stock allocations for a specific project',
   })
-  async findByProject(@Param('projectId', ParseUUIDPipe) projectId: string) {
+  async findByProject(@Param('projectId', ParseUUIDPipe) projectId: string): Promise<StockAllocationResponseDto[]> {
     const allocations = await this.stockAllocationService.findByProject(projectId);
 
     return plainToInstance(StockAllocationResponseDto, allocations, {
@@ -287,7 +289,12 @@ export class StockAllocationController {
     summary: 'Get stock allocation statistics',
     description: 'Get allocation count by status',
   })
-  async getStatistics(@CurrentUser() currentUser: CurrentUserType) {
+  async getStatistics(
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<{
+    totalAllocations: number;
+    byStatus: Record<StockAllocationStatus, number>;
+  }> {
     return this.stockAllocationService.getStatistics(currentUser.organizationId);
   }
 
@@ -300,7 +307,7 @@ export class StockAllocationController {
     summary: 'Get pending allocations',
     description: 'Get list of allocations not yet fulfilled',
   })
-  async getPending(@CurrentUser() currentUser: CurrentUserType) {
+  async getPending(@CurrentUser() currentUser: CurrentUserType): Promise<StockAllocationResponseDto[]> {
     const allocations = await this.stockAllocationService.getPendingAllocations(
       currentUser.organizationId,
     );

@@ -63,7 +63,7 @@ export class VendorService {
       paymentTerms: createDto.paymentTerms,
       creditDays: createDto.creditDays,
       rating: createDto.rating,
-      status: createDto.status || VendorStatus.ACTIVE,
+      status: createDto.status ?? VendorStatus.ACTIVE,
       notes: createDto.notes,
       createdBy,
     });
@@ -83,7 +83,7 @@ export class VendorService {
       vendorType?: VendorType;
       search?: string;
     },
-  ) {
+  ): Promise<{ vendors: VendorEntity[]; total: number }> {
     return this.vendorRepository.findAll(organizationId, page, limit, filters);
   }
 
@@ -183,7 +183,7 @@ export class VendorService {
     organizationId: string,
     rating: number,
   ): Promise<VendorEntity> {
-    if (rating < 0 || rating > 5) {
+    if (rating < 0 ?? rating > 5) {
       throw new BadRequestException('Rating must be between 0 and 5');
     }
 

@@ -79,7 +79,7 @@ export class StockAllocationService {
       warehouseId?: string;
       productId?: string;
     },
-  ) {
+  ): Promise<{ allocations: StockAllocationEntity[]; total: number }> {
     return this.stockAllocationRepository.findAll(organizationId, page, limit, filters);
   }
 

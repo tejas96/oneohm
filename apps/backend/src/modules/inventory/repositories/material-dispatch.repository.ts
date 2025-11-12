@@ -253,7 +253,7 @@ export class MaterialDispatchRepository {
 
     let sequence = 1;
     if (lastDispatch?.dispatchNumber) {
-      const lastSequence = parseInt(lastDispatch.dispatchNumber.split('-').pop() || '0', 10);
+      const lastSequence = parseInt(lastDispatch.dispatchNumber.split('-').pop() ?? '0', 10);
       sequence = lastSequence + 1;
     }
 

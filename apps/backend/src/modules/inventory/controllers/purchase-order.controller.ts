@@ -19,7 +19,7 @@ import {
   Roles,
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
-import { PaymentStatus, PurchaseOrderStatus, PurchaseOrderType } from '@oneohm-epc/shared-types';
+import { PaymentStatus, PurchaseOrderStatus } from '@oneohm-epc/shared-types';
 import {
   ApiCreate,
   ApiDelete,
@@ -159,7 +159,10 @@ export class PurchaseOrderController {
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
     @Query('search') search?: string,
-  ) {
+  ): Promise<{
+    data: PurchaseOrderResponseDto[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+  }> {
     const { purchaseOrders, total } = await this.purchaseOrderService.findAll(
       currentUser.organizationId,
       page,
@@ -181,10 +184,10 @@ export class PurchaseOrderController {
         excludeExtraneousValues: true,
       }),
       meta: {
-        page: page || 1,
-        limit: limit || 20,
+        page: page ?? 1,
+        limit: limit ?? 20,
         total,
-        totalPages: Math.ceil(total / (limit || 20)),
+        totalPages: Math.ceil(total / (limit ?? 20)),
       },
     };
   }
@@ -391,7 +394,14 @@ export class PurchaseOrderController {
     summary: 'Get purchase order statistics',
     description: 'Get PO count by status and pending approvals',
   })
-  async getStatistics(@CurrentUser() currentUser: CurrentUserType) {
+  async getStatistics(
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<{
+    totalOrders: number;
+    byStatus: Record<PurchaseOrderStatus, number>;
+    totalValue: number;
+    pendingValue: number;
+  }> {
     return this.purchaseOrderService.getStatistics(currentUser.organizationId);
   }
 
@@ -404,7 +414,7 @@ export class PurchaseOrderController {
     summary: 'Get overdue purchase orders',
     description: 'Get list of purchase orders past expected delivery date',
   })
-  async getOverdue(@CurrentUser() currentUser: CurrentUserType) {
+  async getOverdue(@CurrentUser() currentUser: CurrentUserType): Promise<PurchaseOrderResponseDto[]> {
     const pos = await this.purchaseOrderService.getOverduePurchaseOrders(
       currentUser.organizationId,
     );

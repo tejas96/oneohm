@@ -41,7 +41,7 @@ export class InventoryStockService {
       lowStock?: boolean;
       search?: string;
     },
-  ) {
+  ): Promise<{ stocks: InventoryStockEntity[]; total: number }> {
     return this.inventoryStockRepository.findByWarehouse(warehouseId, page, limit, filters);
   }
 

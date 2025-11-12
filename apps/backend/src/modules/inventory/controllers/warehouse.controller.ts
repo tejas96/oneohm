@@ -130,7 +130,10 @@ export class WarehouseController {
     @Query('warehouseType') warehouseType?: WarehouseType,
     @Query('warehouseManagerId') warehouseManagerId?: string,
     @Query('search') search?: string,
-  ) {
+  ): Promise<{
+    data: WarehouseResponseDto[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+  }> {
     const { warehouses, total } = await this.warehouseService.findAll(
       currentUser.organizationId,
       page,
@@ -148,10 +151,10 @@ export class WarehouseController {
         excludeExtraneousValues: true,
       }),
       meta: {
-        page: page || 1,
-        limit: limit || 20,
+        page: page ?? 1,
+        limit: limit ?? 20,
         total,
-        totalPages: Math.ceil(total / (limit || 20)),
+        totalPages: Math.ceil(total / (limit ?? 20)),
       },
     };
   }
@@ -234,7 +237,13 @@ export class WarehouseController {
     summary: 'Get warehouse statistics',
     description: 'Get warehouse count by status',
   })
-  async getStatistics(@CurrentUser() currentUser: CurrentUserType) {
+  async getStatistics(
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<{
+    totalWarehouses: number;
+    byStatus: Record<WarehouseStatus, number>;
+    byType: Record<WarehouseType, number>;
+  }> {
     return this.warehouseService.getStatistics(currentUser.organizationId);
   }
 

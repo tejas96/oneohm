@@ -255,7 +255,7 @@ export class PurchaseOrderRepository {
 
     let sequence = 1;
     if (lastPo?.poNumber) {
-      const lastSequence = parseInt(lastPo.poNumber.split('-').pop() || '0', 10);
+      const lastSequence = parseInt(lastPo.poNumber.split('-').pop() ?? '0', 10);
       sequence = lastSequence + 1;
     }
 

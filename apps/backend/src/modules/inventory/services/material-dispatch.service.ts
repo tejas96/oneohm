@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { MaterialDispatchStatus } from '@oneohm-epc/shared-types';
 
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';

@@ -57,7 +57,7 @@ export class ProjectVendorService {
       contractEndDate: createDto.contractEndDate
         ? new Date(createDto.contractEndDate)
         : undefined,
-      status: createDto.status || ProjectVendorStatus.ACTIVE,
+      status: createDto.status ?? ProjectVendorStatus.ACTIVE,
       notes: createDto.notes,
       createdBy,
     });
@@ -89,7 +89,7 @@ export class ProjectVendorService {
     filters?: {
       status?: ProjectVendorStatus;
     },
-  ) {
+  ): Promise<{ projectVendors: ProjectVendorEntity[]; total: number }> {
     return this.projectVendorRepository.findByVendor(vendorId, page, limit, filters);
   }
 

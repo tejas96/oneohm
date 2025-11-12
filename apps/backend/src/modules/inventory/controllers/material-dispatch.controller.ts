@@ -145,7 +145,10 @@ export class MaterialDispatchController {
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
     @Query('search') search?: string,
-  ) {
+  ): Promise<{
+    data: MaterialDispatchResponseDto[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+  }> {
     const { dispatches, total } = await this.materialDispatchService.findAll(
       currentUser.organizationId,
       page,
@@ -165,10 +168,10 @@ export class MaterialDispatchController {
         excludeExtraneousValues: true,
       }),
       meta: {
-        page: page || 1,
-        limit: limit || 20,
+        page: page ?? 1,
+        limit: limit ?? 20,
         total,
-        totalPages: Math.ceil(total / (limit || 20)),
+        totalPages: Math.ceil(total / (limit ?? 20)),
       },
     };
   }
@@ -207,7 +210,7 @@ export class MaterialDispatchController {
     summary: 'Get dispatches by project',
     description: 'Retrieve all material dispatches for a specific project',
   })
-  async findByProject(@Param('projectId', ParseUUIDPipe) projectId: string) {
+  async findByProject(@Param('projectId', ParseUUIDPipe) projectId: string): Promise<MaterialDispatchResponseDto[]> {
     const dispatches = await this.materialDispatchService.findByProject(projectId);
 
     return plainToInstance(MaterialDispatchResponseDto, dispatches, {
@@ -323,7 +326,12 @@ export class MaterialDispatchController {
     summary: 'Get dispatch statistics',
     description: 'Get dispatch count by status',
   })
-  async getStatistics(@CurrentUser() currentUser: CurrentUserType) {
+  async getStatistics(
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<{
+    totalDispatches: number;
+    byStatus: Record<MaterialDispatchStatus, number>;
+  }> {
     return this.materialDispatchService.getStatistics(currentUser.organizationId);
   }
 
@@ -336,7 +344,7 @@ export class MaterialDispatchController {
     summary: 'Get in-transit dispatches',
     description: 'Get list of dispatches currently in transit',
   })
-  async getInTransit(@CurrentUser() currentUser: CurrentUserType) {
+  async getInTransit(@CurrentUser() currentUser: CurrentUserType): Promise<MaterialDispatchResponseDto[]> {
     const dispatches = await this.materialDispatchService.getInTransitDispatches(
       currentUser.organizationId,
     );
@@ -355,7 +363,7 @@ export class MaterialDispatchController {
     summary: 'Get pending dispatches',
     description: 'Get list of draft and prepared dispatches',
   })
-  async getPending(@CurrentUser() currentUser: CurrentUserType) {
+  async getPending(@CurrentUser() currentUser: CurrentUserType): Promise<MaterialDispatchResponseDto[]> {
     const dispatches = await this.materialDispatchService.getPendingDispatches(
       currentUser.organizationId,
     );

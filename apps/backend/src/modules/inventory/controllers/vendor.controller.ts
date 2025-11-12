@@ -123,7 +123,10 @@ export class VendorController {
     @Query('status') status?: VendorStatus,
     @Query('vendorType') vendorType?: VendorType,
     @Query('search') search?: string,
-  ) {
+  ): Promise<{
+    data: VendorResponseDto[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+  }> {
     const { vendors, total } = await this.vendorService.findAll(
       currentUser.organizationId,
       page,
@@ -140,10 +143,10 @@ export class VendorController {
         excludeExtraneousValues: true,
       }),
       meta: {
-        page: page || 1,
-        limit: limit || 20,
+        page: page ?? 1,
+        limit: limit ?? 20,
         total,
-        totalPages: Math.ceil(total / (limit || 20)),
+        totalPages: Math.ceil(total / (limit ?? 20)),
       },
     };
   }
@@ -226,7 +229,13 @@ export class VendorController {
     summary: 'Get vendor statistics',
     description: 'Get vendor count by status and type',
   })
-  async getStatistics(@CurrentUser() currentUser: CurrentUserType) {
+  async getStatistics(
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<{
+    totalVendors: number;
+    byStatus: Record<VendorStatus, number>;
+    byType: Record<VendorType, number>;
+  }> {
     return this.vendorService.getStatistics(currentUser.organizationId);
   }
 

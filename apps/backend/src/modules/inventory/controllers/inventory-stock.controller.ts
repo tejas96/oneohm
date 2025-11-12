@@ -4,7 +4,6 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
-  Patch,
   Post,
   Query,
   UseGuards,
@@ -18,7 +17,7 @@ import {
   Roles,
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
-import { ApiReadAll, ApiReadOne } from '@oneohm-epc/shared-utils';
+import { ApiReadAll } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import {
@@ -105,7 +104,10 @@ export class InventoryStockController {
     @Query('limit') limit?: number,
     @Query('lowStock') lowStock?: boolean,
     @Query('search') search?: string,
-  ) {
+  ): Promise<{
+    data: InventoryStockResponseDto[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+  }> {
     const { stocks, total } = await this.inventoryStockService.getStockByWarehouse(
       warehouseId,
       page,
@@ -121,10 +123,10 @@ export class InventoryStockController {
         excludeExtraneousValues: true,
       }),
       meta: {
-        page: page || 1,
-        limit: limit || 50,
+        page: page ?? 1,
+        limit: limit ?? 50,
         total,
-        totalPages: Math.ceil(total / (limit || 50)),
+        totalPages: Math.ceil(total / (limit ?? 50)),
       },
     };
   }
@@ -141,7 +143,7 @@ export class InventoryStockController {
   async getStockByProduct(
     @CurrentUser() currentUser: CurrentUserType,
     @Param('productId', ParseUUIDPipe) productId: string,
-  ) {
+  ): Promise<InventoryStockResponseDto[]> {
     const stocks = await this.inventoryStockService.getStockByProduct(
       productId,
       currentUser.organizationId,
@@ -161,10 +163,10 @@ export class InventoryStockController {
     summary: 'Get low stock alerts',
     description: 'Retrieve all products with stock below minimum level',
   })
-  async getLowStockAlerts(@CurrentUser() currentUser: CurrentUserType) {
-    const stocks = await this.inventoryStockService.getLowStockAlerts(
-      currentUser.organizationId,
-    );
+  async getLowStockAlerts(
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<InventoryStockResponseDto[]> {
+    const stocks = await this.inventoryStockService.getLowStockAlerts(currentUser.organizationId);
 
     return plainToInstance(InventoryStockResponseDto, stocks, {
       excludeExtraneousValues: true,
@@ -259,7 +261,9 @@ export class InventoryStockController {
     summary: 'Get total stock value',
     description: 'Calculate total value of all stock in organization',
   })
-  async getTotalStockValue(@CurrentUser() currentUser: CurrentUserType) {
+  async getTotalStockValue(
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<{ totalValue: number }> {
     const totalValue = await this.inventoryStockService.getTotalStockValue(
       currentUser.organizationId,
     );
@@ -276,10 +280,15 @@ export class InventoryStockController {
     summary: 'Get stock summary by warehouse',
     description: 'Get stock statistics grouped by warehouse',
   })
-  async getStockSummary(@CurrentUser() currentUser: CurrentUserType) {
-    return this.inventoryStockService.getStockSummaryByWarehouse(
-      currentUser.organizationId,
-    );
+  async getStockSummary(@CurrentUser() currentUser: CurrentUserType): Promise<
+    Array<{
+      warehouseId: string;
+      warehouseName: string;
+      totalProducts: number;
+      totalQuantity: number;
+      totalValue: number;
+    }>
+  > {
+    return this.inventoryStockService.getStockSummaryByWarehouse(currentUser.organizationId);
   }
 }
-
