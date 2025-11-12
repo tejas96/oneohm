@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InventoryTransactionType } from '@oneohm-epc/shared-types';
 
 import { ProductRepository } from '../../products/repositories/product.repository';
@@ -82,6 +82,14 @@ export class InventoryStockService {
       updateDto.organizationId,
     );
 
+    if (!warehouse) {
+      throw new NotFoundException('Warehouse not found');
+    }
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
     // Get or create stock record
     let stock = await this.inventoryStockRepository.findByWarehouseAndProduct(
       updateDto.warehouseId,
@@ -102,7 +110,6 @@ export class InventoryStockService {
       });
     }
 
-    const oldQuantity = stock.availableQuantity;
     const quantityChange = updateDto.quantity;
 
     // Calculate new quantities

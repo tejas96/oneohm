@@ -32,10 +32,7 @@ export class VendorService {
     }
 
     // Check if code already exists
-    const existingVendor = await this.vendorRepository.findByCode(
-      createDto.code,
-      organizationId,
-    );
+    const existingVendor = await this.vendorRepository.findByCode(createDto.code, organizationId);
 
     if (existingVendor) {
       throw new BadRequestException(`Vendor with code ${createDto.code} already exists`);
@@ -105,10 +102,7 @@ export class VendorService {
   ): Promise<VendorEntity> {
     // Check if code is being changed and already exists
     if (updateDto.code) {
-      const existingVendor = await this.vendorRepository.findByCode(
-        updateDto.code,
-        organizationId,
-      );
+      const existingVendor = await this.vendorRepository.findByCode(updateDto.code, organizationId);
 
       if (existingVendor && existingVendor.id !== id) {
         throw new BadRequestException(`Vendor with code ${updateDto.code} already exists`);
@@ -178,16 +172,11 @@ export class VendorService {
   /**
    * Update vendor rating
    */
-  async updateRating(
-    id: string,
-    organizationId: string,
-    rating: number,
-  ): Promise<VendorEntity> {
-    if (rating < 0 ?? rating > 5) {
+  async updateRating(id: string, organizationId: string, rating: number): Promise<VendorEntity> {
+    if (rating < 0 || rating > 5) {
       throw new BadRequestException('Rating must be between 0 and 5');
     }
 
     return this.vendorRepository.updateRating(id, organizationId, rating);
   }
 }
-
