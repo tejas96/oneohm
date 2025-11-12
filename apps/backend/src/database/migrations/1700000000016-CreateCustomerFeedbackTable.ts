@@ -285,7 +285,9 @@ export class CreateCustomerFeedbackTable1700000000016 implements MigrationInterf
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop trigger and function
-    await queryRunner.query('DROP TRIGGER IF EXISTS trg_customer_feedback_updated_at ON customer_feedback');
+    await queryRunner.query(
+      'DROP TRIGGER IF EXISTS trg_customer_feedback_updated_at ON customer_feedback',
+    );
     await queryRunner.query('DROP FUNCTION IF EXISTS update_customer_feedback_updated_at()');
 
     // Drop indexes
@@ -300,4 +302,3 @@ export class CreateCustomerFeedbackTable1700000000016 implements MigrationInterf
     await queryRunner.dropTable('customer_feedback');
   }
 }
-
