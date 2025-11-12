@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from './config';
 import { DatabaseModule } from './database/database.module';
+import { ApprovalModule } from './modules/approvals/approval.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
@@ -25,6 +26,7 @@ import { UsersModule } from './modules/users/users.module';
     QuotesModule,
     ProjectsModule,
     InventoryModule,
+    ApprovalModule,
   ],
   controllers: [AppController],
   providers: [AppService],
