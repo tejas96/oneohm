@@ -15,7 +15,9 @@ import {
   ProjectMilestoneEntity,
   ProjectTaskEntity,
   SiteSurveyEntity,
+  TaskActivityLogEntity,
   TaskTemplateEntity,
+  TaskTimeLogEntity,
 } from './entities';
 import {
   MaterialRepository,
@@ -23,7 +25,9 @@ import {
   ProjectRepository,
   ProjectTaskRepository,
   SurveyRepository,
+  TaskActivityLogRepository,
   TaskTemplateRepository,
+  TaskTimeLogRepository,
 } from './repositories';
 import {
   MaterialService,
@@ -49,6 +53,8 @@ import { QuotesModule } from '../quotes/quotes.module';
       ProjectMaterialEntity,
       TaskTemplateEntity,
       ProjectTaskEntity,
+      TaskTimeLogEntity,
+      TaskActivityLogEntity,
     ]),
     OrganizationsModule,
     QuotesModule,
@@ -69,6 +75,8 @@ import { QuotesModule } from '../quotes/quotes.module';
     MaterialRepository,
     TaskTemplateRepository,
     ProjectTaskRepository,
+    TaskTimeLogRepository,
+    TaskActivityLogRepository,
     // Services
     ProjectService,
     MilestoneService,
@@ -84,6 +92,8 @@ import { QuotesModule } from '../quotes/quotes.module';
     MaterialRepository,
     TaskTemplateRepository,
     ProjectTaskRepository,
+    TaskTimeLogRepository,
+    TaskActivityLogRepository,
     ProjectService,
     MilestoneService,
     SurveyService,
