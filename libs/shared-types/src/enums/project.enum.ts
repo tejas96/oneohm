@@ -98,3 +98,43 @@ export enum MaterialStatus {
   ALLOCATED = 'allocated',
   USED = 'used',
 }
+
+/**
+ * Task Status
+ * Represents the current state of a project task
+ */
+export enum TaskStatus {
+  PENDING = 'pending',
+  TODO = 'todo',
+  IN_PROGRESS = 'in_progress',
+  IN_REVIEW = 'in_review',
+  BLOCKED = 'blocked',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+}
+
+/**
+ * Task Priority
+ * Indicates the urgency/importance of a task
+ */
+export enum TaskPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  URGENT = 'urgent',
+}
+
+/**
+ * Task Type
+ * Categorizes tasks by their nature
+ */
+export enum TaskType {
+  DESIGN = 'design',
+  PROCUREMENT = 'procurement',
+  INSTALLATION = 'installation',
+  TESTING = 'testing',
+  DOCUMENTATION = 'documentation',
+  APPROVAL = 'approval',
+  INSPECTION = 'inspection',
+  OTHER = 'other',
+}
