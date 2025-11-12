@@ -20,20 +20,10 @@ import {
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
 import { ProjectVendorStatus } from '@oneohm-epc/shared-types';
-import {
-  ApiCreate,
-  ApiDelete,
-  ApiReadAll,
-  ApiReadOne,
-  ApiUpdate,
-} from '@oneohm-epc/shared-utils';
+import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
-import {
-  CreateProjectVendorDto,
-  ProjectVendorResponseDto,
-  UpdateProjectVendorDto,
-} from '../dto';
+import { CreateProjectVendorDto, ProjectVendorResponseDto, UpdateProjectVendorDto } from '../dto';
 import { ProjectVendorService } from '../services';
 
 /**
@@ -101,7 +91,9 @@ export class ProjectVendorController {
     summary: 'Get vendors by project',
     description: 'Retrieve all vendors assigned to a specific project',
   })
-  async findByProject(@Param('projectId', ParseUUIDPipe) projectId: string): Promise<ProjectVendorResponseDto[]> {
+  async findByProject(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+  ): Promise<ProjectVendorResponseDto[]> {
     const projectVendors = await this.projectVendorService.findByProject(projectId);
 
     return plainToInstance(ProjectVendorResponseDto, projectVendors, {
@@ -238,9 +230,10 @@ export class ProjectVendorController {
     summary: 'Get total contract value',
     description: 'Calculate total contract value for all active vendors in a project',
   })
-  async getTotalContractValue(@Param('projectId', ParseUUIDPipe) projectId: string): Promise<{ totalValue: number }> {
-    const totalValue =
-      await this.projectVendorService.getTotalContractValueByProject(projectId);
+  async getTotalContractValue(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+  ): Promise<{ totalValue: number }> {
+    const totalValue = await this.projectVendorService.getTotalContractValueByProject(projectId);
 
     return { totalValue };
   }
@@ -254,13 +247,13 @@ export class ProjectVendorController {
     summary: 'Get active vendors',
     description: 'Retrieve all active vendors for a project',
   })
-  async getActiveVendors(@Param('projectId', ParseUUIDPipe) projectId: string): Promise<ProjectVendorResponseDto[]> {
-    const projectVendors =
-      await this.projectVendorService.getActiveVendorsByProject(projectId);
+  async getActiveVendors(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+  ): Promise<ProjectVendorResponseDto[]> {
+    const projectVendors = await this.projectVendorService.getActiveVendorsByProject(projectId);
 
     return plainToInstance(ProjectVendorResponseDto, projectVendors, {
       excludeExtraneousValues: true,
     });
   }
 }
-

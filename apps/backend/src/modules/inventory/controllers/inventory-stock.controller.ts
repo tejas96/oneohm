@@ -17,6 +17,7 @@ import {
   Roles,
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
+import { type PaginatedResponse } from '@oneohm-epc/shared-types';
 import { ApiReadAll } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
@@ -104,10 +105,7 @@ export class InventoryStockController {
     @Query('limit') limit?: number,
     @Query('lowStock') lowStock?: boolean,
     @Query('search') search?: string,
-  ): Promise<{
-    data: InventoryStockResponseDto[];
-    meta: { page: number; limit: number; total: number; totalPages: number };
-  }> {
+  ): Promise<PaginatedResponse<InventoryStockResponseDto>> {
     const { stocks, total } = await this.inventoryStockService.getStockByWarehouse(
       warehouseId,
       page,

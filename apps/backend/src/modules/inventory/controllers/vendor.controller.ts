@@ -19,21 +19,15 @@ import {
   Roles,
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
-import { VendorStatus, VendorType } from '@oneohm-epc/shared-types';
 import {
-  ApiCreate,
-  ApiDelete,
-  ApiReadAll,
-  ApiReadOne,
-  ApiUpdate,
-} from '@oneohm-epc/shared-utils';
+  type ExtendedStatisticsResponse,
+  VendorStatus,
+  VendorType,
+} from '@oneohm-epc/shared-types';
+import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
-import {
-  CreateVendorDto,
-  UpdateVendorDto,
-  VendorResponseDto,
-} from '../dto';
+import { CreateVendorDto, UpdateVendorDto, VendorResponseDto } from '../dto';
 import { VendorService } from '../services';
 
 /**
@@ -231,11 +225,7 @@ export class VendorController {
   })
   async getStatistics(
     @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<{
-    total: number;
-    byStatus: Record<VendorStatus, number>;
-    byType: Record<VendorType, number>;
-  }> {
+  ): Promise<ExtendedStatisticsResponse<VendorStatus, VendorType>> {
     return this.vendorService.getStatistics(currentUser.organizationId);
   }
 
@@ -279,15 +269,10 @@ export class VendorController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body('rating') rating: number,
   ): Promise<VendorResponseDto> {
-    const vendor = await this.vendorService.updateRating(
-      id,
-      currentUser.organizationId,
-      rating,
-    );
+    const vendor = await this.vendorService.updateRating(id, currentUser.organizationId, rating);
 
     return plainToInstance(VendorResponseDto, vendor, {
       excludeExtraneousValues: true,
     });
   }
 }
-

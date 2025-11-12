@@ -19,21 +19,11 @@ import {
   Roles,
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
-import { WarehouseStatus, WarehouseType } from '@oneohm-epc/shared-types';
-import {
-  ApiCreate,
-  ApiDelete,
-  ApiReadAll,
-  ApiReadOne,
-  ApiUpdate,
-} from '@oneohm-epc/shared-utils';
+import { type StatisticsResponse, WarehouseStatus, WarehouseType } from '@oneohm-epc/shared-types';
+import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
-import {
-  CreateWarehouseDto,
-  UpdateWarehouseDto,
-  WarehouseResponseDto,
-} from '../dto';
+import { CreateWarehouseDto, UpdateWarehouseDto, WarehouseResponseDto } from '../dto';
 import { WarehouseService } from '../services';
 
 /**
@@ -239,10 +229,7 @@ export class WarehouseController {
   })
   async getStatistics(
     @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<{
-    total: number;
-    byStatus: Record<WarehouseStatus, number>;
-  }> {
+  ): Promise<StatisticsResponse<WarehouseStatus>> {
     return this.warehouseService.getStatistics(currentUser.organizationId);
   }
 
@@ -272,4 +259,3 @@ export class WarehouseController {
     });
   }
 }
-

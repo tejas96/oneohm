@@ -19,14 +19,8 @@ import {
   Roles,
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
-import { MaterialDispatchStatus } from '@oneohm-epc/shared-types';
-import {
-  ApiCreate,
-  ApiDelete,
-  ApiReadAll,
-  ApiReadOne,
-  ApiUpdate,
-} from '@oneohm-epc/shared-utils';
+import { type StatisticsResponse, MaterialDispatchStatus } from '@oneohm-epc/shared-types';
+import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import {
@@ -191,10 +185,7 @@ export class MaterialDispatchController {
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<MaterialDispatchResponseDto> {
-    const dispatch = await this.materialDispatchService.findById(
-      id,
-      currentUser.organizationId,
-    );
+    const dispatch = await this.materialDispatchService.findById(id, currentUser.organizationId);
 
     return plainToInstance(MaterialDispatchResponseDto, dispatch, {
       excludeExtraneousValues: true,
@@ -210,7 +201,9 @@ export class MaterialDispatchController {
     summary: 'Get dispatches by project',
     description: 'Retrieve all material dispatches for a specific project',
   })
-  async findByProject(@Param('projectId', ParseUUIDPipe) projectId: string): Promise<MaterialDispatchResponseDto[]> {
+  async findByProject(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+  ): Promise<MaterialDispatchResponseDto[]> {
     const dispatches = await this.materialDispatchService.findByProject(projectId);
 
     return plainToInstance(MaterialDispatchResponseDto, dispatches, {
@@ -328,10 +321,7 @@ export class MaterialDispatchController {
   })
   async getStatistics(
     @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<{
-    total: number;
-    byStatus: Record<MaterialDispatchStatus, number>;
-  }> {
+  ): Promise<StatisticsResponse<MaterialDispatchStatus>> {
     return this.materialDispatchService.getStatistics(currentUser.organizationId);
   }
 
@@ -344,7 +334,9 @@ export class MaterialDispatchController {
     summary: 'Get in-transit dispatches',
     description: 'Get list of dispatches currently in transit',
   })
-  async getInTransit(@CurrentUser() currentUser: CurrentUserType): Promise<MaterialDispatchResponseDto[]> {
+  async getInTransit(
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<MaterialDispatchResponseDto[]> {
     const dispatches = await this.materialDispatchService.getInTransitDispatches(
       currentUser.organizationId,
     );
@@ -363,7 +355,9 @@ export class MaterialDispatchController {
     summary: 'Get pending dispatches',
     description: 'Get list of draft and prepared dispatches',
   })
-  async getPending(@CurrentUser() currentUser: CurrentUserType): Promise<MaterialDispatchResponseDto[]> {
+  async getPending(
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<MaterialDispatchResponseDto[]> {
     const dispatches = await this.materialDispatchService.getPendingDispatches(
       currentUser.organizationId,
     );
@@ -373,4 +367,3 @@ export class MaterialDispatchController {
     });
   }
 }
-
