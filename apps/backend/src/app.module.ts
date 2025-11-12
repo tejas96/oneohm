@@ -8,6 +8,7 @@ import { ApprovalModule } from './modules/approvals/approval.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 import { ProductsModule } from './modules/products/products.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
@@ -27,6 +28,7 @@ import { UsersModule } from './modules/users/users.module';
     ProjectsModule,
     InventoryModule,
     ApprovalModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
