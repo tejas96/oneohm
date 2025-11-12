@@ -1,27 +1,14 @@
 // ============================================
 // IMPORTS
 // ============================================
-// Shared types
 import { PaymentMethod, PaymentTransactionStatus } from '@oneohm-epc/shared-types';
+import { Entity, Column, ManyToOne, JoinColumn, Index, DeleteDateColumn } from 'typeorm';
 
-// Third-party imports
-import {
-  Entity,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  Index,
-  DeleteDateColumn,
-} from 'typeorm';
-
-// Local imports
 import { BaseEntity } from '../../../common/entities/base.entity';
-
-// Cross-module entity imports
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
-import { ProjectEntity } from '../../projects/entities/project.entity';
-import { ProjectMilestoneEntity } from '../../projects/entities/project-milestone.entity';
 import { CustomerEntity } from '../../customers/entities/customer.entity';
+import { OrganizationEntity } from '../../organizations/entities/organization.entity';
+import { ProjectMilestoneEntity } from '../../projects/entities/project-milestone.entity';
+import { ProjectEntity } from '../../projects/entities/project.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -119,7 +106,12 @@ export class PaymentEntity extends BaseEntity {
   // ============================================
   // STATUS
   // ============================================
-  @Column({ name: 'status', type: 'varchar', length: 50, default: PaymentTransactionStatus.PENDING })
+  @Column({
+    name: 'status',
+    type: 'varchar',
+    length: 50,
+    default: 'pending',
+  })
   status!: PaymentTransactionStatus;
 
   // ============================================
@@ -149,4 +141,3 @@ export class PaymentEntity extends BaseEntity {
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy?: string;
 }
-
