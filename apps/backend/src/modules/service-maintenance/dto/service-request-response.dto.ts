@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ServiceRequestPriority, ServiceRequestStatus } from '@oneohm-epc/shared-types';
 import { Expose, Type } from 'class-transformer';
 
-import { ServiceRequestPriority, ServiceRequestStatus } from '@oneohm-epc/shared-types';
 
 import { CustomerResponseDto } from '../../customers/dto/customer-response.dto';
 import { OrganizationResponseDto } from '../../organizations/dto/organization-response.dto';

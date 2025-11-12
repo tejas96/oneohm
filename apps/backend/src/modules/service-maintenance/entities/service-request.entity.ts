@@ -1,6 +1,6 @@
+import { ServiceRequestPriority, ServiceRequestStatus } from '@oneohm-epc/shared-types';
 import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
-import { ServiceRequestPriority, ServiceRequestStatus } from '@oneohm-epc/shared-types';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { CustomerEntity } from '../../customers/entities/customer.entity';

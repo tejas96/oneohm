@@ -1,12 +1,12 @@
+import { MaintenanceConfigStatus } from '@oneohm-epc/shared-types';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
-import { MaintenanceConfigStatus } from '@oneohm-epc/shared-types';
 
+import { MaintenanceTaskEntity } from './maintenance-task.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { ProjectEntity } from '../../projects/entities/project.entity';
 import { UserEntity } from '../../users/entities/user.entity';
-import { MaintenanceTaskEntity } from './maintenance-task.entity';
 
 /**
  * Project Maintenance Config Entity

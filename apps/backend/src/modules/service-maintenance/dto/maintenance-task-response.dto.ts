@@ -1,11 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { MaintenanceTaskStatus } from '@oneohm-epc/shared-types';
 import { Expose, Type } from 'class-transformer';
 
-import { MaintenanceTaskStatus } from '@oneohm-epc/shared-types';
 
+import { MaintenanceConfigResponseDto } from './maintenance-config-response.dto';
 import { OrganizationResponseDto } from '../../organizations/dto/organization-response.dto';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
-import { MaintenanceConfigResponseDto } from './maintenance-config-response.dto';
 
 /**
  * DTO for Checklist Item Response

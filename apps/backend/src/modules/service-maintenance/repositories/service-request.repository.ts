@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ServiceRequestPriority, ServiceRequestStatus } from '@oneohm-epc/shared-types';
 import { Between, In, IsNull, LessThanOrEqual, Like, Not, Repository } from 'typeorm';
 
-import { ServiceRequestPriority, ServiceRequestStatus } from '@oneohm-epc/shared-types';
 
 import { ServiceRequestEntity } from '../entities/service-request.entity';
 
@@ -371,19 +371,19 @@ export class ServiceRequestRepository {
 
     return {
       total: requests.length,
-      byStatus: requests.reduce(
+      byStatus: requests.reduce<Record<string, number>>(
         (acc, req) => {
           acc[req.status] = (acc[req.status] || 0) + 1;
           return acc;
         },
-        {} as Record<string, number>,
+        {},
       ),
-      byPriority: requests.reduce(
+      byPriority: requests.reduce<Record<string, number>>(
         (acc, req) => {
           acc[req.priority] = (acc[req.priority] || 0) + 1;
           return acc;
         },
-        {} as Record<string, number>,
+        {},
       ),
       chargeable: requests.filter((r) => r.isChargeable).length,
     };

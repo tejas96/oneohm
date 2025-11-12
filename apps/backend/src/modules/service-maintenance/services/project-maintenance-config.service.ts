@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 
-import { ProjectMaintenanceConfigEntity } from '../entities/project-maintenance-config.entity';
 import {
   CreateMaintenanceConfigDto,
   UpdateMaintenanceConfigDto,
   MaintenanceConfigResponseDto,
 } from '../dto';
+import { ProjectMaintenanceConfigEntity } from '../entities/project-maintenance-config.entity';
 import { ProjectMaintenanceConfigRepository } from '../repositories/project-maintenance-config.repository';
 
 /**

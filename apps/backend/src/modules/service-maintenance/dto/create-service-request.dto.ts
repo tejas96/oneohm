@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ServiceRequestPriority, ServiceRequestStatus } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -16,7 +17,6 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-import { ServiceRequestPriority, ServiceRequestStatus } from '@oneohm-epc/shared-types';
 
 /**
  * DTO for Resolution Attachment

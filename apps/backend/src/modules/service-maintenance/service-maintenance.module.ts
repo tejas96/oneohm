@@ -2,6 +2,11 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import {
+  ProjectMaintenanceConfigController,
+  MaintenanceTaskController,
+  ServiceRequestController,
+} from './controllers';
+import {
   ProjectMaintenanceConfigEntity,
   MaintenanceTaskEntity,
   ServiceRequestEntity,
@@ -16,15 +21,10 @@ import {
   MaintenanceTaskService,
   ServiceRequestService,
 } from './services';
-import {
-  ProjectMaintenanceConfigController,
-  MaintenanceTaskController,
-  ServiceRequestController,
-} from './controllers';
-import { OrganizationsModule } from '../organizations/organizations.module';
-import { UsersModule } from '../users/users.module';
-import { ProjectsModule } from '../projects/projects.module';
 import { CustomersModule } from '../customers/customers.module';
+import { OrganizationsModule } from '../organizations/organizations.module';
+import { ProjectsModule } from '../projects/projects.module';
+import { UsersModule } from '../users/users.module';
 
 /**
  * Service & Maintenance Module

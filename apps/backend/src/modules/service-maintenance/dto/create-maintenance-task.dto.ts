@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { MaintenanceTaskStatus } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
-  ArrayMinSize,
   IsArray,
   IsDateString,
   IsEnum,
@@ -14,7 +14,6 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-import { MaintenanceTaskStatus } from '@oneohm-epc/shared-types';
 
 /**
  * DTO for Checklist Item

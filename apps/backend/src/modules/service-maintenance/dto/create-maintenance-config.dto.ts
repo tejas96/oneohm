@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { MaintenanceConfigStatus } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
@@ -15,7 +16,6 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-import { MaintenanceConfigStatus } from '@oneohm-epc/shared-types';
 
 /**
  * DTO for Maintenance Interval Configuration

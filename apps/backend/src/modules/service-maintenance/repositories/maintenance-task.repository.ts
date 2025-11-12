@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { MaintenanceTaskStatus } from '@oneohm-epc/shared-types';
 import { Between, In, IsNull, LessThanOrEqual, Repository } from 'typeorm';
 
-import { MaintenanceTaskStatus } from '@oneohm-epc/shared-types';
 
 import { MaintenanceTaskEntity } from '../entities/maintenance-task.entity';
 
@@ -251,12 +251,12 @@ export class MaintenanceTaskRepository {
       select: ['status'],
     });
 
-    return tasks.reduce(
+    return tasks.reduce<Record<string, number>>(
       (acc, task) => {
         acc[task.status] = (acc[task.status] || 0) + 1;
         return acc;
       },
-      {} as Record<string, number>,
+      {},
     );
   }
 }
