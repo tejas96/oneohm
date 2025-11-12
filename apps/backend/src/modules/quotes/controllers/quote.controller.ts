@@ -19,7 +19,7 @@ import {
   Roles,
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
-import { QuoteStatus } from '@oneohm-epc/shared-types';
+import { type PaginatedResponse, QuoteStatus } from '@oneohm-epc/shared-types';
 import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
@@ -141,12 +141,7 @@ export class QuoteController {
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
     @Query('search') search?: string,
-  ): Promise<{
-    data: QuoteResponseDto[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
+  ): Promise<PaginatedResponse<QuoteResponseDto>> {
     const result = await this.quoteService.findAll(currentUser.organizationId, page, limit, {
       status,
       customerId,
@@ -161,9 +156,12 @@ export class QuoteController {
       data: plainToInstance(QuoteResponseDto, result.quotes, {
         excludeExtraneousValues: true,
       }),
-      total: result.total,
-      page,
-      limit,
+      meta: {
+        page,
+        limit,
+        total: result.total,
+        totalPages: Math.ceil(result.total / limit),
+      },
     };
   }
 
