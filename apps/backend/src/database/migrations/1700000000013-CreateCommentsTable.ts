@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner, Table, TableIndex } from 'typeorm';
+import { type MigrationInterface, type QueryRunner, Table, TableIndex } from 'typeorm';
 
 /**
  * Migration: Create Comments Table

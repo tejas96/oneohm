@@ -22,7 +22,6 @@ import {
   ApiQuery,
   ApiParam,
 } from '@nestjs/swagger';
-import { CommentEntityType } from '@oneohm-epc/shared-types';
 import {
   CurrentUser,
   type CurrentUserType,
@@ -31,6 +30,7 @@ import {
   Roles,
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
+import { CommentEntityType } from '@oneohm-epc/shared-types';
 import { plainToInstance } from 'class-transformer';
 
 import { CommentResponseDto, CreateCommentDto, UpdateCommentDto } from '../dto';
@@ -52,7 +52,11 @@ export class CommentController {
   // ============================================
   @Post()
   @ApiOperation({ summary: 'Create a new comment' })
-  @ApiResponse({ status: 201, description: 'Comment created successfully', type: CommentResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Comment created successfully',
+    type: CommentResponseDto,
+  })
   @Roles(
     Role.ADMIN,
     Role.MANAGER,
@@ -79,7 +83,11 @@ export class CommentController {
   @ApiQuery({ name: 'entityId', type: String, required: false })
   @ApiQuery({ name: 'userId', type: String, required: false })
   @ApiQuery({ name: 'includeReplies', type: Boolean, required: false })
-  @ApiResponse({ status: 200, description: 'Comments retrieved successfully', type: [CommentResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Comments retrieved successfully',
+    type: [CommentResponseDto],
+  })
   @Roles(
     Role.ADMIN,
     Role.MANAGER,
@@ -98,7 +106,11 @@ export class CommentController {
     let comments;
 
     if (entityType && entityId) {
-      comments = await this.commentService.findByEntity(entityType, entityId, includeReplies ?? true);
+      comments = await this.commentService.findByEntity(
+        entityType,
+        entityId,
+        includeReplies ?? true,
+      );
     } else if (userId) {
       comments = await this.commentService.findByUser(userId);
     } else {
@@ -110,7 +122,11 @@ export class CommentController {
 
   @Get('mentions')
   @ApiOperation({ summary: 'Get comments where current user is mentioned' })
-  @ApiResponse({ status: 200, description: 'Mentions retrieved successfully', type: [CommentResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Mentions retrieved successfully',
+    type: [CommentResponseDto],
+  })
   @Roles(
     Role.ADMIN,
     Role.MANAGER,
@@ -146,7 +162,11 @@ export class CommentController {
   @ApiOperation({ summary: 'Get threaded comment tree for entity' })
   @ApiParam({ name: 'entityType', enum: CommentEntityType })
   @ApiParam({ name: 'entityId', type: String })
-  @ApiResponse({ status: 200, description: 'Comment tree retrieved successfully', type: [CommentResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Comment tree retrieved successfully',
+    type: [CommentResponseDto],
+  })
   @Roles(
     Role.ADMIN,
     Role.MANAGER,
@@ -187,7 +207,11 @@ export class CommentController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get comment by ID' })
-  @ApiResponse({ status: 200, description: 'Comment retrieved successfully', type: CommentResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Comment retrieved successfully',
+    type: CommentResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'Comment not found' })
   @Roles(
     Role.ADMIN,
@@ -205,7 +229,11 @@ export class CommentController {
 
   @Get(':id/replies')
   @ApiOperation({ summary: 'Get replies for a comment' })
-  @ApiResponse({ status: 200, description: 'Replies retrieved successfully', type: [CommentResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Replies retrieved successfully',
+    type: [CommentResponseDto],
+  })
   @Roles(
     Role.ADMIN,
     Role.MANAGER,
@@ -225,7 +253,11 @@ export class CommentController {
   // ============================================
   @Patch(':id')
   @ApiOperation({ summary: 'Update comment' })
-  @ApiResponse({ status: 200, description: 'Comment updated successfully', type: CommentResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Comment updated successfully',
+    type: CommentResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'Comment not found' })
   @Roles(
     Role.ADMIN,
@@ -262,8 +294,10 @@ export class CommentController {
     Role.ACCOUNTS,
     Role.FIELD_WORKER,
   )
-  async delete(@Param('id') id: string, @CurrentUser() currentUser: CurrentUserType): Promise<void> {
+  async delete(
+    @Param('id') id: string,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<void> {
     await this.commentService.delete(id, currentUser.id);
   }
 }
-
