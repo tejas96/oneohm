@@ -19,11 +19,7 @@ import {
   Roles,
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
-import {
-  type PaginatedResponse,
-  ProjectPriority,
-  ProjectStatus,
-} from '@oneohm-epc/shared-types';
+import { type PaginatedResponse, ProjectPriority, ProjectStatus } from '@oneohm-epc/shared-types';
 import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
@@ -71,12 +67,26 @@ export class ProjectController {
    * Get all projects with filters
    */
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
+  @Roles(
+    Role.SUPER_ADMIN,
+    Role.ADMIN,
+    Role.MANAGER,
+    Role.SALES,
+    Role.FIELD_WORKER,
+    Role.EXECUTION_ENGINEER,
+  )
   @ApiReadAll({
     summary: 'Get all projects',
     description: 'Retrieve all projects with optional filters and pagination',
     responseType: ProjectResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
+    roles: [
+      Role.SUPER_ADMIN,
+      Role.ADMIN,
+      Role.MANAGER,
+      Role.SALES,
+      Role.FIELD_WORKER,
+      Role.EXECUTION_ENGINEER,
+    ],
   })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number', example: 1 })
   @ApiQuery({
@@ -128,7 +138,12 @@ export class ProjectController {
     type: String,
     description: 'Filter by start date (from)',
   })
-  @ApiQuery({ name: 'toDate', required: false, type: String, description: 'Filter by end date (to)' })
+  @ApiQuery({
+    name: 'toDate',
+    required: false,
+    type: String,
+    description: 'Filter by end date (to)',
+  })
   @ApiQuery({
     name: 'search',
     required: false,
@@ -186,12 +201,26 @@ export class ProjectController {
    * Get project by ID
    */
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
+  @Roles(
+    Role.SUPER_ADMIN,
+    Role.ADMIN,
+    Role.MANAGER,
+    Role.SALES,
+    Role.FIELD_WORKER,
+    Role.EXECUTION_ENGINEER,
+  )
   @ApiReadOne({
     summary: 'Get project by ID',
     description: 'Retrieve a single project with all relations',
     responseType: ProjectResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
+    roles: [
+      Role.SUPER_ADMIN,
+      Role.ADMIN,
+      Role.MANAGER,
+      Role.SALES,
+      Role.FIELD_WORKER,
+      Role.EXECUTION_ENGINEER,
+    ],
   })
   async findOne(
     @CurrentUser() currentUser: CurrentUserType,
@@ -319,4 +348,3 @@ export class ProjectController {
     });
   }
 }
-

@@ -3,18 +3,18 @@ import { plainToInstance, type ClassConstructor } from 'class-transformer';
 
 /**
  * Create a paginated response with proper structure
- * 
+ *
  * @param data - Array of items to paginate
  * @param total - Total count of items
  * @param page - Current page number
  * @param limit - Items per page
  * @param dtoClass - Optional DTO class for transformation
  * @returns Paginated response with data and meta
- * 
+ *
  * @example
  * // Simple usage
  * return createPaginatedResponse(users, 100, 1, 20);
- * 
+ *
  * @example
  * // With DTO transformation
  * return createPaginatedResponse(users, 100, 1, 20, UserResponseDto);
@@ -43,21 +43,17 @@ export function createPaginatedResponse<T, D = T>(
 
 /**
  * Create pagination metadata
- * 
+ *
  * @param total - Total count of items
  * @param page - Current page number
  * @param limit - Items per page
  * @returns Pagination metadata object
- * 
+ *
  * @example
  * const meta = createPaginationMeta(100, 1, 20);
  * // Returns: { page: 1, limit: 20, total: 100, totalPages: 5 }
  */
-export function createPaginationMeta(
-  total: number,
-  page: number,
-  limit: number,
-): PaginationMeta {
+export function createPaginationMeta(total: number, page: number, limit: number): PaginationMeta {
   return {
     page,
     limit,
@@ -68,14 +64,14 @@ export function createPaginationMeta(
 
 /**
  * Parse and validate pagination parameters
- * 
+ *
  * @param page - Page parameter (can be string or number)
  * @param limit - Limit parameter (can be string or number)
  * @param defaultPage - Default page if not provided (default: 1)
  * @param defaultLimit - Default limit if not provided (default: 20)
  * @param maxLimit - Maximum allowed limit (default: 100)
  * @returns Validated pagination parameters
- * 
+ *
  * @example
  * const { page, limit } = parsePaginationParams(req.query.page, req.query.limit);
  */
@@ -114,15 +110,14 @@ export function parsePaginationParams(
 
 /**
  * Calculate skip value for database queries
- * 
+ *
  * @param page - Current page number
  * @param limit - Items per page
  * @returns Number of items to skip
- * 
+ *
  * @example
  * const skip = calculateSkip(2, 20); // Returns 20
  */
 export function calculateSkip(page: number, limit: number): number {
   return (page - 1) * limit;
 }
-
