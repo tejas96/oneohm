@@ -14,6 +14,8 @@
     "migration:show": "npm run typeorm -- migration:show",
     "schema:drop": "npm run typeorm -- schema:drop",
     "schema:sync": "npm run typeorm -- schema:sync",
-    "seed": "ts-node -r tsconfig-paths/register src/database/seeds/seed.ts"
+    "seed": "ts-node -r tsconfig-paths/register src/database/seeds/seed.ts",
+    "seed:inventory": "ts-node -r tsconfig-paths/register src/database/seeds/seed-inventory.ts",
+    "seed:all": "npm run seed && npm run seed:inventory"
   }
 }
