@@ -19,7 +19,11 @@ import {
   Roles,
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
-import { ProjectPriority, ProjectStatus } from '@oneohm-epc/shared-types';
+import {
+  type PaginatedResponse,
+  ProjectPriority,
+  ProjectStatus,
+} from '@oneohm-epc/shared-types';
 import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
@@ -144,11 +148,14 @@ export class ProjectController {
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
     @Query('search') search?: string,
-  ): Promise<{ projects: ProjectResponseDto[]; total: number; page: number; limit: number }> {
+  ): Promise<PaginatedResponse<ProjectResponseDto>> {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 20;
+
     const result = await this.projectService.findAll(
       currentUser.organizationId,
-      page ? parseInt(page, 10) : 1,
-      limit ? parseInt(limit, 10) : 20,
+      pageNum,
+      limitNum,
       {
         status,
         priority,
@@ -163,10 +170,15 @@ export class ProjectController {
     );
 
     return {
-      ...result,
-      projects: plainToInstance(ProjectResponseDto, result.projects, {
+      data: plainToInstance(ProjectResponseDto, result.projects, {
         excludeExtraneousValues: true,
       }),
+      meta: {
+        page: pageNum,
+        limit: limitNum,
+        total: result.total,
+        totalPages: Math.ceil(result.total / limitNum),
+      },
     };
   }
 
