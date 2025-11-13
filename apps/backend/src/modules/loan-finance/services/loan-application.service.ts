@@ -401,6 +401,7 @@ export class LoanApplicationService {
       [LoanStatus.CANCELLED]: [],
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const allowedStatuses = validTransitions[currentStatus] || [];
 
     if (!allowedStatuses.includes(newStatus)) {

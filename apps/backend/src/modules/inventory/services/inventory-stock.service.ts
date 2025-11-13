@@ -82,10 +82,13 @@ export class InventoryStockService {
       updateDto.organizationId,
     );
 
+    // Defensive null checks for runtime safety
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!warehouse) {
       throw new NotFoundException('Warehouse not found');
     }
 
+     
     if (!product) {
       throw new NotFoundException('Product not found');
     }

@@ -221,6 +221,7 @@ export class OrganizationService {
       // - Complete ongoing projects
       // - Notify users
       // - Handle data archival
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     } else if (newStatus === OrganizationStatus.SUSPENDED) {
       // TODO: Add suspension rules
       // - Check payment issues

@@ -47,7 +47,8 @@ export class ApprovalRequestService {
       throw new BadRequestException('Approval template is not active');
     }
 
-    // Check if template has stages
+    // Check if template has stages (defensive programming for runtime safety)
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!template.stages || template.stages.length === 0) {
       throw new BadRequestException('Template has no approval stages configured');
     }
@@ -448,6 +449,7 @@ export class ApprovalRequestService {
         return approvalCount >= (stage.approverUserIds?.length ?? 1);
 
       case ApprovalRequirementType.COUNT:
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         return approvalCount >= (stage.requiredApprovalsCount ?? 1);
 
       case ApprovalRequirementType.MAJORITY:

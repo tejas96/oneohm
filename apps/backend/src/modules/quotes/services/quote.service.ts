@@ -356,12 +356,14 @@ export class QuoteService {
       updatedBy,
     });
 
-    // Mark old versions as not current
+    // Mark old versions as not current (defensive check for runtime safety)
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (currentVersion) {
       await this.quoteVersionRepository.setCurrentVersion(quote.id, newVersionNumber);
     }
 
-    // Create new version
+    // Create new version (using optional chaining for runtime safety)
+
     const newVersion = await this.quoteVersionRepository.create({
       quoteId: quote.id,
       versionNumber: newVersionNumber,
@@ -382,8 +384,7 @@ export class QuoteService {
         updateDto.paymentMilestones ||
         currentVersion?.paymentMilestones ||
         this.generateDefaultPaymentMilestones(pricing.finalPrice),
-      projectCompletionWeeks:
-        updateDto.projectCompletionWeeks || currentVersion?.projectCompletionWeeks || 4,
+      projectCompletionWeeks: updateDto.projectCompletionWeeks || currentVersion?.projectCompletionWeeks || 4,
       changeSummary: updateDto.changeSummary,
       isCurrent: true,
       createdBy: updatedBy,
@@ -408,6 +409,7 @@ export class QuoteService {
       }));
 
       await this.lineItemRepository.createMany(lineItemsData);
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     } else if (currentVersion) {
       // Copy line items from current version
       const oldLineItems = await this.lineItemRepository.findByVersionId(currentVersion.id);

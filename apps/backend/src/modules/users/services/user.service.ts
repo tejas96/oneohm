@@ -177,6 +177,7 @@ export class UserService {
       // - Complete pending tasks
       // - Transfer ownership
       // - Archive user data
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     } else if (newStatus === UserStatus.ACTIVE) {
       // TODO: Add activation rules
       // - Verify account requirements

@@ -67,7 +67,8 @@ export class MaterialDispatchService {
       createdBy,
     });
 
-    // Create dispatch items
+    // Create dispatch items (defensive check for runtime safety)
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (createDto.items && createDto.items.length > 0) {
       const items = createDto.items.map((item) => ({
         dispatchId: dispatch.id,

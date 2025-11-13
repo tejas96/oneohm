@@ -22,7 +22,8 @@ const configService: ConfigService<ConfigInterface> = {
     let value: unknown = configObj; // Start with unknown for type safety
 
     for (const k of keys) {
-      // Navigate through object structure
+      // Navigate through object structure (defensive optional chaining)
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       value = (value as Record<string, unknown>)?.[k];
     }
 

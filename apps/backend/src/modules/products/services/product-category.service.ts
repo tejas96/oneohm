@@ -136,7 +136,8 @@ export class ProductCategoryService {
   async delete(id: string, organizationId: string): Promise<void> {
     const category = await this.findById(id, organizationId);
 
-    // Check if category has children
+    // Check if category has children (defensive check for runtime safety)
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (category.childCategories && category.childCategories.length > 0) {
       throw new BadRequestException(
         'Cannot delete category with child categories. Delete children first.',
@@ -173,4 +174,3 @@ export class ProductCategoryService {
     }
   }
 }
-

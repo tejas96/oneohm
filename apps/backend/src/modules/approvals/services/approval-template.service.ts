@@ -59,7 +59,9 @@ export class ApprovalTemplateService {
       organizationId,
       createdBy,
       updatedBy: createdBy,
-      stages: stages as any, // TypeORM handles cascade creation
+      // TypeORM handles cascade creation - complex nested type requirements
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+      stages: stages as any,
     });
   }
 

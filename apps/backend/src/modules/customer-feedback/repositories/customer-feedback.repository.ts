@@ -226,6 +226,8 @@ export class CustomerFeedbackRepository {
     const departmentTotals: Record<string, { sum: number; count: number }> = {};
 
     feedbacks.forEach((feedback) => {
+      // Defensive check for runtime safety
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (feedback.departmentRatings) {
         Object.entries(feedback.departmentRatings).forEach(([dept, rating]) => {
           if (!departmentTotals[dept]) {

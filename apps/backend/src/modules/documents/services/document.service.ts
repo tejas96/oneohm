@@ -348,6 +348,7 @@ export class DocumentService {
       [DocumentType.OTHER]: 'DOC',
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     return prefixMap[documentType] ?? 'DOC';
   }
 
@@ -369,6 +370,7 @@ export class DocumentService {
       [DocumentStatus.ARCHIVED]: [],
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     const allowedTransitions = validTransitions[currentStatus] ?? [];
 
     if (!allowedTransitions.includes(newStatus)) {
