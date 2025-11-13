@@ -1,5 +1,6 @@
 export * from './project.entity';
 export * from './project-milestone.entity';
+export * from './milestone-template.entity';
 export * from './site-survey.entity';
 export * from './project-material.entity';
 export * from './task-template.entity';
