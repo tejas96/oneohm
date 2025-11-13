@@ -174,21 +174,6 @@ export class AutoNumberingService {
   }
 
   /**
-   * Generate a consistent lock ID from table and column name
-   * PostgreSQL advisory locks use bigint, so we hash the string
-   */
-  private generateLockId(tableName: string, columnName: string): number {
-    const str = `${tableName}_${columnName}`;
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    return Math.abs(hash);
-  }
-
-  /**
    * Validate if a number follows the expected format
    */
   validateNumberFormat(
@@ -208,6 +193,21 @@ export class AutoNumberingService {
       const regex = new RegExp(`^${prefix}${separator}\\d+$`);
       return regex.test(number);
     
+  }
+
+  /**
+   * Generate a consistent lock ID from table and column name
+   * PostgreSQL advisory locks use bigint, so we hash the string
+   */
+  private generateLockId(tableName: string, columnName: string): number {
+    const str = `${tableName}_${columnName}`;
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
   }
 }
 
