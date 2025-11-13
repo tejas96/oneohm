@@ -4,6 +4,9 @@ export * from './projects';
 // Milestone DTOs
 export * from './milestones';
 
+// Milestone Template DTOs
+export * from './milestone-templates';
+
 // Survey DTOs
 export * from './surveys';
 

@@ -4,12 +4,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import {
   MaterialController,
   MilestoneController,
+  MilestoneTemplateController,
   ProjectController,
   ProjectTaskController,
   SurveyController,
   TaskTemplateController,
 } from './controllers';
 import {
+  MilestoneTemplateEntity,
   ProjectEntity,
   ProjectMaterialEntity,
   ProjectMilestoneEntity,
@@ -22,6 +24,7 @@ import {
 import {
   MaterialRepository,
   MilestoneRepository,
+  MilestoneTemplateRepository,
   ProjectRepository,
   ProjectTaskRepository,
   SurveyRepository,
@@ -32,6 +35,7 @@ import {
 import {
   MaterialService,
   MilestoneService,
+  MilestoneTemplateService,
   ProjectService,
   ProjectTaskService,
   SurveyService,
@@ -49,6 +53,7 @@ import { QuotesModule } from '../quotes/quotes.module';
     TypeOrmModule.forFeature([
       ProjectEntity,
       ProjectMilestoneEntity,
+      MilestoneTemplateEntity,
       SiteSurveyEntity,
       ProjectMaterialEntity,
       TaskTemplateEntity,
@@ -62,6 +67,7 @@ import { QuotesModule } from '../quotes/quotes.module';
   controllers: [
     ProjectController,
     MilestoneController,
+    MilestoneTemplateController,
     SurveyController,
     MaterialController,
     TaskTemplateController,
@@ -71,6 +77,7 @@ import { QuotesModule } from '../quotes/quotes.module';
     // Repositories
     ProjectRepository,
     MilestoneRepository,
+    MilestoneTemplateRepository,
     SurveyRepository,
     MaterialRepository,
     TaskTemplateRepository,
@@ -80,6 +87,7 @@ import { QuotesModule } from '../quotes/quotes.module';
     // Services
     ProjectService,
     MilestoneService,
+    MilestoneTemplateService,
     SurveyService,
     MaterialService,
     TaskTemplateService,
@@ -88,6 +96,7 @@ import { QuotesModule } from '../quotes/quotes.module';
   exports: [
     ProjectRepository,
     MilestoneRepository,
+    MilestoneTemplateRepository,
     SurveyRepository,
     MaterialRepository,
     TaskTemplateRepository,
@@ -96,6 +105,7 @@ import { QuotesModule } from '../quotes/quotes.module';
     TaskActivityLogRepository,
     ProjectService,
     MilestoneService,
+    MilestoneTemplateService,
     SurveyService,
     MaterialService,
     TaskTemplateService,
