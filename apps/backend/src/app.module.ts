@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { ConfigModule } from './config';
 import { DatabaseModule } from './database/database.module';
 import { ApprovalModule } from './modules/approvals/approval.module';
+import { AuditModule } from './modules/audit/audit.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
 import { CustomerFeedbackModule } from './modules/customer-feedback/customer-feedback.module';
@@ -41,6 +42,7 @@ import { UsersModule } from './modules/users/users.module';
     CustomerFeedbackModule,
     LoanFinanceModule,
     ComplianceModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [AppService],
