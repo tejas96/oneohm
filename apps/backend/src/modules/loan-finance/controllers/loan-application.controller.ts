@@ -21,12 +21,12 @@ import {
 import { CurrentUser, JwtAuthGuard, Role, Roles, RolesGuard } from '@oneohm-epc/shared-auth';
 import { LoanStatus } from '@oneohm-epc/shared-types';
 
-import { LoanApplicationService } from '../services/loan-application.service';
 import {
   CreateLoanApplicationDto,
   UpdateLoanApplicationDto,
   LoanApplicationResponseDto,
 } from '../dto';
+import { LoanApplicationService } from '../services/loan-application.service';
 
 /**
  * Controller for Loan Applications

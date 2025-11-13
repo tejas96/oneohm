@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { LoanStatus } from '@oneohm-epc/shared-types';
+import { plainToInstance } from 'class-transformer';
 
-import { LoanApplicationRepository } from '../repositories/loan-application.repository';
 import {
   CreateLoanApplicationDto,
   UpdateLoanApplicationDto,
   LoanApplicationResponseDto,
 } from '../dto';
-import { plainToInstance } from 'class-transformer';
+import { LoanApplicationRepository } from '../repositories/loan-application.repository';
 
 /**
  * Service for Loan Application business logic

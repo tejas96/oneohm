@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LoanDocumentType } from '@oneohm-epc/shared-types';
 import { Expose, Type } from 'class-transformer';
+
 import { UserResponseDto } from '../../users/dto/user-response.dto';
 
 export class LoanDocumentResponseDto {

@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   ParseUUIDPipe,
-  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -16,17 +15,16 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
-  ApiQuery,
 } from '@nestjs/swagger';
 import { CurrentUser, JwtAuthGuard, Role, Roles, RolesGuard } from '@oneohm-epc/shared-auth';
 import { LoanDocumentType } from '@oneohm-epc/shared-types';
 
-import { LoanDocumentService } from '../services/loan-document.service';
 import {
   CreateLoanDocumentDto,
   UpdateLoanDocumentDto,
   LoanDocumentResponseDto,
 } from '../dto';
+import { LoanDocumentService } from '../services/loan-document.service';
 
 /**
  * Controller for Loan Documents

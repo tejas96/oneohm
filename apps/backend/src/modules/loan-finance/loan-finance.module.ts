@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { LoanApplicationController, LoanDocumentController } from './controllers';
 import { LoanApplicationEntity, LoanDocumentEntity } from './entities';
 import { LoanApplicationRepository, LoanDocumentRepository } from './repositories';
 import { LoanApplicationService, LoanDocumentService } from './services';
-import { LoanApplicationController, LoanDocumentController } from './controllers';
 
 /**
  * Loan & Finance Module
