@@ -10,6 +10,7 @@ import { CustomerFeedbackModule } from './modules/customer-feedback/customer-fee
 import { CustomersModule } from './modules/customers/customers.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
+import { LoanFinanceModule } from './modules/loan-finance/loan-finance.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { ProductsModule } from './modules/products/products.module';
@@ -37,6 +38,7 @@ import { UsersModule } from './modules/users/users.module';
     DocumentsModule,
     ServiceMaintenanceModule,
     CustomerFeedbackModule,
+    LoanFinanceModule,
   ],
   controllers: [AppController],
   providers: [AppService],
