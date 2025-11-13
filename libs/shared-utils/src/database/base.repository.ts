@@ -90,7 +90,8 @@ export class BaseRepository<T extends { id: string; deletedAt?: Date | null }> e
    */
   async updateEntity(id: string, data: DeepPartial<T>): Promise<T> {
     await this.findByIdOrFail(id); // Ensure entity exists
-    await this.update(id, data as DeepPartial<T>);
+    // TypeORM update has complex type requirements, using type assertion
+    await this.update({ id } as FindOptionsWhere<T>, data as any);
     return this.findByIdOrFail(id);
   }
 

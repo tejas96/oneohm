@@ -7,7 +7,7 @@ import {
 } from '@oneohm-epc/shared-types';
 
 import type { ApprovalActionDto, CreateApprovalRequestDto, UpdateApprovalRequestDto } from '../dto';
-import type { ApprovalRequestEntity } from '../entities';
+import type { ApprovalRequestEntity, ApprovalStageEntity } from '../entities';
 import {
   ApprovalHistoryRepository,
   ApprovalRequestRepository,
@@ -403,9 +403,9 @@ export class ApprovalRequestService {
   /**
    * Check if user is authorized to approve a stage
    */
-  private isUserAuthorizedForStage(userId: string, userRole: string, stage: any): boolean {
+  private isUserAuthorizedForStage(userId: string, userRole: string, stage: ApprovalStageEntity): boolean {
     // Role-based authorization
-    if (stage.approverRoles?.includes(userRole)) {
+    if (stage.approverRoles?.includes(userRole as any)) {
       return true;
     }
 
@@ -422,14 +422,16 @@ export class ApprovalRequestService {
   /**
    * Check if stage approval requirements are fulfilled
    */
-  private async isStageRequirementFulfilled(requestId: string, stage: any): Promise<boolean> {
+  private async isStageRequirementFulfilled(requestId: string, stage: ApprovalStageEntity): Promise<boolean> {
     const stageHistory = await this.historyRepository.findByStageId(requestId, stage.id);
 
     const approvalCount = stageHistory.filter(
       (h) => h.decision === ApprovalDecision.APPROVED,
     ).length;
 
-    switch (stage.approvalRequirementType) {
+    const requirementType = stage.approvalRequirementType;
+    
+    switch (requirementType) {
       case 'any':
         return approvalCount >= 1;
 
