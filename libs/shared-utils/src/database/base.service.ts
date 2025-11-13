@@ -1,10 +1,8 @@
-import type { DeepPartial, FindManyOptions, FindOptionsWhere } from 'typeorm';
-import type { ClassConstructor } from 'class-transformer';
-import { plainToInstance } from 'class-transformer';
-
 import type { PaginatedResponse } from '@oneohm-epc/shared-types';
+import { type ClassConstructor , plainToInstance } from 'class-transformer';
+import type { DeepPartial, FindManyOptions, FindOptionsWhere } from 'typeorm';
 
-import { BaseRepository } from './base.repository';
+import { type BaseRepository } from './base.repository';
 import { createPaginatedResponse } from '../helpers/pagination.helper';
 
 /**

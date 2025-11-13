@@ -403,7 +403,11 @@ export class ApprovalRequestService {
   /**
    * Check if user is authorized to approve a stage
    */
-  private isUserAuthorizedForStage(userId: string, userRole: string, stage: ApprovalStageEntity): boolean {
+  private isUserAuthorizedForStage(
+    userId: string,
+    userRole: string,
+    stage: ApprovalStageEntity,
+  ): boolean {
     // Role-based authorization
     if (stage.approverRoles?.includes(userRole as any)) {
       return true;
@@ -422,7 +426,10 @@ export class ApprovalRequestService {
   /**
    * Check if stage approval requirements are fulfilled
    */
-  private async isStageRequirementFulfilled(requestId: string, stage: ApprovalStageEntity): Promise<boolean> {
+  private async isStageRequirementFulfilled(
+    requestId: string,
+    stage: ApprovalStageEntity,
+  ): Promise<boolean> {
     const stageHistory = await this.historyRepository.findByStageId(requestId, stage.id);
 
     const approvalCount = stageHistory.filter(
@@ -430,7 +437,7 @@ export class ApprovalRequestService {
     ).length;
 
     const requirementType = stage.approvalRequirementType;
-    
+
     switch (requirementType) {
       case 'any':
         return approvalCount >= 1;

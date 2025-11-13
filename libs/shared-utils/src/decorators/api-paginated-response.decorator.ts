@@ -1,4 +1,4 @@
-import { applyDecorators, Type } from '@nestjs/common';
+import { applyDecorators, type Type } from '@nestjs/common';
 import { ApiExtraModels, ApiOkResponse, getSchemaPath } from '@nestjs/swagger';
 
 /**

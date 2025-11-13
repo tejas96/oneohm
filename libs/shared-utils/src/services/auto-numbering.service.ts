@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { type DataSource } from 'typeorm';
 
 /**
  * AutoNumberingService
@@ -89,9 +89,9 @@ export class AutoNumberingService {
       // Build final number
       if (includeYear) {
         return `${prefix}${separator}${year}${separator}${paddedNumber}`;
-      } else {
+      } 
         return `${prefix}${separator}${paddedNumber}`;
-      }
+      
     } finally {
       // Release advisory lock
       await this.dataSource.query('SELECT pg_advisory_unlock($1)', [lockId]);
@@ -127,7 +127,7 @@ export class AutoNumberingService {
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
 
     // Replace known placeholders to build pattern
-    let pattern = format
+    const pattern = format
       .replace('{PREFIX}', prefix)
       .replace('{YEAR}', year.toString())
       .replace('{MONTH}', month)
@@ -204,10 +204,10 @@ export class AutoNumberingService {
         `^${prefix}${separator}${year}${separator}\\d+$`,
       );
       return regex.test(number);
-    } else {
+    } 
       const regex = new RegExp(`^${prefix}${separator}\\d+$`);
       return regex.test(number);
-    }
+    
   }
 }
 
