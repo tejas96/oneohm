@@ -4,7 +4,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * Migration: Create Audit Logs Table
  * Module: Audit & Logging (Module 19)
  * Schema: Lines 2039-2070
- * 
+ *
  * Creates comprehensive audit trail system for tracking all entity changes
  */
 export class CreateAuditLogsTable1700000000019 implements MigrationInterface {
@@ -46,7 +46,7 @@ export class CreateAuditLogsTable1700000000019 implements MigrationInterface {
     // INDEXES
     // Schema: Lines 2066-2070
     // ============================================
-    
+
     // Index for entity queries (most common)
     await queryRunner.query(`
       CREATE INDEX idx_audit_logs_entity 
@@ -83,4 +83,3 @@ export class CreateAuditLogsTable1700000000019 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE IF EXISTS audit_logs CASCADE;`);
   }
 }
-

@@ -1,6 +1,6 @@
+import { AuditAction, AuditEntityType } from '@oneohm-epc/shared-types';
 import { IsEnum, IsNotEmpty, IsObject, IsOptional, IsString, IsUUID } from 'class-validator';
 
-import { AuditAction, AuditEntityType } from '@oneohm-epc/shared-types';
 
 /**
  * DTO for creating an audit log entry

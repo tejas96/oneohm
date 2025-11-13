@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 
-import { AuditLogEntity } from '../entities/audit-log.entity';
 import { QueryAuditLogsDto } from '../dto/query-audit-logs.dto';
+import { AuditLogEntity } from '../entities/audit-log.entity';
 
 /**
  * Repository for Audit Logs

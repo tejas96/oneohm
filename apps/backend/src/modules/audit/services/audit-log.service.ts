@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 
-import { AuditLogRepository } from '../repositories/audit-log.repository';
 import {
   CreateAuditLogDto,
   QueryAuditLogsDto,
   AuditLogResponseDto,
 } from '../dto';
+import { AuditLogRepository } from '../repositories/audit-log.repository';
 
 /**
  * Service for Audit Logging

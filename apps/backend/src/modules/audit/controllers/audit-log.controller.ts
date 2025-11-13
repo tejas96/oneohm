@@ -13,12 +13,12 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard, Role, Roles, RolesGuard } from '@oneohm-epc/shared-auth';
 
-import { AuditLogService } from '../services/audit-log.service';
 import {
   CreateAuditLogDto,
   QueryAuditLogsDto,
   AuditLogResponseDto,
 } from '../dto';
+import { AuditLogService } from '../services/audit-log.service';
 
 @ApiTags('Audit & Logging')
 @ApiBearerAuth()

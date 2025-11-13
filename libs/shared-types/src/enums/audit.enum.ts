@@ -41,4 +41,3 @@ export enum AuditEntityType {
   INSPECTION = 'inspection',
   SUBSIDY_APPLICATION = 'subsidy_application',
 }
-

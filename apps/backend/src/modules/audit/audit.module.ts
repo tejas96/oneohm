@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
+import { AuditLogController } from './controllers';
 import { AuditLogEntity } from './entities';
 import { AuditLogRepository } from './repositories';
 import { AuditLogService } from './services';
-import { AuditLogController } from './controllers';
 
 /**
  * Audit & Logging Module
