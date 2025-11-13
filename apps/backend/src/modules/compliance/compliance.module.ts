@@ -2,6 +2,11 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import {
+  ComplianceApplicationController,
+  InspectionController,
+  SubsidyApplicationController,
+} from './controllers';
+import {
   ComplianceApplicationEntity,
   InspectionEntity,
   SubsidyApplicationEntity,
@@ -16,11 +21,6 @@ import {
   InspectionService,
   SubsidyApplicationService,
 } from './services';
-import {
-  ComplianceApplicationController,
-  InspectionController,
-  SubsidyApplicationController,
-} from './controllers';
 
 /**
  * Compliance & Liaising Module

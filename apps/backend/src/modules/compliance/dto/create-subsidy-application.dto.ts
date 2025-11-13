@@ -2,7 +2,6 @@ import { SubsidyStatus } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
   IsDate,
-  IsDecimal,
   IsEnum,
   IsNotEmpty,
   IsNumber,

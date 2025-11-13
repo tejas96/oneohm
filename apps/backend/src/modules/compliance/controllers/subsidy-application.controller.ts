@@ -14,12 +14,12 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@ne
 import { CurrentUser, JwtAuthGuard, Role, Roles, RolesGuard } from '@oneohm-epc/shared-auth';
 import { SubsidyStatus } from '@oneohm-epc/shared-types';
 
-import { SubsidyApplicationService } from '../services/subsidy-application.service';
 import {
   CreateSubsidyApplicationDto,
   UpdateSubsidyApplicationDto,
   SubsidyApplicationResponseDto,
 } from '../dto';
+import { SubsidyApplicationService } from '../services/subsidy-application.service';
 
 @ApiTags('Compliance & Liaising')
 @ApiBearerAuth()

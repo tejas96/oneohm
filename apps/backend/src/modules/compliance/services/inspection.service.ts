@@ -2,12 +2,12 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InspectionStatus } from '@oneohm-epc/shared-types';
 import { plainToInstance } from 'class-transformer';
 
-import { InspectionRepository } from '../repositories/inspection.repository';
 import {
   CreateInspectionDto,
   UpdateInspectionDto,
   InspectionResponseDto,
 } from '../dto';
+import { InspectionRepository } from '../repositories/inspection.repository';
 
 @Injectable()
 export class InspectionService {

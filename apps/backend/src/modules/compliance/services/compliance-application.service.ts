@@ -2,12 +2,12 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { ComplianceStatus } from '@oneohm-epc/shared-types';
 import { plainToInstance } from 'class-transformer';
 
-import { ComplianceApplicationRepository } from '../repositories/compliance-application.repository';
 import {
   CreateComplianceApplicationDto,
   UpdateComplianceApplicationDto,
   ComplianceApplicationResponseDto,
 } from '../dto';
+import { ComplianceApplicationRepository } from '../repositories/compliance-application.repository';
 
 @Injectable()
 export class ComplianceApplicationService {

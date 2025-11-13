@@ -3,7 +3,6 @@ import { Type } from 'class-transformer';
 import {
   IsDate,
   IsEnum,
-  IsJSON,
   IsNotEmpty,
   IsOptional,
   IsString,

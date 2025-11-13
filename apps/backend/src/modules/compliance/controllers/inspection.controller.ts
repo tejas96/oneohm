@@ -14,12 +14,12 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@ne
 import { CurrentUser, JwtAuthGuard, Role, Roles, RolesGuard } from '@oneohm-epc/shared-auth';
 import { InspectionStatus } from '@oneohm-epc/shared-types';
 
-import { InspectionService } from '../services/inspection.service';
 import {
   CreateInspectionDto,
   UpdateInspectionDto,
   InspectionResponseDto,
 } from '../dto';
+import { InspectionService } from '../services/inspection.service';
 
 @ApiTags('Compliance & Liaising')
 @ApiBearerAuth()
