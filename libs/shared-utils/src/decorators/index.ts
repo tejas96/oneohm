@@ -5,3 +5,5 @@ export * from './api-delete.decorator';
 export * from './api-read-all.decorator';
 export * from './api-read-one.decorator';
 export * from './api-update.decorator';
+export * from './api-paginated-response.decorator';
+export * from './api-common-responses.decorator';
