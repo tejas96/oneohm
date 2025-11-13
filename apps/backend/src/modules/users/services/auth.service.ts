@@ -131,6 +131,11 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
+  /**
+   * Logout user
+   * TODO: Implement token revocation/blacklisting in future
+   */
+  // eslint-disable-next-line @typescript-eslint/member-ordering
   logout(userId: string): void {
     // In a real-world scenario, you might want to:
     // 1. Invalidate refresh tokens (store them in Redis/DB)

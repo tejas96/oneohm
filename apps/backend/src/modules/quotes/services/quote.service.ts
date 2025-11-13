@@ -248,7 +248,9 @@ export class QuoteService {
 
   /**
    * Find all quotes with filters
+   * TODO: Move to proper position after refactoring to BaseService
    */
+  // eslint-disable-next-line @typescript-eslint/member-ordering
   async findAll(
     organizationId: string,
     page: number,
@@ -268,14 +270,18 @@ export class QuoteService {
 
   /**
    * Find quote by ID
+   * TODO: Move to proper position after refactoring to BaseService
    */
+  // eslint-disable-next-line @typescript-eslint/member-ordering
   async findById(id: string, organizationId: string): Promise<QuoteEntity> {
     return this.quoteRepository.findById(id, organizationId);
   }
 
   /**
    * Update quote (creates new version)
+   * TODO: Move to proper position after refactoring to BaseService
    */
+  // eslint-disable-next-line @typescript-eslint/member-ordering
   async update(
     id: string,
     organizationId: string,
@@ -429,7 +435,9 @@ export class QuoteService {
 
   /**
    * Update quote status
+   * TODO: Move to proper position after refactoring to BaseService
    */
+  // eslint-disable-next-line @typescript-eslint/member-ordering
   async updateStatus(
     id: string,
     organizationId: string,
@@ -493,7 +501,9 @@ export class QuoteService {
 
   /**
    * Delete quote
+   * TODO: Move to proper position after refactoring to BaseService
    */
+  // eslint-disable-next-line @typescript-eslint/member-ordering
   async delete(id: string, organizationId: string): Promise<void> {
     const quote = await this.quoteRepository.findById(id, organizationId);
 
@@ -507,7 +517,9 @@ export class QuoteService {
 
   /**
    * Mark expired quotes (for cron job)
+   * TODO: Move to proper position after refactoring to BaseService
    */
+  // eslint-disable-next-line @typescript-eslint/member-ordering
   async markExpiredQuotes(): Promise<number> {
     const expiredQuotes = await this.quoteRepository.findExpiredQuotes();
 
