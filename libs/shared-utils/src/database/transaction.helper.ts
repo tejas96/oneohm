@@ -1,4 +1,5 @@
-import { DataSource, EntityManager, QueryRunner } from 'typeorm';
+import type { DataSource, EntityManager, QueryRunner } from 'typeorm';
+
 import { DatabaseException } from '../exceptions';
 
 /**
@@ -84,12 +85,12 @@ export class TransactionHelper {
    *   ]
    * );
    */
-  static async executeBatch<T extends any[]>(
+  static async executeBatch<T extends unknown[]>(
     dataSource: DataSource,
-    operations: Array<(manager: EntityManager) => Promise<any>>,
+    operations: Array<(manager: EntityManager) => Promise<unknown>>,
   ): Promise<T> {
-    return await this.executeInTransaction(dataSource, async (manager) => {
-      const results: any[] = [];
+    return this.executeInTransaction(dataSource, async (manager) => {
+      const results: unknown[] = [];
       for (const operation of operations) {
         const result = await operation(manager);
         results.push(result);

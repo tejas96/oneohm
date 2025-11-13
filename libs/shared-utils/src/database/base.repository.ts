@@ -1,4 +1,6 @@
-import { Repository, FindOptionsWhere, DeepPartial, FindManyOptions, DataSource } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
+import type { FindOptionsWhere, DeepPartial, FindManyOptions } from 'typeorm';
+
 import { EntityNotFoundException } from '../exceptions';
 import { calculateSkip } from '../helpers/pagination.helper';
 
@@ -80,7 +82,7 @@ export class BaseRepository<T extends { id: string; deletedAt?: Date | null }> e
    */
   async createEntity(data: DeepPartial<T>): Promise<T> {
     const entity = this.create(data);
-    return await this.save(entity);
+    return this.save(entity);
   }
 
   /**
@@ -88,8 +90,8 @@ export class BaseRepository<T extends { id: string; deletedAt?: Date | null }> e
    */
   async updateEntity(id: string, data: DeepPartial<T>): Promise<T> {
     await this.findByIdOrFail(id); // Ensure entity exists
-    await this.update(id, data as any);
-    return await this.findByIdOrFail(id);
+    await this.update(id, data as DeepPartial<T>);
+    return this.findByIdOrFail(id);
   }
 
   /**
@@ -115,7 +117,7 @@ export class BaseRepository<T extends { id: string; deletedAt?: Date | null }> e
    */
   async restoreEntity(id: string): Promise<T> {
     await this.restore(id);
-    return await this.findByIdOrFail(id);
+    return this.findByIdOrFail(id);
   }
 
   /**
@@ -140,7 +142,7 @@ export class BaseRepository<T extends { id: string; deletedAt?: Date | null }> e
    * Count entities matching criteria
    */
   async countByWhere(where: FindOptionsWhere<T>): Promise<number> {
-    return await this.count({ where });
+    return this.count({ where });
   }
 
   /**
@@ -151,8 +153,9 @@ export class BaseRepository<T extends { id: string; deletedAt?: Date | null }> e
       return [];
     }
 
-    return await this.find({
-      where: ids.map(id => ({ id } as FindOptionsWhere<T>)) as any,
+    // Use In operator from TypeORM
+    return this.find({
+      where: ids.map((id) => ({ id } as FindOptionsWhere<T>)) as FindOptionsWhere<T>[],
       relations,
     });
   }

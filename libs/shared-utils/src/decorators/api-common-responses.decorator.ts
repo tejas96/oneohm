@@ -14,7 +14,7 @@ import { ApiResponse } from '@nestjs/swagger';
  *   // ...
  * }
  */
-export const ApiCommonResponses = () => {
+export const ApiCommonResponses = (): ReturnType<typeof applyDecorators> => {
   return applyDecorators(
     ApiResponse({
       status: HttpStatus.BAD_REQUEST,
@@ -40,7 +40,7 @@ export const ApiCommonResponses = () => {
  * 
  * Applies 404 Not Found response.
  */
-export const ApiNotFoundResponse = (resourceName?: string) => {
+export const ApiNotFoundResponse = (resourceName?: string): ReturnType<typeof ApiResponse> => {
   return ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: resourceName
@@ -54,7 +54,7 @@ export const ApiNotFoundResponse = (resourceName?: string) => {
  * 
  * Applies 409 Conflict response.
  */
-export const ApiConflictResponse = (description?: string) => {
+export const ApiConflictResponse = (description?: string): ReturnType<typeof ApiResponse> => {
   return ApiResponse({
     status: HttpStatus.CONFLICT,
     description: description || 'Conflict - Resource already exists or operation conflicts with current state',
@@ -66,7 +66,7 @@ export const ApiConflictResponse = (description?: string) => {
  * 
  * Applies 422 Unprocessable Entity response for validation errors.
  */
-export const ApiValidationErrorResponse = () => {
+export const ApiValidationErrorResponse = (): ReturnType<typeof ApiResponse> => {
   return ApiResponse({
     status: HttpStatus.UNPROCESSABLE_ENTITY,
     description: 'Unprocessable Entity - Validation failed',

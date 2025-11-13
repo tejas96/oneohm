@@ -1,9 +1,11 @@
-import { DeepPartial, FindManyOptions, FindOptionsWhere } from 'typeorm';
-import { BaseRepository } from './base.repository';
-import { createPaginatedResponse } from '../helpers/pagination.helper';
-import type { PaginatedResponse } from '@oneohm-epc/shared-types';
+import type { DeepPartial, FindManyOptions, FindOptionsWhere } from 'typeorm';
 import type { ClassConstructor } from 'class-transformer';
 import { plainToInstance } from 'class-transformer';
+
+import type { PaginatedResponse } from '@oneohm-epc/shared-types';
+
+import { BaseRepository } from './base.repository';
+import { createPaginatedResponse } from '../helpers/pagination.helper';
 
 /**
  * BaseService
@@ -29,24 +31,6 @@ export abstract class BaseService<
     protected readonly repository: BaseRepository<TEntity>,
     protected readonly responseDto: ClassConstructor<TResponseDto>,
   ) {}
-
-  /**
-   * Transform entity to response DTO
-   */
-  protected toResponseDto(entity: TEntity): TResponseDto {
-    return plainToInstance(this.responseDto, entity, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  /**
-   * Transform multiple entities to response DTOs
-   */
-  protected toResponseDtos(entities: TEntity[]): TResponseDto[] {
-    return plainToInstance(this.responseDto, entities, {
-      excludeExtraneousValues: true,
-    });
-  }
 
   /**
    * Find entity by ID
@@ -118,7 +102,7 @@ export abstract class BaseService<
    * Check if entity exists
    */
   async exists(id: string): Promise<boolean> {
-    return await this.repository.existsById(id);
+    return this.repository.existsById(id);
   }
 
   /**
@@ -126,9 +110,27 @@ export abstract class BaseService<
    */
   async count(where?: FindOptionsWhere<TEntity>): Promise<number> {
     if (where) {
-      return await this.repository.countByWhere(where);
+      return this.repository.countByWhere(where);
     }
-    return await this.repository.count();
+    return this.repository.count();
+  }
+
+  /**
+   * Transform entity to response DTO
+   */
+  protected toResponseDto(entity: TEntity): TResponseDto {
+    return plainToInstance(this.responseDto, entity, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  /**
+   * Transform multiple entities to response DTOs
+   */
+  protected toResponseDtos(entities: TEntity[]): TResponseDto[] {
+    return plainToInstance(this.responseDto, entities, {
+      excludeExtraneousValues: true,
+    });
   }
 }
 

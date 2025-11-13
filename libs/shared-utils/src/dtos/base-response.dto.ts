@@ -3,10 +3,10 @@ import { Expose } from 'class-transformer';
 
 /**
  * BaseResponseDto
- * 
+ *
  * Base DTO for all entity responses containing common audit fields.
  * All response DTOs should extend this to ensure consistency.
- * 
+ *
  * @example
  * export class UserResponseDto extends BaseResponseDto {
  *   @Expose()
@@ -50,7 +50,7 @@ export class BaseResponseDto {
 
 /**
  * BaseAuditResponseDto
- * 
+ *
  * Extended base DTO including user audit fields (createdBy, updatedBy).
  * Use this for entities that track which user performed actions.
  */
@@ -72,7 +72,7 @@ export class BaseAuditResponseDto extends BaseResponseDto {
 
 /**
  * BaseOrganizationResponseDto
- * 
+ *
  * Extended base DTO including organization scoping.
  * Use this for multi-tenant entities that belong to an organization.
  */
