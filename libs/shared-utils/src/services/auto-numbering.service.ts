@@ -3,15 +3,15 @@ import { type DataSource } from 'typeorm';
 
 /**
  * AutoNumberingService
- * 
+ *
  * Centralized service for generating sequential numbers with custom formats.
  * Provides thread-safe number generation for entities requiring auto-numbering.
- * 
+ *
  * Supported formats:
  * - {PREFIX}-{YEAR}-{NUMBER}: e.g., LA-2024-001
  * - {PREFIX}-{NUMBER}: e.g., INV-00123
  * - {YEAR}-{MONTH}-{NUMBER}: e.g., 2024-11-001
- * 
+ *
  * @example
  * // In repository or service:
  * const loanNumber = await this.autoNumberingService.generateNumber(
@@ -29,7 +29,7 @@ export class AutoNumberingService {
 
   /**
    * Generate next sequential number for an entity
-   * 
+   *
    * @param tableName - Database table name
    * @param columnName - Column name storing the number
    * @param prefix - Prefix for the number (e.g., 'LA', 'INV')
@@ -46,15 +46,15 @@ export class AutoNumberingService {
     separator: string = '-',
   ): Promise<string> {
     const year = new Date().getFullYear();
-    
+
     // Build the pattern to search for
-    const pattern = includeYear 
+    const pattern = includeYear
       ? `${prefix}${separator}${year}${separator}%`
       : `${prefix}${separator}%`;
 
     // Use advisory lock for thread-safety
     const lockId = this.generateLockId(tableName, columnName);
-    
+
     try {
       // Acquire advisory lock
       await this.dataSource.query('SELECT pg_advisory_lock($1)', [lockId]);
@@ -89,9 +89,8 @@ export class AutoNumberingService {
       // Build final number
       if (includeYear) {
         return `${prefix}${separator}${year}${separator}${paddedNumber}`;
-      } 
-        return `${prefix}${separator}${paddedNumber}`;
-      
+      }
+      return `${prefix}${separator}${paddedNumber}`;
     } finally {
       // Release advisory lock
       await this.dataSource.query('SELECT pg_advisory_unlock($1)', [lockId]);
@@ -100,12 +99,12 @@ export class AutoNumberingService {
 
   /**
    * Generate a unique number with custom format
-   * 
+   *
    * @param format - Format string with placeholders: {PREFIX}, {YEAR}, {MONTH}, {NUMBER}
    * @param tableName - Table name for querying existing numbers
    * @param columnName - Column name storing the number
    * @param padding - Number of digits for padding (default: 3)
-   * 
+   *
    * @example
    * const number = await generateCustomNumber(
    *   '{PREFIX}-{YEAR}{MONTH}-{NUMBER}',
@@ -183,16 +182,13 @@ export class AutoNumberingService {
     separator: string = '-',
   ): boolean {
     const year = new Date().getFullYear();
-    
+
     if (includeYear) {
-      const regex = new RegExp(
-        `^${prefix}${separator}${year}${separator}\\d+$`,
-      );
+      const regex = new RegExp(`^${prefix}${separator}${year}${separator}\\d+$`);
       return regex.test(number);
-    } 
-      const regex = new RegExp(`^${prefix}${separator}\\d+$`);
-      return regex.test(number);
-    
+    }
+    const regex = new RegExp(`^${prefix}${separator}\\d+$`);
+    return regex.test(number);
   }
 
   /**
@@ -210,4 +206,3 @@ export class AutoNumberingService {
     return Math.abs(hash);
   }
 }
-
