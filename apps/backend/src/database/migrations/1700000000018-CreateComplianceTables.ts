@@ -74,10 +74,18 @@ export class CreateComplianceTables1700000000018 implements MigrationInterface {
 
     // Add auto-update trigger for updated_at
     await queryRunner.query(`
-      CREATE TRIGGER update_compliance_applications_updated_at
+      CREATE OR REPLACE FUNCTION update_compliance_applications_updated_at()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        NEW.updated_at = CURRENT_TIMESTAMP;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+
+      CREATE TRIGGER trigger_update_compliance_applications_updated_at
       BEFORE UPDATE ON compliance_applications
       FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
+      EXECUTE FUNCTION update_compliance_applications_updated_at();
     `);
 
     // ============================================
@@ -152,10 +160,18 @@ export class CreateComplianceTables1700000000018 implements MigrationInterface {
 
     // Add auto-update trigger for updated_at
     await queryRunner.query(`
-      CREATE TRIGGER update_inspections_updated_at
+      CREATE OR REPLACE FUNCTION update_inspections_updated_at()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        NEW.updated_at = CURRENT_TIMESTAMP;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+
+      CREATE TRIGGER trigger_update_inspections_updated_at
       BEFORE UPDATE ON inspections
       FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
+      EXECUTE FUNCTION update_inspections_updated_at();
     `);
 
     // ============================================
@@ -230,18 +246,31 @@ export class CreateComplianceTables1700000000018 implements MigrationInterface {
 
     // Add auto-update trigger for updated_at
     await queryRunner.query(`
-      CREATE TRIGGER update_subsidy_applications_updated_at
+      CREATE OR REPLACE FUNCTION update_subsidy_applications_updated_at()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        NEW.updated_at = CURRENT_TIMESTAMP;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+
+      CREATE TRIGGER trigger_update_subsidy_applications_updated_at
       BEFORE UPDATE ON subsidy_applications
       FOR EACH ROW
-      EXECUTE FUNCTION update_updated_at_column();
+      EXECUTE FUNCTION update_subsidy_applications_updated_at();
     `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop triggers
-    await queryRunner.query(`DROP TRIGGER IF EXISTS update_subsidy_applications_updated_at ON subsidy_applications;`);
-    await queryRunner.query(`DROP TRIGGER IF EXISTS update_inspections_updated_at ON inspections;`);
-    await queryRunner.query(`DROP TRIGGER IF EXISTS update_compliance_applications_updated_at ON compliance_applications;`);
+    await queryRunner.query(`DROP TRIGGER IF EXISTS trigger_update_subsidy_applications_updated_at ON subsidy_applications;`);
+    await queryRunner.query(`DROP TRIGGER IF EXISTS trigger_update_inspections_updated_at ON inspections;`);
+    await queryRunner.query(`DROP TRIGGER IF EXISTS trigger_update_compliance_applications_updated_at ON compliance_applications;`);
+
+    // Drop trigger functions
+    await queryRunner.query(`DROP FUNCTION IF EXISTS update_subsidy_applications_updated_at();`);
+    await queryRunner.query(`DROP FUNCTION IF EXISTS update_inspections_updated_at();`);
+    await queryRunner.query(`DROP FUNCTION IF EXISTS update_compliance_applications_updated_at();`);
 
     // Drop tables in reverse order (respecting foreign key dependencies)
     await queryRunner.query(`DROP TABLE IF EXISTS subsidy_applications CASCADE;`);
