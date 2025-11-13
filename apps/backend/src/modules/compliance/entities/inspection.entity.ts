@@ -122,4 +122,3 @@ export class InspectionEntity extends BaseEntity {
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy: string | null;
 }
-

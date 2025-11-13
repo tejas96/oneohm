@@ -263,9 +263,15 @@ export class CreateComplianceTables1700000000018 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop triggers
-    await queryRunner.query(`DROP TRIGGER IF EXISTS trigger_update_subsidy_applications_updated_at ON subsidy_applications;`);
-    await queryRunner.query(`DROP TRIGGER IF EXISTS trigger_update_inspections_updated_at ON inspections;`);
-    await queryRunner.query(`DROP TRIGGER IF EXISTS trigger_update_compliance_applications_updated_at ON compliance_applications;`);
+    await queryRunner.query(
+      `DROP TRIGGER IF EXISTS trigger_update_subsidy_applications_updated_at ON subsidy_applications;`,
+    );
+    await queryRunner.query(
+      `DROP TRIGGER IF EXISTS trigger_update_inspections_updated_at ON inspections;`,
+    );
+    await queryRunner.query(
+      `DROP TRIGGER IF EXISTS trigger_update_compliance_applications_updated_at ON compliance_applications;`,
+    );
 
     // Drop trigger functions
     await queryRunner.query(`DROP FUNCTION IF EXISTS update_subsidy_applications_updated_at();`);
@@ -278,4 +284,3 @@ export class CreateComplianceTables1700000000018 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE IF EXISTS compliance_applications CASCADE;`);
   }
 }
-
