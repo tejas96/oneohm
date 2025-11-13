@@ -89,7 +89,8 @@ export class BaseRepository<T extends { id: string; deletedAt?: Date | null }> e
    */
   async updateEntity(id: string, data: DeepPartial<T>): Promise<T> {
     await this.findByIdOrFail(id); // Ensure entity exists
-    // TypeORM update has complex type requirements, using type assertion
+    // TypeORM's update method has complex type requirements that don't work well with DeepPartial
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await this.update({ id } as FindOptionsWhere<T>, data as any);
     return this.findByIdOrFail(id);
   }
