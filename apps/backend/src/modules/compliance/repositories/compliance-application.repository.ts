@@ -40,8 +40,7 @@ export class ComplianceApplicationRepository {
   }
 
   async update(id: string, updateData: Partial<ComplianceApplicationEntity>): Promise<ComplianceApplicationEntity | null> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await this.repository.update(id, updateData as any);
+    await this.repository.update(id, updateData);
     return this.findById(id);
   }
 

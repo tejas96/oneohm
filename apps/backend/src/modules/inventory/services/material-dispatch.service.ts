@@ -99,7 +99,7 @@ export class MaterialDispatchService {
       toDate?: string;
       search?: string;
     },
-  ) {
+  ): Promise<{ dispatches: MaterialDispatchEntity[]; total: number }> {
     return this.materialDispatchRepository.findAll(organizationId, page, limit, filters);
   }
 
@@ -218,7 +218,10 @@ export class MaterialDispatchService {
   /**
    * Get dispatch statistics
    */
-  async getStatistics(organizationId: string) {
+  async getStatistics(organizationId: string): Promise<{
+    total: number;
+    byStatus: Record<MaterialDispatchStatus, number>;
+  }> {
     const countByStatus =
       await this.materialDispatchRepository.countByStatus(organizationId);
 

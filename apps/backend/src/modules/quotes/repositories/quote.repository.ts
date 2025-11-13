@@ -125,7 +125,7 @@ export class QuoteRepository {
       {
         ...quoteData,
         updatedAt: new Date(),
-      } as any, // TypeORM has deep partial type limitations with relations
+      },
     );
 
     return this.findById(id, organizationId);

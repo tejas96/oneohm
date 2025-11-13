@@ -78,7 +78,7 @@ export class WarehouseService {
       warehouseManagerId?: string;
       search?: string;
     },
-  ) {
+  ): Promise<{ warehouses: WarehouseEntity[]; total: number }> {
     return this.warehouseRepository.findAll(organizationId, page, limit, filters);
   }
 
@@ -130,7 +130,10 @@ export class WarehouseService {
   /**
    * Get warehouse statistics
    */
-  async getStatistics(organizationId: string) {
+  async getStatistics(organizationId: string): Promise<{
+    total: number;
+    byStatus: Record<WarehouseStatus, number>;
+  }> {
     const countByStatus = await this.warehouseRepository.countByStatus(organizationId);
 
     return {

@@ -201,7 +201,10 @@ export class StockAllocationService {
   /**
    * Get allocation statistics
    */
-  async getStatistics(organizationId: string) {
+  async getStatistics(organizationId: string): Promise<{
+    total: number;
+    byStatus: Record<StockAllocationStatus, number>;
+  }> {
     const countByStatus = await this.stockAllocationRepository.countByStatus(organizationId);
 
     return {

@@ -14,10 +14,10 @@ import { ApiExtraModels, ApiOkResponse, getSchemaPath } from '@nestjs/swagger';
  *   // Returns PaginatedResponse<UserResponseDto>
  * }
  */
-export const ApiPaginatedResponse = <TModel extends Type<any>>(
+export const ApiPaginatedResponse = <TModel extends Type<unknown>>(
   model: TModel,
   description?: string,
-) => {
+): ReturnType<typeof applyDecorators> => {
   return applyDecorators(
     ApiExtraModels(model),
     ApiOkResponse({

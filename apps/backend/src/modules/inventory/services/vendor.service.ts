@@ -127,7 +127,11 @@ export class VendorService {
   /**
    * Get vendor statistics
    */
-  async getStatistics(organizationId: string) {
+  async getStatistics(organizationId: string): Promise<{
+    total: number;
+    byStatus: Record<VendorStatus, number>;
+    byType: Record<VendorType, number>;
+  }> {
     const [countByStatus, countByType] = await Promise.all([
       this.vendorRepository.countByStatus(organizationId),
       this.vendorRepository.countByType(organizationId),

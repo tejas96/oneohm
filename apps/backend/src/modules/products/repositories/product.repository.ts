@@ -123,7 +123,7 @@ export class ProductRepository {
       {
         ...productData,
         updatedAt: new Date(),
-      } as any, // TypeORM has issues with deep JSONB typing for specifications field
+      },
     );
 
     const updated = await this.findById(id, organizationId);

@@ -121,7 +121,7 @@ export class PurchaseOrderService {
       toDate?: string;
       search?: string;
     },
-  ) {
+  ): Promise<{ purchaseOrders: PurchaseOrderEntity[]; total: number }> {
     return this.purchaseOrderRepository.findAll(organizationId, page, limit, filters);
   }
 
@@ -331,7 +331,12 @@ export class PurchaseOrderService {
   /**
    * Get purchase order statistics
    */
-  async getStatistics(organizationId: string) {
+  async getStatistics(organizationId: string): Promise<{
+    total: number;
+    byStatus: Record<PurchaseOrderStatus, number>;
+    pendingApprovals: number;
+    overdueCount: number;
+  }> {
     const [countByStatus, pendingApprovals, overduePos] = await Promise.all([
       this.purchaseOrderRepository.countByStatus(organizationId),
       this.purchaseOrderRepository.getPendingApprovalsCount(organizationId),
