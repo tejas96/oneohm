@@ -5,12 +5,10 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
-  OneToMany,
 } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
-import { TaskTemplateEntity } from './task-template.entity';
 
 /**
  * MilestoneTemplateEntity
