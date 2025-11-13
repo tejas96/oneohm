@@ -4,7 +4,9 @@ import {
   ApprovalAction,
   ApprovalDecision,
   ApprovalRequestStatus,
+  ApprovalRequirementType,
 } from '@oneohm-epc/shared-types';
+import { Role } from '@oneohm-epc/shared-auth';
 
 import type { ApprovalActionDto, CreateApprovalRequestDto, UpdateApprovalRequestDto } from '../dto';
 import type { ApprovalRequestEntity, ApprovalStageEntity } from '../entities';
@@ -180,7 +182,7 @@ export class ApprovalRequestService {
       decision: actionDto.decision,
       comment: actionDto.comment,
       actedBy,
-      actedByRole: actedByRole as any, // Cast to Role type
+      actedByRole: actedByRole as Role,
     });
 
     // Handle rejection
@@ -409,7 +411,7 @@ export class ApprovalRequestService {
     stage: ApprovalStageEntity,
   ): boolean {
     // Role-based authorization
-    if (stage.approverRoles?.includes(userRole as any)) {
+    if (stage.approverRoles?.includes(userRole as Role)) {
       return true;
     }
 
@@ -439,16 +441,16 @@ export class ApprovalRequestService {
     const requirementType = stage.approvalRequirementType;
 
     switch (requirementType) {
-      case 'any':
+      case ApprovalRequirementType.ANY:
         return approvalCount >= 1;
 
-      case 'all':
+      case ApprovalRequirementType.ALL:
         return approvalCount >= (stage.approverUserIds?.length ?? 1);
 
-      case 'count':
+      case ApprovalRequirementType.COUNT:
         return approvalCount >= (stage.requiredApprovalsCount ?? 1);
 
-      case 'majority':
+      case ApprovalRequirementType.MAJORITY:
         return approvalCount > (stage.approverUserIds?.length ?? 2) / 2;
 
       default:
