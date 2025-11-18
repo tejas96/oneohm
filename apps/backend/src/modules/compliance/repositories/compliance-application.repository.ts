@@ -19,7 +19,9 @@ export class ComplianceApplicationRepository {
   // BASIC CRUD
   // ============================================
 
-  async create(application: Partial<ComplianceApplicationEntity>): Promise<ComplianceApplicationEntity> {
+  async create(
+    application: Partial<ComplianceApplicationEntity>,
+  ): Promise<ComplianceApplicationEntity> {
     const entity = this.repository.create(application);
     return this.repository.save(entity);
   }
@@ -39,9 +41,11 @@ export class ComplianceApplicationRepository {
     });
   }
 
-  async update(id: string, updateData: Partial<ComplianceApplicationEntity>): Promise<ComplianceApplicationEntity | null> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await this.repository.update(id, updateData as any);
+  async update(
+    id: string,
+    updateData: Partial<ComplianceApplicationEntity>,
+  ): Promise<ComplianceApplicationEntity | null> {
+    await this.repository.update(id, updateData);
     return this.findById(id);
   }
 
@@ -86,7 +90,9 @@ export class ComplianceApplicationRepository {
     });
   }
 
-  async findByApplicationNumber(applicationNumber: string): Promise<ComplianceApplicationEntity | null> {
+  async findByApplicationNumber(
+    applicationNumber: string,
+  ): Promise<ComplianceApplicationEntity | null> {
     return this.repository.findOne({
       where: { applicationNumber, deletedAt: IsNull() },
       relations: ['organization', 'project', 'submittedByUser'],
@@ -147,4 +153,3 @@ export class ComplianceApplicationRepository {
     return this.repository.count({ where });
   }
 }
-

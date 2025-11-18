@@ -131,8 +131,7 @@ export class ProjectMaintenanceConfigRepository {
     id: string,
     updateData: Partial<ProjectMaintenanceConfigEntity>,
   ): Promise<ProjectMaintenanceConfigEntity | null> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await this.repository.update(id, updateData as any);
+    await this.repository.update(id, updateData);
     return this.findById(id);
   }
 
