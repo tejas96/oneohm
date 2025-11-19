@@ -1,11 +1,18 @@
-import { Body, Controller, Get, HttpStatus, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { type CurrentUserType, CurrentUser, JwtAuthGuard, Role, Roles, RolesGuard } from '@oneohm-epc/shared-auth';
+import { Body, Controller, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  type CurrentUserType,
+  CurrentUser,
+  JwtAuthGuard,
+  Role,
+  RolesGuard,
+} from '@oneohm-epc/shared-auth';
 import { CustomerStatus } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
   ApiCreate,
   ApiDelete,
+  ApiGet,
   ApiReadAll,
   ApiReadOne,
   ApiUpdate,
@@ -18,7 +25,6 @@ import {
   UpdateCustomerStatusDto,
 } from '../dto';
 import { CustomerService } from '../services/customer.service';
-
 
 /**
  * Customer Controller
@@ -160,10 +166,13 @@ export class CustomerController {
   /**
    * Get customer statistics by status
    */
-  @Get('statistics/status')
-  @ApiOperation({ summary: 'Get customer status statistics' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Customer statistics retrieved' })
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  @ApiGet({
+    path: 'statistics/status',
+    summary: 'Get customer status statistics',
+    description: 'Returns count of customers grouped by status for the current organization',
+    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
+  })
   async getStatusStatistics(
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<Record<string, number>> {
