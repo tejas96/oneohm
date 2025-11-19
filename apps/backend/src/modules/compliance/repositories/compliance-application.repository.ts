@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ComplianceStatus } from '@oneohm-epc/shared-types';
 import { IsNull, Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { ComplianceApplicationEntity } from '../entities/compliance-application.entity';
 
@@ -45,7 +46,7 @@ export class ComplianceApplicationRepository {
     id: string,
     updateData: Partial<ComplianceApplicationEntity>,
   ): Promise<ComplianceApplicationEntity | null> {
-    await this.repository.update(id, updateData);
+    await this.repository.update(id, updateData as QueryDeepPartialEntity<ComplianceApplicationEntity>);
     return this.findById(id);
   }
 

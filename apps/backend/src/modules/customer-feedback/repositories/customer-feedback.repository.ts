@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { NPSCategory } from '@oneohm-epc/shared-types';
 import { Between, IsNull, Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { CustomerFeedbackEntity } from '../entities/customer-feedback.entity';
 
@@ -40,7 +41,7 @@ export class CustomerFeedbackRepository {
   }
 
   async update(id: string, updateData: Partial<CustomerFeedbackEntity>): Promise<CustomerFeedbackEntity | null> {
-    await this.repository.update(id, updateData);
+    await this.repository.update(id, updateData as QueryDeepPartialEntity<CustomerFeedbackEntity>);
     return this.findById(id);
   }
 

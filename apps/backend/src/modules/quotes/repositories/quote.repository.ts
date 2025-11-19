@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QuoteStatus } from '@oneohm-epc/shared-types';
 import { Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { QuoteEntity } from '../entities/quote.entity';
 
@@ -125,7 +126,7 @@ export class QuoteRepository {
       {
         ...quoteData,
         updatedAt: new Date(),
-      } as Partial<QuoteEntity>, // TypeORM has deep partial type limitations with relations
+      } as QueryDeepPartialEntity<QuoteEntity>, // TypeORM has deep partial type limitations with relations
     );
 
     return this.findById(id, organizationId);

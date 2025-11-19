@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LoanStatus } from '@oneohm-epc/shared-types';
 import { Between, In, IsNull, Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { LoanApplicationEntity } from '../entities/loan-application.entity';
 
@@ -40,7 +41,7 @@ export class LoanApplicationRepository {
   }
 
   async update(id: string, updateData: Partial<LoanApplicationEntity>): Promise<LoanApplicationEntity | null> {
-    await this.repository.update(id, updateData);
+    await this.repository.update(id, updateData as QueryDeepPartialEntity<LoanApplicationEntity>);
     return this.findById(id);
   }
 

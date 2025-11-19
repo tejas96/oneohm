@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MaintenanceConfigStatus } from '@oneohm-epc/shared-types';
 import { IsNull, LessThanOrEqual, Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 
 import { ProjectMaintenanceConfigEntity } from '../entities/project-maintenance-config.entity';
@@ -131,7 +132,7 @@ export class ProjectMaintenanceConfigRepository {
     id: string,
     updateData: Partial<ProjectMaintenanceConfigEntity>,
   ): Promise<ProjectMaintenanceConfigEntity | null> {
-    await this.repository.update(id, updateData);
+    await this.repository.update(id, updateData as QueryDeepPartialEntity<ProjectMaintenanceConfigEntity>);
     return this.findById(id);
   }
 

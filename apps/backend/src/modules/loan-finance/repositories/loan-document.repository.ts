@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LoanDocumentType } from '@oneohm-epc/shared-types';
 import { Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { LoanDocumentEntity } from '../entities/loan-document.entity';
 
@@ -39,7 +40,7 @@ export class LoanDocumentRepository {
   }
 
   async update(id: string, updateData: Partial<LoanDocumentEntity>): Promise<LoanDocumentEntity | null> {
-    await this.repository.update(id, updateData);
+    await this.repository.update(id, updateData as QueryDeepPartialEntity<LoanDocumentEntity>);
     return this.findById(id);
   }
 
@@ -104,7 +105,7 @@ export class LoanDocumentRepository {
       isVerified: true,
       verifiedBy,
       verifiedAt: new Date(),
-    });
+    } as QueryDeepPartialEntity<LoanDocumentEntity>);
     return this.findById(id);
   }
 
@@ -113,7 +114,7 @@ export class LoanDocumentRepository {
       isVerified: false,
       verifiedBy: null,
       verifiedAt: null,
-    });
+    } as QueryDeepPartialEntity<LoanDocumentEntity>);
     return this.findById(id);
   }
 
