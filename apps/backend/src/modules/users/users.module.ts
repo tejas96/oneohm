@@ -5,11 +5,11 @@ import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtStrategy } from '@oneohm-epc/shared-auth';
 
-import { IamModule } from '../iam/iam.module';
 import { AuthController, UserController } from './controllers';
 import { UserEntity, UserRoleEntity } from './entities';
 import { UserRepository, UserRoleRepository } from './repositories';
 import { AuthService, UserService } from './services';
+import { IamModule } from '../iam/iam.module';
 
 @Module({
   imports: [
