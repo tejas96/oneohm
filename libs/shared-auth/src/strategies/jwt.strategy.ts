@@ -37,10 +37,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     // Return simplified payload to be attached to request.user
     // AuthService validates user existence on login
+    // NEW IAM: Extract permissions from JWT
     return {
       id: payload.sub,
       organizationId: payload.organizationId,
       roles: payload.roles || [],
+      permissions: payload.permissions || [], // NEW: Permissions from JWT
     };
   }
 }

@@ -1,12 +1,6 @@
 import { Body, Controller, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
+import { type CurrentUserType, CurrentUser, JwtAuthGuard } from '@oneohm-epc/shared-auth';
 import { CustomerStatus } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
@@ -18,6 +12,8 @@ import {
   ApiUpdate,
 } from '@oneohm-epc/shared-utils';
 
+import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
+import { PermissionGuard } from '../../iam/guards/permission.guard';
 import {
   CreateCustomerDto,
   CustomerResponseDto,
@@ -29,22 +25,26 @@ import { CustomerService } from '../services/customer.service';
 /**
  * Customer Controller
  * Handles HTTP requests for customer management
+ *
+ * NEW IAM: Now using @RequirePermission() instead of hardcoded @Roles()
+ * Permissions are checked via JWT payload (fast, stateless)
  */
 @ApiTags('Customers')
 @ApiBearerAuth()
 @Controller('customers')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
   /**
    * Create a new customer
    */
+  @RequirePermission('customers:create')
   @ApiCreate({
     summary: 'Create a new customer',
-    description: 'Creates a new customer/lead in the system.',
+    description:
+      'Creates a new customer/lead in the system. Requires: customers:create permission.',
     responseType: CustomerResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
     additionalErrors: [
       {
         status: 409,
@@ -67,11 +67,12 @@ export class CustomerController {
   /**
    * Get all customers
    */
+  @RequirePermission('customers:read')
   @ApiReadAll({
     summary: 'Get all customers',
-    description: 'Retrieve all customers for the current organization.',
+    description:
+      'Retrieve all customers for the current organization. Requires: customers:read permission.',
     responseType: CustomerResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async findAll(@CurrentUser() currentUser: CurrentUserType): Promise<CustomerResponseDto[]> {
     const customers = await this.customerService.findAll(currentUser.organizationId);
@@ -81,11 +82,11 @@ export class CustomerController {
   /**
    * Get customer by ID
    */
+  @RequirePermission('customers:read')
   @ApiReadOne({
     summary: 'Get customer by ID',
-    description: 'Retrieve a specific customer by their ID.',
+    description: 'Retrieve a specific customer by their ID. Requires: customers:read permission.',
     responseType: CustomerResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
@@ -98,11 +99,11 @@ export class CustomerController {
   /**
    * Update customer
    */
+  @RequirePermission('customers:update')
   @ApiUpdate({
     summary: 'Update customer',
-    description: 'Update customer information.',
+    description: 'Update customer information. Requires: customers:update permission.',
     responseType: CustomerResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
     additionalErrors: [
       {
         status: 409,
@@ -127,12 +128,12 @@ export class CustomerController {
   /**
    * Update customer status (generic)
    */
+  @RequirePermission('customers:update-status')
   @ApiAction({
     path: 'status',
     summary: 'Update customer status',
-    description: `Update customer status (${Object.values(CustomerStatus).join(', ')}).`,
+    description: `Update customer status (${Object.values(CustomerStatus).join(', ')}). Requires: customers:update-status permission.`,
     responseType: CustomerResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
@@ -151,10 +152,10 @@ export class CustomerController {
   /**
    * Delete customer
    */
+  @RequirePermission('customers:delete')
   @ApiDelete({
     summary: 'Delete customer',
-    description: 'Soft delete a customer.',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
+    description: 'Soft delete a customer. Requires: customers:delete permission.',
   })
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
@@ -166,12 +167,12 @@ export class CustomerController {
   /**
    * Get customer statistics by status
    */
+  @RequirePermission('customers:read')
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   @ApiGet({
     path: 'statistics/status',
     summary: 'Get customer status statistics',
     description: 'Returns count of customers grouped by status for the current organization',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async getStatusStatistics(
     @CurrentUser() currentUser: CurrentUserType,

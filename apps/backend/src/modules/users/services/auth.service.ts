@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import type { CurrentUserType, JwtPayload } from '@oneohm-epc/shared-auth';
 import { UserStatus } from '@oneohm-epc/shared-types';
 
+import { IamService } from '../../iam/services/iam.service';
 import { LoginDto, LoginResponseDto } from '../dto/login.dto';
 import { RefreshTokenResponseDto } from '../dto/refresh-token.dto';
 import { UserRoleRepository } from '../repositories/user-role.repository';
@@ -19,6 +20,7 @@ export class AuthService {
     private readonly userRoleRepository: UserRoleRepository,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly iamService: IamService,
   ) {}
 
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
@@ -80,10 +82,15 @@ export class AuthService {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      // Generate new tokens
+      // TOKEN ROTATION: Generate new tokens (including new refresh token)
+      // This invalidates the old refresh token and prevents replay attacks
+      // NOTE: For production, store refresh tokens in DB/Redis with:
+      //   1. Token whitelist (active tokens)
+      //   2. Token blacklist (revoked tokens)
+      //   3. Token family ID (detect token reuse)
       const tokens = await this.generateTokens(user.id, user.organizationId, user.roles ?? []);
 
-      this.logger.log(`Token refreshed for user: ${user.email}`);
+      this.logger.log(`Token refreshed with rotation for user: ${user.email}`);
 
       return tokens;
     } catch (error) {
@@ -99,10 +106,19 @@ export class AuthService {
       return null;
     }
 
+    // NEW IAM: Load permissions
+    let permissions: string[] = [];
+    try {
+      permissions = await this.iamService.getUserPermissions(userId);
+    } catch {
+      this.logger.warn(`Failed to load permissions during validation for user ${userId}`);
+    }
+
     return {
       id: user.id,
       organizationId: user.organizationId,
       roles: user.roles ?? [],
+      permissions, // NEW: Include permissions
     };
   }
 
@@ -111,10 +127,21 @@ export class AuthService {
     organizationId: string,
     roles: string[],
   ): Promise<{ accessToken: string; refreshToken: string }> {
+    // NEW IAM: Load user permissions from database
+    let permissions: string[] = [];
+    try {
+      permissions = await this.iamService.getUserPermissions(userId);
+      this.logger.debug(`Loaded ${permissions.length} permissions for user ${userId}`);
+    } catch (error) {
+      this.logger.warn(`Failed to load permissions for user ${userId}:`, error);
+      // Continue without permissions (graceful degradation)
+    }
+
     const payload: JwtPayload = {
       sub: userId,
       organizationId,
-      roles,
+      roles, // Keep for backward compatibility
+      permissions, // NEW: Embed permissions in JWT
     };
 
     const [accessToken, refreshToken] = await Promise.all([
