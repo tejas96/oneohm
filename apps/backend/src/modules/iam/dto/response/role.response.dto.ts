@@ -1,0 +1,69 @@
+import { ApiProperty } from '@nestjs/swagger';
+
+/**
+ * Role Response DTO
+ */
+export class RoleResponseDto {
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  id: string;
+
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174001' })
+  organizationId: string;
+
+  @ApiProperty({ example: 'Sales Manager' })
+  name: string;
+
+  @ApiProperty({ example: 'sales_manager' })
+  code: string;
+
+  @ApiProperty({ example: 'Manages sales team and customer relationships', required: false })
+  description?: string;
+
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174002', required: false })
+  parentRoleId?: string;
+
+  @ApiProperty({ example: 1 })
+  level: number;
+
+  @ApiProperty({ example: false })
+  isSystemRole: boolean;
+
+  @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
+  createdAt: Date;
+
+  @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
+  updatedAt: Date;
+
+  @ApiProperty({ required: false })
+  deletedAt?: Date;
+}
+
+/**
+ * Role with Permissions Response DTO
+ */
+export class RoleWithPermissionsDto extends RoleResponseDto {
+  @ApiProperty({ 
+    type: [String],
+    example: ['customers:read', 'customers:create', 'customers:update']
+  })
+  permissions: string[];
+}
+
+/**
+ * Paginated Roles Response DTO
+ */
+export class PaginatedRolesDto {
+  @ApiProperty({ type: [RoleResponseDto] })
+  data: RoleResponseDto[];
+
+  @ApiProperty({ example: 10 })
+  total: number;
+
+  @ApiProperty({ example: 1 })
+  page: number;
+
+  @ApiProperty({ example: 10 })
+  pageSize: number;
+}
+
+

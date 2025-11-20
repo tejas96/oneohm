@@ -16,6 +16,9 @@
     "schema:sync": "npm run typeorm -- schema:sync",
     "seed": "ts-node -r tsconfig-paths/register src/database/seeds/seed.ts",
     "seed:inventory": "ts-node -r tsconfig-paths/register src/database/seeds/seed-inventory.ts",
-    "seed:all": "npm run seed && npm run seed:inventory"
+    "seed:iam-customers": "ts-node -r tsconfig-paths/register src/database/seeds/run-iam-customers.ts",
+    "seed:test-users-iam": "ts-node -r tsconfig-paths/register src/database/seeds/run-test-users-iam.ts",
+    "seed:all": "npm run seed && npm run seed:inventory",
+    "migrate:users-to-iam": "ts-node -r tsconfig-paths/register src/scripts/run-migrate-users-to-iam.ts"
   }
 }
