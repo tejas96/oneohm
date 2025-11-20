@@ -17,9 +17,13 @@ export class UserRoleEntity {
   @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;
 
-  // ===== ROLE =====
+  // ===== ROLE (Old enum-based) =====
   @Column({ type: 'varchar', length: 50 })
   role!: Role;
+
+  // ===== NEW IAM: Dynamic Role ID =====
+  @Column({ name: 'role_id', type: 'uuid', nullable: true })
+  roleId?: string | null;
 
   // ===== AUDIT =====
   @Column({

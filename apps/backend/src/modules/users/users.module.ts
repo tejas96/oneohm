@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtStrategy } from '@oneohm-epc/shared-auth';
 
+import { IamModule } from '../iam/iam.module';
 import { AuthController, UserController } from './controllers';
 import { UserEntity, UserRoleEntity } from './entities';
 import { UserRepository, UserRoleRepository } from './repositories';
@@ -14,6 +15,7 @@ import { AuthService, UserService } from './services';
   imports: [
     TypeOrmModule.forFeature([UserEntity, UserRoleEntity]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
+    forwardRef(() => IamModule), // ← Use forwardRef to break circular dependency
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
@@ -33,6 +35,6 @@ import { AuthService, UserService } from './services';
   ],
   controllers: [AuthController, UserController],
   providers: [UserRepository, UserRoleRepository, UserService, AuthService, JwtStrategy],
-  exports: [UserService, AuthService, UserRepository],
+  exports: [UserService, AuthService, UserRepository, UserRoleRepository], // ← Export UserRoleRepository for IamService
 })
 export class UsersModule {}
