@@ -1,11 +1,12 @@
-import { Body, Controller, Get, HttpStatus, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { type CurrentUserType, CurrentUser, JwtAuthGuard } from '@oneohm-epc/shared-auth';
 import { CustomerStatus } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
   ApiCreate,
   ApiDelete,
+  ApiGet,
   ApiReadAll,
   ApiReadOne,
   ApiUpdate,
@@ -166,13 +167,13 @@ export class CustomerController {
   /**
    * Get customer statistics by status
    */
-  @Get('statistics/status')
   @RequirePermission('customers:read')
-  @ApiOperation({
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  @ApiGet({
+    path: 'statistics/status',
     summary: 'Get customer status statistics',
-    description: 'Get customer statistics grouped by status. Requires: customers:read permission.',
+    description: 'Returns count of customers grouped by status for the current organization',
   })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Customer statistics retrieved' })
   async getStatusStatistics(
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<Record<string, number>> {

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MaintenanceTaskStatus } from '@oneohm-epc/shared-types';
 import { Between, In, IsNull, LessThanOrEqual, Repository } from 'typeorm';
-
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { MaintenanceTaskEntity } from '../entities/maintenance-task.entity';
 
@@ -36,7 +36,10 @@ export class MaintenanceTaskRepository {
   /**
    * Find task by ID
    */
-  async findById(id: string, options?: { relations?: string[] }): Promise<MaintenanceTaskEntity | null> {
+  async findById(
+    id: string,
+    options?: { relations?: string[] },
+  ): Promise<MaintenanceTaskEntity | null> {
     return this.repository.findOne({
       where: { id },
       relations: options?.relations || [],
@@ -138,7 +141,10 @@ export class MaintenanceTaskRepository {
   /**
    * Find upcoming tasks (scheduled in next N days)
    */
-  async findUpcoming(days: number = 7, options?: { relations?: string[] }): Promise<MaintenanceTaskEntity[]> {
+  async findUpcoming(
+    days: number = 7,
+    options?: { relations?: string[] },
+  ): Promise<MaintenanceTaskEntity[]> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -190,9 +196,11 @@ export class MaintenanceTaskRepository {
   /**
    * Update task
    */
-  async update(id: string, updateData: Partial<MaintenanceTaskEntity>): Promise<MaintenanceTaskEntity | null> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await this.repository.update(id, updateData as any);
+  async update(
+    id: string,
+    updateData: Partial<MaintenanceTaskEntity>,
+  ): Promise<MaintenanceTaskEntity | null> {
+    await this.repository.update(id, updateData as QueryDeepPartialEntity<MaintenanceTaskEntity>);
     return this.findById(id);
   }
 
@@ -251,13 +259,9 @@ export class MaintenanceTaskRepository {
       select: ['status'],
     });
 
-    return tasks.reduce<Record<string, number>>(
-      (acc, task) => {
-        acc[task.status] = (acc[task.status] || 0) + 1;
-        return acc;
-      },
-      {},
-    );
+    return tasks.reduce<Record<string, number>>((acc, task) => {
+      acc[task.status] = (acc[task.status] || 0) + 1;
+      return acc;
+    }, {});
   }
 }
-

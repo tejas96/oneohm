@@ -15,3 +15,4 @@ export * from './document.enum';
 export * from './service-maintenance.enum';
 export * from './customer-feedback.enum';
 export * from './loan.enum';
+export * from './integration-provider.enum';

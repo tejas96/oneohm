@@ -23,7 +23,7 @@ export function ApiReadAll<TResponse>(options: {
     required?: boolean;
     type?: Type<unknown>;
     description?: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     enum?: any;
   }>;
 }): MethodDecorator & ClassDecorator {

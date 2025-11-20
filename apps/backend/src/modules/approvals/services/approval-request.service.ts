@@ -4,10 +4,11 @@ import {
   ApprovalAction,
   ApprovalDecision,
   ApprovalRequestStatus,
+  ApprovalRequirementType,
 } from '@oneohm-epc/shared-types';
 
 import type { ApprovalActionDto, CreateApprovalRequestDto, UpdateApprovalRequestDto } from '../dto';
-import type { ApprovalRequestEntity } from '../entities';
+import type { ApprovalRequestEntity, ApprovalStageEntity } from '../entities';
 import {
   ApprovalHistoryRepository,
   ApprovalRequestRepository,
@@ -422,7 +423,10 @@ export class ApprovalRequestService {
   /**
    * Check if stage approval requirements are fulfilled
    */
-  private async isStageRequirementFulfilled(requestId: string, stage: any): Promise<boolean> {
+  private async isStageRequirementFulfilled(
+    requestId: string,
+    stage: ApprovalStageEntity,
+  ): Promise<boolean> {
     const stageHistory = await this.historyRepository.findByStageId(requestId, stage.id);
 
     const approvalCount = stageHistory.filter(
@@ -430,16 +434,16 @@ export class ApprovalRequestService {
     ).length;
 
     switch (stage.approvalRequirementType) {
-      case 'any':
+      case ApprovalRequirementType.ANY:
         return approvalCount >= 1;
 
-      case 'all':
+      case ApprovalRequirementType.ALL:
         return approvalCount >= (stage.approverUserIds?.length ?? 1);
 
-      case 'count':
+      case ApprovalRequirementType.COUNT:
         return approvalCount >= (stage.requiredApprovalsCount ?? 1);
 
-      case 'majority':
+      case ApprovalRequirementType.MAJORITY:
         return approvalCount > (stage.approverUserIds?.length ?? 2) / 2;
 
       default:

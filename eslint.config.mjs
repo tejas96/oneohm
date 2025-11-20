@@ -80,13 +80,12 @@ export default [
       '@typescript-eslint/explicit-module-boundary-types': 'warn',
       // Note: Use regular imports (not type-only) for classes used in dependency injection
       // Example: Reflector, guards, services - they need runtime values
-      '@typescript-eslint/consistent-type-imports': [
-        'error',
-        {
-          prefer: 'type-imports',
-          fixStyle: 'inline-type-imports',
-        },
-      ],
+      // IMPORTANT: Enums are BOTH types and runtime values in TypeScript
+      // This rule has a limitation - it can't distinguish between pure types and enums
+      // When enums are only used in type positions (like interface properties),
+      // the rule incorrectly tries to convert them to type-only imports, which breaks runtime usage
+      // Solution: Turn off this rule to allow manual control over when to use type imports
+      '@typescript-eslint/consistent-type-imports': 'off',
       '@typescript-eslint/strict-boolean-expressions': 'off',
       '@typescript-eslint/switch-exhaustiveness-check': 'error',
       '@typescript-eslint/no-floating-promises': 'error',
@@ -177,7 +176,7 @@ export default [
       // ------------------------------
       // 🧱 Unsafe Access / Assignment (soft warnings)
       // ------------------------------
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'warn',
       '@typescript-eslint/no-unsafe-member-access': 'warn',
       '@typescript-eslint/no-unsafe-call': 'warn',

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InspectionStatus } from '@oneohm-epc/shared-types';
 import { Between, Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { InspectionEntity } from '../entities/inspection.entity';
 
@@ -39,8 +40,7 @@ export class InspectionRepository {
   }
 
   async update(id: string, updateData: Partial<InspectionEntity>): Promise<InspectionEntity | null> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await this.repository.update(id, updateData as any);
+    await this.repository.update(id, updateData as QueryDeepPartialEntity<InspectionEntity>);
     return this.findById(id);
   }
 

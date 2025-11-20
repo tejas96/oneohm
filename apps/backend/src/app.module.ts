@@ -11,6 +11,7 @@ import { ComplianceModule } from './modules/compliance/compliance.module';
 import { CustomerFeedbackModule } from './modules/customer-feedback/customer-feedback.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { DocumentsModule } from './modules/documents/documents.module';
+import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { LoanFinanceModule } from './modules/loan-finance/loan-finance.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
@@ -38,6 +39,7 @@ import { UsersModule } from './modules/users/users.module';
     PaymentsModule,
     CommentsModule,
     DocumentsModule,
+    IntegrationsModule,
     ServiceMaintenanceModule,
     CustomerFeedbackModule,
     LoanFinanceModule,

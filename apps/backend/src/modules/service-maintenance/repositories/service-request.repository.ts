@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ServiceRequestPriority, ServiceRequestStatus } from '@oneohm-epc/shared-types';
 import { Between, In, IsNull, LessThanOrEqual, Like, Not, Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 
 import { ServiceRequestEntity } from '../entities/service-request.entity';
@@ -250,8 +251,7 @@ export class ServiceRequestRepository {
    * Update request
    */
   async update(id: string, updateData: Partial<ServiceRequestEntity>): Promise<ServiceRequestEntity | null> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await this.repository.update(id, updateData as any);
+    await this.repository.update(id, updateData as QueryDeepPartialEntity<ServiceRequestEntity>);
     return this.findById(id);
   }
 

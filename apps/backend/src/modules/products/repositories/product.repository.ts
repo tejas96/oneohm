@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductStatus } from '@oneohm-epc/shared-types';
 import { IsNull, Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { ProductEntity } from '../entities/product.entity';
 
@@ -123,7 +124,7 @@ export class ProductRepository {
       {
         ...productData,
         updatedAt: new Date(),
-      } as any, // TypeORM has issues with deep JSONB typing for specifications field
+      } as QueryDeepPartialEntity<ProductEntity>, // TypeORM has issues with deep JSONB typing for specifications field
     );
 
     const updated = await this.findById(id, organizationId);
