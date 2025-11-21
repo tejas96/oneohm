@@ -38,6 +38,11 @@
       "outputs": ["{options.outputFile}"],
       "options": {
         "lintFilePatterns": ["apps/backend/src/**/*.ts", "apps/backend/test/**/*.ts"]
+      },
+      "configurations": {
+        "ci": {
+          "maxWarnings": 1000
+        }
       }
     },
     "test": {

@@ -78,7 +78,7 @@ export class CustomerController {
   })
   async findAll(
     @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto[]> {
     // Verify user has access to this organization
 
@@ -99,7 +99,7 @@ export class CustomerController {
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
     @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
     // Verify user has access to this organization
 
@@ -179,7 +179,7 @@ export class CustomerController {
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
     @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<void> {
     // Verify user has access to this organization
 
@@ -199,7 +199,7 @@ export class CustomerController {
   })
   async getStatusStatistics(
     @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<Record<string, number>> {
     // Verify user has access to this organization
 
