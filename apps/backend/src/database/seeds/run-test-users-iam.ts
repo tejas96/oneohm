@@ -8,13 +8,13 @@ import dataSource from '../ormconfig';
 
 async function run(): Promise<void> {
   try {
-    console.log('Initializing database connection...');
+    console.error('Initializing database connection...');
     await dataSource.initialize();
 
-    console.log('Running Test Users IAM seed...');
+    console.error('Running Test Users IAM seed...');
     await seedTestUsersIAM(dataSource);
 
-    console.log('✅ Seed completed successfully!');
+    console.error('✅ Seed completed successfully!');
   } catch (error) {
     console.error('❌ Seed failed:', error);
     process.exit(1);

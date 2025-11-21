@@ -6,3 +6,6 @@ export * from './api-get.decorator';
 export * from './api-read-all.decorator';
 export * from './api-read-one.decorator';
 export * from './api-update.decorator';
+
+// Context Decorators
+export * from './organization-context.decorator';

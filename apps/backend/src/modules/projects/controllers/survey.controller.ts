@@ -20,7 +20,8 @@ import {
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
 import { SiteSurveyStatus } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiUpdate } from '@oneohm-epc/shared-utils';
+import { ApiCreate, ApiDelete, ApiReadAll, ApiUpdate,
+  OrganizationContext} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import { CreateSurveyDto, SurveyResponseDto, UpdateSurveyDto } from '../dto';
@@ -49,6 +50,7 @@ export class SurveyController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   async create(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Body() createDto: CreateSurveyDto,
@@ -56,7 +58,7 @@ export class SurveyController {
     // Ensure projectId in path matches DTO
     createDto.projectId = projectId;
 
-    const survey = await this.surveyService.create(currentUser.organizationId, createDto);
+    const survey = await this.surveyService.create(organizationId, createDto);
 
     return plainToInstance(SurveyResponseDto, survey, {
       excludeExtraneousValues: true,
@@ -87,6 +89,7 @@ export class SurveyController {
     description: 'Filter by surveyor user ID',
   })
   async findByProject(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Query('status') status?: SiteSurveyStatus,
@@ -94,7 +97,7 @@ export class SurveyController {
   ): Promise<SurveyResponseDto[]> {
     const surveys = await this.surveyService.findByProject(
       projectId,
-      currentUser.organizationId,
+      organizationId,
       {
         status,
         surveyorId,
@@ -116,11 +119,12 @@ export class SurveyController {
     description: 'Retrieve a single survey with all details',
   })
   async findOne(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<SurveyResponseDto> {
-    const survey = await this.surveyService.findById(id, projectId, currentUser.organizationId);
+    const survey = await this.surveyService.findById(id, projectId, organizationId);
 
     return plainToInstance(SurveyResponseDto, survey, {
       excludeExtraneousValues: true,
@@ -139,6 +143,7 @@ export class SurveyController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   async update(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -147,7 +152,7 @@ export class SurveyController {
     const survey = await this.surveyService.update(
       id,
       projectId,
-      currentUser.organizationId,
+      organizationId,
       updateDto,
     );
 
@@ -167,11 +172,12 @@ export class SurveyController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<{ message: string }> {
-    await this.surveyService.delete(id, projectId, currentUser.organizationId);
+    await this.surveyService.delete(id, projectId, organizationId);
     return { message: 'Survey deleted successfully' };
   }
 
@@ -191,6 +197,7 @@ export class SurveyController {
     description: 'New status',
   })
   async updateStatus(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -199,7 +206,7 @@ export class SurveyController {
     const survey = await this.surveyService.updateStatus(
       id,
       projectId,
-      currentUser.organizationId,
+      organizationId,
       status,
     );
 
@@ -218,10 +225,11 @@ export class SurveyController {
     description: 'Retrieve the most recent survey for a project',
   })
   async findLatest(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<SurveyResponseDto | null> {
-    const survey = await this.surveyService.findLatest(projectId, currentUser.organizationId);
+    const survey = await this.surveyService.findLatest(projectId, organizationId);
 
     return survey
       ? plainToInstance(SurveyResponseDto, survey, {

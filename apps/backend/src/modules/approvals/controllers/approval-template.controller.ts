@@ -24,7 +24,8 @@ import {
   type PaginatedResponse,
   ApprovalWorkflowType,
 } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
+import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate,
+  OrganizationContext} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import {
@@ -57,11 +58,12 @@ export class ApprovalTemplateController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async create(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateApprovalTemplateDto,
   ): Promise<ApprovalTemplateResponseDto> {
     const template = await this.templateService.create(
-      currentUser.organizationId,
+      organizationId,
       createDto,
       currentUser.id,
     );
@@ -103,6 +105,7 @@ export class ApprovalTemplateController {
     description: 'Search in name, code, description',
   })
   async findAll(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -111,7 +114,7 @@ export class ApprovalTemplateController {
     @Query('search') search?: string,
   ): Promise<PaginatedResponse<ApprovalTemplateResponseDto>> {
     const { templates, total } = await this.templateService.findAll(
-      currentUser.organizationId,
+      organizationId,
       page ?? 1,
       limit ?? 20,
       {
@@ -146,10 +149,11 @@ export class ApprovalTemplateController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async findOne(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ApprovalTemplateResponseDto> {
-    const template = await this.templateService.findById(id, currentUser.organizationId);
+    const template = await this.templateService.findById(id, organizationId);
 
     return plainToInstance(ApprovalTemplateResponseDto, template, {
       excludeExtraneousValues: true,
@@ -166,12 +170,13 @@ export class ApprovalTemplateController {
     description: 'Retrieve all active templates for a specific workflow type',
   })
   async findByWorkflowType(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('type') type: ApprovalWorkflowType,
   ): Promise<ApprovalTemplateResponseDto[]> {
     const templates = await this.templateService.findByWorkflowType(
       type,
-      currentUser.organizationId,
+      organizationId,
     );
 
     return plainToInstance(ApprovalTemplateResponseDto, templates, {
@@ -191,13 +196,14 @@ export class ApprovalTemplateController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async update(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateApprovalTemplateDto,
   ): Promise<ApprovalTemplateResponseDto> {
     const template = await this.templateService.update(
       id,
-      currentUser.organizationId,
+      organizationId,
       updateDto,
       currentUser.id,
     );
@@ -218,10 +224,11 @@ export class ApprovalTemplateController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<{ message: string }> {
-    await this.templateService.delete(id, currentUser.organizationId, currentUser.id);
+    await this.templateService.delete(id, organizationId, currentUser.id);
 
     return { message: 'Template deleted successfully' };
   }
@@ -236,9 +243,10 @@ export class ApprovalTemplateController {
     description: 'Get approval template statistics by workflow type and status',
   })
   async getStatistics(
-    @CurrentUser() currentUser: CurrentUserType,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<ExtendedStatisticsResponse<string, ApprovalWorkflowType>> {
-    return this.templateService.getStatistics(currentUser.organizationId);
+    return this.templateService.getStatistics(organizationId);
   }
 
   /**
@@ -251,12 +259,13 @@ export class ApprovalTemplateController {
     description: 'Activate or deactivate an approval template',
   })
   async toggleStatus(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ApprovalTemplateResponseDto> {
     const template = await this.templateService.toggleStatus(
       id,
-      currentUser.organizationId,
+      organizationId,
       currentUser.id,
     );
 

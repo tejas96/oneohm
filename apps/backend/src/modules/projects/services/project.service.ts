@@ -271,7 +271,7 @@ export class ProjectService {
       projectManagerId: quote.salesPersonId, // Sales person becomes project manager initially
       createdBy,
       projectNumber,
-      name: `${quote.customer.firstName} ${quote.customer.lastName} - ${quote.systemSizeKw}kW Solar Installation`.trim(),
+      name: `${quote.customer.consumerName || 'Customer'} - ${quote.systemSizeKw}kW Solar Installation`.trim(),
       description: `Solar installation project converted from quote ${quote.quoteNumber}`,
       siteAddress: quote.customer.address || 'To be confirmed',
       systemSizeKw: quote.systemSizeKw,

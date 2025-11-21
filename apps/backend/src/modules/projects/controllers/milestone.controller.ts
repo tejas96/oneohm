@@ -20,7 +20,8 @@ import {
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
 import { MilestoneStatus, MilestoneType } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiUpdate } from '@oneohm-epc/shared-utils';
+import { ApiCreate, ApiDelete, ApiReadAll, ApiUpdate,
+  OrganizationContext} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import { CreateMilestoneDto, MilestoneResponseDto, UpdateMilestoneDto } from '../dto';
@@ -49,6 +50,7 @@ export class MilestoneController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async create(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Body() createDto: CreateMilestoneDto,
@@ -56,7 +58,7 @@ export class MilestoneController {
     // Ensure projectId in path matches DTO
     createDto.projectId = projectId;
 
-    const milestone = await this.milestoneService.create(currentUser.organizationId, createDto);
+    const milestone = await this.milestoneService.create(organizationId, createDto);
 
     return plainToInstance(MilestoneResponseDto, milestone, {
       excludeExtraneousValues: true,
@@ -93,6 +95,7 @@ export class MilestoneController {
     description: 'Filter by assigned user ID',
   })
   async findByProject(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Query('status') status?: MilestoneStatus,
@@ -101,7 +104,7 @@ export class MilestoneController {
   ): Promise<MilestoneResponseDto[]> {
     const milestones = await this.milestoneService.findByProject(
       projectId,
-      currentUser.organizationId,
+      organizationId,
       {
         status,
         milestoneType,
@@ -124,6 +127,7 @@ export class MilestoneController {
     description: 'Retrieve a single milestone with details',
   })
   async findOne(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -131,7 +135,7 @@ export class MilestoneController {
     const milestone = await this.milestoneService.findById(
       id,
       projectId,
-      currentUser.organizationId,
+      organizationId,
     );
 
     return plainToInstance(MilestoneResponseDto, milestone, {
@@ -151,6 +155,7 @@ export class MilestoneController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -159,7 +164,7 @@ export class MilestoneController {
     const milestone = await this.milestoneService.update(
       id,
       projectId,
-      currentUser.organizationId,
+      organizationId,
       updateDto,
     );
 
@@ -179,11 +184,12 @@ export class MilestoneController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<{ message: string }> {
-    await this.milestoneService.delete(id, projectId, currentUser.organizationId);
+    await this.milestoneService.delete(id, projectId, organizationId);
     return { message: 'Milestone deleted successfully' };
   }
 
@@ -203,6 +209,7 @@ export class MilestoneController {
     description: 'New status',
   })
   async updateStatus(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -211,7 +218,7 @@ export class MilestoneController {
     const milestone = await this.milestoneService.updateStatus(
       id,
       projectId,
-      currentUser.organizationId,
+      organizationId,
       status,
     );
 
@@ -236,6 +243,7 @@ export class MilestoneController {
     description: 'Progress percentage (0-100)',
   })
   async updateProgress(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -244,7 +252,7 @@ export class MilestoneController {
     const milestone = await this.milestoneService.updateProgress(
       id,
       projectId,
-      currentUser.organizationId,
+      organizationId,
       parseInt(progress, 10),
     );
 

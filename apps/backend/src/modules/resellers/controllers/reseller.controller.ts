@@ -1,6 +1,12 @@
 import { Body, Controller, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { type CurrentUserType, CurrentUser, JwtAuthGuard, Role, RolesGuard } from '@oneohm-epc/shared-auth';
+import {
+  type CurrentUserType,
+  CurrentUser,
+  JwtAuthGuard,
+  Role,
+  RolesGuard,
+} from '@oneohm-epc/shared-auth';
 import { ResellerStatus } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
@@ -9,8 +15,10 @@ import {
   ApiReadAll,
   ApiReadOne,
   ApiUpdate,
+  OrganizationContext,
 } from '@oneohm-epc/shared-utils';
 
+import { ProfileService } from '../../users/services/profile.service';
 import {
   CreateResellerDto,
   ResellerResponseDto,
@@ -19,24 +27,31 @@ import {
 } from '../dto';
 import { ResellerService } from '../services/reseller.service';
 
-
 /**
  * Reseller Controller
  * Handles HTTP requests for reseller management
+ *
+ * Multi-Organization Support:
+ * - organizationId is required as query parameter or header (X-Organization-Id)
+ * - Automatically verifies user has access to the specified organization
  */
 @ApiTags('Resellers')
 @ApiBearerAuth()
 @Controller('resellers')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ResellerController {
-  constructor(private readonly resellerService: ResellerService) {}
+  constructor(
+    private readonly resellerService: ResellerService,
+    private readonly profileService: ProfileService,
+  ) {}
 
   /**
    * Create a new reseller
    */
   @ApiCreate({
     summary: 'Create a new reseller',
-    description: 'Creates a new reseller partner in the system.',
+    description:
+      'Creates a new reseller partner in the system. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
     responseType: ResellerResponseDto,
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
     additionalErrors: [
@@ -48,14 +63,14 @@ export class ResellerController {
   })
   async create(
     @Body() createDto: CreateResellerDto,
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<ResellerResponseDto> {
-    const reseller = await this.resellerService.create(
-      currentUser.organizationId,
-      createDto,
-      currentUser.id,
-    );
-    return reseller as ResellerResponseDto;
+    // Verify user has access to this organization
+    await this.profileService.verifyUserHasAccessToOrg(currentUser.id, organizationId);
+
+    const reseller = await this.resellerService.create(organizationId, createDto, currentUser.id);
+    return reseller as unknown as ResellerResponseDto;
   }
 
   /**
@@ -63,13 +78,20 @@ export class ResellerController {
    */
   @ApiReadAll({
     summary: 'Get all resellers',
-    description: 'Retrieve all reseller partners for the current organization.',
+    description:
+      'Retrieve all reseller partners for the specified organization. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
     responseType: ResellerResponseDto,
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
-  async findAll(@CurrentUser() currentUser: CurrentUserType): Promise<ResellerResponseDto[]> {
-    const resellers = await this.resellerService.findAll(currentUser.organizationId);
-    return resellers as ResellerResponseDto[];
+  async findAll(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<ResellerResponseDto[]> {
+    // Verify user has access to this organization
+    await this.profileService.verifyUserHasAccessToOrg(currentUser.id, organizationId);
+
+    const resellers = await this.resellerService.findAll(organizationId);
+    return resellers as unknown as ResellerResponseDto[];
   }
 
   /**
@@ -77,16 +99,21 @@ export class ResellerController {
    */
   @ApiReadOne({
     summary: 'Get reseller by ID',
-    description: 'Retrieve a specific reseller by their ID.',
+    description:
+      'Retrieve a specific reseller by their ID. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
     responseType: ResellerResponseDto,
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<ResellerResponseDto> {
-    const reseller = await this.resellerService.findById(id, currentUser.organizationId);
-    return reseller as ResellerResponseDto;
+    // Verify user has access to this organization
+    await this.profileService.verifyUserHasAccessToOrg(currentUser.id, organizationId);
+
+    const reseller = await this.resellerService.findById(id, organizationId);
+    return reseller as unknown as ResellerResponseDto;
   }
 
   /**
@@ -94,7 +121,8 @@ export class ResellerController {
    */
   @ApiUpdate({
     summary: 'Update reseller',
-    description: 'Update reseller information.',
+    description:
+      'Update reseller information. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
     responseType: ResellerResponseDto,
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
     additionalErrors: [
@@ -107,15 +135,19 @@ export class ResellerController {
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateResellerDto,
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<ResellerResponseDto> {
+    // Verify user has access to this organization
+    await this.profileService.verifyUserHasAccessToOrg(currentUser.id, organizationId);
+
     const reseller = await this.resellerService.update(
       id,
-      currentUser.organizationId,
+      organizationId,
       updateDto,
       currentUser.id,
     );
-    return reseller as ResellerResponseDto;
+    return reseller as unknown as ResellerResponseDto;
   }
 
   /**
@@ -124,22 +156,26 @@ export class ResellerController {
   @ApiAction({
     path: 'status',
     summary: 'Update reseller status',
-    description: `Update reseller status (${Object.values(ResellerStatus).join(', ')}).`,
+    description: `Update reseller status (${Object.values(ResellerStatus).join(', ')}). Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).`,
     responseType: ResellerResponseDto,
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateResellerStatusDto,
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<ResellerResponseDto> {
+    // Verify user has access to this organization
+    await this.profileService.verifyUserHasAccessToOrg(currentUser.id, organizationId);
+
     const reseller = await this.resellerService.updateStatus(
       id,
-      currentUser.organizationId,
+      organizationId,
       statusDto.status,
       currentUser.id,
     );
-    return reseller as ResellerResponseDto;
+    return reseller as unknown as ResellerResponseDto;
   }
 
   /**
@@ -147,13 +183,18 @@ export class ResellerController {
    */
   @ApiDelete({
     summary: 'Delete reseller',
-    description: 'Soft delete a reseller partner.',
+    description:
+      'Soft delete a reseller partner. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
-    await this.resellerService.delete(id, currentUser.organizationId);
+    // Verify user has access to this organization
+    await this.profileService.verifyUserHasAccessToOrg(currentUser.id, organizationId);
+
+    await this.resellerService.delete(id, organizationId);
   }
 }

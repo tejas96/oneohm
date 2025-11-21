@@ -3,7 +3,7 @@ import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMa
 
 import { LoanDocumentEntity } from './loan-document.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { CustomerEntity } from '../../customers/entities/customer.entity';
+import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { ProjectEntity } from '../../projects/entities/project.entity';
 import { UserEntity } from '../../users/entities/user.entity';
@@ -37,9 +37,9 @@ export class LoanApplicationEntity extends BaseEntity {
   @Column({ name: 'project_id', type: 'uuid' })
   projectId: string;
 
-  @ManyToOne(() => CustomerEntity)
+  @ManyToOne(() => CustomerProfileEntity)
   @JoinColumn({ name: 'customer_id' })
-  customer: CustomerEntity;
+  customer: CustomerProfileEntity;
 
   @Column({ name: 'customer_id', type: 'uuid' })
   customerId: string;

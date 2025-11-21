@@ -20,7 +20,8 @@ import {
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
 import { type PaginatedResponse, ProjectPriority, ProjectStatus } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
+import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate,
+  OrganizationContext} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import { CreateProjectDto, ProjectResponseDto, UpdateProjectDto } from '../dto';
@@ -49,11 +50,12 @@ export class ProjectController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async create(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateProjectDto,
   ): Promise<ProjectResponseDto> {
     const project = await this.projectService.create(
-      currentUser.organizationId,
+      organizationId,
       createDto,
       currentUser.id,
     );
@@ -151,6 +153,7 @@ export class ProjectController {
     description: 'Search by project number or name',
   })
   async findAll(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -168,7 +171,7 @@ export class ProjectController {
     const limitNum = limit ? parseInt(limit, 10) : 20;
 
     const result = await this.projectService.findAll(
-      currentUser.organizationId,
+      organizationId,
       pageNum,
       limitNum,
       {
@@ -223,10 +226,11 @@ export class ProjectController {
     ],
   })
   async findOne(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ProjectResponseDto> {
-    const project = await this.projectService.findById(id, currentUser.organizationId);
+    const project = await this.projectService.findById(id, organizationId);
 
     return plainToInstance(ProjectResponseDto, project, {
       excludeExtraneousValues: true,
@@ -245,11 +249,12 @@ export class ProjectController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateProjectDto,
   ): Promise<ProjectResponseDto> {
-    const project = await this.projectService.update(id, currentUser.organizationId, updateDto);
+    const project = await this.projectService.update(id, organizationId, updateDto);
 
     return plainToInstance(ProjectResponseDto, project, {
       excludeExtraneousValues: true,
@@ -267,10 +272,11 @@ export class ProjectController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<{ message: string }> {
-    await this.projectService.delete(id, currentUser.organizationId);
+    await this.projectService.delete(id, organizationId);
     return { message: 'Project deleted successfully' };
   }
 
@@ -290,11 +296,12 @@ export class ProjectController {
     description: 'New status',
   })
   async updateStatus(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Query('status') status: ProjectStatus,
   ): Promise<ProjectResponseDto> {
-    const project = await this.projectService.updateStatus(id, currentUser.organizationId, status);
+    const project = await this.projectService.updateStatus(id, organizationId, status);
 
     return plainToInstance(ProjectResponseDto, project, {
       excludeExtraneousValues: true,
@@ -311,12 +318,13 @@ export class ProjectController {
     description: 'Retrieve all projects for a specific customer',
   })
   async findByCustomer(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('customerId', ParseUUIDPipe) customerId: string,
   ): Promise<ProjectResponseDto[]> {
     const projects = await this.projectService.findByCustomer(
       customerId,
-      currentUser.organizationId,
+      organizationId,
     );
 
     return plainToInstance(ProjectResponseDto, projects, {
@@ -334,12 +342,13 @@ export class ProjectController {
     description: 'Create a new project from an approved/accepted quote',
   })
   async convertFromQuote(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('quoteId', ParseUUIDPipe) quoteId: string,
   ): Promise<ProjectResponseDto> {
     const project = await this.projectService.convertFromQuote(
       quoteId,
-      currentUser.organizationId,
+      organizationId,
       currentUser.id,
     );
 

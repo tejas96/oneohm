@@ -9,6 +9,7 @@ import {
   type CurrentUserType,
 } from '@oneohm-epc/shared-auth';
 import { MessageType } from '@oneohm-epc/shared-types';
+import { OrganizationContext } from '@oneohm-epc/shared-utils';
 
 import { SendMessageDto, MessageResponseDto } from '../dto';
 import { IntegrationService } from '../services';
@@ -46,6 +47,7 @@ export class MessagingController {
     description: 'Invalid message data or missing required fields',
   })
   async sendMessage(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: SendMessageDto,
   ): Promise<MessageResponseDto> {
@@ -53,7 +55,7 @@ export class MessagingController {
     const messageType: MessageType = dto.type;
     switch (messageType) {
       case MessageType.TEXT:
-        return this.integrationService.sendTextMessage(currentUser.organizationId, {
+        return this.integrationService.sendTextMessage(organizationId, {
           to: dto.to,
           type: MessageType.TEXT,
           body: dto.body!,
@@ -61,7 +63,7 @@ export class MessagingController {
         });
 
       case MessageType.TEMPLATE:
-        return this.integrationService.sendTemplateMessage(currentUser.organizationId, {
+        return this.integrationService.sendTemplateMessage(organizationId, {
           to: dto.to,
           type: MessageType.TEMPLATE,
           templateName: dto.templateName!,
@@ -74,7 +76,7 @@ export class MessagingController {
       case MessageType.DOCUMENT:
       case MessageType.VIDEO:
       case MessageType.AUDIO:
-        return this.integrationService.sendMediaMessage(currentUser.organizationId, {
+        return this.integrationService.sendMediaMessage(organizationId, {
           to: dto.to,
           type: messageType,
           mediaUrl: dto.mediaUrl,
@@ -85,7 +87,7 @@ export class MessagingController {
         });
 
       case MessageType.OTP:
-        return this.integrationService.sendOtpMessage(currentUser.organizationId, {
+        return this.integrationService.sendOtpMessage(organizationId, {
           to: dto.to,
           type: MessageType.OTP,
           otp: dto.otp!,
@@ -94,7 +96,7 @@ export class MessagingController {
         });
 
       case MessageType.ALERT:
-        return this.integrationService.sendAlertMessage(currentUser.organizationId, {
+        return this.integrationService.sendAlertMessage(organizationId, {
           to: dto.to,
           type: MessageType.ALERT,
           body: dto.body!,

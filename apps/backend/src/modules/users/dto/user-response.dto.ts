@@ -3,15 +3,16 @@ import { Role } from '@oneohm-epc/shared-auth';
 import { UserStatus } from '@oneohm-epc/shared-types';
 import { Exclude, Expose } from 'class-transformer';
 
+/**
+ * User Response DTO
+ * Only includes core authentication fields from UserEntity
+ * Profile-specific fields are in separate profile DTOs
+ */
 @Exclude()
 export class UserResponseDto {
   @Expose()
   @ApiProperty()
   id!: string;
-
-  @Expose()
-  @ApiProperty()
-  organizationId!: string;
 
   @Expose()
   @ApiProperty()
@@ -22,64 +23,16 @@ export class UserResponseDto {
   lastName?: string;
 
   @Expose()
-  @ApiProperty()
-  email!: string;
+  @ApiPropertyOptional()
+  email?: string;
 
   @Expose()
   @ApiProperty()
   phone!: string;
 
   @Expose()
-  @ApiPropertyOptional()
-  alternatePhone?: string;
-
-  @Expose()
-  @ApiPropertyOptional()
-  avatarUrl?: string;
-
-  @Expose()
-  @ApiPropertyOptional()
-  dateOfBirth?: Date;
-
-  @Expose()
-  @ApiPropertyOptional()
-  gender?: string;
-
-  @Expose()
-  @ApiPropertyOptional()
-  address?: string;
-
-  @Expose()
-  @ApiPropertyOptional()
-  city?: string;
-
-  @Expose()
-  @ApiPropertyOptional()
-  state?: string;
-
-  @Expose()
-  @ApiPropertyOptional()
-  country?: string;
-
-  @Expose()
-  @ApiPropertyOptional()
-  pincode?: string;
-
-  @Expose()
-  @ApiPropertyOptional()
-  employeeId?: string;
-
-  @Expose()
-  @ApiPropertyOptional()
-  designation?: string;
-
-  @Expose()
-  @ApiPropertyOptional()
-  department?: string;
-
-  @Expose()
-  @ApiPropertyOptional()
-  joiningDate?: Date;
+  @ApiProperty({ description: 'Whether user has completed profile setup' })
+  profileCompleted!: boolean;
 
   @Expose()
   @ApiProperty({ enum: UserStatus })

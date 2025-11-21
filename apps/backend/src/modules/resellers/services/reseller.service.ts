@@ -9,28 +9,28 @@ import { ResellerStatus } from '@oneohm-epc/shared-types';
 
 import { CreateResellerDto } from '../dto/create-reseller.dto';
 import { UpdateResellerDto } from '../dto/update-reseller.dto';
-import { ResellerEntity } from '../entities/reseller.entity';
-import { ResellerRepository } from '../repositories/reseller.repository';
+import { ResellerProfileEntity } from '../entities/reseller-profile.entity';
+import { ResellerProfileRepository } from '../repositories/reseller-profile.repository';
 
 /**
  * Reseller Service
- * Business logic for reseller management
+ * Business logic for reseller profile management
  */
 @Injectable()
 export class ResellerService {
   private readonly logger = new Logger(ResellerService.name);
 
-  constructor(private readonly resellerRepository: ResellerRepository) {}
+  constructor(private readonly resellerRepository: ResellerProfileRepository) {}
 
   /**
-   * Create a new reseller
+   * Create a new reseller profile
    */
   async create(
     organizationId: string,
     createDto: CreateResellerDto,
     createdBy?: string,
-  ): Promise<ResellerEntity> {
-    this.logger.log(`Creating reseller: ${createDto.companyName}`);
+  ): Promise<ResellerProfileEntity> {
+    this.logger.log(`Creating reseller profile: ${createDto.companyName}`);
 
     // Check if company code already exists
     const existingByCode = await this.resellerRepository.findByCompanyCode(
@@ -76,7 +76,7 @@ export class ResellerService {
   /**
    * Find reseller by ID
    */
-  async findById(id: string, organizationId: string): Promise<ResellerEntity> {
+  async findById(id: string, organizationId: string): Promise<ResellerProfileEntity> {
     const reseller = await this.resellerRepository.findById(id);
 
     if (reseller?.organizationId !== organizationId) {
@@ -89,7 +89,7 @@ export class ResellerService {
   /**
    * Find all resellers for an organization
    */
-  async findAll(organizationId: string): Promise<ResellerEntity[]> {
+  async findAll(organizationId: string): Promise<ResellerProfileEntity[]> {
     return this.resellerRepository.findAll(organizationId);
   }
 
@@ -101,7 +101,7 @@ export class ResellerService {
     organizationId: string,
     updateDto: UpdateResellerDto,
     updatedBy?: string,
-  ): Promise<ResellerEntity> {
+  ): Promise<ResellerProfileEntity> {
     this.logger.log(`Updating reseller: ${id}`);
 
     // Verify reseller exists and belongs to organization
@@ -133,6 +133,10 @@ export class ResellerService {
       updatedBy,
     });
 
+    if (!updated) {
+      throw new NotFoundException(`Reseller with ID '${id}' not found`);
+    }
+
     this.logger.log(`Reseller updated successfully: ${id}`);
     return updated;
   }
@@ -145,7 +149,7 @@ export class ResellerService {
     organizationId: string,
     newStatus: ResellerStatus,
     updatedBy?: string,
-  ): Promise<ResellerEntity> {
+  ): Promise<ResellerProfileEntity> {
     this.logger.log(`Updating reseller ${id} status to: ${newStatus}`);
 
     const reseller = await this.findById(id, organizationId);
@@ -159,6 +163,10 @@ export class ResellerService {
       updatedBy,
     });
 
+    if (!updated) {
+      throw new NotFoundException(`Reseller with ID '${id}' not found`);
+    }
+
     this.logger.log(`Reseller status updated successfully: ${id} -> ${newStatus}`);
     return updated;
   }
@@ -166,7 +174,7 @@ export class ResellerService {
   /**
    * Delete reseller (soft delete)
    */
-  async delete(id: string, organizationId: string): Promise<void> {
+  async delete(id: string, organizationId: string, deletedBy?: string): Promise<void> {
     this.logger.log(`Deleting reseller: ${id}`);
 
     // Verify reseller exists and belongs to organization
@@ -175,7 +183,7 @@ export class ResellerService {
     // TODO: Check if reseller has active commissions or linked customers
     // May need to prevent deletion or handle cascade logic
 
-    await this.resellerRepository.softDelete(id);
+    await this.resellerRepository.softDelete(id, deletedBy);
 
     this.logger.log(`Reseller deleted successfully: ${id}`);
   }

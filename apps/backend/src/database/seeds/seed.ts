@@ -1,7 +1,8 @@
-/* eslint-disable no-console -- Console statements are appropriate for CLI seed scripts */
+ 
 import * as bcrypt from 'bcrypt';
 
 import dataSource from '../ormconfig';
+import { seedDefaultProfileRoles } from './default-profile-roles.seed';
 
 /**
  * Database Seed Script
@@ -12,13 +13,13 @@ import dataSource from '../ormconfig';
 async function seed(): Promise<void> {
   await dataSource.initialize();
 
-  console.log('🌱 Starting database seeding...\n');
+  console.error('🌱 Starting database seeding...\n');
 
   try {
     // ============================================
     // 1. SEED ORGANIZATIONS
     // ============================================
-    console.log('📦 Seeding Organizations...');
+    console.error('📦 Seeding Organizations...');
 
     await dataSource.query(`
       INSERT INTO organizations (
@@ -50,12 +51,12 @@ async function seed(): Promise<void> {
       RETURNING id;
     `);
 
-    console.log('✓ Organization seeded');
+    console.error('✓ Organization seeded');
 
     // ============================================
     // 2. SEED SUPER ADMIN USER
     // ============================================
-    console.log('\n👤 Seeding Super Admin User...');
+    console.error('\n👤 Seeding Super Admin User...');
 
     // Password: Admin@123
     const passwordHash = await bcrypt.hash('Admin@123', 10);
@@ -63,43 +64,36 @@ async function seed(): Promise<void> {
     await dataSource.query(
       `
       INSERT INTO users (
-        organization_id,
         first_name,
         last_name,
         email,
         phone,
         password_hash,
         status,
-        designation,
-        department,
-        country
+        profile_completed
       )
-      SELECT
-        id,
+      VALUES (
         'Super',
         'Admin',
         'admin@oneohm.com',
         '+91-9999999999',
         $1,
         'active',
-        'System Administrator',
-        'IT',
-        'India'
-      FROM organizations
-      WHERE code = 'ONEOHM-TEST'
+        true
+      )
       ON CONFLICT (email) DO NOTHING;
     `,
       [passwordHash],
     );
 
-    console.log('✓ Super Admin user created');
-    console.log('  Email: admin@oneohm.com');
-    console.log('  Password: Admin@123');
+    console.error('✓ Super Admin user created');
+    console.error('  Email: admin@oneohm.com');
+    console.error('  Password: Admin@123');
 
     // ============================================
     // 3. ASSIGN SUPER_ADMIN ROLE
     // ============================================
-    console.log('\n🔐 Assigning Super Admin role...');
+    console.error('\n🔐 Assigning Super Admin role...');
 
     await dataSource.query(`
       INSERT INTO user_roles (user_id, role, created_by)
@@ -112,12 +106,12 @@ async function seed(): Promise<void> {
       ON CONFLICT (user_id, role) DO NOTHING;
     `);
 
-    console.log('✓ Role assigned');
+    console.error('✓ Role assigned');
 
     // ============================================
     // 4. SEED RESELLERS
     // ============================================
-    console.log('\n🤝 Seeding Resellers...');
+    console.error('\n🤝 Seeding Resellers...');
 
     await dataSource.query(`
       INSERT INTO resellers (
@@ -209,12 +203,12 @@ async function seed(): Promise<void> {
       ON CONFLICT (organization_id, company_code) DO NOTHING;
     `);
 
-    console.log('✓ Resellers seeded (2 resellers)');
+    console.error('✓ Resellers seeded (2 resellers)');
 
     // ============================================
     // 5. SEED CUSTOMERS
     // ============================================
-    console.log('\n👥 Seeding Customers...');
+    console.error('\n👥 Seeding Customers...');
 
     await dataSource.query(`
       -- Lead Customers (new inquiries)
@@ -446,12 +440,12 @@ async function seed(): Promise<void> {
       ON CONFLICT DO NOTHING;
     `);
 
-    console.log('✓ Customers seeded (5 customers: 2 leads, 1 prospect, 2 active)');
+    console.error('✓ Customers seeded (5 customers: 2 leads, 1 prospect, 2 active)');
 
     // ============================================
     // 6. SEED RESELLER COMMISSIONS (Sample)
     // ============================================
-    console.log('\n💰 Seeding Reseller Commissions...');
+    console.error('\n💰 Seeding Reseller Commissions...');
 
     await dataSource.query(`
       INSERT INTO reseller_commissions (
@@ -511,12 +505,12 @@ async function seed(): Promise<void> {
       ON CONFLICT DO NOTHING;
     `);
 
-    console.log('✓ Reseller commissions seeded (2 commissions)');
+    console.error('✓ Reseller commissions seeded (2 commissions)');
 
     // ============================================
     // 7. SEED PRODUCT CATEGORIES
     // ============================================
-    console.log('\n📂 Seeding Product Categories...');
+    console.error('\n📂 Seeding Product Categories...');
 
     await dataSource.query(`
           -- Level 1: Top Categories
@@ -619,12 +613,12 @@ async function seed(): Promise<void> {
           ON CONFLICT (organization_id, code) DO NOTHING;
         `);
 
-    console.log('✓ Product categories seeded (9 categories)');
+    console.error('✓ Product categories seeded (9 categories)');
 
     // ============================================
     // 8. SEED PRODUCTS
     // ============================================
-    console.log('\n🔧 Seeding Products...');
+    console.error('\n🔧 Seeding Products...');
 
     await dataSource.query(`
           -- Solar Panels
@@ -783,12 +777,12 @@ async function seed(): Promise<void> {
           ON CONFLICT (organization_id, code) DO NOTHING;
         `);
 
-    console.log('✓ Products seeded (6 products)');
+    console.error('✓ Products seeded (6 products)');
 
     // ============================================
     // 7. SEED QUOTES & QUOTATIONS
     // ============================================
-    console.log('\n💼 Seeding Quotes...');
+    console.error('\n💼 Seeding Quotes...');
 
     // Quote 1: Draft quote for lead customer
     await dataSource.query(`
@@ -889,12 +883,12 @@ async function seed(): Promise<void> {
       ON CONFLICT DO NOTHING;
     `);
 
-    console.log('✓ Quotes seeded (3 quotes)');
+    console.error('✓ Quotes seeded (3 quotes)');
 
     // ============================================
     // 8. SEED QUOTE VERSIONS
     // ============================================
-    console.log('\n📋 Seeding Quote Versions...');
+    console.error('\n📋 Seeding Quote Versions...');
 
     // Version 1 for Quote 1 (Draft)
     await dataSource.query(`
@@ -1000,12 +994,12 @@ async function seed(): Promise<void> {
       ON CONFLICT DO NOTHING;
     `);
 
-    console.log('✓ Quote Versions seeded (3 versions)');
+    console.error('✓ Quote Versions seeded (3 versions)');
 
     // ============================================
     // 9. SEED QUOTE LINE ITEMS
     // ============================================
-    console.log('\n📦 Seeding Quote Line Items...');
+    console.error('\n📦 Seeding Quote Line Items...');
 
     // Line items for Quote 1 Version 1
     await dataSource.query(`
@@ -1206,21 +1200,27 @@ async function seed(): Promise<void> {
       ON CONFLICT DO NOTHING;
     `);
 
-    console.log('✓ Quote Line Items seeded (7 line items across 3 quotes)');
+    console.error('✓ Quote Line Items seeded (7 line items across 3 quotes)');
 
-    console.log('\n✅ Database seeding completed successfully!\n');
-    console.log('📊 Seeded Data Summary:');
-    console.log('  - 1 Organization');
-    console.log('  - 1 Super Admin User');
-    console.log('  - 2 Resellers');
-    console.log('  - 5 Customers (2 leads, 1 prospect, 2 active)');
-    console.log('  - 2 Reseller Commissions (1 pending, 1 approved)');
-    console.log('  - 9 Product Categories (hierarchical)');
-    console.log('  - 6 Products (panels, inverters, batteries, mounting)');
-    console.log('  - 3 Quotes (1 draft, 1 sent, 1 accepted)');
-    console.log('  - 3 Quote Versions (with GST calculations & payment milestones)');
-    console.log('  - 7 Quote Line Items (linked to products)');
-    console.log('');
+    // ============================================
+    // SEED DEFAULT PROFILE ROLES
+    // ============================================
+    await seedDefaultProfileRoles(dataSource);
+
+    console.error('\n✅ Database seeding completed successfully!\n');
+    console.error('📊 Seeded Data Summary:');
+    console.error('  - 1 Organization');
+    console.error('  - 1 Super Admin User');
+    console.error('  - 2 Resellers');
+    console.error('  - 5 Customers (2 leads, 1 prospect, 2 active)');
+    console.error('  - 2 Reseller Commissions (1 pending, 1 approved)');
+    console.error('  - 9 Product Categories (hierarchical)');
+    console.error('  - 6 Products (panels, inverters, batteries, mounting)');
+    console.error('  - 3 Quotes (1 draft, 1 sent, 1 accepted)');
+    console.error('  - 3 Quote Versions (with GST calculations & payment milestones)');
+    console.error('  - 7 Quote Line Items (linked to products)');
+    console.error('  - 3 Default Profile Roles (customer, reseller, employee_basic)');
+    console.error('');
   } catch (error) {
     console.error('\n❌ Error during seeding:', error);
     throw error;
@@ -1233,7 +1233,7 @@ async function seed(): Promise<void> {
 if (require.main === module) {
   seed()
     .then(() => {
-      console.log('✨ Seed script finished');
+      console.error('✨ Seed script finished');
       process.exit(0);
     })
     .catch((error) => {

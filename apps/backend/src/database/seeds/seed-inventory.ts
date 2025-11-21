@@ -1,4 +1,4 @@
-/* eslint-disable no-console -- Console statements are appropriate for CLI seed scripts */
+ 
 import dataSource from '../ormconfig';
 
 /**
@@ -10,13 +10,13 @@ import dataSource from '../ormconfig';
 async function seedInventory(): Promise<void> {
   await dataSource.initialize();
 
-  console.log('🏭 Starting Inventory Module seeding...\n');
+  console.error('🏭 Starting Inventory Module seeding...\n');
 
   try {
     // ============================================
     // 1. SEED WAREHOUSES
     // ============================================
-    console.log('📦 Seeding Warehouses...');
+    console.error('📦 Seeding Warehouses...');
 
     await dataSource.query(`
       -- Main Warehouse (Bangalore)
@@ -93,12 +93,12 @@ async function seedInventory(): Promise<void> {
       ON CONFLICT (organization_id, code) DO NOTHING;
     `);
 
-    console.log('✓ Warehouses seeded (3 warehouses)');
+    console.error('✓ Warehouses seeded (3 warehouses)');
 
     // ============================================
     // 2. SEED VENDORS
     // ============================================
-    console.log('\n🤝 Seeding Vendors...');
+    console.error('\n🤝 Seeding Vendors...');
 
     await dataSource.query(`
       -- Solar Panel Supplier
@@ -239,12 +239,12 @@ async function seedInventory(): Promise<void> {
       ON CONFLICT (organization_id, code) DO NOTHING;
     `);
 
-    console.log('✓ Vendors seeded (4 vendors)');
+    console.error('✓ Vendors seeded (4 vendors)');
 
     // ============================================
     // 3. SEED PURCHASE ORDERS
     // ============================================
-    console.log('\n📝 Seeding Purchase Orders...');
+    console.error('\n📝 Seeding Purchase Orders...');
 
     await dataSource.query(`
       -- PO 1: Solar Panels (Received)
@@ -355,12 +355,12 @@ async function seedInventory(): Promise<void> {
       ON CONFLICT (po_number) DO NOTHING;
     `);
 
-    console.log('✓ Purchase Orders seeded (3 POs)');
+    console.error('✓ Purchase Orders seeded (3 POs)');
 
     // ============================================
     // 4. SEED PO ITEMS
     // ============================================
-    console.log('\n📦 Seeding PO Items...');
+    console.error('\n📦 Seeding PO Items...');
 
     await dataSource.query(`
       -- PO-1 Items (Solar Panels - Fully Received)
@@ -424,12 +424,12 @@ async function seedInventory(): Promise<void> {
       ON CONFLICT DO NOTHING;
     `);
 
-    console.log('✓ PO Items seeded (3 line items)');
+    console.error('✓ PO Items seeded (3 line items)');
 
     // ============================================
     // 5. SEED INVENTORY STOCK
     // ============================================
-    console.log('\n📊 Seeding Inventory Stock...');
+    console.error('\n📊 Seeding Inventory Stock...');
 
     await dataSource.query(`
       -- Jinko Solar Panels in Bangalore Warehouse
@@ -571,12 +571,12 @@ async function seedInventory(): Promise<void> {
       ON CONFLICT (warehouse_id, product_id) DO NOTHING;
     `);
 
-    console.log('✓ Inventory Stock seeded (6 stock records)');
+    console.error('✓ Inventory Stock seeded (6 stock records)');
 
     // ============================================
     // 6. SEED INVENTORY TRANSACTIONS (Sample)
     // ============================================
-    console.log('\n📝 Seeding Inventory Transactions...');
+    console.error('\n📝 Seeding Inventory Transactions...');
 
     await dataSource.query(`
       -- Purchase transaction for PO-1
@@ -662,21 +662,21 @@ async function seedInventory(): Promise<void> {
       ON CONFLICT DO NOTHING;
     `);
 
-    console.log('✓ Inventory Transactions seeded (3 transactions)');
+    console.error('✓ Inventory Transactions seeded (3 transactions)');
 
-    console.log('\n✅ Inventory Module seeding completed successfully!\n');
-    console.log('📊 Inventory Seed Summary:');
-    console.log('  - 3 Warehouses (2 own, 1 third-party)');
-    console.log('  - 4 Vendors (2 suppliers, 1 contractor, 1 structure supplier)');
-    console.log('  - 3 Purchase Orders (1 received, 1 partially received, 1 confirmed)');
-    console.log('  - 3 PO Items (across different products)');
-    console.log('  - 6 Stock Records (panels, inverters, batteries, mounting)');
-    console.log('  - 3 Inventory Transactions (purchase, allocation, transfer)');
-    console.log('');
-    console.log('💡 Next Steps:');
-    console.log('  - Run: npm run seed:inventory:projects (to create project-specific data)');
-    console.log('  - Or use API to create stock allocations, material dispatches');
-    console.log('');
+    console.error('\n✅ Inventory Module seeding completed successfully!\n');
+    console.error('📊 Inventory Seed Summary:');
+    console.error('  - 3 Warehouses (2 own, 1 third-party)');
+    console.error('  - 4 Vendors (2 suppliers, 1 contractor, 1 structure supplier)');
+    console.error('  - 3 Purchase Orders (1 received, 1 partially received, 1 confirmed)');
+    console.error('  - 3 PO Items (across different products)');
+    console.error('  - 6 Stock Records (panels, inverters, batteries, mounting)');
+    console.error('  - 3 Inventory Transactions (purchase, allocation, transfer)');
+    console.error('');
+    console.error('💡 Next Steps:');
+    console.error('  - Run: npm run seed:inventory:projects (to create project-specific data)');
+    console.error('  - Or use API to create stock allocations, material dispatches');
+    console.error('');
   } catch (error) {
     console.error('\n❌ Error during inventory seeding:', error);
     throw error;
@@ -689,7 +689,7 @@ async function seedInventory(): Promise<void> {
 if (require.main === module) {
   seedInventory()
     .then(() => {
-      console.log('✨ Inventory seed script finished');
+      console.error('✨ Inventory seed script finished');
       process.exit(0);
     })
     .catch((error) => {

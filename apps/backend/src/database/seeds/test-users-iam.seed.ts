@@ -22,7 +22,7 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
   try {
     await queryRunner.startTransaction();
 
-    console.log('🌱 Starting Test Users IAM seed...');
+    console.error('🌱 Starting Test Users IAM seed...');
 
     // Get first organization (or create test org)
     const orgResult = await queryRunner.query(`
@@ -34,7 +34,7 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
     }
 
     const organizationId = orgResult[0].id;
-    console.log(`📋 Using organization: ${organizationId}`);
+    console.error(`📋 Using organization: ${organizationId}`);
 
     // Hash password
     const hashedPassword = await bcrypt.hash('Test@123', 10);
@@ -42,7 +42,7 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
     // ===========================================================================
     // 1. CREATE ROLES
     // ===========================================================================
-    console.log('📋 Creating roles...');
+    console.error('📋 Creating roles...');
 
     const roles = [
       {
@@ -100,13 +100,13 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
       ]);
 
       roleIds[role.code] = result[0].id;
-      console.log(`✅ Role created: ${role.name} (${result[0].id})`);
+      console.error(`✅ Role created: ${role.name} (${result[0].id})`);
     }
 
     // ===========================================================================
     // 2. GET PERMISSIONS
     // ===========================================================================
-    console.log('📋 Getting permissions...');
+    console.error('📋 Getting permissions...');
 
     const permissionsResult = await queryRunner.query(`
       SELECT id, code FROM permissions 
@@ -118,12 +118,12 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
       permissionMap[p.code] = p.id;
     });
 
-    console.log(`✅ Found ${permissionsResult.length} permissions`);
+    console.error(`✅ Found ${permissionsResult.length} permissions`);
 
     // ===========================================================================
     // 3. ASSIGN PERMISSIONS TO ROLES
     // ===========================================================================
-    console.log('📋 Assigning permissions to roles...');
+    console.error('📋 Assigning permissions to roles...');
 
     // Super Admin - Everything
     const superAdminPermissions = Object.values(permissionMap);
@@ -134,7 +134,7 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
         ON CONFLICT DO NOTHING;
       `, [roleIds.super_admin, permId]);
     }
-    console.log(`✅ Super Admin: ${superAdminPermissions.length} permissions`);
+    console.error(`✅ Super Admin: ${superAdminPermissions.length} permissions`);
 
     // Admin - All customer permissions
     const adminPermissions = [
@@ -153,7 +153,7 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
         `, [roleIds.admin, permissionMap[code]]);
       }
     }
-    console.log(`✅ Admin: ${adminPermissions.length} permissions`);
+    console.error(`✅ Admin: ${adminPermissions.length} permissions`);
 
     // Manager - Create, Read, Update customers
     const managerPermissions = [
@@ -171,7 +171,7 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
         `, [roleIds.manager, permissionMap[code]]);
       }
     }
-    console.log(`✅ Manager: ${managerPermissions.length} permissions`);
+    console.error(`✅ Manager: ${managerPermissions.length} permissions`);
 
     // Sales - Read customers only
     const salesPermissions = ['customers:read'];
@@ -184,12 +184,12 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
         `, [roleIds.sales, permissionMap[code]]);
       }
     }
-    console.log(`✅ Sales: ${salesPermissions.length} permissions`);
+    console.error(`✅ Sales: ${salesPermissions.length} permissions`);
 
     // ===========================================================================
     // 4. CREATE TEST USERS
     // ===========================================================================
-    console.log('📋 Creating test users...');
+    console.error('📋 Creating test users...');
 
     const testUsers = [
       {
@@ -261,21 +261,21 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
         roleIds[testUser.roleCode], // New IAM role_id
       ]);
 
-      console.log(`✅ User created: ${testUser.email} → ${testUser.roleCode}`);
+      console.error(`✅ User created: ${testUser.email} → ${testUser.roleCode}`);
     }
 
     await queryRunner.commitTransaction();
-    console.log('');
-    console.log('✅ Test Users IAM seed completed successfully!');
-    console.log('');
-    console.log('📝 Test Users:');
-    console.log('  • superadmin@test.com (Super Admin - Full access)');
-    console.log('  • admin@test.com (Admin - All customer permissions)');
-    console.log('  • manager@test.com (Manager - Create/Read/Update customers)');
-    console.log('  • sales@test.com (Sales - Read customers only)');
-    console.log('');
-    console.log('🔑 Password for all: Test@123');
-    console.log('');
+    console.error('');
+    console.error('✅ Test Users IAM seed completed successfully!');
+    console.error('');
+    console.error('📝 Test Users:');
+    console.error('  • superadmin@test.com (Super Admin - Full access)');
+    console.error('  • admin@test.com (Admin - All customer permissions)');
+    console.error('  • manager@test.com (Manager - Create/Read/Update customers)');
+    console.error('  • sales@test.com (Sales - Read customers only)');
+    console.error('');
+    console.error('🔑 Password for all: Test@123');
+    console.error('');
 
   } catch (error) {
     await queryRunner.rollbackTransaction();

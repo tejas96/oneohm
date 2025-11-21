@@ -20,7 +20,14 @@ import {
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
 import { type StatisticsResponse, WarehouseStatus, WarehouseType } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
+import {
+  ApiCreate,
+  ApiDelete,
+  ApiReadAll,
+  ApiReadOne,
+  ApiUpdate,
+  OrganizationContext,
+} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import { CreateWarehouseDto, UpdateWarehouseDto, WarehouseResponseDto } from '../dto';
@@ -49,14 +56,11 @@ export class WarehouseController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async create(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateWarehouseDto,
   ): Promise<WarehouseResponseDto> {
-    const warehouse = await this.warehouseService.create(
-      currentUser.organizationId,
-      createDto,
-      currentUser.id,
-    );
+    const warehouse = await this.warehouseService.create(organizationId, createDto, currentUser.id);
 
     return plainToInstance(WarehouseResponseDto, warehouse, {
       excludeExtraneousValues: true,
@@ -113,6 +117,7 @@ export class WarehouseController {
     description: 'Search by name, code, or city',
   })
   async findAll(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -124,17 +129,12 @@ export class WarehouseController {
     data: WarehouseResponseDto[];
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
-    const { warehouses, total } = await this.warehouseService.findAll(
-      currentUser.organizationId,
-      page,
-      limit,
-      {
-        status,
-        warehouseType,
-        warehouseManagerId,
-        search,
-      },
-    );
+    const { warehouses, total } = await this.warehouseService.findAll(organizationId, page, limit, {
+      status,
+      warehouseType,
+      warehouseManagerId,
+      search,
+    });
 
     return {
       data: plainToInstance(WarehouseResponseDto, warehouses, {
@@ -161,10 +161,11 @@ export class WarehouseController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   async findOne(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<WarehouseResponseDto> {
-    const warehouse = await this.warehouseService.findById(id, currentUser.organizationId);
+    const warehouse = await this.warehouseService.findById(id, organizationId);
 
     return plainToInstance(WarehouseResponseDto, warehouse, {
       excludeExtraneousValues: true,
@@ -183,13 +184,14 @@ export class WarehouseController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateWarehouseDto,
   ): Promise<WarehouseResponseDto> {
     const warehouse = await this.warehouseService.update(
       id,
-      currentUser.organizationId,
+      organizationId,
       updateDto,
       currentUser.id,
     );
@@ -210,10 +212,11 @@ export class WarehouseController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<{ message: string }> {
-    await this.warehouseService.delete(id, currentUser.organizationId, currentUser.id);
+    await this.warehouseService.delete(id, organizationId, currentUser.id);
 
     return { message: 'Warehouse deleted successfully' };
   }
@@ -228,9 +231,10 @@ export class WarehouseController {
     description: 'Get warehouse count by status',
   })
   async getStatistics(
-    @CurrentUser() currentUser: CurrentUserType,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<StatisticsResponse<WarehouseStatus>> {
-    return this.warehouseService.getStatistics(currentUser.organizationId);
+    return this.warehouseService.getStatistics(organizationId);
   }
 
   /**
@@ -243,13 +247,14 @@ export class WarehouseController {
     description: 'Update the status of a warehouse',
   })
   async changeStatus(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body('status') status: WarehouseStatus,
   ): Promise<WarehouseResponseDto> {
     const warehouse = await this.warehouseService.changeStatus(
       id,
-      currentUser.organizationId,
+      organizationId,
       status,
       currentUser.id,
     );

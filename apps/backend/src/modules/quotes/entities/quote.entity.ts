@@ -3,9 +3,9 @@ import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany } fr
 
 import { QuoteVersionEntity } from './quote-version.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { CustomerEntity } from '../../customers/entities/customer.entity';
+import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
-import { ResellerEntity } from '../../resellers/entities/reseller.entity';
+import { ResellerProfileEntity } from '../../resellers/entities/reseller-profile.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -25,9 +25,9 @@ export class QuoteEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'customer_id' })
   customerId!: string;
 
-  @ManyToOne(() => CustomerEntity)
+  @ManyToOne(() => CustomerProfileEntity)
   @JoinColumn({ name: 'customer_id' })
-  customer!: CustomerEntity;
+  customer!: CustomerProfileEntity;
 
   @Column({ type: 'uuid', name: 'sales_person_id', nullable: true })
   salesPersonId?: string;
@@ -39,9 +39,9 @@ export class QuoteEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'reseller_id', nullable: true })
   resellerId?: string;
 
-  @ManyToOne(() => ResellerEntity, { nullable: true })
+  @ManyToOne(() => ResellerProfileEntity, { nullable: true })
   @JoinColumn({ name: 'reseller_id' })
-  reseller?: ResellerEntity;
+  reseller?: ResellerProfileEntity;
 
   // ==================== Quote Info ====================
   @Column({ type: 'varchar', length: 50, unique: true, name: 'quote_number' })

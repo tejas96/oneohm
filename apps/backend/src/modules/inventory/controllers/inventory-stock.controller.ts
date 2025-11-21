@@ -18,7 +18,7 @@ import {
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
 import { type PaginatedResponse } from '@oneohm-epc/shared-types';
-import { ApiReadAll } from '@oneohm-epc/shared-utils';
+import { ApiReadAll, OrganizationContext } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import {
@@ -139,13 +139,11 @@ export class InventoryStockController {
     description: 'Retrieve stock levels for a product across all warehouses',
   })
   async getStockByProduct(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('productId', ParseUUIDPipe) productId: string,
   ): Promise<InventoryStockResponseDto[]> {
-    const stocks = await this.inventoryStockService.getStockByProduct(
-      productId,
-      currentUser.organizationId,
-    );
+    const stocks = await this.inventoryStockService.getStockByProduct(productId, organizationId);
 
     return plainToInstance(InventoryStockResponseDto, stocks, {
       excludeExtraneousValues: true,
@@ -162,9 +160,10 @@ export class InventoryStockController {
     description: 'Retrieve all products with stock below minimum level',
   })
   async getLowStockAlerts(
-    @CurrentUser() currentUser: CurrentUserType,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<InventoryStockResponseDto[]> {
-    const stocks = await this.inventoryStockService.getLowStockAlerts(currentUser.organizationId);
+    const stocks = await this.inventoryStockService.getLowStockAlerts(organizationId);
 
     return plainToInstance(InventoryStockResponseDto, stocks, {
       excludeExtraneousValues: true,
@@ -181,13 +180,14 @@ export class InventoryStockController {
     description: 'Add or remove stock (creates transaction record)',
   })
   async updateStock(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() updateDto: UpdateStockDto,
   ): Promise<InventoryStockResponseDto> {
     const stock = await this.inventoryStockService.updateStock(
       {
         ...updateDto,
-        organizationId: currentUser.organizationId,
+        organizationId: organizationId,
       },
       currentUser.id,
     );
@@ -207,11 +207,12 @@ export class InventoryStockController {
     description: 'Move stock from one warehouse to another',
   })
   async transferStock(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() transferDto: StockTransferDto,
   ): Promise<{ message: string }> {
     await this.inventoryStockService.transferStock(
-      currentUser.organizationId,
+      organizationId,
       transferDto.fromWarehouseId,
       transferDto.toWarehouseId,
       transferDto.productId,
@@ -233,11 +234,12 @@ export class InventoryStockController {
     description: 'Manually adjust stock quantity (for corrections)',
   })
   async adjustStock(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() adjustmentDto: StockAdjustmentDto,
   ): Promise<InventoryStockResponseDto> {
     const stock = await this.inventoryStockService.adjustStock(
-      currentUser.organizationId,
+      organizationId,
       adjustmentDto.warehouseId,
       adjustmentDto.productId,
       adjustmentDto.newQuantity,
@@ -260,11 +262,10 @@ export class InventoryStockController {
     description: 'Calculate total value of all stock in organization',
   })
   async getTotalStockValue(
-    @CurrentUser() currentUser: CurrentUserType,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<{ totalValue: number }> {
-    const totalValue = await this.inventoryStockService.getTotalStockValue(
-      currentUser.organizationId,
-    );
+    const totalValue = await this.inventoryStockService.getTotalStockValue(organizationId);
 
     return { totalValue };
   }
@@ -278,7 +279,10 @@ export class InventoryStockController {
     summary: 'Get stock summary by warehouse',
     description: 'Get stock statistics grouped by warehouse',
   })
-  async getStockSummary(@CurrentUser() currentUser: CurrentUserType): Promise<
+  async getStockSummary(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+  ): Promise<
     Array<{
       warehouseId: string;
       warehouseName: string;
@@ -286,6 +290,6 @@ export class InventoryStockController {
       totalValue: number;
     }>
   > {
-    return this.inventoryStockService.getStockSummaryByWarehouse(currentUser.organizationId);
+    return this.inventoryStockService.getStockSummaryByWarehouse(organizationId);
   }
 }

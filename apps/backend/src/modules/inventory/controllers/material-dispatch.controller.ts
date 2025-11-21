@@ -20,7 +20,14 @@ import {
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
 import { type StatisticsResponse, MaterialDispatchStatus } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
+import {
+  ApiCreate,
+  ApiDelete,
+  ApiReadAll,
+  ApiReadOne,
+  ApiUpdate,
+  OrganizationContext,
+} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import {
@@ -54,11 +61,12 @@ export class MaterialDispatchController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER],
   })
   async create(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateMaterialDispatchDto,
   ): Promise<MaterialDispatchResponseDto> {
     const dispatch = await this.materialDispatchService.create(
-      currentUser.organizationId,
+      organizationId,
       createDto,
       currentUser.id,
     );
@@ -130,6 +138,7 @@ export class MaterialDispatchController {
     description: 'Search by dispatch number or project number',
   })
   async findAll(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -144,7 +153,7 @@ export class MaterialDispatchController {
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
     const { dispatches, total } = await this.materialDispatchService.findAll(
-      currentUser.organizationId,
+      organizationId,
       page,
       limit,
       {
@@ -182,10 +191,11 @@ export class MaterialDispatchController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   async findOne(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<MaterialDispatchResponseDto> {
-    const dispatch = await this.materialDispatchService.findById(id, currentUser.organizationId);
+    const dispatch = await this.materialDispatchService.findById(id, organizationId);
 
     return plainToInstance(MaterialDispatchResponseDto, dispatch, {
       excludeExtraneousValues: true,
@@ -223,13 +233,14 @@ export class MaterialDispatchController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER],
   })
   async update(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateMaterialDispatchDto,
   ): Promise<MaterialDispatchResponseDto> {
     const dispatch = await this.materialDispatchService.update(
       id,
-      currentUser.organizationId,
+      organizationId,
       updateDto,
       currentUser.id,
     );
@@ -249,13 +260,14 @@ export class MaterialDispatchController {
     description: 'Update the status of a material dispatch',
   })
   async updateStatus(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateMaterialDispatchStatusDto,
   ): Promise<MaterialDispatchResponseDto> {
     const dispatch = await this.materialDispatchService.updateStatus(
       id,
-      currentUser.organizationId,
+      organizationId,
       statusDto,
       currentUser.id,
     );
@@ -275,13 +287,14 @@ export class MaterialDispatchController {
     description: 'Cancel a material dispatch',
   })
   async cancel(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body('reason') reason: string,
   ): Promise<MaterialDispatchResponseDto> {
     const dispatch = await this.materialDispatchService.cancel(
       id,
-      currentUser.organizationId,
+      organizationId,
       reason,
       currentUser.id,
     );
@@ -302,10 +315,11 @@ export class MaterialDispatchController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<{ message: string }> {
-    await this.materialDispatchService.delete(id, currentUser.organizationId);
+    await this.materialDispatchService.delete(id, organizationId);
 
     return { message: 'Material dispatch deleted successfully' };
   }
@@ -320,9 +334,10 @@ export class MaterialDispatchController {
     description: 'Get dispatch count by status',
   })
   async getStatistics(
-    @CurrentUser() currentUser: CurrentUserType,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<StatisticsResponse<MaterialDispatchStatus>> {
-    return this.materialDispatchService.getStatistics(currentUser.organizationId);
+    return this.materialDispatchService.getStatistics(organizationId);
   }
 
   /**
@@ -335,11 +350,10 @@ export class MaterialDispatchController {
     description: 'Get list of dispatches currently in transit',
   })
   async getInTransit(
-    @CurrentUser() currentUser: CurrentUserType,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<MaterialDispatchResponseDto[]> {
-    const dispatches = await this.materialDispatchService.getInTransitDispatches(
-      currentUser.organizationId,
-    );
+    const dispatches = await this.materialDispatchService.getInTransitDispatches(organizationId);
 
     return plainToInstance(MaterialDispatchResponseDto, dispatches, {
       excludeExtraneousValues: true,
@@ -356,11 +370,10 @@ export class MaterialDispatchController {
     description: 'Get list of draft and prepared dispatches',
   })
   async getPending(
-    @CurrentUser() currentUser: CurrentUserType,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<MaterialDispatchResponseDto[]> {
-    const dispatches = await this.materialDispatchService.getPendingDispatches(
-      currentUser.organizationId,
-    );
+    const dispatches = await this.materialDispatchService.getPendingDispatches(organizationId);
 
     return plainToInstance(MaterialDispatchResponseDto, dispatches, {
       excludeExtraneousValues: true,

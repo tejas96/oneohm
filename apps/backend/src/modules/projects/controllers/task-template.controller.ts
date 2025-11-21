@@ -26,14 +26,11 @@ import {
   ApiReadAll,
   ApiReadOne,
   ApiUpdate,
+  OrganizationContext,
 } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
-import {
-  CreateTaskTemplateDto,
-  TaskTemplateResponseDto,
-  UpdateTaskTemplateDto,
-} from '../dto';
+import { CreateTaskTemplateDto, TaskTemplateResponseDto, UpdateTaskTemplateDto } from '../dto';
 import { TaskTemplateService } from '../services';
 
 @ApiTags('Task Templates')
@@ -47,6 +44,7 @@ export class TaskTemplateController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiCreate({ responseType: TaskTemplateResponseDto, summary: 'Create a new task template' })
   async create(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateTaskTemplateDto,
   ): Promise<TaskTemplateResponseDto> {
@@ -65,6 +63,7 @@ export class TaskTemplateController {
   @ApiQuery({ name: 'type', required: false, type: String })
   @ApiQuery({ name: 'search', required: false, type: String })
   async findAll(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -75,16 +74,11 @@ export class TaskTemplateController {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 20;
 
-    const result = await this.templateService.findAll(
-      currentUser.organizationId,
-      pageNum,
-      limitNum,
-      {
-        isActive: isActive !== undefined ? isActive === 'true' : undefined,
-        type,
-        search,
-      },
-    );
+    const result = await this.templateService.findAll(organizationId, pageNum, limitNum, {
+      isActive: isActive !== undefined ? isActive === 'true' : undefined,
+      type,
+      search,
+    });
 
     return {
       data: plainToInstance(TaskTemplateResponseDto, result.data, {
@@ -98,19 +92,21 @@ export class TaskTemplateController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Get task template statistics' })
   async getStatistics(
-    @CurrentUser() currentUser: CurrentUserType,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<StatisticsResponse> {
-    return this.templateService.getStatistics(currentUser.organizationId);
+    return this.templateService.getStatistics(organizationId);
   }
 
   @Get(':id')
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiReadOne({ responseType: TaskTemplateResponseDto, summary: 'Get task template by ID' })
   async findOne(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<TaskTemplateResponseDto> {
-    const template = await this.templateService.findById(id, currentUser.organizationId);
+    const template = await this.templateService.findById(id, organizationId);
     return plainToInstance(TaskTemplateResponseDto, template, {
       excludeExtraneousValues: true,
     });
@@ -120,13 +116,14 @@ export class TaskTemplateController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiUpdate({ responseType: TaskTemplateResponseDto, summary: 'Update task template' })
   async update(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateTaskTemplateDto,
   ): Promise<TaskTemplateResponseDto> {
     const template = await this.templateService.update(
       id,
-      currentUser.organizationId,
+      organizationId,
       updateDto,
       currentUser.id,
     );
@@ -139,14 +136,11 @@ export class TaskTemplateController {
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Toggle template active status' })
   async toggleStatus(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<TaskTemplateResponseDto> {
-    const template = await this.templateService.toggleStatus(
-      id,
-      currentUser.organizationId,
-      currentUser.id,
-    );
+    const template = await this.templateService.toggleStatus(id, organizationId, currentUser.id);
     return plainToInstance(TaskTemplateResponseDto, template, {
       excludeExtraneousValues: true,
     });
@@ -159,10 +153,10 @@ export class TaskTemplateController {
     description: 'Soft delete a task template',
   })
   async remove(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
-    await this.templateService.remove(id, currentUser.organizationId);
+    await this.templateService.remove(id, organizationId);
   }
 }
-

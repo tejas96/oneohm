@@ -23,7 +23,8 @@ import {
   type StatisticsResponse,
   ApprovalRequestStatus,
 } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
+import { ApiCreate, ApiReadAll, ApiReadOne, ApiUpdate,
+  OrganizationContext} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import {
@@ -57,11 +58,12 @@ export class ApprovalRequestController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async create(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateApprovalRequestDto,
   ): Promise<ApprovalRequestResponseDto> {
     const request = await this.requestService.create(
-      currentUser.organizationId,
+      organizationId,
       createDto,
       currentUser.id,
     );
@@ -109,6 +111,7 @@ export class ApprovalRequestController {
     description: 'Search in request number, title, description',
   })
   async findAll(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -118,7 +121,7 @@ export class ApprovalRequestController {
     @Query('search') search?: string,
   ): Promise<PaginatedResponse<ApprovalRequestResponseDto>> {
     const { requests, total } = await this.requestService.findAll(
-      currentUser.organizationId,
+      organizationId,
       page ?? 1,
       limit ?? 20,
       {
@@ -154,10 +157,11 @@ export class ApprovalRequestController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async findOne(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ApprovalRequestResponseDto> {
-    const request = await this.requestService.findById(id, currentUser.organizationId);
+    const request = await this.requestService.findById(id, organizationId);
 
     return plainToInstance(ApprovalRequestResponseDto, request, {
       excludeExtraneousValues: true,
@@ -174,11 +178,12 @@ export class ApprovalRequestController {
     description: 'Get requests pending approval by current user',
   })
   async getMyPendingApprovals(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<ApprovalRequestResponseDto[]> {
     const requests = await this.requestService.findPendingForUser(
       currentUser.id,
-      currentUser.organizationId,
+      organizationId,
     );
 
     return plainToInstance(ApprovalRequestResponseDto, requests, {
@@ -196,13 +201,14 @@ export class ApprovalRequestController {
     description: 'Approve or reject an approval request',
   })
   async processAction(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() actionDto: ApprovalActionDto,
   ): Promise<ApprovalRequestResponseDto> {
     const request = await this.requestService.processAction(
       id,
-      currentUser.organizationId,
+      organizationId,
       actionDto,
       currentUser.id,
       currentUser.roles[0] ?? '', // Use first role
@@ -225,13 +231,14 @@ export class ApprovalRequestController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateApprovalRequestDto,
   ): Promise<ApprovalRequestResponseDto> {
     const request = await this.requestService.update(
       id,
-      currentUser.organizationId,
+      organizationId,
       updateDto,
       currentUser.id,
     );
@@ -251,13 +258,14 @@ export class ApprovalRequestController {
     description: 'Cancel a pending approval request',
   })
   async cancel(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body('reason') reason?: string,
   ): Promise<ApprovalRequestResponseDto> {
     const request = await this.requestService.cancel(
       id,
-      currentUser.organizationId,
+      organizationId,
       currentUser.id,
       reason,
     );
@@ -277,9 +285,10 @@ export class ApprovalRequestController {
     description: 'Get approval request statistics by status',
   })
   async getStatistics(
-    @CurrentUser() currentUser: CurrentUserType,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<StatisticsResponse<ApprovalRequestStatus>> {
-    return this.requestService.getStatistics(currentUser.organizationId);
+    return this.requestService.getStatistics(organizationId);
   }
 
   /**
@@ -291,8 +300,9 @@ export class ApprovalRequestController {
     summary: 'Get pending count',
     description: 'Get count of pending approval requests',
   })
-  async getPendingCount(@CurrentUser() currentUser: CurrentUserType): Promise<{ count: number }> {
-    const count = await this.requestService.getPendingCount(currentUser.organizationId);
+  async getPendingCount(@OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType): Promise<{ count: number }> {
+    const count = await this.requestService.getPendingCount(organizationId);
     return { count };
   }
 }

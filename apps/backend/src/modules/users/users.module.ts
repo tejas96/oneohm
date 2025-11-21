@@ -6,16 +6,20 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtStrategy } from '@oneohm-epc/shared-auth';
 
 import { AuthController, UserController } from './controllers';
-import { UserEntity, UserRoleEntity } from './entities';
-import { UserRepository, UserRoleRepository } from './repositories';
-import { AuthService, UserService } from './services';
+import { UserEntity, UserRoleEntity, EmployeeProfileEntity } from './entities';
+import { UserRepository, UserRoleRepository, EmployeeProfileRepository } from './repositories';
+import { AuthService, UserService, ProfileService } from './services';
+import { CustomersModule } from '../customers/customers.module';
 import { IamModule } from '../iam/iam.module';
+import { ResellersModule } from '../resellers/resellers.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, UserRoleEntity]),
+    TypeOrmModule.forFeature([UserEntity, UserRoleEntity, EmployeeProfileEntity]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     forwardRef(() => IamModule), // ← Use forwardRef to break circular dependency
+    forwardRef(() => CustomersModule), // ← ProfileService needs CustomerProfileRepository
+    forwardRef(() => ResellersModule), // ← ProfileService needs ResellerProfileRepository
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
@@ -34,7 +38,22 @@ import { IamModule } from '../iam/iam.module';
     }),
   ],
   controllers: [AuthController, UserController],
-  providers: [UserRepository, UserRoleRepository, UserService, AuthService, JwtStrategy],
-  exports: [UserService, AuthService, UserRepository, UserRoleRepository], // ← Export UserRoleRepository for IamService
+  providers: [
+    UserRepository,
+    UserRoleRepository,
+    EmployeeProfileRepository,
+    UserService,
+    AuthService,
+    ProfileService,
+    JwtStrategy,
+  ],
+  exports: [
+    UserService,
+    AuthService,
+    ProfileService,
+    UserRepository,
+    UserRoleRepository,
+    EmployeeProfileRepository,
+  ],
 })
 export class UsersModule {}

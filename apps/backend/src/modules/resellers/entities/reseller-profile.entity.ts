@@ -6,17 +6,31 @@ import { OrganizationEntity } from '../../organizations/entities/organization.en
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
- * Reseller Entity
- * Represents reseller partners who generate leads and earn commissions
+ * Reseller Profile Entity
+ * Stores reseller-specific profile data
+ * A user can have one reseller profile per organization
  */
-@Entity('resellers')
+@Entity('reseller_profiles')
+@Index(['userId', 'organizationId'], { unique: true })
 @Index(['organizationId', 'status', 'deletedAt'])
 @Index(['organizationId', 'companyCode'], { unique: true })
 @Index(['email'], { where: 'deleted_at IS NULL' })
 @Index(['phone'], { where: 'deleted_at IS NULL' })
-export class ResellerEntity extends BaseEntity {
+export class ResellerProfileEntity extends BaseEntity {
+  // ==================== RELATIONSHIPS ====================
+  @Column({ name: 'user_id', type: 'uuid' })
+  userId!: string;
+
+  @ManyToOne(() => UserEntity)
+  @JoinColumn({ name: 'user_id' })
+  user?: UserEntity;
+
   @Column({ name: 'organization_id', type: 'uuid' })
   organizationId!: string;
+
+  @ManyToOne(() => OrganizationEntity)
+  @JoinColumn({ name: 'organization_id' })
+  organization?: OrganizationEntity;
 
   // ==================== Company Details ====================
   @Column({ name: 'company_name', type: 'varchar', length: 255 })
@@ -25,15 +39,15 @@ export class ResellerEntity extends BaseEntity {
   @Column({ name: 'company_code', type: 'varchar', length: 50 })
   companyCode!: string;
 
-  // ==================== Contact Person ====================
-  @Column({ name: 'contact_person_name', type: 'varchar', length: 255 })
-  contactPersonName!: string;
+  // ==================== Contact Person (Organization-Specific) ====================
+  @Column({ name: 'contact_person_name', type: 'varchar', length: 255, nullable: true })
+  contactPersonName?: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  email!: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  email?: string;
 
-  @Column({ type: 'varchar', length: 20 })
-  phone!: string;
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  phone?: string;
 
   @Column({ name: 'alternate_phone', type: 'varchar', length: 20, nullable: true })
   alternatePhone?: string;
@@ -124,19 +138,15 @@ export class ResellerEntity extends BaseEntity {
   @Column({ name: 'created_by', type: 'uuid', nullable: true })
   createdBy?: string;
 
-  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
-  updatedBy?: string;
-
-  // ==================== Relationships ====================
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization?: OrganizationEntity;
-
   @ManyToOne(() => UserEntity)
   @JoinColumn({ name: 'created_by' })
   creator?: UserEntity;
+
+  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
+  updatedBy?: string;
 
   @ManyToOne(() => UserEntity)
   @JoinColumn({ name: 'updated_by' })
   updater?: UserEntity;
 }
+

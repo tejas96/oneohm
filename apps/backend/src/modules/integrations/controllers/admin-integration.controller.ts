@@ -19,6 +19,7 @@ import {
   type CurrentUserType,
 } from '@oneohm-epc/shared-auth';
 import { IntegrationProvider, IntegrationCategory } from '@oneohm-epc/shared-types';
+import { OrganizationContext } from '@oneohm-epc/shared-utils';
 
 import { CreateIntegrationDto, UpdateIntegrationDto, IntegrationResponseDto } from '../dto';
 import { IntegrationEntity } from '../entities';
@@ -55,11 +56,12 @@ export class AdminIntegrationController {
     description: 'Credential validation failed',
   })
   async createIntegration(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: CreateIntegrationDto,
   ): Promise<IntegrationResponseDto> {
     const integration = await this.integrationService.createIntegration(
-      currentUser.organizationId,
+      organizationId,
       dto,
       currentUser.id,
     );
@@ -78,9 +80,10 @@ export class AdminIntegrationController {
     type: [IntegrationResponseDto],
   })
   async getIntegrations(
-    @CurrentUser() currentUser: CurrentUserType,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<IntegrationResponseDto[]> {
-    const integrations = await this.integrationService.getIntegrations(currentUser.organizationId);
+    const integrations = await this.integrationService.getIntegrations(organizationId);
     return integrations.map((i) => this.toResponseDto(i));
   }
 
@@ -104,13 +107,11 @@ export class AdminIntegrationController {
     description: 'Integration not found',
   })
   async getIntegrationById(
+    @OrganizationContext() organizationId: string,
     @Param('id') id: string,
-    @CurrentUser() currentUser: CurrentUserType,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<IntegrationResponseDto> {
-    const integration = await this.integrationService.getIntegrationById(
-      id,
-      currentUser.organizationId,
-    );
+    const integration = await this.integrationService.getIntegrationById(id, organizationId);
     return this.toResponseDto(integration);
   }
 
@@ -138,13 +139,14 @@ export class AdminIntegrationController {
     description: 'Credential validation failed',
   })
   async updateIntegration(
+    @OrganizationContext() organizationId: string,
     @Param('id') id: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() dto: UpdateIntegrationDto,
   ): Promise<IntegrationResponseDto> {
     const integration = await this.integrationService.updateIntegration(
       id,
-      currentUser.organizationId,
+      organizationId,
       dto,
       currentUser.id,
     );
@@ -176,10 +178,11 @@ export class AdminIntegrationController {
     description: 'Integration not found',
   })
   async deleteIntegration(
+    @OrganizationContext() organizationId: string,
     @Param('id') id: string,
-    @CurrentUser() currentUser: CurrentUserType,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<{ message: string }> {
-    await this.integrationService.deleteIntegration(id, currentUser.organizationId);
+    await this.integrationService.deleteIntegration(id, organizationId);
     return { message: 'Integration deleted successfully' };
   }
 
