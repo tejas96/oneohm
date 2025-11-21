@@ -5,7 +5,7 @@ import { DocumentStatus, DocumentType, WcrType } from '@oneohm-epc/shared-types'
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { CustomerEntity } from '../../customers/entities/customer.entity';
+import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { PaymentEntity } from '../../payments/entities/payment.entity';
 import { ProjectEntity } from '../../projects/entities/project.entity';
@@ -44,9 +44,9 @@ export class DocumentEntity extends BaseEntity {
   @Column({ name: 'project_id', type: 'uuid', nullable: true })
   projectId?: string;
 
-  @ManyToOne(() => CustomerEntity, { nullable: true })
+  @ManyToOne(() => CustomerProfileEntity, { nullable: true })
   @JoinColumn({ name: 'customer_id' })
-  customer?: CustomerEntity;
+  customer?: CustomerProfileEntity;
 
   @Column({ name: 'customer_id', type: 'uuid', nullable: true })
   customerId?: string;

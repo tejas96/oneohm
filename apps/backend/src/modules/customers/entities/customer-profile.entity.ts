@@ -3,34 +3,42 @@ import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from '
 
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
-import { ResellerEntity } from '../../resellers/entities/reseller.entity';
+import { ResellerProfileEntity } from '../../resellers/entities/reseller-profile.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
- * Customer Entity
- * Represents customers/leads in the EPC system
+ * Customer Profile Entity
+ * Stores customer-specific profile data
+ * A user can have one customer profile per organization
  */
-@Entity('customers')
+@Entity('customer_profiles')
+@Index(['userId', 'organizationId'], { unique: true })
 @Index(['organizationId', 'status', 'deletedAt'])
 @Index(['phone'], { where: 'deleted_at IS NULL' })
 @Index(['email'], { where: 'deleted_at IS NULL' })
 @Index(['consumerNumber'], { where: 'deleted_at IS NULL' })
-export class CustomerEntity extends BaseEntity {
+export class CustomerProfileEntity extends BaseEntity {
+  // ==================== RELATIONSHIPS ====================
+  @Column({ name: 'user_id', type: 'uuid' })
+  userId!: string;
+
+  @ManyToOne(() => UserEntity)
+  @JoinColumn({ name: 'user_id' })
+  user?: UserEntity;
+
   @Column({ name: 'organization_id', type: 'uuid' })
   organizationId!: string;
 
-  // ==================== Personal Info ====================
-  @Column({ name: 'first_name', type: 'varchar', length: 100 })
-  firstName!: string;
+  @ManyToOne(() => OrganizationEntity)
+  @JoinColumn({ name: 'organization_id' })
+  organization?: OrganizationEntity;
 
-  @Column({ name: 'last_name', type: 'varchar', length: 100, nullable: true })
-  lastName?: string;
-
+  // ==================== Contact Info (Organization-Specific) ====================
   @Column({ type: 'varchar', length: 255, nullable: true })
   email?: string;
 
-  @Column({ type: 'varchar', length: 20 })
-  phone!: string;
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  phone?: string;
 
   @Column({ name: 'alternate_phone', type: 'varchar', length: 20, nullable: true })
   alternatePhone?: string;
@@ -81,6 +89,10 @@ export class CustomerEntity extends BaseEntity {
   @Column({ name: 'reseller_id', type: 'uuid', nullable: true })
   resellerId?: string;
 
+  @ManyToOne(() => ResellerProfileEntity)
+  @JoinColumn({ name: 'reseller_id' })
+  reseller?: ResellerProfileEntity;
+
   // ==================== Status ====================
   @Column({
     type: 'varchar',
@@ -96,21 +108,12 @@ export class CustomerEntity extends BaseEntity {
   @Column({ name: 'created_by', type: 'uuid', nullable: true })
   createdBy?: string;
 
-  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
-  updatedBy?: string;
-
-  // ==================== Relationships ====================
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization?: OrganizationEntity;
-
-  @ManyToOne(() => ResellerEntity)
-  @JoinColumn({ name: 'reseller_id' })
-  reseller?: ResellerEntity;
-
   @ManyToOne(() => UserEntity)
   @JoinColumn({ name: 'created_by' })
   creator?: UserEntity;
+
+  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
+  updatedBy?: string;
 
   @ManyToOne(() => UserEntity)
   @JoinColumn({ name: 'updated_by' })

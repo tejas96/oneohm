@@ -31,16 +31,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * @returns User data to attach to request.user
    */
   async validate(payload: JwtPayload): Promise<CurrentUser> {
-    if (!payload.sub || !payload.organizationId) {
+    if (!payload.sub) {
       throw new UnauthorizedException('Invalid token payload');
     }
 
     // Return simplified payload to be attached to request.user
     // AuthService validates user existence on login
     // NEW IAM: Extract permissions from JWT
+    // organizationId is optional - users can belong to multiple orgs
     return {
       id: payload.sub,
-      organizationId: payload.organizationId,
+      organizationId: payload.organizationId, // Optional - may be undefined
       roles: payload.roles || [],
       permissions: payload.permissions || [], // NEW: Permissions from JWT
     };

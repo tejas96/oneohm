@@ -5,7 +5,7 @@ import { PaymentMethod, PaymentTransactionStatus } from '@oneohm-epc/shared-type
 import { Entity, Column, ManyToOne, JoinColumn, Index, DeleteDateColumn } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { CustomerEntity } from '../../customers/entities/customer.entity';
+import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { ProjectMilestoneEntity } from '../../projects/entities/project-milestone.entity';
 import { ProjectEntity } from '../../projects/entities/project.entity';
@@ -38,9 +38,9 @@ export class PaymentEntity extends BaseEntity {
   @JoinColumn({ name: 'milestone_id' })
   milestone?: ProjectMilestoneEntity;
 
-  @ManyToOne(() => CustomerEntity)
+  @ManyToOne(() => CustomerProfileEntity)
   @JoinColumn({ name: 'customer_id' })
-  customer?: CustomerEntity;
+  customer?: CustomerProfileEntity;
 
   @ManyToOne(() => UserEntity, { nullable: true })
   @JoinColumn({ name: 'reconciled_by' })

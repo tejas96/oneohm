@@ -24,7 +24,14 @@ import {
   VendorStatus,
   VendorType,
 } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
+import {
+  ApiCreate,
+  ApiDelete,
+  ApiReadAll,
+  ApiReadOne,
+  ApiUpdate,
+  OrganizationContext,
+} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import { CreateVendorDto, UpdateVendorDto, VendorResponseDto } from '../dto';
@@ -53,14 +60,11 @@ export class VendorController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async create(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateVendorDto,
   ): Promise<VendorResponseDto> {
-    const vendor = await this.vendorService.create(
-      currentUser.organizationId,
-      createDto,
-      currentUser.id,
-    );
+    const vendor = await this.vendorService.create(organizationId, createDto, currentUser.id);
 
     return plainToInstance(VendorResponseDto, vendor, {
       excludeExtraneousValues: true,
@@ -111,6 +115,7 @@ export class VendorController {
     description: 'Search by name, code, or contact person',
   })
   async findAll(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -121,16 +126,11 @@ export class VendorController {
     data: VendorResponseDto[];
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
-    const { vendors, total } = await this.vendorService.findAll(
-      currentUser.organizationId,
-      page,
-      limit,
-      {
-        status,
-        vendorType,
-        search,
-      },
-    );
+    const { vendors, total } = await this.vendorService.findAll(organizationId, page, limit, {
+      status,
+      vendorType,
+      search,
+    });
 
     return {
       data: plainToInstance(VendorResponseDto, vendors, {
@@ -157,10 +157,11 @@ export class VendorController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   async findOne(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<VendorResponseDto> {
-    const vendor = await this.vendorService.findById(id, currentUser.organizationId);
+    const vendor = await this.vendorService.findById(id, organizationId);
 
     return plainToInstance(VendorResponseDto, vendor, {
       excludeExtraneousValues: true,
@@ -179,16 +180,12 @@ export class VendorController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateVendorDto,
   ): Promise<VendorResponseDto> {
-    const vendor = await this.vendorService.update(
-      id,
-      currentUser.organizationId,
-      updateDto,
-      currentUser.id,
-    );
+    const vendor = await this.vendorService.update(id, organizationId, updateDto, currentUser.id);
 
     return plainToInstance(VendorResponseDto, vendor, {
       excludeExtraneousValues: true,
@@ -206,10 +203,11 @@ export class VendorController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<{ message: string }> {
-    await this.vendorService.delete(id, currentUser.organizationId, currentUser.id);
+    await this.vendorService.delete(id, organizationId, currentUser.id);
 
     return { message: 'Vendor deleted successfully' };
   }
@@ -224,9 +222,10 @@ export class VendorController {
     description: 'Get vendor count by status and type',
   })
   async getStatistics(
-    @CurrentUser() currentUser: CurrentUserType,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<ExtendedStatisticsResponse<VendorStatus, VendorType>> {
-    return this.vendorService.getStatistics(currentUser.organizationId);
+    return this.vendorService.getStatistics(organizationId);
   }
 
   /**
@@ -239,13 +238,14 @@ export class VendorController {
     description: 'Update the status of a vendor',
   })
   async changeStatus(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body('status') status: VendorStatus,
   ): Promise<VendorResponseDto> {
     const vendor = await this.vendorService.changeStatus(
       id,
-      currentUser.organizationId,
+      organizationId,
       status,
       currentUser.id,
     );
@@ -265,11 +265,12 @@ export class VendorController {
     description: 'Update the rating of a vendor (0-5)',
   })
   async updateRating(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body('rating') rating: number,
   ): Promise<VendorResponseDto> {
-    const vendor = await this.vendorService.updateRating(id, currentUser.organizationId, rating);
+    const vendor = await this.vendorService.updateRating(id, organizationId, rating);
 
     return plainToInstance(VendorResponseDto, vendor, {
       excludeExtraneousValues: true,

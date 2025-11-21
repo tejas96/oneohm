@@ -20,7 +20,8 @@ import {
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
 import { ProjectVendorStatus } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
+import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate,
+  OrganizationContext} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import { CreateProjectVendorDto, ProjectVendorResponseDto, UpdateProjectVendorDto } from '../dto';
@@ -49,11 +50,12 @@ export class ProjectVendorController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async assignVendor(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateProjectVendorDto,
   ): Promise<ProjectVendorResponseDto> {
     const projectVendor = await this.projectVendorService.assignVendorToProject(
-      currentUser.organizationId,
+      organizationId,
       createDto,
       currentUser.id,
     );

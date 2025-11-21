@@ -68,13 +68,14 @@ export class RoleController {
   @RequirePermission('iam:roles:read')
   @ApiOperation({ summary: 'List all roles', description: 'Get paginated list of roles for the organization' })
   async findAll(
+    @Query('organizationId', ParseUUIDPipe) organizationId: string,
     @Query('page') page: number = 1,
     @Query('pageSize') pageSize: number = 10,
-    @CurrentUser() user: CurrentUserType,
+    @CurrentUser() _user: CurrentUserType,
   ): Promise<PaginatedRolesDto> {
     const skip = (page - 1) * pageSize;
     const [roles, total] = await this.roleRepository.findByOrganization(
-      user.organizationId,
+      organizationId,
       skip,
       pageSize,
     );

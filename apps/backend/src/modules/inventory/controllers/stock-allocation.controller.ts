@@ -19,7 +19,13 @@ import {
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
 import { type StatisticsResponse, StockAllocationStatus } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
+import {
+  ApiCreate,
+  ApiReadAll,
+  ApiReadOne,
+  ApiUpdate,
+  OrganizationContext,
+} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import {
@@ -53,11 +59,12 @@ export class StockAllocationController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async create(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateStockAllocationDto,
   ): Promise<StockAllocationResponseDto> {
     const allocation = await this.stockAllocationService.create(
-      currentUser.organizationId,
+      organizationId,
       createDto,
       currentUser.id,
     );
@@ -117,6 +124,7 @@ export class StockAllocationController {
     description: 'Filter by product',
   })
   async findAll(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -129,7 +137,7 @@ export class StockAllocationController {
     meta: { page: number; limit: number; total: number; totalPages: number };
   }> {
     const { allocations, total } = await this.stockAllocationService.findAll(
-      currentUser.organizationId,
+      organizationId,
       page,
       limit,
       {
@@ -165,10 +173,11 @@ export class StockAllocationController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   async findOne(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<StockAllocationResponseDto> {
-    const allocation = await this.stockAllocationService.findById(id, currentUser.organizationId);
+    const allocation = await this.stockAllocationService.findById(id, organizationId);
 
     return plainToInstance(StockAllocationResponseDto, allocation, {
       excludeExtraneousValues: true,
@@ -206,13 +215,14 @@ export class StockAllocationController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateStockAllocationDto,
   ): Promise<StockAllocationResponseDto> {
     const allocation = await this.stockAllocationService.update(
       id,
-      currentUser.organizationId,
+      organizationId,
       updateDto,
       currentUser.id,
     );
@@ -232,13 +242,14 @@ export class StockAllocationController {
     description: 'Fulfill allocated stock (full or partial)',
   })
   async fulfill(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() fulfillDto: FulfillStockAllocationDto,
   ): Promise<StockAllocationResponseDto> {
     const allocation = await this.stockAllocationService.fulfill(
       id,
-      currentUser.organizationId,
+      organizationId,
       fulfillDto,
       currentUser.id,
     );
@@ -258,13 +269,14 @@ export class StockAllocationController {
     description: 'Cancel a stock allocation (releases reserved stock)',
   })
   async cancel(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body('reason') reason: string,
   ): Promise<StockAllocationResponseDto> {
     const allocation = await this.stockAllocationService.cancel(
       id,
-      currentUser.organizationId,
+      organizationId,
       reason,
       currentUser.id,
     );
@@ -284,9 +296,10 @@ export class StockAllocationController {
     description: 'Get allocation count by status',
   })
   async getStatistics(
-    @CurrentUser() currentUser: CurrentUserType,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<StatisticsResponse<StockAllocationStatus>> {
-    return this.stockAllocationService.getStatistics(currentUser.organizationId);
+    return this.stockAllocationService.getStatistics(organizationId);
   }
 
   /**
@@ -299,11 +312,10 @@ export class StockAllocationController {
     description: 'Get list of allocations not yet fulfilled',
   })
   async getPending(
-    @CurrentUser() currentUser: CurrentUserType,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<StockAllocationResponseDto[]> {
-    const allocations = await this.stockAllocationService.getPendingAllocations(
-      currentUser.organizationId,
-    );
+    const allocations = await this.stockAllocationService.getPendingAllocations(organizationId);
 
     return plainToInstance(StockAllocationResponseDto, allocations, {
       excludeExtraneousValues: true,

@@ -15,3 +15,13 @@ export enum UserGender {
   FEMALE = 'female',
   OTHER = 'other',
 }
+
+/**
+ * User Profile Type Enum
+ * Represents the types of profiles a user can have
+ */
+export enum UserProfileType {
+  CUSTOMER = 'customer',
+  RESELLER = 'reseller',
+  EMPLOYEE = 'employee',
+}

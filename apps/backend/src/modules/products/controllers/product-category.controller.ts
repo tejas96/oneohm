@@ -10,8 +10,21 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { type CurrentUserType, CurrentUser, JwtAuthGuard, Role, RolesGuard } from '@oneohm-epc/shared-auth';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
+import {
+  type CurrentUserType,
+  CurrentUser,
+  JwtAuthGuard,
+  Role,
+  RolesGuard,
+} from '@oneohm-epc/shared-auth';
+import {
+  ApiCreate,
+  ApiDelete,
+  ApiReadAll,
+  ApiReadOne,
+  ApiUpdate,
+  OrganizationContext,
+} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import {
@@ -36,14 +49,11 @@ export class ProductCategoryController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async create(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateProductCategoryDto,
   ): Promise<ProductCategoryResponseDto> {
-    const category = await this.categoryService.create(
-      currentUser.organizationId,
-      createDto,
-      currentUser.id,
-    );
+    const category = await this.categoryService.create(organizationId, createDto, currentUser.id);
 
     return plainToInstance(ProductCategoryResponseDto, category, {
       excludeExtraneousValues: true,
@@ -58,9 +68,10 @@ export class ProductCategoryController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async findAll(
-    @CurrentUser() currentUser: CurrentUserType,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<ProductCategoryResponseDto[]> {
-    const categories = await this.categoryService.findAll(currentUser.organizationId);
+    const categories = await this.categoryService.findAll(organizationId);
 
     return plainToInstance(ProductCategoryResponseDto, categories, {
       excludeExtraneousValues: true,
@@ -75,9 +86,10 @@ export class ProductCategoryController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async getCategoryTree(
-    @CurrentUser() currentUser: CurrentUserType,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<ProductCategoryResponseDto[]> {
-    const tree = await this.categoryService.getCategoryTree(currentUser.organizationId);
+    const tree = await this.categoryService.getCategoryTree(organizationId);
 
     return plainToInstance(ProductCategoryResponseDto, tree, {
       excludeExtraneousValues: true,
@@ -92,10 +104,11 @@ export class ProductCategoryController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async findOne(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ProductCategoryResponseDto> {
-    const category = await this.categoryService.findById(id, currentUser.organizationId);
+    const category = await this.categoryService.findById(id, organizationId);
 
     return plainToInstance(ProductCategoryResponseDto, category, {
       excludeExtraneousValues: true,
@@ -110,13 +123,14 @@ export class ProductCategoryController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateProductCategoryDto,
   ): Promise<ProductCategoryResponseDto> {
     const category = await this.categoryService.update(
       id,
-      currentUser.organizationId,
+      organizationId,
       updateDto,
       currentUser.id,
     );
@@ -133,9 +147,10 @@ export class ProductCategoryController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
-    await this.categoryService.delete(id, currentUser.organizationId);
+    await this.categoryService.delete(id, organizationId);
   }
 }

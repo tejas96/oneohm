@@ -15,25 +15,60 @@ export class UserRepository {
   async findById(id: string): Promise<UserEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['organization'],
     });
   }
 
   async findByEmail(email: string): Promise<UserEntity | null> {
     return this.repository.findOne({
       where: { email, deletedAt: IsNull() },
-      relations: ['organization'],
     });
+  }
+
+  async findByPhone(phone: string): Promise<UserEntity | null> {
+    return this.repository.findOne({
+      where: { phone, deletedAt: IsNull() },
+    });
+  }
+
+  async findByEmailOrPhone(emailOrPhone: string): Promise<UserEntity | null> {
+    return this.repository
+      .createQueryBuilder('user')
+      .where('user.deleted_at IS NULL')
+      .andWhere('(user.email = :emailOrPhone OR user.phone = :emailOrPhone)', {
+        emailOrPhone,
+      })
+      .getOne();
   }
 
   async findByEmailWithRoles(email: string): Promise<UserEntity | null> {
     const user = await this.repository
       .createQueryBuilder('user')
-      .leftJoinAndSelect('user.organization', 'organization')
       .leftJoin('user_roles', 'ur', 'ur.user_id = user.id')
       .where('user.email = :email', { email })
       .andWhere('user.deleted_at IS NULL')
-      .select(['user', 'organization', 'ur.role'])
+      .select(['user', 'ur.role'])
+      .getRawAndEntities();
+
+    if (!user.entities.length) {
+      return null;
+    }
+
+    const userEntity = user.entities[0];
+    if (userEntity) {
+      userEntity.roles = user.raw.map((r: { ur_role: string }) => r.ur_role);
+      return userEntity;
+    }
+
+    return null;
+  }
+
+  async findByPhoneWithRoles(phone: string): Promise<UserEntity | null> {
+    const user = await this.repository
+      .createQueryBuilder('user')
+      .leftJoin('user_roles', 'ur', 'ur.user_id = user.id')
+      .where('user.phone = :phone', { phone })
+      .andWhere('user.deleted_at IS NULL')
+      .select(['user', 'ur.role'])
       .getRawAndEntities();
 
     if (!user.entities.length) {
@@ -52,11 +87,10 @@ export class UserRepository {
   async findByIdWithRoles(id: string): Promise<UserEntity | null> {
     const user = await this.repository
       .createQueryBuilder('user')
-      .leftJoinAndSelect('user.organization', 'organization')
       .leftJoin('user_roles', 'ur', 'ur.user_id = user.id')
       .where('user.id = :id', { id })
       .andWhere('user.deleted_at IS NULL')
-      .select(['user', 'organization', 'ur.role'])
+      .select(['user', 'ur.role'])
       .getRawAndEntities();
 
     if (!user.entities.length) {
@@ -72,20 +106,8 @@ export class UserRepository {
     return null;
   }
 
-  async findByPhone(phone: string): Promise<UserEntity | null> {
-    return this.repository.findOne({
-      where: { phone, deletedAt: IsNull() },
-    });
-  }
-
-  async findAll(
-    organizationId: string,
-    page = 1,
-    limit = 20,
-    status?: UserStatus,
-  ): Promise<[UserEntity[], number]> {
+  async findAll(page = 1, limit = 20, status?: UserStatus): Promise<[UserEntity[], number]> {
     const where: FindOptionsWhere<UserEntity> = {
-      organizationId,
       deletedAt: IsNull(),
     };
 
@@ -95,7 +117,6 @@ export class UserRepository {
 
     return this.repository.findAndCount({
       where,
-      relations: ['organization'],
       skip: (page - 1) * limit,
       take: limit,
       order: { createdAt: 'DESC' },
@@ -112,12 +133,11 @@ export class UserRepository {
     return this.findById(id);
   }
 
-  async softDelete(id: string, deletedBy: string): Promise<boolean> {
+  async softDelete(id: string): Promise<boolean> {
     const result = await this.repository.update(
       { id },
       {
         deletedAt: new Date(),
-        updatedBy: deletedBy,
       },
     );
     return (result.affected ?? 0) > 0;
@@ -125,5 +145,17 @@ export class UserRepository {
 
   async updateLastLogin(userId: string): Promise<void> {
     await this.repository.update({ id: userId }, { lastLoginAt: new Date() });
+  }
+
+  async verifyEmail(userId: string): Promise<void> {
+    await this.repository.update({ id: userId }, { emailVerifiedAt: new Date() });
+  }
+
+  async verifyPhone(userId: string): Promise<void> {
+    await this.repository.update({ id: userId }, { phoneVerifiedAt: new Date() });
+  }
+
+  async markProfileCompleted(userId: string): Promise<void> {
+    await this.repository.update({ id: userId }, { profileCompleted: true });
   }
 }

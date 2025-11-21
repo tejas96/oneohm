@@ -10,7 +10,7 @@ import { ProjectMaterialEntity } from './project-material.entity';
 import { ProjectMilestoneEntity } from './project-milestone.entity';
 import { SiteSurveyEntity } from './site-survey.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { CustomerEntity } from '../../customers/entities/customer.entity';
+import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { QuoteEntity } from '../../quotes/entities/quote.entity';
 import { UserEntity } from '../../users/entities/user.entity';
@@ -39,9 +39,9 @@ export class ProjectEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'customer_id' })
   customerId!: string;
 
-  @ManyToOne(() => CustomerEntity)
+  @ManyToOne(() => CustomerProfileEntity)
   @JoinColumn({ name: 'customer_id' })
-  customer!: CustomerEntity;
+  customer!: CustomerProfileEntity;
 
   @Column({ type: 'uuid', name: 'project_manager_id', nullable: true })
   projectManagerId?: string;

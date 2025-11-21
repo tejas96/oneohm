@@ -27,6 +27,7 @@ import {
   ApiReadAll,
   ApiReadOne,
   ApiUpdate,
+  OrganizationContext,
 } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
@@ -53,11 +54,12 @@ export class ProductController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async create(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateProductDto,
   ): Promise<ProductResponseDto> {
     const product = await this.productService.create(
-      currentUser.organizationId,
+      organizationId,
       createDto,
       currentUser.id,
     );
@@ -104,6 +106,7 @@ export class ProductController {
     ],
   })
   async findAll(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
@@ -113,7 +116,7 @@ export class ProductController {
     @Query('brand') brand?: string,
     @Query('search') search?: string,
   ): Promise<PaginatedResponse<ProductResponseDto>> {
-    const result = await this.productService.findAll(currentUser.organizationId, page, limit, {
+    const result = await this.productService.findAll(organizationId, page, limit, {
       status,
       type,
       categoryId,
@@ -142,10 +145,11 @@ export class ProductController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async findOne(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ProductResponseDto> {
-    const product = await this.productService.findById(id, currentUser.organizationId);
+    const product = await this.productService.findById(id, organizationId);
 
     return plainToInstance(ProductResponseDto, product, {
       excludeExtraneousValues: true,
@@ -160,13 +164,14 @@ export class ProductController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateProductDto,
   ): Promise<ProductResponseDto> {
     const product = await this.productService.update(
       id,
-      currentUser.organizationId,
+      organizationId,
       updateDto,
       currentUser.id,
     );
@@ -185,13 +190,14 @@ export class ProductController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async updateStatus(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateProductStatusDto,
   ): Promise<ProductResponseDto> {
     const product = await this.productService.updateStatus(
       id,
-      currentUser.organizationId,
+      organizationId,
       statusDto.status,
       currentUser.id,
     );
@@ -208,9 +214,10 @@ export class ProductController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
-    await this.productService.delete(id, currentUser.organizationId);
+    await this.productService.delete(id, organizationId);
   }
 }

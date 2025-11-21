@@ -9,7 +9,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { type CurrentUserType, CurrentUser, JwtAuthGuard, Role, Roles, RolesGuard } from '@oneohm-epc/shared-auth';
+import {
+  type CurrentUserType,
+  CurrentUser,
+  JwtAuthGuard,
+  Role,
+  Roles,
+  RolesGuard,
+} from '@oneohm-epc/shared-auth';
 import { CommissionStatus } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
@@ -18,6 +25,7 @@ import {
   ApiReadAll,
   ApiReadOne,
   ApiUpdate,
+  OrganizationContext,
 } from '@oneohm-epc/shared-utils';
 
 import {
@@ -27,7 +35,6 @@ import {
   UpdateCommissionStatusDto,
 } from '../dto';
 import { ResellerCommissionService } from '../services/reseller-commission.service';
-
 
 /**
  * Reseller Commission Controller
@@ -56,11 +63,12 @@ export class ResellerCommissionController {
     ],
   })
   async create(
+    @OrganizationContext() organizationId: string,
     @Body() createDto: CreateCommissionDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CommissionResponseDto> {
     const commission = await this.commissionService.create(
-      currentUser.organizationId,
+      organizationId,
       createDto,
       currentUser.id,
     );
@@ -91,27 +99,22 @@ export class ResellerCommissionController {
     ],
   })
   async findAll(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query('status') status?: CommissionStatus,
     @Query('resellerId') resellerId?: string,
   ): Promise<CommissionResponseDto[]> {
     if (status) {
-      const commissions = await this.commissionService.findByStatus(
-        currentUser.organizationId,
-        status,
-      );
+      const commissions = await this.commissionService.findByStatus(organizationId, status);
       return commissions as CommissionResponseDto[];
     }
 
     if (resellerId) {
-      const commissions = await this.commissionService.findByResellerId(
-        resellerId,
-        currentUser.organizationId,
-      );
+      const commissions = await this.commissionService.findByResellerId(resellerId, organizationId);
       return commissions as CommissionResponseDto[];
     }
 
-    const commissions = await this.commissionService.findAll(currentUser.organizationId);
+    const commissions = await this.commissionService.findAll(organizationId);
     return commissions as CommissionResponseDto[];
   }
 
@@ -125,10 +128,11 @@ export class ResellerCommissionController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async findOne(
+    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() currentUser: CurrentUserType,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<CommissionResponseDto> {
-    const commission = await this.commissionService.findById(id, currentUser.organizationId);
+    const commission = await this.commissionService.findById(id, organizationId);
     return commission as CommissionResponseDto;
   }
 
@@ -148,13 +152,14 @@ export class ResellerCommissionController {
     ],
   })
   async update(
+    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateCommissionDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CommissionResponseDto> {
     const commission = await this.commissionService.update(
       id,
-      currentUser.organizationId,
+      organizationId,
       updateDto,
       currentUser.id,
     );
@@ -172,13 +177,14 @@ export class ResellerCommissionController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async updateStatus(
+    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateCommissionStatusDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CommissionResponseDto> {
     const commission = await this.commissionService.updateStatus(
       id,
-      currentUser.organizationId,
+      organizationId,
       statusDto.status,
       currentUser.id,
     );
@@ -200,10 +206,11 @@ export class ResellerCommissionController {
     ],
   })
   async delete(
+    @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() currentUser: CurrentUserType,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<void> {
-    await this.commissionService.delete(id, currentUser.organizationId);
+    await this.commissionService.delete(id, organizationId);
   }
 
   /**
@@ -214,13 +221,11 @@ export class ResellerCommissionController {
   @ApiResponse({ status: HttpStatus.OK, description: 'Total commission retrieved' })
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   async getTotalCommissionEarned(
+    @OrganizationContext() organizationId: string,
     @Param('resellerId', ParseUUIDPipe) resellerId: string,
-    @CurrentUser() currentUser: CurrentUserType,
+    @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<{ resellerId: string; totalCommissionEarned: number }> {
-    const total = await this.commissionService.getTotalCommissionEarned(
-      resellerId,
-      currentUser.organizationId,
-    );
+    const total = await this.commissionService.getTotalCommissionEarned(resellerId, organizationId);
     return {
       resellerId,
       totalCommissionEarned: total,

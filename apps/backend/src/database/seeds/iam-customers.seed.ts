@@ -18,12 +18,12 @@ export async function seedIAMCustomers(dataSource: DataSource): Promise<void> {
   try {
     await queryRunner.startTransaction();
 
-    console.log('🌱 Starting IAM Customer module seed...');
+    console.error('🌱 Starting IAM Customer module seed...');
 
     // ===========================================================================
     // 1. CREATE FEATURE: Customers
     // ===========================================================================
-    console.log('📋 Creating feature: Customers');
+    console.error('📋 Creating feature: Customers');
     
     const featureResult = await queryRunner.query(`
       INSERT INTO features (
@@ -48,12 +48,12 @@ export async function seedIAMCustomers(dataSource: DataSource): Promise<void> {
     `);
 
     const featureId = featureResult[0].id;
-    console.log(`✅ Feature created/updated: ${featureId}`);
+    console.error(`✅ Feature created/updated: ${featureId}`);
 
     // ===========================================================================
     // 2. CREATE PERMISSIONS: customers:*
     // ===========================================================================
-    console.log('📋 Creating permissions for Customers');
+    console.error('📋 Creating permissions for Customers');
 
     const permissions = [
       {
@@ -125,13 +125,13 @@ export async function seedIAMCustomers(dataSource: DataSource): Promise<void> {
       ]);
 
       permissionIds[perm.code] = result[0].id;
-      console.log(`✅ Permission: ${perm.code}`);
+      console.error(`✅ Permission: ${perm.code}`);
     }
 
     // ===========================================================================
     // 3. CREATE IAM ADMIN PERMISSIONS (for managing IAM itself)
     // ===========================================================================
-    console.log('📋 Creating IAM admin permissions');
+    console.error('📋 Creating IAM admin permissions');
 
     const iamFeatureResult = await queryRunner.query(`
       INSERT INTO features (
@@ -195,13 +195,13 @@ export async function seedIAMCustomers(dataSource: DataSource): Promise<void> {
       ]);
 
       permissionIds[perm.code] = result[0].id;
-      console.log(`✅ IAM Permission: ${perm.code}`);
+      console.error(`✅ IAM Permission: ${perm.code}`);
     }
 
     // ===========================================================================
     // 4. ASSIGN PERMISSIONS TO ROLES
     // ===========================================================================
-    console.log('📋 Assigning permissions to roles');
+    console.error('📋 Assigning permissions to roles');
 
     // Get organization ID (assuming first organization for now)
     const orgResult = await queryRunner.query(`
@@ -281,7 +281,7 @@ export async function seedIAMCustomers(dataSource: DataSource): Promise<void> {
       const roleId = roleIdsByCode[mapping.roleCode];
       
       if (!roleId) {
-        console.log(`⚠️  Role ${mapping.roleCode} not found, skipping...`);
+        console.error(`⚠️  Role ${mapping.roleCode} not found, skipping...`);
         continue;
       }
 
@@ -289,7 +289,7 @@ export async function seedIAMCustomers(dataSource: DataSource): Promise<void> {
         const permissionId = permissionIds[permCode];
         
         if (!permissionId) {
-          console.log(`⚠️  Permission ${permCode} not found, skipping...`);
+          console.error(`⚠️  Permission ${permCode} not found, skipping...`);
           continue;
         }
 
@@ -303,11 +303,11 @@ export async function seedIAMCustomers(dataSource: DataSource): Promise<void> {
         `, [roleId, permissionId]);
       }
 
-      console.log(`✅ Assigned ${mapping.permissions.length} permissions to ${mapping.roleCode}`);
+      console.error(`✅ Assigned ${mapping.permissions.length} permissions to ${mapping.roleCode}`);
     }
 
     await queryRunner.commitTransaction();
-    console.log('✅ IAM Customer module seed completed successfully!');
+    console.error('✅ IAM Customer module seed completed successfully!');
 
   } catch (error) {
     await queryRunner.rollbackTransaction();

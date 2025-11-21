@@ -20,7 +20,8 @@ import {
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
 import { MaterialStatus } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiUpdate } from '@oneohm-epc/shared-utils';
+import { ApiCreate, ApiDelete, ApiReadAll, ApiUpdate,
+  OrganizationContext} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import { CreateMaterialDto, MaterialResponseDto, UpdateMaterialDto } from '../dto';
@@ -49,6 +50,7 @@ export class MaterialController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async create(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Body() createDto: CreateMaterialDto,
@@ -56,7 +58,7 @@ export class MaterialController {
     // Ensure projectId in path matches DTO
     createDto.projectId = projectId;
 
-    const material = await this.materialService.create(currentUser.organizationId, createDto);
+    const material = await this.materialService.create(organizationId, createDto);
 
     return plainToInstance(MaterialResponseDto, material, {
       excludeExtraneousValues: true,
@@ -93,6 +95,7 @@ export class MaterialController {
     description: 'Filter by product ID',
   })
   async findByProject(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Query('status') status?: MaterialStatus,
@@ -101,7 +104,7 @@ export class MaterialController {
   ): Promise<MaterialResponseDto[]> {
     const materials = await this.materialService.findByProject(
       projectId,
-      currentUser.organizationId,
+      organizationId,
       {
         status,
         category,
@@ -124,11 +127,12 @@ export class MaterialController {
     description: 'Retrieve a single material with details',
   })
   async findOne(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<MaterialResponseDto> {
-    const material = await this.materialService.findById(id, projectId, currentUser.organizationId);
+    const material = await this.materialService.findById(id, projectId, organizationId);
 
     return plainToInstance(MaterialResponseDto, material, {
       excludeExtraneousValues: true,
@@ -147,6 +151,7 @@ export class MaterialController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -155,7 +160,7 @@ export class MaterialController {
     const material = await this.materialService.update(
       id,
       projectId,
-      currentUser.organizationId,
+      organizationId,
       updateDto,
     );
 
@@ -175,11 +180,12 @@ export class MaterialController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<{ message: string }> {
-    await this.materialService.delete(id, projectId, currentUser.organizationId);
+    await this.materialService.delete(id, projectId, organizationId);
     return { message: 'Material deleted successfully' };
   }
 
@@ -199,6 +205,7 @@ export class MaterialController {
     description: 'New status',
   })
   async updateStatus(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -207,7 +214,7 @@ export class MaterialController {
     const material = await this.materialService.updateStatus(
       id,
       projectId,
-      currentUser.organizationId,
+      organizationId,
       status,
     );
 
@@ -238,6 +245,7 @@ export class MaterialController {
     description: 'Used quantity',
   })
   async updateQuantities(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -247,7 +255,7 @@ export class MaterialController {
     const material = await this.materialService.updateQuantities(
       id,
       projectId,
-      currentUser.organizationId,
+      organizationId,
       {
         quantityAllocated: quantityAllocated ? parseFloat(quantityAllocated) : undefined,
         quantityUsed: quantityUsed ? parseFloat(quantityUsed) : undefined,
@@ -269,6 +277,7 @@ export class MaterialController {
     description: 'Get comprehensive material statistics for the project',
   })
   async getStatistics(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<{
@@ -279,7 +288,7 @@ export class MaterialController {
     usedCount: number;
     totalCost: number;
   }> {
-    return this.materialService.getStatistics(projectId, currentUser.organizationId);
+    return this.materialService.getStatistics(projectId, organizationId);
   }
 }
 

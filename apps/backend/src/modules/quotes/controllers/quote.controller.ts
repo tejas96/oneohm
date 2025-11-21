@@ -20,7 +20,8 @@ import {
   RolesGuard,
 } from '@oneohm-epc/shared-auth';
 import { type PaginatedResponse, QuoteStatus } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
+import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate,
+  OrganizationContext} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import { CreateQuoteDto, QuoteResponseDto, UpdateQuoteDto, UpdateQuoteStatusDto } from '../dto';
@@ -49,11 +50,12 @@ export class QuoteController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async create(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateQuoteDto,
   ): Promise<QuoteResponseDto> {
     const quote = await this.quoteService.create(
-      currentUser.organizationId,
+      organizationId,
       createDto,
       currentUser.id,
     );
@@ -131,6 +133,7 @@ export class QuoteController {
     description: 'Search in quote number or customer name',
   })
   async findAll(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Query('page') page = 1,
     @Query('limit') limit = 20,
@@ -142,7 +145,7 @@ export class QuoteController {
     @Query('toDate') toDate?: string,
     @Query('search') search?: string,
   ): Promise<PaginatedResponse<QuoteResponseDto>> {
-    const result = await this.quoteService.findAll(currentUser.organizationId, page, limit, {
+    const result = await this.quoteService.findAll(organizationId, page, limit, {
       status,
       customerId,
       salesPersonId,
@@ -177,10 +180,11 @@ export class QuoteController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async findOne(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<QuoteResponseDto> {
-    const quote = await this.quoteService.findById(id, currentUser.organizationId);
+    const quote = await this.quoteService.findById(id, organizationId);
 
     return plainToInstance(QuoteResponseDto, quote, {
       excludeExtraneousValues: true,
@@ -200,13 +204,14 @@ export class QuoteController {
     roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async update(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateQuoteDto,
   ): Promise<QuoteResponseDto> {
     const quote = await this.quoteService.update(
       id,
-      currentUser.organizationId,
+      organizationId,
       updateDto,
       currentUser.id,
     );
@@ -240,13 +245,14 @@ export class QuoteController {
     type: QuoteResponseDto,
   })
   async updateStatus(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateQuoteStatusDto,
   ): Promise<QuoteResponseDto> {
     const quote = await this.quoteService.updateStatus(
       id,
-      currentUser.organizationId,
+      organizationId,
       statusDto,
       currentUser.id,
     );
@@ -266,10 +272,11 @@ export class QuoteController {
   })
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   async delete(
+    @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<{ message: string }> {
-    await this.quoteService.delete(id, currentUser.organizationId);
+    await this.quoteService.delete(id, organizationId);
     return { message: 'Quote deleted successfully' };
   }
 }

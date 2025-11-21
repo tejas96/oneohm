@@ -12,7 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { type CurrentUserType, CurrentUser, JwtAuthGuard, Role, RolesGuard } from '@oneohm-epc/shared-auth';
+import { JwtAuthGuard, Role, RolesGuard } from '@oneohm-epc/shared-auth';
 import { UserStatus } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
@@ -27,7 +27,11 @@ import { plainToInstance } from 'class-transformer';
 import { CreateUserDto, UpdateUserDto, UpdateUserStatusDto, UserResponseDto } from '../dto';
 import { UserService } from '../services/user.service';
 
-
+/**
+ * User Controller
+ * Handles core user authentication operations
+ * Note: Users are no longer organization-specific
+ */
 @ApiTags('Users')
 @Controller('users')
 @ApiBearerAuth()
@@ -41,11 +45,8 @@ export class UserController {
     responseType: UserResponseDto,
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
-  async create(
-    @Body() createDto: CreateUserDto,
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<UserResponseDto> {
-    const user = await this.userService.create(createDto, currentUser.id);
+  async create(@Body() createDto: CreateUserDto): Promise<UserResponseDto> {
+    const user = await this.userService.create(createDto);
     return plainToInstance(UserResponseDto, user, {
       excludeExtraneousValues: true,
     });
@@ -54,8 +55,10 @@ export class UserController {
   @Get()
   @ApiReadAll({
     summary: 'Get all users',
+    description:
+      'Returns all users across all organizations. Use profile endpoints to filter by organization.',
     responseType: UserResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.SALES],
+    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   @ApiQuery({ name: 'page', required: false, example: 1 })
   @ApiQuery({ name: 'limit', required: false, example: 20 })
@@ -66,7 +69,6 @@ export class UserController {
     example: UserStatus.ACTIVE,
   })
   async findAll(
-    @CurrentUser() currentUser: CurrentUserType,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
     @Query('status') status?: UserStatus,
@@ -76,7 +78,7 @@ export class UserController {
     page: number;
     limit: number;
   }> {
-    const result = await this.userService.findAll(currentUser.organizationId, page, limit, status);
+    const result = await this.userService.findAll(page, limit, status);
 
     return {
       ...result,
@@ -104,15 +106,16 @@ export class UserController {
   @Put(':id')
   @ApiUpdate({
     summary: 'Update user',
+    description:
+      'Updates core user authentication fields only. Use profile endpoints for profile-specific fields.',
     responseType: UserResponseDto,
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateUserDto,
-    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<UserResponseDto> {
-    const user = await this.userService.update(id, updateDto, currentUser.id);
+    const user = await this.userService.update(id, updateDto);
     return plainToInstance(UserResponseDto, user, {
       excludeExtraneousValues: true,
     });
@@ -123,11 +126,8 @@ export class UserController {
     summary: 'Delete user',
     roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
-  async delete(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<void> {
-    await this.userService.delete(id, currentUser.id);
+  async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    await this.userService.delete(id);
   }
 
   @Post(':id/status')
@@ -142,9 +142,8 @@ export class UserController {
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() statusDto: UpdateUserStatusDto,
-    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<UserResponseDto> {
-    const user = await this.userService.updateStatus(id, statusDto.status, currentUser.id);
+    const user = await this.userService.updateStatus(id, statusDto.status);
     return plainToInstance(UserResponseDto, user, {
       excludeExtraneousValues: true,
     });

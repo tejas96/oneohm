@@ -1,48 +1,36 @@
 import { UserStatus } from '@oneohm-epc/shared-types';
 import * as bcrypt from 'bcrypt';
-import { BeforeInsert, BeforeUpdate, Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, Entity, Index } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 
+/**
+ * User Entity
+ * Core authentication entity - stores only authentication and basic user info
+ * Profile-specific data stored in: CustomerProfile, ResellerProfile, EmployeeProfile
+ * A user can have multiple profile types across multiple organizations
+ */
 @Entity('users')
-@Index(['organizationId', 'deletedAt'])
-@Index(['email', 'deletedAt'])
-@Index(['phone', 'deletedAt'])
-@Index(['department', 'deletedAt'])
+@Index(['email'])
+@Index(['phone'])
 export class UserEntity extends BaseEntity {
-  // ===== RELATIONSHIPS =====
-  @ManyToOne(() => OrganizationEntity, { nullable: false })
-  @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
-
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
-
-  // ===== PERSONAL INFO =====
+  // ===== BASIC INFO =====
   @Column({ name: 'first_name', type: 'varchar', length: 100 })
   firstName!: string;
 
   @Column({ name: 'last_name', type: 'varchar', length: 100, nullable: true })
   lastName?: string;
 
-  @Column({ type: 'varchar', length: 255, unique: true })
-  email!: string;
+  // ===== CONTACT INFO =====
+  @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
+  email?: string;
 
   @Column({ type: 'varchar', length: 20, unique: true })
   phone!: string;
 
-  @Column({
-    name: 'alternate_phone',
-    type: 'varchar',
-    length: 20,
-    nullable: true,
-  })
-  alternatePhone?: string;
-
   // ===== AUTHENTICATION =====
-  @Column({ name: 'password_hash', type: 'varchar', length: 255 })
-  passwordHash!: string;
+  @Column({ name: 'password_hash', type: 'varchar', length: 255, nullable: true })
+  passwordHash?: string;
 
   @Column({
     name: 'email_verified_at',
@@ -65,44 +53,13 @@ export class UserEntity extends BaseEntity {
   })
   lastLoginAt?: Date;
 
-  // ===== PROFILE =====
-  @Column({ name: 'avatar_url', type: 'text', nullable: true })
-  avatarUrl?: string;
-
-  @Column({ name: 'date_of_birth', type: 'date', nullable: true })
-  dateOfBirth?: Date;
-
-  @Column({ type: 'varchar', length: 20, nullable: true })
-  gender?: string;
-
-  // ===== ADDRESS =====
-  @Column({ type: 'text', nullable: true })
-  address?: string;
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  city?: string;
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  state?: string;
-
-  @Column({ type: 'varchar', length: 100, default: 'India' })
-  country!: string;
-
-  @Column({ type: 'varchar', length: 10, nullable: true })
-  pincode?: string;
-
-  // ===== EMPLOYMENT =====
-  @Column({ name: 'employee_id', type: 'varchar', length: 50, nullable: true })
-  employeeId?: string;
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  designation?: string;
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  department?: string;
-
-  @Column({ name: 'joining_date', type: 'date', nullable: true })
-  joiningDate?: Date;
+  // ===== PROFILE COMPLETION =====
+  @Column({
+    name: 'profile_completed',
+    type: 'boolean',
+    default: false,
+  })
+  profileCompleted!: boolean;
 
   // ===== STATUS =====
   @Column({
@@ -120,15 +77,9 @@ export class UserEntity extends BaseEntity {
   })
   deletedAt?: Date;
 
-  // ===== AUDIT =====
-  @Column({ name: 'created_by', type: 'uuid', nullable: true })
-  createdBy?: string;
-
-  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
-  updatedBy?: string;
-
-  // ===== VIRTUAL FIELD (not persisted) =====
+  // ===== VIRTUAL FIELDS (not persisted, populated at runtime) =====
   roles?: string[]; // Will be populated from user_roles join
+  permissions?: string[]; // Will be populated from IAM system
 
   // ===== HOOKS =====
   @BeforeInsert()
@@ -142,6 +93,9 @@ export class UserEntity extends BaseEntity {
 
   // ===== METHODS =====
   async validatePassword(password: string): Promise<boolean> {
+    if (!this.passwordHash) {
+      return false;
+    }
     return bcrypt.compare(password, this.passwordHash);
   }
 

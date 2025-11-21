@@ -1,7 +1,7 @@
 import { CommissionStatus } from '@oneohm-epc/shared-types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
-import { ResellerEntity } from './reseller.entity';
+import { ResellerProfileEntity } from './reseller-profile.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
@@ -90,9 +90,9 @@ export class ResellerCommissionEntity extends BaseEntity {
   @JoinColumn({ name: 'organization_id' })
   organization?: OrganizationEntity;
 
-  @ManyToOne(() => ResellerEntity)
+  @ManyToOne(() => ResellerProfileEntity)
   @JoinColumn({ name: 'reseller_id' })
-  reseller?: ResellerEntity;
+  reseller?: ResellerProfileEntity;
 
   @ManyToOne(() => UserEntity)
   @JoinColumn({ name: 'approved_by' })
