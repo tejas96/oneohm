@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
+import { DiscoveryModule } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AdminIntegrationController, MessagingController } from './controllers';
+import { ProviderRegistry, ProviderFactory, ProviderResolver } from './core';
 import { IntegrationEntity } from './entities';
-import { IntegrationProviderFactory } from './factories';
+import { Msg91Provider, WhatsAppBusinessProvider } from './providers-v2';
 import { IntegrationRepository } from './repositories';
 import { IntegrationService, IntegrationCredentialService } from './services';
 import { ConfigModule } from '../../config';
@@ -14,14 +16,29 @@ import { ConfigModule } from '../../config';
  * Database-driven, multi-tenant architecture with encrypted credentials
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([IntegrationEntity]), ConfigModule],
+  imports: [
+    TypeOrmModule.forFeature([IntegrationEntity]),
+    ConfigModule,
+    DiscoveryModule, // Required for auto-discovery
+  ],
   controllers: [AdminIntegrationController, MessagingController],
   providers: [
+    // Repositories
     IntegrationRepository,
+    
+    // Services
     IntegrationCredentialService,
-    IntegrationProviderFactory,
     IntegrationService,
+    
+    // Core architecture (decorator-driven)
+    ProviderRegistry,
+    ProviderFactory,
+    ProviderResolver,
+    
+    // Provider implementations (auto-discovered via decorators)
+    Msg91Provider,
+    WhatsAppBusinessProvider,
   ],
-  exports: [IntegrationService],
+  exports: [IntegrationService, ProviderResolver],
 })
 export class IntegrationsModule {}

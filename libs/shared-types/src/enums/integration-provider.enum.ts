@@ -5,6 +5,7 @@
 export enum IntegrationProvider {
   WHATSAPP_BUSINESS = 'whatsapp-business-api',
   TWILIO = 'twilio',
+  MSG91 = 'msg91',
 }
 
 /**
