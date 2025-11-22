@@ -20,6 +20,7 @@ import { ProductsModule } from './modules/products/products.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
 import { ResellersModule } from './modules/resellers/resellers.module';
+import { SecurityEventsModule } from './modules/security-events/security-events.module';
 import { ServiceMaintenanceModule } from './modules/service-maintenance/service-maintenance.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -27,6 +28,7 @@ import { UsersModule } from './modules/users/users.module';
   imports: [
     ConfigModule,
     DatabaseModule,
+    SecurityEventsModule,
     UsersModule,
     OrganizationsModule,
     CustomersModule,
