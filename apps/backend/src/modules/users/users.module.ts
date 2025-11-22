@@ -8,15 +8,17 @@ import { JwtStrategy } from '@oneohm-epc/shared-auth';
 import { AuthController, UserController } from './controllers';
 import { UserEntity, UserRoleEntity, EmployeeProfileEntity } from './entities';
 import { UserRepository, UserRoleRepository, EmployeeProfileRepository } from './repositories';
-import { AuthService, UserService, ProfileService } from './services';
+import { AuthService, UserService, ProfileService, OtpService } from './services';
 import { CustomersModule } from '../customers/customers.module';
 import { IamModule } from '../iam/iam.module';
 import { ResellersModule } from '../resellers/resellers.module';
+import { SecurityEventsModule } from '../security-events/security-events.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([UserEntity, UserRoleEntity, EmployeeProfileEntity]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
+    SecurityEventsModule, // ← OtpService needs SecurityEventService
     forwardRef(() => IamModule), // ← Use forwardRef to break circular dependency
     forwardRef(() => CustomersModule), // ← ProfileService needs CustomerProfileRepository
     forwardRef(() => ResellersModule), // ← ProfileService needs ResellerProfileRepository
@@ -45,12 +47,14 @@ import { ResellersModule } from '../resellers/resellers.module';
     UserService,
     AuthService,
     ProfileService,
+    OtpService, // ← OTP Service
     JwtStrategy,
   ],
   exports: [
     UserService,
     AuthService,
     ProfileService,
+    OtpService, // ← Export for testing
     UserRepository,
     UserRoleRepository,
     EmployeeProfileRepository,
