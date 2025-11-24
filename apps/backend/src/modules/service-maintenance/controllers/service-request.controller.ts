@@ -11,9 +11,9 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { Role, JwtAuthGuard, RolesGuard, Roles } from '@oneohm-epc/shared-auth';
 import { ServiceRequestStatus } from '@oneohm-epc/shared-types';
 
+import { JwtAuthGuard } from '../../auth/guards';
 import {
   CreateServiceRequestDto,
   UpdateServiceRequestDto,
@@ -26,27 +26,23 @@ import { ServiceRequestService } from '../services/service-request.service';
  */
 @ApiTags('Service & Maintenance - Service Requests')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('service-requests')
 export class ServiceRequestController {
   constructor(private readonly serviceRequestService: ServiceRequestService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Create a new service request' })
   @ApiResponse({
     status: 201,
     description: 'Service request created successfully',
     type: ServiceRequestResponseDto,
   })
-  async create(
-    @Body() createDto: CreateServiceRequestDto,
-  ): Promise<ServiceRequestResponseDto> {
+  async create(@Body() createDto: CreateServiceRequestDto): Promise<ServiceRequestResponseDto> {
     return this.serviceRequestService.create(createDto);
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get all service requests' })
   @ApiResponse({
     status: 200,
@@ -60,7 +56,6 @@ export class ServiceRequestController {
   }
 
   @Get('open')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get open service requests' })
   @ApiResponse({
     status: 200,
@@ -74,7 +69,6 @@ export class ServiceRequestController {
   }
 
   @Get('overdue')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER)
   @ApiOperation({ summary: 'Get overdue service requests' })
   @ApiResponse({
     status: 200,
@@ -88,7 +82,6 @@ export class ServiceRequestController {
   }
 
   @Get('project/:projectId')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get requests by project' })
   @ApiResponse({
     status: 200,
@@ -103,7 +96,6 @@ export class ServiceRequestController {
   }
 
   @Get('customer/:customerId')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get requests by customer' })
   @ApiResponse({
     status: 200,
@@ -118,7 +110,6 @@ export class ServiceRequestController {
   }
 
   @Get('user/:userId')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get requests assigned to user' })
   @ApiResponse({
     status: 200,
@@ -133,7 +124,6 @@ export class ServiceRequestController {
   }
 
   @Get('status/:status')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get requests by status' })
   @ApiResponse({
     status: 200,
@@ -148,7 +138,6 @@ export class ServiceRequestController {
   }
 
   @Get('statistics/:organizationId')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER)
   @ApiOperation({ summary: 'Get request statistics for organization' })
   @ApiResponse({
     status: 200,
@@ -161,7 +150,6 @@ export class ServiceRequestController {
   }
 
   @Get('average-rating')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Get average customer rating' })
   @ApiResponse({
     status: 200,
@@ -176,7 +164,6 @@ export class ServiceRequestController {
   }
 
   @Get('number/:requestNumber')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get request by request number' })
   @ApiResponse({
     status: 200,
@@ -194,7 +181,6 @@ export class ServiceRequestController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get service request by ID' })
   @ApiResponse({
     status: 200,
@@ -209,7 +195,6 @@ export class ServiceRequestController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Update service request' })
   @ApiResponse({
     status: 200,
@@ -224,7 +209,6 @@ export class ServiceRequestController {
   }
 
   @Patch(':id/assign/:userId')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER)
   @ApiOperation({ summary: 'Assign request to user' })
   @ApiResponse({
     status: 200,
@@ -239,7 +223,6 @@ export class ServiceRequestController {
   }
 
   @Patch(':id/resolve')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Mark request as resolved' })
   @ApiResponse({
     status: 200,
@@ -254,25 +237,20 @@ export class ServiceRequestController {
   }
 
   @Patch(':id/close')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER)
   @ApiOperation({ summary: 'Close resolved request' })
   @ApiResponse({
     status: 200,
     description: 'Request closed successfully',
     type: ServiceRequestResponseDto,
   })
-  async closeRequest(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<ServiceRequestResponseDto> {
+  async closeRequest(@Param('id', ParseUUIDPipe) id: string): Promise<ServiceRequestResponseDto> {
     return this.serviceRequestService.closeRequest(id);
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Delete service request (soft delete)' })
   @ApiResponse({ status: 200, description: 'Request deleted successfully' })
   async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.serviceRequestService.delete(id);
   }
 }
-

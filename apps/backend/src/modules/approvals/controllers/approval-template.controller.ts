@@ -12,22 +12,23 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
-import {
   type ExtendedStatisticsResponse,
   type PaginatedResponse,
   ApprovalWorkflowType,
 } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate,
-  OrganizationContext} from '@oneohm-epc/shared-utils';
+import {
+  ApiCreate,
+  ApiDelete,
+  ApiReadAll,
+  ApiReadOne,
+  ApiUpdate,
+  OrganizationContext,
+} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import {
   ApprovalTemplateResponseDto,
   CreateApprovalTemplateDto,
@@ -42,7 +43,7 @@ import { ApprovalTemplateService } from '../services';
 @ApiTags('Approval Workflows')
 @ApiBearerAuth()
 @Controller('approval-templates')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class ApprovalTemplateController {
   constructor(private readonly templateService: ApprovalTemplateService) {}
 
@@ -50,23 +51,17 @@ export class ApprovalTemplateController {
    * Create a new approval template
    */
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiCreate({
     summary: 'Create approval template',
     description: 'Create a new reusable approval workflow template',
     responseType: ApprovalTemplateResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async create(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateApprovalTemplateDto,
   ): Promise<ApprovalTemplateResponseDto> {
-    const template = await this.templateService.create(
-      organizationId,
-      createDto,
-      currentUser.id,
-    );
+    const template = await this.templateService.create(organizationId, createDto, currentUser.id);
 
     return plainToInstance(ApprovalTemplateResponseDto, template, {
       excludeExtraneousValues: true,
@@ -77,12 +72,10 @@ export class ApprovalTemplateController {
    * Get all approval templates
    */
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiReadAll({
     summary: 'Get all approval templates',
     description: 'Retrieve all approval workflow templates with pagination and filters',
     responseType: ApprovalTemplateResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
@@ -141,12 +134,10 @@ export class ApprovalTemplateController {
    * Get approval template by ID
    */
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiReadOne({
     summary: 'Get approval template by ID',
     description: 'Retrieve a single approval template with all stages',
     responseType: ApprovalTemplateResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async findOne(
     @OrganizationContext() organizationId: string,
@@ -164,7 +155,6 @@ export class ApprovalTemplateController {
    * Get templates by workflow type
    */
   @Get('by-type/:type')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiOperation({
     summary: 'Get templates by workflow type',
     description: 'Retrieve all active templates for a specific workflow type',
@@ -174,10 +164,7 @@ export class ApprovalTemplateController {
     @CurrentUser() currentUser: CurrentUserType,
     @Param('type') type: ApprovalWorkflowType,
   ): Promise<ApprovalTemplateResponseDto[]> {
-    const templates = await this.templateService.findByWorkflowType(
-      type,
-      organizationId,
-    );
+    const templates = await this.templateService.findByWorkflowType(type, organizationId);
 
     return plainToInstance(ApprovalTemplateResponseDto, templates, {
       excludeExtraneousValues: true,
@@ -188,12 +175,10 @@ export class ApprovalTemplateController {
    * Update approval template
    */
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiUpdate({
     summary: 'Update approval template',
     description: 'Update an existing approval workflow template',
     responseType: ApprovalTemplateResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async update(
     @OrganizationContext() organizationId: string,
@@ -217,11 +202,9 @@ export class ApprovalTemplateController {
    * Delete approval template
    */
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiDelete({
     summary: 'Delete approval template',
     description: 'Soft delete an approval workflow template',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
     @OrganizationContext() organizationId: string,
@@ -237,7 +220,6 @@ export class ApprovalTemplateController {
    * Get template statistics
    */
   @Get('stats/summary')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Get template statistics',
     description: 'Get approval template statistics by workflow type and status',
@@ -253,7 +235,6 @@ export class ApprovalTemplateController {
    * Toggle template status
    */
   @Patch(':id/toggle-status')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOperation({
     summary: 'Toggle template status',
     description: 'Activate or deactivate an approval template',
@@ -263,11 +244,7 @@ export class ApprovalTemplateController {
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ApprovalTemplateResponseDto> {
-    const template = await this.templateService.toggleStatus(
-      id,
-      organizationId,
-      currentUser.id,
-    );
+    const template = await this.templateService.toggleStatus(id, organizationId, currentUser.id);
 
     return plainToInstance(ApprovalTemplateResponseDto, template, {
       excludeExtraneousValues: true,

@@ -1,4 +1,3 @@
-import { Role } from '@oneohm-epc/shared-auth';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { UserEntity } from './user.entity';
@@ -19,11 +18,15 @@ export class UserRoleEntity {
 
   // ===== ROLE (Old enum-based) =====
   @Column({ type: 'varchar', length: 50 })
-  role!: Role;
+  role!: string;
 
   // ===== NEW IAM: Dynamic Role ID =====
   @Column({ name: 'role_id', type: 'uuid', nullable: true })
   roleId?: string | null;
+
+  // ===== ORGANIZATION (For multi-tenant role assignment) =====
+  @Column({ name: 'organization_id', type: 'uuid', nullable: true })
+  organizationId?: string | null;
 
   // ===== AUDIT =====
   @Column({

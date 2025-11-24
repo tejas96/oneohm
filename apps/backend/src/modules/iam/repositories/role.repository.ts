@@ -146,7 +146,7 @@ export class RoleRepository {
     }
     Object.assign(role, data);
     await this.repository.save(role);
-    
+
     const updated = await this.findWithPermissions(id);
     if (!updated) {
       throw new Error(`Role with ID ${id} not found`);
@@ -161,4 +161,3 @@ export class RoleRepository {
     await this.repository.softDelete(id);
   }
 }
-

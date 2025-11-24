@@ -33,10 +33,7 @@ export class RolePermissionRepository {
   /**
    * Remove permissions from role
    */
-  async removePermissions(
-    roleId: string,
-    permissionIds: string[],
-  ): Promise<void> {
+  async removePermissions(roleId: string, permissionIds: string[]): Promise<void> {
     await this.repository.delete({
       roleId,
       permissionId: In(permissionIds),
@@ -83,10 +80,7 @@ export class RolePermissionRepository {
   /**
    * Check if role has any of the permissions
    */
-  async hasAnyPermission(
-    roleId: string,
-    permissionIds: string[],
-  ): Promise<boolean> {
+  async hasAnyPermission(roleId: string, permissionIds: string[]): Promise<boolean> {
     const count = await this.repository.count({
       where: {
         roleId,
@@ -111,5 +105,3 @@ export class RolePermissionRepository {
     return this.assignPermissions(roleId, permissionIds, createdBy);
   }
 }
-
-

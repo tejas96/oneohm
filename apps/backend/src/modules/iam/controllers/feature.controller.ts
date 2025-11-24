@@ -11,8 +11,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { JwtAuthGuard } from '@oneohm-epc/shared-auth';
 
+import { JwtAuthGuard } from '../../auth/guards';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { CreateFeatureDto } from '../dto/features/create-feature.dto';
 import { UpdateFeatureDto } from '../dto/features/update-feature.dto';
@@ -186,4 +186,3 @@ export class FeatureController {
     };
   }
 }
-

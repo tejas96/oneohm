@@ -1,8 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Role } from '@oneohm-epc/shared-auth';
 import { UserStatus } from '@oneohm-epc/shared-types';
 import {
-  ArrayNotEmpty,
   IsArray,
   IsEmail,
   IsEnum,
@@ -44,7 +42,10 @@ export class CreateUserDto {
   })
   phone!: string;
 
-  @ApiPropertyOptional({ example: 'SecurePassword123!', description: 'Optional for OTP-only users' })
+  @ApiPropertyOptional({
+    example: 'SecurePassword123!',
+    description: 'Optional for OTP-only users',
+  })
   @IsOptional()
   @IsString()
   @MinLength(8)
@@ -64,14 +65,12 @@ export class CreateUserDto {
   @IsEnum(UserStatus)
   status?: UserStatus;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: [String],
-    enum: Role,
-    example: [Role.SALES],
-    description: 'User roles',
+    example: ['manager'],
+    description: 'User roles (optional for OTP-only users)',
   })
+  @IsOptional()
   @IsArray()
-  @ArrayNotEmpty()
-  @IsEnum(Role, { each: true })
-  roles!: Role[];
+  roles?: string[];
 }

@@ -1,9 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Role } from '@oneohm-epc/shared-auth';
-import {
-  ApprovalAction,
-  ApprovalDecision,
-} from '@oneohm-epc/shared-types';
+import { ApprovalAction, ApprovalDecision } from '@oneohm-epc/shared-types';
 import { Expose } from 'class-transformer';
 
 /**
@@ -50,9 +46,8 @@ export class ApprovalHistoryResponseDto {
 
   // ==================== Actor Info ====================
 
-  @ApiPropertyOptional({ enum: Role, example: Role.MANAGER })
   @Expose()
-  actedByRole?: Role;
+  actedByRole?: string;
 
   // ==================== Timestamps ====================
 
@@ -72,4 +67,3 @@ export class ApprovalHistoryResponseDto {
   @Expose()
   createdAt!: Date;
 }
-

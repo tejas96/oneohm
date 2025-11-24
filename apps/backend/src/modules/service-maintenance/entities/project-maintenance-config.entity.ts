@@ -1,7 +1,6 @@
 import { MaintenanceConfigStatus } from '@oneohm-epc/shared-types';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
-
 import { MaintenanceTaskEntity } from './maintenance-task.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
@@ -106,4 +105,3 @@ export class ProjectMaintenanceConfigEntity extends BaseEntity {
   @OneToMany(() => MaintenanceTaskEntity, (task) => task.maintenanceConfig)
   tasks: MaintenanceTaskEntity[];
 }
-

@@ -1,10 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import {
-  ApprovalRequestController,
-  ApprovalTemplateController,
-} from './controllers';
+import { ApprovalRequestController, ApprovalTemplateController } from './controllers';
 import {
   ApprovalHistoryEntity,
   ApprovalRequestEntity,
@@ -16,10 +13,7 @@ import {
   ApprovalRequestRepository,
   ApprovalTemplateRepository,
 } from './repositories';
-import {
-  ApprovalRequestService,
-  ApprovalTemplateService,
-} from './services';
+import { ApprovalRequestService, ApprovalTemplateService } from './services';
 import { UsersModule } from '../users/users.module';
 
 /**
@@ -44,10 +38,7 @@ import { UsersModule } from '../users/users.module';
     ]),
     UsersModule, // For user relations
   ],
-  controllers: [
-    ApprovalTemplateController,
-    ApprovalRequestController,
-  ],
+  controllers: [ApprovalTemplateController, ApprovalRequestController],
   providers: [
     // Repositories
     ApprovalTemplateRepository,
@@ -70,4 +61,3 @@ import { UsersModule } from '../users/users.module';
   ],
 })
 export class ApprovalModule {}
-

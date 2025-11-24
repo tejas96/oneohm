@@ -40,10 +40,10 @@ export class FeatureResponseDto {
   @ApiProperty({ example: true })
   isSystemFeature: boolean;
 
-  @ApiProperty({ 
-    example: { color: '#007bff', category: 'core' }, 
+  @ApiProperty({
+    example: { color: '#007bff', category: 'core' },
     required: false,
-    description: 'Additional metadata for UI customization'
+    description: 'Additional metadata for UI customization',
   })
   metadata?: Record<string, unknown>;
 
@@ -58,15 +58,17 @@ export class FeatureResponseDto {
  * Feature with Permissions Response DTO
  */
 export class FeatureWithPermissionsDto extends FeatureResponseDto {
-  @ApiProperty({ 
+  @ApiProperty({
     type: [Object],
-    example: [{
-      id: '123e4567-e89b-12d3-a456-426614174000',
-      name: 'Read Customers',
-      code: 'customers:read',
-      action: 'read',
-      scope: 'all'
-    }]
+    example: [
+      {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        name: 'Read Customers',
+        code: 'customers:read',
+        action: 'read',
+        scope: 'all',
+      },
+    ],
   })
   permissions: Array<{
     id: string;
@@ -93,5 +95,3 @@ export class PaginatedFeaturesDto {
   @ApiProperty({ example: 10 })
   pageSize: number;
 }
-
-

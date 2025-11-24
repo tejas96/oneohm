@@ -1,8 +1,4 @@
-import { Role } from '@oneohm-epc/shared-auth';
-import {
-  ApprovalAction,
-  ApprovalDecision,
-} from '@oneohm-epc/shared-types';
+import { ApprovalAction, ApprovalDecision } from '@oneohm-epc/shared-types';
 import {
   Column,
   CreateDateColumn,
@@ -88,7 +84,7 @@ export class ApprovalHistoryEntity {
   // ==================== Actor Info ====================
 
   @Column({ name: 'acted_by_role', type: 'varchar', length: 50, nullable: true })
-  actedByRole?: Role;
+  actedByRole?: string;
 
   // ==================== Timestamps ====================
 
@@ -112,4 +108,3 @@ export class ApprovalHistoryEntity {
   })
   createdAt!: Date;
 }
-

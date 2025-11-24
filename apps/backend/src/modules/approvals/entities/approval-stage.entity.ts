@@ -1,4 +1,3 @@
-import { Role } from '@oneohm-epc/shared-auth';
 import {
   ApprovalRequirementType,
   ApproverType,
@@ -69,7 +68,7 @@ export class ApprovalStageEntity {
     array: true,
     nullable: true,
   })
-  approverRoles?: Role[];
+  approverRoles?: string[];
 
   @Column({
     name: 'approver_user_ids',

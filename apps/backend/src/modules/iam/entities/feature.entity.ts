@@ -112,4 +112,3 @@ export class FeatureEntity {
   })
   updatedAt!: Date;
 }
-

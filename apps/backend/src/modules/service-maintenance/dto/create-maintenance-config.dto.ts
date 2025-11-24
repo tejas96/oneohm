@@ -16,7 +16,6 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-
 /**
  * DTO for Maintenance Interval Configuration
  */
@@ -164,4 +163,3 @@ export class CreateMaintenanceConfigDto {
   @IsOptional()
   createdBy?: string;
 }
-

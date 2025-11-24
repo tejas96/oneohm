@@ -1,5 +1,4 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Role } from '@oneohm-epc/shared-auth';
 import { UserProfileType } from '@oneohm-epc/shared-types';
 
 import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
@@ -321,20 +320,17 @@ export class ProfileService {
       // Assign the role
       await this.userRoleRepository.createUserRoles(
         userId,
-        [roleCode as Role], // Old enum-based role (for backward compatibility)
+        [roleCode], // Old enum-based role (for backward compatibility)
         createdBy || userId,
       );
 
       // Update the roleId to link to new IAM system
       const userRoles = await this.userRoleRepository.findByUserId(userId);
-      const newUserRole = userRoles.find((ur) => ur.role === (roleCode as Role) && !ur.roleId);
+      const newUserRole = userRoles.find((ur) => ur.role === roleCode && !ur.roleId);
 
       if (newUserRole) {
         // Update the user_role record to include role_id
-        await this.userRoleRepository.repository.update(
-          { id: newUserRole.id },
-          { roleId: role.id },
-        );
+        await this.userRoleRepository.repository.update({ id: userId }, { roleId: role.id });
 
         this.logger.log(
           `✅ Assigned default role '${roleCode}' (${role.id}) to user ${userId} in org ${organizationId}`,

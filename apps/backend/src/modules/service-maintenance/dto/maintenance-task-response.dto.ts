@@ -2,7 +2,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { MaintenanceTaskStatus } from '@oneohm-epc/shared-types';
 import { Expose, Type } from 'class-transformer';
 
-
 import { MaintenanceConfigResponseDto } from './maintenance-config-response.dto';
 import { OrganizationResponseDto } from '../../organizations/dto/organization-response.dto';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
@@ -198,4 +197,3 @@ export class MaintenanceTaskResponseDto {
   @Type(() => UserResponseDto)
   updatedByUser?: UserResponseDto;
 }
-

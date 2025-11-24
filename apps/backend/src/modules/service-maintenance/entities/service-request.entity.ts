@@ -1,7 +1,6 @@
 import { ServiceRequestPriority, ServiceRequestStatus } from '@oneohm-epc/shared-types';
 import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
-
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
@@ -184,4 +183,3 @@ export class ServiceRequestEntity extends BaseEntity {
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy: string | null;
 }
-

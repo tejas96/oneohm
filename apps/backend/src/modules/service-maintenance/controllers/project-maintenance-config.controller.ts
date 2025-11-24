@@ -11,8 +11,8 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { Role, JwtAuthGuard, RolesGuard, Roles } from '@oneohm-epc/shared-auth';
 
+import { JwtAuthGuard } from '../../auth/guards';
 import {
   CreateMaintenanceConfigDto,
   UpdateMaintenanceConfigDto,
@@ -25,15 +25,12 @@ import { ProjectMaintenanceConfigService } from '../services/project-maintenance
  */
 @ApiTags('Service & Maintenance - Configs')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('maintenance-configs')
 export class ProjectMaintenanceConfigController {
-  constructor(
-    private readonly maintenanceConfigService: ProjectMaintenanceConfigService,
-  ) {}
+  constructor(private readonly maintenanceConfigService: ProjectMaintenanceConfigService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER)
   @ApiOperation({ summary: 'Create a new maintenance config' })
   @ApiResponse({
     status: 201,
@@ -47,7 +44,6 @@ export class ProjectMaintenanceConfigController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get all maintenance configs' })
   @ApiResponse({
     status: 200,
@@ -61,7 +57,6 @@ export class ProjectMaintenanceConfigController {
   }
 
   @Get('active')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get all active maintenance configs' })
   @ApiResponse({
     status: 200,
@@ -75,7 +70,6 @@ export class ProjectMaintenanceConfigController {
   }
 
   @Get('upcoming-maintenance')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get configs with upcoming maintenance' })
   @ApiResponse({
     status: 200,
@@ -85,11 +79,13 @@ export class ProjectMaintenanceConfigController {
   async findUpcomingMaintenance(
     @Query('includeRelations') includeRelations?: string,
   ): Promise<MaintenanceConfigResponseDto[]> {
-    return this.maintenanceConfigService.findUpcomingMaintenance(undefined, includeRelations === 'true');
+    return this.maintenanceConfigService.findUpcomingMaintenance(
+      undefined,
+      includeRelations === 'true',
+    );
   }
 
   @Get('statistics')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER)
   @ApiOperation({ summary: 'Get maintenance config statistics' })
   @ApiResponse({
     status: 200,
@@ -100,7 +96,6 @@ export class ProjectMaintenanceConfigController {
   }
 
   @Get('project/:projectId')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get maintenance config by project ID' })
   @ApiResponse({
     status: 200,
@@ -115,7 +110,6 @@ export class ProjectMaintenanceConfigController {
   }
 
   @Get('organization/:organizationId')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER)
   @ApiOperation({ summary: 'Get maintenance configs by organization' })
   @ApiResponse({
     status: 200,
@@ -133,7 +127,6 @@ export class ProjectMaintenanceConfigController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get maintenance config by ID' })
   @ApiResponse({
     status: 200,
@@ -148,7 +141,6 @@ export class ProjectMaintenanceConfigController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER)
   @ApiOperation({ summary: 'Update maintenance config' })
   @ApiResponse({
     status: 200,
@@ -163,11 +155,9 @@ export class ProjectMaintenanceConfigController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Delete maintenance config' })
   @ApiResponse({ status: 200, description: 'Maintenance config deleted successfully' })
   async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.maintenanceConfigService.delete(id);
   }
 }
-

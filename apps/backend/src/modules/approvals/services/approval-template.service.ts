@@ -1,16 +1,7 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import {
-  type ExtendedStatisticsResponse,
- ApprovalWorkflowType } from '@oneohm-epc/shared-types';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { type ExtendedStatisticsResponse, ApprovalWorkflowType } from '@oneohm-epc/shared-types';
 
-import type {
-  CreateApprovalTemplateDto,
-  UpdateApprovalTemplateDto,
-} from '../dto';
+import type { CreateApprovalTemplateDto, UpdateApprovalTemplateDto } from '../dto';
 import type { ApprovalTemplateEntity } from '../entities';
 import { ApprovalTemplateRepository } from '../repositories';
 
@@ -20,9 +11,7 @@ import { ApprovalTemplateRepository } from '../repositories';
  */
 @Injectable()
 export class ApprovalTemplateService {
-  constructor(
-    private readonly templateRepository: ApprovalTemplateRepository,
-  ) {}
+  constructor(private readonly templateRepository: ApprovalTemplateRepository) {}
 
   /**
    * Create a new approval template
@@ -33,15 +22,10 @@ export class ApprovalTemplateService {
     createdBy: string,
   ): Promise<ApprovalTemplateEntity> {
     // Check if code already exists
-    const existing = await this.templateRepository.findByCode(
-      createDto.code,
-      organizationId,
-    );
+    const existing = await this.templateRepository.findByCode(createDto.code, organizationId);
 
     if (existing) {
-      throw new BadRequestException(
-        `Template with code "${createDto.code}" already exists`,
-      );
+      throw new BadRequestException(`Template with code "${createDto.code}" already exists`);
     }
 
     // Validate stages order
@@ -82,10 +66,7 @@ export class ApprovalTemplateService {
   /**
    * Find template by ID
    */
-  async findById(
-    id: string,
-    organizationId: string,
-  ): Promise<ApprovalTemplateEntity> {
+  async findById(id: string, organizationId: string): Promise<ApprovalTemplateEntity> {
     const template = await this.templateRepository.findById(id, organizationId);
 
     if (!template) {
@@ -98,10 +79,7 @@ export class ApprovalTemplateService {
   /**
    * Find template by code
    */
-  async findByCode(
-    code: string,
-    organizationId: string,
-  ): Promise<ApprovalTemplateEntity> {
+  async findByCode(code: string, organizationId: string): Promise<ApprovalTemplateEntity> {
     const template = await this.templateRepository.findByCode(code, organizationId);
 
     if (!template) {
@@ -134,15 +112,10 @@ export class ApprovalTemplateService {
 
     // Check code uniqueness if code is being updated
     if (updateDto.code) {
-      const existing = await this.templateRepository.findByCode(
-        updateDto.code,
-        organizationId,
-      );
+      const existing = await this.templateRepository.findByCode(updateDto.code, organizationId);
 
       if (existing && existing.id !== id) {
-        throw new BadRequestException(
-          `Template with code "${updateDto.code}" already exists`,
-        );
+        throw new BadRequestException(`Template with code "${updateDto.code}" already exists`);
       }
     }
 
@@ -164,11 +137,7 @@ export class ApprovalTemplateService {
   /**
    * Delete template
    */
-  async delete(
-    id: string,
-    organizationId: string,
-    deletedBy: string,
-  ): Promise<void> {
+  async delete(id: string, organizationId: string, deletedBy: string): Promise<void> {
     await this.findById(id, organizationId);
     await this.templateRepository.softDelete(id, organizationId, deletedBy);
   }
@@ -208,4 +177,3 @@ export class ApprovalTemplateService {
     });
   }
 }
-

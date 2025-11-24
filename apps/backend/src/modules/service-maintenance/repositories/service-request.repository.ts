@@ -4,7 +4,6 @@ import { ServiceRequestPriority, ServiceRequestStatus } from '@oneohm-epc/shared
 import { Between, In, IsNull, LessThanOrEqual, Like, Not, Repository } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
-
 import { ServiceRequestEntity } from '../entities/service-request.entity';
 
 /**
@@ -39,7 +38,10 @@ export class ServiceRequestRepository {
   /**
    * Find request by ID
    */
-  async findById(id: string, options?: { relations?: string[] }): Promise<ServiceRequestEntity | null> {
+  async findById(
+    id: string,
+    options?: { relations?: string[] },
+  ): Promise<ServiceRequestEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
       relations: options?.relations || [],
@@ -250,7 +252,10 @@ export class ServiceRequestRepository {
   /**
    * Update request
    */
-  async update(id: string, updateData: Partial<ServiceRequestEntity>): Promise<ServiceRequestEntity | null> {
+  async update(
+    id: string,
+    updateData: Partial<ServiceRequestEntity>,
+  ): Promise<ServiceRequestEntity | null> {
     await this.repository.update(id, updateData as QueryDeepPartialEntity<ServiceRequestEntity>);
     return this.findById(id);
   }
@@ -274,7 +279,10 @@ export class ServiceRequestRepository {
   /**
    * Generate next request number
    */
-  async generateRequestNumber(organizationId: string, year: number = new Date().getFullYear()): Promise<string> {
+  async generateRequestNumber(
+    organizationId: string,
+    year: number = new Date().getFullYear(),
+  ): Promise<string> {
     const prefix = `SR-${year}`;
     const lastRequest = await this.repository.findOne({
       where: {
@@ -371,22 +379,15 @@ export class ServiceRequestRepository {
 
     return {
       total: requests.length,
-      byStatus: requests.reduce<Record<string, number>>(
-        (acc, req) => {
-          acc[req.status] = (acc[req.status] || 0) + 1;
-          return acc;
-        },
-        {},
-      ),
-      byPriority: requests.reduce<Record<string, number>>(
-        (acc, req) => {
-          acc[req.priority] = (acc[req.priority] || 0) + 1;
-          return acc;
-        },
-        {},
-      ),
+      byStatus: requests.reduce<Record<string, number>>((acc, req) => {
+        acc[req.status] = (acc[req.status] || 0) + 1;
+        return acc;
+      }, {}),
+      byPriority: requests.reduce<Record<string, number>>((acc, req) => {
+        acc[req.priority] = (acc[req.priority] || 0) + 1;
+        return acc;
+      }, {}),
       chargeable: requests.filter((r) => r.isChargeable).length,
     };
   }
 }
-

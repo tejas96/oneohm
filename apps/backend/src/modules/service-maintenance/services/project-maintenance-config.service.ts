@@ -14,9 +14,7 @@ import { ProjectMaintenanceConfigRepository } from '../repositories/project-main
  */
 @Injectable()
 export class ProjectMaintenanceConfigService {
-  constructor(
-    private readonly maintenanceConfigRepository: ProjectMaintenanceConfigRepository,
-  ) {}
+  constructor(private readonly maintenanceConfigRepository: ProjectMaintenanceConfigRepository) {}
 
   /**
    * Create a new maintenance config
@@ -35,7 +33,9 @@ export class ProjectMaintenanceConfigService {
       projectCompletionDate: createDto.projectCompletionDate
         ? new Date(createDto.projectCompletionDate)
         : null,
-      lastMaintenanceDate: createDto.lastMaintenanceDate ? new Date(createDto.lastMaintenanceDate) : null,
+      lastMaintenanceDate: createDto.lastMaintenanceDate
+        ? new Date(createDto.lastMaintenanceDate)
+        : null,
       nextMaintenanceDueDate: createDto.nextMaintenanceDueDate
         ? new Date(createDto.nextMaintenanceDueDate)
         : null,
@@ -65,7 +65,10 @@ export class ProjectMaintenanceConfigService {
   /**
    * Find config by ID
    */
-  async findById(id: string, includeRelations: boolean = false): Promise<MaintenanceConfigResponseDto> {
+  async findById(
+    id: string,
+    includeRelations: boolean = false,
+  ): Promise<MaintenanceConfigResponseDto> {
     const relations = includeRelations
       ? ['organization', 'project', 'createdByUser', 'updatedByUser']
       : [];
@@ -225,4 +228,3 @@ export class ProjectMaintenanceConfigService {
     };
   }
 }
-

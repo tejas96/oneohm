@@ -12,7 +12,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard, Role, RolesGuard } from '@oneohm-epc/shared-auth';
 import { UserStatus } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
@@ -24,6 +23,7 @@ import {
 } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { JwtAuthGuard } from '../../auth/guards';
 import { CreateUserDto, UpdateUserDto, UpdateUserStatusDto, UserResponseDto } from '../dto';
 import { UserService } from '../services/user.service';
 
@@ -35,7 +35,7 @@ import { UserService } from '../services/user.service';
 @ApiTags('Users')
 @Controller('users')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -43,7 +43,6 @@ export class UserController {
   @ApiCreate({
     summary: 'Create a new user',
     responseType: UserResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async create(@Body() createDto: CreateUserDto): Promise<UserResponseDto> {
     const user = await this.userService.create(createDto);
@@ -58,7 +57,6 @@ export class UserController {
     description:
       'Returns all users across all organizations. Use profile endpoints to filter by organization.',
     responseType: UserResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   @ApiQuery({ name: 'page', required: false, example: 1 })
   @ApiQuery({ name: 'limit', required: false, example: 20 })
@@ -94,7 +92,6 @@ export class UserController {
   @ApiReadOne({
     summary: 'Get user by ID',
     responseType: UserResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.SALES],
   })
   async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<UserResponseDto> {
     const user = await this.userService.findById(id);
@@ -109,7 +106,6 @@ export class UserController {
     description:
       'Updates core user authentication fields only. Use profile endpoints for profile-specific fields.',
     responseType: UserResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -124,7 +120,6 @@ export class UserController {
   @Delete(':id')
   @ApiDelete({
     summary: 'Delete user',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     await this.userService.delete(id);
@@ -137,7 +132,6 @@ export class UserController {
     description:
       'Update user status to active, inactive, or suspended. Generic endpoint for all status transitions.',
     responseType: UserResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,

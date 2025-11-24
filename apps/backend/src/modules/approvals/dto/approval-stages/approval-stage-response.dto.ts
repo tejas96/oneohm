@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Role } from '@oneohm-epc/shared-auth';
 import {
   ApprovalRequirementType,
   ApproverType,
@@ -43,9 +42,8 @@ export class ApprovalStageResponseDto {
   @Expose()
   approverType!: ApproverType;
 
-  @ApiPropertyOptional({ enum: Role, isArray: true, example: [Role.MANAGER] })
   @Expose()
-  approverRoles?: Role[];
+  approverRoles?: string[];
 
   @ApiPropertyOptional({ type: [String], example: ['123e4567-e89b-12d3-a456-426614174000'] })
   @Expose()
@@ -111,4 +109,3 @@ export class ApprovalStageResponseDto {
   @Expose()
   updatedBy?: string;
 }
-

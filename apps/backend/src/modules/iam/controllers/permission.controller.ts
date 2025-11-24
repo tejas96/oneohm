@@ -11,23 +11,19 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { JwtAuthGuard  } from '@oneohm-epc/shared-auth';
 
-
+import { JwtAuthGuard } from '../../auth/guards';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { CreatePermissionDto } from '../dto/permissions/create-permission.dto';
 import { UpdatePermissionDto } from '../dto/permissions/update-permission.dto';
-import {
-  PermissionResponseDto,
-  PaginatedPermissionsDto,
-} from '../dto/response';
+import { PermissionResponseDto, PaginatedPermissionsDto } from '../dto/response';
 import { PermissionGuard } from '../guards/permission.guard';
 import { PermissionRepository } from '../repositories/permission.repository';
 
 /**
  * Permission Controller - Admin UI for Permission Management
  * Full CRUD operations for permissions
- * 
+ *
  * Security: All endpoints require IAM admin permissions
  */
 @ApiTags('IAM - Permissions')
@@ -35,19 +31,18 @@ import { PermissionRepository } from '../repositories/permission.repository';
 @Controller('iam/permissions')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class PermissionController {
-  constructor(
-    private readonly permissionRepository: PermissionRepository,
-  ) {}
+  constructor(private readonly permissionRepository: PermissionRepository) {}
 
   /**
    * Create a new permission
    */
   @Post()
   @RequirePermission('iam:permissions:create')
-  @ApiOperation({ summary: 'Create a new permission', description: 'Creates a new permission for a feature' })
-  async create(
-    @Body() createPermissionDto: CreatePermissionDto,
-  ): Promise<PermissionResponseDto> {
+  @ApiOperation({
+    summary: 'Create a new permission',
+    description: 'Creates a new permission for a feature',
+  })
+  async create(@Body() createPermissionDto: CreatePermissionDto): Promise<PermissionResponseDto> {
     const permission = await this.permissionRepository.create(createPermissionDto);
     return permission;
   }
@@ -57,14 +52,17 @@ export class PermissionController {
    */
   @Get()
   @RequirePermission('iam:permissions:read')
-  @ApiOperation({ summary: 'List all permissions', description: 'Get paginated list of permissions' })
+  @ApiOperation({
+    summary: 'List all permissions',
+    description: 'Get paginated list of permissions',
+  })
   async findAll(
     @Query('page') page: number = 1,
     @Query('pageSize') pageSize: number = 50,
     @Query('featureId') featureId?: string,
   ): Promise<PaginatedPermissionsDto> {
     const skip = (page - 1) * pageSize;
-    
+
     let permissions: any[];
     let total: number;
 
@@ -92,11 +90,9 @@ export class PermissionController {
   @Get(':id')
   @RequirePermission('iam:permissions:read')
   @ApiOperation({ summary: 'Get permission details', description: 'Get permission by ID' })
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<PermissionResponseDto> {
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<PermissionResponseDto> {
     const permission = await this.permissionRepository.findOne({ where: { id } });
-    
+
     if (!permission) {
       throw new Error('Permission not found');
     }
@@ -115,9 +111,9 @@ export class PermissionController {
     @Body() updatePermissionDto: UpdatePermissionDto,
   ): Promise<PermissionResponseDto> {
     await this.permissionRepository.update(id, updatePermissionDto);
-    
+
     const permission = await this.permissionRepository.findOne({ where: { id } });
-    
+
     if (!permission) {
       throw new Error('Permission not found after update');
     }
@@ -130,12 +126,13 @@ export class PermissionController {
    */
   @Delete(':id')
   @RequirePermission('iam:permissions:delete')
-  @ApiOperation({ summary: 'Delete permission', description: 'Delete a permission (system permissions cannot be deleted)' })
-  async remove(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{ message: string }> {
+  @ApiOperation({
+    summary: 'Delete permission',
+    description: 'Delete a permission (system permissions cannot be deleted)',
+  })
+  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<{ message: string }> {
     const permission = await this.permissionRepository.findOne({ where: { id } });
-    
+
     if (!permission) {
       throw new Error('Permission not found');
     }
@@ -153,7 +150,10 @@ export class PermissionController {
    */
   @Get('by-feature/:featureCode')
   @RequirePermission('iam:permissions:read')
-  @ApiOperation({ summary: 'Get permissions by feature code', description: 'Get all permissions for a specific feature' })
+  @ApiOperation({
+    summary: 'Get permissions by feature code',
+    description: 'Get all permissions for a specific feature',
+  })
   async findByFeatureCode(
     @Param('featureCode') _featureCode: string,
   ): Promise<PermissionResponseDto[]> {
@@ -162,4 +162,3 @@ export class PermissionController {
     return [];
   }
 }
-

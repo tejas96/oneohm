@@ -17,7 +17,6 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-
 /**
  * DTO for Resolution Attachment
  */
@@ -284,4 +283,3 @@ export class CreateServiceRequestDto {
   @IsOptional()
   createdBy?: string;
 }
-

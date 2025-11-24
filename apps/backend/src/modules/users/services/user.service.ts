@@ -53,8 +53,10 @@ export class UserService {
       profileCompleted: false, // New users haven't completed profile
     });
 
-    // Create user roles (roles is required from DTO)
-    await this.userRoleRepository.createUserRoles(user.id, roles, user.id);
+    // Create user roles (only if roles are provided)
+    if (roles && roles.length > 0) {
+      await this.userRoleRepository.createUserRoles(user.id, roles, user.id);
+    }
 
     this.logger.log(`User created: ${user.phone} (${user.email || 'no email'})`);
 

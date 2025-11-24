@@ -73,4 +73,3 @@ export class EmployeeProfileRepository {
     return (result.affected ?? 0) > 0;
   }
 }
-

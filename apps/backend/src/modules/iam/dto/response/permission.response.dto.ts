@@ -34,10 +34,10 @@ export class PermissionResponseDto {
   @ApiProperty({ example: 'View Customers', required: false })
   menuLabel?: string;
 
-  @ApiProperty({ 
-    example: { department: 'sales', region: 'north' }, 
+  @ApiProperty({
+    example: { department: 'sales', region: 'north' },
     required: false,
-    description: 'Conditional access rules (ABAC support)'
+    description: 'Conditional access rules (ABAC support)',
   })
   conditions?: Record<string, unknown>;
 
@@ -73,5 +73,3 @@ export class PaginatedPermissionsDto {
   @ApiProperty({ example: 10 })
   pageSize: number;
 }
-
-

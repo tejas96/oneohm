@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Role } from '@oneohm-epc/shared-auth';
 import { UserStatus } from '@oneohm-epc/shared-types';
 import { Exclude, Expose } from 'class-transformer';
 
@@ -39,8 +38,8 @@ export class UserResponseDto {
   status!: UserStatus;
 
   @Expose()
-  @ApiProperty({ type: [String], enum: Role })
-  roles!: Role[];
+  @ApiProperty({ type: [String] })
+  roles!: string[];
 
   @Expose()
   @ApiPropertyOptional()

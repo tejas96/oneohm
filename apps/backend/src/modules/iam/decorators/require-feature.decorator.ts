@@ -10,23 +10,23 @@ export interface FeatureMetadata {
 /**
  * Require Feature Decorator
  * Checks if user has access to a feature at the specified level
- * 
+ *
  * @param featureCode - Feature code (e.g., 'customers', 'inventory')
  * @param options - Optional configuration
  * @param options.minimumAccess - Minimum access level required
- * 
+ *
  * @example
  * // Any access to customers feature
  * @RequireFeature('customers')
  * @Controller('customers')
  * export class CustomerController { ... }
- * 
+ *
  * @example
  * // Read-only access required
  * @RequireFeature('customers', { minimumAccess: 'read_only' })
  * @Get()
  * async findAll() { ... }
- * 
+ *
  * @example
  * // Full access required
  * @RequireFeature('customers', { minimumAccess: 'full' })
@@ -46,5 +46,3 @@ export const RequireFeature = (
 
   return SetMetadata(FEATURE_KEY, metadata);
 };
-
-

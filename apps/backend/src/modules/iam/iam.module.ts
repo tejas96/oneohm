@@ -1,12 +1,7 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import {
-  FeatureEntity,
-  PermissionEntity,
-  RoleEntity,
-  RolePermissionEntity,
-} from './entities';
+import { FeatureEntity, PermissionEntity, RoleEntity, RolePermissionEntity } from './entities';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { UsersModule } from '../users/users.module';
 import { FeatureController } from './controllers/feature.controller';
@@ -26,7 +21,7 @@ import { IamService } from './services/iam.service';
  * IAM Module (Identity and Access Management)
  * Provides dynamic role-based access control (RBAC) and
  * attribute-based access control (ABAC) for the application
- * 
+ *
  * Features:
  * - Dynamic roles per organization
  * - Granular permissions per feature
@@ -34,7 +29,7 @@ import { IamService } from './services/iam.service';
  * - Organization-level feature licensing
  * - Scope-based permissions (all, own, department, etc.)
  * - Conditional access (ABAC)
- * 
+ *
  * Replaces hardcoded Role enum with database-driven IAM system
  */
 @Module({
@@ -50,11 +45,7 @@ import { IamService } from './services/iam.service';
     OrganizationsModule,
     forwardRef(() => UsersModule), // ← Use forwardRef to break circular dependency
   ],
-  controllers: [
-    RoleController,
-    PermissionController,
-    FeatureController,
-  ],
+  controllers: [RoleController, PermissionController, FeatureController],
   providers: [
     // Repositories
     FeatureRepository,
@@ -85,4 +76,3 @@ import { IamService } from './services/iam.service';
   ],
 })
 export class IamModule {}
-

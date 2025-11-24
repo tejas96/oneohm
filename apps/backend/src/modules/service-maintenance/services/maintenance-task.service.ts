@@ -2,7 +2,6 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { MaintenanceTaskStatus } from '@oneohm-epc/shared-types';
 import { plainToInstance } from 'class-transformer';
 
-
 import {
   CreateMaintenanceTaskDto,
   UpdateMaintenanceTaskDto,
@@ -39,7 +38,14 @@ export class MaintenanceTaskService {
    */
   async findAll(includeRelations: boolean = false): Promise<MaintenanceTaskResponseDto[]> {
     const relations = includeRelations
-      ? ['organization', 'project', 'maintenanceConfig', 'assignedToUser', 'createdByUser', 'updatedByUser']
+      ? [
+          'organization',
+          'project',
+          'maintenanceConfig',
+          'assignedToUser',
+          'createdByUser',
+          'updatedByUser',
+        ]
       : [];
     const tasks = await this.maintenanceTaskRepository.findAll({ relations });
 
@@ -53,9 +59,19 @@ export class MaintenanceTaskService {
   /**
    * Find task by ID
    */
-  async findById(id: string, includeRelations: boolean = false): Promise<MaintenanceTaskResponseDto> {
+  async findById(
+    id: string,
+    includeRelations: boolean = false,
+  ): Promise<MaintenanceTaskResponseDto> {
     const relations = includeRelations
-      ? ['organization', 'project', 'maintenanceConfig', 'assignedToUser', 'createdByUser', 'updatedByUser']
+      ? [
+          'organization',
+          'project',
+          'maintenanceConfig',
+          'assignedToUser',
+          'createdByUser',
+          'updatedByUser',
+        ]
       : [];
     const task = await this.maintenanceTaskRepository.findById(id, { relations });
 
@@ -94,9 +110,7 @@ export class MaintenanceTaskService {
     userId: string,
     includeRelations: boolean = false,
   ): Promise<MaintenanceTaskResponseDto[]> {
-    const relations = includeRelations
-      ? ['organization', 'project', 'maintenanceConfig']
-      : [];
+    const relations = includeRelations ? ['organization', 'project', 'maintenanceConfig'] : [];
     const tasks = await this.maintenanceTaskRepository.findByAssignedUser(userId, { relations });
 
     return tasks.map((task) =>
@@ -192,7 +206,10 @@ export class MaintenanceTaskService {
   /**
    * Update task
    */
-  async update(id: string, updateDto: UpdateMaintenanceTaskDto): Promise<MaintenanceTaskResponseDto> {
+  async update(
+    id: string,
+    updateDto: UpdateMaintenanceTaskDto,
+  ): Promise<MaintenanceTaskResponseDto> {
     const existing = await this.maintenanceTaskRepository.findById(id);
     if (!existing) {
       throw new NotFoundException(`Maintenance task with ID ${id} not found`);
@@ -268,4 +285,3 @@ export class MaintenanceTaskService {
     };
   }
 }
-

@@ -1,7 +1,6 @@
 import { FeatureType } from '@oneohm-epc/shared-types';
 import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
-
 export class CreateFeatureDto {
   @IsString()
   @IsNotEmpty()
@@ -48,5 +47,3 @@ export class CreateFeatureDto {
   @IsOptional()
   metadata?: Record<string, unknown>;
 }
-
-

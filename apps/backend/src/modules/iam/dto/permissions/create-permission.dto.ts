@@ -1,6 +1,13 @@
 import { PermissionScope, PermissionLevel } from '@oneohm-epc/shared-types';
-import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
-
+import {
+  IsBoolean,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 
 export class CreatePermissionDto {
   @IsUUID()
@@ -51,5 +58,3 @@ export class CreatePermissionDto {
   @IsOptional()
   isActive?: boolean;
 }
-
-

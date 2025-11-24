@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { FeatureRepository } from '../repositories/feature.repository';
@@ -19,6 +19,8 @@ import { RoleRepository } from '../repositories/role.repository';
  */
 @Injectable()
 export class IamService {
+  private readonly logger = new Logger(IamService.name);
+
   constructor(
     private readonly roleRepository: RoleRepository,
     private readonly permissionRepository: PermissionRepository,
@@ -96,13 +98,12 @@ export class IamService {
    * @param userId - User ID
    */
   async getUserPermissions(userId: string): Promise<string[]> {
-    console.log(`🔍 [IamService] Getting permissions for user: ${userId}`);
+    this.logger.debug(`Getting permissions for user: ${userId}`);
 
     const userRoles = await this.userRoleRepository.findByUserId(userId);
-    console.log(`🔍 [IamService] Found ${userRoles?.length || 0} user roles`);
+    this.logger.debug(`Found ${userRoles?.length || 0} user roles for user ${userId}`);
 
     if (!userRoles || userRoles.length === 0) {
-      console.log(`⚠️  [IamService] No user roles found for user: ${userId}`);
       return [];
     }
 
@@ -110,31 +111,24 @@ export class IamService {
 
     for (const userRole of userRoles) {
       const roleId = userRole.roleId;
-      console.log(`🔍 [IamService] Processing role_id: ${roleId} for user ${userId}`);
 
       if (!roleId) {
-        console.log(`⚠️  [IamService] Skipping user role without role_id`);
+        this.logger.warn(`Skipping user role without role_id for user ${userId}`);
         continue;
       }
 
       const rolePermissions = await this.rolePermissionRepository.findByRoleId(roleId);
-      console.log(
-        `🔍 [IamService] Found ${rolePermissions?.length || 0} permissions for role ${roleId}`,
-      );
+      this.logger.debug(`Found ${rolePermissions?.length || 0} permissions for role ${roleId}`);
 
       for (const rp of rolePermissions) {
         if (rp.permission?.isActive) {
           permissionCodes.add(rp.permission.code);
-          console.log(`✅ [IamService] Added permission: ${rp.permission.code}`);
         }
       }
     }
 
     const permissions = Array.from(permissionCodes);
-    console.log(
-      `🔍 [IamService] Total permissions for user ${userId}: ${permissions.length}`,
-      permissions,
-    );
+    this.logger.debug(`Total permissions for user ${userId}: ${permissions.length}`);
     return permissions;
   }
 

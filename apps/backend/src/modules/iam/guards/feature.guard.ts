@@ -5,8 +5,8 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import type { CurrentUserType } from '@oneohm-epc/shared-auth';
 
+import type { CurrentUserType } from '../../auth/types';
 import { FEATURE_KEY, type FeatureMetadata } from '../decorators/require-feature.decorator';
 import { IamService } from '../services/iam.service';
 

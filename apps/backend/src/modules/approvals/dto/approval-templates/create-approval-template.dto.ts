@@ -179,4 +179,3 @@ export class CreateApprovalTemplateDto {
   @IsNotEmpty()
   stages!: CreateApprovalStageDto[];
 }
-

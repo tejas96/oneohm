@@ -115,4 +115,3 @@ export class EmployeeProfileEntity extends BaseEntity {
   @JoinColumn({ name: 'updated_by' })
   updater?: UserEntity;
 }
-

@@ -11,22 +11,22 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
-import {
   type PaginatedResponse,
   type StatisticsResponse,
   ApprovalRequestStatus,
 } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiReadAll, ApiReadOne, ApiUpdate,
-  OrganizationContext} from '@oneohm-epc/shared-utils';
+import {
+  ApiCreate,
+  ApiReadAll,
+  ApiReadOne,
+  ApiUpdate,
+  OrganizationContext,
+} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import {
   ApprovalActionDto,
   ApprovalRequestResponseDto,
@@ -42,7 +42,7 @@ import { ApprovalRequestService } from '../services';
 @ApiTags('Approval Workflows')
 @ApiBearerAuth()
 @Controller('approval-requests')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class ApprovalRequestController {
   constructor(private readonly requestService: ApprovalRequestService) {}
 
@@ -50,23 +50,17 @@ export class ApprovalRequestController {
    * Create a new approval request
    */
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiCreate({
     summary: 'Create approval request',
     description: 'Submit a new approval request',
     responseType: ApprovalRequestResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async create(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateApprovalRequestDto,
   ): Promise<ApprovalRequestResponseDto> {
-    const request = await this.requestService.create(
-      organizationId,
-      createDto,
-      currentUser.id,
-    );
+    const request = await this.requestService.create(organizationId, createDto, currentUser.id);
 
     return plainToInstance(ApprovalRequestResponseDto, request, {
       excludeExtraneousValues: true,
@@ -77,12 +71,10 @@ export class ApprovalRequestController {
    * Get all approval requests
    */
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiReadAll({
     summary: 'Get all approval requests',
     description: 'Retrieve all approval requests with pagination and filters',
     responseType: ApprovalRequestResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
@@ -149,12 +141,10 @@ export class ApprovalRequestController {
    * Get approval request by ID
    */
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiReadOne({
     summary: 'Get approval request by ID',
     description: 'Retrieve a single approval request with full history',
     responseType: ApprovalRequestResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async findOne(
     @OrganizationContext() organizationId: string,
@@ -172,7 +162,6 @@ export class ApprovalRequestController {
    * Get pending requests for current user
    */
   @Get('pending/my-requests')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiOperation({
     summary: 'Get my pending approvals',
     description: 'Get requests pending approval by current user',
@@ -181,10 +170,7 @@ export class ApprovalRequestController {
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<ApprovalRequestResponseDto[]> {
-    const requests = await this.requestService.findPendingForUser(
-      currentUser.id,
-      organizationId,
-    );
+    const requests = await this.requestService.findPendingForUser(currentUser.id, organizationId);
 
     return plainToInstance(ApprovalRequestResponseDto, requests, {
       excludeExtraneousValues: true,
@@ -195,7 +181,6 @@ export class ApprovalRequestController {
    * Process approval action (approve/reject)
    */
   @Post(':id/action')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiOperation({
     summary: 'Process approval action',
     description: 'Approve or reject an approval request',
@@ -223,12 +208,10 @@ export class ApprovalRequestController {
    * Update approval request
    */
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiUpdate({
     summary: 'Update approval request',
     description: 'Update an approval request details',
     responseType: ApprovalRequestResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
     @OrganizationContext() organizationId: string,
@@ -236,12 +219,7 @@ export class ApprovalRequestController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateApprovalRequestDto,
   ): Promise<ApprovalRequestResponseDto> {
-    const request = await this.requestService.update(
-      id,
-      organizationId,
-      updateDto,
-      currentUser.id,
-    );
+    const request = await this.requestService.update(id, organizationId, updateDto, currentUser.id);
 
     return plainToInstance(ApprovalRequestResponseDto, request, {
       excludeExtraneousValues: true,
@@ -252,7 +230,6 @@ export class ApprovalRequestController {
    * Cancel approval request
    */
   @Post(':id/cancel')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Cancel approval request',
     description: 'Cancel a pending approval request',
@@ -263,12 +240,7 @@ export class ApprovalRequestController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body('reason') reason?: string,
   ): Promise<ApprovalRequestResponseDto> {
-    const request = await this.requestService.cancel(
-      id,
-      organizationId,
-      currentUser.id,
-      reason,
-    );
+    const request = await this.requestService.cancel(id, organizationId, currentUser.id, reason);
 
     return plainToInstance(ApprovalRequestResponseDto, request, {
       excludeExtraneousValues: true,
@@ -279,7 +251,6 @@ export class ApprovalRequestController {
    * Get approval request statistics
    */
   @Get('stats/summary')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Get approval request statistics',
     description: 'Get approval request statistics by status',
@@ -295,13 +266,14 @@ export class ApprovalRequestController {
    * Get pending count
    */
   @Get('stats/pending-count')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Get pending count',
     description: 'Get count of pending approval requests',
   })
-  async getPendingCount(@OrganizationContext() organizationId: string,
-    @CurrentUser() _currentUser: CurrentUserType): Promise<{ count: number }> {
+  async getPendingCount(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+  ): Promise<{ count: number }> {
     const count = await this.requestService.getPendingCount(organizationId);
     return { count };
   }

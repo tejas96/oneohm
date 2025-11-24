@@ -11,14 +11,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { JwtAuthGuard, type CurrentUserType, CurrentUser } from '@oneohm-epc/shared-auth';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import { type CurrentUserType } from '../../auth/types';
 import { RequirePermission } from '../decorators/require-permission.decorator';
-import {
-  RoleResponseDto,
-  RoleWithPermissionsDto,
-  PaginatedRolesDto,
-} from '../dto/response';
+import { RoleResponseDto, RoleWithPermissionsDto, PaginatedRolesDto } from '../dto/response';
 import { AssignPermissionsDto } from '../dto/roles/assign-permissions.dto';
 import { CreateRoleDto } from '../dto/roles/create-role.dto';
 import { UpdateRoleDto } from '../dto/roles/update-role.dto';
@@ -29,7 +27,7 @@ import { RoleRepository } from '../repositories/role.repository';
 /**
  * Role Controller - Admin UI for Role Management
  * Full CRUD operations for dynamic roles
- * 
+ *
  * Security: All endpoints require IAM admin permissions
  */
 @ApiTags('IAM - Roles')
@@ -47,7 +45,10 @@ export class RoleController {
    */
   @Post()
   @RequirePermission('iam:roles:create')
-  @ApiOperation({ summary: 'Create a new role', description: 'Creates a new role for an organization' })
+  @ApiOperation({
+    summary: 'Create a new role',
+    description: 'Creates a new role for an organization',
+  })
   async create(
     @Body() createRoleDto: CreateRoleDto,
     @CurrentUser() user: CurrentUserType,
@@ -66,7 +67,10 @@ export class RoleController {
    */
   @Get()
   @RequirePermission('iam:roles:read')
-  @ApiOperation({ summary: 'List all roles', description: 'Get paginated list of roles for the organization' })
+  @ApiOperation({
+    summary: 'List all roles',
+    description: 'Get paginated list of roles for the organization',
+  })
   async findAll(
     @Query('organizationId', ParseUUIDPipe) organizationId: string,
     @Query('page') page: number = 1,
@@ -93,19 +97,20 @@ export class RoleController {
    */
   @Get(':id')
   @RequirePermission('iam:roles:read')
-  @ApiOperation({ summary: 'Get role details', description: 'Get role by ID with assigned permissions' })
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<RoleWithPermissionsDto> {
+  @ApiOperation({
+    summary: 'Get role details',
+    description: 'Get role by ID with assigned permissions',
+  })
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<RoleWithPermissionsDto> {
     const role = await this.roleRepository.findWithPermissions(id);
-    
+
     if (!role) {
       throw new Error('Role not found');
     }
 
     // Get permission codes
     const rolePermissions = await this.rolePermissionRepository.findByRoleId(id);
-    const permissions = rolePermissions.map(rp => rp.permission.code);
+    const permissions = rolePermissions.map((rp) => rp.permission.code);
 
     return {
       ...role,
@@ -137,10 +142,11 @@ export class RoleController {
    */
   @Delete(':id')
   @RequirePermission('iam:roles:delete')
-  @ApiOperation({ summary: 'Delete role', description: 'Soft delete a role (system roles cannot be deleted)' })
-  async remove(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{ message: string }> {
+  @ApiOperation({
+    summary: 'Delete role',
+    description: 'Soft delete a role (system roles cannot be deleted)',
+  })
+  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<{ message: string }> {
     await this.roleRepository.softDelete(id);
     return { message: 'Role deleted successfully' };
   }
@@ -150,9 +156,9 @@ export class RoleController {
    */
   @Post(':id/permissions/sync')
   @RequirePermission('iam:roles:assign-permissions')
-  @ApiOperation({ 
-    summary: 'Sync role permissions', 
-    description: 'Replace all role permissions with new set' 
+  @ApiOperation({
+    summary: 'Sync role permissions',
+    description: 'Replace all role permissions with new set',
   })
   async syncPermissions(
     @Param('id', ParseUUIDPipe) roleId: string,
@@ -176,9 +182,9 @@ export class RoleController {
    */
   @Post(':id/permissions/add')
   @RequirePermission('iam:roles:assign-permissions')
-  @ApiOperation({ 
-    summary: 'Add role permissions', 
-    description: 'Add new permissions to role (keeps existing)' 
+  @ApiOperation({
+    summary: 'Add role permissions',
+    description: 'Add new permissions to role (keeps existing)',
   })
   async addPermissions(
     @Param('id', ParseUUIDPipe) roleId: string,
@@ -202,9 +208,9 @@ export class RoleController {
    */
   @Delete(':id/permissions')
   @RequirePermission('iam:roles:assign-permissions')
-  @ApiOperation({ 
-    summary: 'Remove role permissions', 
-    description: 'Remove specific permissions from role' 
+  @ApiOperation({
+    summary: 'Remove role permissions',
+    description: 'Remove specific permissions from role',
   })
   async removePermissions(
     @Param('id', ParseUUIDPipe) roleId: string,
@@ -218,4 +224,3 @@ export class RoleController {
     };
   }
 }
-

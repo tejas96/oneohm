@@ -59,5 +59,3 @@ export class RolePermissionEntity {
   @Column({ name: 'created_by', type: 'uuid', nullable: true })
   createdBy?: string;
 }
-
-

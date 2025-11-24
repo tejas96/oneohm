@@ -14,7 +14,6 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-
 /**
  * DTO for Checklist Item
  */
@@ -285,4 +284,3 @@ export class CreateMaintenanceTaskDto {
   @IsOptional()
   createdBy?: string;
 }
-

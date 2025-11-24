@@ -44,10 +44,7 @@ export class PermissionRepository {
   /**
    * Find permissions by action and feature
    */
-  async findByActionAndFeature(
-    action: string,
-    featureId: string,
-  ): Promise<PermissionEntity[]> {
+  async findByActionAndFeature(action: string, featureId: string): Promise<PermissionEntity[]> {
     return this.repository.find({
       where: { action, featureId, isActive: true },
     });
@@ -75,7 +72,9 @@ export class PermissionRepository {
   /**
    * Find one permission by criteria
    */
-  async findOne(criteria: Parameters<Repository<PermissionEntity>['findOne']>[0]): Promise<PermissionEntity | null> {
+  async findOne(
+    criteria: Parameters<Repository<PermissionEntity>['findOne']>[0],
+  ): Promise<PermissionEntity | null> {
     return this.repository.findOne(criteria);
   }
 
@@ -127,4 +126,3 @@ export class PermissionRepository {
     await this.repository.delete(id);
   }
 }
-

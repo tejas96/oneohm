@@ -4,7 +4,6 @@ import { MaintenanceConfigStatus } from '@oneohm-epc/shared-types';
 import { IsNull, LessThanOrEqual, Repository } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
-
 import { ProjectMaintenanceConfigEntity } from '../entities/project-maintenance-config.entity';
 
 /**
@@ -20,7 +19,9 @@ export class ProjectMaintenanceConfigRepository {
   /**
    * Create a new maintenance config
    */
-  async create(configData: Partial<ProjectMaintenanceConfigEntity>): Promise<ProjectMaintenanceConfigEntity> {
+  async create(
+    configData: Partial<ProjectMaintenanceConfigEntity>,
+  ): Promise<ProjectMaintenanceConfigEntity> {
     const config = this.repository.create(configData);
     return this.repository.save(config);
   }
@@ -103,7 +104,9 @@ export class ProjectMaintenanceConfigRepository {
   /**
    * Find configs without completion date
    */
-  async findWithoutCompletionDate(options?: { relations?: string[] }): Promise<ProjectMaintenanceConfigEntity[]> {
+  async findWithoutCompletionDate(options?: {
+    relations?: string[];
+  }): Promise<ProjectMaintenanceConfigEntity[]> {
     return this.repository.find({
       where: {
         projectCompletionDate: IsNull(),
@@ -132,7 +135,10 @@ export class ProjectMaintenanceConfigRepository {
     id: string,
     updateData: Partial<ProjectMaintenanceConfigEntity>,
   ): Promise<ProjectMaintenanceConfigEntity | null> {
-    await this.repository.update(id, updateData as QueryDeepPartialEntity<ProjectMaintenanceConfigEntity>);
+    await this.repository.update(
+      id,
+      updateData as QueryDeepPartialEntity<ProjectMaintenanceConfigEntity>,
+    );
     return this.findById(id);
   }
 
@@ -178,4 +184,3 @@ export class ProjectMaintenanceConfigRepository {
     });
   }
 }
-

@@ -2,7 +2,6 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { ServiceRequestStatus } from '@oneohm-epc/shared-types';
 import { plainToInstance } from 'class-transformer';
 
-
 import {
   CreateServiceRequestDto,
   UpdateServiceRequestDto,
@@ -60,7 +59,10 @@ export class ServiceRequestService {
   /**
    * Find request by ID
    */
-  async findById(id: string, includeRelations: boolean = false): Promise<ServiceRequestResponseDto> {
+  async findById(
+    id: string,
+    includeRelations: boolean = false,
+  ): Promise<ServiceRequestResponseDto> {
     const relations = includeRelations
       ? ['organization', 'project', 'customer', 'assignedToUser', 'createdByUser', 'updatedByUser']
       : [];
@@ -105,9 +107,7 @@ export class ServiceRequestService {
     projectId: string,
     includeRelations: boolean = false,
   ): Promise<ServiceRequestResponseDto[]> {
-    const relations = includeRelations
-      ? ['organization', 'customer', 'assignedToUser']
-      : [];
+    const relations = includeRelations ? ['organization', 'customer', 'assignedToUser'] : [];
     const requests = await this.serviceRequestRepository.findByProject(projectId, { relations });
 
     return requests.map((request) =>
@@ -124,9 +124,7 @@ export class ServiceRequestService {
     customerId: string,
     includeRelations: boolean = false,
   ): Promise<ServiceRequestResponseDto[]> {
-    const relations = includeRelations
-      ? ['organization', 'project', 'assignedToUser']
-      : [];
+    const relations = includeRelations ? ['organization', 'project', 'assignedToUser'] : [];
     const requests = await this.serviceRequestRepository.findByCustomer(customerId, { relations });
 
     return requests.map((request) =>
@@ -143,9 +141,7 @@ export class ServiceRequestService {
     userId: string,
     includeRelations: boolean = false,
   ): Promise<ServiceRequestResponseDto[]> {
-    const relations = includeRelations
-      ? ['organization', 'project', 'customer']
-      : [];
+    const relations = includeRelations ? ['organization', 'project', 'customer'] : [];
     const requests = await this.serviceRequestRepository.findByAssignedUser(userId, { relations });
 
     return requests.map((request) =>
@@ -346,4 +342,3 @@ export class ServiceRequestService {
     return this.serviceRequestRepository.getAverageRating({ projectId, customerId });
   }
 }
-

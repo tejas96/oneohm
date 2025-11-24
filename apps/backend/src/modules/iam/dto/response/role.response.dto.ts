@@ -42,9 +42,9 @@ export class RoleResponseDto {
  * Role with Permissions Response DTO
  */
 export class RoleWithPermissionsDto extends RoleResponseDto {
-  @ApiProperty({ 
+  @ApiProperty({
     type: [String],
-    example: ['customers:read', 'customers:create', 'customers:update']
+    example: ['customers:read', 'customers:create', 'customers:update'],
   })
   permissions: string[];
 }
@@ -65,5 +65,3 @@ export class PaginatedRolesDto {
   @ApiProperty({ example: 10 })
   pageSize: number;
 }
-
-

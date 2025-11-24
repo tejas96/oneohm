@@ -12,9 +12,9 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { Role, JwtAuthGuard, RolesGuard, Roles } from '@oneohm-epc/shared-auth';
 import { MaintenanceTaskStatus } from '@oneohm-epc/shared-types';
 
+import { JwtAuthGuard } from '../../auth/guards';
 import {
   CreateMaintenanceTaskDto,
   UpdateMaintenanceTaskDto,
@@ -27,27 +27,23 @@ import { MaintenanceTaskService } from '../services/maintenance-task.service';
  */
 @ApiTags('Service & Maintenance - Tasks')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('maintenance-tasks')
 export class MaintenanceTaskController {
   constructor(private readonly maintenanceTaskService: MaintenanceTaskService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER)
   @ApiOperation({ summary: 'Create a new maintenance task' })
   @ApiResponse({
     status: 201,
     description: 'Maintenance task created successfully',
     type: MaintenanceTaskResponseDto,
   })
-  async create(
-    @Body() createDto: CreateMaintenanceTaskDto,
-  ): Promise<MaintenanceTaskResponseDto> {
+  async create(@Body() createDto: CreateMaintenanceTaskDto): Promise<MaintenanceTaskResponseDto> {
     return this.maintenanceTaskService.create(createDto);
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get all maintenance tasks' })
   @ApiResponse({
     status: 200,
@@ -61,7 +57,6 @@ export class MaintenanceTaskController {
   }
 
   @Get('overdue')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get overdue maintenance tasks' })
   @ApiResponse({
     status: 200,
@@ -75,7 +70,6 @@ export class MaintenanceTaskController {
   }
 
   @Get('upcoming')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get upcoming maintenance tasks' })
   @ApiQuery({ name: 'days', required: false, description: 'Number of days ahead' })
   @ApiResponse({
@@ -91,7 +85,6 @@ export class MaintenanceTaskController {
   }
 
   @Get('project/:projectId')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get tasks by project' })
   @ApiResponse({
     status: 200,
@@ -106,7 +99,6 @@ export class MaintenanceTaskController {
   }
 
   @Get('user/:userId')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get tasks assigned to user' })
   @ApiResponse({
     status: 200,
@@ -121,7 +113,6 @@ export class MaintenanceTaskController {
   }
 
   @Get('status/:status')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get tasks by status' })
   @ApiResponse({
     status: 200,
@@ -136,7 +127,6 @@ export class MaintenanceTaskController {
   }
 
   @Get('statistics/:organizationId')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER)
   @ApiOperation({ summary: 'Get task statistics for organization' })
   @ApiResponse({
     status: 200,
@@ -149,7 +139,6 @@ export class MaintenanceTaskController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get maintenance task by ID' })
   @ApiResponse({
     status: 200,
@@ -164,7 +153,6 @@ export class MaintenanceTaskController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Update maintenance task' })
   @ApiResponse({
     status: 200,
@@ -179,7 +167,6 @@ export class MaintenanceTaskController {
   }
 
   @Patch(':id/assign/:userId')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER)
   @ApiOperation({ summary: 'Assign task to user' })
   @ApiResponse({
     status: 200,
@@ -195,25 +182,20 @@ export class MaintenanceTaskController {
   }
 
   @Patch(':id/complete')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Mark task as completed' })
   @ApiResponse({
     status: 200,
     description: 'Task completed successfully',
     type: MaintenanceTaskResponseDto,
   })
-  async completeTask(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<MaintenanceTaskResponseDto> {
+  async completeTask(@Param('id', ParseUUIDPipe) id: string): Promise<MaintenanceTaskResponseDto> {
     return this.maintenanceTaskService.completeTask(id);
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Delete maintenance task' })
   @ApiResponse({ status: 200, description: 'Task deleted successfully' })
   async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.maintenanceTaskService.delete(id);
   }
 }
-

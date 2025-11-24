@@ -10,5 +10,3 @@ export class AssignPermissionsDto {
   @IsNotEmpty()
   permissionIds!: string[];
 }
-
-

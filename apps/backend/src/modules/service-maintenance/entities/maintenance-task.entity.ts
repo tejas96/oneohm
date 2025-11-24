@@ -1,7 +1,6 @@
 import { MaintenanceTaskStatus } from '@oneohm-epc/shared-types';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
-
 import { ProjectMaintenanceConfigEntity } from './project-maintenance-config.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
@@ -170,4 +169,3 @@ export class MaintenanceTaskEntity extends BaseEntity {
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy: string | null;
 }
-

@@ -86,10 +86,7 @@ export class ApprovalHistoryRepository {
   /**
    * Get recent actions
    */
-  async getRecentActions(
-    organizationId: string,
-    limit = 10,
-  ): Promise<ApprovalHistoryEntity[]> {
+  async getRecentActions(organizationId: string, limit = 10): Promise<ApprovalHistoryEntity[]> {
     return this.repository
       .createQueryBuilder('history')
       .leftJoinAndSelect('history.approvalRequest', 'request')
@@ -125,4 +122,3 @@ export class ApprovalHistoryRepository {
     return stats as Record<ApprovalAction, number>;
   }
 }
-
