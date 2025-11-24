@@ -8,7 +8,7 @@ import { SecurityEventService } from './services';
 /**
  * Security Events Module
  * Provides centralized security event logging and auditing
- * 
+ *
  * Features:
  * - Generic security event tracking
  * - OTP attempt logging
@@ -16,7 +16,7 @@ import { SecurityEventService } from './services';
  * - Failed login tracking
  * - Suspicious activity detection
  * - Compliance audit trail
- * 
+ *
  * Exported for use in:
  * - Authentication module (OTP, login attempts)
  * - IAM module (permission denied events)
@@ -28,4 +28,3 @@ import { SecurityEventService } from './services';
   exports: [SecurityEventService, SecurityEventRepository],
 })
 export class SecurityEventsModule {}
-

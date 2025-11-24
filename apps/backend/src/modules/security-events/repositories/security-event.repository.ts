@@ -8,7 +8,6 @@ import {
 } from '@oneohm-epc/shared-types';
 import { Repository, LessThan, MoreThanOrEqual } from 'typeorm';
 
-
 import { SecurityEventEntity } from '../entities';
 
 /**
@@ -157,7 +156,9 @@ export class SecurityEventRepository {
     organizationId: string,
     startDate: Date,
     endDate: Date,
-  ): Promise<{ category: SecurityEventCategory; count: number; severity: SecurityEventSeverity }[]> {
+  ): Promise<
+    { category: SecurityEventCategory; count: number; severity: SecurityEventSeverity }[]
+  > {
     const results = await this.repository
       .createQueryBuilder('event')
       .select('event.eventCategory', 'category')
@@ -222,4 +223,3 @@ export class SecurityEventRepository {
     });
   }
 }
-
