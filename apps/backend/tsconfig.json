@@ -3,8 +3,8 @@
   "compilerOptions": {
     /* NestJS-specific overrides */
     "module": "commonjs",
-    "target": "ES2023",
-    "lib": ["ES2023"], // Backend doesn't need DOM types
+    "target": "ES2021",
+    "types": ["node"], // Only Node.js types, no DOM
     "outDir": "./dist",
     "incremental": true,
 
