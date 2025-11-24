@@ -1,6 +1,5 @@
 import { type Type, applyDecorators, Get, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
-import { type Role, Roles } from '@oneohm-epc/shared-auth';
 
 /**
  * API Read One Decorator
@@ -18,13 +17,12 @@ export function ApiReadOne<TResponse>(options: {
   summary: string;
   description?: string;
   responseType: Type<TResponse>;
-  roles?: Role[];
+  // roles removed - use @RequirePermission instead
   idParam?: string;
 }): MethodDecorator & ClassDecorator {
   const decorators = [
     Get(`:${options.idParam || 'id'}`),
     HttpCode(HttpStatus.OK),
-    ...(options.roles ? [Roles(...options.roles)] : []),
     ApiOperation({
       summary: options.summary,
       description: options.description,

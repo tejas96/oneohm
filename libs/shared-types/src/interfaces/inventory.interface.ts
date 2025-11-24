@@ -100,5 +100,3 @@ export interface VendorContractDetails {
   contractEndDate?: Date | string;
   vendorRole?: string;
 }
-
-

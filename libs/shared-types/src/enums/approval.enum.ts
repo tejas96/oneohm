@@ -88,4 +88,3 @@ export enum AutoActionOnTimeout {
   REJECT = 'reject',
   ESCALATE = 'escalate',
 }
-

@@ -53,4 +53,3 @@ export enum LoanDocumentType {
   // Other
   OTHER = 'other',
 }
-

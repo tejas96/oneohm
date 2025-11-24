@@ -39,4 +39,3 @@ export enum CommentEntityType {
   SUBSIDY_APPLICATION = 'subsidy_application',
   LOAN_APPLICATION = 'loan_application',
 }
-

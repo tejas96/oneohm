@@ -43,5 +43,3 @@ export enum PermissionAction {
   MANAGE = 'manage',
   ASSIGN = 'assign',
 }
-
-

@@ -1,7 +1,0 @@
-{
-  "name": "@oneohm-epc/shared-auth",
-  "version": "0.0.1",
-  "description": "Shared authentication and authorization utilities for OneOhm EPC",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts"
-}

@@ -61,4 +61,3 @@ export enum UnitOfMeasure {
   BOXES = 'box',
   ROLLS = 'roll',
 }
-

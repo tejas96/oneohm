@@ -1,6 +1,5 @@
 import { type Type, applyDecorators, Get, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
-import { type Role, Roles } from '@oneohm-epc/shared-auth';
 
 /**
  * API Get Decorator
@@ -41,7 +40,7 @@ export function ApiGet<TResponse = Record<string, unknown>>(options: {
   responseType?: Type<TResponse>;
   responseSchema?: Record<string, unknown>;
   responseIsArray?: boolean;
-  roles?: Role[];
+  // roles removed - use @RequirePermission instead
   params?: Array<{
     name: string;
     type?: Type<unknown>;
@@ -58,7 +57,6 @@ export function ApiGet<TResponse = Record<string, unknown>>(options: {
   const decorators = [
     Get(options.path),
     HttpCode(HttpStatus.OK),
-    ...(options.roles ? [Roles(...options.roles)] : []),
     ApiOperation({
       summary: options.summary,
       description: options.description,

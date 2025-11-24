@@ -26,4 +26,3 @@ export enum PaymentTransactionStatus {
   BOUNCED = 'bounced',
   REFUNDED = 'refunded',
 }
-

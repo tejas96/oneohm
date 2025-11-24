@@ -1,6 +1,5 @@
 import { type Type, applyDecorators, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { type Role, Roles } from '@oneohm-epc/shared-auth';
 
 /**
  * API Create Decorator
@@ -17,13 +16,12 @@ export function ApiCreate<TResponse>(options: {
   summary: string;
   description?: string;
   responseType: Type<TResponse>;
-  roles?: Role[];
+  // roles removed - use @RequirePermission instead
   additionalErrors?: Array<{ status: HttpStatus; description: string }>;
 }): MethodDecorator & ClassDecorator {
   const decorators = [
     Post(),
     HttpCode(HttpStatus.CREATED),
-    ...(options.roles ? [Roles(...options.roles)] : []),
     ApiOperation({
       summary: options.summary,
       description: options.description,

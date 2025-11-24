@@ -29,4 +29,3 @@ export enum FeedbackMethod {
   ONLINE_FORM = 'online_form',
   MOBILE_APP = 'mobile_app',
 }
-

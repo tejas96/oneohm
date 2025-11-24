@@ -36,4 +36,3 @@ export enum SubsidyStatus {
   DISBURSED = 'disbursed',
   REJECTED = 'rejected',
 }
-

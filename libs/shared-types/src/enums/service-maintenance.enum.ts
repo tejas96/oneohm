@@ -52,4 +52,3 @@ export enum ServiceRequestPriority {
   HIGH = 'high',
   URGENT = 'urgent',
 }
-

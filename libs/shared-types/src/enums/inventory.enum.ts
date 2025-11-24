@@ -121,5 +121,3 @@ export enum MaterialDispatchStatus {
   PARTIALLY_DELIVERED = 'partially_delivered',
   CANCELLED = 'cancelled',
 }
-
-
