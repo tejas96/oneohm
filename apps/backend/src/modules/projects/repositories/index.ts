@@ -7,4 +7,3 @@ export * from './task-template.repository';
 export * from './project-task.repository';
 export * from './task-time-log.repository';
 export * from './task-activity-log.repository';
-

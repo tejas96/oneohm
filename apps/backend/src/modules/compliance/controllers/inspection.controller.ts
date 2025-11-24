@@ -11,25 +11,21 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
-import { CurrentUser, JwtAuthGuard, Role, Roles, RolesGuard } from '@oneohm-epc/shared-auth';
 import { InspectionStatus } from '@oneohm-epc/shared-types';
 
-import {
-  CreateInspectionDto,
-  UpdateInspectionDto,
-  InspectionResponseDto,
-} from '../dto';
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import { CreateInspectionDto, UpdateInspectionDto, InspectionResponseDto } from '../dto';
 import { InspectionService } from '../services/inspection.service';
 
 @ApiTags('Compliance & Liaising')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('inspections')
 export class InspectionController {
   constructor(private readonly inspectionService: InspectionService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.MANAGER, Role.LIAISON_OFFICER)
   @ApiOperation({ summary: 'Create a new inspection' })
   @ApiResponse({
     status: 201,
@@ -108,7 +104,6 @@ export class InspectionController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.LIAISON_OFFICER)
   @ApiOperation({ summary: 'Update an inspection' })
   @ApiParam({ name: 'id', description: 'Inspection UUID' })
   @ApiResponse({
@@ -128,7 +123,6 @@ export class InspectionController {
   }
 
   @Patch(':id/complete')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.LIAISON_OFFICER)
   @ApiOperation({ summary: 'Complete an inspection' })
   @ApiParam({ name: 'id', description: 'Inspection UUID' })
   @ApiResponse({
@@ -145,7 +139,6 @@ export class InspectionController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Delete an inspection' })
   @ApiParam({ name: 'id', description: 'Inspection UUID' })
   @ApiResponse({ status: 200, description: 'Inspection deleted successfully' })

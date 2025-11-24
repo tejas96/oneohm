@@ -1,5 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { WarehouseStatus, WarehouseType, type WarehouseCoordinates } from '@oneohm-epc/shared-types';
+import {
+  WarehouseStatus,
+  WarehouseType,
+  type WarehouseCoordinates,
+} from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
   IsEmail,
@@ -119,6 +123,3 @@ export class UpdateWarehouseDto {
   @IsOptional()
   status?: WarehouseStatus;
 }
-
-
-

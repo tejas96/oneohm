@@ -7,4 +7,3 @@ import { CreateProductDto } from './create-product.dto';
  * All fields are optional
  */
 export class UpdateProductDto extends PartialType(CreateProductDto) {}
-

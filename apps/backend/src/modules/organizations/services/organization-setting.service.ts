@@ -228,12 +228,9 @@ export class OrganizationSettingService {
   ): Promise<Record<string, string | null>> {
     const settings = await this.findByOrganization(organizationId, category);
 
-    return settings.reduce<Record<string, string | null>>(
-      (map, setting) => {
-        map[setting.key] = setting.value;
-        return map;
-      },
-      {},
-    );
+    return settings.reduce<Record<string, string | null>>((map, setting) => {
+      map[setting.key] = setting.value;
+      return map;
+    }, {});
   }
 }

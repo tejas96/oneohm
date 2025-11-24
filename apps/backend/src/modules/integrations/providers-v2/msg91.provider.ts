@@ -8,7 +8,6 @@ import {
 } from '@oneohm-epc/shared-types';
 import type { AxiosInstance } from 'axios';
 
-
 import { BaseMessagingProvider } from '../base';
 import {
   IntegrationProvider as IntegrationProviderDecorator,
@@ -20,13 +19,13 @@ import {
 /**
  * MSG91 Provider (New Architecture)
  * Implements MSG91 Dedicated OTP API and SMS API
- * 
+ *
  * ✨ Features new decorator-driven architecture:
  * - Auto-injection of credentials
  * - Auto-injection of configuration
  * - Auto-setup of HTTP client
  * - Clean, minimal code
- * 
+ *
  * API Documentation: https://docs.msg91.com/
  */
 @Injectable()
@@ -184,10 +183,13 @@ export class Msg91Provider extends BaseMessagingProvider {
       });
 
       if (response.data?.type === 'success') {
-        return this.createSuccessResponse(response.data.request_id || `msg91-resend-${Date.now()}`, {
-          mobile,
-          type: 'resend',
-        });
+        return this.createSuccessResponse(
+          response.data.request_id || `msg91-resend-${Date.now()}`,
+          {
+            mobile,
+            type: 'resend',
+          },
+        );
       }
 
       throw new Error(response.data?.message || 'Failed to resend OTP');
@@ -209,4 +211,3 @@ export class Msg91Provider extends BaseMessagingProvider {
     }
   }
 }
-

@@ -79,4 +79,3 @@ export class MilestoneTemplateResponseDto {
   @Type(() => UserResponseDto)
   updatedByUser?: UserResponseDto;
 }
-

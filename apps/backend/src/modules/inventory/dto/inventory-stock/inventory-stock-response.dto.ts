@@ -71,5 +71,3 @@ export class InventoryStockResponseDto {
   @Type(() => Date)
   updatedAt!: Date;
 }
-
-

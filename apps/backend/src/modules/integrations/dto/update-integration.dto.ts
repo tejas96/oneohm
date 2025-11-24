@@ -1,11 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsString,
-  IsObject,
-  IsBoolean,
-  IsOptional,
-  MaxLength,
-} from 'class-validator';
+import { IsString, IsObject, IsBoolean, IsOptional, MaxLength } from 'class-validator';
 
 export class UpdateIntegrationDto {
   @ApiPropertyOptional({
@@ -55,4 +49,3 @@ export class UpdateIntegrationDto {
   @IsOptional()
   isActive?: boolean;
 }
-

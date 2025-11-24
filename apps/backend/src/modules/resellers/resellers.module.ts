@@ -17,7 +17,10 @@ import { ResellerService } from './services/reseller.service';
  * Imports UsersModule for ProfileService (multi-org access verification)
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([ResellerProfileEntity, ResellerCommissionEntity]), forwardRef(() => UsersModule)],
+  imports: [
+    TypeOrmModule.forFeature([ResellerProfileEntity, ResellerCommissionEntity]),
+    forwardRef(() => UsersModule),
+  ],
   controllers: [ResellerController, ResellerCommissionController],
   providers: [
     ResellerService,

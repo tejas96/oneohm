@@ -12,13 +12,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { type PaginatedResponse, ProductStatus } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
@@ -31,6 +24,9 @@ import {
 } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import { type CurrentUserType } from '../../auth/types';
 import {
   CreateProductDto,
   ProductResponseDto,
@@ -42,7 +38,7 @@ import { ProductService } from '../services/product.service';
 @ApiTags('Products')
 @Controller('products')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
@@ -51,18 +47,13 @@ export class ProductController {
     summary: 'Create a new product',
     description: 'Create a new solar equipment product with specifications',
     responseType: ProductResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async create(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateProductDto,
   ): Promise<ProductResponseDto> {
-    const product = await this.productService.create(
-      organizationId,
-      createDto,
-      currentUser.id,
-    );
+    const product = await this.productService.create(organizationId, createDto, currentUser.id);
 
     return plainToInstance(ProductResponseDto, product, {
       excludeExtraneousValues: true,
@@ -74,7 +65,6 @@ export class ProductController {
     summary: 'Get all products',
     description: 'Retrieve all products with pagination and filters',
     responseType: ProductResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
     additionalQueries: [
       { name: 'page', required: false, type: Number, description: 'Page number (default: 1)' },
       {
@@ -142,7 +132,6 @@ export class ProductController {
     summary: 'Get product by ID',
     description: 'Retrieve a specific product with full details',
     responseType: ProductResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async findOne(
     @OrganizationContext() organizationId: string,
@@ -161,7 +150,6 @@ export class ProductController {
     summary: 'Update product',
     description: 'Update an existing product',
     responseType: ProductResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
     @OrganizationContext() organizationId: string,
@@ -169,12 +157,7 @@ export class ProductController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateProductDto,
   ): Promise<ProductResponseDto> {
-    const product = await this.productService.update(
-      id,
-      organizationId,
-      updateDto,
-      currentUser.id,
-    );
+    const product = await this.productService.update(id, organizationId, updateDto, currentUser.id);
 
     return plainToInstance(ProductResponseDto, product, {
       excludeExtraneousValues: true,
@@ -187,7 +170,6 @@ export class ProductController {
     summary: 'Update product status',
     description: 'Update the status of a product (active/inactive/discontinued)',
     responseType: ProductResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async updateStatus(
     @OrganizationContext() organizationId: string,
@@ -211,7 +193,6 @@ export class ProductController {
   @ApiDelete({
     summary: 'Delete product',
     description: 'Soft delete a product',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
     @OrganizationContext() organizationId: string,

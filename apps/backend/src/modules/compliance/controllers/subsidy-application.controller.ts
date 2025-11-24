@@ -11,9 +11,10 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
-import { CurrentUser, JwtAuthGuard, Role, Roles, RolesGuard } from '@oneohm-epc/shared-auth';
 import { SubsidyStatus } from '@oneohm-epc/shared-types';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
 import {
   CreateSubsidyApplicationDto,
   UpdateSubsidyApplicationDto,
@@ -23,13 +24,12 @@ import { SubsidyApplicationService } from '../services/subsidy-application.servi
 
 @ApiTags('Compliance & Liaising')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('subsidy-applications')
 export class SubsidyApplicationController {
   constructor(private readonly subsidyService: SubsidyApplicationService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.MANAGER, Role.LIAISON_OFFICER, Role.ACCOUNTS)
   @ApiOperation({ summary: 'Create a new subsidy application' })
   @ApiResponse({
     status: 201,
@@ -106,7 +106,9 @@ export class SubsidyApplicationController {
     description: 'List of subsidy applications with given status',
     type: [SubsidyApplicationResponseDto],
   })
-  async findByStatus(@Param('status') status: SubsidyStatus): Promise<SubsidyApplicationResponseDto[]> {
+  async findByStatus(
+    @Param('status') status: SubsidyStatus,
+  ): Promise<SubsidyApplicationResponseDto[]> {
     return this.subsidyService.findByStatus(status);
   }
 
@@ -124,7 +126,6 @@ export class SubsidyApplicationController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.ACCOUNTS)
   @ApiOperation({ summary: 'Update a subsidy application' })
   @ApiParam({ name: 'id', description: 'Subsidy Application UUID' })
   @ApiResponse({
@@ -144,7 +145,6 @@ export class SubsidyApplicationController {
   }
 
   @Patch(':id/approve')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Approve subsidy application' })
   @ApiParam({ name: 'id', description: 'Subsidy Application UUID' })
   @ApiResponse({
@@ -160,7 +160,6 @@ export class SubsidyApplicationController {
   }
 
   @Patch(':id/disburse')
-  @Roles(Role.ADMIN, Role.ACCOUNTS)
   @ApiOperation({ summary: 'Disburse subsidy' })
   @ApiParam({ name: 'id', description: 'Subsidy Application UUID' })
   @ApiResponse({
@@ -183,7 +182,6 @@ export class SubsidyApplicationController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Delete a subsidy application (soft delete)' })
   @ApiParam({ name: 'id', description: 'Subsidy Application UUID' })
   @ApiResponse({ status: 200, description: 'Subsidy application deleted successfully' })

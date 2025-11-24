@@ -153,6 +153,3 @@ export class VendorResponseDto {
   @Expose()
   updatedBy?: string;
 }
-
-
-

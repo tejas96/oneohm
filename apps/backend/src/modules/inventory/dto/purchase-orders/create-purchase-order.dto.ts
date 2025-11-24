@@ -140,6 +140,3 @@ export class CreatePurchaseOrderDto {
   @IsOptional()
   termsConditions?: string;
 }
-
-
-

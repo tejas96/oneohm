@@ -58,7 +58,10 @@ export class LoanApplicationService {
     });
   }
 
-  async update(id: string, updateDto: UpdateLoanApplicationDto): Promise<LoanApplicationResponseDto> {
+  async update(
+    id: string,
+    updateDto: UpdateLoanApplicationDto,
+  ): Promise<LoanApplicationResponseDto> {
     const existingApplication = await this.loanApplicationRepository.findById(id);
 
     if (!existingApplication) {
@@ -121,7 +124,8 @@ export class LoanApplicationService {
   }
 
   async findByApplicationNumber(applicationNumber: string): Promise<LoanApplicationResponseDto> {
-    const application = await this.loanApplicationRepository.findByApplicationNumber(applicationNumber);
+    const application =
+      await this.loanApplicationRepository.findByApplicationNumber(applicationNumber);
 
     if (!application) {
       throw new NotFoundException(`Loan application with number ${applicationNumber} not found`);
@@ -143,7 +147,10 @@ export class LoanApplicationService {
   // JAN SAMARTH OPERATIONS
   // ============================================
 
-  async submitToJanSamarth(id: string, janSamarthApplicationId: string): Promise<LoanApplicationResponseDto> {
+  async submitToJanSamarth(
+    id: string,
+    janSamarthApplicationId: string,
+  ): Promise<LoanApplicationResponseDto> {
     const application = await this.loanApplicationRepository.findById(id);
 
     if (!application) {
@@ -170,10 +177,13 @@ export class LoanApplicationService {
   }
 
   async findByJanSamarthId(janSamarthApplicationId: string): Promise<LoanApplicationResponseDto> {
-    const application = await this.loanApplicationRepository.findByJanSamarthId(janSamarthApplicationId);
+    const application =
+      await this.loanApplicationRepository.findByJanSamarthId(janSamarthApplicationId);
 
     if (!application) {
-      throw new NotFoundException(`Loan application with Jan Samarth ID ${janSamarthApplicationId} not found`);
+      throw new NotFoundException(
+        `Loan application with Jan Samarth ID ${janSamarthApplicationId} not found`,
+      );
     }
 
     return plainToInstance(LoanApplicationResponseDto, application, {
@@ -264,7 +274,11 @@ export class LoanApplicationService {
   // APPROVAL OPERATIONS
   // ============================================
 
-  async approve(id: string, approvedAmount: number, approvedByLender: string): Promise<LoanApplicationResponseDto> {
+  async approve(
+    id: string,
+    approvedAmount: number,
+    approvedByLender: string,
+  ): Promise<LoanApplicationResponseDto> {
     const application = await this.loanApplicationRepository.findById(id);
 
     if (!application) {
@@ -344,8 +358,14 @@ export class LoanApplicationService {
     });
   }
 
-  async findByDisbursementDateRange(startDate: Date, endDate: Date): Promise<LoanApplicationResponseDto[]> {
-    const applications = await this.loanApplicationRepository.findByDisbursementDateRange(startDate, endDate);
+  async findByDisbursementDateRange(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<LoanApplicationResponseDto[]> {
+    const applications = await this.loanApplicationRepository.findByDisbursementDateRange(
+      startDate,
+      endDate,
+    );
     return plainToInstance(LoanApplicationResponseDto, applications, {
       excludeExtraneousValues: true,
     });
@@ -370,10 +390,7 @@ export class LoanApplicationService {
         LoanStatus.SUBMITTED,
         LoanStatus.CANCELLED,
       ],
-      [LoanStatus.DOCUMENTS_PENDING]: [
-        LoanStatus.SUBMITTED,
-        LoanStatus.CANCELLED,
-      ],
+      [LoanStatus.DOCUMENTS_PENDING]: [LoanStatus.SUBMITTED, LoanStatus.CANCELLED],
       [LoanStatus.SUBMITTED]: [
         LoanStatus.UNDER_REVIEW,
         LoanStatus.SITE_VISIT_PENDING,
@@ -392,10 +409,7 @@ export class LoanApplicationService {
         LoanStatus.REJECTED,
         LoanStatus.CANCELLED,
       ],
-      [LoanStatus.APPROVED]: [
-        LoanStatus.DISBURSED,
-        LoanStatus.CANCELLED,
-      ],
+      [LoanStatus.APPROVED]: [LoanStatus.DISBURSED, LoanStatus.CANCELLED],
       [LoanStatus.DISBURSED]: [],
       [LoanStatus.REJECTED]: [],
       [LoanStatus.CANCELLED]: [],
@@ -410,4 +424,3 @@ export class LoanApplicationService {
     }
   }
 }
-

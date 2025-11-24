@@ -11,19 +11,20 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { type PaginatedResponse, QuoteStatus } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate,
-  OrganizationContext} from '@oneohm-epc/shared-utils';
+import {
+  ApiCreate,
+  ApiDelete,
+  ApiReadAll,
+  ApiReadOne,
+  ApiUpdate,
+  OrganizationContext,
+} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import { CreateQuoteDto, QuoteResponseDto, UpdateQuoteDto, UpdateQuoteStatusDto } from '../dto';
 import { QuoteService } from '../services/quote.service';
 
@@ -34,7 +35,7 @@ import { QuoteService } from '../services/quote.service';
 @ApiTags('Quotes & Quotations')
 @ApiBearerAuth()
 @Controller('quotes')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class QuoteController {
   constructor(private readonly quoteService: QuoteService) {}
 
@@ -42,23 +43,17 @@ export class QuoteController {
    * Create a new quote
    */
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiCreate({
     summary: 'Create a new quote',
     description: 'Creates a new quote with initial version and line items',
     responseType: QuoteResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async create(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateQuoteDto,
   ): Promise<QuoteResponseDto> {
-    const quote = await this.quoteService.create(
-      organizationId,
-      createDto,
-      currentUser.id,
-    );
+    const quote = await this.quoteService.create(organizationId, createDto, currentUser.id);
 
     return plainToInstance(QuoteResponseDto, quote, {
       excludeExtraneousValues: true,
@@ -69,12 +64,10 @@ export class QuoteController {
    * Get all quotes with filters
    */
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiReadAll({
     summary: 'Get all quotes',
     description: 'Retrieve all quotes with optional filters and pagination',
     responseType: QuoteResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   @ApiQuery({
     name: 'page',
@@ -172,12 +165,10 @@ export class QuoteController {
    * Get quote by ID
    */
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiReadOne({
     summary: 'Get quote by ID',
     description: 'Retrieve a specific quote with all versions and line items',
     responseType: QuoteResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async findOne(
     @OrganizationContext() organizationId: string,
@@ -195,13 +186,11 @@ export class QuoteController {
    * Update quote (creates new version)
    */
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiUpdate({
     summary: 'Update quote',
     description:
       'Update quote details. Automatically creates a new version. Cannot update accepted/rejected quotes.',
     responseType: QuoteResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async update(
     @OrganizationContext() organizationId: string,
@@ -209,12 +198,7 @@ export class QuoteController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateQuoteDto,
   ): Promise<QuoteResponseDto> {
-    const quote = await this.quoteService.update(
-      id,
-      organizationId,
-      updateDto,
-      currentUser.id,
-    );
+    const quote = await this.quoteService.update(id, organizationId, updateDto, currentUser.id);
 
     return plainToInstance(QuoteResponseDto, quote, {
       excludeExtraneousValues: true,
@@ -225,7 +209,6 @@ export class QuoteController {
    * Update quote status
    */
   @Patch(':id/status')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiOperation({
     summary: 'Update quote status',
     description: `
@@ -268,9 +251,7 @@ export class QuoteController {
   @ApiDelete({
     summary: 'Delete quote',
     description: 'Soft delete a quote. Cannot delete accepted quotes.',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   async delete(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,

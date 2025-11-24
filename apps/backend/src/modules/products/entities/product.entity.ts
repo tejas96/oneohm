@@ -137,4 +137,3 @@ export class ProductEntity extends BaseEntity {
   @JoinColumn({ name: 'updated_by' })
   updater?: UserEntity;
 }
-

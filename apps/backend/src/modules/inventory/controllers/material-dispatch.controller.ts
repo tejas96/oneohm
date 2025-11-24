@@ -11,14 +11,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { type StatisticsResponse, MaterialDispatchStatus } from '@oneohm-epc/shared-types';
 import {
   ApiCreate,
@@ -30,6 +22,9 @@ import {
 } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import {
   CreateMaterialDispatchDto,
   MaterialDispatchResponseDto,
@@ -45,7 +40,7 @@ import { MaterialDispatchService } from '../services';
 @ApiTags('Inventory - Material Dispatches')
 @ApiBearerAuth()
 @Controller('material-dispatches')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class MaterialDispatchController {
   constructor(private readonly materialDispatchService: MaterialDispatchService) {}
 
@@ -53,12 +48,10 @@ export class MaterialDispatchController {
    * Create a new material dispatch
    */
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER)
   @ApiCreate({
     summary: 'Create a material dispatch',
     description: 'Create a new material dispatch to project site',
     responseType: MaterialDispatchResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER],
   })
   async create(
     @OrganizationContext() organizationId: string,
@@ -80,12 +73,10 @@ export class MaterialDispatchController {
    * Get all material dispatches with filters
    */
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiReadAll({
     summary: 'Get all material dispatches',
     description: 'Retrieve all material dispatches with optional filters and pagination',
     responseType: MaterialDispatchResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   @ApiQuery({
     name: 'page',
@@ -183,12 +174,10 @@ export class MaterialDispatchController {
    * Get material dispatch by ID
    */
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiReadOne({
     summary: 'Get material dispatch by ID',
     description: 'Retrieve a specific material dispatch by its ID',
     responseType: MaterialDispatchResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   async findOne(
     @OrganizationContext() organizationId: string,
@@ -206,7 +195,6 @@ export class MaterialDispatchController {
    * Get dispatches by project
    */
   @Get('project/:projectId')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiOperation({
     summary: 'Get dispatches by project',
     description: 'Retrieve all material dispatches for a specific project',
@@ -225,12 +213,10 @@ export class MaterialDispatchController {
    * Update material dispatch
    */
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER)
   @ApiUpdate({
     summary: 'Update material dispatch',
     description: 'Update an existing material dispatch (draft/prepared only)',
     responseType: MaterialDispatchResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER],
   })
   async update(
     @OrganizationContext() organizationId: string,
@@ -254,7 +240,6 @@ export class MaterialDispatchController {
    * Update dispatch status
    */
   @Patch(':id/status')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER)
   @ApiOperation({
     summary: 'Update dispatch status',
     description: 'Update the status of a material dispatch',
@@ -281,7 +266,6 @@ export class MaterialDispatchController {
    * Cancel material dispatch
    */
   @Post(':id/cancel')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Cancel material dispatch',
     description: 'Cancel a material dispatch',
@@ -308,11 +292,9 @@ export class MaterialDispatchController {
    * Delete material dispatch
    */
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiDelete({
     summary: 'Delete material dispatch',
     description: 'Delete a material dispatch (draft only)',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
     @OrganizationContext() organizationId: string,
@@ -328,7 +310,6 @@ export class MaterialDispatchController {
    * Get dispatch statistics
    */
   @Get('stats/summary')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Get dispatch statistics',
     description: 'Get dispatch count by status',
@@ -344,7 +325,6 @@ export class MaterialDispatchController {
    * Get in-transit dispatches
    */
   @Get('in-transit/list')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER)
   @ApiOperation({
     summary: 'Get in-transit dispatches',
     description: 'Get list of dispatches currently in transit',
@@ -364,7 +344,6 @@ export class MaterialDispatchController {
    * Get pending dispatches
    */
   @Get('pending/list')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER)
   @ApiOperation({
     summary: 'Get pending dispatches',
     description: 'Get list of draft and prepared dispatches',

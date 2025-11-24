@@ -2,11 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InspectionStatus } from '@oneohm-epc/shared-types';
 import { plainToInstance } from 'class-transformer';
 
-import {
-  CreateInspectionDto,
-  UpdateInspectionDto,
-  InspectionResponseDto,
-} from '../dto';
+import { CreateInspectionDto, UpdateInspectionDto, InspectionResponseDto } from '../dto';
 import { InspectionRepository } from '../repositories/inspection.repository';
 
 @Injectable()
@@ -93,7 +89,11 @@ export class InspectionService {
     });
   }
 
-  async completeInspection(id: string, passed: boolean, report?: string): Promise<InspectionResponseDto> {
+  async completeInspection(
+    id: string,
+    passed: boolean,
+    report?: string,
+  ): Promise<InspectionResponseDto> {
     const inspection = await this.repository.findById(id);
     if (!inspection) {
       throw new NotFoundException(`Inspection with ID ${id} not found`);

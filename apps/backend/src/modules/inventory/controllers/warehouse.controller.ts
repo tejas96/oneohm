@@ -11,14 +11,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { type StatisticsResponse, WarehouseStatus, WarehouseType } from '@oneohm-epc/shared-types';
 import {
   ApiCreate,
@@ -30,6 +22,9 @@ import {
 } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import { CreateWarehouseDto, UpdateWarehouseDto, WarehouseResponseDto } from '../dto';
 import { WarehouseService } from '../services';
 
@@ -40,7 +35,7 @@ import { WarehouseService } from '../services';
 @ApiTags('Inventory - Warehouses')
 @ApiBearerAuth()
 @Controller('warehouses')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class WarehouseController {
   constructor(private readonly warehouseService: WarehouseService) {}
 
@@ -48,12 +43,10 @@ export class WarehouseController {
    * Create a new warehouse
    */
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiCreate({
     summary: 'Create a new warehouse',
     description: 'Creates a new warehouse/storage location',
     responseType: WarehouseResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async create(
     @OrganizationContext() organizationId: string,
@@ -71,12 +64,10 @@ export class WarehouseController {
    * Get all warehouses with filters
    */
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiReadAll({
     summary: 'Get all warehouses',
     description: 'Retrieve all warehouses with optional filters and pagination',
     responseType: WarehouseResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   @ApiQuery({
     name: 'page',
@@ -153,12 +144,10 @@ export class WarehouseController {
    * Get warehouse by ID
    */
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiReadOne({
     summary: 'Get warehouse by ID',
     description: 'Retrieve a specific warehouse by its ID',
     responseType: WarehouseResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   async findOne(
     @OrganizationContext() organizationId: string,
@@ -176,12 +165,10 @@ export class WarehouseController {
    * Update warehouse
    */
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiUpdate({
     summary: 'Update warehouse',
     description: 'Update an existing warehouse',
     responseType: WarehouseResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
     @OrganizationContext() organizationId: string,
@@ -205,11 +192,9 @@ export class WarehouseController {
    * Delete warehouse
    */
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiDelete({
     summary: 'Delete warehouse',
     description: 'Soft delete a warehouse',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
     @OrganizationContext() organizationId: string,
@@ -225,7 +210,6 @@ export class WarehouseController {
    * Get warehouse statistics
    */
   @Get('stats/summary')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Get warehouse statistics',
     description: 'Get warehouse count by status',
@@ -241,7 +225,6 @@ export class WarehouseController {
    * Change warehouse status
    */
   @Patch(':id/status')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Change warehouse status',
     description: 'Update the status of a warehouse',

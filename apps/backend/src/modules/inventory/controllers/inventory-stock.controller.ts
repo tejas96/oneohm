@@ -9,18 +9,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { type PaginatedResponse } from '@oneohm-epc/shared-types';
 import { ApiReadAll, OrganizationContext } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import {
   InventoryStockResponseDto,
   StockAdjustmentDto,
@@ -36,7 +31,7 @@ import { InventoryStockService } from '../services';
 @ApiTags('Inventory - Stock Management')
 @ApiBearerAuth()
 @Controller('inventory-stock')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class InventoryStockController {
   constructor(private readonly inventoryStockService: InventoryStockService) {}
 
@@ -44,7 +39,6 @@ export class InventoryStockController {
    * Get stock by warehouse and product
    */
   @Get('warehouse/:warehouseId/product/:productId')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiOperation({
     summary: 'Get stock by warehouse and product',
     description: 'Retrieve stock level for a specific product in a specific warehouse',
@@ -66,12 +60,10 @@ export class InventoryStockController {
    * Get all stock for a warehouse
    */
   @Get('warehouse/:warehouseId')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiReadAll({
     summary: 'Get stock by warehouse',
     description: 'Retrieve all stock levels for a warehouse',
     responseType: InventoryStockResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   @ApiQuery({
     name: 'page',
@@ -133,7 +125,6 @@ export class InventoryStockController {
    * Get all stock for a product across warehouses
    */
   @Get('product/:productId')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiOperation({
     summary: 'Get stock by product',
     description: 'Retrieve stock levels for a product across all warehouses',
@@ -154,7 +145,6 @@ export class InventoryStockController {
    * Get low stock alerts
    */
   @Get('alerts/low-stock')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Get low stock alerts',
     description: 'Retrieve all products with stock below minimum level',
@@ -174,7 +164,6 @@ export class InventoryStockController {
    * Update stock
    */
   @Post('update')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER)
   @ApiOperation({
     summary: 'Update stock',
     description: 'Add or remove stock (creates transaction record)',
@@ -201,7 +190,6 @@ export class InventoryStockController {
    * Transfer stock between warehouses
    */
   @Post('transfer')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Transfer stock between warehouses',
     description: 'Move stock from one warehouse to another',
@@ -228,7 +216,6 @@ export class InventoryStockController {
    * Adjust stock (manual correction)
    */
   @Post('adjust')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Adjust stock',
     description: 'Manually adjust stock quantity (for corrections)',
@@ -256,7 +243,6 @@ export class InventoryStockController {
    * Get total stock value
    */
   @Get('stats/total-value')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Get total stock value',
     description: 'Calculate total value of all stock in organization',
@@ -274,7 +260,6 @@ export class InventoryStockController {
    * Get stock summary by warehouse
    */
   @Get('stats/by-warehouse')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Get stock summary by warehouse',
     description: 'Get stock statistics grouped by warehouse',

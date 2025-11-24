@@ -43,7 +43,10 @@ export class PurchaseOrderRepository {
   /**
    * Find purchase order by PO number
    */
-  async findByPoNumber(poNumber: string, organizationId: string): Promise<PurchaseOrderEntity | null> {
+  async findByPoNumber(
+    poNumber: string,
+    organizationId: string,
+  ): Promise<PurchaseOrderEntity | null> {
     return this.repository.findOne({
       where: { poNumber, organizationId, deletedAt: IsNull() },
       relations: ['vendor', 'items'],
@@ -231,7 +234,11 @@ export class PurchaseOrderRepository {
       .where('po.organizationId = :organizationId', { organizationId })
       .andWhere('po.expectedDeliveryDate < :today', { today })
       .andWhere('po.status IN (:...statuses)', {
-        statuses: [PurchaseOrderStatus.SENT, PurchaseOrderStatus.CONFIRMED, PurchaseOrderStatus.PARTIALLY_RECEIVED],
+        statuses: [
+          PurchaseOrderStatus.SENT,
+          PurchaseOrderStatus.CONFIRMED,
+          PurchaseOrderStatus.PARTIALLY_RECEIVED,
+        ],
       })
       .andWhere('po.deletedAt IS NULL')
       .orderBy('po.expectedDeliveryDate', 'ASC')
@@ -262,4 +269,3 @@ export class PurchaseOrderRepository {
     return `${prefix}-${year}${month}-${String(sequence).padStart(4, '0')}`;
   }
 }
-

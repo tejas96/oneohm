@@ -27,14 +27,9 @@ export class PaymentService {
   // ============================================
   // CREATE
   // ============================================
-  async create(
-    dto: CreatePaymentDto,
-    createdBy: string,
-  ): Promise<PaymentEntity> {
+  async create(dto: CreatePaymentDto, createdBy: string): Promise<PaymentEntity> {
     // Generate payment number if not provided
-    const paymentNumber = await this.paymentRepository.getNextPaymentNumber(
-      dto.organizationId,
-    );
+    const paymentNumber = await this.paymentRepository.getNextPaymentNumber(dto.organizationId);
 
     // Validate amounts
     if (dto.paidAmount > dto.expectedAmount) {
@@ -101,11 +96,7 @@ export class PaymentService {
   // ============================================
   // UPDATE
   // ============================================
-  async update(
-    id: string,
-    dto: UpdatePaymentDto,
-    updatedBy: string,
-  ): Promise<PaymentEntity> {
+  async update(id: string, dto: UpdatePaymentDto, updatedBy: string): Promise<PaymentEntity> {
     const payment = await this.findById(id);
 
     // Validate amounts if being updated
@@ -154,7 +145,7 @@ export class PaymentService {
     // Only cleared payments can be reconciled
     if (payment.status !== PaymentTransactionStatus.CLEARED) {
       throw new BadRequestException(
-        `Only cleared payments can be reconciled. Current status: ${  payment.status}`,
+        `Only cleared payments can be reconciled. Current status: ${payment.status}`,
       );
     }
 
@@ -222,4 +213,3 @@ export class PaymentService {
     return this.paymentRepository.getNextPaymentNumber(organizationId);
   }
 }
-

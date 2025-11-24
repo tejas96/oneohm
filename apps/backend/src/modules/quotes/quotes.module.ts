@@ -3,11 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { QuoteController } from './controllers';
 import { QuoteEntity, QuoteLineItemEntity, QuoteVersionEntity } from './entities';
-import {
-  QuoteLineItemRepository,
-  QuoteRepository,
-  QuoteVersionRepository,
-} from './repositories';
+import { QuoteLineItemRepository, QuoteRepository, QuoteVersionRepository } from './repositories';
 import { QuoteService } from './services';
 import { OrganizationsModule } from '../organizations/organizations.module';
 
@@ -21,14 +17,7 @@ import { OrganizationsModule } from '../organizations/organizations.module';
     OrganizationsModule, // For organization repository
   ],
   controllers: [QuoteController],
-  providers: [
-    QuoteService,
-    QuoteRepository,
-    QuoteVersionRepository,
-    QuoteLineItemRepository,
-  ],
+  providers: [QuoteService, QuoteRepository, QuoteVersionRepository, QuoteLineItemRepository],
   exports: [QuoteService, QuoteRepository],
 })
 export class QuotesModule {}
-
-

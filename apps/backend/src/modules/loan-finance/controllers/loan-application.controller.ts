@@ -18,9 +18,10 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { CurrentUser, JwtAuthGuard, Role, Roles, RolesGuard } from '@oneohm-epc/shared-auth';
 import { LoanStatus } from '@oneohm-epc/shared-types';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
 import {
   CreateLoanApplicationDto,
   UpdateLoanApplicationDto,
@@ -33,7 +34,7 @@ import { LoanApplicationService } from '../services/loan-application.service';
  */
 @ApiTags('Loan & Finance')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('loan-applications')
 export class LoanApplicationController {
   constructor(private readonly loanApplicationService: LoanApplicationService) {}
@@ -43,7 +44,6 @@ export class LoanApplicationController {
   // ============================================
 
   @Post()
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Create a new loan application' })
   @ApiResponse({
     status: 201,
@@ -217,7 +217,10 @@ export class LoanApplicationController {
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
   ): Promise<LoanApplicationResponseDto[]> {
-    return this.loanApplicationService.findByDisbursementDateRange(new Date(startDate), new Date(endDate));
+    return this.loanApplicationService.findByDisbursementDateRange(
+      new Date(startDate),
+      new Date(endDate),
+    );
   }
 
   @Get(':id')
@@ -238,7 +241,6 @@ export class LoanApplicationController {
   // ============================================
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Update a loan application' })
   @ApiParam({ name: 'id', description: 'Loan Application UUID' })
   @ApiResponse({
@@ -260,7 +262,6 @@ export class LoanApplicationController {
   }
 
   @Patch(':id/submit-jan-samarth')
-  @Roles(Role.ADMIN, Role.ACCOUNTS)
   @ApiOperation({ summary: 'Submit application to Jan Samarth portal' })
   @ApiParam({ name: 'id', description: 'Loan Application UUID' })
   @ApiQuery({ name: 'janSamarthApplicationId', description: 'Jan Samarth application ID' })
@@ -279,10 +280,13 @@ export class LoanApplicationController {
   }
 
   @Patch(':id/schedule-site-visit')
-  @Roles(Role.ADMIN, Role.ACCOUNTS, Role.MANAGER)
   @ApiOperation({ summary: 'Schedule site visit for loan application' })
   @ApiParam({ name: 'id', description: 'Loan Application UUID' })
-  @ApiQuery({ name: 'scheduledDate', description: 'Scheduled date (ISO 8601)', example: '2024-01-15' })
+  @ApiQuery({
+    name: 'scheduledDate',
+    description: 'Scheduled date (ISO 8601)',
+    example: '2024-01-15',
+  })
   @ApiResponse({
     status: 200,
     description: 'Site visit scheduled successfully',
@@ -297,7 +301,6 @@ export class LoanApplicationController {
   }
 
   @Patch(':id/complete-site-visit')
-  @Roles(Role.ADMIN, Role.ACCOUNTS, Role.MANAGER)
   @ApiOperation({ summary: 'Complete site visit for loan application' })
   @ApiParam({ name: 'id', description: 'Loan Application UUID' })
   @ApiQuery({ name: 'report', description: 'Site visit report' })
@@ -316,11 +319,14 @@ export class LoanApplicationController {
   }
 
   @Patch(':id/approve')
-  @Roles(Role.ADMIN, Role.ACCOUNTS)
   @ApiOperation({ summary: 'Approve loan application' })
   @ApiParam({ name: 'id', description: 'Loan Application UUID' })
   @ApiQuery({ name: 'approvedAmount', description: 'Approved loan amount', example: 100000 })
-  @ApiQuery({ name: 'approvedByLender', description: 'Lender name who approved', example: 'Bank XYZ' })
+  @ApiQuery({
+    name: 'approvedByLender',
+    description: 'Lender name who approved',
+    example: 'Bank XYZ',
+  })
   @ApiResponse({
     status: 200,
     description: 'Loan application approved successfully',
@@ -336,7 +342,6 @@ export class LoanApplicationController {
   }
 
   @Patch(':id/reject')
-  @Roles(Role.ADMIN, Role.ACCOUNTS)
   @ApiOperation({ summary: 'Reject loan application' })
   @ApiParam({ name: 'id', description: 'Loan Application UUID' })
   @ApiQuery({ name: 'rejectionReason', description: 'Reason for rejection' })
@@ -354,7 +359,6 @@ export class LoanApplicationController {
   }
 
   @Patch(':id/disburse')
-  @Roles(Role.ADMIN, Role.ACCOUNTS)
   @ApiOperation({ summary: 'Disburse approved loan' })
   @ApiParam({ name: 'id', description: 'Loan Application UUID' })
   @ApiQuery({ name: 'disbursementAmount', description: 'Disbursement amount', example: 100000 })
@@ -371,7 +375,11 @@ export class LoanApplicationController {
     @Query('disbursementAmount') disbursementAmount: number,
     @Query('disbursementReference') disbursementReference: string,
   ): Promise<LoanApplicationResponseDto> {
-    return this.loanApplicationService.disburse(id, Number(disbursementAmount), disbursementReference);
+    return this.loanApplicationService.disburse(
+      id,
+      Number(disbursementAmount),
+      disbursementReference,
+    );
   }
 
   // ============================================
@@ -379,7 +387,6 @@ export class LoanApplicationController {
   // ============================================
 
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.ACCOUNTS)
   @ApiOperation({ summary: 'Delete a loan application (soft delete)' })
   @ApiParam({ name: 'id', description: 'Loan Application UUID' })
   @ApiResponse({ status: 200, description: 'Loan application deleted successfully' })
@@ -389,4 +396,3 @@ export class LoanApplicationController {
     return { message: 'Loan application deleted successfully' };
   }
 }
-

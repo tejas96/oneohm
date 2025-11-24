@@ -1,14 +1,22 @@
-import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
  * AuditLog Entity
- * 
+ *
  * Tracks all changes to entities across the system for audit trail purposes.
  * Stores before/after snapshots, user info, and metadata.
- * 
+ *
  * Schema: Lines 2039-2070
  */
 @Entity('audit_logs')
@@ -86,4 +94,3 @@ export class AuditLogEntity {
   @CreateDateColumn({ name: 'created_at', type: 'timestamp with time zone' })
   createdAt: Date;
 }
-

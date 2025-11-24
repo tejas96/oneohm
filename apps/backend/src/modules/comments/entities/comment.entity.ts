@@ -117,4 +117,3 @@ export class CommentEntity {
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz' })
   deletedAt?: Date;
 }
-

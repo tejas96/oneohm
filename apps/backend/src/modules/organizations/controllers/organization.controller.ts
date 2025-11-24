@@ -1,6 +1,5 @@
 import { Body, Controller, Param, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { type CurrentUserType, CurrentUser, JwtAuthGuard, Role, RolesGuard } from '@oneohm-epc/shared-auth';
 import { OrganizationStatus } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
@@ -11,6 +10,9 @@ import {
   ApiUpdate,
 } from '@oneohm-epc/shared-utils';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import { type CurrentUserType } from '../../auth/types';
 import {
   CreateOrganizationDto,
   OrganizationResponseDto,
@@ -19,7 +21,6 @@ import {
 } from '../dto';
 import { OrganizationService } from '../services/organization.service';
 
-
 /**
  * Organization Controller
  * Handles HTTP requests for organization management
@@ -27,7 +28,7 @@ import { OrganizationService } from '../services/organization.service';
 @ApiTags('Organizations')
 @ApiBearerAuth()
 @Controller('organizations')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class OrganizationController {
   constructor(private readonly organizationService: OrganizationService) {}
 
@@ -38,7 +39,6 @@ export class OrganizationController {
     summary: 'Create a new organization',
     description: 'Creates a new organization in the system. Requires SUPER_ADMIN or ADMIN role.',
     responseType: OrganizationResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
     additionalErrors: [
       {
         status: 409,
@@ -61,7 +61,6 @@ export class OrganizationController {
     summary: 'Get all organizations',
     description: 'Retrieve all organizations with pagination and optional status filter.',
     responseType: OrganizationResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
     additionalQueries: [
       {
         name: 'status',
@@ -100,7 +99,6 @@ export class OrganizationController {
     summary: 'Get organization by ID',
     description: 'Retrieve a specific organization by its UUID.',
     responseType: OrganizationResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async findById(@Param('id', ParseUUIDPipe) id: string): Promise<OrganizationResponseDto> {
     const organization = await this.organizationService.findById(id);
@@ -114,7 +112,6 @@ export class OrganizationController {
     summary: 'Update organization',
     description: 'Update an existing organization by its UUID.',
     responseType: OrganizationResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
     additionalErrors: [
       {
         status: 409,
@@ -138,7 +135,6 @@ export class OrganizationController {
     summary: 'Delete organization',
     description:
       'Soft delete an organization by its UUID. Only SUPER_ADMIN can delete organizations.',
-    roles: [Role.SUPER_ADMIN],
     additionalErrors: [
       {
         status: 400,
@@ -162,7 +158,6 @@ export class OrganizationController {
     description:
       'Update organization status to active, inactive, or suspended. Generic endpoint for all status transitions.',
     responseType: OrganizationResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,

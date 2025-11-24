@@ -116,4 +116,3 @@ export class ProductService {
     await this.productRepository.softDelete(id, organizationId);
   }
 }
-

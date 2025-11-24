@@ -11,19 +11,20 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { type PaginatedResponse, ProjectPriority, ProjectStatus } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate,
-  OrganizationContext} from '@oneohm-epc/shared-utils';
+import {
+  ApiCreate,
+  ApiDelete,
+  ApiReadAll,
+  ApiReadOne,
+  ApiUpdate,
+  OrganizationContext,
+} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import { CreateProjectDto, ProjectResponseDto, UpdateProjectDto } from '../dto';
 import { ProjectService } from '../services/project.service';
 
@@ -34,7 +35,7 @@ import { ProjectService } from '../services/project.service';
 @ApiTags('Projects & Installation')
 @ApiBearerAuth()
 @Controller('projects')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
 
@@ -42,23 +43,17 @@ export class ProjectController {
    * Create a new project
    */
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiCreate({
     summary: 'Create a new project',
     description: 'Creates a new solar installation project',
     responseType: ProjectResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async create(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Body() createDto: CreateProjectDto,
   ): Promise<ProjectResponseDto> {
-    const project = await this.projectService.create(
-      organizationId,
-      createDto,
-      currentUser.id,
-    );
+    const project = await this.projectService.create(organizationId, createDto, currentUser.id);
 
     return plainToInstance(ProjectResponseDto, project, {
       excludeExtraneousValues: true,
@@ -69,26 +64,10 @@ export class ProjectController {
    * Get all projects with filters
    */
   @Get()
-  @Roles(
-    Role.SUPER_ADMIN,
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.SALES,
-    Role.FIELD_WORKER,
-    Role.EXECUTION_ENGINEER,
-  )
   @ApiReadAll({
     summary: 'Get all projects',
     description: 'Retrieve all projects with optional filters and pagination',
     responseType: ProjectResponseDto,
-    roles: [
-      Role.SUPER_ADMIN,
-      Role.ADMIN,
-      Role.MANAGER,
-      Role.SALES,
-      Role.FIELD_WORKER,
-      Role.EXECUTION_ENGINEER,
-    ],
   })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number', example: 1 })
   @ApiQuery({
@@ -170,22 +149,17 @@ export class ProjectController {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 20;
 
-    const result = await this.projectService.findAll(
-      organizationId,
-      pageNum,
-      limitNum,
-      {
-        status,
-        priority,
-        customerId,
-        projectManagerId,
-        quoteId,
-        projectType,
-        fromDate,
-        toDate,
-        search,
-      },
-    );
+    const result = await this.projectService.findAll(organizationId, pageNum, limitNum, {
+      status,
+      priority,
+      customerId,
+      projectManagerId,
+      quoteId,
+      projectType,
+      fromDate,
+      toDate,
+      search,
+    });
 
     return {
       data: plainToInstance(ProjectResponseDto, result.projects, {
@@ -204,26 +178,10 @@ export class ProjectController {
    * Get project by ID
    */
   @Get(':id')
-  @Roles(
-    Role.SUPER_ADMIN,
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.SALES,
-    Role.FIELD_WORKER,
-    Role.EXECUTION_ENGINEER,
-  )
   @ApiReadOne({
     summary: 'Get project by ID',
     description: 'Retrieve a single project with all relations',
     responseType: ProjectResponseDto,
-    roles: [
-      Role.SUPER_ADMIN,
-      Role.ADMIN,
-      Role.MANAGER,
-      Role.SALES,
-      Role.FIELD_WORKER,
-      Role.EXECUTION_ENGINEER,
-    ],
   })
   async findOne(
     @OrganizationContext() organizationId: string,
@@ -241,12 +199,10 @@ export class ProjectController {
    * Update a project
    */
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiUpdate({
     summary: 'Update a project',
     description: 'Update project details',
     responseType: ProjectResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
     @OrganizationContext() organizationId: string,
@@ -265,11 +221,9 @@ export class ProjectController {
    * Delete a project
    */
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiDelete({
     summary: 'Delete a project',
     description: 'Soft delete a project (only draft/cancelled)',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
     @OrganizationContext() organizationId: string,
@@ -284,7 +238,6 @@ export class ProjectController {
    * Update project status
    */
   @Patch(':id/status')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Update project status',
     description: 'Change project status with validation',
@@ -312,7 +265,6 @@ export class ProjectController {
    * Get projects by customer
    */
   @Get('customer/:customerId')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiOperation({
     summary: 'Get projects by customer',
     description: 'Retrieve all projects for a specific customer',
@@ -322,10 +274,7 @@ export class ProjectController {
     @CurrentUser() currentUser: CurrentUserType,
     @Param('customerId', ParseUUIDPipe) customerId: string,
   ): Promise<ProjectResponseDto[]> {
-    const projects = await this.projectService.findByCustomer(
-      customerId,
-      organizationId,
-    );
+    const projects = await this.projectService.findByCustomer(customerId, organizationId);
 
     return plainToInstance(ProjectResponseDto, projects, {
       excludeExtraneousValues: true,
@@ -336,7 +285,6 @@ export class ProjectController {
    * Convert quote to project
    */
   @Post('convert-from-quote/:quoteId')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Convert quote to project',
     description: 'Create a new project from an approved/accepted quote',

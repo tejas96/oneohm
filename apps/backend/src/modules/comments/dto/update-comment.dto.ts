@@ -16,4 +16,3 @@ export class UpdateCommentDto extends PartialType(CreateCommentDto) {
   @IsBoolean()
   isEdited?: boolean;
 }
-

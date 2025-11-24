@@ -102,6 +102,3 @@ export class CreateInventoryTransactionDto {
   @IsOptional()
   notes?: string;
 }
-
-
-

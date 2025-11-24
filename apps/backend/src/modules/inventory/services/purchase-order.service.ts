@@ -2,11 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { PaymentStatus, PurchaseOrderStatus } from '@oneohm-epc/shared-types';
 
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
-import {
-  CreatePurchaseOrderDto,
-  ReceivePurchaseOrderDto,
-  UpdatePurchaseOrderDto,
-} from '../dto';
+import { CreatePurchaseOrderDto, ReceivePurchaseOrderDto, UpdatePurchaseOrderDto } from '../dto';
 import { PurchaseOrderEntity } from '../entities/purchase-order.entity';
 import {
   PurchaseOrderItemRepository,
@@ -148,9 +144,7 @@ export class PurchaseOrderService {
       po.status !== PurchaseOrderStatus.DRAFT &&
       po.status !== PurchaseOrderStatus.PENDING_APPROVAL
     ) {
-      throw new BadRequestException(
-        `Cannot update purchase order with status ${po.status}`,
-      );
+      throw new BadRequestException(`Cannot update purchase order with status ${po.status}`);
     }
 
     return this.purchaseOrderRepository.update(id, organizationId, {
@@ -216,11 +210,7 @@ export class PurchaseOrderService {
   /**
    * Send purchase order to vendor
    */
-  async send(
-    id: string,
-    organizationId: string,
-    updatedBy: string,
-  ): Promise<PurchaseOrderEntity> {
+  async send(id: string, organizationId: string, updatedBy: string): Promise<PurchaseOrderEntity> {
     const po = await this.purchaseOrderRepository.findById(id, organizationId);
 
     if (po.status !== PurchaseOrderStatus.APPROVED) {
@@ -282,9 +272,7 @@ export class PurchaseOrderService {
 
     // Check if all items are fully received
     const items = await this.purchaseOrderItemRepository.findByPurchaseOrder(id);
-    const allFullyReceived = items.every(
-      (item) => item.receivedQuantity >= item.orderedQuantity,
-    );
+    const allFullyReceived = items.every((item) => item.receivedQuantity >= item.orderedQuantity);
     const anyPartiallyReceived = items.some(
       (item) => item.receivedQuantity > 0 && item.receivedQuantity < item.orderedQuantity,
     );
@@ -353,4 +341,3 @@ export class PurchaseOrderService {
     return this.purchaseOrderRepository.getOverduePurchaseOrders(organizationId);
   }
 }
-

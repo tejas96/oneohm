@@ -26,7 +26,9 @@ export class MaterialDispatchItemRepository {
   /**
    * Create multiple material dispatch items
    */
-  async createMany(itemsData: Partial<MaterialDispatchItemEntity>[]): Promise<MaterialDispatchItemEntity[]> {
+  async createMany(
+    itemsData: Partial<MaterialDispatchItemEntity>[],
+  ): Promise<MaterialDispatchItemEntity[]> {
     const items = this.repository.create(itemsData);
     return this.repository.save(items);
   }
@@ -107,10 +109,7 @@ export class MaterialDispatchItemRepository {
   /**
    * Get total dispatched quantity for a product by project
    */
-  async getTotalDispatchedQuantityByProject(
-    productId: string,
-    projectId: string,
-  ): Promise<number> {
+  async getTotalDispatchedQuantityByProject(productId: string, projectId: string): Promise<number> {
     const result = await this.repository
       .createQueryBuilder('item')
       .innerJoin('item.dispatch', 'dispatch')
@@ -137,4 +136,3 @@ export class MaterialDispatchItemRepository {
     });
   }
 }
-

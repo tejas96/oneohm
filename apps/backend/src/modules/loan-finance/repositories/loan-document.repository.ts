@@ -39,7 +39,10 @@ export class LoanDocumentRepository {
     });
   }
 
-  async update(id: string, updateData: Partial<LoanDocumentEntity>): Promise<LoanDocumentEntity | null> {
+  async update(
+    id: string,
+    updateData: Partial<LoanDocumentEntity>,
+  ): Promise<LoanDocumentEntity | null> {
     await this.repository.update(id, updateData as QueryDeepPartialEntity<LoanDocumentEntity>);
     return this.findById(id);
   }
@@ -158,4 +161,3 @@ export class LoanDocumentRepository {
     };
   }
 }
-

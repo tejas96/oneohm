@@ -9,14 +9,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { CommissionStatus } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
@@ -28,6 +20,9 @@ import {
   OrganizationContext,
 } from '@oneohm-epc/shared-utils';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import {
   CommissionResponseDto,
   CreateCommissionDto,
@@ -43,7 +38,7 @@ import { ResellerCommissionService } from '../services/reseller-commission.servi
 @ApiTags('Reseller Commissions')
 @ApiBearerAuth()
 @Controller('commissions')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class ResellerCommissionController {
   constructor(private readonly commissionService: ResellerCommissionService) {}
 
@@ -54,7 +49,6 @@ export class ResellerCommissionController {
     summary: 'Create a new commission',
     description: 'Creates a new commission record for a reseller.',
     responseType: CommissionResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
     additionalErrors: [
       {
         status: 400,
@@ -82,7 +76,6 @@ export class ResellerCommissionController {
     summary: 'Get all commissions',
     description: 'Retrieve all commission records for the current organization.',
     responseType: CommissionResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
     additionalQueries: [
       {
         name: 'status',
@@ -125,7 +118,6 @@ export class ResellerCommissionController {
     summary: 'Get commission by ID',
     description: 'Retrieve a specific commission record by its ID.',
     responseType: CommissionResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async findOne(
     @OrganizationContext() organizationId: string,
@@ -143,7 +135,6 @@ export class ResellerCommissionController {
     summary: 'Update commission',
     description: 'Update commission record details.',
     responseType: CommissionResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
     additionalErrors: [
       {
         status: 400,
@@ -174,7 +165,6 @@ export class ResellerCommissionController {
     summary: 'Update commission status',
     description: `Update commission status (${Object.values(CommissionStatus).join(', ')}). Handles approval and payment workflows.`,
     responseType: CommissionResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async updateStatus(
     @OrganizationContext() organizationId: string,
@@ -197,7 +187,6 @@ export class ResellerCommissionController {
   @ApiDelete({
     summary: 'Delete commission',
     description: 'Soft delete a commission record. Cannot delete paid commissions.',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
     additionalErrors: [
       {
         status: 400,
@@ -219,7 +208,6 @@ export class ResellerCommissionController {
   @Get('reseller/:resellerId/total')
   @ApiOperation({ summary: 'Get total commission earned' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Total commission retrieved' })
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   async getTotalCommissionEarned(
     @OrganizationContext() organizationId: string,
     @Param('resellerId', ParseUUIDPipe) resellerId: string,

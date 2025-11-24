@@ -108,4 +108,3 @@ export class SubsidyApplicationResponseDto {
   @Type(() => UserResponseDto)
   updatedByUser?: UserResponseDto;
 }
-

@@ -1,5 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProjectPriority, ProjectStatus, type GpsCoordinates, type ProjectMetadata } from '@oneohm-epc/shared-types';
+import {
+  ProjectPriority,
+  ProjectStatus,
+  type GpsCoordinates,
+  type ProjectMetadata,
+} from '@oneohm-epc/shared-types';
 import { Expose, Type } from 'class-transformer';
 
 import { MaterialResponseDto } from '../materials/material-response.dto';
@@ -152,4 +157,3 @@ export class ProjectResponseDto {
   @Expose()
   deletedAt?: Date;
 }
-

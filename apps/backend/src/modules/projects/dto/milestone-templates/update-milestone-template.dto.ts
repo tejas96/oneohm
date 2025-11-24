@@ -8,4 +8,3 @@ import { CreateMilestoneTemplateDto } from './create-milestone-template.dto';
 export class UpdateMilestoneTemplateDto extends PartialType(CreateMilestoneTemplateDto) {
   updatedBy?: string;
 }
-

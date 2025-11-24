@@ -62,7 +62,9 @@ export class ProjectTaskRepository {
       .andWhere('task.deleted_at IS NULL');
 
     if (filters.milestoneId) {
-      queryBuilder.andWhere('task.milestone_id = :milestoneId', { milestoneId: filters.milestoneId });
+      queryBuilder.andWhere('task.milestone_id = :milestoneId', {
+        milestoneId: filters.milestoneId,
+      });
     }
 
     if (filters.assignedToUserId) {
@@ -247,4 +249,3 @@ export class ProjectTaskRepository {
     return `TASK-${nextNumber.toString().padStart(3, '0')}`;
   }
 }
-

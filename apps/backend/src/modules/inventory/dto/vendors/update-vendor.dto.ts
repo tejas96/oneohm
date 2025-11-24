@@ -179,6 +179,3 @@ export class UpdateVendorDto {
   @IsOptional()
   notes?: string;
 }
-
-
-

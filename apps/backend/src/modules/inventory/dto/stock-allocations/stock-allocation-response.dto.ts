@@ -101,6 +101,3 @@ export class StockAllocationResponseDto {
   @Expose()
   updatedBy?: string;
 }
-
-
-

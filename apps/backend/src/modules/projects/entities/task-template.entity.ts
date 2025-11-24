@@ -1,11 +1,5 @@
 import { type TaskChecklist } from '@oneohm-epc/shared-types';
-import {
-  Column,
-  DeleteDateColumn,
-  Entity,
-  Index,
-  OneToMany,
-} from 'typeorm';
+import { Column, DeleteDateColumn, Entity, Index, OneToMany } from 'typeorm';
 
 import { ProjectTaskEntity } from './project-task.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
@@ -96,4 +90,3 @@ export class TaskTemplateEntity extends BaseEntity {
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy?: string;
 }
-

@@ -22,17 +22,12 @@ import {
   ApiQuery,
   ApiParam,
 } from '@nestjs/swagger';
-import {
-  CurrentUser,
-  type CurrentUserType,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { CommentEntityType } from '@oneohm-epc/shared-types';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import { CommentResponseDto, CreateCommentDto, UpdateCommentDto } from '../dto';
 import { CommentService } from '../services/comment.service';
 
@@ -43,7 +38,7 @@ import { CommentService } from '../services/comment.service';
 @ApiTags('Comments')
 @ApiBearerAuth()
 @Controller('comments')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
@@ -57,15 +52,6 @@ export class CommentController {
     description: 'Comment created successfully',
     type: CommentResponseDto,
   })
-  @Roles(
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.SALES,
-    Role.EXECUTION_ENGINEER,
-    Role.DESIGN_ENGINEER,
-    Role.ACCOUNTS,
-    Role.FIELD_WORKER,
-  )
   async create(
     @Body() dto: CreateCommentDto,
     @CurrentUser() currentUser: CurrentUserType,
@@ -88,15 +74,6 @@ export class CommentController {
     description: 'Comments retrieved successfully',
     type: [CommentResponseDto],
   })
-  @Roles(
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.SALES,
-    Role.EXECUTION_ENGINEER,
-    Role.DESIGN_ENGINEER,
-    Role.ACCOUNTS,
-    Role.FIELD_WORKER,
-  )
   async findAll(
     @Query('entityType') entityType?: CommentEntityType,
     @Query('entityId') entityId?: string,
@@ -127,15 +104,6 @@ export class CommentController {
     description: 'Mentions retrieved successfully',
     type: [CommentResponseDto],
   })
-  @Roles(
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.SALES,
-    Role.EXECUTION_ENGINEER,
-    Role.DESIGN_ENGINEER,
-    Role.ACCOUNTS,
-    Role.FIELD_WORKER,
-  )
   async getMentions(@CurrentUser() currentUser: CurrentUserType): Promise<CommentResponseDto[]> {
     const comments = await this.commentService.findMentions(currentUser.id);
     return plainToInstance(CommentResponseDto, comments, { excludeExtraneousValues: true });
@@ -144,15 +112,6 @@ export class CommentController {
   @Get('mentions/count')
   @ApiOperation({ summary: 'Get count of unread mentions' })
   @ApiResponse({ status: 200, description: 'Mentions count retrieved successfully' })
-  @Roles(
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.SALES,
-    Role.EXECUTION_ENGINEER,
-    Role.DESIGN_ENGINEER,
-    Role.ACCOUNTS,
-    Role.FIELD_WORKER,
-  )
   async getMentionsCount(@CurrentUser() currentUser: CurrentUserType): Promise<{ count: number }> {
     const count = await this.commentService.getUnreadMentionsCount(currentUser.id);
     return { count };
@@ -167,15 +126,6 @@ export class CommentController {
     description: 'Comment tree retrieved successfully',
     type: [CommentResponseDto],
   })
-  @Roles(
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.SALES,
-    Role.EXECUTION_ENGINEER,
-    Role.DESIGN_ENGINEER,
-    Role.ACCOUNTS,
-    Role.FIELD_WORKER,
-  )
   async getCommentTree(
     @Param('entityType') entityType: CommentEntityType,
     @Param('entityId') entityId: string,
@@ -189,15 +139,6 @@ export class CommentController {
   @ApiParam({ name: 'entityType', enum: CommentEntityType })
   @ApiParam({ name: 'entityId', type: String })
   @ApiResponse({ status: 200, description: 'Comment stats retrieved successfully' })
-  @Roles(
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.SALES,
-    Role.EXECUTION_ENGINEER,
-    Role.DESIGN_ENGINEER,
-    Role.ACCOUNTS,
-    Role.FIELD_WORKER,
-  )
   async getStats(
     @Param('entityType') entityType: CommentEntityType,
     @Param('entityId') entityId: string,
@@ -213,15 +154,6 @@ export class CommentController {
     type: CommentResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Comment not found' })
-  @Roles(
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.SALES,
-    Role.EXECUTION_ENGINEER,
-    Role.DESIGN_ENGINEER,
-    Role.ACCOUNTS,
-    Role.FIELD_WORKER,
-  )
   async findById(@Param('id') id: string): Promise<CommentResponseDto> {
     const comment = await this.commentService.findById(id);
     return plainToInstance(CommentResponseDto, comment, { excludeExtraneousValues: true });
@@ -234,15 +166,6 @@ export class CommentController {
     description: 'Replies retrieved successfully',
     type: [CommentResponseDto],
   })
-  @Roles(
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.SALES,
-    Role.EXECUTION_ENGINEER,
-    Role.DESIGN_ENGINEER,
-    Role.ACCOUNTS,
-    Role.FIELD_WORKER,
-  )
   async getReplies(@Param('id') id: string): Promise<CommentResponseDto[]> {
     const replies = await this.commentService.findReplies(id);
     return plainToInstance(CommentResponseDto, replies, { excludeExtraneousValues: true });
@@ -259,15 +182,6 @@ export class CommentController {
     type: CommentResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Comment not found' })
-  @Roles(
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.SALES,
-    Role.EXECUTION_ENGINEER,
-    Role.DESIGN_ENGINEER,
-    Role.ACCOUNTS,
-    Role.FIELD_WORKER,
-  )
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateCommentDto,
@@ -285,15 +199,6 @@ export class CommentController {
   @ApiOperation({ summary: 'Delete comment (soft delete)' })
   @ApiResponse({ status: 204, description: 'Comment deleted successfully' })
   @ApiResponse({ status: 404, description: 'Comment not found' })
-  @Roles(
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.SALES,
-    Role.EXECUTION_ENGINEER,
-    Role.DESIGN_ENGINEER,
-    Role.ACCOUNTS,
-    Role.FIELD_WORKER,
-  )
   async delete(
     @Param('id') id: string,
     @CurrentUser() currentUser: CurrentUserType,

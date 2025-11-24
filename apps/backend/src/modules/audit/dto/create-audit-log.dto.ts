@@ -1,7 +1,6 @@
 import { AuditAction, AuditEntityType } from '@oneohm-epc/shared-types';
 import { IsEnum, IsNotEmpty, IsObject, IsOptional, IsString, IsUUID } from 'class-validator';
 
-
 /**
  * DTO for creating an audit log entry
  */
@@ -46,4 +45,3 @@ export class CreateAuditLogDto {
   @IsOptional()
   metadata?: Record<string, unknown>;
 }
-

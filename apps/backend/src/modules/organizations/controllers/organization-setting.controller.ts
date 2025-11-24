@@ -1,13 +1,14 @@
 import { Body, Controller, Param, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { type CurrentUserType, CurrentUser, JwtAuthGuard, Role, RolesGuard } from '@oneohm-epc/shared-auth';
 import { ApiCreate, ApiDelete, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import { type CurrentUserType } from '../../auth/types';
 import { CreateOrganizationSettingDto } from '../dto/create-organization-setting.dto';
 import { UpdateOrganizationSettingDto } from '../dto/update-organization-setting.dto';
 import type { OrganizationSettingEntity } from '../entities/organization-setting.entity';
 import { OrganizationSettingService } from '../services/organization-setting.service';
-
 
 /**
  * Organization Setting Controller
@@ -16,7 +17,7 @@ import { OrganizationSettingService } from '../services/organization-setting.ser
 @ApiTags('Organization Settings')
 @ApiBearerAuth()
 @Controller('organization-settings')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class OrganizationSettingController {
   constructor(private readonly organizationSettingService: OrganizationSettingService) {}
 
@@ -27,7 +28,6 @@ export class OrganizationSettingController {
     summary: 'Create organization setting',
     description: 'Create a new setting for an organization.',
     responseType: Object, // Generic response since we don't have a specific DTO
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async create(
     @Body() createDto: CreateOrganizationSettingDto,
@@ -43,7 +43,6 @@ export class OrganizationSettingController {
     summary: 'Get organization settings',
     description: 'Retrieve all settings for a specific organization.',
     responseType: Array,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
     idParam: 'organizationId',
   })
   async findByOrganization(
@@ -60,7 +59,6 @@ export class OrganizationSettingController {
     summary: 'Get setting by ID',
     description: 'Retrieve a specific setting by its UUID.',
     responseType: Object,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async findById(@Param('id', ParseUUIDPipe) id: string): Promise<OrganizationSettingEntity> {
     return this.organizationSettingService.findById(id);
@@ -73,7 +71,6 @@ export class OrganizationSettingController {
     summary: 'Update setting',
     description: 'Update an existing setting by its UUID.',
     responseType: Object,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -89,7 +86,6 @@ export class OrganizationSettingController {
   @ApiDelete({
     summary: 'Delete setting',
     description: 'Delete a setting by its UUID.',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     await this.organizationSettingService.delete(id);

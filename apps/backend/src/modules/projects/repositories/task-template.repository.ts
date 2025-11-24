@@ -139,4 +139,3 @@ export class TaskTemplateRepository {
     return count > 0;
   }
 }
-

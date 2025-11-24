@@ -90,10 +90,7 @@ export class ResellerProfileRepository {
     });
   }
 
-  async findByEmail(
-    organizationId: string,
-    email: string,
-  ): Promise<ResellerProfileEntity | null> {
+  async findByEmail(organizationId: string, email: string): Promise<ResellerProfileEntity | null> {
     return this.repository.findOne({
       where: { organizationId, email, deletedAt: IsNull() },
     });
@@ -111,4 +108,3 @@ export class ResellerProfileRepository {
     await this.repository.update({ id }, metrics);
   }
 }
-

@@ -19,10 +19,7 @@ export class SurveyService {
   /**
    * Create a new site survey
    */
-  async create(
-    organizationId: string,
-    createDto: CreateSurveyDto,
-  ): Promise<SiteSurveyEntity> {
+  async create(organizationId: string, createDto: CreateSurveyDto): Promise<SiteSurveyEntity> {
     // Verify project exists and belongs to organization
     await this.projectRepository.findById(createDto.projectId, organizationId);
 
@@ -71,11 +68,7 @@ export class SurveyService {
   /**
    * Find survey by ID
    */
-  async findById(
-    id: string,
-    projectId: string,
-    organizationId: string,
-  ): Promise<SiteSurveyEntity> {
+  async findById(id: string, projectId: string, organizationId: string): Promise<SiteSurveyEntity> {
     // Verify project exists
     await this.projectRepository.findById(projectId, organizationId);
 
@@ -169,4 +162,3 @@ export class SurveyService {
     return this.surveyRepository.findCompleted(projectId);
   }
 }
-

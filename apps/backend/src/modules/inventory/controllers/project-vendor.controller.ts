@@ -11,19 +11,20 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { ProjectVendorStatus } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate,
-  OrganizationContext} from '@oneohm-epc/shared-utils';
+import {
+  ApiCreate,
+  ApiDelete,
+  ApiReadAll,
+  ApiReadOne,
+  ApiUpdate,
+  OrganizationContext,
+} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import { CreateProjectVendorDto, ProjectVendorResponseDto, UpdateProjectVendorDto } from '../dto';
 import { ProjectVendorService } from '../services';
 
@@ -34,7 +35,7 @@ import { ProjectVendorService } from '../services';
 @ApiTags('Inventory - Project Vendors')
 @ApiBearerAuth()
 @Controller('project-vendors')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class ProjectVendorController {
   constructor(private readonly projectVendorService: ProjectVendorService) {}
 
@@ -42,12 +43,10 @@ export class ProjectVendorController {
    * Assign vendor to project
    */
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiCreate({
     summary: 'Assign vendor to project',
     description: 'Create a relationship between a vendor and a project',
     responseType: ProjectVendorResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async assignVendor(
     @OrganizationContext() organizationId: string,
@@ -69,12 +68,10 @@ export class ProjectVendorController {
    * Get project-vendor by ID
    */
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiReadOne({
     summary: 'Get project-vendor by ID',
     description: 'Retrieve a specific project-vendor relationship by its ID',
     responseType: ProjectVendorResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<ProjectVendorResponseDto> {
     const projectVendor = await this.projectVendorService.findById(id);
@@ -88,7 +85,6 @@ export class ProjectVendorController {
    * Get all vendors for a project
    */
   @Get('project/:projectId')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiOperation({
     summary: 'Get vendors by project',
     description: 'Retrieve all vendors assigned to a specific project',
@@ -107,12 +103,10 @@ export class ProjectVendorController {
    * Get all projects for a vendor
    */
   @Get('vendor/:vendorId')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiReadAll({
     summary: 'Get projects by vendor',
     description: 'Retrieve all projects assigned to a specific vendor',
     responseType: ProjectVendorResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   @ApiQuery({
     name: 'page',
@@ -169,12 +163,10 @@ export class ProjectVendorController {
    * Update project-vendor relationship
    */
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiUpdate({
     summary: 'Update project-vendor',
     description: 'Update an existing project-vendor relationship',
     responseType: ProjectVendorResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -191,11 +183,9 @@ export class ProjectVendorController {
    * Remove vendor from project
    */
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiDelete({
     summary: 'Remove vendor from project',
     description: 'Delete a project-vendor relationship (inactive only)',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async remove(@Param('id', ParseUUIDPipe) id: string): Promise<{ message: string }> {
     await this.projectVendorService.removeVendorFromProject(id);
@@ -207,7 +197,6 @@ export class ProjectVendorController {
    * Change vendor status
    */
   @Patch(':id/status')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Change vendor status',
     description: 'Update the status of a project-vendor relationship',
@@ -227,7 +216,6 @@ export class ProjectVendorController {
    * Get total contract value for a project
    */
   @Get('project/:projectId/contract-value')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Get total contract value',
     description: 'Calculate total contract value for all active vendors in a project',
@@ -244,7 +232,6 @@ export class ProjectVendorController {
    * Get active vendors for a project
    */
   @Get('project/:projectId/active')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiOperation({
     summary: 'Get active vendors',
     description: 'Retrieve all active vendors for a project',

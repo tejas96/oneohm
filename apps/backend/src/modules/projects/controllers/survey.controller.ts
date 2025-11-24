@@ -11,19 +11,19 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { SiteSurveyStatus } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiUpdate,
-  OrganizationContext} from '@oneohm-epc/shared-utils';
+import {
+  ApiCreate,
+  ApiDelete,
+  ApiReadAll,
+  ApiUpdate,
+  OrganizationContext,
+} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import { CreateSurveyDto, SurveyResponseDto, UpdateSurveyDto } from '../dto';
 import { SurveyService } from '../services/survey.service';
 
@@ -34,7 +34,7 @@ import { SurveyService } from '../services/survey.service';
 @ApiTags('Projects & Installation')
 @ApiBearerAuth()
 @Controller('projects/:projectId/surveys')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class SurveyController {
   constructor(private readonly surveyService: SurveyService) {}
 
@@ -42,12 +42,10 @@ export class SurveyController {
    * Create a new site survey
    */
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiCreate({
     summary: 'Create a new site survey',
     description: 'Creates a new pre-installation site survey',
     responseType: SurveyResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   async create(
     @OrganizationContext() organizationId: string,
@@ -69,12 +67,10 @@ export class SurveyController {
    * Get all surveys for a project
    */
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiReadAll({
     summary: 'Get all surveys',
     description: 'Retrieve all site surveys for a project',
     responseType: SurveyResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   @ApiQuery({
     name: 'status',
@@ -95,14 +91,10 @@ export class SurveyController {
     @Query('status') status?: SiteSurveyStatus,
     @Query('surveyorId') surveyorId?: string,
   ): Promise<SurveyResponseDto[]> {
-    const surveys = await this.surveyService.findByProject(
-      projectId,
-      organizationId,
-      {
-        status,
-        surveyorId,
-      },
-    );
+    const surveys = await this.surveyService.findByProject(projectId, organizationId, {
+      status,
+      surveyorId,
+    });
 
     return plainToInstance(SurveyResponseDto, surveys, {
       excludeExtraneousValues: true,
@@ -113,7 +105,6 @@ export class SurveyController {
    * Get survey by ID
    */
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiOperation({
     summary: 'Get survey by ID',
     description: 'Retrieve a single survey with all details',
@@ -135,12 +126,10 @@ export class SurveyController {
    * Update a survey
    */
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiUpdate({
     summary: 'Update a survey',
     description: 'Update survey findings and details',
     responseType: SurveyResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   async update(
     @OrganizationContext() organizationId: string,
@@ -149,12 +138,7 @@ export class SurveyController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateSurveyDto,
   ): Promise<SurveyResponseDto> {
-    const survey = await this.surveyService.update(
-      id,
-      projectId,
-      organizationId,
-      updateDto,
-    );
+    const survey = await this.surveyService.update(id, projectId, organizationId, updateDto);
 
     return plainToInstance(SurveyResponseDto, survey, {
       excludeExtraneousValues: true,
@@ -165,11 +149,9 @@ export class SurveyController {
    * Delete a survey
    */
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiDelete({
     summary: 'Delete a survey',
     description: 'Delete a survey (only scheduled)',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
     @OrganizationContext() organizationId: string,
@@ -185,7 +167,6 @@ export class SurveyController {
    * Update survey status
    */
   @Patch(':id/status')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiOperation({
     summary: 'Update survey status',
     description: 'Change survey status',
@@ -203,12 +184,7 @@ export class SurveyController {
     @Param('id', ParseUUIDPipe) id: string,
     @Query('status') status: SiteSurveyStatus,
   ): Promise<SurveyResponseDto> {
-    const survey = await this.surveyService.updateStatus(
-      id,
-      projectId,
-      organizationId,
-      status,
-    );
+    const survey = await this.surveyService.updateStatus(id, projectId, organizationId, status);
 
     return plainToInstance(SurveyResponseDto, survey, {
       excludeExtraneousValues: true,
@@ -219,7 +195,6 @@ export class SurveyController {
    * Get latest survey
    */
   @Get('latest/survey')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiOperation({
     summary: 'Get latest survey',
     description: 'Retrieve the most recent survey for a project',
@@ -238,4 +213,3 @@ export class SurveyController {
       : null;
   }
 }
-

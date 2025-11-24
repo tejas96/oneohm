@@ -127,4 +127,3 @@ export class PricingRuleEntity extends BaseEntity {
   @JoinColumn({ name: 'updated_by' })
   updater?: UserEntity;
 }
-

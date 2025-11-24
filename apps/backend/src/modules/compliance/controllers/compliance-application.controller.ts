@@ -11,9 +11,10 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
-import { CurrentUser, JwtAuthGuard, Role, Roles, RolesGuard } from '@oneohm-epc/shared-auth';
 import { ComplianceStatus } from '@oneohm-epc/shared-types';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
 import {
   CreateComplianceApplicationDto,
   UpdateComplianceApplicationDto,
@@ -23,13 +24,12 @@ import { ComplianceApplicationService } from '../services/compliance-application
 
 @ApiTags('Compliance & Liaising')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('compliance-applications')
 export class ComplianceApplicationController {
   constructor(private readonly complianceService: ComplianceApplicationService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.MANAGER, Role.LIAISON_OFFICER)
   @ApiOperation({ summary: 'Create a new compliance application' })
   @ApiResponse({
     status: 201,
@@ -79,7 +79,9 @@ export class ComplianceApplicationController {
     description: 'List of compliance applications with given status',
     type: [ComplianceApplicationResponseDto],
   })
-  async findByStatus(@Param('status') status: ComplianceStatus): Promise<ComplianceApplicationResponseDto[]> {
+  async findByStatus(
+    @Param('status') status: ComplianceStatus,
+  ): Promise<ComplianceApplicationResponseDto[]> {
     return this.complianceService.findByStatus(status);
   }
 
@@ -92,12 +94,13 @@ export class ComplianceApplicationController {
     type: ComplianceApplicationResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Compliance application not found' })
-  async findById(@Param('id', ParseUUIDPipe) id: string): Promise<ComplianceApplicationResponseDto> {
+  async findById(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ComplianceApplicationResponseDto> {
     return this.complianceService.findById(id);
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.LIAISON_OFFICER)
   @ApiOperation({ summary: 'Update a compliance application' })
   @ApiParam({ name: 'id', description: 'Compliance Application UUID' })
   @ApiResponse({
@@ -117,7 +120,6 @@ export class ComplianceApplicationController {
   }
 
   @Patch(':id/submit')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.LIAISON_OFFICER)
   @ApiOperation({ summary: 'Submit compliance application' })
   @ApiParam({ name: 'id', description: 'Compliance Application UUID' })
   @ApiResponse({
@@ -133,7 +135,6 @@ export class ComplianceApplicationController {
   }
 
   @Patch(':id/approve')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Approve compliance application' })
   @ApiParam({ name: 'id', description: 'Compliance Application UUID' })
   @ApiResponse({
@@ -149,7 +150,6 @@ export class ComplianceApplicationController {
   }
 
   @Patch(':id/reject')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Reject compliance application' })
   @ApiParam({ name: 'id', description: 'Compliance Application UUID' })
   @ApiResponse({
@@ -165,7 +165,6 @@ export class ComplianceApplicationController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Delete a compliance application (soft delete)' })
   @ApiParam({ name: 'id', description: 'Compliance Application UUID' })
   @ApiResponse({ status: 200, description: 'Compliance application deleted successfully' })

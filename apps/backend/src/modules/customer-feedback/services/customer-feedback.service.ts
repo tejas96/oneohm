@@ -55,7 +55,10 @@ export class CustomerFeedbackService {
     });
   }
 
-  async update(id: string, updateDto: UpdateCustomerFeedbackDto): Promise<CustomerFeedbackResponseDto> {
+  async update(
+    id: string,
+    updateDto: UpdateCustomerFeedbackDto,
+  ): Promise<CustomerFeedbackResponseDto> {
     const existing = await this.feedbackRepository.findById(id);
     if (!existing) {
       throw new NotFoundException(`Customer feedback with ID ${id} not found`);
@@ -126,7 +129,9 @@ export class CustomerFeedbackService {
     });
   }
 
-  async findPublishedByOrganization(organizationId: string): Promise<CustomerFeedbackResponseDto[]> {
+  async findPublishedByOrganization(
+    organizationId: string,
+  ): Promise<CustomerFeedbackResponseDto[]> {
     const feedbacks = await this.feedbackRepository.findPublishedByOrganization(organizationId);
     return plainToInstance(CustomerFeedbackResponseDto, feedbacks, {
       excludeExtraneousValues: true,
@@ -285,4 +290,3 @@ export class CustomerFeedbackService {
     return NPSCategory.PROMOTER;
   }
 }
-

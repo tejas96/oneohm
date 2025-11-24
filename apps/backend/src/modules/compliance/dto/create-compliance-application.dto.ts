@@ -1,6 +1,14 @@
 import { ComplianceStatus } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
-import { IsDate, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import {
+  IsDate,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 
 /**
  * DTO for creating a compliance application
@@ -46,4 +54,3 @@ export class CreateComplianceApplicationDto {
   @IsOptional()
   createdBy?: string;
 }
-

@@ -219,8 +219,7 @@ export class MaterialDispatchService {
    * Get dispatch statistics
    */
   async getStatistics(organizationId: string) {
-    const countByStatus =
-      await this.materialDispatchRepository.countByStatus(organizationId);
+    const countByStatus = await this.materialDispatchRepository.countByStatus(organizationId);
 
     return {
       total: Object.values(countByStatus).reduce((sum, count) => sum + count, 0),
@@ -278,4 +277,3 @@ export class MaterialDispatchService {
     }
   }
 }
-

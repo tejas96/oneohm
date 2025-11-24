@@ -83,4 +83,3 @@ export class CreateInspectionDto {
   @IsOptional()
   createdBy?: string;
 }
-

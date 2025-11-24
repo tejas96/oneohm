@@ -7,7 +7,7 @@ import { AuditLogEntity } from '../entities/audit-log.entity';
 
 /**
  * Repository for Audit Logs
- * 
+ *
  * Provides comprehensive query methods for audit trail analysis
  */
 @Injectable()
@@ -48,13 +48,19 @@ export class AuditLogRepository {
   /**
    * Find audit logs with complex filters
    */
-  async findWithFilters(filters: QueryAuditLogsDto, limit: number = 100): Promise<AuditLogEntity[]> {
-    const query = this.repository.createQueryBuilder('audit')
+  async findWithFilters(
+    filters: QueryAuditLogsDto,
+    limit: number = 100,
+  ): Promise<AuditLogEntity[]> {
+    const query = this.repository
+      .createQueryBuilder('audit')
       .leftJoinAndSelect('audit.organization', 'organization')
       .leftJoinAndSelect('audit.user', 'user');
 
     if (filters.organizationId) {
-      query.andWhere('audit.organization_id = :organizationId', { organizationId: filters.organizationId });
+      query.andWhere('audit.organization_id = :organizationId', {
+        organizationId: filters.organizationId,
+      });
     }
 
     if (filters.entityType) {
@@ -143,7 +149,11 @@ export class AuditLogRepository {
   /**
    * Find audit logs within date range
    */
-  async findByDateRange(startDate: Date, endDate: Date, limit: number = 100): Promise<AuditLogEntity[]> {
+  async findByDateRange(
+    startDate: Date,
+    endDate: Date,
+    limit: number = 100,
+  ): Promise<AuditLogEntity[]> {
     return this.repository.find({
       where: {
         createdAt: Between(startDate, endDate),
@@ -176,7 +186,9 @@ export class AuditLogRepository {
     const query = this.repository.createQueryBuilder('audit');
 
     if (filters.organizationId) {
-      query.andWhere('audit.organization_id = :organizationId', { organizationId: filters.organizationId });
+      query.andWhere('audit.organization_id = :organizationId', {
+        organizationId: filters.organizationId,
+      });
     }
 
     if (filters.entityType) {
@@ -249,4 +261,3 @@ export class AuditLogRepository {
     }, {});
   }
 }
-

@@ -12,9 +12,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { CurrentUser, JwtAuthGuard, Role, Roles, RolesGuard } from '@oneohm-epc/shared-auth';
 import { NPSCategory } from '@oneohm-epc/shared-types';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
 import {
   CreateCustomerFeedbackDto,
   CustomerFeedbackResponseDto,
@@ -27,7 +28,7 @@ import { CustomerFeedbackService } from '../services';
  */
 @ApiTags('Customer Feedback')
 @Controller('customer-feedback')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class CustomerFeedbackController {
   constructor(private readonly feedbackService: CustomerFeedbackService) {}
 
@@ -36,7 +37,6 @@ export class CustomerFeedbackController {
   // ============================================
 
   @Post()
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Create customer feedback' })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -62,7 +62,6 @@ export class CustomerFeedbackController {
   // ============================================
 
   @Get()
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiOperation({ summary: 'Get all customer feedback' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -74,7 +73,6 @@ export class CustomerFeedbackController {
   }
 
   @Get('published')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES, Role.EXECUTION_ENGINEER, Role.DESIGN_ENGINEER)
   @ApiOperation({ summary: 'Get all published feedback (testimonials)' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -86,7 +84,6 @@ export class CustomerFeedbackController {
   }
 
   @Get('without-response')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiOperation({ summary: 'Get feedback without company response' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -98,7 +95,6 @@ export class CustomerFeedbackController {
   }
 
   @Get('with-response')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiOperation({ summary: 'Get feedback with company response' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -110,19 +106,19 @@ export class CustomerFeedbackController {
   }
 
   @Get('organization/:organizationId')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiOperation({ summary: 'Get feedback by organization' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'List of feedback for organization',
     type: [CustomerFeedbackResponseDto],
   })
-  async findByOrganization(@Param('organizationId') organizationId: string): Promise<CustomerFeedbackResponseDto[]> {
+  async findByOrganization(
+    @Param('organizationId') organizationId: string,
+  ): Promise<CustomerFeedbackResponseDto[]> {
     return this.feedbackService.findByOrganization(organizationId);
   }
 
   @Get('organization/:organizationId/published')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES, Role.EXECUTION_ENGINEER, Role.DESIGN_ENGINEER)
   @ApiOperation({ summary: 'Get published feedback by organization' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -136,43 +132,45 @@ export class CustomerFeedbackController {
   }
 
   @Get('project/:projectId')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES, Role.EXECUTION_ENGINEER)
   @ApiOperation({ summary: 'Get feedback by project' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'List of feedback for project',
     type: [CustomerFeedbackResponseDto],
   })
-  async findByProject(@Param('projectId') projectId: string): Promise<CustomerFeedbackResponseDto[]> {
+  async findByProject(
+    @Param('projectId') projectId: string,
+  ): Promise<CustomerFeedbackResponseDto[]> {
     return this.feedbackService.findByProject(projectId);
   }
 
   @Get('customer/:customerId')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiOperation({ summary: 'Get feedback by customer' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'List of feedback for customer',
     type: [CustomerFeedbackResponseDto],
   })
-  async findByCustomer(@Param('customerId') customerId: string): Promise<CustomerFeedbackResponseDto[]> {
+  async findByCustomer(
+    @Param('customerId') customerId: string,
+  ): Promise<CustomerFeedbackResponseDto[]> {
     return this.feedbackService.findByCustomer(customerId);
   }
 
   @Get('nps-category/:category')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiOperation({ summary: 'Get feedback by NPS category' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'List of feedback by NPS category',
     type: [CustomerFeedbackResponseDto],
   })
-  async findByNPSCategory(@Param('category') category: NPSCategory): Promise<CustomerFeedbackResponseDto[]> {
+  async findByNPSCategory(
+    @Param('category') category: NPSCategory,
+  ): Promise<CustomerFeedbackResponseDto[]> {
     return this.feedbackService.findByNPSCategory(category);
   }
 
   @Get('date-range')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiOperation({ summary: 'Get feedback by date range' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -191,7 +189,6 @@ export class CustomerFeedbackController {
   // ============================================
 
   @Get('organization/:organizationId/nps-score')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Calculate NPS score for organization' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -211,19 +208,19 @@ export class CustomerFeedbackController {
   }
 
   @Get('organization/:organizationId/average-rating')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Get average rating for organization' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Average rating',
   })
-  async getAverageRating(@Param('organizationId') organizationId: string): Promise<{ averageRating: number }> {
+  async getAverageRating(
+    @Param('organizationId') organizationId: string,
+  ): Promise<{ averageRating: number }> {
     const rating = await this.feedbackService.getAverageRating(organizationId);
     return { averageRating: rating };
   }
 
   @Get('organization/:organizationId/department-averages')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Get department-wise average ratings' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -236,18 +233,18 @@ export class CustomerFeedbackController {
   }
 
   @Get('organization/:organizationId/statistics')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Get comprehensive statistics for organization' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Comprehensive feedback statistics',
   })
-  async getStatistics(@Param('organizationId') organizationId: string): Promise<Record<string, unknown>> {
+  async getStatistics(
+    @Param('organizationId') organizationId: string,
+  ): Promise<Record<string, unknown>> {
     return this.feedbackService.getStatistics(organizationId);
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES, Role.EXECUTION_ENGINEER)
   @ApiOperation({ summary: 'Get feedback by ID' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -267,7 +264,6 @@ export class CustomerFeedbackController {
   // ============================================
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiOperation({ summary: 'Update feedback' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -290,7 +286,6 @@ export class CustomerFeedbackController {
   }
 
   @Patch(':id/respond')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Add company response to feedback' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -310,7 +305,6 @@ export class CustomerFeedbackController {
   }
 
   @Patch(':id/publish')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Publish feedback as testimonial' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -326,7 +320,6 @@ export class CustomerFeedbackController {
   }
 
   @Patch(':id/unpublish')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Unpublish feedback' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -346,7 +339,6 @@ export class CustomerFeedbackController {
   // ============================================
 
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete feedback (soft delete)' })
   @ApiResponse({
@@ -361,4 +353,3 @@ export class CustomerFeedbackController {
     return this.feedbackService.delete(id);
   }
 }
-

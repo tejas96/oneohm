@@ -71,4 +71,3 @@ export class ReceivePurchaseOrderDto {
   @IsOptional()
   notes?: string;
 }
-

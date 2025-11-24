@@ -40,8 +40,14 @@ export class SubsidyApplicationRepository {
     });
   }
 
-  async update(id: string, updateData: Partial<SubsidyApplicationEntity>): Promise<SubsidyApplicationEntity | null> {
-    await this.repository.update(id, updateData as QueryDeepPartialEntity<SubsidyApplicationEntity>);
+  async update(
+    id: string,
+    updateData: Partial<SubsidyApplicationEntity>,
+  ): Promise<SubsidyApplicationEntity | null> {
+    await this.repository.update(
+      id,
+      updateData as QueryDeepPartialEntity<SubsidyApplicationEntity>,
+    );
     return this.findById(id);
   }
 
@@ -86,7 +92,9 @@ export class SubsidyApplicationRepository {
     });
   }
 
-  async findByApplicationNumber(applicationNumber: string): Promise<SubsidyApplicationEntity | null> {
+  async findByApplicationNumber(
+    applicationNumber: string,
+  ): Promise<SubsidyApplicationEntity | null> {
     return this.repository.findOne({
       where: { applicationNumber, deletedAt: IsNull() },
       relations: ['organization', 'project', 'customer'],
@@ -141,8 +149,14 @@ export class SubsidyApplicationRepository {
     });
 
     const totalApplied = applications.reduce((sum, app) => sum + Number(app.appliedAmount), 0);
-    const totalApproved = applications.reduce((sum, app) => sum + Number(app.approvedAmount || 0), 0);
-    const totalDisbursed = applications.reduce((sum, app) => sum + Number(app.disbursementAmount || 0), 0);
+    const totalApproved = applications.reduce(
+      (sum, app) => sum + Number(app.approvedAmount || 0),
+      0,
+    );
+    const totalDisbursed = applications.reduce(
+      (sum, app) => sum + Number(app.disbursementAmount || 0),
+      0,
+    );
 
     return {
       total: applications.length,
@@ -154,8 +168,9 @@ export class SubsidyApplicationRepository {
         return acc;
       }, {}),
       approvalRate:
-        applications.filter((a) => a.status === SubsidyStatus.APPROVED || a.status === SubsidyStatus.DISBURSED).length /
-        (applications.length || 1),
+        applications.filter(
+          (a) => a.status === SubsidyStatus.APPROVED || a.status === SubsidyStatus.DISBURSED,
+        ).length / (applications.length || 1),
     };
   }
 
@@ -179,4 +194,3 @@ export class SubsidyApplicationRepository {
     return this.repository.count({ where });
   }
 }
-

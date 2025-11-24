@@ -2,11 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { LoanDocumentType } from '@oneohm-epc/shared-types';
 import { plainToInstance } from 'class-transformer';
 
-import {
-  CreateLoanDocumentDto,
-  UpdateLoanDocumentDto,
-  LoanDocumentResponseDto,
-} from '../dto';
+import { CreateLoanDocumentDto, UpdateLoanDocumentDto, LoanDocumentResponseDto } from '../dto';
 import { LoanApplicationRepository } from '../repositories/loan-application.repository';
 import { LoanDocumentRepository } from '../repositories/loan-document.repository';
 
@@ -29,7 +25,9 @@ export class LoanDocumentService {
     const application = await this.loanApplicationRepository.findById(createDto.loanApplicationId);
 
     if (!application) {
-      throw new NotFoundException(`Loan application with ID ${createDto.loanApplicationId} not found`);
+      throw new NotFoundException(
+        `Loan application with ID ${createDto.loanApplicationId} not found`,
+      );
     }
 
     const document = await this.loanDocumentRepository.create({
@@ -108,7 +106,10 @@ export class LoanDocumentService {
     loanApplicationId: string,
     documentType: LoanDocumentType,
   ): Promise<LoanDocumentResponseDto[]> {
-    const documents = await this.loanDocumentRepository.findByDocumentType(loanApplicationId, documentType);
+    const documents = await this.loanDocumentRepository.findByDocumentType(
+      loanApplicationId,
+      documentType,
+    );
     return plainToInstance(LoanDocumentResponseDto, documents, {
       excludeExtraneousValues: true,
     });
@@ -196,4 +197,3 @@ export class LoanDocumentService {
     return this.loanDocumentRepository.getVerificationStats(loanApplicationId);
   }
 }
-

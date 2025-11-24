@@ -173,7 +173,9 @@ export class InventoryStockRepository {
    */
   async getStockSummaryByWarehouse(
     organizationId: string,
-  ): Promise<Array<{ warehouseId: string; warehouseName: string; totalItems: number; totalValue: number }>> {
+  ): Promise<
+    Array<{ warehouseId: string; warehouseName: string; totalItems: number; totalValue: number }>
+  > {
     return this.repository
       .createQueryBuilder('stock')
       .innerJoin('stock.warehouse', 'warehouse')
@@ -190,4 +192,3 @@ export class InventoryStockRepository {
       .getRawMany();
   }
 }
-

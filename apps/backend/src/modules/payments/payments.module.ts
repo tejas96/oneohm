@@ -29,4 +29,3 @@ import { ProjectsModule } from '../projects/projects.module';
   exports: [PaymentRepository, PaymentService],
 })
 export class PaymentsModule {}
-

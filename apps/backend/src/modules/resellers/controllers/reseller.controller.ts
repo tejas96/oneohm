@@ -1,12 +1,5 @@
 import { Body, Controller, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { ResellerStatus } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
@@ -18,6 +11,9 @@ import {
   OrganizationContext,
 } from '@oneohm-epc/shared-utils';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import { type CurrentUserType } from '../../auth/types';
 import { ProfileService } from '../../users/services/profile.service';
 import {
   CreateResellerDto,
@@ -38,7 +34,7 @@ import { ResellerService } from '../services/reseller.service';
 @ApiTags('Resellers')
 @ApiBearerAuth()
 @Controller('resellers')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class ResellerController {
   constructor(
     private readonly resellerService: ResellerService,
@@ -53,7 +49,6 @@ export class ResellerController {
     description:
       'Creates a new reseller partner in the system. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
     responseType: ResellerResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
     additionalErrors: [
       {
         status: 409,
@@ -81,7 +76,6 @@ export class ResellerController {
     description:
       'Retrieve all reseller partners for the specified organization. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
     responseType: ResellerResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async findAll(
     @OrganizationContext() organizationId: string,
@@ -102,7 +96,6 @@ export class ResellerController {
     description:
       'Retrieve a specific reseller by their ID. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
     responseType: ResellerResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
@@ -124,7 +117,6 @@ export class ResellerController {
     description:
       'Update reseller information. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
     responseType: ResellerResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
     additionalErrors: [
       {
         status: 409,
@@ -158,7 +150,6 @@ export class ResellerController {
     summary: 'Update reseller status',
     description: `Update reseller status (${Object.values(ResellerStatus).join(', ')}). Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).`,
     responseType: ResellerResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
@@ -185,7 +176,6 @@ export class ResellerController {
     summary: 'Delete reseller',
     description:
       'Soft delete a reseller partner. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
     @Param('id', ParseUUIDPipe) id: string,

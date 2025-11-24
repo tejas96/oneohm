@@ -1,5 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { MilestoneStatus, MilestoneType, type MilestoneDeliverable } from '@oneohm-epc/shared-types';
+import {
+  MilestoneStatus,
+  MilestoneType,
+  type MilestoneDeliverable,
+} from '@oneohm-epc/shared-types';
 import { Expose } from 'class-transformer';
 
 /**
@@ -97,4 +101,3 @@ export class MilestoneResponseDto {
   @Expose()
   deletedAt?: Date;
 }
-

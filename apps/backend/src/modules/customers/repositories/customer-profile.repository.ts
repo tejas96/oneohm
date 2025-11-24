@@ -82,19 +82,13 @@ export class CustomerProfileRepository {
     });
   }
 
-  async findByPhone(
-    organizationId: string,
-    phone: string,
-  ): Promise<CustomerProfileEntity[]> {
+  async findByPhone(organizationId: string, phone: string): Promise<CustomerProfileEntity[]> {
     return this.repository.find({
       where: { organizationId, phone, deletedAt: IsNull() },
     });
   }
 
-  async findByEmail(
-    organizationId: string,
-    email: string,
-  ): Promise<CustomerProfileEntity | null> {
+  async findByEmail(organizationId: string, email: string): Promise<CustomerProfileEntity | null> {
     return this.repository.findOne({
       where: { organizationId, email, deletedAt: IsNull() },
     });
@@ -115,4 +109,3 @@ export class CustomerProfileRepository {
     });
   }
 }
-

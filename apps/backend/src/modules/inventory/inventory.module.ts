@@ -126,4 +126,3 @@ import { ProjectsModule } from '../projects/projects.module';
   ],
 })
 export class InventoryModule {}
-

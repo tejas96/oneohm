@@ -5,4 +5,3 @@ export * from './project-vendor.service';
 export * from './purchase-order.service';
 export * from './stock-allocation.service';
 export * from './material-dispatch.service';
-

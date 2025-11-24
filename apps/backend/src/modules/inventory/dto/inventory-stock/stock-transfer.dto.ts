@@ -33,4 +33,3 @@ export class StockTransferDto {
   @IsOptional()
   notes?: string;
 }
-

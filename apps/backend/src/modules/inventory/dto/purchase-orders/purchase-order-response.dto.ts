@@ -139,6 +139,3 @@ export class PurchaseOrderResponseDto {
   @Expose()
   updatedBy?: string;
 }
-
-
-

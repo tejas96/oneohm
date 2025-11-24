@@ -40,7 +40,10 @@ export class CustomerFeedbackRepository {
     });
   }
 
-  async update(id: string, updateData: Partial<CustomerFeedbackEntity>): Promise<CustomerFeedbackEntity | null> {
+  async update(
+    id: string,
+    updateData: Partial<CustomerFeedbackEntity>,
+  ): Promise<CustomerFeedbackEntity | null> {
     await this.repository.update(id, updateData as QueryDeepPartialEntity<CustomerFeedbackEntity>);
     return this.findById(id);
   }
@@ -179,7 +182,9 @@ export class CustomerFeedbackRepository {
     }
 
     const promoters = feedbacks.filter((f) => f.npsScore !== null && f.npsScore >= 9).length;
-    const passives = feedbacks.filter((f) => f.npsScore !== null && f.npsScore >= 7 && f.npsScore <= 8).length;
+    const passives = feedbacks.filter(
+      (f) => f.npsScore !== null && f.npsScore >= 7 && f.npsScore <= 8,
+    ).length;
     const detractors = feedbacks.filter((f) => f.npsScore !== null && f.npsScore <= 6).length;
 
     const promoterPercentage = (promoters / totalResponses) * 100;
@@ -296,4 +301,3 @@ export class CustomerFeedbackRepository {
     });
   }
 }
-

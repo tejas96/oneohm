@@ -23,4 +23,3 @@ import { UsersModule } from '../users/users.module';
   exports: [CommentRepository, CommentService],
 })
 export class CommentsModule {}
-

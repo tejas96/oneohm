@@ -1,15 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { StockAllocationSourceType, StockAllocationStatus } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsUUID,
-  Min,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
 /**
  * DTO for creating a stock allocation
@@ -72,6 +64,3 @@ export class CreateStockAllocationDto {
   @IsOptional()
   notes?: string;
 }
-
-
-

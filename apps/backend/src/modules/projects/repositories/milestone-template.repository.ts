@@ -125,7 +125,11 @@ export class MilestoneTemplateRepository {
   /**
    * Update a milestone template
    */
-  async update(id: string, organizationId: string, data: Partial<MilestoneTemplateEntity>): Promise<MilestoneTemplateEntity | null> {
+  async update(
+    id: string,
+    organizationId: string,
+    data: Partial<MilestoneTemplateEntity>,
+  ): Promise<MilestoneTemplateEntity | null> {
     await this.repository.update(
       {
         id,
@@ -180,4 +184,3 @@ export class MilestoneTemplateRepository {
     });
   }
 }
-

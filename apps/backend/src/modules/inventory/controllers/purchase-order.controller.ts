@@ -11,14 +11,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { PaymentStatus, PurchaseOrderStatus } from '@oneohm-epc/shared-types';
 import {
   ApiCreate,
@@ -30,6 +22,9 @@ import {
 } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import {
   CreatePurchaseOrderDto,
   PurchaseOrderResponseDto,
@@ -45,7 +40,7 @@ import { PurchaseOrderService } from '../services';
 @ApiTags('Inventory - Purchase Orders')
 @ApiBearerAuth()
 @Controller('purchase-orders')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class PurchaseOrderController {
   constructor(private readonly purchaseOrderService: PurchaseOrderService) {}
 
@@ -53,12 +48,10 @@ export class PurchaseOrderController {
    * Create a new purchase order
    */
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiCreate({
     summary: 'Create a new purchase order',
     description: 'Creates a new purchase order for procurement',
     responseType: PurchaseOrderResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async create(
     @OrganizationContext() organizationId: string,
@@ -76,12 +69,10 @@ export class PurchaseOrderController {
    * Get all purchase orders with filters
    */
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiReadAll({
     summary: 'Get all purchase orders',
     description: 'Retrieve all purchase orders with optional filters and pagination',
     responseType: PurchaseOrderResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   @ApiQuery({
     name: 'page',
@@ -195,12 +186,10 @@ export class PurchaseOrderController {
    * Get purchase order by ID
    */
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiReadOne({
     summary: 'Get purchase order by ID',
     description: 'Retrieve a specific purchase order by its ID',
     responseType: PurchaseOrderResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   async findOne(
     @OrganizationContext() organizationId: string,
@@ -218,12 +207,10 @@ export class PurchaseOrderController {
    * Update purchase order
    */
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiUpdate({
     summary: 'Update purchase order',
     description: 'Update an existing purchase order (draft/pending only)',
     responseType: PurchaseOrderResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
     @OrganizationContext() organizationId: string,
@@ -247,11 +234,9 @@ export class PurchaseOrderController {
    * Delete purchase order
    */
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiDelete({
     summary: 'Delete purchase order',
     description: 'Soft delete a purchase order (draft only)',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
     @OrganizationContext() organizationId: string,
@@ -267,7 +252,6 @@ export class PurchaseOrderController {
    * Submit purchase order for approval
    */
   @Post(':id/submit')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Submit purchase order for approval',
     description: 'Submit a draft purchase order for approval',
@@ -292,7 +276,6 @@ export class PurchaseOrderController {
    * Approve purchase order
    */
   @Post(':id/approve')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiOperation({
     summary: 'Approve purchase order',
     description: 'Approve a pending purchase order',
@@ -313,7 +296,6 @@ export class PurchaseOrderController {
    * Send purchase order to vendor
    */
   @Post(':id/send')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Send purchase order',
     description: 'Send an approved purchase order to vendor',
@@ -334,7 +316,6 @@ export class PurchaseOrderController {
    * Receive purchase order items
    */
   @Post(':id/receive')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER)
   @ApiOperation({
     summary: 'Receive purchase order',
     description: 'Receive items from a purchase order (full or partial)',
@@ -361,7 +342,6 @@ export class PurchaseOrderController {
    * Cancel purchase order
    */
   @Post(':id/cancel')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Cancel purchase order',
     description: 'Cancel a purchase order',
@@ -383,7 +363,6 @@ export class PurchaseOrderController {
    * Get purchase order statistics
    */
   @Get('stats/summary')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Get purchase order statistics',
     description: 'Get PO count by status and pending approvals',
@@ -404,7 +383,6 @@ export class PurchaseOrderController {
    * Get overdue purchase orders
    */
   @Get('overdue/list')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Get overdue purchase orders',
     description: 'Get list of purchase orders past expected delivery date',

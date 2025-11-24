@@ -14,4 +14,3 @@ export interface IBaseIntegration {
    */
   validateCredentials(): Promise<{ valid: boolean; error?: string }>;
 }
-

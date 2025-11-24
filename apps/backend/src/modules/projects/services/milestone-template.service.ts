@@ -30,7 +30,9 @@ export class MilestoneTemplateService {
       createDto.organizationId,
     );
     if (!codeUnique) {
-      throw new BadRequestException(`Milestone template with code ${createDto.code} already exists`);
+      throw new BadRequestException(
+        `Milestone template with code ${createDto.code} already exists`,
+      );
     }
 
     const template = await this.templateRepository.create({
@@ -133,7 +135,9 @@ export class MilestoneTemplateService {
         id,
       );
       if (!codeUnique) {
-        throw new BadRequestException(`Milestone template with code ${updateDto.code} already exists`);
+        throw new BadRequestException(
+          `Milestone template with code ${updateDto.code} already exists`,
+        );
       }
     }
 
@@ -171,4 +175,3 @@ export class MilestoneTemplateService {
     return this.templateRepository.countByOrganization(organizationId);
   }
 }
-

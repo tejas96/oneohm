@@ -22,17 +22,12 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import {
-  CurrentUser,
-  type CurrentUserType,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { DocumentStatus, DocumentType } from '@oneohm-epc/shared-types';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import {
   CreateDocumentDto,
   CreateDocumentVersionDto,
@@ -52,7 +47,7 @@ import { DocumentService } from '../services/document.service';
 @ApiTags('Documents')
 @ApiBearerAuth()
 @Controller('documents')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
 
@@ -66,7 +61,6 @@ export class DocumentController {
     description: 'Document created successfully',
     type: DocumentResponseDto,
   })
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES, Role.EXECUTION_ENGINEER, Role.ACCOUNTS)
   async create(
     @Body() dto: CreateDocumentDto,
     @CurrentUser() currentUser: CurrentUserType,
@@ -82,7 +76,6 @@ export class DocumentController {
     description: 'Document version created successfully',
     type: DocumentResponseDto,
   })
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES, Role.EXECUTION_ENGINEER, Role.ACCOUNTS)
   async createVersion(
     @Body() dto: CreateDocumentVersionDto,
     @CurrentUser() currentUser: CurrentUserType,
@@ -108,7 +101,6 @@ export class DocumentController {
     description: 'Documents retrieved successfully',
     type: [DocumentResponseDto],
   })
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES, Role.EXECUTION_ENGINEER, Role.ACCOUNTS)
   async findAll(
     @Query('organizationId') organizationId?: string,
     @Query('projectId') projectId?: string,
@@ -150,7 +142,6 @@ export class DocumentController {
     type: DocumentResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Document not found' })
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES, Role.EXECUTION_ENGINEER, Role.ACCOUNTS)
   async findByDocumentNumber(
     @Param('documentNumber') documentNumber: string,
   ): Promise<DocumentResponseDto> {
@@ -166,7 +157,6 @@ export class DocumentController {
     description: 'Documents retrieved successfully',
     type: [DocumentResponseDto],
   })
-  @Roles(Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER)
   async findByWcrSession(
     @Param('wcrSessionNumber') wcrSessionNumber: string,
   ): Promise<DocumentResponseDto[]> {
@@ -178,10 +168,7 @@ export class DocumentController {
   @ApiOperation({ summary: 'Get document statistics for organization' })
   @ApiParam({ name: 'organizationId', type: String })
   @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
-  @Roles(Role.ADMIN, Role.MANAGER)
-  async getStats(
-    @Param('organizationId') organizationId: string,
-  ): Promise<{
+  async getStats(@Param('organizationId') organizationId: string): Promise<{
     byType: { type: DocumentType; count: number }[];
     byStatus: { status: DocumentStatus; count: number }[];
     unsigned: number;
@@ -198,7 +185,6 @@ export class DocumentController {
     type: DocumentResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Document not found' })
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES, Role.EXECUTION_ENGINEER, Role.ACCOUNTS)
   async findById(@Param('id') id: string): Promise<DocumentResponseDto> {
     const document = await this.documentService.findById(id);
     return plainToInstance(DocumentResponseDto, document, { excludeExtraneousValues: true });
@@ -211,7 +197,6 @@ export class DocumentController {
     description: 'Document versions retrieved successfully',
     type: [DocumentVersionResponseDto],
   })
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES, Role.EXECUTION_ENGINEER, Role.ACCOUNTS)
   async findVersions(@Param('id') id: string): Promise<DocumentVersionResponseDto[]> {
     const versions = await this.documentService.findVersions(id);
     return plainToInstance(DocumentVersionResponseDto, versions, { excludeExtraneousValues: true });
@@ -224,7 +209,6 @@ export class DocumentController {
     description: 'Latest version retrieved successfully',
     type: DocumentResponseDto,
   })
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES, Role.EXECUTION_ENGINEER, Role.ACCOUNTS)
   async findLatestVersion(@Param('id') id: string): Promise<DocumentResponseDto | null> {
     const document = await this.documentService.findLatestVersion(id);
     return plainToInstance(DocumentResponseDto, document, { excludeExtraneousValues: true });
@@ -241,7 +225,6 @@ export class DocumentController {
     type: DocumentResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Document not found' })
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES, Role.EXECUTION_ENGINEER, Role.ACCOUNTS)
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateDocumentDto,
@@ -259,7 +242,6 @@ export class DocumentController {
     type: DocumentResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Document not found' })
-  @Roles(Role.ADMIN, Role.MANAGER)
   async updateStatus(
     @Param('id') id: string,
     @Body() dto: UpdateDocumentStatusDto,
@@ -281,7 +263,6 @@ export class DocumentController {
   })
   @ApiResponse({ status: 400, description: 'Invalid request' })
   @ApiResponse({ status: 404, description: 'Document not found' })
-  @Roles(Role.ADMIN, Role.MANAGER)
   async signDocument(
     @Param('id') id: string,
     @Body() dto: SignDocumentDto,
@@ -303,7 +284,6 @@ export class DocumentController {
   })
   @ApiResponse({ status: 400, description: 'Invalid OTP' })
   @ApiResponse({ status: 404, description: 'Document not found' })
-  @Roles(Role.ADMIN, Role.MANAGER, Role.SALES, Role.EXECUTION_ENGINEER, Role.ACCOUNTS)
   async verifyOtp(
     @Param('id') id: string,
     @Body() dto: VerifyOtpDto,
@@ -321,9 +301,7 @@ export class DocumentController {
   @ApiOperation({ summary: 'Delete document (soft delete)' })
   @ApiResponse({ status: 204, description: 'Document deleted successfully' })
   @ApiResponse({ status: 404, description: 'Document not found' })
-  @Roles(Role.ADMIN)
   async delete(@Param('id') id: string): Promise<void> {
     await this.documentService.delete(id);
   }
 }
-

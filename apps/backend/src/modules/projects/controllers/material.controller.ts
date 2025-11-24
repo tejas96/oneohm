@@ -11,19 +11,19 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { MaterialStatus } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiUpdate,
-  OrganizationContext} from '@oneohm-epc/shared-utils';
+import {
+  ApiCreate,
+  ApiDelete,
+  ApiReadAll,
+  ApiUpdate,
+  OrganizationContext,
+} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import { CreateMaterialDto, MaterialResponseDto, UpdateMaterialDto } from '../dto';
 import { MaterialService } from '../services/material.service';
 
@@ -34,7 +34,7 @@ import { MaterialService } from '../services/material.service';
 @ApiTags('Projects & Installation')
 @ApiBearerAuth()
 @Controller('projects/:projectId/materials')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class MaterialController {
   constructor(private readonly materialService: MaterialService) {}
 
@@ -42,12 +42,10 @@ export class MaterialController {
    * Create a new material entry
    */
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiCreate({
     summary: 'Create a new material entry',
     description: 'Add a material requirement to the project',
     responseType: MaterialResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async create(
     @OrganizationContext() organizationId: string,
@@ -69,12 +67,10 @@ export class MaterialController {
    * Get all materials for a project
    */
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiReadAll({
     summary: 'Get all materials',
     description: 'Retrieve all materials for a project',
     responseType: MaterialResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   @ApiQuery({
     name: 'status',
@@ -102,15 +98,11 @@ export class MaterialController {
     @Query('category') category?: string,
     @Query('productId') productId?: string,
   ): Promise<MaterialResponseDto[]> {
-    const materials = await this.materialService.findByProject(
-      projectId,
-      organizationId,
-      {
-        status,
-        category,
-        productId,
-      },
-    );
+    const materials = await this.materialService.findByProject(projectId, organizationId, {
+      status,
+      category,
+      productId,
+    });
 
     return plainToInstance(MaterialResponseDto, materials, {
       excludeExtraneousValues: true,
@@ -121,7 +113,6 @@ export class MaterialController {
    * Get material by ID
    */
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiOperation({
     summary: 'Get material by ID',
     description: 'Retrieve a single material with details',
@@ -143,12 +134,10 @@ export class MaterialController {
    * Update a material
    */
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiUpdate({
     summary: 'Update a material',
     description: 'Update material details and quantities',
     responseType: MaterialResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
     @OrganizationContext() organizationId: string,
@@ -157,12 +146,7 @@ export class MaterialController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateMaterialDto,
   ): Promise<MaterialResponseDto> {
-    const material = await this.materialService.update(
-      id,
-      projectId,
-      organizationId,
-      updateDto,
-    );
+    const material = await this.materialService.update(id, projectId, organizationId, updateDto);
 
     return plainToInstance(MaterialResponseDto, material, {
       excludeExtraneousValues: true,
@@ -173,11 +157,9 @@ export class MaterialController {
    * Delete a material
    */
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiDelete({
     summary: 'Delete a material',
     description: 'Delete a material (only required/ordered)',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
     @OrganizationContext() organizationId: string,
@@ -193,7 +175,6 @@ export class MaterialController {
    * Update material status
    */
   @Patch(':id/status')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Update material status',
     description: 'Change material status with auto-date updates',
@@ -211,12 +192,7 @@ export class MaterialController {
     @Param('id', ParseUUIDPipe) id: string,
     @Query('status') status: MaterialStatus,
   ): Promise<MaterialResponseDto> {
-    const material = await this.materialService.updateStatus(
-      id,
-      projectId,
-      organizationId,
-      status,
-    );
+    const material = await this.materialService.updateStatus(id, projectId, organizationId, status);
 
     return plainToInstance(MaterialResponseDto, material, {
       excludeExtraneousValues: true,
@@ -227,7 +203,6 @@ export class MaterialController {
    * Update material quantities
    */
   @Patch(':id/quantities')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiOperation({
     summary: 'Update material quantities',
     description: 'Update allocated or used quantities',
@@ -252,15 +227,10 @@ export class MaterialController {
     @Query('quantityAllocated') quantityAllocated?: string,
     @Query('quantityUsed') quantityUsed?: string,
   ): Promise<MaterialResponseDto> {
-    const material = await this.materialService.updateQuantities(
-      id,
-      projectId,
-      organizationId,
-      {
-        quantityAllocated: quantityAllocated ? parseFloat(quantityAllocated) : undefined,
-        quantityUsed: quantityUsed ? parseFloat(quantityUsed) : undefined,
-      },
-    );
+    const material = await this.materialService.updateQuantities(id, projectId, organizationId, {
+      quantityAllocated: quantityAllocated ? parseFloat(quantityAllocated) : undefined,
+      quantityUsed: quantityUsed ? parseFloat(quantityUsed) : undefined,
+    });
 
     return plainToInstance(MaterialResponseDto, material, {
       excludeExtraneousValues: true,
@@ -271,7 +241,6 @@ export class MaterialController {
    * Get material statistics
    */
   @Get('statistics/summary')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiOperation({
     summary: 'Get material statistics',
     description: 'Get comprehensive material statistics for the project',
@@ -291,4 +260,3 @@ export class MaterialController {
     return this.materialService.getStatistics(projectId, organizationId);
   }
 }
-

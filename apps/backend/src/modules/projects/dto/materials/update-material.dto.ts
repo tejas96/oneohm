@@ -141,4 +141,3 @@ export class UpdateMaterialDto {
   @IsOptional()
   notes?: string;
 }
-

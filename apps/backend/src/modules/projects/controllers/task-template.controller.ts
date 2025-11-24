@@ -11,14 +11,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { type PaginatedResponse, type StatisticsResponse } from '@oneohm-epc/shared-types';
 import {
   ApiCreate,
@@ -30,18 +22,20 @@ import {
 } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import { CreateTaskTemplateDto, TaskTemplateResponseDto, UpdateTaskTemplateDto } from '../dto';
 import { TaskTemplateService } from '../services';
 
 @ApiTags('Task Templates')
 @ApiBearerAuth()
 @Controller('task-templates')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class TaskTemplateController {
   constructor(private readonly templateService: TaskTemplateService) {}
 
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiCreate({ responseType: TaskTemplateResponseDto, summary: 'Create a new task template' })
   async create(
     @OrganizationContext() organizationId: string,
@@ -55,7 +49,6 @@ export class TaskTemplateController {
   }
 
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiReadAll({ responseType: TaskTemplateResponseDto, summary: 'Get all task templates' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
@@ -89,7 +82,6 @@ export class TaskTemplateController {
   }
 
   @Get('stats/summary')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Get task template statistics' })
   async getStatistics(
     @OrganizationContext() organizationId: string,
@@ -99,7 +91,6 @@ export class TaskTemplateController {
   }
 
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiReadOne({ responseType: TaskTemplateResponseDto, summary: 'Get task template by ID' })
   async findOne(
     @OrganizationContext() organizationId: string,
@@ -113,7 +104,6 @@ export class TaskTemplateController {
   }
 
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiUpdate({ responseType: TaskTemplateResponseDto, summary: 'Update task template' })
   async update(
     @OrganizationContext() organizationId: string,
@@ -133,7 +123,6 @@ export class TaskTemplateController {
   }
 
   @Patch(':id/toggle-status')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Toggle template active status' })
   async toggleStatus(
     @OrganizationContext() organizationId: string,
@@ -147,7 +136,6 @@ export class TaskTemplateController {
   }
 
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiDelete({
     summary: 'Delete task template',
     description: 'Soft delete a task template',

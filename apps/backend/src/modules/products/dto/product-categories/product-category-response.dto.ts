@@ -45,4 +45,3 @@ export class ProductCategoryResponseDto {
   @Type(() => ProductCategoryResponseDto)
   childCategories?: ProductCategoryResponseDto[];
 }
-

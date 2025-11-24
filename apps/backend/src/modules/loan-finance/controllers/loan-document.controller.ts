@@ -9,21 +9,12 @@ import {
   ParseUUIDPipe,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
-import { CurrentUser, JwtAuthGuard, Role, Roles, RolesGuard } from '@oneohm-epc/shared-auth';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { LoanDocumentType } from '@oneohm-epc/shared-types';
 
-import {
-  CreateLoanDocumentDto,
-  UpdateLoanDocumentDto,
-  LoanDocumentResponseDto,
-} from '../dto';
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import { CreateLoanDocumentDto, UpdateLoanDocumentDto, LoanDocumentResponseDto } from '../dto';
 import { LoanDocumentService } from '../services/loan-document.service';
 
 /**
@@ -31,7 +22,7 @@ import { LoanDocumentService } from '../services/loan-document.service';
  */
 @ApiTags('Loan & Finance')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('loan-documents')
 export class LoanDocumentController {
   constructor(private readonly loanDocumentService: LoanDocumentService) {}
@@ -41,7 +32,6 @@ export class LoanDocumentController {
   // ============================================
 
   @Post()
-  @Roles(Role.ADMIN, Role.ACCOUNTS, Role.MANAGER, Role.SALES)
   @ApiOperation({ summary: 'Upload a new loan document' })
   @ApiResponse({
     status: 201,
@@ -181,7 +171,6 @@ export class LoanDocumentController {
   // ============================================
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.ACCOUNTS, Role.MANAGER)
   @ApiOperation({ summary: 'Update a loan document' })
   @ApiParam({ name: 'id', description: 'Loan Document UUID' })
   @ApiResponse({
@@ -199,7 +188,6 @@ export class LoanDocumentController {
   }
 
   @Patch(':id/verify')
-  @Roles(Role.ADMIN, Role.ACCOUNTS)
   @ApiOperation({ summary: 'Verify a loan document' })
   @ApiParam({ name: 'id', description: 'Loan Document UUID' })
   @ApiResponse({
@@ -217,7 +205,6 @@ export class LoanDocumentController {
   }
 
   @Patch(':id/unverify')
-  @Roles(Role.ADMIN, Role.ACCOUNTS)
   @ApiOperation({ summary: 'Unverify a loan document' })
   @ApiParam({ name: 'id', description: 'Loan Document UUID' })
   @ApiResponse({
@@ -236,7 +223,6 @@ export class LoanDocumentController {
   // ============================================
 
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.ACCOUNTS)
   @ApiOperation({ summary: 'Delete a loan document' })
   @ApiParam({ name: 'id', description: 'Loan Document UUID' })
   @ApiResponse({ status: 200, description: 'Loan document deleted successfully' })
@@ -246,4 +232,3 @@ export class LoanDocumentController {
     return { message: 'Loan document deleted successfully' };
   }
 }
-

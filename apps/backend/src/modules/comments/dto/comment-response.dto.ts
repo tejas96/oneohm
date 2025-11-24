@@ -125,4 +125,3 @@ export class CommentResponseDto {
   @Type(() => CommentResponseDto)
   parentComment?: CommentResponseDto;
 }
-

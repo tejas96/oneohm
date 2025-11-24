@@ -78,9 +78,11 @@ export class CreateLoanApplicationDto {
   @IsOptional()
   notes?: string;
 
-  @ApiPropertyOptional({ description: 'Created by user ID', example: '123e4567-e89b-12d3-a456-426614174003' })
+  @ApiPropertyOptional({
+    description: 'Created by user ID',
+    example: '123e4567-e89b-12d3-a456-426614174003',
+  })
   @IsUUID()
   @IsOptional()
   createdBy?: string;
 }
-

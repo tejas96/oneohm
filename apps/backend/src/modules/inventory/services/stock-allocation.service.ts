@@ -217,4 +217,3 @@ export class StockAllocationService {
     return this.stockAllocationRepository.getPendingAllocations(organizationId);
   }
 }
-

@@ -62,6 +62,3 @@ export class UpdateProjectVendorDto {
   @IsOptional()
   notes?: string;
 }
-
-
-

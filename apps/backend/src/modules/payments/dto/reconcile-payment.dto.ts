@@ -16,4 +16,3 @@ export class ReconcilePaymentDto {
   @IsOptional()
   notes?: string;
 }
-

@@ -215,4 +215,3 @@ export class DocumentVersionResponseDto {
   @Type(() => DocumentUserResponseDto)
   createdByUser?: DocumentUserResponseDto;
 }
-

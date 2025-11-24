@@ -6,4 +6,3 @@ import { CreateComplianceApplicationDto } from './create-compliance-application.
  * DTO for updating a compliance application
  */
 export class UpdateComplianceApplicationDto extends PartialType(CreateComplianceApplicationDto) {}
-

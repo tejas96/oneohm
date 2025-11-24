@@ -12,14 +12,6 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
-import {
   type ExtendedStatisticsResponse,
   VendorStatus,
   VendorType,
@@ -34,6 +26,9 @@ import {
 } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import { CreateVendorDto, UpdateVendorDto, VendorResponseDto } from '../dto';
 import { VendorService } from '../services';
 
@@ -44,7 +39,7 @@ import { VendorService } from '../services';
 @ApiTags('Inventory - Vendors')
 @ApiBearerAuth()
 @Controller('vendors')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class VendorController {
   constructor(private readonly vendorService: VendorService) {}
 
@@ -52,12 +47,10 @@ export class VendorController {
    * Create a new vendor
    */
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiCreate({
     summary: 'Create a new vendor',
     description: 'Creates a new vendor/supplier',
     responseType: VendorResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async create(
     @OrganizationContext() organizationId: string,
@@ -75,12 +68,10 @@ export class VendorController {
    * Get all vendors with filters
    */
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiReadAll({
     summary: 'Get all vendors',
     description: 'Retrieve all vendors with optional filters and pagination',
     responseType: VendorResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   @ApiQuery({
     name: 'page',
@@ -149,12 +140,10 @@ export class VendorController {
    * Get vendor by ID
    */
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiReadOne({
     summary: 'Get vendor by ID',
     description: 'Retrieve a specific vendor by its ID',
     responseType: VendorResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   async findOne(
     @OrganizationContext() organizationId: string,
@@ -172,12 +161,10 @@ export class VendorController {
    * Update vendor
    */
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiUpdate({
     summary: 'Update vendor',
     description: 'Update an existing vendor',
     responseType: VendorResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
     @OrganizationContext() organizationId: string,
@@ -196,11 +183,9 @@ export class VendorController {
    * Delete vendor
    */
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiDelete({
     summary: 'Delete vendor',
     description: 'Soft delete a vendor',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
     @OrganizationContext() organizationId: string,
@@ -216,7 +201,6 @@ export class VendorController {
    * Get vendor statistics
    */
   @Get('stats/summary')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Get vendor statistics',
     description: 'Get vendor count by status and type',
@@ -232,7 +216,6 @@ export class VendorController {
    * Change vendor status
    */
   @Patch(':id/status')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Change vendor status',
     description: 'Update the status of a vendor',
@@ -259,7 +242,6 @@ export class VendorController {
    * Update vendor rating
    */
   @Patch(':id/rating')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Update vendor rating',
     description: 'Update the rating of a vendor (0-5)',

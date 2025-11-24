@@ -75,6 +75,3 @@ export class CreateProjectVendorDto {
   @IsOptional()
   notes?: string;
 }
-
-
-

@@ -8,7 +8,7 @@ import { LoanApplicationService, LoanDocumentService } from './services';
 
 /**
  * Loan & Finance Module
- * 
+ *
  * Handles:
  * - Loan applications with auto-numbering (LA-{YEAR}-{NUMBER})
  * - Loan documents with verification tracking
@@ -19,26 +19,14 @@ import { LoanApplicationService, LoanDocumentService } from './services';
  * - Loan lifecycle management
  */
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      LoanApplicationEntity,
-      LoanDocumentEntity,
-    ]),
-  ],
-  controllers: [
-    LoanApplicationController,
-    LoanDocumentController,
-  ],
+  imports: [TypeOrmModule.forFeature([LoanApplicationEntity, LoanDocumentEntity])],
+  controllers: [LoanApplicationController, LoanDocumentController],
   providers: [
     LoanApplicationRepository,
     LoanDocumentRepository,
     LoanApplicationService,
     LoanDocumentService,
   ],
-  exports: [
-    LoanApplicationService,
-    LoanDocumentService,
-  ],
+  exports: [LoanApplicationService, LoanDocumentService],
 })
 export class LoanFinanceModule {}
-

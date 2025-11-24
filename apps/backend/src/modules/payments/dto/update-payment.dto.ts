@@ -10,4 +10,3 @@ import { CreatePaymentDto } from './create-payment.dto';
  * All fields from CreatePaymentDto are optional
  */
 export class UpdatePaymentDto extends PartialType(CreatePaymentDto) {}
-

@@ -95,6 +95,3 @@ export class InventoryTransactionResponseDto {
   @Type(() => Date)
   createdAt!: Date;
 }
-
-
-

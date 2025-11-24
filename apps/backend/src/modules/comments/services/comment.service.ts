@@ -140,7 +140,10 @@ export class CommentService {
   // ============================================
   // STATISTICS
   // ============================================
-  async getCommentStats(entityType: CommentEntityType, entityId: string): Promise<{
+  async getCommentStats(
+    entityType: CommentEntityType,
+    entityId: string,
+  ): Promise<{
     totalComments: number;
     topLevelComments: number;
     replies: number;
@@ -194,4 +197,3 @@ export class CommentService {
     return rootComments;
   }
 }
-

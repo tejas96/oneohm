@@ -12,4 +12,3 @@ export * from './inspection-response.dto';
 export * from './create-subsidy-application.dto';
 export * from './update-subsidy-application.dto';
 export * from './subsidy-application-response.dto';
-

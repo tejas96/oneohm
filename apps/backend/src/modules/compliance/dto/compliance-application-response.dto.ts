@@ -99,4 +99,3 @@ export class ComplianceApplicationResponseDto {
   @Type(() => UserResponseDto)
   updatedByUser?: UserResponseDto;
 }
-

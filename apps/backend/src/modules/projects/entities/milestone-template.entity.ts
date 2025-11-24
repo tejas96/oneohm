@@ -1,21 +1,14 @@
-import {
-  Column,
-  DeleteDateColumn,
-  Entity,
-  Index,
-  JoinColumn,
-  ManyToOne,
-} from 'typeorm';
+import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 
 /**
  * MilestoneTemplateEntity
- * 
+ *
  * Represents reusable milestone templates for standardizing project workflows.
  * Templates can be applied when creating new projects to speed up setup.
- * 
+ *
  * Schema: Lines 2125-2167
  */
 @Entity('milestone_templates')
@@ -64,7 +57,13 @@ export class MilestoneTemplateEntity extends BaseEntity {
   @Column({ name: 'requires_payment', type: 'boolean', default: false })
   requiresPayment: boolean;
 
-  @Column({ name: 'default_payment_percentage', type: 'decimal', precision: 5, scale: 2, nullable: true })
+  @Column({
+    name: 'default_payment_percentage',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+  })
   defaultPaymentPercentage: number | null;
 
   // ============================================
@@ -118,4 +117,3 @@ export class MilestoneTemplateEntity extends BaseEntity {
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy: string | null;
 }
-

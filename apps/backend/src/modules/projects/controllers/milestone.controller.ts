@@ -11,19 +11,19 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { MilestoneStatus, MilestoneType } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiUpdate,
-  OrganizationContext} from '@oneohm-epc/shared-utils';
+import {
+  ApiCreate,
+  ApiDelete,
+  ApiReadAll,
+  ApiUpdate,
+  OrganizationContext,
+} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import { CreateMilestoneDto, MilestoneResponseDto, UpdateMilestoneDto } from '../dto';
 import { MilestoneService } from '../services/milestone.service';
 
@@ -34,7 +34,7 @@ import { MilestoneService } from '../services/milestone.service';
 @ApiTags('Projects & Installation')
 @ApiBearerAuth()
 @Controller('projects/:projectId/milestones')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class MilestoneController {
   constructor(private readonly milestoneService: MilestoneService) {}
 
@@ -42,12 +42,10 @@ export class MilestoneController {
    * Create a new milestone
    */
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiCreate({
     summary: 'Create a new milestone',
     description: 'Creates a new project milestone with dependencies',
     responseType: MilestoneResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async create(
     @OrganizationContext() organizationId: string,
@@ -69,12 +67,10 @@ export class MilestoneController {
    * Get all milestones for a project
    */
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiReadAll({
     summary: 'Get all milestones',
     description: 'Retrieve all milestones for a project with optional filters',
     responseType: MilestoneResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   @ApiQuery({
     name: 'status',
@@ -102,15 +98,11 @@ export class MilestoneController {
     @Query('milestoneType') milestoneType?: MilestoneType,
     @Query('assignedTo') assignedTo?: string,
   ): Promise<MilestoneResponseDto[]> {
-    const milestones = await this.milestoneService.findByProject(
-      projectId,
-      organizationId,
-      {
-        status,
-        milestoneType,
-        assignedTo,
-      },
-    );
+    const milestones = await this.milestoneService.findByProject(projectId, organizationId, {
+      status,
+      milestoneType,
+      assignedTo,
+    });
 
     return plainToInstance(MilestoneResponseDto, milestones, {
       excludeExtraneousValues: true,
@@ -121,7 +113,6 @@ export class MilestoneController {
    * Get milestone by ID
    */
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiOperation({
     summary: 'Get milestone by ID',
     description: 'Retrieve a single milestone with details',
@@ -132,11 +123,7 @@ export class MilestoneController {
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<MilestoneResponseDto> {
-    const milestone = await this.milestoneService.findById(
-      id,
-      projectId,
-      organizationId,
-    );
+    const milestone = await this.milestoneService.findById(id, projectId, organizationId);
 
     return plainToInstance(MilestoneResponseDto, milestone, {
       excludeExtraneousValues: true,
@@ -147,12 +134,10 @@ export class MilestoneController {
    * Update a milestone
    */
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiUpdate({
     summary: 'Update a milestone',
     description: 'Update milestone details and progress',
     responseType: MilestoneResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
     @OrganizationContext() organizationId: string,
@@ -161,12 +146,7 @@ export class MilestoneController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateMilestoneDto,
   ): Promise<MilestoneResponseDto> {
-    const milestone = await this.milestoneService.update(
-      id,
-      projectId,
-      organizationId,
-      updateDto,
-    );
+    const milestone = await this.milestoneService.update(id, projectId, organizationId, updateDto);
 
     return plainToInstance(MilestoneResponseDto, milestone, {
       excludeExtraneousValues: true,
@@ -177,11 +157,9 @@ export class MilestoneController {
    * Delete a milestone
    */
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiDelete({
     summary: 'Delete a milestone',
     description: 'Delete a milestone (only pending/skipped)',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
     @OrganizationContext() organizationId: string,
@@ -197,7 +175,6 @@ export class MilestoneController {
    * Update milestone status
    */
   @Patch(':id/status')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiOperation({
     summary: 'Update milestone status',
     description: 'Change milestone status with dependency validation',
@@ -231,7 +208,6 @@ export class MilestoneController {
    * Update milestone progress
    */
   @Patch(':id/progress')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiOperation({
     summary: 'Update milestone progress',
     description: 'Update milestone progress percentage (0-100)',
@@ -261,4 +237,3 @@ export class MilestoneController {
     });
   }
 }
-

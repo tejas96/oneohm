@@ -139,10 +139,7 @@ export class MaterialService {
     const material = await this.materialRepository.findById(id, projectId);
 
     // Check if material can be deleted (only required/ordered)
-    if (
-      material.status !== MaterialStatus.REQUIRED &&
-      material.status !== MaterialStatus.ORDERED
-    ) {
+    if (material.status !== MaterialStatus.REQUIRED && material.status !== MaterialStatus.ORDERED) {
       throw new BadRequestException(
         `Cannot delete material with status ${material.status}. Only required or ordered materials can be deleted.`,
       );
@@ -281,4 +278,3 @@ export class MaterialService {
     };
   }
 }
-

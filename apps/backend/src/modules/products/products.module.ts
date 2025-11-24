@@ -17,4 +17,3 @@ import { ProductCategoryService, ProductService } from './services';
   exports: [ProductCategoryService, ProductService, ProductCategoryRepository, ProductRepository],
 })
 export class ProductsModule {}
-

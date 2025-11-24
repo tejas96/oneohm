@@ -75,6 +75,3 @@ export class ProjectVendorResponseDto {
   @Expose()
   createdBy?: string;
 }
-
-
-

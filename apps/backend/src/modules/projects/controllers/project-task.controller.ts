@@ -12,14 +12,6 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
-import {
   type PaginatedResponse,
   type StatisticsResponse,
   TaskPriority,
@@ -28,6 +20,9 @@ import {
 import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import {
   CreateProjectTaskDto,
   CreateTaskTimeLogDto,
@@ -41,12 +36,11 @@ import { ProjectTaskService } from '../services';
 @ApiTags('Project Tasks')
 @ApiBearerAuth()
 @Controller('projects/:projectId/tasks')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class ProjectTaskController {
   constructor(private readonly taskService: ProjectTaskService) {}
 
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiCreate({ responseType: ProjectTaskResponseDto, summary: 'Create a new project task' })
   async create(
     @CurrentUser() currentUser: CurrentUserType,
@@ -63,14 +57,6 @@ export class ProjectTaskController {
   }
 
   @Get()
-  @Roles(
-    Role.SUPER_ADMIN,
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.SALES,
-    Role.EXECUTION_ENGINEER,
-    Role.FIELD_WORKER,
-  )
   @ApiReadAll({ responseType: ProjectTaskResponseDto, summary: 'Get all project tasks' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
@@ -109,7 +95,6 @@ export class ProjectTaskController {
   }
 
   @Get('stats/summary')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Get project task statistics' })
   async getStatistics(
     @Param('projectId', ParseUUIDPipe) projectId: string,
@@ -118,7 +103,6 @@ export class ProjectTaskController {
   }
 
   @Get('overdue')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Get overdue tasks' })
   async getOverdue(
     @Param('projectId', ParseUUIDPipe) projectId: string,
@@ -130,7 +114,6 @@ export class ProjectTaskController {
   }
 
   @Get('milestone/:milestoneId')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get tasks by milestone' })
   async findByMilestone(
     @Param('projectId', ParseUUIDPipe) projectId: string,
@@ -143,7 +126,6 @@ export class ProjectTaskController {
   }
 
   @Get('assignee/:assigneeId')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get tasks by assignee' })
   async findByAssignee(
     @Param('projectId', ParseUUIDPipe) projectId: string,
@@ -156,7 +138,6 @@ export class ProjectTaskController {
   }
 
   @Get('generate-code')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Generate next task code' })
   async generateCode(
     @Param('projectId', ParseUUIDPipe) projectId: string,
@@ -166,14 +147,6 @@ export class ProjectTaskController {
   }
 
   @Get(':id')
-  @Roles(
-    Role.SUPER_ADMIN,
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.SALES,
-    Role.EXECUTION_ENGINEER,
-    Role.FIELD_WORKER,
-  )
   @ApiReadOne({ responseType: ProjectTaskResponseDto, summary: 'Get project task by ID' })
   async findOne(
     @Param('projectId', ParseUUIDPipe) projectId: string,
@@ -186,7 +159,6 @@ export class ProjectTaskController {
   }
 
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER)
   @ApiUpdate({ responseType: ProjectTaskResponseDto, summary: 'Update project task' })
   async update(
     @CurrentUser() currentUser: CurrentUserType,
@@ -201,7 +173,6 @@ export class ProjectTaskController {
   }
 
   @Patch(':id/status')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Update task status' })
   async updateStatus(
     @CurrentUser() currentUser: CurrentUserType,
@@ -216,7 +187,6 @@ export class ProjectTaskController {
   }
 
   @Patch(':id/assign')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER)
   @ApiOperation({ summary: 'Assign task to user' })
   async assignTask(
     @CurrentUser() currentUser: CurrentUserType,
@@ -231,7 +201,6 @@ export class ProjectTaskController {
   }
 
   @Patch(':id/progress')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Update task progress' })
   async updateProgress(
     @CurrentUser() currentUser: CurrentUserType,
@@ -251,7 +220,6 @@ export class ProjectTaskController {
   }
 
   @Post(':id/time-logs')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Log time for task' })
   async logTime(
     @CurrentUser() currentUser: CurrentUserType,
@@ -274,7 +242,6 @@ export class ProjectTaskController {
   }
 
   @Get(':id/time-logs')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get all time logs for a task' })
   async getTimeLogs(
     @Param('projectId', ParseUUIDPipe) projectId: string,
@@ -287,7 +254,6 @@ export class ProjectTaskController {
   }
 
   @Get(':id/activity-log')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.EXECUTION_ENGINEER, Role.FIELD_WORKER)
   @ApiOperation({ summary: 'Get activity history for a task' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getActivityLog(
@@ -302,7 +268,6 @@ export class ProjectTaskController {
   }
 
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiDelete({
     summary: 'Delete project task',
     description: 'Soft delete a project task',

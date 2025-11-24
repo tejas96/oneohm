@@ -196,11 +196,7 @@ export class VendorRepository {
   /**
    * Update vendor rating
    */
-  async updateRating(
-    id: string,
-    organizationId: string,
-    rating: number,
-  ): Promise<VendorEntity> {
+  async updateRating(id: string, organizationId: string, rating: number): Promise<VendorEntity> {
     const vendor = await this.findById(id, organizationId);
 
     vendor.rating = rating;
@@ -208,4 +204,3 @@ export class VendorRepository {
     return this.repository.save(vendor);
   }
 }
-

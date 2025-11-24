@@ -1,5 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { MilestoneStatus, MilestoneType, type MilestoneDeliverable } from '@oneohm-epc/shared-types';
+import {
+  MilestoneStatus,
+  MilestoneType,
+  type MilestoneDeliverable,
+} from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -37,7 +41,8 @@ export class UpdateMilestoneDto {
   name?: string;
 
   @ApiPropertyOptional({
-    example: 'Complete detailed site assessment including roof measurements and electrical inspection',
+    example:
+      'Complete detailed site assessment including roof measurements and electrical inspection',
     description: 'Milestone description',
   })
   @IsString()
@@ -154,4 +159,3 @@ export class UpdateMilestoneDto {
   @IsOptional()
   notes?: string;
 }
-

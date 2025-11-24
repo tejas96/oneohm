@@ -23,4 +23,3 @@ export class FulfillStockAllocationDto {
   @IsOptional()
   notes?: string;
 }
-

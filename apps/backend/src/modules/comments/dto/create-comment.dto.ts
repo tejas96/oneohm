@@ -27,7 +27,10 @@ export class CommentAttachmentDto {
   @MaxLength(255)
   fileName!: string;
 
-  @ApiProperty({ description: 'File URL', example: 'https://storage.example.com/documents/123.pdf' })
+  @ApiProperty({
+    description: 'File URL',
+    example: 'https://storage.example.com/documents/123.pdf',
+  })
   @IsString()
   @IsNotEmpty()
   fileUrl!: string;
@@ -104,4 +107,3 @@ export class CreateCommentDto {
   @IsBoolean()
   isInternal?: boolean;
 }
-

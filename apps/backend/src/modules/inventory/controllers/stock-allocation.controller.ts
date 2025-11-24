@@ -10,14 +10,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { type StatisticsResponse, StockAllocationStatus } from '@oneohm-epc/shared-types';
 import {
   ApiCreate,
@@ -28,6 +20,9 @@ import {
 } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import {
   CreateStockAllocationDto,
   FulfillStockAllocationDto,
@@ -43,7 +38,7 @@ import { StockAllocationService } from '../services';
 @ApiTags('Inventory - Stock Allocations')
 @ApiBearerAuth()
 @Controller('stock-allocations')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class StockAllocationController {
   constructor(private readonly stockAllocationService: StockAllocationService) {}
 
@@ -51,12 +46,10 @@ export class StockAllocationController {
    * Create a new stock allocation
    */
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiCreate({
     summary: 'Create a stock allocation',
     description: 'Allocate stock to a project (reserves inventory)',
     responseType: StockAllocationResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async create(
     @OrganizationContext() organizationId: string,
@@ -78,12 +71,10 @@ export class StockAllocationController {
    * Get all stock allocations with filters
    */
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiReadAll({
     summary: 'Get all stock allocations',
     description: 'Retrieve all stock allocations with optional filters and pagination',
     responseType: StockAllocationResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   @ApiQuery({
     name: 'page',
@@ -165,12 +156,10 @@ export class StockAllocationController {
    * Get stock allocation by ID
    */
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiReadOne({
     summary: 'Get stock allocation by ID',
     description: 'Retrieve a specific stock allocation by its ID',
     responseType: StockAllocationResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER],
   })
   async findOne(
     @OrganizationContext() organizationId: string,
@@ -188,7 +177,6 @@ export class StockAllocationController {
    * Get allocations by project
    */
   @Get('project/:projectId')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER, Role.EXECUTION_ENGINEER)
   @ApiOperation({
     summary: 'Get allocations by project',
     description: 'Retrieve all stock allocations for a specific project',
@@ -207,12 +195,10 @@ export class StockAllocationController {
    * Update stock allocation
    */
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiUpdate({
     summary: 'Update stock allocation',
     description: 'Update an existing stock allocation',
     responseType: StockAllocationResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
     @OrganizationContext() organizationId: string,
@@ -236,7 +222,6 @@ export class StockAllocationController {
    * Fulfill stock allocation
    */
   @Post(':id/fulfill')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.FIELD_WORKER)
   @ApiOperation({
     summary: 'Fulfill stock allocation',
     description: 'Fulfill allocated stock (full or partial)',
@@ -263,7 +248,6 @@ export class StockAllocationController {
    * Cancel stock allocation
    */
   @Post(':id/cancel')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Cancel stock allocation',
     description: 'Cancel a stock allocation (releases reserved stock)',
@@ -290,7 +274,6 @@ export class StockAllocationController {
    * Get stock allocation statistics
    */
   @Get('stats/summary')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Get stock allocation statistics',
     description: 'Get allocation count by status',
@@ -306,7 +289,6 @@ export class StockAllocationController {
    * Get pending allocations
    */
   @Get('pending/list')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({
     summary: 'Get pending allocations',
     description: 'Get list of allocations not yet fulfilled',

@@ -223,7 +223,9 @@ export class DocumentRepository {
     }));
   }
 
-  async countByStatus(organizationId: string): Promise<{ status: DocumentStatus; count: number }[]> {
+  async countByStatus(
+    organizationId: string,
+  ): Promise<{ status: DocumentStatus; count: number }[]> {
     const results = await this.repository
       .createQueryBuilder('document')
       .select('document.status', 'status')
@@ -239,4 +241,3 @@ export class DocumentRepository {
     }));
   }
 }
-

@@ -92,4 +92,3 @@ export class InspectionResponseDto {
   @Type(() => UserResponseDto)
   updatedByUser?: UserResponseDto;
 }
-

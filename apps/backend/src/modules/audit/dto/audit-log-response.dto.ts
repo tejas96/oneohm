@@ -52,4 +52,3 @@ export class AuditLogResponseDto {
   @Type(() => Date)
   createdAt: Date;
 }
-

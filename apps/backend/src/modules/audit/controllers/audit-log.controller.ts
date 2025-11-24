@@ -10,25 +10,27 @@ import {
   UseGuards,
   DefaultValuePipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
-import { JwtAuthGuard, Role, Roles, RolesGuard } from '@oneohm-epc/shared-auth';
-
 import {
-  CreateAuditLogDto,
-  QueryAuditLogsDto,
-  AuditLogResponseDto,
-} from '../dto';
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiQuery,
+} from '@nestjs/swagger';
+
+import { JwtAuthGuard } from '../../auth/guards';
+import { CreateAuditLogDto, QueryAuditLogsDto, AuditLogResponseDto } from '../dto';
 import { AuditLogService } from '../services/audit-log.service';
 
 @ApiTags('Audit & Logging')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('audit-logs')
 export class AuditLogController {
   constructor(private readonly auditLogService: AuditLogService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Create audit log entry (manual)' })
   @ApiResponse({
     status: 201,
@@ -40,9 +42,13 @@ export class AuditLogController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Query audit logs with filters' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Max results (default: 100)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Max results (default: 100)',
+  })
   @ApiResponse({
     status: 200,
     description: 'List of audit logs',
@@ -56,9 +62,13 @@ export class AuditLogController {
   }
 
   @Get('recent')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Get recent audit logs' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Max results (default: 50)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Max results (default: 50)',
+  })
   @ApiResponse({
     status: 200,
     description: 'List of recent audit logs',
@@ -71,7 +81,6 @@ export class AuditLogController {
   }
 
   @Get('stats/actions')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Get action statistics' })
   @ApiQuery({ name: 'organizationId', required: false, type: String })
   @ApiResponse({
@@ -85,7 +94,6 @@ export class AuditLogController {
   }
 
   @Get('stats/entities')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Get entity type statistics' })
   @ApiQuery({ name: 'organizationId', required: false, type: String })
   @ApiResponse({
@@ -99,7 +107,6 @@ export class AuditLogController {
   }
 
   @Get('count')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Count audit logs with filters' })
   @ApiResponse({
     status: 200,
@@ -111,7 +118,6 @@ export class AuditLogController {
   }
 
   @Get('entity/:entityType/:entityId')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Get audit logs for a specific entity' })
   @ApiParam({ name: 'entityType', description: 'Entity type (e.g., user, project)' })
   @ApiParam({ name: 'entityId', description: 'Entity UUID' })
@@ -128,10 +134,14 @@ export class AuditLogController {
   }
 
   @Get('user/:userId')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Get audit logs for a user' })
   @ApiParam({ name: 'userId', description: 'User UUID' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Max results (default: 100)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Max results (default: 100)',
+  })
   @ApiResponse({
     status: 200,
     description: 'List of audit logs for user',
@@ -145,10 +155,14 @@ export class AuditLogController {
   }
 
   @Get('organization/:organizationId')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Get audit logs for an organization' })
   @ApiParam({ name: 'organizationId', description: 'Organization UUID' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Max results (default: 100)' })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Max results (default: 100)',
+  })
   @ApiResponse({
     status: 200,
     description: 'List of audit logs for organization',
@@ -162,7 +176,6 @@ export class AuditLogController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Get audit log by ID' })
   @ApiParam({ name: 'id', description: 'Audit Log UUID' })
   @ApiResponse({
@@ -175,4 +188,3 @@ export class AuditLogController {
     return this.auditLogService.findById(id);
   }
 }
-

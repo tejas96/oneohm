@@ -260,4 +260,3 @@ export class MaterialDispatchRepository {
     return `${prefix}-${year}${month}-${String(sequence).padStart(4, '0')}`;
   }
 }
-

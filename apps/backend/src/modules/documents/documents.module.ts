@@ -34,4 +34,3 @@ import { UsersModule } from '../users/users.module';
   exports: [DocumentRepository, DocumentService],
 })
 export class DocumentsModule {}
-

@@ -13,18 +13,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
-import {
-  CurrentUser,
-  type CurrentUserType,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { PaymentTransactionStatus } from '@oneohm-epc/shared-types';
 import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import {
   CreatePaymentDto,
   UpdatePaymentDto,
@@ -39,7 +34,7 @@ import { PaymentService } from '../services/payment.service';
 @Controller('payments')
 @ApiTags('Payments')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
@@ -47,11 +42,9 @@ export class PaymentController {
   // CREATE
   // ============================================
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS)
   @ApiCreate({
     summary: 'Create a new payment',
     responseType: PaymentResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS],
   })
   async create(
     @Body() dto: CreatePaymentDto,
@@ -67,11 +60,9 @@ export class PaymentController {
   // READ
   // ============================================
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS, Role.MANAGER)
   @ApiReadAll({
     summary: 'Get all payments',
     responseType: PaymentResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS, Role.MANAGER],
   })
   async findAll(): Promise<PaymentResponseDto[]> {
     const payments = await this.paymentService.findAll();
@@ -81,15 +72,11 @@ export class PaymentController {
   }
 
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS, Role.MANAGER)
   @ApiReadOne({
     summary: 'Get payment by ID',
     responseType: PaymentResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS, Role.MANAGER],
   })
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<PaymentResponseDto> {
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<PaymentResponseDto> {
     const payment = await this.paymentService.findById(id);
     return plainToInstance(PaymentResponseDto, payment, {
       excludeExtraneousValues: true,
@@ -97,7 +84,6 @@ export class PaymentController {
   }
 
   @Get('organization/:organizationId')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS, Role.MANAGER)
   @ApiOperation({ summary: 'Get payments by organization' })
   @ApiParam({ name: 'organizationId', type: String })
   async findByOrganization(
@@ -110,7 +96,6 @@ export class PaymentController {
   }
 
   @Get('project/:projectId')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS, Role.MANAGER)
   @ApiOperation({ summary: 'Get payments by project' })
   @ApiParam({ name: 'projectId', type: String })
   async findByProject(
@@ -123,7 +108,6 @@ export class PaymentController {
   }
 
   @Get('milestone/:milestoneId')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS, Role.MANAGER)
   @ApiOperation({ summary: 'Get payments by milestone' })
   @ApiParam({ name: 'milestoneId', type: String })
   async findByMilestone(
@@ -136,7 +120,6 @@ export class PaymentController {
   }
 
   @Get('customer/:customerId')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS, Role.MANAGER)
   @ApiOperation({ summary: 'Get payments by customer' })
   @ApiParam({ name: 'customerId', type: String })
   async findByCustomer(
@@ -149,7 +132,6 @@ export class PaymentController {
   }
 
   @Get('status/:status')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS, Role.MANAGER)
   @ApiOperation({ summary: 'Get payments by status' })
   @ApiParam({ name: 'status', enum: PaymentTransactionStatus })
   async findByStatus(
@@ -162,7 +144,6 @@ export class PaymentController {
   }
 
   @Get('number/:paymentNumber')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS, Role.MANAGER)
   @ApiOperation({ summary: 'Get payment by payment number' })
   @ApiParam({ name: 'paymentNumber', type: String })
   async findByPaymentNumber(
@@ -178,11 +159,9 @@ export class PaymentController {
   // UPDATE
   // ============================================
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS)
   @ApiUpdate({
     summary: 'Update payment',
     responseType: PaymentResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS],
   })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -196,7 +175,6 @@ export class PaymentController {
   }
 
   @Patch(':id/status/:status')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS)
   @ApiOperation({ summary: 'Update payment status' })
   @ApiParam({ name: 'id', type: String })
   @ApiParam({ name: 'status', enum: PaymentTransactionStatus })
@@ -215,7 +193,6 @@ export class PaymentController {
   // RECONCILIATION
   // ============================================
   @Post(':id/reconcile')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS)
   @ApiOperation({ summary: 'Reconcile payment' })
   @ApiParam({ name: 'id', type: String })
   async reconcile(
@@ -233,10 +210,8 @@ export class PaymentController {
   // DELETE
   // ============================================
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
   @ApiDelete({
     summary: 'Delete payment',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     await this.paymentService.delete(id);
@@ -246,12 +221,9 @@ export class PaymentController {
   // STATISTICS
   // ============================================
   @Get('project/:projectId/summary')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS, Role.MANAGER)
   @ApiOperation({ summary: 'Get payment summary for project' })
   @ApiParam({ name: 'projectId', type: String })
-  async getProjectPaymentSummary(
-    @Param('projectId', ParseUUIDPipe) projectId: string,
-  ): Promise<{
+  async getProjectPaymentSummary(@Param('projectId', ParseUUIDPipe) projectId: string): Promise<{
     totalExpected: number;
     totalPaid: number;
     pendingAmount: number;
@@ -261,7 +233,6 @@ export class PaymentController {
   }
 
   @Get('organization/:organizationId/stats')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS)
   @ApiOperation({ summary: 'Get payment statistics by organization' })
   @ApiParam({ name: 'organizationId', type: String })
   async getOrganizationPaymentStats(
@@ -280,15 +251,12 @@ export class PaymentController {
   // UTILITIES
   // ============================================
   @Get('organization/:organizationId/next-number')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.ACCOUNTS)
   @ApiOperation({ summary: 'Generate next payment number' })
   @ApiParam({ name: 'organizationId', type: String })
   async generatePaymentNumber(
     @Param('organizationId', ParseUUIDPipe) organizationId: string,
   ): Promise<{ paymentNumber: string }> {
-    const paymentNumber =
-      await this.paymentService.generatePaymentNumber(organizationId);
+    const paymentNumber = await this.paymentService.generatePaymentNumber(organizationId);
     return { paymentNumber };
   }
 }
-

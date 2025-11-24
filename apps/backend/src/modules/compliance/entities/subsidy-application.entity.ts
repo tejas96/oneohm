@@ -143,4 +143,3 @@ export class SubsidyApplicationEntity extends BaseEntity {
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy: string | null;
 }
-

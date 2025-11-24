@@ -11,14 +11,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  Roles,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
 import { type PaginatedResponse } from '@oneohm-epc/shared-types';
 import {
   ApiCreate,
@@ -29,6 +21,9 @@ import {
   OrganizationContext,
 } from '@oneohm-epc/shared-utils';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import {
   CreateMilestoneTemplateDto,
   MilestoneTemplateResponseDto,
@@ -39,12 +34,11 @@ import { MilestoneTemplateService } from '../services';
 @ApiTags('Milestone Templates')
 @ApiBearerAuth()
 @Controller('milestone-templates')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class MilestoneTemplateController {
   constructor(private readonly templateService: MilestoneTemplateService) {}
 
   @Post()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiCreate({
     responseType: MilestoneTemplateResponseDto,
     summary: 'Create a new milestone template',
@@ -58,7 +52,6 @@ export class MilestoneTemplateController {
   }
 
   @Get()
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiReadAll({
     responseType: MilestoneTemplateResponseDto,
     summary: 'Get all milestone templates',
@@ -88,7 +81,6 @@ export class MilestoneTemplateController {
   }
 
   @Get('active')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiOperation({ summary: 'Get all active milestone templates' })
   async findAllActive(
     @OrganizationContext() organizationId: string,
@@ -98,7 +90,6 @@ export class MilestoneTemplateController {
   }
 
   @Get('type/:type')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiOperation({ summary: 'Get milestone templates by type' })
   async findByType(
     @OrganizationContext() organizationId: string,
@@ -109,7 +100,6 @@ export class MilestoneTemplateController {
   }
 
   @Get('count')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiOperation({ summary: 'Get milestone template count' })
   async getCount(
     @OrganizationContext() organizationId: string,
@@ -120,7 +110,6 @@ export class MilestoneTemplateController {
   }
 
   @Get(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES)
   @ApiReadOne({
     responseType: MilestoneTemplateResponseDto,
     summary: 'Get milestone template by ID',
@@ -134,7 +123,6 @@ export class MilestoneTemplateController {
   }
 
   @Patch(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiUpdate({ responseType: MilestoneTemplateResponseDto, summary: 'Update milestone template' })
   async update(
     @OrganizationContext() organizationId: string,
@@ -146,7 +134,6 @@ export class MilestoneTemplateController {
   }
 
   @Delete(':id')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER)
   @ApiDelete({ summary: 'Delete milestone template (soft delete)' })
   async delete(
     @OrganizationContext() organizationId: string,

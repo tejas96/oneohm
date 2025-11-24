@@ -26,7 +26,9 @@ export class PurchaseOrderItemRepository {
   /**
    * Create multiple purchase order items
    */
-  async createMany(itemsData: Partial<PurchaseOrderItemEntity>[]): Promise<PurchaseOrderItemEntity[]> {
+  async createMany(
+    itemsData: Partial<PurchaseOrderItemEntity>[],
+  ): Promise<PurchaseOrderItemEntity[]> {
     const items = this.repository.create(itemsData);
     return this.repository.save(items);
   }
@@ -61,10 +63,7 @@ export class PurchaseOrderItemRepository {
   /**
    * Update purchase order item
    */
-  async update(
-    id: string,
-    updateData: Record<string, unknown>,
-  ): Promise<PurchaseOrderItemEntity> {
+  async update(id: string, updateData: Record<string, unknown>): Promise<PurchaseOrderItemEntity> {
     const item = await this.findById(id);
 
     Object.assign(item, updateData);
@@ -129,4 +128,3 @@ export class PurchaseOrderItemRepository {
       .getMany();
   }
 }
-

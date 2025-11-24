@@ -1,16 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 
-import {
-  CreateAuditLogDto,
-  QueryAuditLogsDto,
-  AuditLogResponseDto,
-} from '../dto';
+import { CreateAuditLogDto, QueryAuditLogsDto, AuditLogResponseDto } from '../dto';
 import { AuditLogRepository } from '../repositories/audit-log.repository';
 
 /**
  * Service for Audit Logging
- * 
+ *
  * Provides audit trail creation and querying functionality
  */
 @Injectable()
@@ -109,7 +105,7 @@ export class AuditLogService {
    */
   async findById(id: string): Promise<AuditLogResponseDto> {
     const auditLog = await this.repository.findById(id);
-    
+
     if (!auditLog) {
       throw new NotFoundException(`Audit log with ID ${id} not found`);
     }
@@ -122,7 +118,10 @@ export class AuditLogService {
   /**
    * Query audit logs with filters
    */
-  async findWithFilters(filters: QueryAuditLogsDto, limit: number = 100): Promise<AuditLogResponseDto[]> {
+  async findWithFilters(
+    filters: QueryAuditLogsDto,
+    limit: number = 100,
+  ): Promise<AuditLogResponseDto[]> {
     const auditLogs = await this.repository.findWithFilters(filters, limit);
 
     return plainToInstance(AuditLogResponseDto, auditLogs, {
@@ -155,7 +154,10 @@ export class AuditLogService {
   /**
    * Get all audit logs for an organization
    */
-  async findByOrganization(organizationId: string, limit: number = 100): Promise<AuditLogResponseDto[]> {
+  async findByOrganization(
+    organizationId: string,
+    limit: number = 100,
+  ): Promise<AuditLogResponseDto[]> {
     const auditLogs = await this.repository.findByOrganization(organizationId, limit);
 
     return plainToInstance(AuditLogResponseDto, auditLogs, {
@@ -195,4 +197,3 @@ export class AuditLogService {
     return this.repository.countWithFilters(filters);
   }
 }
-

@@ -11,13 +11,6 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
-  type CurrentUserType,
-  CurrentUser,
-  JwtAuthGuard,
-  Role,
-  RolesGuard,
-} from '@oneohm-epc/shared-auth';
-import {
   ApiCreate,
   ApiDelete,
   ApiReadAll,
@@ -27,6 +20,9 @@ import {
 } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import { type CurrentUserType } from '../../auth/types';
 import {
   CreateProductCategoryDto,
   ProductCategoryResponseDto,
@@ -37,7 +33,7 @@ import { ProductCategoryService } from '../services/product-category.service';
 @ApiTags('Product Categories')
 @Controller('product-categories')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class ProductCategoryController {
   constructor(private readonly categoryService: ProductCategoryService) {}
 
@@ -46,7 +42,6 @@ export class ProductCategoryController {
     summary: 'Create a new product category',
     description: 'Create a new hierarchical product category',
     responseType: ProductCategoryResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async create(
     @OrganizationContext() organizationId: string,
@@ -65,7 +60,6 @@ export class ProductCategoryController {
     summary: 'Get all product categories',
     description: 'Retrieve all product categories (flat list)',
     responseType: ProductCategoryResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async findAll(
     @OrganizationContext() organizationId: string,
@@ -83,7 +77,6 @@ export class ProductCategoryController {
     summary: 'Get category hierarchy tree',
     description: 'Retrieve hierarchical tree structure of categories',
     responseType: ProductCategoryResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async getCategoryTree(
     @OrganizationContext() organizationId: string,
@@ -101,7 +94,6 @@ export class ProductCategoryController {
     summary: 'Get product category by ID',
     description: 'Retrieve a specific product category with its children',
     responseType: ProductCategoryResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES],
   })
   async findOne(
     @OrganizationContext() organizationId: string,
@@ -120,7 +112,6 @@ export class ProductCategoryController {
     summary: 'Update product category',
     description: 'Update an existing product category',
     responseType: ProductCategoryResponseDto,
-    roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER],
   })
   async update(
     @OrganizationContext() organizationId: string,
@@ -144,7 +135,6 @@ export class ProductCategoryController {
   @ApiDelete({
     summary: 'Delete product category',
     description: 'Soft delete a product category (must not have children)',
-    roles: [Role.SUPER_ADMIN, Role.ADMIN],
   })
   async delete(
     @OrganizationContext() organizationId: string,

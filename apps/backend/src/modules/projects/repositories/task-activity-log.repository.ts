@@ -22,9 +22,7 @@ export class TaskActivityLogRepository {
   /**
    * Create a new activity log entry
    */
-  async create(
-    data: Partial<TaskActivityLogEntity>,
-  ): Promise<TaskActivityLogEntity> {
+  async create(data: Partial<TaskActivityLogEntity>): Promise<TaskActivityLogEntity> {
     const activityLog = this.repository.create(data);
     return this.repository.save(activityLog);
   }
@@ -32,10 +30,7 @@ export class TaskActivityLogRepository {
   /**
    * Find activity logs by task ID
    */
-  async findByTaskId(
-    taskId: string,
-    limit = 100,
-  ): Promise<TaskActivityLogEntity[]> {
+  async findByTaskId(taskId: string, limit = 100): Promise<TaskActivityLogEntity[]> {
     return this.repository.find({
       where: { taskId },
       order: { createdAt: 'DESC' },
@@ -59,9 +54,7 @@ export class TaskActivityLogRepository {
   /**
    * Get recent activities across all tasks (for dashboard/feed)
    */
-  async findRecentActivities(
-    limit = 50,
-  ): Promise<TaskActivityLogEntity[]> {
+  async findRecentActivities(limit = 50): Promise<TaskActivityLogEntity[]> {
     return this.repository.find({
       order: { createdAt: 'DESC' },
       take: limit,
@@ -71,10 +64,7 @@ export class TaskActivityLogRepository {
   /**
    * Get activities by user
    */
-  async findByUserId(
-    userId: string,
-    limit = 100,
-  ): Promise<TaskActivityLogEntity[]> {
+  async findByUserId(userId: string, limit = 100): Promise<TaskActivityLogEntity[]> {
     return this.repository.find({
       where: { userId },
       order: { createdAt: 'DESC' },
@@ -82,4 +72,3 @@ export class TaskActivityLogRepository {
     });
   }
 }
-

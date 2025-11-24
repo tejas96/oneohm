@@ -38,9 +38,7 @@ export class WarehouseService {
     );
 
     if (existingWarehouse) {
-      throw new BadRequestException(
-        `Warehouse with code ${createDto.code} already exists`,
-      );
+      throw new BadRequestException(`Warehouse with code ${createDto.code} already exists`);
     }
 
     // Create warehouse
@@ -106,9 +104,7 @@ export class WarehouseService {
       );
 
       if (existingWarehouse && existingWarehouse.id !== id) {
-        throw new BadRequestException(
-          `Warehouse with code ${updateDto.code} already exists`,
-        );
+        throw new BadRequestException(`Warehouse with code ${updateDto.code} already exists`);
       }
     }
 
@@ -161,4 +157,3 @@ export class WarehouseService {
     });
   }
 }
-

@@ -22,9 +22,7 @@ export class TaskTimeLogRepository {
   /**
    * Create a new time log entry
    */
-  async create(
-    data: Partial<TaskTimeLogEntity>,
-  ): Promise<TaskTimeLogEntity> {
+  async create(data: Partial<TaskTimeLogEntity>): Promise<TaskTimeLogEntity> {
     const timeLog = this.repository.create(data);
     return this.repository.save(timeLog);
   }
@@ -79,11 +77,7 @@ export class TaskTimeLogRepository {
   /**
    * Get total hours logged by user for a specific date range
    */
-  async getTotalHoursByUser(
-    userId: string,
-    startDate: Date,
-    endDate: Date,
-  ): Promise<number> {
+  async getTotalHoursByUser(userId: string, startDate: Date, endDate: Date): Promise<number> {
     const result = await this.repository
       .createQueryBuilder('log')
       .select('SUM(log.time_spent_hours)', 'total')
@@ -118,4 +112,3 @@ export class TaskTimeLogRepository {
     await this.repository.delete(id);
   }
 }
-

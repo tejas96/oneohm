@@ -13,7 +13,9 @@ import { ComplianceApplicationRepository } from '../repositories/compliance-appl
 export class ComplianceApplicationService {
   constructor(private readonly repository: ComplianceApplicationRepository) {}
 
-  async create(createDto: CreateComplianceApplicationDto): Promise<ComplianceApplicationResponseDto> {
+  async create(
+    createDto: CreateComplianceApplicationDto,
+  ): Promise<ComplianceApplicationResponseDto> {
     const applicationNumber = await this.repository.generateApplicationNumber();
     const applicationDate = createDto.applicationDate || new Date();
 
@@ -46,7 +48,10 @@ export class ComplianceApplicationService {
     });
   }
 
-  async update(id: string, updateDto: UpdateComplianceApplicationDto): Promise<ComplianceApplicationResponseDto> {
+  async update(
+    id: string,
+    updateDto: UpdateComplianceApplicationDto,
+  ): Promise<ComplianceApplicationResponseDto> {
     const existing = await this.repository.findById(id);
     if (!existing) {
       throw new NotFoundException(`Compliance application with ID ${id} not found`);
@@ -113,7 +118,10 @@ export class ComplianceApplicationService {
     });
   }
 
-  async approve(id: string, approvalDocumentPath?: string): Promise<ComplianceApplicationResponseDto> {
+  async approve(
+    id: string,
+    approvalDocumentPath?: string,
+  ): Promise<ComplianceApplicationResponseDto> {
     const application = await this.repository.findById(id);
     if (!application) {
       throw new NotFoundException(`Compliance application with ID ${id} not found`);

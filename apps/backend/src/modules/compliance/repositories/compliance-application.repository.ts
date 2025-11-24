@@ -46,7 +46,10 @@ export class ComplianceApplicationRepository {
     id: string,
     updateData: Partial<ComplianceApplicationEntity>,
   ): Promise<ComplianceApplicationEntity | null> {
-    await this.repository.update(id, updateData as QueryDeepPartialEntity<ComplianceApplicationEntity>);
+    await this.repository.update(
+      id,
+      updateData as QueryDeepPartialEntity<ComplianceApplicationEntity>,
+    );
     return this.findById(id);
   }
 

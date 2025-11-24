@@ -28,7 +28,14 @@ export class LoanApplicationRepository {
   async findAll(): Promise<LoanApplicationEntity[]> {
     return this.repository.find({
       where: { deletedAt: IsNull() },
-      relations: ['organization', 'project', 'customer', 'documents', 'createdByUser', 'updatedByUser'],
+      relations: [
+        'organization',
+        'project',
+        'customer',
+        'documents',
+        'createdByUser',
+        'updatedByUser',
+      ],
       order: { createdAt: 'DESC' },
     });
   }
@@ -36,11 +43,21 @@ export class LoanApplicationRepository {
   async findById(id: string): Promise<LoanApplicationEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['organization', 'project', 'customer', 'documents', 'createdByUser', 'updatedByUser'],
+      relations: [
+        'organization',
+        'project',
+        'customer',
+        'documents',
+        'createdByUser',
+        'updatedByUser',
+      ],
     });
   }
 
-  async update(id: string, updateData: Partial<LoanApplicationEntity>): Promise<LoanApplicationEntity | null> {
+  async update(
+    id: string,
+    updateData: Partial<LoanApplicationEntity>,
+  ): Promise<LoanApplicationEntity | null> {
     await this.repository.update(id, updateData as QueryDeepPartialEntity<LoanApplicationEntity>);
     return this.findById(id);
   }
@@ -139,7 +156,10 @@ export class LoanApplicationRepository {
   // DATE RANGE QUERIES
   // ============================================
 
-  async findByApplicationDateRange(startDate: Date, endDate: Date): Promise<LoanApplicationEntity[]> {
+  async findByApplicationDateRange(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<LoanApplicationEntity[]> {
     return this.repository.find({
       where: {
         applicationDate: Between(startDate, endDate),
@@ -150,7 +170,10 @@ export class LoanApplicationRepository {
     });
   }
 
-  async findByDisbursementDateRange(startDate: Date, endDate: Date): Promise<LoanApplicationEntity[]> {
+  async findByDisbursementDateRange(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<LoanApplicationEntity[]> {
     return this.repository.find({
       where: {
         disbursementDate: Between(startDate, endDate),
@@ -230,8 +253,14 @@ export class LoanApplicationRepository {
     });
 
     const totalAmount = applications.reduce((sum, app) => sum + Number(app.loanAmount), 0);
-    const totalApproved = applications.reduce((sum, app) => sum + Number(app.approvedAmount || 0), 0);
-    const totalDisbursed = applications.reduce((sum, app) => sum + Number(app.disbursementAmount || 0), 0);
+    const totalApproved = applications.reduce(
+      (sum, app) => sum + Number(app.approvedAmount || 0),
+      0,
+    );
+    const totalDisbursed = applications.reduce(
+      (sum, app) => sum + Number(app.disbursementAmount || 0),
+      0,
+    );
 
     return {
       total: applications.length,
@@ -243,10 +272,12 @@ export class LoanApplicationRepository {
         return acc;
       }, {}),
       approvalRate:
-        applications.filter((a) => a.status === LoanStatus.APPROVED || a.status === LoanStatus.DISBURSED).length /
-        (applications.length || 1),
+        applications.filter(
+          (a) => a.status === LoanStatus.APPROVED || a.status === LoanStatus.DISBURSED,
+        ).length / (applications.length || 1),
       averageTenure:
-        applications.reduce((sum, app) => sum + app.loanTenureMonths, 0) / (applications.length || 1),
+        applications.reduce((sum, app) => sum + app.loanTenureMonths, 0) /
+        (applications.length || 1),
       janSamarthSubmissions: applications.filter((a) => a.janSamarthApplicationId).length,
     };
   }
@@ -271,4 +302,3 @@ export class LoanApplicationRepository {
     return this.repository.count({ where });
   }
 }
-

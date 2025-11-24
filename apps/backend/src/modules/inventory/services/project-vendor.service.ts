@@ -36,7 +36,6 @@ export class ProjectVendorService {
     const isAssigned = await this.projectVendorRepository.isVendorAssignedToProject(
       createDto.projectId,
       createDto.vendorId,
-      createDto.vendorRole,
     );
 
     if (isAssigned) {
@@ -49,14 +48,11 @@ export class ProjectVendorService {
     const projectVendor = await this.projectVendorRepository.create({
       projectId: createDto.projectId,
       vendorId: createDto.vendorId,
-      vendorRole: createDto.vendorRole,
       contractValue: createDto.contractValue,
       contractStartDate: createDto.contractStartDate
         ? new Date(createDto.contractStartDate)
         : undefined,
-      contractEndDate: createDto.contractEndDate
-        ? new Date(createDto.contractEndDate)
-        : undefined,
+      contractEndDate: createDto.contractEndDate ? new Date(createDto.contractEndDate) : undefined,
       status: createDto.status ?? ProjectVendorStatus.ACTIVE,
       notes: createDto.notes,
       createdBy,
@@ -96,10 +92,7 @@ export class ProjectVendorService {
   /**
    * Update project-vendor relationship
    */
-  async update(
-    id: string,
-    updateDto: UpdateProjectVendorDto,
-  ): Promise<ProjectVendorEntity> {
+  async update(id: string, updateDto: UpdateProjectVendorDto): Promise<ProjectVendorEntity> {
     return this.projectVendorRepository.update(id, { ...updateDto });
   }
 
@@ -111,9 +104,7 @@ export class ProjectVendorService {
 
     // Only allow removal if status is not active
     if (projectVendor.status === ProjectVendorStatus.ACTIVE) {
-      throw new BadRequestException(
-        'Cannot remove active vendor. Change status first.',
-      );
+      throw new BadRequestException('Cannot remove active vendor. Change status first.');
     }
 
     await this.projectVendorRepository.delete(id);
@@ -140,4 +131,3 @@ export class ProjectVendorService {
     return this.projectVendorRepository.getActiveVendorsByProject(projectId);
   }
 }
-

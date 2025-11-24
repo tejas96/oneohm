@@ -70,4 +70,3 @@ export class UpdateStockDto {
   // Organization ID (injected by controller)
   organizationId?: string;
 }
-

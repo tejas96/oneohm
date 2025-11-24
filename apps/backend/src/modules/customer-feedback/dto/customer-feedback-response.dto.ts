@@ -131,4 +131,3 @@ export class CustomerFeedbackResponseDto {
   @Type(() => UserResponseDto)
   updatedByUser?: UserResponseDto;
 }
-

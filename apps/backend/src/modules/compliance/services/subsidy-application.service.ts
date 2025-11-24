@@ -46,7 +46,10 @@ export class SubsidyApplicationService {
     });
   }
 
-  async update(id: string, updateDto: UpdateSubsidyApplicationDto): Promise<SubsidyApplicationResponseDto> {
+  async update(
+    id: string,
+    updateDto: UpdateSubsidyApplicationDto,
+  ): Promise<SubsidyApplicationResponseDto> {
     const existing = await this.repository.findById(id);
     if (!existing) {
       throw new NotFoundException(`Subsidy application with ID ${id} not found`);

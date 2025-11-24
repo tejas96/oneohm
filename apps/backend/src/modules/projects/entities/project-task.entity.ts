@@ -5,14 +5,7 @@ import {
   type FileAttachment,
   type TaskChecklist,
 } from '@oneohm-epc/shared-types';
-import {
-  Column,
-  DeleteDateColumn,
-  Entity,
-  Index,
-  JoinColumn,
-  ManyToOne,
-} from 'typeorm';
+import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { ProjectMilestoneEntity } from './project-milestone.entity';
 import { ProjectEntity } from './project.entity';
@@ -183,4 +176,3 @@ export class ProjectTaskEntity extends BaseEntity {
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy?: string;
 }
-

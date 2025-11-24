@@ -49,6 +49,3 @@ export class MaterialDispatchItemResponseDto {
   @Type(() => Date)
   createdAt!: Date;
 }
-
-
-

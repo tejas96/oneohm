@@ -8,10 +8,10 @@ import { AuditLogService } from './services';
 
 /**
  * Audit & Logging Module
- * 
+ *
  * Provides comprehensive audit trail functionality for tracking
  * all entity changes across the system.
- * 
+ *
  * Features:
  * - Audit log creation and storage
  * - Complex querying with filters
@@ -27,4 +27,3 @@ import { AuditLogService } from './services';
   exports: [AuditLogService],
 })
 export class AuditModule {}
-

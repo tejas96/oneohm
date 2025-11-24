@@ -27,4 +27,3 @@ import { UsersModule } from '../users/users.module';
   exports: [CustomerFeedbackService, CustomerFeedbackRepository],
 })
 export class CustomerFeedbackModule {}
-

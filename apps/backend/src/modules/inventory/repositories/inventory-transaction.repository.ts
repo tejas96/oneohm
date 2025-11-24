@@ -89,7 +89,9 @@ export class InventoryTransactionRepository {
     }
 
     if (filters?.referenceType && filters.referenceId) {
-      query.andWhere('txn.referenceType = :referenceType', { referenceType: filters.referenceType });
+      query.andWhere('txn.referenceType = :referenceType', {
+        referenceType: filters.referenceType,
+      });
       query.andWhere('txn.referenceId = :referenceId', { referenceId: filters.referenceId });
     }
 
@@ -170,7 +172,9 @@ export class InventoryTransactionRepository {
     organizationId: string,
     fromDate?: string,
     toDate?: string,
-  ): Promise<Array<{ transactionType: InventoryTransactionType; count: number; totalQuantity: number }>> {
+  ): Promise<
+    Array<{ transactionType: InventoryTransactionType; count: number; totalQuantity: number }>
+  > {
     const query = this.repository
       .createQueryBuilder('txn')
       .select('txn.transactionType', 'transactionType')
@@ -222,4 +226,3 @@ export class InventoryTransactionRepository {
     });
   }
 }
-

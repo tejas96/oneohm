@@ -24,7 +24,7 @@ import {
 
 /**
  * Compliance & Liaising Module
- * 
+ *
  * Handles:
  * - Compliance applications with auto-numbering (CA-{YEAR}-{NUMBER})
  * - Inspections with scheduling and results (IN-{YEAR}-{NUMBER})
@@ -54,11 +54,6 @@ import {
     InspectionService,
     SubsidyApplicationService,
   ],
-  exports: [
-    ComplianceApplicationService,
-    InspectionService,
-    SubsidyApplicationService,
-  ],
+  exports: [ComplianceApplicationService, InspectionService, SubsidyApplicationService],
 })
 export class ComplianceModule {}
-

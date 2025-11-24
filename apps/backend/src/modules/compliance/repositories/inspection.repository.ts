@@ -39,7 +39,10 @@ export class InspectionRepository {
     });
   }
 
-  async update(id: string, updateData: Partial<InspectionEntity>): Promise<InspectionEntity | null> {
+  async update(
+    id: string,
+    updateData: Partial<InspectionEntity>,
+  ): Promise<InspectionEntity | null> {
     await this.repository.update(id, updateData as QueryDeepPartialEntity<InspectionEntity>);
     return this.findById(id);
   }
@@ -170,4 +173,3 @@ export class InspectionRepository {
     return this.repository.count({ where });
   }
 }
-

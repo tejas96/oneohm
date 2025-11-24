@@ -6,8 +6,16 @@ import {
 } from '@oneohm-epc/shared-types';
 
 import { type CreateProjectTaskDto, type UpdateProjectTaskDto } from '../dto';
-import { type ProjectTaskEntity, type TaskTimeLogEntity, type TaskActivityLogEntity } from '../entities';
-import { ProjectTaskRepository, TaskTimeLogRepository, TaskActivityLogRepository } from '../repositories';
+import {
+  type ProjectTaskEntity,
+  type TaskTimeLogEntity,
+  type TaskActivityLogEntity,
+} from '../entities';
+import {
+  ProjectTaskRepository,
+  TaskTimeLogRepository,
+  TaskActivityLogRepository,
+} from '../repositories';
 
 /**
  * ProjectTaskService
@@ -28,7 +36,9 @@ export class ProjectTaskService {
     // Check if code already exists
     const codeExists = await this.taskRepository.existsByCode(createDto.code, createDto.projectId);
     if (codeExists) {
-      throw new BadRequestException(`Task with code ${createDto.code} already exists in this project`);
+      throw new BadRequestException(
+        `Task with code ${createDto.code} already exists in this project`,
+      );
     }
 
     // Validate dependencies
@@ -117,7 +127,9 @@ export class ProjectTaskService {
     if (updateDto.code) {
       const codeExists = await this.taskRepository.existsByCode(updateDto.code, projectId, id);
       if (codeExists) {
-        throw new BadRequestException(`Task with code ${updateDto.code} already exists in this project`);
+        throw new BadRequestException(
+          `Task with code ${updateDto.code} already exists in this project`,
+        );
       }
     }
 
@@ -138,9 +150,7 @@ export class ProjectTaskService {
         statusChanges.actualStartDate = new Date();
       }
     }
-    if (
-      updateDto.status === TaskStatus.COMPLETED || updateDto.status === TaskStatus.CANCELLED
-    ) {
+    if (updateDto.status === TaskStatus.COMPLETED || updateDto.status === TaskStatus.CANCELLED) {
       if (!existingTask.actualEndDate) {
         statusChanges.actualEndDate = new Date();
       }
@@ -171,7 +181,10 @@ export class ProjectTaskService {
       );
     }
 
-    if (updateDto.assignedToUserId && updateDto.assignedToUserId !== existingTask.assignedToUserId) {
+    if (
+      updateDto.assignedToUserId &&
+      updateDto.assignedToUserId !== existingTask.assignedToUserId
+    ) {
       await this.createActivityLog(
         id,
         'assigned',
@@ -378,4 +391,3 @@ export class ProjectTaskService {
     });
   }
 }
-

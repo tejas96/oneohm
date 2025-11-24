@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TaskPriority, TaskStatus, TaskType, type TaskChecklist, type FileAttachment } from '@oneohm-epc/shared-types';
+import {
+  TaskPriority,
+  TaskStatus,
+  TaskType,
+  type TaskChecklist,
+  type FileAttachment,
+} from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -24,12 +30,18 @@ export class CreateProjectTaskDto {
   @IsNotEmpty()
   projectId!: string;
 
-  @ApiPropertyOptional({ description: 'Milestone ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiPropertyOptional({
+    description: 'Milestone ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @IsUUID()
   @IsOptional()
   milestoneId?: string;
 
-  @ApiPropertyOptional({ description: 'Task Template ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiPropertyOptional({
+    description: 'Task Template ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @IsUUID()
   @IsOptional()
   taskTemplateId?: string;
@@ -51,12 +63,19 @@ export class CreateProjectTaskDto {
   @IsOptional()
   description?: string;
 
-  @ApiPropertyOptional({ enum: Object.values(TaskType), enumName: 'TaskType', example: TaskType.INSTALLATION })
+  @ApiPropertyOptional({
+    enum: Object.values(TaskType),
+    enumName: 'TaskType',
+    example: TaskType.INSTALLATION,
+  })
   @IsEnum(TaskType)
   @IsOptional()
   type?: TaskType;
 
-  @ApiPropertyOptional({ description: 'Assigned user ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiPropertyOptional({
+    description: 'Assigned user ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @IsUUID()
   @IsOptional()
   assignedToUserId?: string;
@@ -85,12 +104,22 @@ export class CreateProjectTaskDto {
   @Type(() => Date)
   plannedEndDate?: Date;
 
-  @ApiPropertyOptional({ enum: Object.values(TaskStatus), enumName: 'TaskStatus', example: TaskStatus.TODO, default: TaskStatus.PENDING })
+  @ApiPropertyOptional({
+    enum: Object.values(TaskStatus),
+    enumName: 'TaskStatus',
+    example: TaskStatus.TODO,
+    default: TaskStatus.PENDING,
+  })
   @IsEnum(TaskStatus)
   @IsOptional()
   status?: TaskStatus;
 
-  @ApiPropertyOptional({ enum: Object.values(TaskPriority), enumName: 'TaskPriority', example: TaskPriority.HIGH, default: TaskPriority.MEDIUM })
+  @ApiPropertyOptional({
+    enum: Object.values(TaskPriority),
+    enumName: 'TaskPriority',
+    example: TaskPriority.HIGH,
+    default: TaskPriority.MEDIUM,
+  })
   @IsEnum(TaskPriority)
   @IsOptional()
   priority?: TaskPriority;
@@ -106,7 +135,12 @@ export class CreateProjectTaskDto {
   @IsOptional()
   canRunParallel?: boolean;
 
-  @ApiPropertyOptional({ description: 'Completion percentage', example: 0, minimum: 0, maximum: 100 })
+  @ApiPropertyOptional({
+    description: 'Completion percentage',
+    example: 0,
+    minimum: 0,
+    maximum: 100,
+  })
   @IsInt()
   @Min(0)
   @Max(100)
@@ -136,7 +170,11 @@ export class CreateProjectTaskDto {
   @Type(() => Number)
   storyPoints?: number;
 
-  @ApiPropertyOptional({ description: 'Task labels', type: [String], example: ['urgent', 'critical'] })
+  @ApiPropertyOptional({
+    description: 'Task labels',
+    type: [String],
+    example: ['urgent', 'critical'],
+  })
   @IsArray()
   @IsString({ each: true })
   @IsOptional()

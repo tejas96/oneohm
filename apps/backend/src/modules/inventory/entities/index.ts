@@ -8,6 +8,3 @@ export * from './inventory-transaction.entity';
 export * from './stock-allocation.entity';
 export * from './material-dispatch.entity';
 export * from './material-dispatch-item.entity';
-
-
-

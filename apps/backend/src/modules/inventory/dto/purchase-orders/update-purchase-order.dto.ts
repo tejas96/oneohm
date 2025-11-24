@@ -1,15 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PaymentStatus, PurchaseOrderStatus, PurchaseOrderType } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
-import {
-  IsDateString,
-  IsEnum,
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsUUID,
-  Min,
-} from 'class-validator';
+import { IsDateString, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
 /**
  * DTO for updating a purchase order
@@ -123,6 +115,3 @@ export class UpdatePurchaseOrderDto {
   @IsOptional()
   termsConditions?: string;
 }
-
-
-
