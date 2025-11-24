@@ -3,14 +3,18 @@ import { AuthGuard } from '@nestjs/passport';
 
 /**
  * Local Auth Guard
- * Uses LocalStrategy for email/password authentication
+ * Protects routes with email/password authentication
  *
- * Usage:
+ * Uses LocalStrategy under the hood
+ *
+ * @example
+ * ```typescript
  * @UseGuards(LocalAuthGuard)
  * @Post('login')
  * async login(@Request() req) {
- *   // req.user contains validated user from LocalStrategy
+ *   return req.user; // User is attached by LocalStrategy
  * }
+ * ```
  */
 @Injectable()
 export class LocalAuthGuard extends AuthGuard('local') {}

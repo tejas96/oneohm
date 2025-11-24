@@ -34,6 +34,7 @@ export class AuthController {
   /**
    * Login with email/password
    * Uses LocalStrategy (Passport)
+   * Recommended for admin and employee users
    */
   @Public()
   @UseGuards(LocalAuthGuard)

@@ -17,10 +17,10 @@ import { UsersModule } from '../users/users.module';
  * Handles all authentication logic
  *
  * Features:
- * - Password-based auth (LocalStrategy)
- * - OTP-based auth (OtpStrategy)
+ * - Email/Password authentication (LocalStrategy) - For admin/employee users
+ * - OTP-based authentication (OtpStrategy) - For customer users
  * - JWT token generation & validation
- * - Refresh tokens
+ * - Refresh tokens with rotation
  * - Session management
  *
  * Uses Passport.js strategies for extensibility

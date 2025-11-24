@@ -2,8 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MinLength } from 'class-validator';
 
 /**
- * Traditional Email/Password Login DTO
- * @deprecated Use OtpRequestDto and OtpLoginDto for better security
+ * Email/Password Login DTO
+ * Traditional authentication method for admin and employee users
  */
 export class LoginDto {
   @ApiProperty({ example: 'john.doe@example.com' })

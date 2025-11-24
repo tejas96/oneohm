@@ -33,8 +33,8 @@ export class AuthService {
   ) {}
 
   /**
-   * Traditional email/password login
-   * @deprecated Use OTP login for better security
+   * Email/password login
+   * Recommended for admin and employee users
    */
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
     const { email, password } = loginDto;
