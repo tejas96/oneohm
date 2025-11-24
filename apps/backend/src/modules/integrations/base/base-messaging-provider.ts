@@ -5,12 +5,12 @@ import { BaseIntegrationProvider } from './base-integration-provider';
 /**
  * Base Messaging Provider
  * Abstract base class for all messaging providers (SMS, WhatsApp, etc.)
- * 
+ *
  * Provides common functionality for messaging:
  * - Success response formatting
  * - Error response formatting
  * - Phone number utilities
- * 
+ *
  * NOTE: Full interface implementation will be done in future PR
  * when integration system refactor is complete
  */
@@ -34,10 +34,7 @@ export abstract class BaseMessagingProvider extends BaseIntegrationProvider {
   /**
    * Create a failed response
    */
-  protected createFailedResponse(
-    error: any,
-    operation: string,
-  ): IMessageResponse {
+  protected createFailedResponse(error: any, operation: string): IMessageResponse {
     const errorData = this.handleError(error, operation);
 
     return {
@@ -79,4 +76,3 @@ export abstract class BaseMessagingProvider extends BaseIntegrationProvider {
     return Boolean(message && message.length > 0 && message.length <= maxLength);
   }
 }
-

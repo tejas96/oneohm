@@ -20,7 +20,7 @@ export interface HttpClientMetadata {
 /**
  * @InjectHttpClient Decorator
  * Automatically configures and injects an Axios HTTP client
- * 
+ *
  * Usage:
  * ```typescript
  * @InjectHttpClient({
@@ -29,7 +29,7 @@ export interface HttpClientMetadata {
  * })
  * protected readonly http!: AxiosInstance;
  * ```
- * 
+ *
  * The decorator stores metadata that the ProviderFactory uses to:
  * 1. Create Axios instance with baseURL from @IntegrationProvider
  * 2. Add auth header from credentials
@@ -54,4 +54,3 @@ export function InjectHttpClient(options: InjectHttpClientOptions = {}) {
 export function getHttpClientMetadata(target: any): HttpClientMetadata | undefined {
   return Reflect.getMetadata('integration:http', target);
 }
-

@@ -8,7 +8,7 @@ import { ProviderFactory } from './provider-factory.service';
 /**
  * Provider Resolver Service
  * Resolves and creates provider instances for specific organizations
- * 
+ *
  * Implements the Resolver Pattern - finds active integration and creates provider
  */
 @Injectable()
@@ -23,7 +23,7 @@ export class ProviderResolver {
   /**
    * Resolve and create a provider for an organization
    * Finds the active integration and returns a configured provider instance
-   * 
+   *
    * @param organizationId - Organization ID
    * @param category - Integration category (e.g., MESSAGING)
    * @param providerName - Optional specific provider (e.g., MSG91)
@@ -39,11 +39,7 @@ export class ProviderResolver {
     );
 
     // Find active integration
-    const integration = await this.findActiveIntegration(
-      organizationId,
-      category,
-      providerName,
-    );
+    const integration = await this.findActiveIntegration(organizationId, category, providerName);
 
     if (!integration) {
       throw new NotFoundException(
@@ -57,9 +53,7 @@ export class ProviderResolver {
       integration,
     );
 
-    this.logger.debug(
-      `✅ Resolved provider: ${integration.provider} for org ${organizationId}`,
-    );
+    this.logger.debug(`✅ Resolved provider: ${integration.provider} for org ${organizationId}`);
 
     return provider;
   }
@@ -72,11 +66,7 @@ export class ProviderResolver {
     category: IntegrationCategory,
     providerName?: IntegrationProvider,
   ): Promise<boolean> {
-    const integration = await this.findActiveIntegration(
-      organizationId,
-      category,
-      providerName,
-    );
+    const integration = await this.findActiveIntegration(organizationId, category, providerName);
     return !!integration;
   }
 
@@ -95,14 +85,12 @@ export class ProviderResolver {
         providerName,
         category,
       );
-    } 
-      // Find any active provider in category
-      const integrations = await this.integrationRepository.findByCategoryAndOrg(
-        category,
-        organizationId,
-      );
-      return integrations[0] || null; // Return first or null
-    
+    }
+    // Find any active provider in category
+    const integrations = await this.integrationRepository.findByCategoryAndOrg(
+      category,
+      organizationId,
+    );
+    return integrations[0] || null; // Return first or null
   }
 }
-

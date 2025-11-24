@@ -25,16 +25,16 @@ import { ConfigModule } from '../../config';
   providers: [
     // Repositories
     IntegrationRepository,
-    
+
     // Services
     IntegrationCredentialService,
     IntegrationService,
-    
+
     // Core architecture (decorator-driven)
     ProviderRegistry,
     ProviderFactory,
     ProviderResolver,
-    
+
     // Provider implementations (auto-discovered via decorators)
     Msg91Provider,
     WhatsAppBusinessProvider,

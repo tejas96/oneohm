@@ -1,16 +1,12 @@
 import { Body, Controller, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import {
-  JwtAuthGuard,
-  RolesGuard,
-  Role,
-  Roles,
-  CurrentUser,
-  type CurrentUserType,
-} from '@oneohm-epc/shared-auth';
 import { MessageType } from '@oneohm-epc/shared-types';
 import { OrganizationContext } from '@oneohm-epc/shared-utils';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import { type CurrentUserType } from '../../auth/types';
+import { PermissionGuard } from '../../iam/guards/permission.guard';
 import { SendMessageDto, MessageResponseDto } from '../dto';
 import { IntegrationService } from '../services';
 
@@ -18,20 +14,21 @@ import { IntegrationService } from '../services';
  * Messaging Controller
  * Handles messaging operations (auto-selects provider based on org config)
  * Uses a unified DTO for all message types
+ *
+ * Access: Users with 'messaging:send' permission
  */
 @ApiTags('Messaging')
 @ApiBearerAuth('JWT-auth')
 @Controller('messaging')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class MessagingController {
   constructor(private readonly integrationService: IntegrationService) {}
 
   @Post('send')
-  @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.SALES, Role.TELECALLER)
   @ApiOperation({
     summary: 'Send message',
     description:
-      'Send any type of message (text, template, media, OTP, alert). The system automatically uses the active messaging provider configured for your organization.',
+      'Send any type of message (text, template, media, OTP, alert). The system automatically uses the active messaging provider configured for your organization. Requires messaging:send permission.',
   })
   @ApiResponse({
     status: HttpStatus.OK,

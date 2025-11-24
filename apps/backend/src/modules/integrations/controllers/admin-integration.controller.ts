@@ -10,17 +10,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import {
-  JwtAuthGuard,
-  RolesGuard,
-  Role,
-  Roles,
-  CurrentUser,
-  type CurrentUserType,
-} from '@oneohm-epc/shared-auth';
 import { IntegrationProvider, IntegrationCategory } from '@oneohm-epc/shared-types';
 import { OrganizationContext } from '@oneohm-epc/shared-utils';
 
+import { CurrentUser } from '../../auth/decorators';
+import { JwtAuthGuard } from '../../auth/guards';
+import { type CurrentUserType } from '../../auth/types';
+import { PermissionGuard } from '../../iam/guards/permission.guard';
 import { CreateIntegrationDto, UpdateIntegrationDto, IntegrationResponseDto } from '../dto';
 import { IntegrationEntity } from '../entities';
 import { IntegrationService } from '../services';
@@ -28,19 +24,21 @@ import { IntegrationService } from '../services';
 /**
  * Admin Integration Controller
  * Manages CRUD operations for integrations
+ *
+ * Access: Only org_super_admin role (per-org basis)
  */
 @ApiTags('Admin - Integrations')
 @ApiBearerAuth('JWT-auth')
 @Controller('admin/integrations')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.SUPER_ADMIN, Role.ADMIN)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class AdminIntegrationController {
   constructor(private readonly integrationService: IntegrationService) {}
 
   @Post()
   @ApiOperation({
     summary: 'Create a new integration',
-    description: 'Create a new third-party integration for the organization',
+    description:
+      'Create a new third-party integration for the organization. Requires org_super_admin role with integrations:create permission.',
   })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -72,7 +70,7 @@ export class AdminIntegrationController {
   @Get()
   @ApiOperation({
     summary: 'Get all integrations',
-    description: 'Get all integrations for the organization',
+    description: 'Get all integrations for the organization. Requires org_super_admin role.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -90,7 +88,7 @@ export class AdminIntegrationController {
   @Get(':id')
   @ApiOperation({
     summary: 'Get integration by ID',
-    description: 'Get a specific integration by its ID',
+    description: 'Get a specific integration by its ID. Requires org_super_admin role.',
   })
   @ApiParam({
     name: 'id',
@@ -118,7 +116,7 @@ export class AdminIntegrationController {
   @Put(':id')
   @ApiOperation({
     summary: 'Update integration',
-    description: 'Update an existing integration',
+    description: 'Update an existing integration. Requires org_super_admin role.',
   })
   @ApiParam({
     name: 'id',
@@ -157,7 +155,7 @@ export class AdminIntegrationController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Delete integration',
-    description: 'Delete an integration (soft delete)',
+    description: 'Delete an integration (soft delete). Requires org_super_admin role.',
   })
   @ApiParam({
     name: 'id',

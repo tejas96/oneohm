@@ -6,7 +6,7 @@ import type { IBaseIntegration } from '../interfaces';
 /**
  * Base Integration Provider
  * Abstract base class for all integration providers
- * 
+ *
  * Provides common functionality:
  * - Logging
  * - Error handling
@@ -77,4 +77,3 @@ export abstract class BaseIntegrationProvider implements IBaseIntegration {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
-

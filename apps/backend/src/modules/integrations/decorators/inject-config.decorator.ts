@@ -20,16 +20,16 @@ export interface ConfigMetadata {
 /**
  * @InjectConfig Decorator
  * Automatically injects configuration values from database configuration
- * 
+ *
  * Usage:
  * ```typescript
  * @InjectConfig('otpTemplateId', { required: true })
  * private readonly otpTemplateId!: string;
- * 
+ *
  * @InjectConfig('otpLength', { default: 6 })
  * private readonly otpLength!: number;
  * ```
- * 
+ *
  * The decorator stores metadata that the ProviderFactory uses to:
  * 1. Extract the config from integration.configuration.{key}
  * 2. Validate if required
@@ -60,4 +60,3 @@ export function InjectConfig(configKey: string, options: InjectConfigOptions = {
 export function getConfigMetadata(target: any): Record<string, ConfigMetadata> {
   return Reflect.getMetadata('integration:config', target) || {};
 }
-

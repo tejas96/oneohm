@@ -1,7 +1,7 @@
 import 'reflect-metadata';
-import { 
-  IntegrationProvider as IntegrationProviderEnum, 
-  IntegrationCategory 
+import {
+  IntegrationProvider as IntegrationProviderEnum,
+  IntegrationCategory,
 } from '@oneohm-epc/shared-types';
 
 /**
@@ -20,7 +20,7 @@ export interface IntegrationProviderMetadata {
 /**
  * @IntegrationProvider Decorator
  * Marks a class as an integration provider and stores metadata
- * 
+ *
  * Usage:
  * ```typescript
  * @IntegrationProvider({
@@ -37,10 +37,10 @@ export function IntegrationProvider(metadata: IntegrationProviderMetadata) {
   return function <T extends new (...args: any[]) => any>(target: T) {
     // Store metadata on the class
     Reflect.defineMetadata('integration:provider', metadata, target);
-    
+
     // Store provider name for registry lookup
     Reflect.defineMetadata('integration:provider:name', metadata.provider, target);
-    
+
     return target;
   };
 }
@@ -58,4 +58,3 @@ export function getProviderMetadata(target: any): IntegrationProviderMetadata | 
 export function getProviderName(target: any): IntegrationProviderEnum | undefined {
   return Reflect.getMetadata('integration:provider:name', target);
 }
-

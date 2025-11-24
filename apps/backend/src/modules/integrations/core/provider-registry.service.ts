@@ -8,7 +8,7 @@ import type { IBaseIntegration } from '../interfaces';
 /**
  * Provider Registry Service
  * Auto-discovers and registers all @IntegrationProvider decorated classes
- * 
+ *
  * Implements the Registry Pattern for provider management
  */
 @Injectable()
@@ -95,4 +95,3 @@ export class ProviderRegistry implements OnModuleInit {
     }
   }
 }
-
