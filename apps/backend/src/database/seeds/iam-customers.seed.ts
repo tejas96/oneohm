@@ -2,12 +2,12 @@ import type { DataSource } from 'typeorm';
 
 /**
  * IAM Seed Data - Customer Module
- * 
+ *
  * Populates:
  * 1. Features: customers
  * 2. Permissions: customers:create, customers:read, customers:update, customers:update-status, customers:delete
  * 3. Roles: Admin, Manager, Sales (with appropriate permissions)
- * 
+ *
  * Run: npm run seed:iam-customers
  */
 
@@ -24,7 +24,7 @@ export async function seedIAMCustomers(dataSource: DataSource): Promise<void> {
     // 1. CREATE FEATURE: Customers
     // ===========================================================================
     console.error('📋 Creating feature: Customers');
-    
+
     const featureResult = await queryRunner.query(`
       INSERT INTO features (
         name, code, description, icon, display_order,
@@ -101,7 +101,8 @@ export async function seedIAMCustomers(dataSource: DataSource): Promise<void> {
     const permissionIds: Record<string, string> = {};
 
     for (const perm of permissions) {
-      const result = await queryRunner.query(`
+      const result = await queryRunner.query(
+        `
         INSERT INTO permissions (
           feature_id, name, code, description, action, scope,
           permission_level, show_in_menu, is_active, is_system_permission,
@@ -114,15 +115,9 @@ export async function seedIAMCustomers(dataSource: DataSource): Promise<void> {
           name = EXCLUDED.name,
           description = EXCLUDED.description
         RETURNING id;
-      `, [
-        featureId,
-        perm.name,
-        perm.code,
-        perm.description,
-        perm.action,
-        perm.scope,
-        perm.level,
-      ]);
+      `,
+        [featureId, perm.name, perm.code, perm.description, perm.action, perm.scope, perm.level],
+      );
 
       permissionIds[perm.code] = result[0].id;
       console.error(`✅ Permission: ${perm.code}`);
@@ -174,7 +169,8 @@ export async function seedIAMCustomers(dataSource: DataSource): Promise<void> {
     ];
 
     for (const perm of iamPermissions) {
-      const result = await queryRunner.query(`
+      const result = await queryRunner.query(
+        `
         INSERT INTO permissions (
           feature_id, name, code, description, action, scope,
           permission_level, show_in_menu, is_active, is_system_permission,
@@ -186,13 +182,9 @@ export async function seedIAMCustomers(dataSource: DataSource): Promise<void> {
         ON CONFLICT (code) DO UPDATE SET
           name = EXCLUDED.name
         RETURNING id;
-      `, [
-        iamFeatureId,
-        perm.name,
-        perm.code,
-        `IAM Admin: ${perm.name}`,
-        perm.action,
-      ]);
+      `,
+        [iamFeatureId, perm.name, perm.code, `IAM Admin: ${perm.name}`, perm.action],
+      );
 
       permissionIds[perm.code] = result[0].id;
       console.error(`✅ IAM Permission: ${perm.code}`);
@@ -207,19 +199,22 @@ export async function seedIAMCustomers(dataSource: DataSource): Promise<void> {
     const orgResult = await queryRunner.query(`
       SELECT id FROM organizations LIMIT 1;
     `);
-    
+
     if (!orgResult || orgResult.length === 0) {
       throw new Error('No organization found. Please create an organization first.');
     }
-    
+
     const organizationId = orgResult[0].id;
 
     // Get all role IDs by code
-    const rolesResult = await queryRunner.query(`
+    const rolesResult = await queryRunner.query(
+      `
       SELECT id, code FROM roles 
       WHERE organization_id = $1;
-    `, [organizationId]);
-    
+    `,
+      [organizationId],
+    );
+
     const roleIdsByCode: Record<string, string> = {};
     rolesResult.forEach((r: any) => {
       roleIdsByCode[r.code] = r.id;
@@ -261,25 +256,19 @@ export async function seedIAMCustomers(dataSource: DataSource): Promise<void> {
       // Manager - Create, Read, Update customers (no delete)
       {
         roleCode: 'manager',
-        permissions: [
-          'customers:read',
-          'customers:create',
-          'customers:update',
-        ],
+        permissions: ['customers:read', 'customers:create', 'customers:update'],
       },
       // Sales - Read customers only
       {
         roleCode: 'sales',
-        permissions: [
-          'customers:read',
-        ],
+        permissions: ['customers:read'],
       },
     ];
 
     // Insert role-permission assignments
     for (const mapping of rolePermissions) {
       const roleId = roleIdsByCode[mapping.roleCode];
-      
+
       if (!roleId) {
         console.error(`⚠️  Role ${mapping.roleCode} not found, skipping...`);
         continue;
@@ -287,20 +276,23 @@ export async function seedIAMCustomers(dataSource: DataSource): Promise<void> {
 
       for (const permCode of mapping.permissions) {
         const permissionId = permissionIds[permCode];
-        
+
         if (!permissionId) {
           console.error(`⚠️  Permission ${permCode} not found, skipping...`);
           continue;
         }
 
-        await queryRunner.query(`
+        await queryRunner.query(
+          `
           INSERT INTO role_permissions (
             role_id, permission_id, created_by, created_at
           ) VALUES (
             $1, $2, NULL, CURRENT_TIMESTAMP
           )
           ON CONFLICT (role_id, permission_id) DO NOTHING;
-        `, [roleId, permissionId]);
+        `,
+          [roleId, permissionId],
+        );
       }
 
       console.error(`✅ Assigned ${mapping.permissions.length} permissions to ${mapping.roleCode}`);
@@ -308,7 +300,6 @@ export async function seedIAMCustomers(dataSource: DataSource): Promise<void> {
 
     await queryRunner.commitTransaction();
     console.error('✅ IAM Customer module seed completed successfully!');
-
   } catch (error) {
     await queryRunner.rollbackTransaction();
     console.error('❌ Seed failed:', error);
@@ -320,12 +311,12 @@ export async function seedIAMCustomers(dataSource: DataSource): Promise<void> {
 
 /**
  * Export for use in seed runner
- * 
+ *
  * Example usage:
  * ```
  * import { DataSource } from 'typeorm';
  * import { seedIAMCustomers } from './iam-customers.seed';
- * 
+ *
  * const dataSource = new DataSource(config);
  * await dataSource.initialize();
  * await seedIAMCustomers(dataSource);

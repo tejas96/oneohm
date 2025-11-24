@@ -48,4 +48,3 @@ export class AddResellerToQuotes1700000000006 implements MigrationInterface {
     `);
   }
 }
-

@@ -164,13 +164,23 @@ export async function seedDefaultProfileRoles(dataSource: DataSource): Promise<v
         code: 'customer',
         name: 'Customer',
         description: 'Default role for customer profiles - can view and update own profile',
-        permissions: ['customers:read:own', 'customers:update:own', 'profile:read:own', 'profile:update:own'],
+        permissions: [
+          'customers:read:own',
+          'customers:update:own',
+          'profile:read:own',
+          'profile:update:own',
+        ],
       },
       {
         code: 'reseller',
         name: 'Reseller',
         description: 'Default role for reseller profiles - can view and update own profile',
-        permissions: ['resellers:read:own', 'resellers:update:own', 'profile:read:own', 'profile:update:own'],
+        permissions: [
+          'resellers:read:own',
+          'resellers:update:own',
+          'profile:read:own',
+          'profile:update:own',
+        ],
       },
       {
         code: 'employee_basic',
@@ -236,4 +246,3 @@ export async function seedDefaultProfileRoles(dataSource: DataSource): Promise<v
     await queryRunner.release();
   }
 }
-

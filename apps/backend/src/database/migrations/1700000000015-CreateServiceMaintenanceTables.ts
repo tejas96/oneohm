@@ -758,4 +758,3 @@ export class CreateServiceMaintenanceTables1700000000015 implements MigrationInt
     await queryRunner.dropTable('project_maintenance_configs');
   }
 }
-

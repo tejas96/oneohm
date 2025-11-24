@@ -95,11 +95,12 @@ export class CreateIntegrationsTable1700000000021 implements MigrationInterface 
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop trigger
-    await queryRunner.query(`DROP TRIGGER IF EXISTS trigger_update_integrations_updated_at ON integrations;`);
+    await queryRunner.query(
+      `DROP TRIGGER IF EXISTS trigger_update_integrations_updated_at ON integrations;`,
+    );
     await queryRunner.query(`DROP FUNCTION IF EXISTS update_integrations_updated_at();`);
 
     // Drop table (CASCADE will drop indexes and constraints automatically)
     await queryRunner.query(`DROP TABLE IF EXISTS integrations CASCADE;`);
   }
 }
-

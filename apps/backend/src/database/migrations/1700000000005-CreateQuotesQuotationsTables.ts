@@ -177,5 +177,3 @@ export class CreateQuotesQuotationsTables1700000000005 implements MigrationInter
     await queryRunner.query(`DROP TABLE IF EXISTS quotes CASCADE;`);
   }
 }
-
-

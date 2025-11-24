@@ -8,7 +8,6 @@ import type { Configuration as ConfigInterface } from '../config/config.interfac
 import configuration from '../config/configuration';
 import { createDataSourceOptions } from '../database/datasource';
 
-
 // Load environment variables from apps/backend/.env
 config({ path: resolve(__dirname, '../../.env') });
 
@@ -19,7 +18,7 @@ const configObj = configuration();
 const configService: ConfigService<ConfigInterface> = {
   get: <K extends keyof ConfigInterface>(key: K): ConfigInterface[K] => {
     const keys = key.split('.');
-     
+
     let value: any = configObj; // Need 'any' for dynamic property access
 
     for (const k of keys) {

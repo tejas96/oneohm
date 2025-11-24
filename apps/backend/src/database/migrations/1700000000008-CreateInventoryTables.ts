@@ -648,5 +648,3 @@ export class CreateInventoryTables1700000000008 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE IF EXISTS warehouses CASCADE;`);
   }
 }
-
-

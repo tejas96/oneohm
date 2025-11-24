@@ -3,15 +3,15 @@ import type { DataSource } from 'typeorm';
 
 /**
  * Test Users Seed - IAM System
- * 
+ *
  * Creates test users with IAM roles:
  * 1. Super Admin - Full IAM + all customer permissions
  * 2. Admin - All customer permissions
  * 3. Manager - Create, Read, Update customers (no delete)
  * 4. Sales - Read customers only
- * 
+ *
  * Default password for all: Test@123
- * 
+ *
  * Run: npm run seed:test-users-iam
  */
 
@@ -78,7 +78,8 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
     const roleIds: Record<string, string> = {};
 
     for (const role of roles) {
-      const result = await queryRunner.query(`
+      const result = await queryRunner.query(
+        `
         INSERT INTO roles (
           organization_id, code, name, description, level, is_system_role,
           created_at, updated_at
@@ -90,14 +91,9 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
           name = EXCLUDED.name,
           description = EXCLUDED.description
         RETURNING id;
-      `, [
-        organizationId,
-        role.code,
-        role.name,
-        role.description,
-        role.level,
-        role.isSystem,
-      ]);
+      `,
+        [organizationId, role.code, role.name, role.description, role.level, role.isSystem],
+      );
 
       roleIds[role.code] = result[0].id;
       console.error(`✅ Role created: ${role.name} (${result[0].id})`);
@@ -128,11 +124,14 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
     // Super Admin - Everything
     const superAdminPermissions = Object.values(permissionMap);
     for (const permId of superAdminPermissions) {
-      await queryRunner.query(`
+      await queryRunner.query(
+        `
         INSERT INTO role_permissions (role_id, permission_id, created_at)
         VALUES ($1, $2, CURRENT_TIMESTAMP)
         ON CONFLICT DO NOTHING;
-      `, [roleIds.super_admin, permId]);
+      `,
+        [roleIds.super_admin, permId],
+      );
     }
     console.error(`✅ Super Admin: ${superAdminPermissions.length} permissions`);
 
@@ -146,11 +145,14 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
     ];
     for (const code of adminPermissions) {
       if (permissionMap[code]) {
-        await queryRunner.query(`
+        await queryRunner.query(
+          `
           INSERT INTO role_permissions (role_id, permission_id, created_at)
           VALUES ($1, $2, CURRENT_TIMESTAMP)
           ON CONFLICT DO NOTHING;
-        `, [roleIds.admin, permissionMap[code]]);
+        `,
+          [roleIds.admin, permissionMap[code]],
+        );
       }
     }
     console.error(`✅ Admin: ${adminPermissions.length} permissions`);
@@ -164,11 +166,14 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
     ];
     for (const code of managerPermissions) {
       if (permissionMap[code]) {
-        await queryRunner.query(`
+        await queryRunner.query(
+          `
           INSERT INTO role_permissions (role_id, permission_id, created_at)
           VALUES ($1, $2, CURRENT_TIMESTAMP)
           ON CONFLICT DO NOTHING;
-        `, [roleIds.manager, permissionMap[code]]);
+        `,
+          [roleIds.manager, permissionMap[code]],
+        );
       }
     }
     console.error(`✅ Manager: ${managerPermissions.length} permissions`);
@@ -177,11 +182,14 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
     const salesPermissions = ['customers:read'];
     for (const code of salesPermissions) {
       if (permissionMap[code]) {
-        await queryRunner.query(`
+        await queryRunner.query(
+          `
           INSERT INTO role_permissions (role_id, permission_id, created_at)
           VALUES ($1, $2, CURRENT_TIMESTAMP)
           ON CONFLICT DO NOTHING;
-        `, [roleIds.sales, permissionMap[code]]);
+        `,
+          [roleIds.sales, permissionMap[code]],
+        );
       }
     }
     console.error(`✅ Sales: ${salesPermissions.length} permissions`);
@@ -220,7 +228,8 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
 
     for (const testUser of testUsers) {
       // Create or update user
-      const userResult = await queryRunner.query(`
+      const userResult = await queryRunner.query(
+        `
         INSERT INTO users (
           organization_id, email, first_name, last_name, password_hash, phone,
           status, created_at, updated_at
@@ -233,19 +242,22 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
           last_name = EXCLUDED.last_name,
           password_hash = EXCLUDED.password_hash
         RETURNING id;
-      `, [
-        organizationId,
-        testUser.email,
-        testUser.firstName,
-        testUser.lastName,
-        hashedPassword,
-        `+1${Math.floor(Math.random() * 9000000000 + 1000000000)}`, // Random phone
-      ]);
+      `,
+        [
+          organizationId,
+          testUser.email,
+          testUser.firstName,
+          testUser.lastName,
+          hashedPassword,
+          `+1${Math.floor(Math.random() * 9000000000 + 1000000000)}`, // Random phone
+        ],
+      );
 
       const userId = userResult[0].id;
 
       // Assign role to user
-      await queryRunner.query(`
+      await queryRunner.query(
+        `
         INSERT INTO user_roles (
           user_id, role, role_id,
           created_at
@@ -255,11 +267,13 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
         )
         ON CONFLICT (user_id, role) DO UPDATE SET
           role_id = EXCLUDED.role_id;
-      `, [
-        userId,
-        testUser.roleCode, // Old enum column
-        roleIds[testUser.roleCode], // New IAM role_id
-      ]);
+      `,
+        [
+          userId,
+          testUser.roleCode, // Old enum column
+          roleIds[testUser.roleCode], // New IAM role_id
+        ],
+      );
 
       console.error(`✅ User created: ${testUser.email} → ${testUser.roleCode}`);
     }
@@ -276,7 +290,6 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
     console.error('');
     console.error('🔑 Password for all: Test@123');
     console.error('');
-
   } catch (error) {
     await queryRunner.rollbackTransaction();
     console.error('❌ Seed failed:', error);
@@ -288,16 +301,15 @@ export async function seedTestUsersIAM(dataSource: DataSource): Promise<void> {
 
 /**
  * Export for use in seed runner
- * 
+ *
  * Example usage:
  * ```
  * import { DataSource } from 'typeorm';
  * import { seedTestUsersIAM } from './test-users-iam.seed';
- * 
+ *
  * const dataSource = new DataSource(config);
  * await dataSource.initialize();
  * await seedTestUsersIAM(dataSource);
  * await dataSource.destroy();
  * ```
  */
-

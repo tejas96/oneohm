@@ -1,4 +1,3 @@
- 
 import dataSource from '../ormconfig';
 
 /**
@@ -699,4 +698,3 @@ if (require.main === module) {
 }
 
 export { seedInventory };
-

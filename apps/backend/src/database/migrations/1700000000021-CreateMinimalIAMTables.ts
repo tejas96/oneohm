@@ -3,13 +3,13 @@ import { type MigrationInterface, type QueryRunner } from 'typeorm';
 /**
  * Migration: Create Minimal IAM Tables (4 Core Tables)
  * Module 2: IAM - Features, Roles & Permissions
- * 
+ *
  * Simplified IAM system with only essential tables:
  * 1. features - Application features/modules
  * 2. permissions - Granular permissions tied to features
  * 3. roles - Dynamic roles (replaces hardcoded enum)
  * 4. role_permissions - Many-to-many: roles ↔ permissions
- * 
+ *
  * Removed optional tables for simplicity:
  * - permission_conditions (ABAC - can add later)
  * - role_feature_access (feature licensing - can add later)
@@ -270,7 +270,7 @@ export class CreateMinimalIAMTables1700000000021 implements MigrationInterface {
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     // Drop in reverse order (respect foreign keys)
-    
+
     // Drop user_roles modifications
     await queryRunner.query(`ALTER TABLE user_roles DROP CONSTRAINT IF EXISTS fk_user_roles_role;`);
     await queryRunner.query(`DROP INDEX IF EXISTS idx_user_roles_role_id;`);
@@ -305,5 +305,3 @@ export class CreateMinimalIAMTables1700000000021 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE IF EXISTS features CASCADE;`);
   }
 }
-
-

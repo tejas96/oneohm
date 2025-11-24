@@ -463,7 +463,9 @@ export class CreateLoanFinanceTables1700000000017 implements MigrationInterface 
     await queryRunner.dropTable('loan_documents');
 
     // Drop trigger and function for loan_applications
-    await queryRunner.query('DROP TRIGGER IF EXISTS trg_loan_applications_updated_at ON loan_applications');
+    await queryRunner.query(
+      'DROP TRIGGER IF EXISTS trg_loan_applications_updated_at ON loan_applications',
+    );
     await queryRunner.query('DROP FUNCTION IF EXISTS update_loan_applications_updated_at()');
 
     // Drop indexes for loan_applications
@@ -477,4 +479,3 @@ export class CreateLoanFinanceTables1700000000017 implements MigrationInterface 
     await queryRunner.dropTable('loan_applications');
   }
 }
-

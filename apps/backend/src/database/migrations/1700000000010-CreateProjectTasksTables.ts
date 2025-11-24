@@ -174,4 +174,3 @@ export class CreateProjectTasksTables1700000000010 implements MigrationInterface
     await queryRunner.query(`DROP TABLE IF EXISTS task_templates CASCADE;`);
   }
 }
-
