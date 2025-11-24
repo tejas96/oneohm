@@ -4,6 +4,7 @@
     /* NestJS-specific overrides */
     "module": "commonjs",
     "target": "ES2023",
+    "lib": ["ES2023"], // Backend doesn't need DOM types
     "outDir": "./dist",
     "incremental": true,
 
