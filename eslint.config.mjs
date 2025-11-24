@@ -65,7 +65,6 @@ export default [
           './tsconfig.base.json',
           './apps/web/tsconfig.json',
           './apps/backend/tsconfig.json',
-          './libs/shared-auth/tsconfig.json',
           './libs/shared-types/tsconfig.json',
           './libs/shared-utils/tsconfig.json',
         ],
