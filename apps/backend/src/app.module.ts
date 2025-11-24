@@ -6,6 +6,7 @@ import { ConfigModule } from './config';
 import { DatabaseModule } from './database/database.module';
 import { ApprovalModule } from './modules/approvals/approval.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
 import { CustomerFeedbackModule } from './modules/customer-feedback/customer-feedback.module';
@@ -16,6 +17,7 @@ import { InventoryModule } from './modules/inventory/inventory.module';
 import { LoanFinanceModule } from './modules/loan-finance/loan-finance.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { PlatformModule } from './modules/platform/platform.module';
 import { ProductsModule } from './modules/products/products.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
@@ -29,8 +31,10 @@ import { UsersModule } from './modules/users/users.module';
     ConfigModule,
     DatabaseModule,
     SecurityEventsModule,
+    AuthModule,
     UsersModule,
     OrganizationsModule,
+    PlatformModule,
     CustomersModule,
     ResellersModule,
     ProductsModule,

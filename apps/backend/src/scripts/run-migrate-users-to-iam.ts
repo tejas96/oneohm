@@ -7,14 +7,13 @@ import dataSource from '../database/ormconfig';
  */
 
 async function run(): Promise<void> {
-
   try {
     console.log('Initializing database connection...');
     await dataSource.initialize();
-    
+
     console.log('Running User Roles → IAM migration...');
     await migrateUsersToIAM(dataSource);
-    
+
     console.log('✅ Migration completed successfully!');
   } catch (error) {
     console.error('❌ Migration failed:', error);
@@ -26,4 +25,3 @@ async function run(): Promise<void> {
 }
 
 void run();
-

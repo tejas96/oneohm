@@ -2,15 +2,15 @@ import type { DataSource } from 'typeorm';
 
 /**
  * Data Migration: User Roles to IAM
- * 
+ *
  * Migrates existing users from enum-based roles to new IAM role_id system
- * 
+ *
  * Steps:
  * 1. Find all user_roles with old enum 'role' column
  * 2. Map enum values to new IAM roles
  * 3. Update user_roles.role_id with corresponding IAM role
  * 4. Verify all users have been migrated
- * 
+ *
  * Mapping:
  * - SUPER_ADMIN → super_admin role
  * - ADMIN → admin role
@@ -18,7 +18,7 @@ import type { DataSource } from 'typeorm';
  * - SALES → sales role
  * - ACCOUNTANT → sales role (fallback)
  * - SUPPORT → sales role (fallback)
- * 
+ *
  * Run manually: npm run migrate:users-to-iam
  */
 
@@ -89,7 +89,7 @@ export async function migrateUsersToIAM(dataSource: DataSource): Promise<void> {
     // 3. GET IAM ROLES BY ORGANIZATION
     // ===========================================================================
     console.log('📋 Loading IAM roles...');
-    
+
     const iamRoles = await queryRunner.query(`
       SELECT id, organization_id, code 
       FROM roles 
@@ -128,12 +128,12 @@ export async function migrateUsersToIAM(dataSource: DataSource): Promise<void> {
 
         // Map old enum to new role code
         const roleCodeMap: Record<string, string> = {
-          'SUPER_ADMIN': 'super_admin',
-          'ADMIN': 'admin',
-          'MANAGER': 'manager',
-          'SALES': 'sales',
-          'ACCOUNTANT': 'sales', // Fallback
-          'SUPPORT': 'sales', // Fallback
+          SUPER_ADMIN: 'super_admin',
+          ADMIN: 'admin',
+          MANAGER: 'manager',
+          SALES: 'sales',
+          ACCOUNTANT: 'sales', // Fallback
+          SUPPORT: 'sales', // Fallback
         };
 
         const newRoleCode = roleCodeMap[oldRole];
@@ -153,21 +153,25 @@ export async function migrateUsersToIAM(dataSource: DataSource): Promise<void> {
 
         const newRoleId = orgRoles[newRoleCode];
         if (!newRoleId) {
-          console.log(`❌ User ${userRole.user_id}: Role "${newRoleCode}" not found in organization`);
+          console.log(
+            `❌ User ${userRole.user_id}: Role "${newRoleCode}" not found in organization`,
+          );
           stats.errors++;
           continue;
         }
 
         // Update user_role with new role_id
-        await queryRunner.query(`
+        await queryRunner.query(
+          `
           UPDATE user_roles
           SET role_id = $1
           WHERE id = $2;
-        `, [newRoleId, userRole.id]);
+        `,
+          [newRoleId, userRole.id],
+        );
 
         console.log(`✅ User ${userRole.user_id}: ${oldRole} → ${newRoleCode}`);
         stats.migrated++;
-
       } catch (error) {
         console.error(`❌ Error migrating user ${userRole.user_id}:`, error);
         stats.errors++;
@@ -197,7 +201,6 @@ export async function migrateUsersToIAM(dataSource: DataSource): Promise<void> {
     console.log('  2. Test Customer module endpoints');
     console.log('  3. If all works, you can DROP the old "role" enum column (manual step)');
     console.log('');
-
   } catch (error) {
     await queryRunner.rollbackTransaction();
     console.error('❌ Migration failed:', error);
@@ -212,16 +215,15 @@ export async function migrateUsersToIAM(dataSource: DataSource): Promise<void> {
  * Note: To run this migration, use a separate runner script or call this function
  * from your migration system. Direct execution with require.main pattern has been
  * removed to comply with TypeScript best practices.
- * 
+ *
  * Example usage:
  * ```
  * import { DataSource } from 'typeorm';
  * import { migrateUsersToIAM } from './migrate-users-to-iam';
- * 
+ *
  * const dataSource = new DataSource(config);
  * await dataSource.initialize();
  * await migrateUsersToIAM(dataSource);
  * await dataSource.destroy();
  * ```
  */
-
