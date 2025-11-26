@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   Query,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
@@ -24,7 +25,14 @@ import {
 import { plainToInstance } from 'class-transformer';
 
 import { JwtAuthGuard } from '../../auth/guards';
-import { CreateUserDto, UpdateUserDto, UpdateUserStatusDto, UserResponseDto } from '../dto';
+import {
+  CreateProfileDto,
+  CreateUserDto,
+  UpdateUserDto,
+  UpdateUserStatusDto,
+  UserResponseDto,
+} from '../dto';
+import { ProfileService } from '../services/profile.service';
 import { UserService } from '../services/user.service';
 
 /**
@@ -37,7 +45,10 @@ import { UserService } from '../services/user.service';
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly profileService: ProfileService,
+  ) {}
 
   @Post()
   @ApiCreate({
@@ -141,5 +152,34 @@ export class UserController {
     return plainToInstance(UserResponseDto, user, {
       excludeExtraneousValues: true,
     });
+  }
+
+  @Post(':id/profiles')
+  @ApiCreate({
+    path: 'profiles',
+    summary: 'Create user profile',
+    description:
+      'Create a new profile (customer/employee/reseller) for a user in an organization. Automatically assigns the corresponding role.',
+    responseType: Object,
+    statusCode: 201,
+    successMessage: 'Profile created successfully',
+  })
+  async createProfile(
+    @Param('id', ParseUUIDPipe) userId: string,
+    @Body() createProfileDto: CreateProfileDto,
+    @Request() req: Express.Request,
+  ): Promise<any> {
+    const createdBy = req.user?.id;
+
+    // Create profile with auto role assignment
+    const profile = await this.profileService.createProfile({
+      userId,
+      organizationId: createProfileDto.organizationId,
+      profileType: createProfileDto.profileType,
+      profileData: createProfileDto.profileData,
+      createdBy,
+    });
+
+    return profile;
   }
 }
