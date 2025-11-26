@@ -1,19 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { UserProfileType } from '@oneohm-epc/shared-types';
-import { IsNotEmpty, IsString, IsUUID, IsEnum, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsEnum, IsOptional } from 'class-validator';
 
 /**
  * Create Profile DTO
  * Used to create a new profile for a user in an organization
+ * Note: userId comes from URL parameter, not body
  */
 export class CreateProfileDto {
-  @ApiProperty({ example: 'uuid', description: 'User ID' })
-  @IsUUID()
-  @IsNotEmpty()
-  userId!: string;
-
-  @ApiProperty({ example: 'uuid', description: 'Organization ID' })
-  @IsUUID()
+  @ApiProperty({ example: '00000000-0000-0000-0000-000000000001', description: 'Organization ID' })
+  @IsString()
   @IsNotEmpty()
   organizationId!: string;
 
@@ -29,11 +25,6 @@ export class CreateProfileDto {
   @ApiProperty({ description: 'Profile-specific data' })
   @IsNotEmpty()
   profileData!: any;
-
-  @ApiProperty({ example: 'uuid', description: 'User who created this profile', required: false })
-  @IsOptional()
-  @IsUUID()
-  createdBy?: string;
 }
 
 /**

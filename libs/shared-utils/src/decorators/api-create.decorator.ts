@@ -16,19 +16,24 @@ export function ApiCreate<TResponse>(options: {
   summary: string;
   description?: string;
   responseType: Type<TResponse>;
-  // roles removed - use @RequirePermission instead
+  path?: string; // Optional custom path (e.g., 'login', 'otp/request')
+  statusCode?: HttpStatus; // Optional custom status code (default: 201 CREATED)
+  successMessage?: string; // Optional custom success message
   additionalErrors?: Array<{ status: HttpStatus; description: string }>;
 }): MethodDecorator & ClassDecorator {
+  const statusCode = options.statusCode || HttpStatus.CREATED;
+  const successMessage = options.successMessage || 'Resource created successfully';
+  
   const decorators = [
-    Post(),
-    HttpCode(HttpStatus.CREATED),
+    Post(options.path || ''),
+    HttpCode(statusCode),
     ApiOperation({
       summary: options.summary,
       description: options.description,
     }),
     ApiResponse({
-      status: HttpStatus.CREATED,
-      description: 'Resource created successfully',
+      status: statusCode,
+      description: successMessage,
       type: options.responseType,
     }),
     ApiResponse({

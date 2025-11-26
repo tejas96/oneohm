@@ -16,11 +16,12 @@ import { MoreThan } from 'typeorm';
 
 import { SecurityEventRepository } from '../../security-events/repositories/security-event.repository';
 import { SecurityEventService } from '../../security-events/services/security-event.service';
-
 /**
  * OTP Service
- * Handles OTP generation, storage, verification, and rate limiting
+ * Handles OTP generation, storage, and verification
  * Uses security_events table for persistent storage (no Redis required)
+ *
+ * Note: Rate limiting is now handled by SecurityRateLimitGuard at the controller level
  */
 @Injectable()
 export class OtpService {
@@ -30,8 +31,6 @@ export class OtpService {
   // Configuration
   private readonly OTP_LENGTH = 6;
   private readonly OTP_EXPIRY_SECONDS = 300; // 5 minutes
-  private readonly COOLDOWN_SECONDS = 60; // 60 seconds between requests
-  private readonly DAILY_LIMIT = 5; // Max 5 OTPs per day
   private readonly MAX_FAILED_ATTEMPTS = 5; // Block after 5 failed attempts
   private readonly BLOCK_DURATION_SECONDS = 86400; // 24 hours
 
@@ -53,6 +52,8 @@ export class OtpService {
    * @param organizationId - Optional organization ID
    * @param ipAddress - Request IP address
    * @param userAgent - Request user agent
+   *
+   * Note: Rate limiting is enforced by SecurityRateLimitGuard at controller level
    */
   async generateAndStoreOtp(data: {
     phone: string;
@@ -71,19 +72,16 @@ export class OtpService {
       );
     }
 
-    // 2. Check rate limits
-    await this.checkRateLimits(phone, ipAddress);
-
-    // 3. Invalidate any existing pending OTPs for this phone
+    // 2. Invalidate any existing pending OTPs for this phone
     await this.invalidateExistingOtps(phone);
 
-    // 4. Generate OTP
+    // 3. Generate OTP
     const otp = this.generateOtp();
 
-    // 5. Hash OTP for security
+    // 4. Hash OTP for security
     const otpHash = await bcrypt.hash(otp, 10);
 
-    // 6. Store in security_events table
+    // 5. Store in security_events table
     const expiresAt = new Date(Date.now() + this.OTP_EXPIRY_SECONDS * 1000);
 
     await this.securityEventService.logEvent({
@@ -229,59 +227,6 @@ export class OtpService {
   }
 
   /**
-   * Check rate limits (cooldown + daily limit)
-   */
-  private async checkRateLimits(phone: string, ipAddress?: string): Promise<void> {
-    // Check cooldown (60 seconds)
-    const recentOtpCount = await this.securityEventRepository.repository
-      .createQueryBuilder('event')
-      .where('event.eventType = :eventType', { eventType: SecurityEventType.OTP_SENT })
-      .andWhere('event.metadata @> :metadata', { metadata: { phone } })
-      .andWhere('event.createdAt >= :since', {
-        since: new Date(Date.now() - this.COOLDOWN_SECONDS * 1000),
-      })
-      .getCount();
-
-    if (recentOtpCount > 0) {
-      await this.securityEventService.logRateLimitExceeded({
-        eventType: SecurityEventType.OTP_SENT,
-        ipAddress,
-        limit: 1,
-        window: `${this.COOLDOWN_SECONDS}s`,
-        currentCount: recentOtpCount + 1,
-      });
-
-      throw new BadRequestException(
-        `Please wait ${this.COOLDOWN_SECONDS} seconds before requesting another OTP.`,
-      );
-    }
-
-    // Check daily limit (5 per day)
-    const dailyOtpCount = await this.securityEventRepository.repository
-      .createQueryBuilder('event')
-      .where('event.eventType = :eventType', { eventType: SecurityEventType.OTP_SENT })
-      .andWhere('event.metadata @> :metadata', { metadata: { phone } })
-      .andWhere('event.createdAt >= :since', {
-        since: new Date(Date.now() - 86400 * 1000), // 24 hours
-      })
-      .getCount();
-
-    if (dailyOtpCount >= this.DAILY_LIMIT) {
-      // Block for 24 hours
-      await this.securityEventService.logAccountBlocked({
-        ipAddress,
-        phone,
-        reason: 'Daily OTP limit exceeded',
-        blockDurationSeconds: this.BLOCK_DURATION_SECONDS,
-      });
-
-      throw new BadRequestException(
-        `Daily OTP limit (${this.DAILY_LIMIT}) reached. Please try again after 24 hours.`,
-      );
-    }
-  }
-
-  /**
    * Invalidate existing pending OTPs for the phone
    */
   private async invalidateExistingOtps(phone: string): Promise<void> {
@@ -310,15 +255,6 @@ export class OtpService {
   }
 
   /**
-   * Validate phone number format (E.164)
-   */
-  validatePhoneNumber(phone: string): boolean {
-    // E.164 format: +[country code][number]
-    const e164Regex = /^\+[1-9]\d{1,14}$/;
-    return e164Regex.test(phone);
-  }
-
-  /**
    * Request OTP - Public endpoint
    * Creates user if doesn't exist (Firebase-like)
    */
@@ -326,20 +262,14 @@ export class OtpService {
     phone?: string;
     email?: string;
   }): Promise<{ message: string; retryAfter?: number }> {
-    const { phone, email } = data;
+    const { phone } = data;
 
-    // Validate input
-    if (!phone && !email) {
-      throw new BadRequestException('Either phone or email must be provided');
-    }
+    // DTO validation already ensures:
+    // 1. At least one of phone/email is provided
+    // 2. Phone is in E.164 format if provided
+    // 3. Email is valid format if provided
 
-    if (phone && !this.validatePhoneNumber(phone)) {
-      throw new BadRequestException(
-        'Invalid phone number format. Use E.164 format (e.g. +919876543210)',
-      );
-    }
-
-    // For now, only phone OTP is supported
+    // Business logic validation: Email OTP not yet implemented
     if (!phone) {
       throw new BadRequestException('Email OTP not yet implemented. Please use phone OTP.');
     }
@@ -361,7 +291,7 @@ export class OtpService {
       if (error instanceof BadRequestException && error.message.includes('wait')) {
         return {
           message: error.message,
-          retryAfter: this.COOLDOWN_SECONDS,
+          retryAfter: 60, // 60 seconds cooldown
         };
       }
       throw error;
@@ -377,13 +307,13 @@ export class OtpService {
     email?: string;
     otp: string;
   }): Promise<{ accessToken: string; refreshToken: string; user: any }> {
-    const { phone, email, otp } = data;
+    const { phone, otp } = data;
 
-    // Validate input
-    if (!phone && !email) {
-      throw new BadRequestException('Either phone or email must be provided');
-    }
+    // DTO validation already ensures:
+    // 1. At least one of phone/email is provided
+    // 2. OTP format is valid (6 digits)
 
+    // Business logic validation: Email OTP not yet implemented
     if (!phone) {
       throw new BadRequestException('Email OTP not yet implemented. Please use phone OTP.');
     }

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { SecurityEventEntity } from './entities';
+import { SecurityRateLimitGuard } from './guards';
 import { SecurityEventRepository } from './repositories';
 import { SecurityEventService } from './services';
 
@@ -24,7 +25,7 @@ import { SecurityEventService } from './services';
  */
 @Module({
   imports: [TypeOrmModule.forFeature([SecurityEventEntity])],
-  providers: [SecurityEventRepository, SecurityEventService],
-  exports: [SecurityEventService, SecurityEventRepository],
+  providers: [SecurityEventRepository, SecurityEventService, SecurityRateLimitGuard],
+  exports: [SecurityEventService, SecurityEventRepository, SecurityRateLimitGuard],
 })
 export class SecurityEventsModule {}
