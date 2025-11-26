@@ -5,6 +5,7 @@
     "module": "commonjs",
     "target": "ES2021",
     "types": ["node"], // Only Node.js types, no DOM
+    "typeRoots": ["../../node_modules/@types", "./src/types"],
     "outDir": "./dist",
     "incremental": true,
 
@@ -13,6 +14,6 @@
     "noUnusedLocals": false, // NestJS decorators sometimes create unused parameters
     "noUnusedParameters": false // NestJS decorators use _ prefix pattern
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/types/**/*.d.ts"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
 }
