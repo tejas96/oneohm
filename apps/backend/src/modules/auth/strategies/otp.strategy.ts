@@ -4,6 +4,7 @@ import { UserStatus } from '@oneohm-epc/shared-types';
 import { Request } from 'express';
 import { Strategy } from 'passport-custom';
 
+import { UserEntity } from '../../users/entities/user.entity';
 import { UserService } from '../../users/services/user.service';
 import { OtpService } from '../services/otp.service';
 
@@ -32,7 +33,7 @@ export class OtpStrategy extends PassportStrategy(Strategy, 'otp') {
    * @param req - Express request (contains phone/email + OTP in body)
    * @returns User object if OTP valid, throws UnauthorizedException if invalid
    */
-  async validate(req: Request): Promise<any> {
+  async validate(req: Request): Promise<UserEntity> {
     const { phone, email, otp } = req.body as {
       phone?: string;
       email?: string;
@@ -66,7 +67,7 @@ export class OtpStrategy extends PassportStrategy(Strategy, 'otp') {
     }
 
     // Get or create user (Firebase-like behavior)
-    let user;
+    let user: UserEntity;
 
     try {
       // Try to find existing user (throws NotFoundException if not found)
