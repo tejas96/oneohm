@@ -6,6 +6,7 @@ import {
   Configuration,
   DatabaseConfig,
   FeatureFlagsConfig,
+  IntegrationsConfig,
   JwtConfig,
   LoggingConfig,
   MailConfig,
@@ -110,6 +111,13 @@ export class ConfigService {
   }
 
   /**
+   * Integrations Configuration
+   */
+  get integrations(): IntegrationsConfig {
+    return this.nestConfigService.get<IntegrationsConfig>('integrations')!;
+  }
+
+  /**
    * Get complete configuration
    */
   get all(): Configuration {
@@ -125,6 +133,7 @@ export class ConfigService {
       featureFlags: this.featureFlags,
       monitoring: this.monitoring,
       thirdParty: this.thirdParty,
+      integrations: this.integrations,
     };
   }
 

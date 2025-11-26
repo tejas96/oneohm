@@ -14,7 +14,6 @@ declare namespace NodeJS {
     DATABASE_NAME: string;
     DATABASE_URL?: string;
     DATABASE_SSL: string;
-    DATABASE_SYNCHRONIZE: string;
     DATABASE_LOGGING: string;
     DATABASE_POOL_MIN: string;
     DATABASE_POOL_MAX: string;
@@ -40,6 +39,10 @@ declare namespace NodeJS {
     STORAGE_TYPE?: string;
     STORAGE_LOCAL_PATH?: string;
     STORAGE_MAX_FILE_SIZE?: string;
+    AWS_REGION?: string;
+    AWS_ACCESS_KEY_ID?: string;
+    AWS_SECRET_ACCESS_KEY?: string;
+    AWS_S3_BUCKET?: string;
 
     API_KEY?: string;
     API_KEY_HEADER?: string;
@@ -66,5 +69,10 @@ declare namespace NodeJS {
     STRIPE_SECRET_KEY?: string;
     STRIPE_WEBHOOK_SECRET?: string;
     GOOGLE_MAPS_API_KEY?: string;
+
+    INTEGRATION_ENCRYPTION_KEY?: string;
+    MSG91_AUTH_KEY?: string;
+    MSG91_SENDER_ID?: string;
+    MSG91_DLT_TEMPLATE_ID?: string;
   }
 }

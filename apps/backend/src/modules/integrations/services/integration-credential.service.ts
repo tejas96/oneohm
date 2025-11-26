@@ -1,7 +1,8 @@
 import * as crypto from 'crypto';
 
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+
+import { ConfigService } from '../../../config';
 
 /**
  * Integration Credential Service
@@ -17,7 +18,7 @@ export class IntegrationCredentialService {
   private readonly authTagLength = 16; // 128 bits for GCM
 
   constructor(private readonly configService: ConfigService) {
-    const key = this.configService.get<string>('INTEGRATION_ENCRYPTION_KEY');
+    const key = this.configService.integrations.encryptionKey;
 
     if (!key) {
       throw new Error('INTEGRATION_ENCRYPTION_KEY is not configured in environment variables');
