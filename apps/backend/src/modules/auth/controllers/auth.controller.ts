@@ -1,21 +1,21 @@
 import {
   Body,
   Controller,
-  Get,
-  HttpCode,
   HttpStatus,
-  Post,
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { SecurityEventType } from '@oneohm-epc/shared-types';
+import { ApiCreate, ApiGet, SecurityRateLimit } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
+import type { Request as ExpressRequest } from 'express';
 
+import { SecurityRateLimitGuard } from '../../security-events/guards';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
 import { UserService } from '../../users/services/user.service';
 import { CurrentUser, Public } from '../decorators';
-import { LoginDto, LoginResponseDto } from '../dto/login.dto';
-import { RequestOtpDto, VerifyOtpDto, OtpResponseDto } from '../dto/otp.dto';
+import { LoginDto, LoginResponseDto, RequestOtpDto, VerifyOtpDto, OtpRequestResponseDto } from '../dto/login.dto';
 import { RefreshTokenDto, RefreshTokenResponseDto } from '../dto/refresh-token.dto';
 import { JwtAuthGuard, LocalAuthGuard, OtpAuthGuard } from '../guards';
 import { AuthService } from '../services/auth.service';
@@ -38,55 +38,53 @@ export class AuthController {
    */
   @Public()
   @UseGuards(LocalAuthGuard)
-  @Post('login')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'User login with email/password' })
-  @ApiResponse({
-    status: 200,
-    description: 'Login successful',
-    type: LoginResponseDto,
+  @ApiCreate({
+    path: 'login',
+    summary: 'User login with email/password',
+    description: 'Uses LocalStrategy (Passport). Recommended for admin and employee users',
+    responseType: LoginResponseDto,
+    statusCode: HttpStatus.OK,
+    successMessage: 'Login successful',
+    additionalErrors: [{ status: HttpStatus.UNAUTHORIZED, description: 'Invalid credentials' }],
   })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() loginDto: LoginDto, @Request() req: any): Promise<LoginResponseDto> {
-    // User is already validated by LocalStrategy
-    // Available in req.user
-    return this.authService.generateTokensForUser(req.user);
+  async login(@Body() loginDto: LoginDto, @Request() req: ExpressRequest): Promise<LoginResponseDto> {
+    // User is already validated by LocalStrategy (guard ensures req.user exists)
+    return this.authService.generateTokensForUser(req.user!);
   }
 
   @Public()
-  @Post('refresh')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Refresh access token' })
-  @ApiResponse({
-    status: 200,
-    description: 'Token refreshed successfully',
-    type: RefreshTokenResponseDto,
+  @ApiCreate({
+    path: 'refresh',
+    summary: 'Refresh access token',
+    responseType: RefreshTokenResponseDto,
+    statusCode: HttpStatus.OK,
+    successMessage: 'Token refreshed successfully',
+    additionalErrors: [{ status: HttpStatus.UNAUTHORIZED, description: 'Invalid refresh token' }],
   })
-  @ApiResponse({ status: 401, description: 'Invalid refresh token' })
   async refresh(@Body() refreshTokenDto: RefreshTokenDto): Promise<RefreshTokenResponseDto> {
     return this.authService.refreshToken(refreshTokenDto.refreshToken);
   }
 
-  @Post('logout')
   @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'User logout' })
-  @ApiResponse({ status: 204, description: 'Logout successful' })
+  @ApiCreate({
+    path: 'logout',
+    summary: 'User logout',
+    responseType: LoginResponseDto,
+    statusCode: HttpStatus.NO_CONTENT,
+    successMessage: 'Logout successful',
+  })
   logout(@CurrentUser() user: CurrentUserType): void {
     this.authService.logout(user.id);
   }
 
-  @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get current user profile' })
-  @ApiResponse({
-    status: 200,
-    description: 'Current user profile',
-    type: UserResponseDto,
+  @ApiGet({
+    path: 'me',
+    summary: 'Get current user profile',
+    responseType: UserResponseDto,
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getCurrentUser(@CurrentUser() user: CurrentUserType): Promise<UserResponseDto> {
     const fullUser = await this.userService.findById(user.id);
     return plainToInstance(UserResponseDto, fullUser, {
@@ -97,46 +95,67 @@ export class AuthController {
   /**
    * Request OTP for phone or email
    * Creates user account if doesn't exist (Firebase-like behavior)
+   * Rate Limited: 1 per minute, 5 per day per phone/IP
    */
   @Public()
-  @Post('otp/request')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
+  @UseGuards(SecurityRateLimitGuard)
+  @SecurityRateLimit({
+    eventType: SecurityEventType.OTP_SENT,
+    trackBy: ['phone', 'ipAddress'],
+    limits: [
+      { count: 1, windowSeconds: 60, message: 'Please wait 60 seconds before requesting another OTP' },
+      { count: 5, windowSeconds: 86400, message: 'Maximum 5 OTP requests per day. Try again after 24 hours' },
+    ],
+    blockOnExceed: true,
+    blockDurationSeconds: 86400,
+  })
+  @ApiCreate({
+    path: 'otp/request',
     summary: 'Request OTP',
-    description: 'Request OTP for phone or email. Creates user if doesnt exist.',
+    description: 'Request OTP for phone or email. Creates user if doesnt exist. Rate limited: 1/min, 5/day',
+    responseType: OtpRequestResponseDto,
+    statusCode: HttpStatus.OK,
+    successMessage: 'OTP sent successfully',
+    additionalErrors: [
+      { status: HttpStatus.BAD_REQUEST, description: 'Invalid request or rate limit exceeded' },
+      { status: HttpStatus.TOO_MANY_REQUESTS, description: 'Rate limit exceeded' },
+    ],
   })
-  @ApiResponse({
-    status: 200,
-    description: 'OTP sent successfully',
-    type: OtpResponseDto,
-  })
-  @ApiResponse({ status: 400, description: 'Invalid request or rate limit exceeded' })
-  async requestOtp(@Body() dto: RequestOtpDto): Promise<OtpResponseDto> {
+  async requestOtp(@Body() dto: RequestOtpDto): Promise<OtpRequestResponseDto> {
     return this.otpService.requestOtp(dto);
   }
 
   /**
    * Verify OTP and login
    * Uses OtpStrategy (Passport)
+   * Rate Limited: 5 attempts per 5 minutes per phone/IP
    */
   @Public()
-  @UseGuards(OtpAuthGuard)
-  @Post('otp/verify')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
+  @UseGuards(OtpAuthGuard, SecurityRateLimitGuard)
+  @SecurityRateLimit({
+    eventType: SecurityEventType.OTP_VERIFY_ATTEMPT,
+    trackBy: ['phone', 'ipAddress'],
+    limits: [
+      { count: 5, windowSeconds: 300, message: 'Too many failed attempts. Wait 5 minutes before trying again' },
+    ],
+    blockOnExceed: true,
+    blockDurationSeconds: 300,
+  })
+  @ApiCreate({
+    path: 'otp/verify',
     summary: 'Verify OTP and login',
-    description: 'Verify OTP and return JWT tokens',
+    description: 'Verify OTP and return JWT tokens. Rate limited: 5 attempts per 5 minutes',
+    responseType: LoginResponseDto,
+    statusCode: HttpStatus.OK,
+    successMessage: 'OTP verified, login successful',
+    additionalErrors: [
+      { status: HttpStatus.BAD_REQUEST, description: 'Invalid OTP' },
+      { status: HttpStatus.UNAUTHORIZED, description: 'OTP expired or incorrect' },
+      { status: HttpStatus.TOO_MANY_REQUESTS, description: 'Too many verification attempts' },
+    ],
   })
-  @ApiResponse({
-    status: 200,
-    description: 'OTP verified, login successful',
-    type: LoginResponseDto,
-  })
-  @ApiResponse({ status: 400, description: 'Invalid OTP' })
-  @ApiResponse({ status: 401, description: 'OTP expired or incorrect' })
-  async verifyOtp(@Body() dto: VerifyOtpDto, @Request() req: any): Promise<LoginResponseDto> {
-    // User is already validated by OtpStrategy
-    // Available in req.user
-    return this.authService.generateTokensForUser(req.user);
+  async verifyOtp(@Body() dto: VerifyOtpDto, @Request() req: ExpressRequest): Promise<LoginResponseDto> {
+    // User is already validated by OtpStrategy (guard ensures req.user exists)
+    return this.authService.generateTokensForUser(req.user!);
   }
 }
