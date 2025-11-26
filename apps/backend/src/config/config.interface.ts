@@ -95,6 +95,13 @@ export interface ThirdPartyConfig {
   googleMapsApiKey?: string;
 }
 
+export interface IntegrationsConfig {
+  encryptionKey?: string;
+  msg91AuthKey?: string;
+  msg91SenderId?: string;
+  msg91DltTemplateId?: string;
+}
+
 /**
  * Complete Application Configuration
  */
@@ -110,4 +117,5 @@ export interface Configuration {
   featureFlags: FeatureFlagsConfig;
   monitoring: MonitoringConfig;
   thirdParty: ThirdPartyConfig;
+  integrations: IntegrationsConfig;
 }
