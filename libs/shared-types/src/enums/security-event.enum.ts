@@ -5,9 +5,11 @@
 export enum SecurityEventType {
   // Authentication Events
   OTP_SENT = 'otp_sent',
+  OTP_VERIFY_ATTEMPT = 'otp_verify_attempt',
   OTP_VERIFIED = 'otp_verified',
   OTP_FAILED = 'otp_failed',
   OTP_EXPIRED = 'otp_expired',
+  LOGIN_ATTEMPT = 'login_attempt',
   LOGIN_SUCCESS = 'login_success',
   LOGIN_FAILED = 'login_failed',
   LOGOUT = 'logout',
