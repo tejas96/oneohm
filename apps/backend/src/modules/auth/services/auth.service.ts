@@ -3,10 +3,15 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UserStatus } from '@oneohm-epc/shared-types';
 
+import { CustomerProfileRepository } from '../../customers/repositories/customer-profile.repository';
 import { IamService } from '../../iam/services/iam.service';
+import { ResellerProfileRepository } from '../../resellers/repositories/reseller-profile.repository';
+import { UserEntity } from '../../users/entities/user.entity';
+import { EmployeeProfileRepository } from '../../users/repositories/employee-profile.repository';
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { UserRepository } from '../../users/repositories/user.repository';
 import { LoginDto, LoginResponseDto } from '../dto/login.dto';
+import { ProfileSummaryDto, LoginUserDto } from '../dto/profile-summary.dto';
 import { RefreshTokenResponseDto } from '../dto/refresh-token.dto';
 import type { CurrentUserType, JwtPayload } from '../types';
 
@@ -30,6 +35,9 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly iamService: IamService,
+    private readonly customerProfileRepository: CustomerProfileRepository,
+    private readonly resellerProfileRepository: ResellerProfileRepository,
+    private readonly employeeProfileRepository: EmployeeProfileRepository,
   ) {}
 
   /**
@@ -66,19 +74,28 @@ export class AuthService {
     // Generate tokens
     const tokens = await this.generateTokens(user.id, user.roles ?? []);
 
+    // Fetch all profiles
+    const profiles = await this.fetchUserProfiles(user.id);
+
     this.logger.log(`User logged in successfully: ${email}`);
+
+    const loginUser: LoginUserDto = {
+      id: user.id,
+      email: user.email ?? '',
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      profileCompleted: user.profileCompleted,
+      roles: user.roles ?? [],
+      profiles,
+      emailVerified: !!user.emailVerifiedAt,
+      phoneVerified: !!user.phoneVerifiedAt,
+      fullName: `${user.firstName} ${user.lastName || ''}`.trim(),
+    };
 
     return {
       ...tokens,
-      user: {
-        id: user.id,
-        email: user.email ?? '',
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
-        profileCompleted: user.profileCompleted,
-        roles: user.roles ?? [],
-      },
+      user: loginUser,
     };
   }
 
@@ -167,17 +184,26 @@ export class AuthService {
 
     this.logger.log(`User logged in with OTP successfully: ${phone}`);
 
+    // Fetch all profiles
+    const profiles = await this.fetchUserProfiles(user.id);
+
+    const loginUser: LoginUserDto = {
+      id: user.id,
+      email: user.email ?? '',
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      profileCompleted: user.profileCompleted,
+      roles: user.roles ?? [],
+      profiles,
+      emailVerified: !!user.emailVerifiedAt,
+      phoneVerified: !!user.phoneVerifiedAt,
+      fullName: `${user.firstName} ${user.lastName || ''}`.trim(),
+    };
+
     return {
       ...tokens,
-      user: {
-        id: user.id,
-        email: user.email ?? '',
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phone: user.phone,
-        profileCompleted: user.profileCompleted,
-        roles: user.roles ?? [],
-      },
+      user: loginUser,
     };
   }
 
@@ -296,25 +322,101 @@ export class AuthService {
    * Generate JWT tokens for authenticated user (used by Passport strategies)
    * Accepts user object from strategy validation
    */
-  async generateTokensForUser(user: any): Promise<LoginResponseDto> {
+  async generateTokensForUser(user: UserEntity): Promise<LoginResponseDto> {
     const roles =
       user.roles
         ?.filter((r: any) => r != null) // Filter out null/undefined roles
         .map((r: any) => r.code || r) || [];
+    
     const tokens = await this.generateTokens(user.id, roles);
+
+    // Fetch all profiles for the user
+    const profiles = await this.fetchUserProfiles(user.id);
+
+    const loginUser: LoginUserDto = {
+      id: user.id,
+      email: user.email || '',
+      firstName: user.firstName || '',
+      lastName: user.lastName,
+      phone: user.phone || '',
+      profileCompleted: user.profileCompleted || false,
+      roles,
+      profiles,
+      emailVerified: !!user.emailVerifiedAt,
+      phoneVerified: !!user.phoneVerifiedAt,
+      fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+    };
 
     return {
       ...tokens,
-      user: {
-        id: user.id,
-        email: user.email || '',
-        firstName: user.firstName || '',
-        lastName: user.lastName,
-        phone: user.phone || '',
-        profileCompleted: user.profileCompleted || false,
-        roles,
-      },
+      user: loginUser,
     };
+  }
+
+  /**
+   * Fetch all profiles for a user across all organizations
+   */
+  private async fetchUserProfiles(userId: string): Promise<ProfileSummaryDto[]> {
+    try {
+      // Fetch all profile types in parallel
+      const [customerProfiles, resellerProfiles, employeeProfiles] = await Promise.all([
+        this.customerProfileRepository.findByUserId(userId),
+        this.resellerProfileRepository.findByUserId(userId),
+        this.employeeProfileRepository.findByUserId(userId),
+      ]);
+
+      const profiles: ProfileSummaryDto[] = [];
+
+      // Map customer profiles
+      for (const profile of customerProfiles) {
+        profiles.push({
+          type: 'customer',
+          profileId: profile.id,
+          organizationId: profile.organizationId,
+          organizationName: profile.organization?.name || 'Unknown Organization',
+          isPrimary: false, // TODO: Add isPrimary logic if needed
+          status: profile.status,
+        });
+      }
+
+      // Map reseller profiles
+      for (const profile of resellerProfiles) {
+        profiles.push({
+          type: 'reseller',
+          profileId: profile.id,
+          organizationId: profile.organizationId,
+          organizationName: profile.organization?.name || 'Unknown Organization',
+          isPrimary: false, // TODO: Add isPrimary logic if needed
+          status: profile.status,
+          businessName: profile.companyName,
+        });
+      }
+
+      // Map employee profiles
+      for (const profile of employeeProfiles) {
+        profiles.push({
+          type: 'employee',
+          profileId: profile.id,
+          organizationId: profile.organizationId,
+          organizationName: profile.organization?.name || 'Unknown Organization',
+          isPrimary: false, // TODO: Add isPrimary logic if needed
+          status: profile.status,
+          avatarUrl: profile.avatarUrl,
+          designation: profile.designation,
+          department: profile.department,
+        });
+      }
+
+      // Set first profile as primary if exists
+      if (profiles.length > 0) {
+        profiles[0]!.isPrimary = true;
+      }
+
+      return profiles;
+    } catch (error) {
+      this.logger.error(`Failed to fetch profiles for user ${userId}:`, error);
+      return []; // Return empty array on error, don't fail login
+    }
   }
 
   logout(userId: string): void {
