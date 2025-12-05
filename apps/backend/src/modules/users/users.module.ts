@@ -2,39 +2,40 @@ import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { UserController } from './controllers';
-import { UserEntity, UserRoleEntity, EmployeeProfileEntity, InvitationEntity } from './entities';
-import {
-  UserRepository,
-  UserRoleRepository,
-  EmployeeProfileRepository,
-  InvitationRepository,
-} from './repositories';
+import { UserEntity, UserRoleEntity, InvitationEntity } from './entities';
+import { UserRepository, UserRoleRepository, InvitationRepository } from './repositories';
 import { UserService, ProfileService, InvitationService } from './services';
 import { CustomersModule } from '../customers/customers.module';
+import { EmployeesModule } from '../employees/employees.module';
 import { IamModule } from '../iam/iam.module';
 import { ResellersModule } from '../resellers/resellers.module';
 
 /**
  * Users Module
- * User management only (Auth moved to AuthModule)
+ * User management and authentication
  *
  * Features:
  * - User CRUD
- * - Profile management (Customer, Reseller, Employee)
+ * - Profile orchestration (delegates to Customers, Resellers, Employees modules)
  * - Invitations
+ *
+ * Profile modules:
+ * - CustomersModule: Customer profile management
+ * - ResellersModule: Reseller profile management
+ * - EmployeesModule: Employee profile management
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, UserRoleEntity, EmployeeProfileEntity, InvitationEntity]),
+    TypeOrmModule.forFeature([UserEntity, UserRoleEntity, InvitationEntity]),
     forwardRef(() => IamModule),
     forwardRef(() => CustomersModule),
     forwardRef(() => ResellersModule),
+    forwardRef(() => EmployeesModule),
   ],
   controllers: [UserController],
   providers: [
     UserRepository,
     UserRoleRepository,
-    EmployeeProfileRepository,
     InvitationRepository,
     UserService,
     ProfileService,
@@ -46,7 +47,6 @@ import { ResellersModule } from '../resellers/resellers.module';
     InvitationService,
     UserRepository,
     UserRoleRepository,
-    EmployeeProfileRepository,
     InvitationRepository,
   ],
 })

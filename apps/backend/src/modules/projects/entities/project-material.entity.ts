@@ -3,7 +3,7 @@ import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne } from 'typeorm
 
 import { ProjectEntity } from './project.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { ProductEntity } from '../../products/entities/product.entity';
+import { ProductEntity } from '../../master-data/entities/product.entity';
 
 /**
  * Project Material Entity

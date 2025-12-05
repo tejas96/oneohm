@@ -3,11 +3,11 @@ import { UserProfileType } from '@oneohm-epc/shared-types';
 
 import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
 import { CustomerProfileRepository } from '../../customers/repositories/customer-profile.repository';
+import { EmployeeProfileEntity } from '../../employees/entities/employee-profile.entity';
+import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
 import { RoleRepository } from '../../iam/repositories/role.repository';
 import { ResellerProfileEntity } from '../../resellers/entities/reseller-profile.entity';
 import { ResellerProfileRepository } from '../../resellers/repositories/reseller-profile.repository';
-import { EmployeeProfileEntity } from '../entities/employee-profile.entity';
-import { EmployeeProfileRepository } from '../repositories/employee-profile.repository';
 import { UserRoleRepository } from '../repositories/user-role.repository';
 import { UserRepository } from '../repositories/user.repository';
 
@@ -317,20 +317,27 @@ export class ProfileService {
         return;
       }
 
-      // Assign the role
+      // Assign the role with organization context
       await this.userRoleRepository.createUserRoles(
         userId,
         [roleCode], // Old enum-based role (for backward compatibility)
         createdBy || userId,
+        organizationId, // ✅ Now includes organization context
       );
 
       // Update the roleId to link to new IAM system
-      const userRoles = await this.userRoleRepository.findByUserId(userId);
+      const userRoles = await this.userRoleRepository.findByUserAndOrganization(
+        userId,
+        organizationId,
+      );
       const newUserRole = userRoles.find((ur) => ur.role === roleCode && !ur.roleId);
 
       if (newUserRole) {
         // Update the user_role record to include role_id
-        await this.userRoleRepository.repository.update({ id: userId }, { roleId: role.id });
+        await this.userRoleRepository.repository.update(
+          { id: newUserRole.id },
+          { roleId: role.id },
+        );
 
         this.logger.log(
           `✅ Assigned default role '${roleCode}' (${role.id}) to user ${userId} in org ${organizationId}`,

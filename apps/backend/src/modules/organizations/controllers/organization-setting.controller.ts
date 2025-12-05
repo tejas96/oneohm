@@ -25,6 +25,7 @@ export class OrganizationSettingController {
    * Create a new organization setting
    */
   @ApiCreate({
+    path: '',
     summary: 'Create organization setting',
     description: 'Create a new setting for an organization.',
     responseType: Object, // Generic response since we don't have a specific DTO
@@ -40,6 +41,7 @@ export class OrganizationSettingController {
    * Get all settings for an organization
    */
   @ApiReadOne({
+    path: ':organizationId',
     summary: 'Get organization settings',
     description: 'Retrieve all settings for a specific organization.',
     responseType: Array,
@@ -56,6 +58,7 @@ export class OrganizationSettingController {
    * Get setting by ID
    */
   @ApiReadOne({
+    path: ':id',
     summary: 'Get setting by ID',
     description: 'Retrieve a specific setting by its UUID.',
     responseType: Object,
@@ -68,6 +71,7 @@ export class OrganizationSettingController {
    * Update setting by ID
    */
   @ApiUpdate({
+    path: ':id',
     summary: 'Update setting',
     description: 'Update an existing setting by its UUID.',
     responseType: Object,
@@ -84,6 +88,7 @@ export class OrganizationSettingController {
    * Delete setting by ID
    */
   @ApiDelete({
+    path: ':id',
     summary: 'Delete setting',
     description: 'Delete a setting by its UUID.',
   })

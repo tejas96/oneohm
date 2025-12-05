@@ -3,9 +3,44 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { OrganizationStatus } from '@oneohm-epc/shared-types';
 import { FindOptionsWhere, IsNull, Repository } from 'typeorm';
 
-import { CreateOrganizationDto } from '../dto/create-organization.dto';
-import { UpdateOrganizationDto } from '../dto/update-organization.dto';
 import { OrganizationEntity } from '../entities/organization.entity';
+
+/**
+ * Type for creating an organization (matches entity fields)
+ */
+type CreateOrganizationData = Partial<
+  Pick<
+    OrganizationEntity,
+    | 'name'
+    | 'code'
+    | 'email'
+    | 'phone'
+    | 'address'
+    | 'city'
+    | 'state'
+    | 'country'
+    | 'pincode'
+    | 'gstin'
+    | 'pan'
+    | 'timezone'
+    | 'currency'
+    | 'dateFormat'
+    | 'defaultProjectTimelineWeeks'
+    | 'defaultQuoteValidityDays'
+    | 'maxQuoteVersions'
+    | 'status'
+    | 'subscriptionPlan'
+    | 'subscriptionExpiresAt'
+    | 'createdBy'
+    | 'updatedBy'
+  >
+> &
+  Required<Pick<OrganizationEntity, 'name' | 'code'>>;
+
+/**
+ * Type for updating an organization
+ */
+type UpdateOrganizationData = Partial<CreateOrganizationData>;
 
 /**
  * Organization Repository
@@ -23,7 +58,7 @@ export class OrganizationRepository {
    * @param data - Organization creation data
    * @returns Created organization entity
    */
-  async create(data: CreateOrganizationDto): Promise<OrganizationEntity> {
+  async create(data: CreateOrganizationData): Promise<OrganizationEntity> {
     const entity = this.repository.create({
       ...data,
       createdAt: new Date(),
@@ -92,7 +127,7 @@ export class OrganizationRepository {
    * @returns Updated organization entity
    * @throws NotFoundException if organization not found
    */
-  async update(id: string, data: UpdateOrganizationDto): Promise<OrganizationEntity> {
+  async update(id: string, data: UpdateOrganizationData): Promise<OrganizationEntity> {
     const organization = await this.findOneById(id);
 
     if (!organization) {

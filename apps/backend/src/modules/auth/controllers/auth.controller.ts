@@ -3,24 +3,30 @@ import {
   Controller,
   HttpStatus,
   Request,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { SecurityEventType } from '@oneohm-epc/shared-types';
 import { ApiCreate, ApiGet, SecurityRateLimit } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
-import type { Request as ExpressRequest } from 'express';
 
 import { SecurityRateLimitGuard } from '../../security-events/guards';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
 import { UserService } from '../../users/services/user.service';
 import { CurrentUser, Public } from '../decorators';
-import { LoginDto, LoginResponseDto, RequestOtpDto, VerifyOtpDto, OtpRequestResponseDto } from '../dto/login.dto';
+import {
+  LoginDto,
+  LoginResponseDto,
+  RequestOtpDto,
+  VerifyOtpDto,
+  OtpRequestResponseDto,
+} from '../dto/login.dto';
 import { RefreshTokenDto, RefreshTokenResponseDto } from '../dto/refresh-token.dto';
 import { JwtAuthGuard, LocalAuthGuard, OtpAuthGuard } from '../guards';
 import { AuthService } from '../services/auth.service';
 import { OtpService } from '../services/otp.service';
-import type { CurrentUserType } from '../types';
+import type { CurrentUserType, LocalAuthRequest, OtpAuthRequest } from '../types';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -47,9 +53,16 @@ export class AuthController {
     successMessage: 'Login successful',
     additionalErrors: [{ status: HttpStatus.UNAUTHORIZED, description: 'Invalid credentials' }],
   })
-  async login(@Body() loginDto: LoginDto, @Request() req: ExpressRequest): Promise<LoginResponseDto> {
+  async login(
+    @Body() _loginDto: LoginDto,
+    @Request() req: LocalAuthRequest,
+  ): Promise<LoginResponseDto> {
     // User is already validated by LocalStrategy (guard ensures req.user exists)
-    return this.authService.generateTokensForUser(req.user!);
+    // LocalAuthRequest types req.user as UserEntity
+    if (!req.user) {
+      throw new UnauthorizedException('User not found');
+    }
+    return this.authService.generateTokensForUser(req.user);
   }
 
   @Public()
@@ -103,8 +116,16 @@ export class AuthController {
     eventType: SecurityEventType.OTP_SENT,
     trackBy: ['phone', 'ipAddress'],
     limits: [
-      { count: 1, windowSeconds: 60, message: 'Please wait 60 seconds before requesting another OTP' },
-      { count: 5, windowSeconds: 86400, message: 'Maximum 5 OTP requests per day. Try again after 24 hours' },
+      {
+        count: 1,
+        windowSeconds: 60,
+        message: 'Please wait 60 seconds before requesting another OTP',
+      },
+      {
+        count: 5,
+        windowSeconds: 86400,
+        message: 'Maximum 5 OTP requests per day. Try again after 24 hours',
+      },
     ],
     blockOnExceed: true,
     blockDurationSeconds: 86400,
@@ -112,7 +133,8 @@ export class AuthController {
   @ApiCreate({
     path: 'otp/request',
     summary: 'Request OTP',
-    description: 'Request OTP for phone or email. Creates user if doesnt exist. Rate limited: 1/min, 5/day',
+    description:
+      'Request OTP for phone or email. Creates user if doesnt exist. Rate limited: 1/min, 5/day',
     responseType: OtpRequestResponseDto,
     statusCode: HttpStatus.OK,
     successMessage: 'OTP sent successfully',
@@ -136,7 +158,11 @@ export class AuthController {
     eventType: SecurityEventType.OTP_VERIFY_ATTEMPT,
     trackBy: ['phone', 'ipAddress'],
     limits: [
-      { count: 5, windowSeconds: 300, message: 'Too many failed attempts. Wait 5 minutes before trying again' },
+      {
+        count: 5,
+        windowSeconds: 300,
+        message: 'Too many failed attempts. Wait 5 minutes before trying again',
+      },
     ],
     blockOnExceed: true,
     blockDurationSeconds: 300,
@@ -154,8 +180,12 @@ export class AuthController {
       { status: HttpStatus.TOO_MANY_REQUESTS, description: 'Too many verification attempts' },
     ],
   })
-  async verifyOtp(@Body() dto: VerifyOtpDto, @Request() req: ExpressRequest): Promise<LoginResponseDto> {
+  async verifyOtp(
+    @Body() _dto: VerifyOtpDto,
+    @Request() req: OtpAuthRequest,
+  ): Promise<LoginResponseDto> {
     // User is already validated by OtpStrategy (guard ensures req.user exists)
-    return this.authService.generateTokensForUser(req.user!);
+    // OtpAuthRequest types req.user as UserEntity
+    return this.authService.generateTokensForUser(req.user);
   }
 }

@@ -13,13 +13,32 @@ export class RoleRepository {
 
   /**
    * Find role by code and organization
+   * Pass null for organizationId to find platform-level roles
    */
   async findByCodeAndOrganization(
     code: string,
-    organizationId: string,
+    organizationId: string | null,
   ): Promise<RoleEntity | null> {
+    // For platform roles, organization_id IS NULL
+    if (organizationId === null || organizationId === '') {
+      return this.repository.findOne({
+        where: { code, organizationId: IsNull(), deletedAt: IsNull() },
+        relations: ['parent', 'rolePermissions', 'rolePermissions.permission'],
+      });
+    }
+
     return this.repository.findOne({
       where: { code, organizationId, deletedAt: IsNull() },
+      relations: ['parent', 'rolePermissions', 'rolePermissions.permission'],
+    });
+  }
+
+  /**
+   * Find platform-level role by code (organization_id IS NULL)
+   */
+  async findPlatformRoleByCode(code: string): Promise<RoleEntity | null> {
+    return this.repository.findOne({
+      where: { code, organizationId: IsNull(), deletedAt: IsNull() },
       relations: ['parent', 'rolePermissions', 'rolePermissions.permission'],
     });
   }

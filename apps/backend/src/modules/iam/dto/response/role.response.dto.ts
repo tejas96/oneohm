@@ -7,8 +7,12 @@ export class RoleResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   id: string;
 
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174001' })
-  organizationId: string;
+  @ApiProperty({
+    example: '123e4567-e89b-12d3-a456-426614174001',
+    nullable: true,
+    description: 'Organization ID. NULL for platform-level roles (e.g., platform_admin)',
+  })
+  organizationId: string | null;
 
   @ApiProperty({ example: 'Sales Manager' })
   name: string;

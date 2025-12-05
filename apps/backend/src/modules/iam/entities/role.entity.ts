@@ -33,9 +33,9 @@ export class RoleEntity {
 
   // ==================== Relations ====================
 
-  @ManyToOne(() => OrganizationEntity)
+  @ManyToOne(() => OrganizationEntity, { nullable: true })
   @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
+  organization?: OrganizationEntity;
 
   @ManyToOne(() => RoleEntity, (role) => role.children, { nullable: true })
   @JoinColumn({ name: 'parent_role_id' })
@@ -57,8 +57,8 @@ export class RoleEntity {
 
   // ==================== Foreign Keys ====================
 
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
+  @Column({ name: 'organization_id', type: 'uuid', nullable: true })
+  organizationId!: string | null;
 
   @Column({ name: 'parent_role_id', type: 'uuid', nullable: true })
   parentRoleId?: string;

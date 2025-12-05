@@ -4,10 +4,10 @@ import { JwtService } from '@nestjs/jwt';
 import { UserStatus } from '@oneohm-epc/shared-types';
 
 import { CustomerProfileRepository } from '../../customers/repositories/customer-profile.repository';
+import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
 import { IamService } from '../../iam/services/iam.service';
 import { ResellerProfileRepository } from '../../resellers/repositories/reseller-profile.repository';
 import { UserEntity } from '../../users/entities/user.entity';
-import { EmployeeProfileRepository } from '../../users/repositories/employee-profile.repository';
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { UserRepository } from '../../users/repositories/user.repository';
 import { LoginDto, LoginResponseDto } from '../dto/login.dto';
@@ -74,8 +74,9 @@ export class AuthService {
     // Generate tokens
     const tokens = await this.generateTokens(user.id, user.roles ?? []);
 
-    // Fetch all profiles
+    // Fetch all profiles and permissions
     const profiles = await this.fetchUserProfiles(user.id);
+    const permissions = await this.iamService.getUserPermissions(user.id);
 
     this.logger.log(`User logged in successfully: ${email}`);
 
@@ -87,6 +88,7 @@ export class AuthService {
       phone: user.phone,
       profileCompleted: user.profileCompleted,
       roles: user.roles ?? [],
+      permissions,
       profiles,
       emailVerified: !!user.emailVerifiedAt,
       phoneVerified: !!user.phoneVerifiedAt,
@@ -184,8 +186,9 @@ export class AuthService {
 
     this.logger.log(`User logged in with OTP successfully: ${phone}`);
 
-    // Fetch all profiles
+    // Fetch all profiles and permissions
     const profiles = await this.fetchUserProfiles(user.id);
+    const permissions = await this.iamService.getUserPermissions(user.id);
 
     const loginUser: LoginUserDto = {
       id: user.id,
@@ -195,6 +198,7 @@ export class AuthService {
       phone: user.phone,
       profileCompleted: user.profileCompleted,
       roles: user.roles ?? [],
+      permissions,
       profiles,
       emailVerified: !!user.emailVerifiedAt,
       phoneVerified: !!user.phoneVerifiedAt,
@@ -327,11 +331,14 @@ export class AuthService {
       user.roles
         ?.filter((r: any) => r != null) // Filter out null/undefined roles
         .map((r: any) => r.code || r) || [];
-    
+
     const tokens = await this.generateTokens(user.id, roles);
 
     // Fetch all profiles for the user
     const profiles = await this.fetchUserProfiles(user.id);
+
+    // Fetch permissions for all user's roles using IAM service
+    const permissions = await this.iamService.getUserPermissions(user.id);
 
     const loginUser: LoginUserDto = {
       id: user.id,
@@ -341,6 +348,7 @@ export class AuthService {
       phone: user.phone || '',
       profileCompleted: user.profileCompleted || false,
       roles,
+      permissions,
       profiles,
       emailVerified: !!user.emailVerifiedAt,
       phoneVerified: !!user.phoneVerifiedAt,

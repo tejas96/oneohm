@@ -4,235 +4,442 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  forwardRef,
+  Inject,
 } from '@nestjs/common';
 import { OrganizationStatus } from '@oneohm-epc/shared-types';
+import { plainToInstance } from 'class-transformer';
 
-import { CreateOrganizationDto } from '../dto/create-organization.dto';
-import { UpdateOrganizationDto } from '../dto/update-organization.dto';
+import {
+  AssignSuperAdminDto,
+  CreateOrganizationDto,
+  CreateOrganizationResponseDto,
+  OrganizationResponseDto,
+  OrganizationWithStatsDto,
+  PaginatedOrganizationsResponseDto,
+  UpdateOrganizationDto,
+} from '../dto';
 import { OrganizationEntity } from '../entities/organization.entity';
 import { OrganizationRepository } from '../repositories/organization.repository';
+import { RoleRepository } from '../../iam/repositories/role.repository';
+import { UserRepository } from '../../users/repositories/user.repository';
+import { UserRoleRepository } from '../../users/repositories/user-role.repository';
+import { InvitationService } from '../../users/services/invitation.service';
+import { RoleEntity } from '../../iam/entities/role.entity';
 
 /**
  * Organization Service
- * Business logic for organization management
+ * Handles all organization management operations
+ * Including creation with default roles, super admin setup, and invitations
  */
 @Injectable()
 export class OrganizationService {
   private readonly logger = new Logger(OrganizationService.name);
 
-  constructor(private readonly organizationRepository: OrganizationRepository) {}
+  constructor(
+    private readonly organizationRepository: OrganizationRepository,
+    @Inject(forwardRef(() => RoleRepository))
+    private readonly roleRepository: RoleRepository,
+    @Inject(forwardRef(() => UserRepository))
+    private readonly userRepository: UserRepository,
+    @Inject(forwardRef(() => UserRoleRepository))
+    private readonly userRoleRepository: UserRoleRepository,
+    @Inject(forwardRef(() => InvitationService))
+    private readonly invitationService: InvitationService,
+  ) {}
+
+  // ==================== CREATE ====================
 
   /**
-   * Create a new organization
-   * @param createDto - Organization creation data
-   * @param createdBy - User ID who is creating the organization
-   * @returns Created organization
+   * Create organization with super admin and default roles
+   * @param dto - Organization creation data with super admin details
+   * @param createdBy - Platform admin user ID
    */
-  async create(createDto: CreateOrganizationDto, createdBy?: string): Promise<OrganizationEntity> {
-    this.logger.log(`Creating organization with code: ${createDto.code}`);
-
-    // TODO: Add business validation rules
-    // - Check if user has permission to create organizations
-    // - Validate organization code against business rules
-    // - Check subscription limits
-
+  async create(
+    dto: CreateOrganizationDto,
+    createdBy: string,
+  ): Promise<CreateOrganizationResponseDto> {
     // Check if organization code already exists
-    const existingOrg = await this.organizationRepository.findOneByCode(createDto.code);
+    const existingOrg = await this.organizationRepository.findOneByCode(dto.code);
     if (existingOrg) {
-      throw new ConflictException(`Organization with code '${createDto.code}' already exists`);
+      throw new ConflictException(`Organization with code '${dto.code}' already exists`);
     }
 
+    // Check if super admin email already exists
+    const existingUser = await this.userRepository.findByEmail(dto.superAdminEmail);
+    if (existingUser) {
+      throw new ConflictException(`User with email '${dto.superAdminEmail}' already exists`);
+    }
+
+    // 1. Create organization
     const organization = await this.organizationRepository.create({
-      ...createDto,
+      name: dto.name,
+      code: dto.code,
+      email: dto.email,
+      phone: dto.phone,
+      address: dto.address,
+      city: dto.city,
+      state: dto.state,
+      country: dto.country || 'India',
+      pincode: dto.pincode,
+      gstin: dto.gstin,
+      pan: dto.pan,
+      timezone: dto.timezone || 'Asia/Kolkata',
+      currency: dto.currency || 'INR',
+      dateFormat: dto.dateFormat || 'DD-MM-YYYY',
+      defaultProjectTimelineWeeks: dto.defaultProjectTimelineWeeks || 4,
+      defaultQuoteValidityDays: dto.defaultQuoteValidityDays || 30,
+      maxQuoteVersions: dto.maxQuoteVersions || 3,
+      subscriptionPlan: dto.subscriptionPlan,
+      subscriptionExpiresAt: dto.subscriptionExpiresAt,
       createdBy,
-      updatedBy: createdBy,
-    } as CreateOrganizationDto);
+    });
 
-    this.logger.log(`Organization created successfully: ${organization.id}`);
+    this.logger.log(`Organization created: ${organization.name} (${organization.id})`);
 
-    // TODO: Trigger events/notifications
-    // - Send welcome email
-    // - Create default settings
-    // - Initialize organization resources
+    // 2. Create default roles for organization
+    const rolesCreated = await this.createDefaultRoles(organization.id);
 
-    return organization;
+    // 3. Create super admin user
+    const superAdminUser = await this.userRepository.create({
+      email: dto.superAdminEmail,
+      firstName: dto.superAdminFirstName,
+      lastName: dto.superAdminLastName,
+      phone: dto.superAdminPhone,
+      profileCompleted: false,
+    });
+
+    this.logger.log(`Super admin user created: ${superAdminUser.email}`);
+
+    // 4. Get super_admin role
+    const superAdminRole = await this.roleRepository.findByCodeAndOrganization(
+      'super_admin',
+      organization.id,
+    );
+
+    if (!superAdminRole) {
+      throw new BadRequestException('Failed to create super_admin role');
+    }
+
+    // 5. Assign super_admin role to user
+    await this.userRoleRepository.create({
+      userId: superAdminUser.id,
+      roleId: superAdminRole.id,
+      role: superAdminRole.code,
+      organizationId: organization.id,
+    });
+
+    this.logger.log(
+      `Super admin role assigned to user ${superAdminUser.email} in org ${organization.id}`,
+    );
+
+    // 6. Create invitation
+    const invitation = await this.invitationService.createInvitation({
+      email: dto.superAdminEmail,
+      organizationId: organization.id,
+      roleId: superAdminRole.id,
+      invitedBy: createdBy,
+      expiryDays: 7,
+    });
+
+    const invitationLink = this.invitationService.generateInvitationLink(invitation.token);
+
+    this.logger.log(`Invitation created for ${dto.superAdminEmail}`);
+
+    // 7. TODO: Send invitation email via MSG91
+    const invitationSent = false;
+
+    return {
+      organization: plainToInstance(OrganizationResponseDto, organization, {
+        excludeExtraneousValues: true,
+      }),
+      superAdminUserId: superAdminUser.id,
+      invitationToken: invitation.token,
+      invitationLink,
+      rolesCreated: rolesCreated.map((r) => r.code),
+      invitationSent,
+    };
+  }
+
+  // ==================== READ ====================
+
+  /**
+   * List all organizations with pagination
+   */
+  async findAll(
+    page: number = 1,
+    limit: number = 20,
+    search?: string,
+    status?: OrganizationStatus,
+  ): Promise<PaginatedOrganizationsResponseDto> {
+    const skip = (page - 1) * limit;
+
+    const result = await this.organizationRepository.findAll({
+      limit,
+      offset: skip,
+      status,
+    });
+
+    let filtered = result.items;
+
+    // Apply search filter if provided
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filtered = result.items.filter((org: OrganizationEntity) => {
+        return (
+          org.name.toLowerCase().includes(searchLower) ||
+          org.code.toLowerCase().includes(searchLower) ||
+          (org.email && org.email.toLowerCase().includes(searchLower))
+        );
+      });
+    }
+
+    return {
+      data: filtered.map((org: OrganizationEntity) =>
+        plainToInstance(OrganizationResponseDto, org, {
+          excludeExtraneousValues: true,
+        }),
+      ),
+      total: result.total,
+      page,
+      limit,
+      totalPages: Math.ceil(result.total / limit),
+    };
   }
 
   /**
-   * Find organization by ID
-   * @param id - Organization UUID
-   * @returns Organization entity
-   * @throws NotFoundException if organization not found
+   * Get organization by ID with statistics
    */
-  async findById(id: string): Promise<OrganizationEntity> {
+  async findById(id: string): Promise<OrganizationWithStatsDto> {
     const organization = await this.organizationRepository.findOneById(id);
 
     if (!organization) {
       throw new NotFoundException(`Organization with ID ${id} not found`);
     }
 
-    return organization;
-  }
-
-  /**
-   * Find organization by code
-   * @param code - Organization code
-   * @returns Organization entity
-   * @throws NotFoundException if organization not found
-   */
-  async findByCode(code: string): Promise<OrganizationEntity> {
-    const organization = await this.organizationRepository.findOneByCode(code);
-
-    if (!organization) {
-      throw new NotFoundException(`Organization with code '${code}' not found`);
-    }
-
-    return organization;
-  }
-
-  /**
-   * Find all organizations with pagination and filters
-   * @param params - Query parameters
-   * @returns Paginated list of organizations
-   */
-  async findAll(params: {
-    limit?: number;
-    offset?: number;
-    status?: OrganizationStatus;
-  }): Promise<{ items: OrganizationEntity[]; total: number; page: number; limit: number }> {
-    const { limit = 10, offset = 0, status } = params;
-
-    // TODO: Add business logic
-    // - Filter by user permissions
-    // - Add search/sort capabilities
-    // - Apply organization-level filters
-
-    const { items, total } = await this.organizationRepository.findAll({
-      limit,
-      offset,
-      status,
-    });
+    // TODO: Get actual statistics from respective repositories
+    const stats = {
+      totalUsers: 0,
+      totalCustomers: 0,
+      totalResellers: 0,
+      totalProjects: 0,
+      activeProjects: 0,
+    };
 
     return {
-      items,
-      total,
-      page: Math.floor(offset / limit) + 1,
-      limit,
+      ...plainToInstance(OrganizationResponseDto, organization, {
+        excludeExtraneousValues: true,
+      }),
+      ...stats,
     };
   }
 
   /**
-   * Update organization by ID
-   * @param id - Organization UUID
-   * @param updateDto - Update data
-   * @param updatedBy - User ID who is updating
-   * @returns Updated organization
+   * Get organization by code
+   */
+  async findByCode(code: string): Promise<OrganizationResponseDto | null> {
+    const organization = await this.organizationRepository.findOneByCode(code);
+
+    if (!organization) {
+      return null;
+    }
+
+    return plainToInstance(OrganizationResponseDto, organization, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  // ==================== UPDATE ====================
+
+  /**
+   * Update organization
    */
   async update(
     id: string,
-    updateDto: UpdateOrganizationDto,
-    updatedBy?: string,
-  ): Promise<OrganizationEntity> {
-    this.logger.log(`Updating organization: ${id}`);
+    dto: UpdateOrganizationDto,
+    updatedBy: string,
+  ): Promise<OrganizationResponseDto> {
+    const organization = await this.organizationRepository.findOneById(id);
 
-    // TODO: Add business validation rules
-    // - Check if user has permission to update this organization
-    // - Validate changes against business rules
-    // - Check if status change is allowed
-
-    // If code is being updated, check for conflicts
-    if (updateDto.code) {
-      const existingOrg = await this.organizationRepository.findOneByCode(updateDto.code);
-      if (existingOrg && existingOrg.id !== id) {
-        throw new ConflictException(`Organization with code '${updateDto.code}' already exists`);
-      }
+    if (!organization) {
+      throw new NotFoundException(`Organization with ID ${id} not found`);
     }
 
-    const organization = await this.organizationRepository.update(id, {
-      ...updateDto,
+    const updated = await this.organizationRepository.update(id, {
+      ...dto,
       updatedBy,
-    } as UpdateOrganizationDto);
+    });
 
-    this.logger.log(`Organization updated successfully: ${id}`);
+    this.logger.log(`Organization updated: ${id}`);
 
-    // TODO: Trigger events/notifications
-    // - Notify organization members of changes
-    // - Update related resources if needed
-
-    return organization;
+    return plainToInstance(OrganizationResponseDto, updated, {
+      excludeExtraneousValues: true,
+    });
   }
 
   /**
-   * Soft delete organization by ID
-   * @param id - Organization UUID
-   * @param deletedBy - User ID who is deleting
+   * Update organization status
    */
-  async delete(id: string, _deletedBy?: string): Promise<void> {
-    this.logger.log(`Deleting organization: ${id}`);
+  async updateStatus(
+    id: string,
+    status: OrganizationStatus,
+    updatedBy: string,
+  ): Promise<OrganizationResponseDto> {
+    const organization = await this.organizationRepository.findOneById(id);
 
-    // TODO: Add business validation rules
-    // - Check if user has permission to delete this organization
-    // - Check if organization has active projects/users
-    // - Prevent deletion if there are dependencies
+    if (!organization) {
+      throw new NotFoundException(`Organization with ID ${id} not found`);
+    }
 
-    const organization = await this.findById(id);
+    if (organization.status === status) {
+      throw new BadRequestException(`Organization is already in '${status}' status`);
+    }
 
-    // Prevent deletion of active organizations without confirmation
-    if (organization.status === OrganizationStatus.ACTIVE) {
-      throw new BadRequestException(
-        'Cannot delete an active organization. Please deactivate it first.',
-      );
+    return this.update(id, { status }, updatedBy);
+  }
+
+  // ==================== DELETE ====================
+
+  /**
+   * Soft delete organization
+   */
+  async delete(id: string): Promise<void> {
+    const organization = await this.organizationRepository.findOneById(id);
+
+    if (!organization) {
+      throw new NotFoundException(`Organization with ID ${id} not found`);
     }
 
     await this.organizationRepository.delete(id);
 
-    this.logger.log(`Organization deleted successfully: ${id}`);
-
-    // TODO: Trigger cleanup/notifications
-    // - Archive related data
-    // - Notify stakeholders
-    // - Clean up resources
+    this.logger.log(`Organization soft deleted: ${id}`);
   }
 
+  // ==================== SUPER ADMIN ====================
+
   /**
-   * Update organization status (Generic method)
-   * @param id - Organization UUID
-   * @param newStatus - New status to set
-   * @param updatedBy - User ID performing the action
-   * @returns Updated organization
+   * Assign additional super admin to organization
    */
-  async updateStatus(
-    id: string,
-    newStatus: OrganizationStatus,
-    updatedBy?: string,
-  ): Promise<OrganizationEntity> {
-    this.logger.log(`Updating organization status: ${id} -> ${newStatus}`);
+  async assignSuperAdmin(
+    organizationId: string,
+    dto: AssignSuperAdminDto,
+    assignedBy: string,
+  ): Promise<{ userId: string; invitationLink: string }> {
+    const organization = await this.organizationRepository.findOneById(organizationId);
 
-    const organization = await this.findById(id);
-
-    // Business rules based on status transition
-    if (newStatus === OrganizationStatus.ACTIVE) {
-      // TODO: Add activation rules
-      // - Check subscription status
-      // - Verify payment information
-      // - Check compliance requirements
-    } else if (newStatus === OrganizationStatus.INACTIVE) {
-      // TODO: Add deactivation rules
-      // - Complete ongoing projects
-      // - Notify users
-      // - Handle data archival
-    } else if (newStatus === OrganizationStatus.SUSPENDED) {
-      // TODO: Add suspension rules
-      // - Check payment issues
-      // - Enforce compliance
-      // - Block access to resources
+    if (!organization) {
+      throw new NotFoundException(`Organization with ID ${organizationId} not found`);
     }
 
-    // Validate status transition
-    if (organization.status === newStatus) {
-      throw new BadRequestException(`Organization is already in '${newStatus}' status`);
+    // Check if user already exists
+    let user = await this.userRepository.findByEmail(dto.email);
+
+    if (!user) {
+      // Create new user
+      user = await this.userRepository.create({
+        email: dto.email,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        phone: dto.phone,
+        profileCompleted: false,
+      });
+
+      this.logger.log(`New user created for super admin: ${user.email}`);
     }
 
-    return this.update(id, { status: newStatus }, updatedBy);
+    // Get super_admin role
+    const superAdminRole = await this.roleRepository.findByCodeAndOrganization(
+      'super_admin',
+      organizationId,
+    );
+
+    if (!superAdminRole) {
+      throw new BadRequestException('super_admin role not found for organization');
+    }
+
+    // Check if user already has super_admin role in this org
+    const existingRole = await this.userRoleRepository.findByUserAndRole(
+      user.id,
+      superAdminRole.id,
+    );
+
+    if (existingRole) {
+      throw new ConflictException('User already has super_admin role in this organization');
+    }
+
+    // Assign super_admin role
+    await this.userRoleRepository.create({
+      userId: user.id,
+      roleId: superAdminRole.id,
+      role: superAdminRole.code,
+      organizationId,
+    });
+
+    // Create invitation
+    const invitation = await this.invitationService.createInvitation({
+      email: dto.email,
+      organizationId,
+      roleId: superAdminRole.id,
+      invitedBy: assignedBy,
+      expiryDays: 7,
+    });
+
+    const invitationLink = this.invitationService.generateInvitationLink(invitation.token);
+
+    this.logger.log(`Super admin assigned to org ${organizationId}: ${dto.email}`);
+
+    return {
+      userId: user.id,
+      invitationLink,
+    };
+  }
+
+  // ==================== PRIVATE HELPERS ====================
+
+  /**
+   * Create default roles for organization
+   */
+  private async createDefaultRoles(organizationId: string): Promise<RoleEntity[]> {
+    const defaultRoles = [
+      {
+        code: 'super_admin',
+        name: 'Super Administrator',
+        description: 'Full access to organization',
+        level: 0,
+      },
+      {
+        code: 'admin',
+        name: 'Administrator',
+        description: 'Administrative access',
+        level: 1,
+      },
+      {
+        code: 'customer',
+        name: 'Customer',
+        description: 'Customer access',
+        level: 10,
+      },
+      {
+        code: 'reseller',
+        name: 'Reseller',
+        description: 'Reseller access',
+        level: 10,
+      },
+    ];
+
+    const createdRoles: RoleEntity[] = [];
+
+    for (const roleData of defaultRoles) {
+      const role = await this.roleRepository.create({
+        ...roleData,
+        organizationId,
+        isSystemRole: true,
+      });
+      createdRoles.push(role as RoleEntity);
+    }
+
+    this.logger.log(`Created ${createdRoles.length} default roles for org ${organizationId}`);
+
+    return createdRoles;
   }
 }

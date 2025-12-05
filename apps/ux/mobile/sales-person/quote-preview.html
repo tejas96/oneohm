@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote Preview - OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        secondary: '#0d74b8',
+                        tagline: '#025580',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #76c044 0%, #0d74b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .float-animation { animation: float 3s ease-in-out infinite; }
+        
+        .quote-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl relative pb-32">
+        
+        <!-- Success Header -->
+        <div class="relative bg-gradient-to-br from-primary via-green-500 to-secondary px-6 py-8 pt-14 overflow-hidden">
+            <div class="absolute inset-0">
+                <div class="absolute top-10 right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                <div class="absolute bottom-0 left-0 w-60 h-60 bg-blue-400/10 rounded-full blur-3xl"></div>
+            </div>
+            
+            <div class="relative z-10">
+                <a href="quote-list.html" class="inline-flex items-center text-white/80 hover:text-white mb-6">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </a>
+                
+                <!-- Success Animation -->
+                <div class="text-center mb-4">
+                    <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 float-animation">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h1 class="text-2xl font-bold text-white mb-2">Quote Generated!</h1>
+                    <p class="text-green-100">Ready to share with customer</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quote Card -->
+        <div class="px-6 -mt-6">
+            <div class="quote-card rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
+                <!-- Quote Header -->
+                <div class="bg-gradient-to-r from-gray-900 to-gray-800 p-6 text-white relative">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-primary/20 rounded-full blur-2xl"></div>
+                    
+                    <div class="flex items-start justify-between relative z-10">
+                        <div>
+                            <p class="text-gray-400 text-xs mb-1">QUOTE NUMBER</p>
+                            <h2 class="text-xl font-bold">QT-2025-1289</h2>
+                        </div>
+                        <div class="text-right">
+                            <span class="px-3 py-1 bg-yellow-500 text-yellow-900 text-xs font-bold rounded-full">PENDING</span>
+                            <p class="text-gray-400 text-xs mt-2">Valid until Dec 31, 2025</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 pt-4 border-t border-gray-700/50">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                                PP
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg">Pradeep Patil</h3>
+                                <p class="text-gray-400 text-sm">LD-2025-123 • Residential</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- System Overview -->
+                <div class="p-6 bg-gradient-to-br from-green-50/50 to-blue-50/50">
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                            <div class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mx-auto mb-2">
+                                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-900">5 KW</p>
+                            <p class="text-xs text-gray-500">System Size</p>
+                        </div>
+                        <div>
+                            <div class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mx-auto mb-2">
+                                <svg class="w-6 h-6 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-900">10</p>
+                            <p class="text-xs text-gray-500">Panels</p>
+                        </div>
+                        <div>
+                            <div class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mx-auto mb-2">
+                                <svg class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-2xl font-bold text-gray-900">4</p>
+                            <p class="text-xs text-gray-500">Weeks</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Price Breakdown -->
+                <div class="p-6">
+                    <h3 class="font-bold text-gray-900 mb-4 flex items-center">
+                        <svg class="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        Price Breakdown
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-gray-600 text-sm">Solar Panels (6 DCR + 4 Non-DCR)</span>
+                            <span class="font-semibold">₹1,41,520</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-gray-600 text-sm">Inverter (Sungrow 5KW)</span>
+                            <span class="font-semibold">₹45,000</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-gray-600 text-sm">Structure (Aluminum Rail)</span>
+                            <span class="font-semibold">₹17,500</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2">
+                            <span class="text-gray-600 text-sm">Installation & Charges</span>
+                            <span class="font-semibold">₹34,600</span>
+                        </div>
+                        
+                        <div class="border-t border-gray-200 pt-3 mt-3">
+                            <div class="flex justify-between items-center py-1">
+                                <span class="text-gray-600 text-sm">Subtotal</span>
+                                <span class="font-semibold">₹2,38,620</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1">
+                                <span class="text-gray-600 text-sm">GST</span>
+                                <span class="font-semibold">₹32,930</span>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-100 rounded-xl p-4 mt-4">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-gray-900">Gross Total</span>
+                                <span class="text-xl font-bold text-gray-900">₹2,71,550</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Subsidy Section -->
+                        <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-4 mt-4 text-white relative overflow-hidden">
+                            <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full"></div>
+                            <div class="relative z-10">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="text-white/80 text-xs">PM Surya Ghar Subsidy</p>
+                                            <p class="font-bold text-lg">3 KW Eligible</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-2xl font-bold">-₹78,000</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Final Amount -->
+                        <div class="bg-gradient-to-r from-primary/10 to-secondary/10 border-2 border-primary rounded-xl p-5 mt-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-500 text-xs mb-1">CUSTOMER PAYS</p>
+                                    <p class="text-3xl font-bold gradient-text">₹1,93,550</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-gray-500 text-xs">Savings</p>
+                                    <p class="text-green-600 font-bold text-lg">₹78,000</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Payment Schedule -->
+                <div class="px-6 pb-6">
+                    <h3 class="font-bold text-gray-900 mb-4 flex items-center">
+                        <svg class="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        Payment Schedule
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 font-bold text-sm">1</div>
+                                <div>
+                                    <p class="font-semibold text-gray-900 text-sm">Advance</p>
+                                    <p class="text-xs text-gray-500">On order confirmation</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-gray-900">₹58,065</p>
+                                <p class="text-xs text-gray-500">30%</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center text-orange-600 font-bold text-sm">2</div>
+                                <div>
+                                    <p class="font-semibold text-gray-900 text-sm">Material Delivery</p>
+                                    <p class="text-xs text-gray-500">On site delivery</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-gray-900">₹77,420</p>
+                                <p class="text-xs text-gray-500">40%</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between py-3 border-b border-gray-100">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600 font-bold text-sm">3</div>
+                                <div>
+                                    <p class="font-semibold text-gray-900 text-sm">Installation</p>
+                                    <p class="text-xs text-gray-500">On installation complete</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-gray-900">₹38,710</p>
+                                <p class="text-xs text-gray-500">20%</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between py-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center text-green-600 font-bold text-sm">4</div>
+                                <div>
+                                    <p class="font-semibold text-gray-900 text-sm">Commissioning</p>
+                                    <p class="text-xs text-gray-500">On final handover</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-gray-900">₹19,355</p>
+                                <p class="text-xs text-gray-500">10%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bottom Actions -->
+        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-2xl max-w-md mx-auto">
+            <div class="px-6 py-4">
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <button class="py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        <span>Download</span>
+                    </button>
+                    <button class="py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
+                        </svg>
+                        <span>Share</span>
+                    </button>
+                </div>
+                <button class="w-full py-4 bg-gradient-to-r from-primary via-green-500 to-secondary text-white rounded-2xl font-bold shadow-lg shadow-green-500/30 flex items-center justify-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                    <span>Send to Customer via WhatsApp</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -1,7 +1,7 @@
 import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { PurchaseOrderEntity } from './purchase-order.entity';
-import { ProductEntity } from '../../products/entities/product.entity';
+import { ProductEntity } from '../../master-data/entities/product.entity';
 
 /**
  * Purchase Order Item Entity

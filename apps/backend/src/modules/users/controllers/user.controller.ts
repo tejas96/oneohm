@@ -9,7 +9,6 @@ import {
   Post,
   Put,
   Query,
-  Request,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
@@ -24,7 +23,9 @@ import {
 } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
+import type { CurrentUserType } from '../../auth/types';
 import {
   CreateProfileDto,
   CreateUserDto,
@@ -50,19 +51,26 @@ export class UserController {
     private readonly profileService: ProfileService,
   ) {}
 
-  @Post()
   @ApiCreate({
+    path: '',
     summary: 'Create a new user',
+    description:
+      'Creates a user with optional profile.\n\n' +
+      '**User Only:** Provide basic fields (firstName, phone, email, password)\n\n' +
+      '**With Profile (Org Onboarding):** Also provide organizationId, profileType, profileData.\n' +
+      'Profile types: employee, reseller, customer. Role is auto-assigned based on profileType.',
     responseType: UserResponseDto,
   })
-  async create(@Body() createDto: CreateUserDto): Promise<UserResponseDto> {
-    const user = await this.userService.create(createDto);
+  async create(
+    @Body() createDto: CreateUserDto,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<UserResponseDto> {
+    const user = await this.userService.create(createDto, currentUser.id);
     return plainToInstance(UserResponseDto, user, {
       excludeExtraneousValues: true,
     });
   }
 
-  @Get()
   @ApiReadAll({
     summary: 'Get all users',
     description:
@@ -99,8 +107,8 @@ export class UserController {
     };
   }
 
-  @Get(':id')
   @ApiReadOne({
+    path: ':id',
     summary: 'Get user by ID',
     responseType: UserResponseDto,
   })
@@ -111,8 +119,8 @@ export class UserController {
     });
   }
 
-  @Put(':id')
   @ApiUpdate({
+    path: ':id',
     summary: 'Update user',
     description:
       'Updates core user authentication fields only. Use profile endpoints for profile-specific fields.',
@@ -128,17 +136,16 @@ export class UserController {
     });
   }
 
-  @Delete(':id')
   @ApiDelete({
+    path: ':id',
     summary: 'Delete user',
   })
   async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     await this.userService.delete(id);
   }
 
-  @Post(':id/status')
   @ApiAction({
-    path: 'status',
+    path: ':id/status',
     summary: 'Update user status',
     description:
       'Update user status to active, inactive, or suspended. Generic endpoint for all status transitions.',
@@ -154,9 +161,8 @@ export class UserController {
     });
   }
 
-  @Post(':id/profiles')
   @ApiCreate({
-    path: 'profiles',
+    path: ':id/profiles',
     summary: 'Create user profile',
     description:
       'Create a new profile (customer/employee/reseller) for a user in an organization. Automatically assigns the corresponding role.',
@@ -167,9 +173,9 @@ export class UserController {
   async createProfile(
     @Param('id', ParseUUIDPipe) userId: string,
     @Body() createProfileDto: CreateProfileDto,
-    @Request() req: Express.Request,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<any> {
-    const createdBy = req.user?.id;
+    const createdBy = currentUser?.id;
 
     // Create profile with auto role assignment
     const profile = await this.profileService.createProfile({

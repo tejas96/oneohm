@@ -4,7 +4,7 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { WarehouseEntity } from './warehouse.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
-import { ProductEntity } from '../../products/entities/product.entity';
+import { ProductEntity } from '../../master-data/entities/product.entity';
 import { ProjectEntity } from '../../projects/entities/project.entity';
 
 /**

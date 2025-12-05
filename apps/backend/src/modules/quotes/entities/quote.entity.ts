@@ -1,4 +1,11 @@
-import { ProjectType, QuoteStatus, SystemType } from '@oneohm-epc/shared-types';
+import {
+  ProjectType,
+  QuoteStatus,
+  SystemType,
+  PhaseType,
+  DcrPreference,
+  QuoteCalculationMode,
+} from '@oneohm-epc/shared-types';
 import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 import { QuoteVersionEntity } from './quote-version.entity';
@@ -74,6 +81,69 @@ export class QuoteEntity extends BaseEntity {
 
   @Column({ type: 'integer', name: 'total_wattage_wp' })
   totalWattageWp!: number;
+
+  // ==================== Quote Calculator Fields ====================
+  @Column({
+    type: 'varchar',
+    length: 20,
+    name: 'phase_type',
+    nullable: true,
+  })
+  phaseType?: PhaseType;
+
+  @Column({
+    type: 'varchar',
+    length: 20,
+    name: 'dcr_preference',
+    default: DcrPreference.AUTO_SPLIT,
+  })
+  dcrPreference!: DcrPreference;
+
+  @Column({
+    type: 'varchar',
+    length: 20,
+    name: 'calculation_mode',
+    default: QuoteCalculationMode.AUTO,
+  })
+  calculationMode!: QuoteCalculationMode;
+
+  /** DCR system size in kW (for split systems) */
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    name: 'dcr_system_size_kw',
+    nullable: true,
+  })
+  dcrSystemSizeKw?: number;
+
+  /** Non-DCR system size in kW (for split systems) */
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    name: 'non_dcr_system_size_kw',
+    nullable: true,
+  })
+  nonDcrSystemSizeKw?: number;
+
+  /** Installation floor number */
+  @Column({
+    type: 'integer',
+    name: 'floor_number',
+    default: 0,
+  })
+  floorNumber!: number;
+
+  /** Distance from warehouse in km */
+  @Column({
+    type: 'decimal',
+    precision: 8,
+    scale: 2,
+    name: 'distance_km',
+    nullable: true,
+  })
+  distanceKm?: number;
 
   // ==================== Project Type ====================
   @Column({
