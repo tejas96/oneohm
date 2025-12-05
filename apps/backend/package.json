@@ -19,6 +19,7 @@
     "seed:iam-customers": "ts-node -r tsconfig-paths/register src/database/seeds/run-iam-customers.ts",
     "seed:test-users-iam": "ts-node -r tsconfig-paths/register src/database/seeds/run-test-users-iam.ts",
     "seed:all": "npm run seed && npm run seed:inventory",
-    "migrate:users-to-iam": "ts-node -r tsconfig-paths/register src/scripts/run-migrate-users-to-iam.ts"
+    "migrate:users-to-iam": "ts-node -r tsconfig-paths/register src/scripts/run-migrate-users-to-iam.ts",
+    "seed:platform-admin": "ts-node -r tsconfig-paths/register src/database/seeds/platform-admin.seed.ts"
   }
 }

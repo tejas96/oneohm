@@ -1,30 +1,56 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { UserProfileType } from '@oneohm-epc/shared-types';
-import { IsNotEmpty, IsString, IsEnum, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsEnum, IsOptional, IsObject } from 'class-validator';
 
 /**
  * Create Profile DTO
  * Used to create a new profile for a user in an organization
  * Note: userId comes from URL parameter, not body
+ *
+ * Profile data structure depends on profileType:
+ * - customer: See CreateCustomerDto in modules/customers/dto
+ * - reseller: See CreateResellerDto in modules/resellers/dto
+ * - employee: See CreateEmployeeDto in modules/employees/dto
  */
 export class CreateProfileDto {
-  @ApiProperty({ example: '00000000-0000-0000-0000-000000000001', description: 'Organization ID' })
+  @ApiProperty({
+    example: '00000000-0000-0000-0000-000000000001',
+    description: 'Organization ID where profile will be created',
+  })
   @IsString()
   @IsNotEmpty()
   organizationId!: string;
 
   @ApiProperty({
-    example: 'customer',
     enum: UserProfileType,
-    description: 'Profile type to create',
+    example: 'employee',
+    description:
+      'Type of profile to create. Auto-assigns corresponding role:\n' +
+      '- customer → customer role\n' +
+      '- employee → employee_basic role\n' +
+      '- reseller → reseller role',
+    enumName: 'UserProfileType',
   })
   @IsEnum(UserProfileType)
   @IsNotEmpty()
   profileType!: UserProfileType;
 
-  @ApiProperty({ description: 'Profile-specific data' })
+  @ApiProperty({
+    description:
+      'Profile-specific data. Structure depends on profileType:\n' +
+      '- employee: { employeeId, designation, department, joiningDate, email, phone, address, city, state, pincode }\n' +
+      '- customer: See CreateCustomerDto\n' +
+      '- reseller: See CreateResellerDto',
+    example: {
+      employeeId: 'EMP001',
+      designation: 'Sales Executive',
+      department: 'Sales',
+      joiningDate: '2024-01-15',
+    },
+  })
+  @IsObject()
   @IsNotEmpty()
-  profileData!: any;
+  profileData!: Record<string, unknown>;
 }
 
 /**

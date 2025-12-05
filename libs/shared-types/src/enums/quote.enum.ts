@@ -55,3 +55,34 @@ export enum PaymentMilestoneStage {
   FINAL_PAYMENT = 'final_payment',
   POST_INSTALLATION = 'post_installation',
 }
+
+/**
+ * Subsidy Scheme Type Enum
+ * Different government subsidy schemes
+ */
+export enum SubsidySchemeType {
+  PM_SURYA_GHAR = 'pm_surya_ghar',
+  STATE_SUBSIDY = 'state_subsidy',
+  MNRE = 'mnre',
+  CUSTOM = 'custom',
+}
+
+/**
+ * Quote Calculation Mode Enum
+ * How the quote should be calculated
+ */
+export enum QuoteCalculationMode {
+  AUTO = 'auto',
+  MANUAL = 'manual',
+  HYBRID = 'hybrid',
+}
+
+/**
+ * DCR Preference Enum
+ * Customer's preference for DCR vs Non-DCR panels
+ */
+export enum DcrPreference {
+  DCR_ONLY = 'dcr_only',
+  NON_DCR_ONLY = 'non_dcr_only',
+  AUTO_SPLIT = 'auto_split', // System decides based on subsidy eligibility
+}

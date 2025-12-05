@@ -1,21 +1,34 @@
-import { Body, Controller, Param, ParseUUIDPipe, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { OrganizationStatus } from '@oneohm-epc/shared-types';
 import {
-  ApiAction,
-  ApiCreate,
-  ApiDelete,
-  ApiReadAll,
-  ApiReadOne,
-  ApiUpdate,
-} from '@oneohm-epc/shared-utils';
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { OrganizationStatus } from '@oneohm-epc/shared-types';
 
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
-import { type CurrentUserType } from '../../auth/types';
+import { CurrentUserType } from '../../auth/types';
+import { RequireRole } from '../../iam/decorators/require-role.decorator';
+import { RoleGuard } from '../../iam/guards/role.guard';
 import {
+  AssignSuperAdminDto,
   CreateOrganizationDto,
+  CreateOrganizationResponseDto,
   OrganizationResponseDto,
+  OrganizationWithStatsDto,
+  PaginatedOrganizationsResponseDto,
   UpdateOrganizationDto,
   UpdateOrganizationStatusDto,
 } from '../dto';
@@ -23,152 +36,215 @@ import { OrganizationService } from '../services/organization.service';
 
 /**
  * Organization Controller
- * Handles HTTP requests for organization management
+ * Handles organization management for platform admins
+ * All endpoints require platform_admin role
  */
 @ApiTags('Organizations')
-@ApiBearerAuth()
 @Controller('organizations')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RoleGuard)
+@ApiBearerAuth('JWT-auth')
 export class OrganizationController {
   constructor(private readonly organizationService: OrganizationService) {}
 
+  // ==================== CREATE ====================
+
   /**
-   * Create a new organization
+   * Create new organization with super admin
    */
-  @ApiCreate({
-    summary: 'Create a new organization',
-    description: 'Creates a new organization in the system. Requires SUPER_ADMIN or ADMIN role.',
-    responseType: OrganizationResponseDto,
-    additionalErrors: [
-      {
-        status: 409,
-        description: 'Organization code already exists',
-      },
-    ],
+  @Post()
+  @RequireRole('platform_admin')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Create organization',
+    description:
+      'Creates organization, seeds default roles, creates super admin user, and sends invitation. Requires platform_admin role.',
+  })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Organization created successfully',
+    type: CreateOrganizationResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Organization code or email already exists',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Platform admin access required',
   })
   async create(
-    @Body() createDto: CreateOrganizationDto,
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<OrganizationResponseDto> {
-    const organization = await this.organizationService.create(createDto, currentUser.id);
-    return organization as OrganizationResponseDto;
+    @Body() dto: CreateOrganizationDto,
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<CreateOrganizationResponseDto> {
+    return this.organizationService.create(dto, user.id);
   }
 
+  // ==================== READ ====================
+
   /**
-   * Get all organizations with pagination
+   * List all organizations with pagination and filters
    */
-  @ApiReadAll({
-    summary: 'Get all organizations',
-    description: 'Retrieve all organizations with pagination and optional status filter.',
-    responseType: OrganizationResponseDto,
-    additionalQueries: [
-      {
-        name: 'status',
-        required: false,
-        enum: OrganizationStatus,
-        description: 'Filter by organization status',
-      },
-    ],
+  @Get()
+  @RequireRole('platform_admin')
+  @ApiOperation({
+    summary: 'List all organizations',
+    description:
+      'Get paginated list of organizations with optional search and status filter. Requires platform_admin role.',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, enum: OrganizationStatus })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Organizations retrieved successfully',
+    type: PaginatedOrganizationsResponseDto,
   })
   async findAll(
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('search') search?: string,
     @Query('status') status?: OrganizationStatus,
-  ): Promise<{
-    items: OrganizationResponseDto[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
-    const result = await this.organizationService.findAll({
-      limit: limit ? Number(limit) : undefined,
-      offset: offset ? Number(offset) : undefined,
-      status,
-    });
-
-    return {
-      ...result,
-      items: result.items as OrganizationResponseDto[],
-    };
+  ): Promise<PaginatedOrganizationsResponseDto> {
+    return this.organizationService.findAll(page, limit, search, status);
   }
 
   /**
-   * Get organization by ID
+   * Get organization by ID with statistics
    */
-  @ApiReadOne({
-    summary: 'Get organization by ID',
-    description: 'Retrieve a specific organization by its UUID.',
-    responseType: OrganizationResponseDto,
+  @Get(':id')
+  @RequireRole('platform_admin')
+  @ApiOperation({
+    summary: 'Get organization details',
+    description:
+      'Get organization by ID with user and project statistics. Requires platform_admin role.',
   })
-  async findById(@Param('id', ParseUUIDPipe) id: string): Promise<OrganizationResponseDto> {
-    const organization = await this.organizationService.findById(id);
-    return organization as OrganizationResponseDto;
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Organization retrieved successfully',
+    type: OrganizationWithStatsDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Organization not found',
+  })
+  async findById(@Param('id', ParseUUIDPipe) id: string): Promise<OrganizationWithStatsDto> {
+    return this.organizationService.findById(id);
   }
 
+  // ==================== UPDATE ====================
+
   /**
-   * Update organization by ID
+   * Update organization
    */
-  @ApiUpdate({
+  @Patch(':id')
+  @RequireRole('platform_admin')
+  @ApiOperation({
     summary: 'Update organization',
-    description: 'Update an existing organization by its UUID.',
-    responseType: OrganizationResponseDto,
-    additionalErrors: [
-      {
-        status: 409,
-        description: 'Organization code already exists',
-      },
-    ],
+    description: 'Update organization details. Requires platform_admin role.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Organization updated successfully',
+    type: OrganizationResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Organization not found',
   })
   async update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateDto: UpdateOrganizationDto,
-    @CurrentUser() currentUser: CurrentUserType,
+    @Body() dto: UpdateOrganizationDto,
+    @CurrentUser() user: CurrentUserType,
   ): Promise<OrganizationResponseDto> {
-    const organization = await this.organizationService.update(id, updateDto, currentUser.id);
-    return organization as OrganizationResponseDto;
+    return this.organizationService.update(id, dto, user.id);
   }
 
   /**
-   * Delete organization by ID
+   * Update organization status
    */
-  @ApiDelete({
-    summary: 'Delete organization',
-    description:
-      'Soft delete an organization by its UUID. Only SUPER_ADMIN can delete organizations.',
-    additionalErrors: [
-      {
-        status: 400,
-        description: 'Cannot delete active organization',
-      },
-    ],
-  })
-  async delete(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<void> {
-    await this.organizationService.delete(id, currentUser.id);
-  }
-
-  /**
-   * Update organization status (Generic endpoint)
-   */
-  @ApiAction({
-    path: 'status',
+  @Patch(':id/status')
+  @RequireRole('platform_admin')
+  @ApiOperation({
     summary: 'Update organization status',
     description:
-      'Update organization status to active, inactive, or suspended. Generic endpoint for all status transitions.',
-    responseType: OrganizationResponseDto,
+      'Update organization status (active/inactive/suspended). Requires platform_admin role.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Organization status updated successfully',
+    type: OrganizationResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Organization not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Organization already in requested status',
   })
   async updateStatus(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() statusDto: UpdateOrganizationStatusDto,
-    @CurrentUser() currentUser: CurrentUserType,
+    @Body() dto: UpdateOrganizationStatusDto,
+    @CurrentUser() user: CurrentUserType,
   ): Promise<OrganizationResponseDto> {
-    const organization = await this.organizationService.updateStatus(
-      id,
-      statusDto.status,
-      currentUser.id,
-    );
-    return organization as OrganizationResponseDto;
+    return this.organizationService.updateStatus(id, dto.status, user.id);
+  }
+
+  // ==================== DELETE ====================
+
+  /**
+   * Delete organization (soft delete)
+   */
+  @Delete(':id')
+  @RequireRole('platform_admin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Delete organization',
+    description: 'Soft delete organization and all related data. Requires platform_admin role.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Organization deleted successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Organization not found',
+  })
+  async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+    await this.organizationService.delete(id);
+  }
+
+  // ==================== SUPER ADMIN ====================
+
+  /**
+   * Assign additional super admin to organization
+   */
+  @Post(':id/super-admin')
+  @RequireRole('platform_admin')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Assign super admin',
+    description:
+      'Assign additional super admin user to organization. Requires platform_admin role.',
+  })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Super admin assigned successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Organization not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'User already has super_admin role',
+  })
+  async assignSuperAdmin(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AssignSuperAdminDto,
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<{ userId: string; invitationLink: string }> {
+    return this.organizationService.assignSuperAdmin(id, dto, user.id);
   }
 }

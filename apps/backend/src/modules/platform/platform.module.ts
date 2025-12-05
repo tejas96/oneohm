@@ -1,34 +1,21 @@
-import { Module, forwardRef } from '@nestjs/common';
-
-import { PlatformOrganizationController, PublicOrganizationController } from './controllers';
-import { PlatformOrganizationService } from './services';
-import { IamModule } from '../iam/iam.module';
-import { OrganizationsModule } from '../organizations/organizations.module';
-import { UsersModule } from '../users/users.module';
+import { Module } from '@nestjs/common';
 
 /**
  * Platform Module
- * Platform admin functionality for managing organizations
+ * Reserved for future platform-level features
  *
- * Features:
- * - Create organizations with auto role seeding
- * - Manage super admins
- * - Organization CRUD operations
- * - User invitations
- * - Public organization search (no auth required)
+ * Potential future features:
+ * - Platform billing/subscription management
+ * - Platform analytics dashboard
+ * - Platform-wide settings
+ * - Multi-tenant administration
  *
- * Access:
- * - Platform APIs: Restricted to platform_admin role only
- * - Public APIs: Open access for customer registration
+ * Note: Organization management has been moved to OrganizationsModule
  */
 @Module({
-  imports: [
-    forwardRef(() => OrganizationsModule),
-    forwardRef(() => IamModule),
-    forwardRef(() => UsersModule),
-  ],
-  controllers: [PlatformOrganizationController, PublicOrganizationController],
-  providers: [PlatformOrganizationService],
-  exports: [PlatformOrganizationService],
+  imports: [],
+  controllers: [],
+  providers: [],
+  exports: [],
 })
 export class PlatformModule {}

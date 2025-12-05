@@ -43,8 +43,8 @@ import {
   VendorService,
   WarehouseService,
 } from './services';
+import { MasterDataModule } from '../master-data/master-data.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
-import { ProductsModule } from '../products/products.module';
 import { ProjectsModule } from '../projects/projects.module';
 
 /**
@@ -70,7 +70,7 @@ import { ProjectsModule } from '../projects/projects.module';
       MaterialDispatchItemEntity,
     ]),
     OrganizationsModule,
-    ProductsModule,
+    MasterDataModule,
     ProjectsModule,
   ],
   controllers: [

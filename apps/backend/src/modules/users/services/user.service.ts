@@ -1,12 +1,15 @@
 import {
   BadRequestException,
   ConflictException,
+  forwardRef,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { UserStatus } from '@oneohm-epc/shared-types';
 
+import { ProfileService } from './profile.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UserEntity } from '../entities/user.entity';
@@ -25,9 +28,37 @@ export class UserService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly userRoleRepository: UserRoleRepository,
+    @Inject(forwardRef(() => ProfileService))
+    private readonly profileService: ProfileService,
   ) {}
 
-  async create(createDto: CreateUserDto): Promise<UserEntity> {
+  /**
+   * Create a new user with optional profile creation
+   *
+   * @param createDto - User data with optional profile info
+   * @param createdBy - UUID of the user creating this user (for audit)
+   * @returns Created user entity
+   *
+   * @example
+   * // Create user only
+   * await userService.create({ firstName: 'John', phone: '+919876543210' });
+   *
+   * @example
+   * // Create user + employee profile (org onboarding)
+   * await userService.create({
+   *   firstName: 'John',
+   *   phone: '+919876543210',
+   *   organizationId: 'org-uuid',
+   *   profileType: UserProfileType.EMPLOYEE,
+   *   profileData: { employeeId: 'EMP001', designation: 'Sales Executive' }
+   * }, 'admin-user-uuid');
+   */
+  async create(createDto: CreateUserDto, createdBy?: string): Promise<UserEntity> {
+    // Validate: If profileType provided, organizationId is required
+    if (createDto.profileType && !createDto.organizationId) {
+      throw new BadRequestException('organizationId is required when profileType is provided');
+    }
+
     // Check if email already exists (if provided)
     if (createDto.email) {
       const existingEmail = await this.userRepository.findByEmail(createDto.email);
@@ -42,23 +73,54 @@ export class UserService {
       throw new ConflictException(`Phone ${createDto.phone} is already registered`);
     }
 
-    // Extract roles from DTO
-    const { roles, password, ...userData } = createDto;
+    // Extract profile and role fields from user data
+    const { roles, password, organizationId, profileType, profileData, ...userData } = createDto;
 
     // Create user
     const user = await this.userRepository.create({
       ...userData,
       passwordHash: password, // Will be hashed by entity hook
       status: createDto.status || UserStatus.ACTIVE,
-      profileCompleted: false, // New users haven't completed profile
+      profileCompleted: false, // Will be updated after profile creation
     });
 
-    // Create user roles (only if roles are provided)
-    if (roles && roles.length > 0) {
-      await this.userRoleRepository.createUserRoles(user.id, roles, user.id);
-    }
-
     this.logger.log(`User created: ${user.phone} (${user.email || 'no email'})`);
+
+    // Create profile if profileType is provided (org onboarding flow)
+    if (profileType && organizationId) {
+      try {
+        await this.profileService.createProfile({
+          userId: user.id,
+          organizationId,
+          profileType,
+          profileData: profileData || {},
+          createdBy: createdBy || user.id,
+        });
+
+        this.logger.log(
+          `Profile created: ${profileType} for user ${user.id} in org ${organizationId}`,
+        );
+      } catch (error) {
+        // Log error but don't fail user creation
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          `Failed to create ${profileType} profile for user ${user.id}: ${errorMessage}`,
+        );
+        // Re-throw for now - we want the caller to know profile creation failed
+        throw error;
+      }
+    } else if (roles && roles.length > 0) {
+      // Legacy: Direct role assignment (deprecated, use profileType instead)
+      await this.userRoleRepository.createUserRoles(
+        user.id,
+        roles,
+        createdBy || user.id,
+        organizationId,
+      );
+      this.logger.warn(
+        `Direct role assignment used for user ${user.id}. Consider using profileType instead.`,
+      );
+    }
 
     // Return user with roles
     return this.findById(user.id);

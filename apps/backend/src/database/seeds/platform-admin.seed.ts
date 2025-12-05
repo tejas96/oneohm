@@ -39,7 +39,8 @@ async function seedPlatformAdmin() {
     // eslint-disable-next-line no-console
     console.log('📝 Creating platform_admin role...');
 
-    const existingRole = await roleRepository.findByCodeAndOrganization('platform_admin', '');
+    // Use findPlatformRoleByCode for platform-level roles (org_id IS NULL)
+    const existingRole = await roleRepository.findPlatformRoleByCode('platform_admin');
 
     let platformAdminRole;
     if (existingRole) {
@@ -51,7 +52,7 @@ async function seedPlatformAdmin() {
         name: 'Platform Administrator',
         code: 'platform_admin',
         description: 'Full system access - SaaS provider only',
-        organizationId: '', // ← Platform level role
+        organizationId: null, // ← Platform level role (NULL in DB)
         isSystemRole: true,
         level: 0,
       });
@@ -65,26 +66,42 @@ async function seedPlatformAdmin() {
     // eslint-disable-next-line no-console
     console.log('\n📝 Assigning permissions to platform_admin...');
 
-    // @ts-expect-error - Repository type signature mismatch - works at runtime
     const allPermissions = await permissionRepository.findAll();
     // eslint-disable-next-line no-console
     console.log(`Found ${allPermissions.length} permissions`);
 
+    // Get permission IDs that aren't already assigned
+    const permissionIdsToAssign: string[] = [];
     for (const permission of allPermissions) {
-      // @ts-expect-error - Repository type signature mismatch - works at runtime
-      const exists = await rolePermissionRepository.exists(platformAdminRole.id, permission.id);
-
-      if (!exists) {
-        // @ts-expect-error - Repository type signature mismatch - works at runtime
-        await rolePermissionRepository.create({
-          roleId: platformAdminRole.id,
-          permissionId: permission.id,
-        });
+      const hasPermission = await rolePermissionRepository.hasPermission(
+        platformAdminRole.id,
+        permission.id,
+      );
+      if (!hasPermission) {
+        permissionIdsToAssign.push(permission.id);
       }
     }
 
+    // Assign new permissions in batch (createdBy is nullable, use null for system actions)
+    if (permissionIdsToAssign.length > 0) {
+      // Use direct repository to avoid createdBy requirement
+      const rolePermissions = permissionIdsToAssign.map((permissionId) =>
+        rolePermissionRepository.repository.create({
+          roleId: platformAdminRole.id,
+          permissionId,
+          createdBy: undefined, // System action, no specific user
+        }),
+      );
+      await rolePermissionRepository.repository.save(rolePermissions);
+      // eslint-disable-next-line no-console
+      console.log(`✅ Assigned ${permissionIdsToAssign.length} new permissions to platform_admin`);
+    } else {
+      // eslint-disable-next-line no-console
+      console.log('✅ All permissions already assigned to platform_admin');
+    }
+
     // eslint-disable-next-line no-console
-    console.log(`✅ Assigned ${allPermissions.length} permissions to platform_admin`);
+    console.log(`📊 Total permissions: ${allPermissions.length}`);
 
     // ============================================
     // 3. Create Platform Admin User
@@ -92,9 +109,9 @@ async function seedPlatformAdmin() {
     // eslint-disable-next-line no-console
     console.log('\n📝 Creating platform admin user...');
 
-    const email = 'platform@oneohm.com';
-    const phone = '+919999999999';
-    const password = 'Platform@123'; // Change this in production!
+    const email = 'tejas.patil@beyondnyx.com';
+    const phone = '+918087823247';
+    const password = 'admin@123'; // Change this in production!
 
     let platformUser = await userRepository.findByEmail(email);
 
@@ -109,6 +126,8 @@ async function seedPlatformAdmin() {
         phoneVerifiedAt: new Date(),
         profileCompleted: true,
         status: UserStatus.ACTIVE,
+        firstName: 'Tejas',
+        lastName: 'Patil',
       });
 
       // eslint-disable-next-line no-console
@@ -136,11 +155,14 @@ async function seedPlatformAdmin() {
     );
 
     if (!existingUserRole) {
-      await userRoleRepository.create({
+      // Use direct repository to set both legacy 'role' and new 'roleId'
+      const userRole = userRoleRepository.repository.create({
         userId: platformUser.id,
-        roleId: platformAdminRole.id,
-        organizationId: null, // ← Platform level assignment
+        role: platformAdminRole.code, // Legacy role string (NOT NULL in DB)
+        roleId: platformAdminRole.id, // New IAM role UUID
+        organizationId: null, // Platform level assignment
       });
+      await userRoleRepository.repository.save(userRole);
       // eslint-disable-next-line no-console
       console.log('✅ platform_admin role assigned to user');
     } else {

@@ -3,110 +3,208 @@ import { OrganizationStatus } from '@oneohm-epc/shared-types';
 import { Exclude, Expose, Type } from 'class-transformer';
 
 /**
- * DTO for organization response
- * Used to transform and serialize organization data in API responses
+ * Organization Response DTO
+ * Used for all organization API responses
  */
 @Exclude()
 export class OrganizationResponseDto {
-  @Expose()
   @ApiProperty({ description: 'Organization ID' })
-  id: string;
-
   @Expose()
+  id!: string;
+
   @ApiProperty({ description: 'Organization name' })
-  name: string;
-
   @Expose()
+  name!: string;
+
   @ApiProperty({ description: 'Organization code' })
-  code: string;
-
   @Expose()
+  code!: string;
+
   @ApiPropertyOptional({ description: 'Organization email' })
-  email: string | null;
-
   @Expose()
+  email?: string | null;
+
   @ApiPropertyOptional({ description: 'Organization phone' })
-  phone: string | null;
-
   @Expose()
+  phone?: string | null;
+
   @ApiPropertyOptional({ description: 'Address' })
-  address: string | null;
-
   @Expose()
+  address?: string | null;
+
   @ApiPropertyOptional({ description: 'City' })
-  city: string | null;
-
   @Expose()
+  city?: string | null;
+
   @ApiPropertyOptional({ description: 'State' })
-  state: string | null;
-
   @Expose()
+  state?: string | null;
+
   @ApiProperty({ description: 'Country' })
-  country: string;
-
   @Expose()
+  country!: string;
+
   @ApiPropertyOptional({ description: 'Pincode' })
-  pincode: string | null;
-
   @Expose()
+  pincode?: string | null;
+
   @ApiPropertyOptional({ description: 'GSTIN' })
-  gstin: string | null;
-
   @Expose()
+  gstin?: string | null;
+
   @ApiPropertyOptional({ description: 'PAN' })
-  pan: string | null;
-
   @Expose()
+  pan?: string | null;
+
+  // ==================== Configuration ====================
+
   @ApiProperty({ description: 'Timezone' })
-  timezone: string;
-
   @Expose()
+  timezone!: string;
+
   @ApiProperty({ description: 'Currency' })
-  currency: string;
-
   @Expose()
+  currency!: string;
+
   @ApiProperty({ description: 'Date format' })
-  dateFormat: string;
-
   @Expose()
+  dateFormat!: string;
+
   @ApiProperty({ description: 'Default project timeline in weeks' })
-  defaultProjectTimelineWeeks: number;
-
   @Expose()
+  defaultProjectTimelineWeeks!: number;
+
   @ApiProperty({ description: 'Default quote validity in days' })
-  defaultQuoteValidityDays: number;
-
   @Expose()
+  defaultQuoteValidityDays!: number;
+
   @ApiProperty({ description: 'Maximum quote versions' })
-  maxQuoteVersions: number;
-
   @Expose()
-  @ApiProperty({ description: 'Organization status', enum: OrganizationStatus })
-  status: OrganizationStatus;
+  maxQuoteVersions!: number;
 
+  // ==================== Status & Subscription ====================
+
+  @ApiProperty({ description: 'Status', enum: OrganizationStatus })
   @Expose()
+  status!: OrganizationStatus;
+
   @ApiPropertyOptional({ description: 'Subscription plan' })
-  subscriptionPlan: string | null;
-
   @Expose()
-  @ApiPropertyOptional({ description: 'Subscription expiration date' })
-  subscriptionExpiresAt: Date | null;
+  subscriptionPlan?: string | null;
 
+  @ApiPropertyOptional({ description: 'Subscription expiry date' })
   @Expose()
+  subscriptionExpiresAt?: Date | null;
+
+  // ==================== Audit ====================
+
   @ApiProperty({ description: 'Created at timestamp' })
-  @Type(() => Date)
-  createdAt: Date;
-
   @Expose()
+  @Type(() => Date)
+  createdAt!: Date;
+
   @ApiProperty({ description: 'Updated at timestamp' })
+  @Expose()
   @Type(() => Date)
-  updatedAt: Date;
+  updatedAt!: Date;
 
-  @Expose()
   @ApiPropertyOptional({ description: 'Created by user ID' })
-  createdBy: string | null;
-
   @Expose()
+  createdBy?: string | null;
+
   @ApiPropertyOptional({ description: 'Updated by user ID' })
-  updatedBy: string | null;
+  @Expose()
+  updatedBy?: string | null;
+}
+
+/**
+ * Alias for backward compatibility
+ * @deprecated Use OrganizationResponseDto instead
+ */
+export class PlatformOrganizationResponseDto extends OrganizationResponseDto {}
+
+/**
+ * Organization Creation Response
+ * Includes organization, super admin, and invitation details
+ */
+export class CreateOrganizationResponseDto {
+  @ApiProperty({
+    description: 'Created organization',
+    type: OrganizationResponseDto,
+  })
+  organization!: OrganizationResponseDto;
+
+  @ApiProperty({
+    description: 'Super admin user ID',
+  })
+  superAdminUserId!: string;
+
+  @ApiProperty({
+    description: 'Invitation token',
+  })
+  invitationToken!: string;
+
+  @ApiProperty({
+    description: 'Invitation link (for email)',
+  })
+  invitationLink!: string;
+
+  @ApiProperty({
+    description: 'Default roles created',
+    example: ['super_admin', 'admin', 'customer', 'reseller'],
+  })
+  rolesCreated!: string[];
+
+  @ApiProperty({
+    description: 'Invitation sent to email',
+  })
+  invitationSent!: boolean;
+}
+
+/**
+ * Paginated organizations list response
+ */
+export class PaginatedOrganizationsResponseDto {
+  @ApiProperty({
+    description: 'List of organizations',
+    type: [OrganizationResponseDto],
+  })
+  data!: OrganizationResponseDto[];
+
+  @ApiProperty({ description: 'Total count' })
+  total!: number;
+
+  @ApiProperty({ description: 'Current page' })
+  page!: number;
+
+  @ApiProperty({ description: 'Page size' })
+  limit!: number;
+
+  @ApiProperty({ description: 'Total pages' })
+  totalPages!: number;
+}
+
+/**
+ * Organization with statistics
+ */
+export class OrganizationWithStatsDto extends OrganizationResponseDto {
+  @ApiProperty({ description: 'Total users count' })
+  @Expose()
+  totalUsers!: number;
+
+  @ApiProperty({ description: 'Total customers count' })
+  @Expose()
+  totalCustomers!: number;
+
+  @ApiProperty({ description: 'Total resellers count' })
+  @Expose()
+  totalResellers!: number;
+
+  @ApiProperty({ description: 'Total projects count' })
+  @Expose()
+  totalProjects!: number;
+
+  @ApiProperty({ description: 'Active projects count' })
+  @Expose()
+  activeProjects!: number;
 }

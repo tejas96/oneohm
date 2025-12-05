@@ -8,6 +8,7 @@ import { JwtAuthGuard } from './guards';
 import { AuthService, OtpService } from './services';
 import { JwtStrategy, LocalStrategy, OtpStrategy } from './strategies';
 import { CustomersModule } from '../customers/customers.module';
+import { EmployeesModule } from '../employees/employees.module';
 import { IamModule } from '../iam/iam.module';
 import { IntegrationsModule } from '../integrations/integrations.module';
 import { ResellersModule } from '../resellers/resellers.module';
@@ -49,6 +50,7 @@ import { UsersModule } from '../users/users.module';
     forwardRef(() => UsersModule),
     forwardRef(() => CustomersModule),
     forwardRef(() => ResellersModule),
+    forwardRef(() => EmployeesModule),
     forwardRef(() => IamModule),
     SecurityEventsModule,
     IntegrationsModule,

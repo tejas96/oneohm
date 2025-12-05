@@ -9,6 +9,7 @@ import { PermissionController } from './controllers/permission.controller';
 import { RoleController } from './controllers/role.controller';
 import { FeatureGuard } from './guards/feature.guard';
 import { PermissionGuard } from './guards/permission.guard';
+import { RoleGuard } from './guards/role.guard';
 import {
   FeatureRepository,
   PermissionRepository,
@@ -42,7 +43,7 @@ import { IamService } from './services/iam.service';
       RolePermissionEntity,
     ]),
     // Module dependencies
-    OrganizationsModule,
+    forwardRef(() => OrganizationsModule), // ← Use forwardRef to break circular dependency
     forwardRef(() => UsersModule), // ← Use forwardRef to break circular dependency
   ],
   controllers: [RoleController, PermissionController, FeatureController],
@@ -59,6 +60,7 @@ import { IamService } from './services/iam.service';
     // Guards
     PermissionGuard,
     FeatureGuard,
+    RoleGuard,
   ],
   exports: [
     // Export repositories for other modules
@@ -73,6 +75,7 @@ import { IamService } from './services/iam.service';
     // Export guards
     PermissionGuard,
     FeatureGuard,
+    RoleGuard,
   ],
 })
 export class IamModule {}

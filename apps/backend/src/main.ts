@@ -46,21 +46,38 @@ async function bootstrap(): Promise<void> {
   // Swagger API Documentation
   const swaggerConfig = new DocumentBuilder()
     .setTitle('OneOhm EPC API')
-    .setDescription('OneOhm EPC Management System API Documentation')
+    .setDescription(
+      'OneOhm EPC Management System API Documentation\n\n' +
+        '## Authentication\n' +
+        '1. Use `/auth/login` with email/password OR `/auth/otp/request` + `/auth/otp/verify` for OTP login\n' +
+        '2. Copy the `accessToken` from response\n' +
+        '3. Click "Authorize" button and paste the token\n\n' +
+        '## Test Credentials\n' +
+        '- Email: `admin@oneohm.com`\n' +
+        '- Password: `Admin@123`\n' +
+        '- OTP (dev mode): `123456`',
+    )
     .setVersion('1.0')
     .addBearerAuth(
       {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Enter JWT token',
+        description: 'Enter your JWT access token',
         in: 'header',
       },
-      'JWT-auth', // This name must match the one used in @ApiBearerAuth()
+      'bearer', // Must match @ApiBearerAuth() default
     )
+    .addTag('Authentication', 'Login, OTP, token refresh endpoints')
+    .addTag('Users', 'User management and profile creation')
     .addTag('Organizations', 'Organization management endpoints')
     .addTag('Organization Settings', 'Organization settings management')
+    .addTag('Customers', 'Customer profile management')
+    .addTag('Employees', 'Employee profile management')
+    .addTag('Resellers', 'Reseller profile management')
+    .addTag('IAM - Roles', 'Role-based access control')
+    .addTag('IAM - Permissions', 'Permission management')
+    .addTag('IAM - Features', 'Feature flag management')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

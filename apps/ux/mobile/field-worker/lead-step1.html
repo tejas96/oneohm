@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Lead - Step 1 - OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        secondary: '#0d74b8',
+                        tagline: '#025580',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Mobile Container -->
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl">
+        
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-primary via-green-500 to-secondary px-6 py-6 pt-12">
+            <!-- Back Button & Progress -->
+            <div class="flex items-center justify-between mb-6">
+                <a href="dashboard-fieldworker.html" class="inline-flex items-center text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </a>
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-1 bg-white rounded-full"></div>
+                    <div class="w-8 h-1 bg-white/30 rounded-full"></div>
+                    <div class="w-8 h-1 bg-white/30 rounded-full"></div>
+                    <div class="w-8 h-1 bg-white/30 rounded-full"></div>
+                    <div class="w-8 h-1 bg-white/30 rounded-full"></div>
+                    <div class="w-8 h-1 bg-white/30 rounded-full"></div>
+                </div>
+            </div>
+
+            <!-- Title -->
+            <div class="mb-4">
+                <p class="text-green-100 text-sm mb-1">Step 1 of 6</p>
+                <h1 class="text-3xl font-bold text-white mb-2">Basic Information</h1>
+                <p class="text-green-100">Let's start with your contact details</p>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="px-6 py-8">
+            
+            <!-- Form -->
+            <form id="leadForm" class="space-y-6" onsubmit="handleSubmit(event)">
+                
+                <!-- Full Name -->
+                <div>
+                    <label for="fullName" class="block text-sm font-medium text-gray-700 mb-2">
+                        Full Name *
+                    </label>
+                    <input 
+                        type="text" 
+                        id="fullName" 
+                        name="fullName" 
+                        class="block w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                        placeholder="Enter your full name"
+                        required
+                        minlength="3"
+                    />
+                </div>
+
+                <!-- Mobile Number -->
+                <div>
+                    <label for="mobile" class="block text-sm font-medium text-gray-700 mb-2">
+                        Mobile Number *
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <span class="text-gray-500">+91</span>
+                        </div>
+                        <input 
+                            type="tel" 
+                            id="mobile" 
+                            name="mobile" 
+                            maxlength="10"
+                            pattern="[0-9]{10}"
+                            class="block w-full pl-14 pr-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                            placeholder="98765 43210"
+                            required
+                        />
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                        Email Address *
+                    </label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        class="block w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                        placeholder="your.email@example.com"
+                        required
+                    />
+                </div>
+
+                <!-- Address -->
+                <div>
+                    <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
+                        Complete Address *
+                    </label>
+                    <textarea 
+                        id="address" 
+                        name="address" 
+                        rows="3"
+                        class="block w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all resize-none"
+                        placeholder="House/Flat no., Street, Area"
+                        required
+                        minlength="10"
+                    ></textarea>
+                </div>
+
+                <!-- City -->
+                <div>
+                    <label for="city" class="block text-sm font-medium text-gray-700 mb-2">
+                        City *
+                    </label>
+                    <select 
+                        id="city" 
+                        name="city" 
+                        class="block w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                        required
+                    >
+                        <option value="">Select city</option>
+                        <option value="Pune">Pune</option>
+                        <option value="Mumbai">Mumbai</option>
+                        <option value="Nagpur">Nagpur</option>
+                        <option value="Nashik">Nashik</option>
+                        <option value="Aurangabad">Aurangabad</option>
+                        <option value="Thane">Thane</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <!-- State -->
+                <div>
+                    <label for="state" class="block text-sm font-medium text-gray-700 mb-2">
+                        State *
+                    </label>
+                    <select 
+                        id="state" 
+                        name="state" 
+                        class="block w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                        required
+                    >
+                        <option value="">Select state</option>
+                        <option value="Maharashtra" selected>Maharashtra</option>
+                        <option value="Gujarat">Gujarat</option>
+                        <option value="Karnataka">Karnataka</option>
+                        <option value="Delhi">Delhi</option>
+                        <option value="Rajasthan">Rajasthan</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <!-- Pincode -->
+                <div>
+                    <label for="pincode" class="block text-sm font-medium text-gray-700 mb-2">
+                        Pincode *
+                    </label>
+                    <input 
+                        type="text" 
+                        id="pincode" 
+                        name="pincode" 
+                        maxlength="6"
+                        pattern="[0-9]{6}"
+                        class="block w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                        placeholder="411001"
+                        required
+                    />
+                </div>
+
+                <!-- Location Capture -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Location Coordinates
+                    </label>
+                    <button 
+                        type="button" 
+                        onclick="captureLocation()"
+                        class="w-full flex items-center justify-center space-x-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-2xl hover:border-primary hover:bg-primary/5 transition-all"
+                    >
+                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <span class="text-sm font-medium text-gray-700" id="locationBtn">Capture GPS Location</span>
+                    </button>
+                    <input type="hidden" id="latitude" name="latitude" />
+                    <input type="hidden" id="longitude" name="longitude" />
+                    <p class="mt-2 text-xs text-gray-500" id="locationText">Location will be captured automatically</p>
+                </div>
+
+                <!-- Lead Source -->
+                <div>
+                    <label for="leadSource" class="block text-sm font-medium text-gray-700 mb-2">
+                        How did you hear about us? *
+                    </label>
+                    <select 
+                        id="leadSource" 
+                        name="leadSource" 
+                        class="block w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                        required
+                    >
+                        <option value="">Select source</option>
+                        <option value="Online">Online Search</option>
+                        <option value="Referral">Friend/Family Referral</option>
+                        <option value="Walk-in">Walked into office</option>
+                        <option value="Social Media">Social Media</option>
+                        <option value="Advertisement">Advertisement</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <!-- Info Box -->
+                <div class="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                    <div class="flex items-start space-x-3">
+                        <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        </svg>
+                        <div>
+                            <p class="text-sm text-blue-800 leading-relaxed">
+                                <strong class="font-semibold">Creating lead for someone else?</strong><br>
+                                You can enter their details. We'll contact them directly for the solar installation.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex space-x-3 pt-4">
+                    <a href="dashboard-fieldworker.html" class="flex-1">
+                        <button 
+                            type="button"
+                            class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-4 px-6 rounded-2xl transition-all"
+                        >
+                            Cancel
+                        </button>
+                    </a>
+                    <button 
+                        type="submit" 
+                        class="flex-1 bg-gradient-to-r from-primary via-green-500 to-secondary text-white font-semibold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center space-x-2"
+                    >
+                        <span>Next Step</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                        </svg>
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+    <script>
+        // Auto-format phone number
+        document.getElementById('mobile').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+        });
+
+        // Auto-format pincode
+        document.getElementById('pincode').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
+        });
+
+        // Capture GPS location
+        function captureLocation() {
+            const btn = document.getElementById('locationBtn');
+            const text = document.getElementById('locationText');
+            
+            btn.textContent = 'Capturing location...';
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        document.getElementById('latitude').value = position.coords.latitude;
+                        document.getElementById('longitude').value = position.coords.longitude;
+                        btn.textContent = '✓ Location Captured';
+                        btn.parentElement.classList.add('border-success', 'bg-success/5');
+                        btn.parentElement.classList.remove('border-gray-300');
+                        text.textContent = `Lat: ${position.coords.latitude.toFixed(6)}, Long: ${position.coords.longitude.toFixed(6)}`;
+                        text.classList.add('text-success');
+                    },
+                    (error) => {
+                        btn.textContent = 'Location capture failed';
+                        text.textContent = 'Please enable location access or enter manually';
+                        text.classList.add('text-error');
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by your browser');
+            }
+        }
+
+        // Form submission
+        function handleSubmit(event) {
+            event.preventDefault();
+            
+            // Collect form data
+            const formData = {
+                fullName: document.getElementById('fullName').value,
+                mobile: document.getElementById('mobile').value,
+                email: document.getElementById('email').value,
+                address: document.getElementById('address').value,
+                city: document.getElementById('city').value,
+                state: document.getElementById('state').value,
+                pincode: document.getElementById('pincode').value,
+                latitude: document.getElementById('latitude').value || '18.5204',
+                longitude: document.getElementById('longitude').value || '73.8567',
+                leadSource: document.getElementById('leadSource').value
+            };
+            
+            // Save to localStorage
+            localStorage.setItem('leadFormStep1', JSON.stringify(formData));
+            
+            console.log('Step 1 data saved:', formData);
+            
+            // Navigate to step 2
+            window.location.href = 'lead-step2.html';
+        }
+
+        // Load saved data if exists
+        window.addEventListener('load', () => {
+            const savedData = localStorage.getItem('leadFormStep1');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                document.getElementById('fullName').value = data.fullName || '';
+                document.getElementById('mobile').value = data.mobile || '';
+                document.getElementById('email').value = data.email || '';
+                document.getElementById('address').value = data.address || '';
+                document.getElementById('city').value = data.city || '';
+                document.getElementById('state').value = data.state || '';
+                document.getElementById('pincode').value = data.pincode || '';
+                document.getElementById('leadSource').value = data.leadSource || '';
+                
+                if (data.latitude && data.longitude) {
+                    document.getElementById('latitude').value = data.latitude;
+                    document.getElementById('longitude').value = data.longitude;
+                    document.getElementById('locationBtn').textContent = '✓ Location Captured';
+                    document.getElementById('locationText').textContent = `Lat: ${data.latitude}, Long: ${data.longitude}`;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+

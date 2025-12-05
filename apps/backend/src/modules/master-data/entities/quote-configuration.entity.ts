@@ -1,0 +1,165 @@
+import type {
+  GstConfig,
+  WattageRoundingConfig,
+  PaymentMilestoneConfig,
+} from '@oneohm-epc/shared-types';
+import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm';
+
+import { BaseEntity } from '../../../common/entities/base.entity';
+import { OrganizationEntity } from '../../organizations/entities/organization.entity';
+
+/**
+ * Quote Configuration Entity
+ * Stores organization-level quote settings
+ * Each organization has ONE active configuration
+ *
+ * This controls:
+ * - Quote validity period
+ * - Version limits
+ * - GST split configuration
+ * - Default payment milestones
+ * - Wattage rounding rules
+ */
+@Entity('quote_configurations')
+@Index(['organizationId', 'isActive'], { unique: true, where: '"is_active" = true' })
+export class QuoteConfiguration extends BaseEntity {
+  /**
+   * Organization this configuration belongs to
+   */
+  @Column({ type: 'uuid', name: 'organization_id' })
+  organizationId: string;
+
+  @ManyToOne(() => OrganizationEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'organization_id' })
+  organization: OrganizationEntity;
+
+  /**
+   * Default quote validity in days (default: 30)
+   */
+  @Column({
+    type: 'int',
+    name: 'default_validity_days',
+    default: 30,
+  })
+  defaultValidityDays: number;
+
+  /**
+   * Maximum allowed versions per quote (default: 3)
+   */
+  @Column({
+    type: 'int',
+    name: 'max_versions',
+    default: 3,
+  })
+  maxVersions: number;
+
+  /**
+   * Default project completion weeks
+   */
+  @Column({
+    type: 'int',
+    name: 'default_completion_weeks',
+    default: 4,
+  })
+  defaultCompletionWeeks: number;
+
+  /**
+   * GST Configuration (JSONB)
+   *
+   * Default: 70% at 12% GST (civil/installation), 30% at 18% GST (electrical)
+   *
+   * Example:
+   * {
+   *   rate1: 12,
+   *   rate1Percentage: 70,
+   *   rate2: 18,
+   *   rate2Percentage: 30
+   * }
+   */
+  @Column({
+    type: 'jsonb',
+    name: 'gst_config',
+    default: '{"rate1": 12, "rate1Percentage": 70, "rate2": 18, "rate2Percentage": 30}',
+  })
+  gstConfig: GstConfig;
+
+  /**
+   * Wattage Rounding Configuration (JSONB)
+   *
+   * Example: Round to nearest 10W, 5+ rounds up
+   * {
+   *   roundTo: 10,
+   *   roundUpThreshold: 5
+   * }
+   *
+   * So 547W → 550W (7 >= 5, rounds up)
+   * And 544W → 540W (4 < 5, rounds down)
+   */
+  @Column({
+    type: 'jsonb',
+    name: 'wattage_rounding',
+    default: '{"roundTo": 10, "roundUpThreshold": 5}',
+  })
+  wattageRounding: WattageRoundingConfig;
+
+  /**
+   * Default Payment Milestones (JSONB)
+   *
+   * Example:
+   * [
+   *   { stage: "advance", name: "Advance", percentage: 40, order: 1 },
+   *   { stage: "material_delivery", name: "Material Delivery", percentage: 30, order: 2 },
+   *   { stage: "installation_complete", name: "Installation Complete", percentage: 20, order: 3 },
+   *   { stage: "commissioning", name: "Commissioning", percentage: 10, order: 4 }
+   * ]
+   */
+  @Column({
+    type: 'jsonb',
+    name: 'payment_milestones',
+    default:
+      '[{"stage":"advance","name":"Advance","percentage":40,"order":1},{"stage":"material_delivery","name":"Material Delivery","percentage":30,"order":2},{"stage":"installation_complete","name":"Installation Complete","percentage":20,"order":3},{"stage":"commissioning","name":"Commissioning","percentage":10,"order":4}]',
+  })
+  paymentMilestones: PaymentMilestoneConfig[];
+
+  /**
+   * Whether to show real-time inventory stock in quote UI
+   */
+  @Column({
+    type: 'boolean',
+    name: 'show_inventory_stock',
+    default: true,
+  })
+  showInventoryStock: boolean;
+
+  /**
+   * Minimum profit margin percentage (optional)
+   * Used for validation during manual pricing
+   */
+  @Column({
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    name: 'min_profit_margin_percent',
+    nullable: true,
+  })
+  minProfitMarginPercent: number | null;
+
+  /**
+   * Whether this configuration is currently active
+   */
+  @Column({
+    type: 'boolean',
+    name: 'is_active',
+    default: true,
+  })
+  isActive: boolean;
+
+  /**
+   * Optional notes
+   */
+  @Column({
+    type: 'text',
+    nullable: true,
+  })
+  notes: string | null;
+}

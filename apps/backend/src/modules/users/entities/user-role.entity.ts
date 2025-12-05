@@ -3,7 +3,10 @@ import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { UserEntity } from './user.entity';
 
 @Entity('user_roles')
-@Index(['userId', 'role'], { unique: true })
+// Note: Unique indexes use COALESCE for NULL organization_id (platform-level roles)
+// Actual indexes are created via migrations for proper NULL handling
+@Index('idx_user_roles_user_org', ['userId', 'organizationId'])
+@Index('idx_user_roles_role_org', ['roleId', 'organizationId'])
 export class UserRoleEntity {
   @Column({ primary: true, type: 'uuid', default: () => 'gen_random_uuid()' })
   id!: string;

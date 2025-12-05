@@ -1,4 +1,4 @@
-import { PaymentMilestone, SystemType } from '@oneohm-epc/shared-types';
+import { PaymentMilestone, SystemType, QuoteConfigSnapshot } from '@oneohm-epc/shared-types';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 import { QuoteLineItemEntity } from './quote-line-item.entity';
@@ -113,6 +113,14 @@ export class QuoteVersionEntity extends BaseEntity {
 
   @Column({ type: 'boolean', name: 'is_current', default: true })
   isCurrent!: boolean;
+
+  // ==================== Configuration Snapshot ====================
+  /**
+   * Captures the pricing configuration at time of quote creation.
+   * This ensures historical quotes can be audited even if prices change.
+   */
+  @Column({ type: 'jsonb', name: 'config_snapshot', nullable: true })
+  configSnapshot?: QuoteConfigSnapshot;
 
   // ==================== Audit ====================
   @Column({ type: 'uuid', name: 'created_by' })

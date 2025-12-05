@@ -1,7 +1,7 @@
 import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { MaterialDispatchEntity } from './material-dispatch.entity';
-import { ProductEntity } from '../../products/entities/product.entity';
+import { ProductEntity } from '../../master-data/entities/product.entity';
 
 /**
  * Material Dispatch Item Entity

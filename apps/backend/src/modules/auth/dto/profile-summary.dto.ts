@@ -116,6 +116,13 @@ export class LoginUserDto {
   roles!: string[];
 
   @ApiProperty({
+    description: 'User permissions (from assigned roles)',
+    type: [String],
+    example: ['users:read', 'users:create', 'organizations:manage'],
+  })
+  permissions!: string[];
+
+  @ApiProperty({
     description: 'User profiles across organizations',
     type: [ProfileSummaryDto],
     isArray: true,
@@ -140,4 +147,3 @@ export class LoginUserDto {
   })
   fullName!: string;
 }
-

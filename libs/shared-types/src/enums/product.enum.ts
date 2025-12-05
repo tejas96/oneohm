@@ -61,3 +61,51 @@ export enum UnitOfMeasure {
   BOXES = 'box',
   ROLLS = 'roll',
 }
+
+/**
+ * Phase Type Enum
+ * Defines electrical phase types for inverters
+ */
+export enum PhaseType {
+  SINGLE_PHASE = '1_phase',
+  THREE_PHASE = '3_phase',
+}
+
+/**
+ * Panel Technology Enum
+ * Defines solar panel manufacturing technologies
+ */
+export enum PanelTechnology {
+  PERC = 'perc',
+  TOPCON = 'topcon',
+  MONO_PERC = 'mono_perc',
+  POLY = 'poly',
+  BIFACIAL = 'bifacial',
+}
+
+/**
+ * Structure Type Enum
+ * Defines mounting structure types
+ */
+export enum StructureType {
+  ALUMINUM_RAIL = 'aluminum_rail',
+  GI_STRUCTURE = 'gi_structure',
+  FLUSH_MOUNT = 'flush_mount',
+  GROUND_MOUNT = 'ground_mount',
+  ELEVATED = 'elevated',
+  CARPORT = 'carport',
+}
+
+/**
+ * Installation Component Type Enum
+ * Defines different installation cost components
+ */
+export enum InstallationComponentType {
+  ELECTRICAL_WORK = 'electrical_work',
+  FIXED_MATERIAL = 'fixed_material',
+  VARIABLE_FLOOR = 'variable_floor',
+  MSEDCL_CHARGES = 'msedcl_charges',
+  SUPERVISION = 'supervision',
+  TRANSPORT = 'transport',
+  OTHER = 'other',
+}

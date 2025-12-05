@@ -107,6 +107,17 @@ export class PermissionRepository {
   }
 
   /**
+   * Find all active permissions (used for platform admin setup)
+   */
+  async findAll(): Promise<PermissionEntity[]> {
+    return this.repository.find({
+      where: { isActive: true },
+      order: { action: 'ASC', name: 'ASC' },
+      relations: ['feature'],
+    });
+  }
+
+  /**
    * Update a permission
    */
   async update(id: string, data: Partial<PermissionEntity>): Promise<void> {

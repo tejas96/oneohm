@@ -14,13 +14,14 @@ import { ComplianceModule } from './modules/compliance/compliance.module';
 import { CustomerFeedbackModule } from './modules/customer-feedback/customer-feedback.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { DocumentsModule } from './modules/documents/documents.module';
+import { EmployeesModule } from './modules/employees/employees.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { LoanFinanceModule } from './modules/loan-finance/loan-finance.module';
+import { MasterDataModule } from './modules/master-data/master-data.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { PlatformModule } from './modules/platform/platform.module';
-import { ProductsModule } from './modules/products/products.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
 import { ResellersModule } from './modules/resellers/resellers.module';
@@ -44,9 +45,12 @@ import { UsersModule } from './modules/users/users.module';
     UsersModule,
     OrganizationsModule,
     PlatformModule,
+    // Profile modules
     CustomersModule,
     ResellersModule,
-    ProductsModule,
+    EmployeesModule,
+    // Other modules
+    MasterDataModule,
     QuotesModule,
     ProjectsModule,
     InventoryModule,

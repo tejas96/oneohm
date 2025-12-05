@@ -3,7 +3,7 @@ import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 import { QuoteVersionEntity } from './quote-version.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { ProductEntity } from '../../products/entities/product.entity';
+import { ProductEntity } from '../../master-data/entities/product.entity';
 
 /**
  * Quote Line Item Entity
