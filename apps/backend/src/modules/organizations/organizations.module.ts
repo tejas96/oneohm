@@ -10,8 +10,8 @@ import { OrganizationSettingEntity } from './entities/organization-setting.entit
 import { OrganizationEntity } from './entities/organization.entity';
 import { OrganizationSettingRepository } from './repositories/organization-setting.repository';
 import { OrganizationRepository } from './repositories/organization.repository';
-import { OrganizationService } from './services/organization.service';
 import { OrganizationSettingService } from './services/organization-setting.service';
+import { OrganizationService } from './services/organization.service';
 import { IamModule } from '../iam/iam.module';
 import { UsersModule } from '../users/users.module';
 

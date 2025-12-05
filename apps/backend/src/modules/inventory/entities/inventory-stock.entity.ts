@@ -1,8 +1,8 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne, Unique, UpdateDateColumn } from 'typeorm';
 
 import { WarehouseEntity } from './warehouse.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { ProductEntity } from '../../master-data/entities/product.entity';
+import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 
 /**
  * Inventory Stock Entity

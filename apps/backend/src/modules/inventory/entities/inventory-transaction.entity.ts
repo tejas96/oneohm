@@ -2,8 +2,8 @@ import { InventoryTransactionType } from '@oneohm-epc/shared-types';
 import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { WarehouseEntity } from './warehouse.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { ProductEntity } from '../../master-data/entities/product.entity';
+import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**

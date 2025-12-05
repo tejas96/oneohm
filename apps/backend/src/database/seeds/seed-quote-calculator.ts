@@ -1,4 +1,3 @@
-import { DataSource } from 'typeorm';
 import {
   ProductType,
   ProductStatus,
@@ -9,6 +8,7 @@ import {
   SubsidySchemeType,
   PricingRuleType,
 } from '@oneohm-epc/shared-types';
+import { DataSource } from 'typeorm';
 
 /**
  * Seed Quote Calculator Data

@@ -19,9 +19,9 @@
 
 import type { Request } from 'express';
 
+import type { CurrentUserType } from './current-user.type';
 import type { UserEntity } from '../../users/entities/user.entity';
 
-import type { CurrentUserType } from './current-user.type';
 
 /**
  * Request type after LocalAuthGuard

@@ -9,12 +9,12 @@ import {
 } from '@nestjs/common';
 import { UserStatus } from '@oneohm-epc/shared-types';
 
+import { ProfileService } from './profile.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UserEntity } from '../entities/user.entity';
 import { UserRoleRepository } from '../repositories/user-role.repository';
 import { UserRepository } from '../repositories/user.repository';
-import { ProfileService } from './profile.service';
 
 /**
  * User Service
@@ -102,7 +102,10 @@ export class UserService {
         );
       } catch (error) {
         // Log error but don't fail user creation
-        this.logger.error(`Failed to create ${profileType} profile for user ${user.id}: ${error}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          `Failed to create ${profileType} profile for user ${user.id}: ${errorMessage}`,
+        );
         // Re-throw for now - we want the caller to know profile creation failed
         throw error;
       }

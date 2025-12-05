@@ -10,6 +10,11 @@ import {
 import { OrganizationStatus } from '@oneohm-epc/shared-types';
 import { plainToInstance } from 'class-transformer';
 
+import { RoleEntity } from '../../iam/entities/role.entity';
+import { RoleRepository } from '../../iam/repositories/role.repository';
+import { UserRoleRepository } from '../../users/repositories/user-role.repository';
+import { UserRepository } from '../../users/repositories/user.repository';
+import { InvitationService } from '../../users/services/invitation.service';
 import {
   AssignSuperAdminDto,
   CreateOrganizationDto,
@@ -21,11 +26,6 @@ import {
 } from '../dto';
 import { OrganizationEntity } from '../entities/organization.entity';
 import { OrganizationRepository } from '../repositories/organization.repository';
-import { RoleRepository } from '../../iam/repositories/role.repository';
-import { UserRepository } from '../../users/repositories/user.repository';
-import { UserRoleRepository } from '../../users/repositories/user-role.repository';
-import { InvitationService } from '../../users/services/invitation.service';
-import { RoleEntity } from '../../iam/entities/role.entity';
 
 /**
  * Organization Service
@@ -435,7 +435,7 @@ export class OrganizationService {
         organizationId,
         isSystemRole: true,
       });
-      createdRoles.push(role as RoleEntity);
+      createdRoles.push(role);
     }
 
     this.logger.log(`Created ${createdRoles.length} default roles for org ${organizationId}`);

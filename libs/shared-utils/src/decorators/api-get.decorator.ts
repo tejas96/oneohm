@@ -91,7 +91,7 @@ export function ApiGet<TResponse = Record<string, unknown>>(options: {
     /** Description for Swagger */
     description?: string;
     /** Enum values - can pass enum directly (UserStatus) or as array */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     enum?: any;
     /** Example value */
     example?: unknown;

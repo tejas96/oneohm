@@ -61,7 +61,7 @@ export function ApiReadAll<TResponse>(options: {
     /** Description for Swagger */
     description?: string;
     /** Enum values - can pass enum directly (UserStatus) or as array (Object.values(UserStatus)) */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     enum?: any;
     /** Example value */
     example?: unknown;
