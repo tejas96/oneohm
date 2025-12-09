@@ -12,48 +12,74 @@ import { OrganizationEntity } from '../../organizations/entities/organization.en
  * - Max 3KW eligible for subsidy
  * - Requires DCR panels
  * - Tiered rates: 0-2KW @ ₹30,000/KW, 2-3KW @ ₹18,000/KW
+ *
+ * @example
+ * {
+ *   schemeName: "PM Surya Ghar - Residential",
+ *   schemeCode: "PM-SURYA-RES",
+ *   schemeType: "pm_surya_ghar",
+ *   projectType: "residential",
+ *   maxSubsidyKw: 3,
+ *   maxSubsidyAmount: 78000,
+ *   requiresDcr: true,
+ *   tiers: [
+ *     { fromKw: 0, toKw: 2, ratePerKw: 30000 },
+ *     { fromKw: 2, toKw: 3, ratePerKw: 18000 }
+ *   ]
+ * }
  */
 @Entity('subsidy_configurations')
 @Index(['organizationId', 'projectType', 'isActive'])
+// Note: Unique index on (organization_id, scheme_code) is created via migration
+// as a partial index (WHERE scheme_code IS NOT NULL) since scheme_code is nullable
 @Index(['schemeType', 'isActive'])
 export class SubsidyConfiguration extends BaseEntity {
+  // ==================== Foreign Keys ====================
+
   /**
    * Organization this configuration belongs to
    */
   @Column({ type: 'uuid', name: 'organization_id' })
-  organizationId: string;
+  organizationId!: string;
 
-  @ManyToOne(() => OrganizationEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'organization_id' })
-  organization: OrganizationEntity;
+  // ==================== Identity ====================
 
   /**
    * Scheme name for display
    * Example: "PM Surya Ghar", "State Subsidy Maharashtra"
    */
   @Column({ type: 'varchar', length: 100, name: 'scheme_name' })
-  schemeName: string;
+  schemeName!: string;
+
+  /**
+   * Unique scheme code
+   * Example: "PM-SURYA-RES", "MH-STATE-SUBSIDY"
+   */
+  @Column({ type: 'varchar', length: 50, name: 'scheme_code', nullable: true })
+  schemeCode?: string;
 
   /**
    * Type of subsidy scheme
    */
   @Column({
-    type: 'enum',
-    enum: SubsidySchemeType,
+    type: 'varchar',
+    length: 30,
     name: 'scheme_type',
     default: SubsidySchemeType.PM_SURYA_GHAR,
   })
-  schemeType: SubsidySchemeType;
+  schemeType!: SubsidySchemeType;
+
+  // ==================== Eligibility ====================
 
   /**
    * Project type this subsidy applies to
    */
   @Column({
-    type: 'enum',
-    enum: ProjectType,
+    type: 'varchar',
+    length: 30,
     name: 'project_type',
   })
-  projectType: ProjectType;
+  projectType!: ProjectType;
 
   /**
    * Maximum system size (in KW) eligible for subsidy
@@ -65,7 +91,20 @@ export class SubsidyConfiguration extends BaseEntity {
     scale: 2,
     name: 'max_subsidy_kw',
   })
-  maxSubsidyKw: number;
+  maxSubsidyKw!: number;
+
+  /**
+   * Maximum subsidy amount (cap) in INR
+   * Example: 78000 for residential
+   */
+  @Column({
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    name: 'max_subsidy_amount',
+    nullable: true,
+  })
+  maxSubsidyAmount?: number;
 
   /**
    * Whether DCR (Domestic Content Requirement) panels are required
@@ -75,7 +114,7 @@ export class SubsidyConfiguration extends BaseEntity {
     name: 'requires_dcr',
     default: true,
   })
-  requiresDcr: boolean;
+  requiresDcr!: boolean;
 
   /**
    * Whether to automatically split system into DCR + Non-DCR
@@ -88,7 +127,9 @@ export class SubsidyConfiguration extends BaseEntity {
     name: 'auto_split_enabled',
     default: true,
   })
-  autoSplitEnabled: boolean;
+  autoSplitEnabled!: boolean;
+
+  // ==================== Calculation ====================
 
   /**
    * Tiered subsidy rates (JSONB)
@@ -104,7 +145,9 @@ export class SubsidyConfiguration extends BaseEntity {
     name: 'tiers',
     default: '[]',
   })
-  tiers: SubsidyTier[];
+  tiers!: SubsidyTier[];
+
+  // ==================== Status ====================
 
   /**
    * Whether this configuration is currently active
@@ -115,7 +158,9 @@ export class SubsidyConfiguration extends BaseEntity {
     name: 'is_active',
     default: true,
   })
-  isActive: boolean;
+  isActive!: boolean;
+
+  // ==================== Metadata ====================
 
   /**
    * Optional description/notes
@@ -124,7 +169,7 @@ export class SubsidyConfiguration extends BaseEntity {
     type: 'text',
     nullable: true,
   })
-  description: string | null;
+  description?: string;
 
   /**
    * Date from which this configuration is effective
@@ -134,7 +179,7 @@ export class SubsidyConfiguration extends BaseEntity {
     name: 'effective_from',
     nullable: true,
   })
-  effectiveFrom: Date | null;
+  effectiveFrom?: Date;
 
   /**
    * Date until which this configuration is effective
@@ -144,5 +189,15 @@ export class SubsidyConfiguration extends BaseEntity {
     name: 'effective_to',
     nullable: true,
   })
-  effectiveTo: Date | null;
+  effectiveTo?: Date;
+
+  // ==================== Relationships ====================
+
+  /**
+   * Organization relationship
+   * @lazy Load with: .relations(['organization'])
+   */
+  @ManyToOne(() => OrganizationEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'organization_id' })
+  organization?: OrganizationEntity;
 }

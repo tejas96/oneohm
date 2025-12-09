@@ -2,9 +2,7 @@ import {
   ProductStatus,
   ProductType,
   UnitOfMeasure,
-  PhaseType,
-  PanelTechnology,
-  StructureType,
+  ProductSpecifications,
 } from '@oneohm-epc/shared-types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
@@ -13,71 +11,8 @@ import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
-/**
- * Product Specifications Type
- * Strongly typed JSONB structure for different product types
- */
-export interface ProductSpecifications {
-  common?: {
-    wattage?: number;
-    capacity?: number;
-    voltage?: string;
-    efficiency?: number;
-    dimensions?: string;
-    weight?: number;
-    inputVoltage?: string;
-    outputVoltage?: string;
-    phases?: number;
-    mpptChannels?: number;
-    cellType?: string;
-    chemistry?: string;
-    cycleLife?: number;
-    depthOfDischarge?: number;
-  };
-  /**
-   * Solar Panel specific fields
-   */
-  panel?: {
-    /** Whether panel qualifies for DCR subsidy */
-    isDcr: boolean;
-    /** Panel technology (PERC, TOPCon, etc.) */
-    technology: PanelTechnology;
-    /** Nominal wattage */
-    wattage: number;
-    /** Minimum wattage in batch */
-    minWattage: number;
-    /** Maximum wattage in batch */
-    maxWattage: number;
-  };
-  /**
-   * Inverter specific fields
-   */
-  inverter?: {
-    /** Inverter capacity in kW */
-    capacityKw: number;
-    /** Phase type (1-phase or 3-phase) */
-    phaseType: PhaseType;
-    /** Minimum system size this inverter supports */
-    minSystemSizeKw: number;
-    /** Maximum system size this inverter supports */
-    maxSystemSizeKw: number;
-    /** Number of MPPT channels */
-    mpptCount?: number;
-  };
-  /**
-   * Structure specific fields
-   */
-  structure?: {
-    /** Type of mounting structure */
-    structureType: StructureType;
-    /** Material (e.g., aluminum, GI) */
-    material: string;
-    /** Maximum wind speed rating */
-    maxWindSpeedKmh?: number;
-  };
-  /** Additional flexible fields */
-  additional?: Record<string, unknown>;
-}
+// Re-export for backward compatibility
+export type { ProductSpecifications } from '@oneohm-epc/shared-types';
 
 /**
  * Product Entity
@@ -169,18 +104,35 @@ export class ProductEntity extends BaseEntity {
   updatedBy?: string;
 
   // ==================== Relationships ====================
+
+  /**
+   * Organization relationship
+   * @lazy Load with: .relations(['organization'])
+   */
   @ManyToOne(() => OrganizationEntity)
   @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
+  organization?: OrganizationEntity;
 
+  /**
+   * Product category relationship
+   * @lazy Load with: .relations(['category'])
+   */
   @ManyToOne(() => ProductCategoryEntity, { nullable: true })
   @JoinColumn({ name: 'category_id' })
   category?: ProductCategoryEntity;
 
+  /**
+   * Creator user relationship
+   * @lazy Load with: .relations(['creator'])
+   */
   @ManyToOne(() => UserEntity)
   @JoinColumn({ name: 'created_by' })
   creator?: UserEntity;
 
+  /**
+   * Updater user relationship
+   * @lazy Load with: .relations(['updater'])
+   */
   @ManyToOne(() => UserEntity)
   @JoinColumn({ name: 'updated_by' })
   updater?: UserEntity;

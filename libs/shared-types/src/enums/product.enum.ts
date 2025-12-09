@@ -44,6 +44,7 @@ export enum PricingRuleType {
  */
 export enum ProjectType {
   RESIDENTIAL = 'residential',
+  RESIDENTIAL_APARTMENT = 'residential_apartment',
   COMMERCIAL = 'commercial',
   INDUSTRIAL = 'industrial',
   AGRICULTURAL = 'agricultural',
@@ -99,13 +100,24 @@ export enum StructureType {
 /**
  * Installation Component Type Enum
  * Defines different installation cost components
+ *
+ * Note: These are the standard component keys used in InstallationCostComponents JSONB.
+ * Additional custom keys can be added to the JSONB without updating this enum.
  */
 export enum InstallationComponentType {
   ELECTRICAL_WORK = 'electrical_work',
   FIXED_MATERIAL = 'fixed_material',
   VARIABLE_FLOOR = 'variable_floor',
+  STRUCTURE_COST = 'structure_cost',
+  INSTALLATION_LABOR = 'installation_labor',
   MSEDCL_CHARGES = 'msedcl_charges',
+  LOADING_UNLOADING = 'loading_unloading',
   SUPERVISION = 'supervision',
   TRANSPORT = 'transport',
+  CRANE_CHARGES = 'crane_charges',
+  PERMIT_FEES = 'permit_fees',
+  INSURANCE = 'insurance',
+  SAFETY_EQUIPMENT = 'safety_equipment',
+  DOCUMENTATION = 'documentation',
   OTHER = 'other',
 }

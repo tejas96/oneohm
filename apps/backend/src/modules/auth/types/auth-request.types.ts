@@ -22,7 +22,6 @@ import type { Request } from 'express';
 import type { CurrentUserType } from './current-user.type';
 import type { UserEntity } from '../../users/entities/user.entity';
 
-
 /**
  * Request type after LocalAuthGuard
  * LocalStrategy validates email/password and returns full UserEntity

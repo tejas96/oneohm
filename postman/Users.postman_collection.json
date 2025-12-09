@@ -1,0 +1,673 @@
+{
+  "info": {
+    "name": "OneOhm - Users & Employee Onboarding",
+    "_postman_id": "oneohm-users-collection",
+    "description": "User Management & Employee Onboarding API Collection\n\n## Employee Onboarding Flow\n1. Create User (POST /users)\n2. Create Employee Profile (POST /users/:id/profiles)\n3. Assign Specific Roles (optional)\n\n## Profile Types\n- `customer` - Customer profile\n- `employee` - Employee profile  \n- `reseller` - Reseller profile",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8085/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "organizationId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Auth (Get Token First)",
+      "item": [
+        {
+          "name": "Login (Get Access Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', jsonData.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', jsonData.refreshToken);",
+                  "    console.log('✅ Tokens saved successfully');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@oneohm.com\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login to get access token. Tokens are automatically saved to collection variables."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👤 User Management",
+      "item": [
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('userId', jsonData.id);",
+                  "    console.log('✅ User created. ID saved: ' + jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Rahul\",\n  \"lastName\": \"Sharma\",\n  \"email\": \"rahul.sharma@example.com\",\n  \"phone\": \"+919876543210\",\n  \"password\": \"SecurePass123!\",\n  \"status\": \"active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Create a new user (Step 1 of onboarding).\n\n**Required Fields:**\n- `firstName`: User's first name\n- `phone`: Phone number (E.164 format)\n\n**Optional Fields:**\n- `lastName`: User's last name\n- `email`: Email address\n- `password`: Password (required for email login)\n- `status`: active/inactive/suspended\n- `roles`: Array of role codes"
+          },
+          "response": []
+        },
+        {
+          "name": "Create User (Minimal - OTP Only)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('userId', jsonData.id);",
+                  "    console.log('✅ User created. ID saved: ' + jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Priya\",\n  \"phone\": \"+919876543211\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Create a minimal user for OTP-only authentication.\nNo password or email required."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get paginated list of all users.\n\n**Query Parameters:**\n- `page`: Page number (default: 1)\n- `limit`: Items per page (default: 20)\n- `status`: Filter by status (active/inactive/suspended)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            },
+            "description": "Get a specific user by their ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Rahul\",\n  \"lastName\": \"Sharma Updated\",\n  \"email\": \"rahul.updated@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            },
+            "description": "Update user's basic information."
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "status"]
+            },
+            "description": "Update user's status.\n\n**Status Options:**\n- `active`\n- `inactive`\n- `suspended`"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            },
+            "description": "Soft delete a user."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👔 Employee Onboarding",
+      "item": [
+        {
+          "name": "Step 1: Create User for Employee",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('userId', jsonData.id);",
+                  "    console.log('✅ Step 1 Complete - User created: ' + jsonData.id);",
+                  "    console.log('➡️ Now run Step 2: Create Employee Profile');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Amit\",\n  \"lastName\": \"Patel\",\n  \"email\": \"amit.patel@oneohm.com\",\n  \"phone\": \"+919876543212\",\n  \"password\": \"Employee@123\",\n  \"status\": \"active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "**Step 1 of Employee Onboarding**\n\nCreate the base user account for the employee.\nThe userId will be saved automatically for Step 2."
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2: Create Employee Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const jsonData = pm.response.json();",
+                  "    console.log('✅ Step 2 Complete - Employee profile created');",
+                  "    console.log('✅ Role auto-assigned: employee_basic');",
+                  "    console.log('🎉 Employee onboarding complete!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"profileType\": \"employee\",\n  \"profileData\": {\n    \"employeeId\": \"EMP001\",\n    \"designation\": \"Sales Executive\",\n    \"department\": \"Sales\",\n    \"joiningDate\": \"2024-01-15\",\n    \"email\": \"amit.patel@company.com\",\n    \"phone\": \"+919876543212\",\n    \"address\": \"123 Business Park\",\n    \"city\": \"Mumbai\",\n    \"state\": \"Maharashtra\",\n    \"pincode\": \"400001\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/profiles",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "profiles"]
+            },
+            "description": "**Step 2 of Employee Onboarding**\n\nCreate employee profile with organization-specific data.\n\n**Auto-assigns:** `employee_basic` role\n\n**Profile Data Fields:**\n- `employeeId`: Company employee ID\n- `designation`: Job title\n- `department`: Department name\n- `joiningDate`: Date of joining (YYYY-MM-DD)\n- `email`: Work email\n- `phone`: Work phone\n- `address`, `city`, `state`, `pincode`: Work address"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Sales Person Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    console.log('✅ Sales Person profile created');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"profileType\": \"employee\",\n  \"profileData\": {\n    \"employeeId\": \"SALES001\",\n    \"designation\": \"Sales Executive\",\n    \"department\": \"Sales\",\n    \"joiningDate\": \"2024-01-15\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/profiles",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "profiles"]
+            },
+            "description": "Create employee profile for a Sales Person.\nDepartment: Sales"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Field Worker Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"profileType\": \"employee\",\n  \"profileData\": {\n    \"employeeId\": \"FW001\",\n    \"designation\": \"Field Technician\",\n    \"department\": \"Installation\",\n    \"joiningDate\": \"2024-01-20\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/profiles",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "profiles"]
+            },
+            "description": "Create employee profile for a Field Worker.\nDepartment: Installation"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Telecaller Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"profileType\": \"employee\",\n  \"profileData\": {\n    \"employeeId\": \"TC001\",\n    \"designation\": \"Telecaller\",\n    \"department\": \"Telecalling\",\n    \"joiningDate\": \"2024-02-01\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/profiles",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "profiles"]
+            },
+            "description": "Create employee profile for a Telecaller.\nDepartment: Telecalling"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Finance Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"profileType\": \"employee\",\n  \"profileData\": {\n    \"employeeId\": \"FIN001\",\n    \"designation\": \"Finance Executive\",\n    \"department\": \"Finance\",\n    \"joiningDate\": \"2024-02-01\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/profiles",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "profiles"]
+            },
+            "description": "Create employee profile for Finance team member.\nDepartment: Finance"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🛒 Customer Onboarding",
+      "item": [
+        {
+          "name": "Create Customer (Auto-creates User)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const jsonData = pm.response.json();",
+                  "    console.log('✅ Customer created: ' + jsonData.id);",
+                  "    console.log('✅ User auto-created and role assigned');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-organization-id",
+                "value": "{{organizationId}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Rajesh\",\n  \"lastName\": \"Kumar\",\n  \"email\": \"rajesh.kumar@gmail.com\",\n  \"phone\": \"+919876543213\",\n  \"address\": \"456 Residential Colony\",\n  \"city\": \"Delhi\",\n  \"state\": \"Delhi\",\n  \"pincode\": \"110001\",\n  \"propertyType\": \"residential\",\n  \"leadSource\": \"website\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/customers",
+              "host": ["{{baseUrl}}"],
+              "path": ["customers"]
+            },
+            "description": "Create a customer profile.\n\n**Note:** This endpoint automatically:\n1. Creates user if not exists (by phone)\n2. Creates customer profile\n3. Assigns `customer` role"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🏢 Reseller Onboarding",
+      "item": [
+        {
+          "name": "Step 1: Create User for Reseller",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('userId', jsonData.id);",
+                  "    console.log('✅ User created for reseller: ' + jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Vikram\",\n  \"lastName\": \"Singh\",\n  \"email\": \"vikram@solarsolutions.com\",\n  \"phone\": \"+919876543214\",\n  \"password\": \"Reseller@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Create user for reseller onboarding."
+          },
+          "response": []
+        },
+        {
+          "name": "Step 2: Create Reseller Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"profileType\": \"reseller\",\n  \"profileData\": {\n    \"businessName\": \"Solar Solutions Pvt Ltd\",\n    \"gstin\": \"27AABCU9603R1ZM\",\n    \"pan\": \"AABCU9603R\",\n    \"address\": \"789 Business Center\",\n    \"city\": \"Pune\",\n    \"state\": \"Maharashtra\",\n    \"pincode\": \"411001\",\n    \"commissionPercentage\": 5.0\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/profiles",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "profiles"]
+            },
+            "description": "Create reseller profile with business details.\n\n**Auto-assigns:** `reseller` role"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📋 Profile Management",
+      "item": [
+        {
+          "name": "Create Profile (Generic)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationId\": \"{{organizationId}}\",\n  \"profileType\": \"employee\",\n  \"profileData\": {\n    \"employeeId\": \"EMP002\",\n    \"designation\": \"Manager\",\n    \"department\": \"Operations\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/profiles",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "profiles"]
+            },
+            "description": "Create any type of profile for a user.\n\n**Profile Types:**\n- `customer`\n- `employee`\n- `reseller`\n\n**Auto Role Assignment:**\n- customer → `customer` role\n- employee → `employee_basic` role\n- reseller → `reseller` role"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
+

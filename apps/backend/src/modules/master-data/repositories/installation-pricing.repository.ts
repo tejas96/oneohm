@@ -49,7 +49,7 @@ export class InstallationPricingRepository {
       .andWhere('pricing.project_type = :projectType', { projectType })
       .andWhere('pricing.is_active = true')
       .andWhere('pricing.min_system_size_kw <= :size', { size: systemSizeKw })
-      .andWhere('(pricing.max_system_size_kw IS NULL OR pricing.max_system_size_kw > :size)', {
+      .andWhere('(pricing.max_system_size_kw IS NULL OR pricing.max_system_size_kw >= :size)', {
         size: systemSizeKw,
       })
       .andWhere('(pricing.effective_from IS NULL OR pricing.effective_from <= :date)', {

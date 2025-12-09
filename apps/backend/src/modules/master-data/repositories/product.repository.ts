@@ -40,7 +40,7 @@ export class ProductRepository {
     limit = 20,
     filters?: {
       status?: ProductStatus;
-      type?: string;
+      type?: ProductType;
       categoryId?: string;
       brand?: string;
       search?: string;

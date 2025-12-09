@@ -99,26 +99,55 @@
                     <p class="text-xs text-gray-600 mt-1">Based on your consumption pattern</p>
                 </div>
 
-                <!-- Rooftop Area -->
+                <!-- Rooftop Area - Single Input with +/- buttons -->
                 <div>
-                    <label for="rooftopArea" class="block text-sm font-medium text-gray-700 mb-2">
-                        Total Rooftop Area (sq.ft) *
+                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                        Rooftop Area (sq.ft) *
                     </label>
-                    <input type="number" id="rooftopArea" name="rooftopArea" min="100" class="block w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all" placeholder="e.g., 500" required onchange="calculateUsableArea()" />
-                </div>
-
-                <!-- Usable Area (Auto-calculated) -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Usable Rooftop Area (sq.ft)
-                    </label>
-                    <div class="flex items-center space-x-3 px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-2xl">
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                        </svg>
-                        <span class="text-gray-900 font-semibold" id="usableArea">0 sq.ft</span>
-                        <span class="text-xs text-gray-500">(75% of total)</span>
+                    <div class="flex items-center justify-center gap-4">
+                        <!-- Minus Button -->
+                        <button 
+                            type="button" 
+                            onclick="adjustArea(-50)"
+                            class="w-14 h-14 flex items-center justify-center bg-gray-100 hover:bg-gray-200 active:bg-gray-300 border-2 border-gray-200 rounded-2xl transition-all"
+                        >
+                            <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"></path>
+                            </svg>
+                        </button>
+                        
+                        <!-- Area Input -->
+                        <div class="flex-1 max-w-[160px]">
+                            <div class="relative">
+                                <input 
+                                    type="number" 
+                                    id="rooftopArea" 
+                                    name="rooftopArea" 
+                                    min="100" 
+                                    value="500"
+                                    class="block w-full text-center text-2xl font-bold text-gray-900 px-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                                    required 
+                                    onchange="calculateUsableArea()" 
+                                />
+                                <span class="absolute -bottom-5 left-0 right-0 text-center text-xs text-gray-500">sq.ft</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Plus Button -->
+                        <button 
+                            type="button" 
+                            onclick="adjustArea(50)"
+                            class="w-14 h-14 flex items-center justify-center bg-primary/10 hover:bg-primary/20 active:bg-primary/30 border-2 border-primary/30 rounded-2xl transition-all"
+                        >
+                            <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                        </button>
                     </div>
+                    <!-- Usable area hint -->
+                    <p class="text-center text-xs text-gray-500 mt-6">
+                        Usable: <span id="usableArea" class="font-semibold text-primary">375</span> sq.ft (75%)
+                    </p>
                 </div>
 
                 <!-- Consumer Number -->
@@ -200,11 +229,19 @@
             }
         }
 
+        function adjustArea(delta) {
+            const input = document.getElementById('rooftopArea');
+            let currentValue = parseInt(input.value) || 500;
+            currentValue = Math.max(100, currentValue + delta); // Minimum 100 sq.ft
+            input.value = currentValue;
+            calculateUsableArea();
+        }
+
         function calculateUsableArea() {
             const totalArea = parseFloat(document.getElementById('rooftopArea').value);
             if (totalArea && totalArea > 0) {
                 const usableArea = Math.round(totalArea * 0.75);
-                document.getElementById('usableArea').textContent = usableArea + ' sq.ft';
+                document.getElementById('usableArea').textContent = usableArea;
             }
         }
 
@@ -216,7 +253,7 @@
                 monthlyConsumption: document.getElementById('monthlyConsumption').value,
                 recommendedSize: document.getElementById('recommendedSize').textContent,
                 rooftopArea: document.getElementById('rooftopArea').value,
-                usableArea: document.getElementById('usableArea').textContent,
+                usableArea: document.getElementById('usableArea').textContent + ' sq.ft',
                 consumerNumber: document.getElementById('consumerNumber').value,
                 division: document.getElementById('division').value,
                 floors: document.getElementById('floors').value
@@ -238,12 +275,13 @@
                 }
                 if (data.rooftopArea) {
                     document.getElementById('rooftopArea').value = data.rooftopArea;
-                    calculateUsableArea();
                 }
                 if (data.consumerNumber) document.getElementById('consumerNumber').value = data.consumerNumber;
                 if (data.division) document.getElementById('division').value = data.division;
                 if (data.floors) document.getElementById('floors').value = data.floors;
             }
+            // Always calculate usable area on load
+            calculateUsableArea();
         });
     </script>
 </body>

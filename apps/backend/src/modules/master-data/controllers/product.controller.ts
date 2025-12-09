@@ -12,7 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { type PaginatedResponse, ProductStatus } from '@oneohm-epc/shared-types';
+import { type PaginatedResponse, ProductStatus, ProductType } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
   ApiCreate,
@@ -101,7 +101,7 @@ export class ProductController {
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
     @Query('status') status?: ProductStatus,
-    @Query('type') type?: string,
+    @Query('type') type?: ProductType,
     @Query('categoryId') categoryId?: string,
     @Query('brand') brand?: string,
     @Query('search') search?: string,

@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Technical Assessment | OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        'primary-dark': '#5ea031',
+                        secondary: '#0d74b8',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        * { -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #f8fdf5 100%);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+        }
+        .input-focus:focus { box-shadow: 0 0 0 3px rgba(13, 116, 184, 0.15); }
+        .btn-gradient {
+            background: linear-gradient(135deg, #0d74b8 0%, #025580 50%, #76c044 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 3s ease infinite;
+        }
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .input-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+            text-transform: uppercase;
+        }
+        .option-card {
+            transition: all 0.2s ease;
+        }
+        .option-card.selected {
+            border-color: #0d74b8;
+            background: rgba(13, 116, 184, 0.05);
+        }
+        .option-card.selected .option-dot {
+            background: #0d74b8;
+            border-color: #0d74b8;
+        }
+        .brand-chip.selected {
+            background: rgba(13, 116, 184, 0.1);
+            border-color: #0d74b8;
+            color: #0d74b8;
+        }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="max-w-md mx-auto min-h-screen flex flex-col">
+        
+        <!-- Header -->
+        <header class="sticky top-0 z-50 px-4 pt-4">
+            <div class="glass-card rounded-2xl px-4 py-3 flex items-center justify-between shadow-lg">
+                <button onclick="history.back()" class="p-2 -ml-2 rounded-xl hover:bg-gray-100 transition-colors">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                
+                <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-2.5 h-2.5 rounded-full bg-secondary"></div>
+                        <div class="w-2 h-2 rounded-full bg-gray-300"></div>
+                    </div>
+                    <span class="text-xs font-medium text-gray-500 ml-2">Part 2 of 2</span>
+                </div>
+                
+                <span class="px-2 py-1 bg-secondary/10 text-secondary text-xs font-semibold rounded-full">Technical</span>
+            </div>
+        </header>
+
+        <!-- Lead Info Banner -->
+        <div class="mx-4 mt-4 p-3 bg-white rounded-xl border border-gray-100 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                <span id="avatarInitials" class="text-white font-bold text-sm">SP</span>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p id="leadName" class="font-semibold text-gray-900 truncate">Sanjay Patil</p>
+                <p id="leadLocation" class="text-xs text-gray-500 truncate">Sangli, Maharashtra</p>
+            </div>
+            <div id="propertyBadge" class="px-2 py-1 bg-primary/10 text-primary text-xs font-semibold rounded-full">
+                Residential
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="flex-1 px-6 py-6 fade-in overflow-y-auto">
+            
+            <!-- Title -->
+            <div class="mb-6">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary/10 rounded-full mb-4">
+                    <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <span class="text-xs font-semibold text-secondary uppercase tracking-wide">Field Worker Only</span>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900 mb-1">Technical Assessment</h1>
+                <p class="text-gray-500 text-sm">Site-specific details for accurate quote</p>
+            </div>
+
+            <!-- Form -->
+            <form id="technicalForm" class="space-y-6">
+                
+                <!-- System Size -->
+                <div class="space-y-3">
+                    <label class="input-label text-gray-600">System Size (KW) <span class="text-red-500">*</span></label>
+                    <div class="bg-white border-2 border-gray-100 rounded-2xl p-4">
+                        <div class="flex items-center justify-between">
+                            <button type="button" onclick="adjustSize(-1)" class="w-12 h-12 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"/>
+                                </svg>
+                            </button>
+                            <div class="text-center">
+                                <input 
+                                    type="number" 
+                                    id="systemSize"
+                                    name="systemSize"
+                                    value="5"
+                                    min="1"
+                                    max="100"
+                                    required
+                                    class="w-16 text-4xl font-bold text-secondary text-center bg-transparent focus:outline-none"
+                                />
+                                <span class="text-sm text-gray-500 block">KW</span>
+                            </div>
+                            <button type="button" onclick="adjustSize(1)" class="w-12 h-12 rounded-xl bg-secondary/10 hover:bg-secondary/20 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <!-- Quick Select -->
+                        <div class="flex gap-2 mt-4 overflow-x-auto pb-1 scrollbar-hide">
+                            <button type="button" onclick="setSize(3)" class="size-btn flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-gray-100 rounded-full transition-colors">3 KW</button>
+                            <button type="button" onclick="setSize(5)" class="size-btn flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-secondary/10 text-secondary rounded-full">5 KW</button>
+                            <button type="button" onclick="setSize(7)" class="size-btn flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-gray-100 rounded-full transition-colors">7 KW</button>
+                            <button type="button" onclick="setSize(10)" class="size-btn flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-gray-100 rounded-full transition-colors">10 KW</button>
+                            <button type="button" onclick="setSize(15)" class="size-btn flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-gray-100 rounded-full transition-colors">15 KW</button>
+                            <button type="button" onclick="setSize(20)" class="size-btn flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-gray-100 rounded-full transition-colors">20 KW</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase Type -->
+                <div class="space-y-3">
+                    <label class="input-label text-gray-600">Phase Type <span class="text-red-500">*</span></label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="option-card selected p-4 border-2 border-gray-200 rounded-2xl cursor-pointer" data-value="single_phase">
+                            <input type="radio" name="phaseType" value="single_phase" class="sr-only" checked />
+                            <div class="flex items-center gap-3">
+                                <div class="option-dot w-5 h-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                                    <div class="w-2.5 h-2.5 rounded-full bg-white"></div>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-gray-900">Single Phase</p>
+                                    <p class="text-xs text-gray-500">Up to 10 KW</p>
+                                </div>
+                            </div>
+                        </label>
+                        <label class="option-card p-4 border-2 border-gray-200 rounded-2xl cursor-pointer" data-value="three_phase">
+                            <input type="radio" name="phaseType" value="three_phase" class="sr-only" />
+                            <div class="flex items-center gap-3">
+                                <div class="option-dot w-5 h-5 rounded-full border-2 border-gray-300"></div>
+                                <div>
+                                    <p class="font-semibold text-gray-900">Three Phase</p>
+                                    <p class="text-xs text-gray-500">10+ KW</p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- DCR Preference -->
+                <div class="space-y-3">
+                    <label class="input-label text-gray-600">DCR Preference <span class="text-red-500">*</span></label>
+                    <div class="space-y-2">
+                        <label class="option-card selected flex items-center gap-3 p-4 border-2 border-gray-200 rounded-2xl cursor-pointer" data-value="auto_split">
+                            <input type="radio" name="dcrPreference" value="auto_split" class="sr-only" checked />
+                            <div class="option-dot w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0"></div>
+                            <div class="flex-1">
+                                <p class="font-semibold text-gray-900">Auto Split</p>
+                                <p class="text-xs text-gray-500">Optimal DCR/Non-DCR combination</p>
+                            </div>
+                            <span class="px-2 py-0.5 bg-primary/10 text-primary text-xs font-semibold rounded-full">Recommended</span>
+                        </label>
+                        <label class="option-card flex items-center gap-3 p-4 border-2 border-gray-200 rounded-2xl cursor-pointer" data-value="dcr_only">
+                            <input type="radio" name="dcrPreference" value="dcr_only" class="sr-only" />
+                            <div class="option-dot w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0"></div>
+                            <div class="flex-1">
+                                <p class="font-semibold text-gray-900">DCR Only</p>
+                                <p class="text-xs text-gray-500">100% domestic content (subsidy eligible)</p>
+                            </div>
+                        </label>
+                        <label class="option-card flex items-center gap-3 p-4 border-2 border-gray-200 rounded-2xl cursor-pointer" data-value="non_dcr_only">
+                            <input type="radio" name="dcrPreference" value="non_dcr_only" class="sr-only" />
+                            <div class="option-dot w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0"></div>
+                            <div class="flex-1">
+                                <p class="font-semibold text-gray-900">Non-DCR Only</p>
+                                <p class="text-xs text-gray-500">Imported panels (no subsidy)</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Panel Brand -->
+                <div class="space-y-3">
+                    <label class="input-label text-gray-600">Panel Brand <span class="text-red-500">*</span></label>
+                    <div class="flex gap-2 flex-wrap">
+                        <button type="button" onclick="selectBrand('panel', 'Adani')" class="brand-chip panel-brand selected px-4 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 transition-colors">Adani</button>
+                        <button type="button" onclick="selectBrand('panel', 'Waaree')" class="brand-chip panel-brand px-4 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 transition-colors">Waaree</button>
+                        <button type="button" onclick="selectBrand('panel', 'Premier')" class="brand-chip panel-brand px-4 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 transition-colors">Premier</button>
+                        <button type="button" onclick="selectBrand('panel', 'Vikram')" class="brand-chip panel-brand px-4 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 transition-colors">Vikram</button>
+                        <button type="button" onclick="selectBrand('panel', 'Navitas')" class="brand-chip panel-brand px-4 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 transition-colors">Navitas</button>
+                    </div>
+                    <input type="hidden" id="panelBrand" name="panelBrand" value="Adani" />
+                </div>
+
+                <!-- Inverter Brand -->
+                <div class="space-y-3">
+                    <label class="input-label text-gray-600">Inverter Brand <span class="text-red-500">*</span></label>
+                    <div class="flex gap-2 flex-wrap">
+                        <button type="button" onclick="selectBrand('inverter', 'Sungrow')" class="brand-chip inverter-brand selected px-4 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 transition-colors">Sungrow</button>
+                        <button type="button" onclick="selectBrand('inverter', 'Goodwe')" class="brand-chip inverter-brand px-4 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 transition-colors">Goodwe</button>
+                        <button type="button" onclick="selectBrand('inverter', 'SolarEdge')" class="brand-chip inverter-brand px-4 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 transition-colors">SolarEdge</button>
+                    </div>
+                    <input type="hidden" id="inverterBrand" name="inverterBrand" value="Sungrow" />
+                </div>
+
+                <!-- Structure Type -->
+                <div class="space-y-3">
+                    <label class="input-label text-gray-600">Structure Type <span class="text-red-500">*</span></label>
+                    <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                        <label class="option-card selected flex-shrink-0 px-4 py-3 border-2 border-gray-200 rounded-xl cursor-pointer" data-value="aluminum_rail">
+                            <input type="radio" name="structureType" value="aluminum_rail" class="sr-only" checked />
+                            <span class="text-sm font-medium text-gray-700">Aluminum Rail</span>
+                        </label>
+                        <label class="option-card flex-shrink-0 px-4 py-3 border-2 border-gray-200 rounded-xl cursor-pointer" data-value="galvanized_iron">
+                            <input type="radio" name="structureType" value="galvanized_iron" class="sr-only" />
+                            <span class="text-sm font-medium text-gray-700">GI Structure</span>
+                        </label>
+                        <label class="option-card flex-shrink-0 px-4 py-3 border-2 border-gray-200 rounded-xl cursor-pointer" data-value="elevated">
+                            <input type="radio" name="structureType" value="elevated" class="sr-only" />
+                            <span class="text-sm font-medium text-gray-700">Elevated</span>
+                        </label>
+                        <label class="option-card flex-shrink-0 px-4 py-3 border-2 border-gray-200 rounded-xl cursor-pointer" data-value="tin_shed">
+                            <input type="radio" name="structureType" value="tin_shed" class="sr-only" />
+                            <span class="text-sm font-medium text-gray-700">Tin Shed</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Floor Number -->
+                <div class="space-y-2">
+                    <label class="input-label text-gray-600">Installation Floor</label>
+                    <div class="bg-white border-2 border-gray-100 rounded-xl p-3">
+                        <div class="flex items-center justify-between">
+                            <button type="button" onclick="adjustFloor(-1)" class="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"/>
+                                </svg>
+                            </button>
+                            <div class="text-center">
+                                <input 
+                                    type="number" 
+                                    id="floorNumber"
+                                    name="floorNumber"
+                                    value="0"
+                                    min="0"
+                                    max="10"
+                                    class="w-12 text-2xl font-bold text-secondary text-center bg-transparent focus:outline-none"
+                                    onchange="onFloorChange(this.value)"
+                                />
+                                <span class="text-xs text-gray-500 block">Floor</span>
+                            </div>
+                            <button type="button" onclick="adjustFloor(1)" class="w-10 h-10 rounded-lg bg-secondary/10 hover:bg-secondary/20 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <!-- Cost Display -->
+                        <div class="mt-2 pt-2 border-t border-gray-100 text-center">
+                            <span class="text-xs text-gray-500">Extra: </span>
+                            <span class="text-sm font-semibold" id="floorCost">₹0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subsidy -->
+                <div class="space-y-3">
+                    <label class="input-label text-gray-600">Subsidy Applicable</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="option-card selected p-4 border-2 border-gray-200 rounded-2xl cursor-pointer" data-value="yes">
+                            <input type="radio" name="subsidy" value="yes" class="sr-only" checked />
+                            <div class="text-center">
+                                <div class="w-10 h-10 mx-auto mb-2 rounded-xl bg-green-100 flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                </div>
+                                <p class="font-semibold text-gray-900">Yes</p>
+                                <p class="text-xs text-gray-500">PM Surya Ghar</p>
+                            </div>
+                        </label>
+                        <label class="option-card p-4 border-2 border-gray-200 rounded-2xl cursor-pointer" data-value="no">
+                            <input type="radio" name="subsidy" value="no" class="sr-only" />
+                            <div class="text-center">
+                                <div class="w-10 h-10 mx-auto mb-2 rounded-xl bg-gray-100 flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </div>
+                                <p class="font-semibold text-gray-900">No</p>
+                                <p class="text-xs text-gray-500">Not applicable</p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Distance -->
+                <div class="space-y-2">
+                    <label class="input-label text-gray-600">Distance from Warehouse</label>
+                    <div class="bg-white border-2 border-gray-100 rounded-xl p-3">
+                        <div class="flex items-center justify-between">
+                            <button type="button" onclick="adjustDistance(-10)" class="w-10 h-10 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"/>
+                                </svg>
+                            </button>
+                            <div class="text-center">
+                                <input 
+                                    type="number" 
+                                    id="distance"
+                                    name="distance"
+                                    value="30"
+                                    min="0"
+                                    max="500"
+                                    class="w-14 text-2xl font-bold text-secondary text-center bg-transparent focus:outline-none"
+                                    onchange="onDistanceChange(this.value)"
+                                />
+                                <span class="text-xs text-gray-500 block">KM</span>
+                            </div>
+                            <button type="button" onclick="adjustDistance(10)" class="w-10 h-10 rounded-lg bg-secondary/10 hover:bg-secondary/20 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <!-- Cost Display -->
+                        <div class="mt-2 pt-2 border-t border-gray-100 text-center">
+                            <span class="text-xs text-gray-500">Transport: </span>
+                            <span class="text-sm font-semibold" id="distanceCost">₹600</span>
+                        </div>
+                    </div>
+                </div>
+
+            </form>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="sticky bottom-0 p-4 pb-8 bg-gradient-to-t from-white via-white">
+            <button 
+                onclick="handleGenerateQuote()"
+                class="btn-gradient w-full py-4 px-6 rounded-2xl text-white font-semibold text-lg shadow-xl shadow-secondary/25 flex items-center justify-center gap-2"
+            >
+                <span>Generate Quote</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+            </button>
+        </footer>
+
+    </div>
+
+    <script>
+        let selectedFloor = 0;
+        let selectedPanelBrand = 'Adani';
+        let selectedInverterBrand = 'Sungrow';
+
+        // Load lead data
+        function loadLeadData() {
+            const lead = JSON.parse(localStorage.getItem('createdLead') || '{}');
+            if (lead.fullName) {
+                document.getElementById('leadName').textContent = lead.fullName;
+                const initials = lead.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                document.getElementById('avatarInitials').textContent = initials;
+            }
+            if (lead.city || lead.state) {
+                document.getElementById('leadLocation').textContent = [lead.city, lead.state].filter(Boolean).join(', ');
+            }
+            if (lead.propertyType) {
+                const labels = {
+                    residential: 'Residential',
+                    apartment: 'Apartment',
+                    commercial: 'Commercial',
+                    industrial: 'Industrial',
+                    agricultural: 'Agricultural'
+                };
+                document.getElementById('propertyBadge').textContent = labels[lead.propertyType] || lead.propertyType;
+            }
+            
+            // Auto-suggest system size based on requirements
+            const bill = parseInt(lead.monthlyBill) || 0;
+            const area = parseInt(lead.roofArea) || 0;
+            if (bill || area) {
+                const sizeByBill = bill / 1000;
+                const sizeByArea = area / 100;
+                const size = Math.max(1, Math.round(Math.min(sizeByBill || 999, sizeByArea || 999)));
+                document.getElementById('systemSize').value = size;
+                updatePhaseBySize(size);
+                updateSizeButtons(size);
+            }
+        }
+
+        function adjustSize(delta) {
+            const input = document.getElementById('systemSize');
+            let value = parseInt(input.value) || 5;
+            value = Math.max(1, Math.min(100, value + delta));
+            input.value = value;
+            updatePhaseBySize(value);
+            updateSizeButtons(value);
+        }
+
+        function setSize(value) {
+            document.getElementById('systemSize').value = value;
+            updatePhaseBySize(value);
+            updateSizeButtons(value);
+        }
+
+        function updateSizeButtons(size) {
+            document.querySelectorAll('.size-btn').forEach(btn => {
+                const btnSize = parseInt(btn.textContent);
+                if (btnSize === size) {
+                    btn.classList.add('bg-secondary/10', 'text-secondary');
+                    btn.classList.remove('bg-gray-100');
+                } else {
+                    btn.classList.remove('bg-secondary/10', 'text-secondary');
+                    btn.classList.add('bg-gray-100');
+                }
+            });
+        }
+
+        function updatePhaseBySize(size) {
+            const singlePhaseCard = document.querySelector('.option-card[data-value="single_phase"]');
+            const threePhaseCard = document.querySelector('.option-card[data-value="three_phase"]');
+            
+            if (size > 10) {
+                document.querySelector('input[value="three_phase"]').checked = true;
+                threePhaseCard.classList.add('selected');
+                singlePhaseCard.classList.remove('selected');
+            } else {
+                document.querySelector('input[value="single_phase"]').checked = true;
+                singlePhaseCard.classList.add('selected');
+                threePhaseCard.classList.remove('selected');
+            }
+        }
+
+        function selectBrand(type, brand) {
+            const chips = document.querySelectorAll(`.${type}-brand`);
+            chips.forEach(chip => chip.classList.remove('selected'));
+            event.target.classList.add('selected');
+            
+            if (type === 'panel') {
+                selectedPanelBrand = brand;
+                document.getElementById('panelBrand').value = brand;
+            } else {
+                selectedInverterBrand = brand;
+                document.getElementById('inverterBrand').value = brand;
+            }
+        }
+
+        const FLOOR_COST = 1500; // ₹ per floor
+        const DISTANCE_COST = 20; // ₹ per km
+
+        function adjustFloor(delta) {
+            selectedFloor = Math.max(0, Math.min(10, selectedFloor + delta));
+            document.getElementById('floorNumber').value = selectedFloor;
+            updateFloorCost();
+        }
+
+        function onFloorChange(value) {
+            selectedFloor = Math.max(0, Math.min(10, parseInt(value) || 0));
+            document.getElementById('floorNumber').value = selectedFloor;
+            updateFloorCost();
+        }
+
+        function updateFloorCost() {
+            const cost = selectedFloor * FLOOR_COST;
+            const costEl = document.getElementById('floorCost');
+            if (cost === 0) {
+                costEl.textContent = '₹0';
+                costEl.className = 'text-sm font-semibold text-green-600';
+            } else {
+                costEl.textContent = '+₹' + cost.toLocaleString('en-IN');
+                costEl.className = 'text-sm font-semibold text-orange-500';
+            }
+        }
+
+        function adjustDistance(delta) {
+            const input = document.getElementById('distance');
+            let value = parseInt(input.value) || 30;
+            value = Math.max(0, Math.min(500, value + delta));
+            input.value = value;
+            updateDistanceCost();
+        }
+
+        function onDistanceChange(value) {
+            const input = document.getElementById('distance');
+            const val = Math.max(0, Math.min(500, parseInt(value) || 0));
+            input.value = val;
+            updateDistanceCost();
+        }
+
+        function updateDistanceCost() {
+            const distance = parseInt(document.getElementById('distance').value) || 0;
+            const cost = distance * DISTANCE_COST;
+            document.getElementById('distanceCost').textContent = '₹' + cost.toLocaleString('en-IN');
+        }
+
+        // Option card selection
+        document.querySelectorAll('.option-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const input = this.querySelector('input');
+                if (input) {
+                    const name = input.name;
+                    document.querySelectorAll(`input[name="${name}"]`).forEach(inp => {
+                        inp.closest('.option-card')?.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+                    input.checked = true;
+                }
+            });
+        });
+
+        function handleGenerateQuote() {
+            // Validate required fields
+            const systemSize = document.getElementById('systemSize').value;
+            if (!systemSize || systemSize < 1) {
+                alert('Please enter a valid system size');
+                return;
+            }
+
+            // Collect form data
+            const formData = {
+                systemSizeKw: parseInt(systemSize),
+                phaseType: document.querySelector('input[name="phaseType"]:checked')?.value,
+                dcrPreference: document.querySelector('input[name="dcrPreference"]:checked')?.value,
+                preferredPanelBrand: document.getElementById('panelBrand').value,
+                preferredInverterBrand: document.getElementById('inverterBrand').value,
+                structureType: document.querySelector('input[name="structureType"]:checked')?.value,
+                floorNumber: parseInt(document.getElementById('floorNumber').value),
+                subsidyApplicable: document.querySelector('input[name="subsidy"]:checked')?.value === 'yes',
+                distanceKm: parseInt(document.getElementById('distance').value) || 30
+            };
+            
+            // Save technical data
+            localStorage.setItem('leadData_technical', JSON.stringify(formData));
+            
+            // Navigate to quote review/generation
+            window.location.href = 'part2-quote-review.html';
+        }
+
+        window.addEventListener('load', () => {
+            loadLeadData();
+            updateFloorCost();
+            updateDistanceCost();
+        });
+    </script>
+</body>
+</html>

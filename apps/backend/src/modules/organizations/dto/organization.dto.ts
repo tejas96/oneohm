@@ -252,6 +252,21 @@ export class CreateOrganizationDto {
   @IsPhoneNumber()
   @IsOptional()
   superAdminPhone?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Initial password for super admin (optional). If not provided, super admin will set password via invitation link.',
+    example: 'SecurePassword123!',
+  })
+  @IsOptional()
+  @IsString()
+  @MinLength(8)
+  @MaxLength(50)
+  // @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+  //   message:
+  //     'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+  // })
+  superAdminPassword?: string;
 }
 
 /**

@@ -23,15 +23,15 @@ import { OrganizationEntity } from '../../organizations/entities/organization.en
 @Entity('quote_configurations')
 @Index(['organizationId', 'isActive'], { unique: true, where: '"is_active" = true' })
 export class QuoteConfiguration extends BaseEntity {
+  // ==================== Foreign Keys ====================
+
   /**
    * Organization this configuration belongs to
    */
   @Column({ type: 'uuid', name: 'organization_id' })
-  organizationId: string;
+  organizationId!: string;
 
-  @ManyToOne(() => OrganizationEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'organization_id' })
-  organization: OrganizationEntity;
+  // ==================== Quote Settings ====================
 
   /**
    * Default quote validity in days (default: 30)
@@ -41,7 +41,7 @@ export class QuoteConfiguration extends BaseEntity {
     name: 'default_validity_days',
     default: 30,
   })
-  defaultValidityDays: number;
+  defaultValidityDays!: number;
 
   /**
    * Maximum allowed versions per quote (default: 3)
@@ -51,7 +51,7 @@ export class QuoteConfiguration extends BaseEntity {
     name: 'max_versions',
     default: 3,
   })
-  maxVersions: number;
+  maxVersions!: number;
 
   /**
    * Default project completion weeks
@@ -61,7 +61,9 @@ export class QuoteConfiguration extends BaseEntity {
     name: 'default_completion_weeks',
     default: 4,
   })
-  defaultCompletionWeeks: number;
+  defaultCompletionWeeks!: number;
+
+  // ==================== GST Configuration ====================
 
   /**
    * GST Configuration (JSONB)
@@ -81,7 +83,9 @@ export class QuoteConfiguration extends BaseEntity {
     name: 'gst_config',
     default: '{"rate1": 12, "rate1Percentage": 70, "rate2": 18, "rate2Percentage": 30}',
   })
-  gstConfig: GstConfig;
+  gstConfig!: GstConfig;
+
+  // ==================== Wattage Rounding ====================
 
   /**
    * Wattage Rounding Configuration (JSONB)
@@ -100,7 +104,9 @@ export class QuoteConfiguration extends BaseEntity {
     name: 'wattage_rounding',
     default: '{"roundTo": 10, "roundUpThreshold": 5}',
   })
-  wattageRounding: WattageRoundingConfig;
+  wattageRounding!: WattageRoundingConfig;
+
+  // ==================== Payment Configuration ====================
 
   /**
    * Default Payment Milestones (JSONB)
@@ -119,7 +125,9 @@ export class QuoteConfiguration extends BaseEntity {
     default:
       '[{"stage":"advance","name":"Advance","percentage":40,"order":1},{"stage":"material_delivery","name":"Material Delivery","percentage":30,"order":2},{"stage":"installation_complete","name":"Installation Complete","percentage":20,"order":3},{"stage":"commissioning","name":"Commissioning","percentage":10,"order":4}]',
   })
-  paymentMilestones: PaymentMilestoneConfig[];
+  paymentMilestones!: PaymentMilestoneConfig[];
+
+  // ==================== UI Settings ====================
 
   /**
    * Whether to show real-time inventory stock in quote UI
@@ -129,7 +137,9 @@ export class QuoteConfiguration extends BaseEntity {
     name: 'show_inventory_stock',
     default: true,
   })
-  showInventoryStock: boolean;
+  showInventoryStock!: boolean;
+
+  // ==================== Validation ====================
 
   /**
    * Minimum profit margin percentage (optional)
@@ -142,7 +152,9 @@ export class QuoteConfiguration extends BaseEntity {
     name: 'min_profit_margin_percent',
     nullable: true,
   })
-  minProfitMarginPercent: number | null;
+  minProfitMarginPercent?: number;
+
+  // ==================== Status ====================
 
   /**
    * Whether this configuration is currently active
@@ -152,7 +164,9 @@ export class QuoteConfiguration extends BaseEntity {
     name: 'is_active',
     default: true,
   })
-  isActive: boolean;
+  isActive!: boolean;
+
+  // ==================== Metadata ====================
 
   /**
    * Optional notes
@@ -161,5 +175,15 @@ export class QuoteConfiguration extends BaseEntity {
     type: 'text',
     nullable: true,
   })
-  notes: string | null;
+  notes?: string;
+
+  // ==================== Relationships ====================
+
+  /**
+   * Organization relationship
+   * @lazy Load with: .relations(['organization'])
+   */
+  @ManyToOne(() => OrganizationEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'organization_id' })
+  organization?: OrganizationEntity;
 }

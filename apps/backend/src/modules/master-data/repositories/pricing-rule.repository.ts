@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { ProductType, ProjectType, PricingRuleType } from '@oneohm-epc/shared-types';
+import { IsNull, Repository, LessThanOrEqual, MoreThanOrEqual, Or } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { PricingRuleEntity } from '../entities/pricing-rule.entity';
@@ -19,6 +20,7 @@ export class PricingRuleRepository {
   /**
    * Find active pricing rule for a product
    * Returns the highest priority active rule
+   * @deprecated Use findByProductIdWithContext for proper project type and date filtering
    */
   async findByProductId(
     organizationId: string,
@@ -33,6 +35,47 @@ export class PricingRuleRepository {
       },
       order: { priority: 'DESC' },
     });
+  }
+
+  /**
+   * Find active pricing rule for a product with full context
+   * Considers project type and effective dates
+   * Returns the highest priority matching rule
+   */
+  async findByProductIdWithContext(
+    organizationId: string,
+    productId: string,
+    projectType?: ProjectType,
+    asOfDate?: Date,
+  ): Promise<PricingRuleEntity | null> {
+    const date = asOfDate || new Date();
+    const dateStr = date.toISOString().split('T')[0];
+
+    const query = this.repository
+      .createQueryBuilder('rule')
+      .where('rule.organization_id = :organizationId', { organizationId })
+      .andWhere('rule.product_id = :productId', { productId })
+      .andWhere('rule.is_active = true')
+      .andWhere('rule.deleted_at IS NULL')
+      .andWhere('rule.effective_from <= :date', { date: dateStr })
+      .andWhere('(rule.effective_to IS NULL OR rule.effective_to >= :date)', { date: dateStr });
+
+    // If project type specified, prefer matching rule, but fallback to null project type
+    if (projectType) {
+      query.andWhere('(rule.project_type = :projectType OR rule.project_type IS NULL)', {
+        projectType,
+      });
+      // Order: matching project type first, then by priority
+      query.orderBy(
+        `CASE WHEN rule.project_type = '${projectType}' THEN 0 ELSE 1 END`,
+        'ASC',
+      );
+      query.addOrderBy('rule.priority', 'DESC');
+    } else {
+      query.orderBy('rule.priority', 'DESC');
+    }
+
+    return query.getOne();
   }
 
   /**
@@ -57,7 +100,7 @@ export class PricingRuleRepository {
    */
   async findByProductType(
     organizationId: string,
-    productType: string,
+    productType: ProductType,
   ): Promise<PricingRuleEntity[]> {
     return this.repository.find({
       where: {
@@ -68,6 +111,63 @@ export class PricingRuleRepository {
       },
       order: { priority: 'DESC' },
     });
+  }
+
+  /**
+   * Find pricing rules by product type and project type
+   * Used for quote calculation with project context
+   */
+  async findByProductAndProjectType(
+    organizationId: string,
+    productType: ProductType,
+    projectType: ProjectType,
+    asOfDate?: Date,
+  ): Promise<PricingRuleEntity[]> {
+    const date = asOfDate || new Date();
+
+    return this.repository
+      .createQueryBuilder('rule')
+      .where('rule.organization_id = :organizationId', { organizationId })
+      .andWhere('rule.product_type = :productType', { productType })
+      .andWhere('rule.project_type = :projectType', { projectType })
+      .andWhere('rule.is_active = true')
+      .andWhere('rule.deleted_at IS NULL')
+      .andWhere('rule.effective_from <= :date', { date })
+      .andWhere('(rule.effective_to IS NULL OR rule.effective_to >= :date)', { date })
+      .orderBy('rule.priority', 'DESC')
+      .getMany();
+  }
+
+  /**
+   * Find all active pricing rules for an organization
+   */
+  async findAllActive(
+    organizationId: string,
+    filters?: {
+      productType?: ProductType;
+      projectType?: ProjectType;
+      ruleType?: PricingRuleType;
+    },
+  ): Promise<PricingRuleEntity[]> {
+    const query = this.repository
+      .createQueryBuilder('rule')
+      .where('rule.organization_id = :organizationId', { organizationId })
+      .andWhere('rule.is_active = true')
+      .andWhere('rule.deleted_at IS NULL');
+
+    if (filters?.productType) {
+      query.andWhere('rule.product_type = :productType', { productType: filters.productType });
+    }
+
+    if (filters?.projectType) {
+      query.andWhere('rule.project_type = :projectType', { projectType: filters.projectType });
+    }
+
+    if (filters?.ruleType) {
+      query.andWhere('rule.rule_type = :ruleType', { ruleType: filters.ruleType });
+    }
+
+    return query.orderBy('rule.priority', 'DESC').getMany();
   }
 
   /**

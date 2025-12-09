@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Your Profile - OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        secondary: '#0d74b8',
+                        tagline: '#025580',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .avatar-upload:hover .avatar-overlay { opacity: 1; }
+        .avatar-overlay { transition: opacity 0.2s ease; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl">
+        
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-primary via-green-500 to-secondary px-6 py-6 pt-12">
+            <!-- Progress Bar -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between text-white/70 text-xs mb-2">
+                    <span>Profile Completion</span>
+                    <span id="progressText">0%</span>
+                </div>
+                <div class="w-full bg-white/20 rounded-full h-2">
+                    <div id="progressBar" class="bg-white rounded-full h-2 transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Welcome Message -->
+            <div class="text-center">
+                <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold text-white mb-2">Welcome to OneOhm!</h1>
+                <p class="text-green-100">Complete your profile to get started</p>
+            </div>
+        </div>
+
+        <!-- Form Container -->
+        <div class="px-6 py-8">
+            <form id="profileForm" class="space-y-6">
+                
+                <!-- Section: Profile Photo -->
+                <div class="text-center mb-8">
+                    <label class="block text-sm font-semibold text-gray-700 mb-4">Profile Photo</label>
+                    <div class="relative inline-block avatar-upload cursor-pointer" onclick="document.getElementById('avatarInput').click()">
+                        <div id="avatarPreview" class="w-28 h-28 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
+                            <span id="avatarInitials" class="text-3xl font-bold text-gray-400">AK</span>
+                            <img id="avatarImage" src="" class="w-full h-full object-cover hidden" />
+                        </div>
+                        <div class="avatar-overlay absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-lg">
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <input type="file" id="avatarInput" accept="image/*" class="hidden" onchange="handleAvatarChange(event)" />
+                    <p class="text-xs text-gray-500 mt-3">Tap to upload your photo</p>
+                </div>
+
+                <!-- Section: Personal Information -->
+                <div class="bg-gray-50 rounded-2xl p-5">
+                    <h3 class="font-bold text-gray-900 mb-4 flex items-center">
+                        <svg class="w-5 h-5 text-primary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                        Personal Information
+                    </h3>
+                    
+                    <!-- Read-only fields from login -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Full Name</label>
+                            <div class="px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium">
+                                Amit Kumar
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Employee ID</label>
+                                <div class="px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium">
+                                    EMP001
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Designation</label>
+                                <div class="px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium">
+                                    Field Worker
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Department</label>
+                            <div class="px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-900 font-medium">
+                                Sales
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Additional Details -->
+                <div class="bg-gray-50 rounded-2xl p-5">
+                    <h3 class="font-bold text-gray-900 mb-4 flex items-center">
+                        <svg class="w-5 h-5 text-secondary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Additional Details
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <!-- Date of Birth -->
+                        <div>
+                            <label for="dateOfBirth" class="block text-sm font-medium text-gray-700 mb-2">
+                                Date of Birth *
+                            </label>
+                            <input 
+                                type="date" 
+                                id="dateOfBirth" 
+                                name="dateOfBirth"
+                                class="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all bg-white"
+                                required
+                            />
+                        </div>
+
+                        <!-- Gender -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Gender *</label>
+                            <div class="grid grid-cols-3 gap-3">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="gender" value="male" class="peer sr-only" required />
+                                    <div class="px-4 py-3 text-center border-2 border-gray-200 rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 transition-all">
+                                        <span class="text-2xl mb-1">👨</span>
+                                        <p class="text-sm font-medium text-gray-700">Male</p>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="gender" value="female" class="peer sr-only" />
+                                    <div class="px-4 py-3 text-center border-2 border-gray-200 rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 transition-all">
+                                        <span class="text-2xl mb-1">👩</span>
+                                        <p class="text-sm font-medium text-gray-700">Female</p>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="gender" value="other" class="peer sr-only" />
+                                    <div class="px-4 py-3 text-center border-2 border-gray-200 rounded-xl peer-checked:border-primary peer-checked:bg-primary/5 transition-all">
+                                        <span class="text-2xl mb-1">🧑</span>
+                                        <p class="text-sm font-medium text-gray-700">Other</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Alternate Phone -->
+                        <div>
+                            <label for="alternatePhone" class="block text-sm font-medium text-gray-700 mb-2">
+                                Alternate Phone (Optional)
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <span class="text-gray-500">+91</span>
+                                </div>
+                                <input 
+                                    type="tel" 
+                                    id="alternatePhone" 
+                                    name="alternatePhone"
+                                    maxlength="10"
+                                    pattern="[0-9]{10}"
+                                    class="block w-full pl-14 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all bg-white"
+                                    placeholder="98765 43210"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Address -->
+                <div class="bg-gray-50 rounded-2xl p-5">
+                    <h3 class="font-bold text-gray-900 mb-4 flex items-center">
+                        <svg class="w-5 h-5 text-orange-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        Residential Address
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <!-- Address -->
+                        <div>
+                            <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
+                                Street Address *
+                            </label>
+                            <textarea 
+                                id="address" 
+                                name="address"
+                                rows="2"
+                                class="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all resize-none bg-white"
+                                placeholder="House/Flat no., Street, Area"
+                                required
+                            ></textarea>
+                        </div>
+
+                        <!-- City & State -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="city" class="block text-sm font-medium text-gray-700 mb-2">City *</label>
+                                <select 
+                                    id="city" 
+                                    name="city"
+                                    class="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all bg-white"
+                                    required
+                                >
+                                    <option value="">Select</option>
+                                    <option value="Mumbai">Mumbai</option>
+                                    <option value="Pune">Pune</option>
+                                    <option value="Nagpur">Nagpur</option>
+                                    <option value="Nashik">Nashik</option>
+                                    <option value="Thane">Thane</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="state" class="block text-sm font-medium text-gray-700 mb-2">State *</label>
+                                <select 
+                                    id="state" 
+                                    name="state"
+                                    class="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all bg-white"
+                                    required
+                                >
+                                    <option value="">Select</option>
+                                    <option value="Maharashtra" selected>Maharashtra</option>
+                                    <option value="Gujarat">Gujarat</option>
+                                    <option value="Karnataka">Karnataka</option>
+                                    <option value="Rajasthan">Rajasthan</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Pincode -->
+                        <div>
+                            <label for="pincode" class="block text-sm font-medium text-gray-700 mb-2">
+                                Pincode *
+                            </label>
+                            <input 
+                                type="text" 
+                                id="pincode" 
+                                name="pincode"
+                                maxlength="6"
+                                pattern="[0-9]{6}"
+                                class="block w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all bg-white"
+                                placeholder="411001"
+                                required
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emergency Contact Info -->
+                <div class="bg-red-50 border border-red-100 rounded-2xl p-4">
+                    <div class="flex items-start space-x-3">
+                        <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <div>
+                            <p class="text-sm text-red-800">
+                                <strong>Important:</strong> Your profile information helps us ensure your safety during field visits. Please provide accurate details.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button 
+                    type="submit" 
+                    class="w-full bg-gradient-to-r from-primary via-green-500 to-secondary text-white font-bold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center space-x-2"
+                >
+                    <span>Complete Profile</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </button>
+
+                <p class="text-center text-xs text-gray-500 mt-4">
+                    By continuing, you agree to our 
+                    <a href="#" class="text-primary font-medium">Terms of Service</a> and 
+                    <a href="#" class="text-primary font-medium">Privacy Policy</a>
+                </p>
+
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Calculate progress
+        function updateProgress() {
+            const fields = ['dateOfBirth', 'address', 'city', 'state', 'pincode'];
+            const gender = document.querySelector('input[name="gender"]:checked');
+            
+            let filled = 0;
+            fields.forEach(field => {
+                if (document.getElementById(field).value) filled++;
+            });
+            if (gender) filled++;
+            
+            const progress = Math.round((filled / (fields.length + 1)) * 100);
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressText').textContent = progress + '%';
+        }
+
+        // Add listeners for progress
+        document.querySelectorAll('input, select, textarea').forEach(el => {
+            el.addEventListener('input', updateProgress);
+            el.addEventListener('change', updateProgress);
+        });
+
+        // Handle avatar change
+        function handleAvatarChange(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('avatarImage').src = e.target.result;
+                    document.getElementById('avatarImage').classList.remove('hidden');
+                    document.getElementById('avatarInitials').classList.add('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Phone number formatting
+        document.getElementById('alternatePhone').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+        });
+
+        // Pincode formatting
+        document.getElementById('pincode').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
+        });
+
+        // Form submission
+        document.getElementById('profileForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                dateOfBirth: document.getElementById('dateOfBirth').value,
+                gender: document.querySelector('input[name="gender"]:checked')?.value,
+                alternatePhone: document.getElementById('alternatePhone').value,
+                address: document.getElementById('address').value,
+                city: document.getElementById('city').value,
+                state: document.getElementById('state').value,
+                pincode: document.getElementById('pincode').value,
+            };
+            
+            console.log('Profile data:', formData);
+            
+            // Show success and redirect
+            alert('Profile completed successfully!');
+            window.location.href = 'dashboard-fieldworker.html';
+        });
+
+        // Initial progress
+        updateProgress();
+    </script>
+</body>
+</html>
+

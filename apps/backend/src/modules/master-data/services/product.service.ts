@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { ProductStatus } from '@oneohm-epc/shared-types';
+import { ProductStatus, ProductType } from '@oneohm-epc/shared-types';
 
 import type { CreateProductDto, UpdateProductDto } from '../dto/products';
 import { ProductEntity } from '../entities/product.entity';
@@ -43,7 +43,7 @@ export class ProductService {
     limit = 20,
     filters?: {
       status?: ProductStatus;
-      type?: string;
+      type?: ProductType;
       categoryId?: string;
       brand?: string;
       search?: string;

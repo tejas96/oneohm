@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>New Lead - Property | OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        'primary-dark': '#5ea031',
+                        secondary: '#0d74b8',
+                        'secondary-dark': '#025580',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * { -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(135deg, #f8fdf5 0%, #f0f9ff 100%);
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .input-focus:focus { box-shadow: 0 0 0 3px rgba(118, 192, 68, 0.15); }
+        
+        .btn-gradient {
+            background: linear-gradient(135deg, #76c044 0%, #5ea031 50%, #0d74b8 100%);
+            background-size: 200% 200%;
+            animation: gradientShift 3s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .property-card {
+            transition: all 0.2s ease;
+        }
+        
+        .property-card.selected {
+            border-color: #76c044;
+            background: rgba(118, 192, 68, 0.05);
+        }
+        
+        .property-card.selected .property-icon {
+            background: #76c044;
+            color: white;
+        }
+        
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .input-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+            text-transform: uppercase;
+        }
+        
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="max-w-md mx-auto min-h-screen flex flex-col">
+        
+        <!-- Header -->
+        <header class="sticky top-0 z-50 px-4 pt-4">
+            <div class="glass-card rounded-2xl px-4 py-3 flex items-center justify-between shadow-lg">
+                <button onclick="history.back()" class="p-2 -ml-2 rounded-xl hover:bg-gray-100 transition-colors">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                
+                <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
+                        <div class="progress-dot active w-2.5 h-2.5 rounded-full bg-primary"></div>
+                        <div class="progress-dot w-2 h-2 rounded-full bg-gray-300"></div>
+                    </div>
+                    <span class="text-xs font-medium text-gray-500 ml-2">Part 1 of 2</span>
+                </div>
+                
+                <button onclick="saveDraft()" class="text-sm font-semibold text-primary">Save</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 px-6 py-8 fade-in">
+            
+            <!-- Title -->
+            <div class="mb-8">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full mb-4">
+                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <span class="text-xs font-semibold text-primary uppercase tracking-wide">Location</span>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Property Details</h1>
+                <p class="text-gray-500">Where is the installation site?</p>
+            </div>
+
+            <!-- Form -->
+            <form id="propertyForm" class="space-y-6">
+                
+                <!-- Property Type - Horizontal Scroll -->
+                <div class="space-y-3">
+                    <label class="input-label text-gray-600">
+                        Property Type <span class="text-red-500">*</span>
+                    </label>
+                    <div class="flex gap-3 overflow-x-auto pb-2 -mx-6 px-6 scrollbar-hide">
+                        <label class="property-card flex-shrink-0 w-24 p-3 border-2 border-gray-200 rounded-2xl cursor-pointer text-center" data-value="residential">
+                            <input type="radio" name="propertyType" value="residential" class="sr-only" required checked />
+                            <div class="property-icon w-10 h-10 mx-auto mb-2 rounded-xl bg-gray-100 flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                </svg>
+                            </div>
+                            <span class="text-xs font-medium text-gray-700">Home</span>
+                        </label>
+                        
+                        <label class="property-card flex-shrink-0 w-24 p-3 border-2 border-gray-200 rounded-2xl cursor-pointer text-center" data-value="apartment">
+                            <input type="radio" name="propertyType" value="apartment" class="sr-only" />
+                            <div class="property-icon w-10 h-10 mx-auto mb-2 rounded-xl bg-gray-100 flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                </svg>
+                            </div>
+                            <span class="text-xs font-medium text-gray-700">Apartment</span>
+                        </label>
+                        
+                        <label class="property-card flex-shrink-0 w-24 p-3 border-2 border-gray-200 rounded-2xl cursor-pointer text-center" data-value="commercial">
+                            <input type="radio" name="propertyType" value="commercial" class="sr-only" />
+                            <div class="property-icon w-10 h-10 mx-auto mb-2 rounded-xl bg-gray-100 flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                            <span class="text-xs font-medium text-gray-700">Business</span>
+                        </label>
+                        
+                        <label class="property-card flex-shrink-0 w-24 p-3 border-2 border-gray-200 rounded-2xl cursor-pointer text-center" data-value="industrial">
+                            <input type="radio" name="propertyType" value="industrial" class="sr-only" />
+                            <div class="property-icon w-10 h-10 mx-auto mb-2 rounded-xl bg-gray-100 flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                                </svg>
+                            </div>
+                            <span class="text-xs font-medium text-gray-700">Industrial</span>
+                        </label>
+                        
+                        <label class="property-card flex-shrink-0 w-24 p-3 border-2 border-gray-200 rounded-2xl cursor-pointer text-center" data-value="agricultural">
+                            <input type="radio" name="propertyType" value="agricultural" class="sr-only" />
+                            <div class="property-icon w-10 h-10 mx-auto mb-2 rounded-xl bg-gray-100 flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/>
+                                </svg>
+                            </div>
+                            <span class="text-xs font-medium text-gray-700">Farm</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Address -->
+                <div class="space-y-2">
+                    <label class="input-label text-gray-600">
+                        Address <span class="text-red-500">*</span>
+                    </label>
+                    <textarea 
+                        id="address"
+                        name="address"
+                        required
+                        rows="2"
+                        class="input-focus w-full px-4 py-4 bg-white border-2 border-gray-100 rounded-2xl text-gray-900 placeholder-gray-400 focus:border-primary focus:outline-none transition-all resize-none"
+                        placeholder="House/Flat no., Street, Area"
+                    ></textarea>
+                </div>
+
+                <!-- City & State Row -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="input-label text-gray-600">City <span class="text-red-500">*</span></label>
+                        <input 
+                            type="text" 
+                            id="city"
+                            name="city"
+                            required
+                            class="input-focus w-full px-4 py-4 bg-white border-2 border-gray-100 rounded-2xl text-gray-900 placeholder-gray-400 focus:border-primary focus:outline-none transition-all"
+                            placeholder="City"
+                        />
+                    </div>
+                    <div class="space-y-2">
+                        <label class="input-label text-gray-600">State <span class="text-red-500">*</span></label>
+                        <input 
+                            type="text" 
+                            id="state"
+                            name="state"
+                            required
+                            value="Maharashtra"
+                            class="input-focus w-full px-4 py-4 bg-white border-2 border-gray-100 rounded-2xl text-gray-900 placeholder-gray-400 focus:border-primary focus:outline-none transition-all"
+                            placeholder="State"
+                        />
+                    </div>
+                </div>
+
+                <!-- Pincode -->
+                <div class="space-y-2">
+                    <label class="input-label text-gray-600">Pincode <span class="text-red-500">*</span></label>
+                    <input 
+                        type="text" 
+                        id="pincode"
+                        name="pincode"
+                        required
+                        maxlength="6"
+                        pattern="[0-9]{6}"
+                        class="input-focus w-full px-4 py-4 bg-white border-2 border-gray-100 rounded-2xl text-gray-900 placeholder-gray-400 focus:border-primary focus:outline-none transition-all"
+                        placeholder="411001"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                    />
+                </div>
+
+                <!-- Property Name (Optional) -->
+                <div class="space-y-2">
+                    <label class="input-label text-gray-500">
+                        Building/Property Name <span class="text-gray-400 font-normal normal-case">(optional)</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="propertyName"
+                        name="propertyName"
+                        class="input-focus w-full px-4 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl text-gray-900 placeholder-gray-400 focus:border-primary focus:bg-white focus:outline-none transition-all"
+                        placeholder="e.g., Sunshine Apartments"
+                    />
+                </div>
+
+            </form>
+
+        </main>
+
+        <!-- Footer Actions -->
+        <footer class="sticky bottom-0 p-4 pb-8">
+            <div class="flex gap-3">
+                <button 
+                    onclick="history.back()"
+                    class="flex-1 py-4 px-6 bg-gray-100 hover:bg-gray-200 rounded-2xl text-gray-700 font-semibold transition-colors"
+                >
+                    Back
+                </button>
+                <button 
+                    onclick="handleNext(event)"
+                    class="flex-[2] btn-gradient py-4 px-6 rounded-2xl text-white font-semibold shadow-xl shadow-primary/25 flex items-center justify-center gap-2"
+                >
+                    <span>Continue</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
+                </button>
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        // Property type selection
+        document.querySelectorAll('.property-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.querySelectorAll('.property-card').forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+                this.querySelector('input').checked = true;
+            });
+        });
+
+        // Set initial selection
+        document.querySelector('.property-card[data-value="residential"]').classList.add('selected');
+
+        function saveDraft() {
+            const formData = getFormData();
+            localStorage.setItem('leadDraft_property', JSON.stringify(formData));
+            showToast('Draft saved!');
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-20 left-1/2 -translate-x-1/2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full shadow-lg z-50';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        function getFormData() {
+            return {
+                propertyType: document.querySelector('input[name="propertyType"]:checked')?.value || 'residential',
+                address: document.getElementById('address').value,
+                city: document.getElementById('city').value,
+                state: document.getElementById('state').value,
+                pincode: document.getElementById('pincode').value,
+                propertyName: document.getElementById('propertyName').value
+            };
+        }
+
+        function handleNext(e) {
+            e.preventDefault();
+            const form = document.getElementById('propertyForm');
+            
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            localStorage.setItem('leadData_property', JSON.stringify(getFormData()));
+            window.location.href = 'part1-requirements.html';
+        }
+
+        // Load saved data
+        window.addEventListener('load', () => {
+            const draft = localStorage.getItem('leadDraft_property') || localStorage.getItem('leadData_property');
+            if (draft) {
+                const data = JSON.parse(draft);
+                if (data.propertyType) {
+                    const card = document.querySelector(`.property-card[data-value="${data.propertyType}"]`);
+                    if (card) {
+                        document.querySelectorAll('.property-card').forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        card.querySelector('input').checked = true;
+                    }
+                }
+                if (data.address) document.getElementById('address').value = data.address;
+                if (data.city) document.getElementById('city').value = data.city;
+                if (data.state) document.getElementById('state').value = data.state;
+                if (data.pincode) document.getElementById('pincode').value = data.pincode;
+                if (data.propertyName) document.getElementById('propertyName').value = data.propertyName;
+            }
+        });
+    </script>
+</body>
+</html>
+

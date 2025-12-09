@@ -17,6 +17,7 @@ interface CreateProfileDto {
   profileType: UserProfileType;
   profileData: any;
   createdBy?: string;
+  roleCode?: string; // Optional: Override default role (e.g., 'field_worker' instead of 'employee_basic')
 }
 
 interface UserProfileSummary {
@@ -101,10 +102,10 @@ export class ProfileService {
 
   /**
    * Create a new profile for a user in an organization
-   * Automatically assigns default role based on profile type
+   * Automatically assigns role based on profile type (or custom role if provided)
    */
   async createProfile(dto: CreateProfileDto): Promise<any> {
-    const { userId, organizationId, profileType, profileData, createdBy } = dto;
+    const { userId, organizationId, profileType, profileData, createdBy, roleCode } = dto;
 
     // Verify user exists
     const user = await this.userRepository.findById(userId);
@@ -161,8 +162,13 @@ export class ProfileService {
         throw new BadRequestException(`Invalid profile type: ${String(profileType)}`);
     }
 
-    // ✅ AUTO-ASSIGN DEFAULT ROLE
-    await this.assignDefaultRole(userId, organizationId, defaultRoleCode, createdBy);
+    // ✅ AUTO-ASSIGN ROLE (use custom roleCode if provided, otherwise use default)
+    const finalRoleCode = roleCode || defaultRoleCode;
+    await this.assignDefaultRole(userId, organizationId, finalRoleCode, createdBy);
+
+    // ✅ UPDATE USER: Mark profile as completed
+    await this.userRepository.markProfileCompleted(userId);
+    this.logger.log(`✅ Profile completed for user ${userId}`);
 
     return profile;
   }

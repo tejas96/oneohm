@@ -1,10 +1,15 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  ApiExtraModels,
+  ApiProperty,
+  ApiPropertyOptional,
+  getSchemaPath,
+  PartialType,
+} from '@nestjs/swagger';
 import { UserProfileType, UserStatus } from '@oneohm-epc/shared-types';
 import {
   IsArray,
   IsEmail,
   IsEnum,
-  IsObject,
   IsOptional,
   IsString,
   IsUUID,
@@ -13,6 +18,21 @@ import {
   MinLength,
   ValidateIf,
 } from 'class-validator';
+
+import { CreateCustomerDto } from '../../customers/dto/create-customer.dto';
+import { CreateEmployeeDto } from '../../employees/dto/create-employee.dto';
+import { CreateResellerDto } from '../../resellers/dto/create-reseller.dto';
+
+// Partial versions for inline profile creation (all fields optional)
+export class PartialEmployeeProfileDto extends PartialType(CreateEmployeeDto) {}
+export class PartialCustomerProfileDto extends PartialType(CreateCustomerDto) {}
+export class PartialResellerProfileDto extends PartialType(CreateResellerDto) {}
+
+// Union type for profileData
+export type ProfileDataType =
+  | PartialEmployeeProfileDto
+  | PartialCustomerProfileDto
+  | PartialResellerProfileDto;
 
 /**
  * Create User DTO
@@ -23,6 +43,7 @@ import {
  * 2. Onboard employee/reseller: Provide organizationId + profileType + profileData
  * 3. Register customer: Can be done via self-registration flow
  */
+@ApiExtraModels(PartialEmployeeProfileDto, PartialCustomerProfileDto, PartialResellerProfileDto)
 export class CreateUserDto {
   // ==================== REQUIRED: Basic User Info ====================
 
@@ -65,10 +86,10 @@ export class CreateUserDto {
   @IsString()
   @MinLength(8)
   @MaxLength(50)
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
-    message:
-      'Password must contain at least one uppercase letter, one lowercase letter, and one number',
-  })
+  // @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
+  //   message:
+  //     'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+  // })
   password?: string;
 
   @ApiPropertyOptional({
@@ -89,7 +110,7 @@ export class CreateUserDto {
     description: 'Organization ID for profile creation. Required if profileType is provided.',
   })
   @ValidateIf((o) => o.profileType !== undefined)
-  @IsUUID('all')
+  @IsUUID()
   organizationId?: string;
 
   @ApiPropertyOptional({
@@ -109,18 +130,25 @@ export class CreateUserDto {
   @ApiPropertyOptional({
     description:
       'Profile-specific data. Structure depends on profileType:\n' +
-      '- employee: { employeeId?, designation?, department?, joiningDate? }\n' +
-      '- reseller: { companyName?, gstNumber?, panNumber? }\n' +
-      '- customer: { source?, referredBy? }',
+      '- employee: { designation, department, joiningDate, ... }\n' +
+      '- customer: { leadSource, propertyType, address, ... }\n' +
+      '- reseller: { companyName, companyCode, gstin, ... }\n' +
+      'Note: userId and organizationId are auto-filled from user creation.',
+    oneOf: [
+      { $ref: getSchemaPath(PartialEmployeeProfileDto) },
+      { $ref: getSchemaPath(PartialCustomerProfileDto) },
+      { $ref: getSchemaPath(PartialResellerProfileDto) },
+    ],
     example: {
-      employeeId: 'EMP001',
-      designation: 'Sales Executive',
+      designation: 'Field Executive',
       department: 'Sales',
+      joiningDate: '2024-01-15',
     },
   })
   @IsOptional()
-  @IsObject()
-  profileData?: Record<string, unknown>;
+  // Note: Nested validation skipped - profileData is validated in UserService.create()
+  // based on profileType. This avoids whitelist issues with dynamic union types.
+  profileData?: ProfileDataType;
 
   // ==================== DEPRECATED: Use profileType instead ====================
 

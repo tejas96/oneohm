@@ -100,16 +100,19 @@ export class OrganizationService {
     // 2. Create default roles for organization
     const rolesCreated = await this.createDefaultRoles(organization.id);
 
-    // 3. Create super admin user
+    // 3. Create super admin user (with optional password)
     const superAdminUser = await this.userRepository.create({
       email: dto.superAdminEmail,
       firstName: dto.superAdminFirstName,
       lastName: dto.superAdminLastName,
       phone: dto.superAdminPhone,
+      passwordHash: dto.superAdminPassword, // Optional - if provided, user can login immediately
       profileCompleted: false,
     });
 
-    this.logger.log(`Super admin user created: ${superAdminUser.email}`);
+    this.logger.log(
+      `Super admin user created: ${superAdminUser.email} (password: ${dto.superAdminPassword ? 'set' : 'via invitation'})`,
+    );
 
     // 4. Get super_admin role
     const superAdminRole = await this.roleRepository.findByCodeAndOrganization(
@@ -401,6 +404,7 @@ export class OrganizationService {
    */
   private async createDefaultRoles(organizationId: string): Promise<RoleEntity[]> {
     const defaultRoles = [
+      // Admin roles
       {
         code: 'super_admin',
         name: 'Super Administrator',
@@ -414,15 +418,47 @@ export class OrganizationService {
         level: 1,
       },
       {
+        code: 'manager',
+        name: 'Manager',
+        description: 'Management access with limited admin capabilities',
+        level: 2,
+      },
+      // Employee roles
+      {
+        code: 'employee_basic',
+        name: 'Employee (Basic)',
+        description: 'Basic employee access',
+        level: 5,
+      },
+      {
+        code: 'field_worker',
+        name: 'Field Worker',
+        description: 'Field worker access - can create leads and quotes',
+        level: 5,
+      },
+      {
+        code: 'sales_person',
+        name: 'Sales Person',
+        description: 'Sales access - can manage leads and quotes',
+        level: 5,
+      },
+      {
+        code: 'telecaller',
+        name: 'Telecaller',
+        description: 'Telecaller access - can manage leads',
+        level: 6,
+      },
+      // External roles
+      {
         code: 'customer',
         name: 'Customer',
-        description: 'Customer access',
+        description: 'Customer self-service access',
         level: 10,
       },
       {
         code: 'reseller',
         name: 'Reseller',
-        description: 'Reseller access',
+        description: 'Reseller partner access',
         level: 10,
       },
     ];

@@ -1,7 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProductStatus, ProductType, UnitOfMeasure } from '@oneohm-epc/shared-types';
+import {
+  ProductStatus,
+  ProductType,
+  UnitOfMeasure,
+  PhaseType,
+  PanelTechnology,
+  StructureType,
+} from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsEnum,
   IsInt,
   IsNotEmpty,
@@ -11,6 +19,7 @@ import {
   IsPositive,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
   Min,
   ValidateNested,
@@ -100,6 +109,111 @@ export class CommonSpecificationsDto {
 }
 
 /**
+ * Solar Panel specifications DTO
+ */
+export class PanelSpecificationsDto {
+  @ApiProperty({ example: true, description: 'Whether panel qualifies for DCR subsidy' })
+  @IsBoolean()
+  isDcr!: boolean;
+
+  @ApiProperty({
+    enum: PanelTechnology,
+    example: PanelTechnology.PERC,
+    description: 'Panel technology',
+  })
+  @IsEnum(PanelTechnology)
+  technology!: PanelTechnology;
+
+  @ApiProperty({ example: 550, description: 'Nominal wattage' })
+  @IsNumber()
+  @IsPositive()
+  wattage!: number;
+
+  @ApiPropertyOptional({ example: 530, description: 'Minimum wattage in batch' })
+  @IsNumber()
+  @IsOptional()
+  @IsPositive()
+  minWattage?: number;
+
+  @ApiPropertyOptional({ example: 550, description: 'Maximum wattage in batch' })
+  @IsNumber()
+  @IsOptional()
+  @IsPositive()
+  maxWattage?: number;
+}
+
+/**
+ * Inverter specifications DTO
+ */
+export class InverterSpecificationsDto {
+  @ApiProperty({ example: 5, description: 'Inverter capacity in kW' })
+  @IsNumber()
+  @IsPositive()
+  capacityKw!: number;
+
+  @ApiProperty({
+    enum: PhaseType,
+    example: PhaseType.SINGLE_PHASE,
+    description: 'Phase type',
+  })
+  @IsEnum(PhaseType)
+  phaseType!: PhaseType;
+
+  @ApiPropertyOptional({ example: 1, description: 'Minimum system size this inverter supports' })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  minSystemSizeKw?: number;
+
+  @ApiPropertyOptional({ example: 6, description: 'Maximum system size this inverter supports' })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  maxSystemSizeKw?: number;
+
+  @ApiPropertyOptional({ example: 2, description: 'Number of MPPT channels' })
+  @IsInt()
+  @IsOptional()
+  @Min(1)
+  mpptCount?: number;
+}
+
+/**
+ * Structure specifications DTO
+ */
+export class StructureSpecificationsDto {
+  @ApiProperty({
+    enum: StructureType,
+    example: StructureType.ELEVATED,
+    description: 'Type of mounting structure',
+  })
+  @IsEnum(StructureType)
+  structureType!: StructureType;
+
+  @ApiProperty({ example: 'Aluminum', description: 'Material' })
+  @IsString()
+  material!: string;
+
+  @ApiPropertyOptional({ example: 150, description: 'Maximum wind speed rating (km/h)' })
+  @IsNumber()
+  @IsOptional()
+  @IsPositive()
+  maxWindSpeedKmh?: number;
+
+  @ApiPropertyOptional({
+    example: 1.3,
+    description:
+      'Cost multiplier applied to base structure cost from installation pricing. e.g., 1.0 for standard aluminum rail, 1.3 for elevated, 1.5 for super elevated',
+    default: 1.0,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0.1)
+  @Max(10)
+  costMultiplier?: number;
+}
+
+/**
  * Full specifications DTO (Hybrid)
  */
 export class ProductSpecificationsDto {
@@ -109,6 +223,27 @@ export class ProductSpecificationsDto {
   @ValidateNested()
   @Type(() => CommonSpecificationsDto)
   common?: CommonSpecificationsDto;
+
+  @ApiPropertyOptional({ type: PanelSpecificationsDto, description: 'Solar panel specific fields' })
+  @IsObject()
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PanelSpecificationsDto)
+  panel?: PanelSpecificationsDto;
+
+  @ApiPropertyOptional({ type: InverterSpecificationsDto, description: 'Inverter specific fields' })
+  @IsObject()
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => InverterSpecificationsDto)
+  inverter?: InverterSpecificationsDto;
+
+  @ApiPropertyOptional({ type: StructureSpecificationsDto, description: 'Structure specific fields' })
+  @IsObject()
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => StructureSpecificationsDto)
+  structure?: StructureSpecificationsDto;
 
   @ApiPropertyOptional({
     example: { customField1: 'value1', customField2: 'value2' },
