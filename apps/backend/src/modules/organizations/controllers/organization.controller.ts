@@ -42,7 +42,7 @@ import { OrganizationService } from '../services/organization.service';
 @ApiTags('Organizations')
 @Controller('organizations')
 @UseGuards(JwtAuthGuard, RoleGuard)
-@ApiBearerAuth('JWT-auth')
+@ApiBearerAuth()
 export class OrganizationController {
   constructor(private readonly organizationService: OrganizationService) {}
 

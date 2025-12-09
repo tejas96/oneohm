@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectType, PhaseType, DcrPreference, StructureType } from '@oneohm-epc/shared-types';
+import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsEnum,
   IsNotEmpty,
@@ -11,7 +13,54 @@ import {
   IsUUID,
   Max,
   Min,
+  ValidateNested,
 } from 'class-validator';
+
+/**
+ * Panel override - user can specify exact panel product and quantity
+ */
+export class PanelOverrideDto {
+  @ApiProperty({
+    description: 'Product ID of the panel',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  productId!: string;
+
+  @ApiProperty({
+    description: 'Number of panels',
+    example: 6,
+    minimum: 1,
+  })
+  @IsNumber()
+  @IsPositive()
+  @Min(1)
+  quantity!: number;
+}
+
+/**
+ * Inverter override - user can specify exact inverter products and quantities
+ */
+export class InverterOverrideDto {
+  @ApiProperty({
+    description: 'Product ID of the inverter',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  productId!: string;
+
+  @ApiProperty({
+    description: 'Number of inverters of this type',
+    example: 2,
+    minimum: 1,
+  })
+  @IsNumber()
+  @IsPositive()
+  @Min(1)
+  quantity!: number;
+}
 
 /**
  * DTO for calculating a quote
@@ -119,6 +168,39 @@ export class CalculateQuoteDto {
   @Min(0)
   @Max(500)
   distanceKm?: number;
+
+  // ==================== OVERRIDE FIELDS ====================
+  // These allow users to customize the auto-calculated configuration
+
+  @ApiPropertyOptional({
+    type: [PanelOverrideDto],
+    description: `
+      Override auto-calculated panel selection.
+      Use this when user wants specific panels or quantities.
+      Note: All panels in override must be from the same brand (no brand mixing allowed).
+      Example: User wants 7 panels instead of auto-calculated 6.
+    `,
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PanelOverrideDto)
+  @IsOptional()
+  panelOverrides?: PanelOverrideDto[];
+
+  @ApiPropertyOptional({
+    type: [InverterOverrideDto],
+    description: `
+      Override auto-calculated inverter selection.
+      Use this when user wants specific inverter combination.
+      Example: For 10KW system, user wants 2x 5KW instead of 1x 10KW.
+      Total inverter capacity should be >= system size.
+    `,
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => InverterOverrideDto)
+  @IsOptional()
+  inverterOverrides?: InverterOverrideDto[];
 }
 
 /**

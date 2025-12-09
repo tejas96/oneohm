@@ -1,7 +1,8 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException, forwardRef } from '@nestjs/common';
 import { UserStatus } from '@oneohm-epc/shared-types';
 import { plainToInstance } from 'class-transformer';
 
+import { UserRepository } from '../../users/repositories/user.repository';
 import { CreateEmployeeDto, EmployeeResponseDto, UpdateEmployeeDto } from '../dto';
 import { EmployeeProfileEntity } from '../entities/employee-profile.entity';
 import { EmployeeProfileRepository } from '../repositories/employee-profile.repository';
@@ -14,7 +15,11 @@ import { EmployeeProfileRepository } from '../repositories/employee-profile.repo
 export class EmployeeService {
   private readonly logger = new Logger(EmployeeService.name);
 
-  constructor(private readonly employeeRepository: EmployeeProfileRepository) {}
+  constructor(
+    private readonly employeeRepository: EmployeeProfileRepository,
+    @Inject(forwardRef(() => UserRepository))
+    private readonly userRepository: UserRepository,
+  ) {}
 
   /**
    * Create a new employee profile
@@ -169,6 +174,7 @@ export class EmployeeService {
 
   /**
    * Update employee profile
+   * Auto-sets user.profileCompleted = true if required fields are filled
    */
   async update(
     id: string,
@@ -196,7 +202,27 @@ export class EmployeeService {
 
     this.logger.log(`Updated employee profile ${id}`);
 
+    // Auto-set profileCompleted if required fields are filled
+    if (this.isProfileComplete(updated)) {
+      await this.userRepository.markProfileCompleted(updated.userId);
+      this.logger.log(`Marked user ${updated.userId} profileCompleted = true`);
+    }
+
     return this.toResponseDto(updated);
+  }
+
+  /**
+   * Check if employee profile has all required fields filled
+   */
+  private isProfileComplete(profile: EmployeeProfileEntity): boolean {
+    return !!(
+      profile.dateOfBirth &&
+      profile.gender &&
+      profile.address &&
+      profile.city &&
+      profile.state &&
+      profile.pincode
+    );
   }
 
   /**

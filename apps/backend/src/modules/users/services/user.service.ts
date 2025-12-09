@@ -89,16 +89,21 @@ export class UserService {
     // Create profile if profileType is provided (org onboarding flow)
     if (profileType && organizationId) {
       try {
+        // Use first role from roles array if provided, otherwise use default for profileType
+        const customRoleCode = roles && roles.length > 0 ? roles[0] : undefined;
+
         await this.profileService.createProfile({
           userId: user.id,
           organizationId,
           profileType,
           profileData: profileData || {},
           createdBy: createdBy || user.id,
+          roleCode: customRoleCode, // Pass custom role if provided
         });
 
         this.logger.log(
-          `Profile created: ${profileType} for user ${user.id} in org ${organizationId}`,
+          `Profile created: ${profileType} for user ${user.id} in org ${organizationId}` +
+            (customRoleCode ? ` with role ${customRoleCode}` : ''),
         );
       } catch (error) {
         // Log error but don't fail user creation

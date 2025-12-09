@@ -1,0 +1,13 @@
+id,organization_id,name,code,description,parent_category_id,created_at
+CAT-001,ORG-001,Solar Equipment,SOLAR,All solar equipment and components,,2024-01-01
+CAT-002,ORG-001,Solar Panels,PANELS,Solar photovoltaic panels,CAT-001,2024-01-01
+CAT-003,ORG-001,DCR Panels,DCR-PANELS,Domestic Content Requirement panels for subsidy projects,CAT-002,2024-01-01
+CAT-004,ORG-001,Non-DCR Panels,NON-DCR-PANELS,Non-DCR panels for commercial and industrial projects,CAT-002,2024-01-01
+CAT-005,ORG-001,Inverters,INVERTERS,Solar inverters for power conversion,CAT-001,2024-01-01
+CAT-006,ORG-001,1-Phase Inverters,INV-1P,Single phase inverters for residential,CAT-005,2024-01-01
+CAT-007,ORG-001,3-Phase Inverters,INV-3P,Three phase inverters for commercial and industrial,CAT-005,2024-01-01
+CAT-008,ORG-001,Mounting Structures,STRUCTURES,Panel mounting structures,CAT-001,2024-01-01
+CAT-009,ORG-001,Rooftop Structures,ROOF-STRUCT,Rooftop mounting structures,CAT-008,2024-01-01
+CAT-010,ORG-001,Ground Mount Structures,GROUND-STRUCT,Ground mounting structures,CAT-008,2024-01-01
+CAT-011,ORG-001,Cables and Wiring,CABLES,Electrical cables and wiring,CAT-001,2024-01-01
+CAT-012,ORG-001,Accessories,ACCESSORIES,Solar system accessories,CAT-001,2024-01-01

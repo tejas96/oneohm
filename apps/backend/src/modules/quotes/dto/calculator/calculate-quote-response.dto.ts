@@ -34,8 +34,8 @@ export class CalculatedPanelDto {
   @ApiProperty({ description: 'Whether DCR panel', example: true })
   isDcr!: boolean;
 
-  @ApiProperty({ enum: PanelTechnology, description: 'Panel technology' })
-  technology!: PanelTechnology;
+  @ApiPropertyOptional({ enum: PanelTechnology, description: 'Panel technology' })
+  technology?: PanelTechnology;
 
   @ApiProperty({ description: 'Wattage per panel in W', example: 540 })
   wattagePerPanel!: number;
@@ -144,6 +144,15 @@ export class CalculatedInstallationDto {
   @ApiProperty({ description: 'Variable floor cost in INR', example: 0 })
   variableFloor!: number;
 
+  @ApiProperty({ description: 'Structure cost in INR', example: 13336 })
+  structureCost!: number;
+
+  @ApiProperty({ description: 'Installation labor cost in INR', example: 4400 })
+  installationLabor!: number;
+
+  @ApiProperty({ description: 'Loading/unloading charges in INR', example: 1500 })
+  loadingUnloading!: number;
+
   @ApiProperty({ description: 'MSEDCL charges in INR', example: 5000 })
   msedclCharges!: number;
 
@@ -161,6 +170,36 @@ export class CalculatedInstallationDto {
 
   @ApiProperty({ description: 'Total with GST in INR', example: 36960 })
   totalWithGst!: number;
+
+  @ApiPropertyOptional({
+    description: 'All cost components breakdown (for detailed display)',
+    example: { electrical_work: 4200, fixed_material: 8500, structure_cost: 13336 },
+  })
+  breakdown?: Record<string, number>;
+}
+
+/**
+ * Validation warning (non-blocking)
+ */
+export class ValidationWarningDto {
+  @ApiProperty({
+    description: 'Warning code',
+    example: 'INVERTER_CAPACITY_EXCEEDS',
+  })
+  code!: string;
+
+  @ApiProperty({
+    description: 'Human-readable warning message',
+    example: 'Inverter total capacity (12KW) exceeds system size (10KW)',
+  })
+  message!: string;
+
+  @ApiProperty({
+    description: 'Severity level',
+    enum: ['info', 'warning', 'error'],
+    example: 'warning',
+  })
+  severity!: 'info' | 'warning' | 'error';
 }
 
 /**
@@ -285,6 +324,30 @@ export class CalculateQuoteResponseDto {
 
   @ApiPropertyOptional({ type: [InventoryStatusDto], description: 'Inventory status for products' })
   inventoryStatus?: InventoryStatusDto[];
+
+  @ApiPropertyOptional({
+    type: [ValidationWarningDto],
+    description: 'Validation warnings (non-blocking issues)',
+  })
+  warnings?: ValidationWarningDto[];
+
+  @ApiProperty({
+    description: 'Whether overrides were applied',
+    example: false,
+  })
+  hasOverrides!: boolean;
+
+  @ApiProperty({
+    description: 'Actual total wattage from panels (may differ from requested system size)',
+    example: 3240,
+  })
+  actualTotalWattage!: number;
+
+  @ApiProperty({
+    description: 'Actual system size in KW (based on actual panel wattage)',
+    example: 3.24,
+  })
+  actualSystemSizeKw!: number;
 
   @ApiProperty({ description: 'Calculation timestamp' })
   calculatedAt!: string;

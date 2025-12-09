@@ -72,16 +72,15 @@ export class CustomerService {
     }
 
     // Step 3: Create customer profile using ProfileService (handles role assignment)
-    // Extract only profile-specific fields (exclude firstName/lastName which are in User)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { firstName, lastName, ...profileFields } = createDto;
-
+    // Include firstName and lastName in profileData (required by customer_profiles table)
     const customer = (await this.profileService.createProfile({
       userId: user.id,
       organizationId,
       profileType: UserProfileType.CUSTOMER,
       profileData: {
-        ...profileFields,
+        ...createDto,
+        firstName: createDto.firstName || user.firstName || 'Unknown',
+        lastName: createDto.lastName || user.lastName,
         status: createDto.status || CustomerStatus.ACTIVE,
       },
       createdBy,

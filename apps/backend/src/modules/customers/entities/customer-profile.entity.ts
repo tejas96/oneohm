@@ -33,6 +33,13 @@ export class CustomerProfileEntity extends BaseEntity {
   @JoinColumn({ name: 'organization_id' })
   organization?: OrganizationEntity;
 
+  // ==================== Personal Info ====================
+  @Column({ name: 'first_name', type: 'varchar', length: 100 })
+  firstName!: string;
+
+  @Column({ name: 'last_name', type: 'varchar', length: 100, nullable: true })
+  lastName?: string;
+
   // ==================== Contact Info (Organization-Specific) ====================
   @Column({ type: 'varchar', length: 255, nullable: true })
   email?: string;

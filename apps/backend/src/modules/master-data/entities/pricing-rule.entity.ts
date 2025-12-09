@@ -1,4 +1,9 @@
-import { PricingRuleType, ProjectType, PhaseType, StructureType } from '@oneohm-epc/shared-types';
+import {
+  PricingRuleType,
+  ProductType,
+  ProjectType,
+  PricingRuleFormula,
+} from '@oneohm-epc/shared-types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { ProductEntity } from './product.entity';
@@ -7,53 +12,29 @@ import { OrganizationEntity } from '../../organizations/entities/organization.en
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
- * Pricing Formula Type
- * Strongly typed JSONB structure for pricing calculations
- */
-export interface PricingFormula {
-  /** Base price in INR (used for inverters, structures) */
-  basePrice?: number;
-  /** Price per watt in INR (used for solar panels) */
-  pricePerWatt?: number;
-  /** Price per kW in INR (used for structures, services) */
-  pricePerKw?: number;
-  /** GST rate percentage (e.g., 12, 18) */
-  gstRate?: number;
-  /** Whether this is DCR panel pricing */
-  isDcr?: boolean;
-  /** Phase type for inverter pricing */
-  phaseType?: PhaseType;
-  /** Structure type for structure pricing */
-  structureType?: StructureType;
-  /** Capacity range for inverter pricing */
-  capacityRange?: {
-    min: number;
-    max: number;
-  };
-  /** Margin percentage */
-  marginPercentage?: number;
-  /** Volume-based discounts */
-  volumeDiscounts?: Array<{
-    minQuantity: number;
-    discountPercentage: number;
-  }>;
-  /** Customer type multipliers */
-  customerTypeMultipliers?: {
-    retail?: number;
-    reseller?: number;
-    wholesale?: number;
-  };
-  /** Additional costs */
-  additionalCosts?: {
-    installation?: number;
-    transportation?: number;
-    gst?: number;
-  };
-}
-
-/**
  * Pricing Rule Entity
  * Dynamic pricing strategies with flexible formulas
+ *
+ * Supports:
+ * - Product-specific pricing (by productId)
+ * - Product type-level pricing (by productType)
+ * - Project type-level pricing (by projectType)
+ * - Time-based validity (effectiveFrom/To)
+ * - Priority-based rule selection
+ *
+ * @example
+ * // Panel pricing rule
+ * {
+ *   name: 'Adani PERC DCR - Residential',
+ *   code: 'ADANI-PERC-DCR-RES',
+ *   ruleType: 'base_price',
+ *   productId: 'prod-001',
+ *   projectType: 'residential',
+ *   formula: { pricePerWatt: 25.75, gstRate: 5 },
+ *   effectiveFrom: '2024-01-01',
+ *   priority: 10,
+ *   isActive: true
+ * }
  */
 @Entity('pricing_rules')
 @Index(['organizationId', 'code'], { unique: true })
@@ -61,6 +42,7 @@ export interface PricingFormula {
 @Index(['productId', 'deletedAt'])
 @Index(['ruleType', 'deletedAt'])
 @Index(['effectiveFrom', 'effectiveTo', 'isActive'])
+@Index(['organizationId', 'productType', 'projectType', 'isActive'])
 export class PricingRuleEntity extends BaseEntity {
   @Column({ name: 'organization_id', type: 'uuid' })
   organizationId!: string;
@@ -76,42 +58,90 @@ export class PricingRuleEntity extends BaseEntity {
   description?: string;
 
   // ==================== Rule Type ====================
+  /**
+   * Type of pricing rule
+   * - base_price: Standard product pricing
+   * - volume_discount: Quantity-based discounts
+   * - customer_type: Customer category pricing
+   * - seasonal: Time-based promotions
+   * - promotional: Special offers
+   * - project_type: Project category pricing
+   */
   @Column({ name: 'rule_type', type: 'varchar', length: 50 })
   ruleType!: PricingRuleType;
 
   // ==================== Applicability ====================
+
+  /**
+   * Specific product this rule applies to (optional)
+   * If set, this rule only applies to this product
+   */
   @Column({ name: 'product_id', type: 'uuid', nullable: true })
   productId?: string;
 
+  /**
+   * Product type this rule applies to (optional)
+   * If set without productId, applies to all products of this type
+   */
   @Column({ name: 'product_type', type: 'varchar', length: 50, nullable: true })
-  productType?: string;
+  productType?: ProductType;
 
+  /**
+   * Project type this rule applies to (optional)
+   * - residential: Individual homes
+   * - residential_apartment: Apartment common areas
+   * - commercial: Business premises
+   * - industrial: Factories, warehouses
+   * - agricultural: Farm installations
+   */
   @Column({ name: 'project_type', type: 'varchar', length: 50, nullable: true })
   projectType?: ProjectType;
 
   // ==================== Pricing Formula ====================
   /**
-   * Strongly typed pricing formula:
-   * - For solar panels: pricePerWatt, gstRate, isDcr
-   * - For inverters: basePrice, gstRate, phaseType, capacityRange
-   * - For structures: pricePerKw, gstRate, structureType
-   * - General: marginPercentage, volumeDiscounts, customerTypeMultipliers
+   * Pricing formula configuration (JSONB)
+   *
+   * Structure depends on product type:
+   * - Solar panels: { pricePerWatt, gstRate, isDcr }
+   * - Inverters: { basePrice, gstRate, phaseType, capacityRange }
+   * - Structures: { pricePerKw, gstRate, structureType }
+   * - General: { marginPercentage, volumeDiscounts, customerTypeMultipliers }
+   *
+   * @see PricingRuleFormula in @oneohm-epc/shared-types
    */
   @Column({ type: 'jsonb' })
-  formula!: PricingFormula;
+  formula!: PricingRuleFormula;
 
   // ==================== Date Range ====================
+
+  /**
+   * Date from which this pricing rule is effective
+   */
   @Column({ name: 'effective_from', type: 'date' })
   effectiveFrom!: Date;
 
+  /**
+   * Date until which this pricing rule is effective
+   * NULL means no end date (currently active)
+   */
   @Column({ name: 'effective_to', type: 'date', nullable: true })
   effectiveTo?: Date;
 
   // ==================== Priority ====================
+
+  /**
+   * Priority for rule selection when multiple rules match
+   * Higher number = higher priority (wins)
+   * Default: 0
+   */
   @Column({ type: 'integer', default: 0 })
   priority!: number;
 
   // ==================== Status ====================
+
+  /**
+   * Whether this pricing rule is currently active
+   */
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 

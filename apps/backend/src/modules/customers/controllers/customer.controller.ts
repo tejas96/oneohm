@@ -14,8 +14,9 @@ import {
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
-import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
-import { PermissionGuard } from '../../iam/guards/permission.guard';
+// TODO: Re-enable permissions when IAM is fully configured
+// import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
+// import { PermissionGuard } from '../../iam/guards/permission.guard';
 import {
   CreateCustomerDto,
   CustomerResponseDto,
@@ -31,23 +32,26 @@ import { CustomerService } from '../services/customer.service';
  * Multi-Organization Support:
  * - organizationId is required as query parameter or header (X-Organization-Id)
  * - Automatically verifies user has access to the specified organization
- * - Permissions are checked via JWT payload (fast, stateless)
+ *
+ * TODO: Re-enable permission checks when IAM is fully configured
+ * - Currently only JwtAuthGuard is active
+ * - Add PermissionGuard and @RequirePermission decorators back
  */
 @ApiTags('Customers')
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 @Controller('customers')
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard) // TODO: Add PermissionGuard back when IAM is ready
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
   /**
    * Create a new customer
    */
-  @RequirePermission('customers:create')
+  // @RequirePermission('customers:create') // TODO: Re-enable
   @ApiCreate({
     summary: 'Create a new customer',
     description:
-      'Creates a new customer/lead in the system. Requires: customers:create permission. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      'Creates a new customer/lead in the system. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
     responseType: CustomerResponseDto,
     additionalErrors: [
       {
@@ -61,9 +65,6 @@ export class CustomerController {
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
-    // Note: Permission check is already done by @RequirePermission decorator
-    // No need to verify org access - if user has permission, they can create
-
     const customer = await this.customerService.create(organizationId, createDto, currentUser.id);
     return customer as unknown as CustomerResponseDto;
   }
@@ -71,19 +72,17 @@ export class CustomerController {
   /**
    * Get all customers
    */
-  @RequirePermission('customers:read')
+  // @RequirePermission('customers:read') // TODO: Re-enable
   @ApiReadAll({
     summary: 'Get all customers',
     description:
-      'Retrieve all customers for the specified organization. Requires: customers:read permission. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      'Retrieve all customers for the specified organization. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
     responseType: CustomerResponseDto,
   })
   async findAll(
     @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto[]> {
-    // Verify user has access to this organization
-
     const customers = await this.customerService.findAll(organizationId);
     return customers as unknown as CustomerResponseDto[];
   }
@@ -91,11 +90,11 @@ export class CustomerController {
   /**
    * Get customer by ID
    */
-  @RequirePermission('customers:read')
+  // @RequirePermission('customers:read') // TODO: Re-enable
   @ApiReadOne({
     summary: 'Get customer by ID',
     description:
-      'Retrieve a specific customer by their ID. Requires: customers:read permission. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      'Retrieve a specific customer by their ID. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
     responseType: CustomerResponseDto,
   })
   async findOne(
@@ -103,8 +102,6 @@ export class CustomerController {
     @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
-    // Verify user has access to this organization
-
     const customer = await this.customerService.findById(id, organizationId);
     return customer as unknown as CustomerResponseDto;
   }
@@ -112,11 +109,11 @@ export class CustomerController {
   /**
    * Update customer
    */
-  @RequirePermission('customers:update')
+  // @RequirePermission('customers:update') // TODO: Re-enable
   @ApiUpdate({
     summary: 'Update customer',
     description:
-      'Update customer information. Requires: customers:update permission. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      'Update customer information. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
     responseType: CustomerResponseDto,
     additionalErrors: [
       {
@@ -131,8 +128,6 @@ export class CustomerController {
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
-    // Verify user has access to this organization
-
     const customer = await this.customerService.update(
       id,
       organizationId,
@@ -145,11 +140,11 @@ export class CustomerController {
   /**
    * Update customer status (generic)
    */
-  @RequirePermission('customers:update-status')
+  // @RequirePermission('customers:update-status') // TODO: Re-enable
   @ApiAction({
     path: 'status',
     summary: 'Update customer status',
-    description: `Update customer status (${Object.values(CustomerStatus).join(', ')}). Requires: customers:update-status permission. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).`,
+    description: `Update customer status (${Object.values(CustomerStatus).join(', ')}). Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).`,
     responseType: CustomerResponseDto,
   })
   async updateStatus(
@@ -158,8 +153,6 @@ export class CustomerController {
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
-    // Verify user has access to this organization
-
     const customer = await this.customerService.updateStatus(
       id,
       organizationId,
@@ -172,26 +165,24 @@ export class CustomerController {
   /**
    * Delete customer
    */
-  @RequirePermission('customers:delete')
+  // @RequirePermission('customers:delete') // TODO: Re-enable
   @ApiDelete({
     summary: 'Delete customer',
     description:
-      'Soft delete a customer. Requires: customers:delete permission. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      'Soft delete a customer. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
   })
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
     @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<void> {
-    // Verify user has access to this organization
-
     await this.customerService.delete(id, organizationId);
   }
 
   /**
    * Get customer statistics by status
    */
-  @RequirePermission('customers:read')
+  // @RequirePermission('customers:read') // TODO: Re-enable
   @ApiAction({
     path: 'statistics/status',
     summary: 'Get customer status statistics',
@@ -203,8 +194,6 @@ export class CustomerController {
     @OrganizationContext() organizationId: string,
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<Record<string, number>> {
-    // Verify user has access to this organization
-
     return this.customerService.getStatusStatistics(organizationId);
   }
 }

@@ -93,9 +93,10 @@ export interface StructureSpecifications extends BaseProductSpecifications {
 }
 
 /**
- * Union type for all product specifications
+ * Union type for all product specifications (for quote calculator)
+ * @deprecated Use ProductSpecifications from product.interface.ts for entity typing
  */
-export type ProductSpecifications =
+export type QuoteProductSpecifications =
   | SolarPanelSpecifications
   | InverterSpecifications
   | StructureSpecifications
@@ -167,6 +168,77 @@ export type PricingFormula =
   | Record<string, unknown>;
 
 /**
+ * General Pricing Rule Formula (JSONB)
+ *
+ * Comprehensive interface for pricing_rules.formula column.
+ * Supports all product types and pricing strategies.
+ *
+ * @example
+ * // Panel pricing
+ * { pricePerWatt: 25.75, gstRate: 5, isDcr: true }
+ *
+ * // Inverter pricing
+ * { basePrice: 15800, gstRate: 5, phaseType: '1_phase' }
+ *
+ * // With volume discounts
+ * {
+ *   pricePerWatt: 25,
+ *   gstRate: 5,
+ *   volumeDiscounts: [
+ *     { minQuantity: 100, discountPercentage: 5 },
+ *     { minQuantity: 500, discountPercentage: 10 }
+ *   ]
+ * }
+ */
+export interface PricingRuleFormula {
+  /** Base price in INR (used for inverters, structures, fixed-price items) */
+  basePrice?: number;
+  /** Price per watt in INR (used for solar panels) */
+  pricePerWatt?: number;
+  /** Price per kW in INR (used for structures, services) */
+  pricePerKw?: number;
+  /** Price per kWh in INR (used for batteries) */
+  pricePerKwh?: number;
+  /** GST rate percentage (e.g., 5, 12, 18) */
+  gstRate?: number;
+  /** Currency code */
+  currency?: string;
+  /** Whether this is DCR panel pricing */
+  isDcr?: boolean;
+  /** Phase type for inverter pricing */
+  phaseType?: PhaseType;
+  /** Structure type for structure pricing */
+  structureType?: StructureType;
+  /** Capacity range for inverter/battery pricing */
+  capacityRange?: {
+    min: number;
+    max: number;
+  };
+  /** Margin percentage to add */
+  marginPercentage?: number;
+  /** Volume-based discounts */
+  volumeDiscounts?: Array<{
+    minQuantity: number;
+    discountPercentage: number;
+  }>;
+  /** Customer type multipliers */
+  customerTypeMultipliers?: {
+    retail?: number;
+    reseller?: number;
+    wholesale?: number;
+  };
+  /** Additional costs breakdown */
+  additionalCosts?: {
+    installation?: number;
+    transportation?: number;
+    handling?: number;
+    [key: string]: number | undefined;
+  };
+  /** Allow any additional custom fields */
+  [key: string]: unknown;
+}
+
+/**
  * ============================================================================
  * SUBSIDY CONFIGURATION INTERFACES
  * ============================================================================
@@ -222,8 +294,61 @@ export interface SubsidyConfig {
  */
 
 /**
+ * Installation Cost Components (Dynamic JSONB)
+ *
+ * Stores all installation cost components in a flexible structure.
+ * New cost components can be added without schema changes.
+ *
+ * @example
+ * {
+ *   electrical_work: 4200,
+ *   fixed_material: 8500,
+ *   variable_floor: 4548,
+ *   structure_cost: 13336,
+ *   installation_labor: 4400,
+ *   msedcl_charges: 1500,
+ *   loading_unloading: 1500
+ * }
+ */
+export interface InstallationCostComponents {
+  /** Electrical work: Wiring, junction boxes, DB installation */
+  electrical_work?: number;
+  /** Fixed material cost: Cables, connectors, earthing kit */
+  fixed_material?: number;
+  /** Variable floor cost (base amount, multiplied by floor level) */
+  variable_floor?: number;
+  /** Mounting structure cost */
+  structure_cost?: number;
+  /** Installation labor charges */
+  installation_labor?: number;
+  /** MSEDCL/Utility grid connection charges */
+  msedcl_charges?: number;
+  /** Loading and unloading charges */
+  loading_unloading?: number;
+  /** Supervision charges */
+  supervision?: number;
+
+  // ==================== Future additions (no schema change needed) ====================
+  /** Crane charges for large installations */
+  crane_charges?: number;
+  /** Permit and approval fees */
+  permit_fees?: number;
+  /** Insurance charges */
+  insurance?: number;
+  /** Safety equipment charges */
+  safety_equipment?: number;
+  /** Documentation charges */
+  documentation?: number;
+
+  /** Allow any additional custom cost components */
+  [key: string]: number | undefined;
+}
+
+/**
  * Installation Pricing Config
  * Defines pricing for a specific system size range
+ *
+ * @deprecated Use InstallationCostComponents with dynamic JSONB instead
  */
 export interface InstallationPricingConfig {
   /** Minimum system size in kW (inclusive) */
@@ -362,8 +487,8 @@ export interface CalculatedPanelConfig {
   brand: string;
   /** Whether DCR panel */
   isDcr: boolean;
-  /** Technology */
-  technology: PanelTechnology;
+  /** Technology (optional - may not be specified in specs) */
+  technology?: PanelTechnology;
   /** Wattage per panel */
   wattagePerPanel: number;
   /** Number of panels */
@@ -411,6 +536,12 @@ export interface CalculatedInstallationCost {
   fixedMaterial: number;
   /** Variable floor cost */
   variableFloor: number;
+  /** Structure cost (from installation pricing, with multiplier applied) */
+  structureCost: number;
+  /** Installation labor charges */
+  installationLabor: number;
+  /** Loading/unloading charges */
+  loadingUnloading: number;
   /** MSEDCL charges */
   msedclCharges: number;
   /** Supervision charges */
@@ -423,6 +554,20 @@ export interface CalculatedInstallationCost {
   gstAmount: number;
   /** Total with GST */
   totalWithGst: number;
+  /** Full breakdown of all cost components */
+  breakdown?: Record<string, number>;
+}
+
+/**
+ * Validation Warning
+ */
+export interface ValidationWarning {
+  /** Warning code for programmatic handling */
+  code: string;
+  /** Human-readable message */
+  message: string;
+  /** Severity level */
+  severity: 'info' | 'warning' | 'error';
 }
 
 /**

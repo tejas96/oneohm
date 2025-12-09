@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProductStatus, ProductType, UnitOfMeasure } from '@oneohm-epc/shared-types';
-import { Expose } from 'class-transformer';
+import { ProductStatus, ProductType, UnitOfMeasure, ProductSpecifications } from '@oneohm-epc/shared-types';
+import { Expose, Type } from 'class-transformer';
 
 /**
  * DTO for product response
@@ -34,9 +34,15 @@ export class ProductResponseDto {
   @Expose()
   type!: ProductType;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'Product specifications (type-specific JSONB)',
+    example: {
+      panel: { isDcr: true, technology: 'perc', wattage: 550, minWattage: 530, maxWattage: 550 },
+      common: { efficiency: 21.5, dimensions: '2278x1134x35mm', weight: 27.5 },
+    },
+  })
   @Expose()
-  specifications?: unknown;
+  specifications?: ProductSpecifications;
 
   @ApiPropertyOptional({ example: 'Jinko Solar' })
   @Expose()
@@ -77,4 +83,26 @@ export class ProductResponseDto {
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
   @Expose()
   updatedAt!: Date;
+}
+
+/**
+ * DTO for paginated products response
+ */
+export class ProductsListResponseDto {
+  @ApiProperty({ type: [ProductResponseDto] })
+  @Expose()
+  @Type(() => ProductResponseDto)
+  data!: ProductResponseDto[];
+
+  @ApiProperty({ example: 100 })
+  @Expose()
+  total!: number;
+
+  @ApiProperty({ example: 1 })
+  @Expose()
+  page!: number;
+
+  @ApiProperty({ example: 20 })
+  @Expose()
+  limit!: number;
 }
