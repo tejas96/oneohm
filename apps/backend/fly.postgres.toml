@@ -1,0 +1,35 @@
+# Fly.io PostgreSQL Database for OneOhm EPC
+# Deploy with: fly deploy --config apps/backend/fly.postgres.toml
+
+app = 'oneohm-epc-db'
+primary_region = 'bom'  # Mumbai
+
+[build]
+  image = 'postgres:15-alpine'
+
+[env]
+  LANG = 'C.UTF-8'
+  LC_ALL = 'C.UTF-8'
+  POSTGRES_DB = 'oneohm_epc'
+  POSTGRES_INITDB_ARGS = '--locale=C.UTF-8'
+  PGDATA = '/var/lib/postgresql/data/pgdata'
+  # Note: POSTGRES_USER and POSTGRES_PASSWORD should be set via secrets!
+
+# Persistent storage for database
+[[mounts]]
+  source = 'oneohm_epc_pg_data'
+  destination = '/var/lib/postgresql/data'
+
+# Internal TCP service (not exposed to internet)
+[[services]]
+  protocol = 'tcp'
+  internal_port = 5432
+
+  [[services.ports]]
+    port = 5432
+
+# VM Configuration
+[[vm]]
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024

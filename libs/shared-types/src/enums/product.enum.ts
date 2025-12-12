@@ -90,9 +90,13 @@ export enum PanelTechnology {
  */
 export enum StructureType {
   ALUMINUM_RAIL = 'aluminum_rail',
+  RCC_3X6 = 'rcc_3x6',
+  ELEVATED_6X9 = 'elevated_6x9',
+  SUPER_ELEVATED = 'super_elevated',
+  GROUND_MOUNT = 'ground_mount',
+  // Legacy types (kept for backward compatibility)
   GI_STRUCTURE = 'gi_structure',
   FLUSH_MOUNT = 'flush_mount',
-  GROUND_MOUNT = 'ground_mount',
   ELEVATED = 'elevated',
   CARPORT = 'carport',
 }

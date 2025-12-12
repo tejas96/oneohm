@@ -314,23 +314,23 @@ jobs:
             echo "affected=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build Backend Docker Image
+      - name: Setup Fly CLI
         if: steps.check-backend.outputs.affected == 'true'
-        working-directory: ./apps/backend
-        run: docker build -t oneohm-epc-backend:${{ github.sha }} -t oneohm-epc-backend:latest .
+        uses: superfly/flyctl-actions/setup-flyctl@master
 
-      - name: Deploy Backend
+      - name: Deploy Backend to Fly.io
         if: steps.check-backend.outputs.affected == 'true'
-        run: |
-          echo "🚀 Add your backend deployment steps here"
-          echo "Example: docker push, kubectl apply, etc."
+        run: flyctl deploy --config apps/backend/fly.toml --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
       - name: Generate Summary
         if: always()
         run: |
           echo "## 🚀 Backend Deployment" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.check-backend.outputs.affected }}" == "true" ]; then
-            echo "✅ Backend deployed" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Backend deployed to Fly.io" >> $GITHUB_STEP_SUMMARY
+            echo "🔗 https://oneohm-epc-backend.fly.dev" >> $GITHUB_STEP_SUMMARY
           else
             echo "⏭️ Backend not affected, skipped" >> $GITHUB_STEP_SUMMARY
           fi

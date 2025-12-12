@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductType, ProjectType, PricingRuleType } from '@oneohm-epc/shared-types';
-import { IsNull, Repository, LessThanOrEqual, MoreThanOrEqual, Or } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { PricingRuleEntity } from '../entities/pricing-rule.entity';
@@ -41,6 +41,16 @@ export class PricingRuleRepository {
    * Find active pricing rule for a product with full context
    * Considers project type and effective dates
    * Returns the highest priority matching rule
+   * 
+   * Fallback Chain (single optimized query):
+   * 1. Exact project_type match (highest priority)
+   * 2. Fallback to 'residential' (for DCR panels)
+   * 3. Fallback to 'commercial' (for Non-DCR panels)
+   * 4. Fallback to NULL project_type (universal)
+   * 
+   * Business Logic:
+   * - DCR panels: residential pricing applies to residential_apartment too
+   * - Non-DCR panels: commercial pricing applies to residential (above 3KW), industrial, agricultural
    */
   async findByProductIdWithContext(
     organizationId: string,
@@ -60,16 +70,38 @@ export class PricingRuleRepository {
       .andWhere('rule.effective_from <= :date', { date: dateStr })
       .andWhere('(rule.effective_to IS NULL OR rule.effective_to >= :date)', { date: dateStr });
 
-    // If project type specified, prefer matching rule, but fallback to null project type
     if (projectType) {
-      query.andWhere('(rule.project_type = :projectType OR rule.project_type IS NULL)', {
+      // Include all possible fallback project types in the query
+      // This allows finding a rule even if exact match doesn't exist
+      query.andWhere(
+        `(rule.project_type = :projectType 
+          OR rule.project_type = :residential 
+          OR rule.project_type = :commercial 
+          OR rule.project_type IS NULL)`,
+        {
         projectType,
-      });
-      // Order: matching project type first, then by priority
+          residential: ProjectType.RESIDENTIAL,
+          commercial: ProjectType.COMMERCIAL,
+        },
+      );
+
+      // Order by fallback priority:
+      // 0 = exact match, 1 = residential (DCR fallback), 2 = commercial (Non-DCR fallback), 3 = NULL (universal)
       query.orderBy(
-        `CASE WHEN rule.project_type = '${projectType}' THEN 0 ELSE 1 END`,
+        `CASE 
+          WHEN rule.project_type = :projectType THEN 0
+          WHEN rule.project_type = :residential THEN 1
+          WHEN rule.project_type = :commercial THEN 2
+          WHEN rule.project_type IS NULL THEN 3
+          ELSE 4
+        END`,
         'ASC',
       );
+      query.setParameters({
+        projectType,
+        residential: ProjectType.RESIDENTIAL,
+        commercial: ProjectType.COMMERCIAL,
+      });
       query.addOrderBy('rule.priority', 'DESC');
     } else {
       query.orderBy('rule.priority', 'DESC');

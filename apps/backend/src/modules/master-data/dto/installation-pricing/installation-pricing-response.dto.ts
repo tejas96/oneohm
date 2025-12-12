@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
 import { ProjectType, InstallationCostComponents } from '@oneohm-epc/shared-types';
+import { Expose, Type } from 'class-transformer';
 
 /**
  * DTO for installation pricing response

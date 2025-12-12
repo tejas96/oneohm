@@ -1,5 +1,13 @@
-# Base stage
+# ============================================
+# OneOhm EPC Backend - Production Dockerfile
+# Nx Monorepo with Shared Libraries
+# ============================================
+
+# Base stage - Install dependencies
 FROM node:20-alpine AS base
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
 
 WORKDIR /app
 
@@ -10,59 +18,80 @@ COPY tsconfig.base.json ./nx.json ./jest.preset.js ./
 # Copy backend application
 COPY apps/backend ./apps/backend/
 
-# Copy shared libraries
+# Copy shared libraries (required by backend)
 COPY libs ./libs/
 
-# Install all dependencies (including dev dependencies)
-RUN npm ci
+# Install all dependencies (including dev dependencies for build)
+RUN npm ci --ignore-scripts && npm cache clean --force
 
+# ============================================
 # Development stage
+# ============================================
 FROM base AS development
 
 WORKDIR /app
-
 ENV NODE_ENV=development
-
-# Expose port
 EXPOSE 8085
 
-# Start application in watch mode
-CMD ["npx", "nx", "serve", "backend"]
+CMD ["dumb-init", "npx", "nx", "serve", "backend"]
 
+# ============================================
 # Build stage
+# ============================================
 FROM base AS builder
 
-# Build backend
-RUN npx nx build backend
+WORKDIR /app
 
+# Build backend with all dependencies (Nx builds shared libs too)
+RUN npx nx build backend --configuration=production
+
+# Verify build outputs exist
+RUN ls -la apps/backend/dist/src/ && \
+    test -f apps/backend/dist/src/main.js || (echo "Build failed: main.js not found" && exit 1)
+
+# ============================================
 # Production stage
+# ============================================
 FROM node:20-alpine AS production
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
 
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV PORT=8085
+
+# Copy package files
+COPY package*.json ./
 
 # Install production dependencies
-COPY package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm ci --omit=dev --ignore-scripts && \
+    npm cache clean --force && \
+    rm -rf /root/.npm
 
-# Copy built application
+# Copy built backend application
 COPY --from=builder /app/apps/backend/dist ./dist
-COPY --from=builder /app/apps/backend/package*.json ./
 
-# Create non-root user
+# Copy built shared libraries to node_modules for proper resolution
+# This creates the @oneohm-epc scope in node_modules
+RUN mkdir -p node_modules/@oneohm-epc
+COPY --from=builder /app/dist/libs/shared-types ./node_modules/@oneohm-epc/shared-types
+COPY --from=builder /app/dist/libs/shared-utils ./node_modules/@oneohm-epc/shared-utils
+
+# Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nestjs -u 1001 && \
+    adduser -S nestjs -u 1001 -G nodejs && \
     chown -R nestjs:nodejs /app
 
 USER nestjs
 
-# Expose port
 EXPOSE 8085
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:8085', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:8085/api/v1', (r) => { process.exit(r.statusCode >= 200 && r.statusCode < 400 ? 0 : 1); }).on('error', () => process.exit(1))"
 
-# Start application
-CMD ["node", "dist/main"]
+ENTRYPOINT ["dumb-init", "--"]
+
+CMD ["node", "dist/src/main.js"]

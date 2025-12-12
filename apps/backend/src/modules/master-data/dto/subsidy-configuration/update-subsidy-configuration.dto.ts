@@ -1,4 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { SubsidySchemeType, ProjectType } from '@oneohm-epc/shared-types';
+import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -11,8 +13,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-import { SubsidySchemeType, ProjectType } from '@oneohm-epc/shared-types';
+
 import { SubsidyTierDto } from './create-subsidy-configuration.dto';
 
 /**

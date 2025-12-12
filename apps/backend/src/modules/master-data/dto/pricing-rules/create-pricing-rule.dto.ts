@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PricingRuleType, ProductType, ProjectType } from '@oneohm-epc/shared-types';
 import {
   IsBoolean,
   IsDateString,
@@ -12,7 +13,6 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { PricingRuleType, ProductType, ProjectType } from '@oneohm-epc/shared-types';
 
 /**
  * DTO for creating a new pricing rule
