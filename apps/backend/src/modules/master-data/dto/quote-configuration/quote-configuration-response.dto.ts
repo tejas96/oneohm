@@ -1,10 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
 import {
   GstConfig,
   WattageRoundingConfig,
   PaymentMilestoneConfig,
 } from '@oneohm-epc/shared-types';
+import { Expose, Type } from 'class-transformer';
 
 /**
  * DTO for quote configuration response

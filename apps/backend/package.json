@@ -21,6 +21,7 @@
     "seed:all": "npm run seed && npm run seed:inventory",
     "migrate:users-to-iam": "ts-node -r tsconfig-paths/register src/scripts/run-migrate-users-to-iam.ts",
     "seed:platform-admin": "ts-node -r tsconfig-paths/register src/database/seeds/platform-admin.seed.ts",
-    "seed:master-data": "ts-node -r tsconfig-paths/register src/database/seeds/master-data.seed.ts"
+    "seed:master-data": "ts-node -r tsconfig-paths/register src/database/seeds/master-data.seed.ts",
+    "seed:prod": "ts-node -r tsconfig-paths/register src/scripts/run-seeds-prod.ts"
   }
 }

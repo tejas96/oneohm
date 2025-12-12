@@ -102,8 +102,8 @@ export class UserService {
         });
 
         this.logger.log(
-          `Profile created: ${profileType} for user ${user.id} in org ${organizationId}` +
-            (customRoleCode ? ` with role ${customRoleCode}` : ''),
+          `Profile created: ${profileType} for user ${user.id} in org ${organizationId}${ 
+            customRoleCode ? ` with role ${customRoleCode}` : ''}`,
         );
       } catch (error) {
         // Log error but don't fail user creation

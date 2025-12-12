@@ -1,4 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ProjectType, InstallationCostComponents } from '@oneohm-epc/shared-types';
 import {
   IsBoolean,
   IsDateString,
@@ -10,7 +11,6 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { ProjectType, InstallationCostComponents } from '@oneohm-epc/shared-types';
 
 /**
  * DTO for updating an installation pricing configuration

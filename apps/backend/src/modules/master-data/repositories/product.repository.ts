@@ -174,13 +174,16 @@ export class ProductRepository {
   // ==================== Quote Calculator Methods ====================
 
   /**
-   * Find solar panel by DCR status and optional brand preference
-   * Returns highest wattage panel matching criteria
+   * Find solar panel by DCR status and optional brand/technology/wattage preference
+   * If preferredWattage is specified, finds panel with matching minWattage
+   * Otherwise returns highest wattage panel matching criteria
    */
   async findSolarPanel(
     organizationId: string,
     isDcr: boolean,
     preferredBrand?: string,
+    preferredTechnology?: string,
+    preferredWattage?: number,
   ): Promise<ProductEntity | null> {
     const query = this.repository
       .createQueryBuilder('product')
@@ -196,8 +199,21 @@ export class ProductRepository {
       query.andWhere('LOWER(product.brand) = LOWER(:brand)', { brand: preferredBrand });
     }
 
-    // Order by wattage descending (prefer higher wattage panels)
-    query.orderBy("product.specifications->'panel'->>'wattage'", 'DESC');
+    if (preferredTechnology) {
+      query.andWhere("LOWER(product.specifications->'panel'->>'technology') = LOWER(:technology)", {
+        technology: preferredTechnology,
+      });
+    }
+
+    // If specific wattage is preferred, match by minWattage (e.g., 560 for 560-580Wp range)
+    if (preferredWattage) {
+      query.andWhere("(product.specifications->'panel'->>'minWattage')::int = :preferredWattage", {
+        preferredWattage,
+      });
+    }
+
+    // Order by wattage descending (prefer higher wattage panels when no specific wattage requested)
+    query.orderBy("(product.specifications->'panel'->>'wattage')::int", 'DESC');
 
     return query.getOne();
   }

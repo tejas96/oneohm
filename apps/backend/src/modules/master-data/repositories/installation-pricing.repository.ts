@@ -33,6 +33,10 @@ export class InstallationPricingRepository {
   /**
    * Find installation pricing for a specific system size
    * This is the main method used by the quote calculator
+   * 
+   * Fallback Logic:
+   * - First tries to find pricing for the exact project type
+   * - If not found, falls back to 'residential' pricing (same for all project types)
    */
   async findBySystemSize(
     organizationId: string,
@@ -41,8 +45,38 @@ export class InstallationPricingRepository {
     asOfDate?: Date,
   ): Promise<InstallationPricing | null> {
     const date = asOfDate || new Date();
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr: string = date.toISOString().split('T')[0] || '';
 
+    // Try exact project type match first
+    let pricing = await this.findBySystemSizeAndProjectType(
+      organizationId,
+      systemSizeKw,
+      projectType,
+      dateStr,
+    );
+
+    // Fallback to residential if not found (installation pricing is same for all project types)
+    if (!pricing && projectType !== ProjectType.RESIDENTIAL) {
+      pricing = await this.findBySystemSizeAndProjectType(
+        organizationId,
+        systemSizeKw,
+        ProjectType.RESIDENTIAL,
+        dateStr,
+      );
+    }
+
+    return pricing;
+  }
+
+  /**
+   * Internal helper to find pricing by system size and project type
+   */
+  private async findBySystemSizeAndProjectType(
+    organizationId: string,
+    systemSizeKw: number,
+    projectType: ProjectType,
+    dateStr: string,
+  ): Promise<InstallationPricing | null> {
     return this.repository
       .createQueryBuilder('pricing')
       .where('pricing.organization_id = :organizationId', { organizationId })

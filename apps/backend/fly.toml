@@ -1,0 +1,96 @@
+# Fly.io configuration for OneOhm EPC Backend
+# See https://fly.io/docs/reference/configuration/
+
+app = 'oneohm-epc-backend'
+primary_region = 'bom'  # Mumbai region
+
+[build]
+  dockerfile = 'Dockerfile'
+
+# Non-sensitive environment variables
+# Sensitive ones MUST be set via: fly secrets set KEY=value
+[env]
+  NODE_ENV = 'production'
+  PORT = '8085'
+  BACKEND_PORT = '8085'
+  BACKEND_HOST = '0.0.0.0'
+  BACKEND_API_PREFIX = '/api/v1'
+  TZ = 'Asia/Kolkata'
+  
+  # Database (non-sensitive - host is internal)
+  DATABASE_PORT = '5432'
+  DATABASE_SSL = 'false'
+  DATABASE_LOGGING = 'false'
+  DATABASE_POOL_MIN = '5'
+  DATABASE_POOL_MAX = '20'
+  
+  # Features
+  ENABLE_SWAGGER = 'true'
+  ENABLE_CACHING = 'false'
+  ENABLE_RATE_LIMITING = 'true'
+  ENABLE_COMPRESSION = 'true'
+  ENABLE_HELMET = 'true'
+  
+  # Logging
+  LOG_LEVEL = 'info'
+  LOG_FORMAT = 'json'
+  
+  # Rate Limiting
+  THROTTLE_TTL = '60'
+  THROTTLE_LIMIT = '100'
+  RATE_LIMIT_TTL = '60'
+  RATE_LIMIT_MAX = '1000'
+
+# HTTP Service Configuration
+[http_service]
+  internal_port = 8085
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ['app']
+
+  [http_service.concurrency]
+    type = 'connections'
+    hard_limit = 25
+    soft_limit = 20
+
+  # Response headers for security
+  [http_service.http_options]
+    h2_backend = false
+
+# VM Configuration
+[[vm]]
+  size = 'shared-cpu-1x'
+  memory = '1gb'
+
+# Health Checks
+[checks]
+  [checks.health]
+    port = 8085
+    type = 'http'
+    interval = '30s'
+    timeout = '10s'
+    grace_period = '60s'
+    method = 'GET'
+    path = '/api/v1'
+
+# Deployment Configuration
+[deploy]
+  # Run migrations before starting new version (like Heroku release phase)
+  release_command = 'node dist/src/scripts/run-migrations.js'
+  # Rolling deployment strategy
+  strategy = 'rolling'
+
+# Graceful Shutdown
+[processes]
+  app = 'node dist/src/main.js'
+
+# Statics (if any)
+[[statics]]
+  guest_path = '/app/public'
+  url_prefix = '/public'
+
+# Kill signal for graceful shutdown
+kill_signal = 'SIGTERM'
+kill_timeout = '30s'

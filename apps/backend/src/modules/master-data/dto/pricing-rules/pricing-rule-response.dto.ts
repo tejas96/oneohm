@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
 import { PricingRuleType, ProductType, ProjectType, PricingRuleFormula } from '@oneohm-epc/shared-types';
+import { Expose, Type } from 'class-transformer';
 
 /**
  * DTO for pricing rule response
