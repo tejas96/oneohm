@@ -923,7 +923,10 @@ export class QuoteCalculatorService {
       }, 0);
     };
 
-    // Note: getCombinationCapacity removed - capacity is calculated inline via getInverterCapacity
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const getCombinationCapacity = (combo: Combination): number => {
+      return combo.reduce((sum, c) => sum + getInverterCapacity(c.inverter) * c.quantity, 0);
+    };
 
     const getInverterCount = (combo: Combination): number => {
       return combo.reduce((sum, c) => sum + c.quantity, 0);
