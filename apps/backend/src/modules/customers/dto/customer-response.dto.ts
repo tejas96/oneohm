@@ -1,9 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CustomerStatus } from '@oneohm-epc/shared-types';
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
+
+import { CustomerPropertyResponseDto } from './customer-property-response.dto';
 
 /**
- * DTO for customer response
+ * DTO for customer profile response
  * Used in API responses to control what data is exposed
  */
 @Exclude()
@@ -15,6 +17,10 @@ export class CustomerResponseDto {
   @ApiProperty()
   @Expose()
   organizationId!: string;
+
+  @ApiPropertyOptional()
+  @Expose()
+  userId?: string;
 
   // ==================== Personal Info ====================
   @ApiProperty()
@@ -37,20 +43,7 @@ export class CustomerResponseDto {
   @Expose()
   alternatePhone?: string;
 
-  // ==================== Consumer Details ====================
-  @ApiPropertyOptional()
-  @Expose()
-  consumerNumber?: string;
-
-  @ApiPropertyOptional()
-  @Expose()
-  consumerName?: string;
-
-  @ApiPropertyOptional()
-  @Expose()
-  currentLoad?: string;
-
-  // ==================== Address ====================
+  // ==================== Address (Billing/Mailing) ====================
   @ApiPropertyOptional()
   @Expose()
   address?: string;
@@ -71,19 +64,6 @@ export class CustomerResponseDto {
   @Expose()
   pincode?: string;
 
-  @ApiPropertyOptional()
-  @Expose()
-  locationCoordinates?: string;
-
-  // ==================== Property Details ====================
-  @ApiPropertyOptional()
-  @Expose()
-  propertyName?: string;
-
-  @ApiPropertyOptional()
-  @Expose()
-  propertyType?: string;
-
   // ==================== Source Tracking ====================
   @ApiPropertyOptional()
   @Expose()
@@ -93,14 +73,16 @@ export class CustomerResponseDto {
   @Expose()
   referralCode?: string;
 
-  @ApiPropertyOptional()
-  @Expose()
-  resellerId?: string;
-
   // ==================== Status ====================
   @ApiProperty({ enum: CustomerStatus })
   @Expose()
   status!: CustomerStatus;
+
+  // ==================== Properties (One-to-Many) ====================
+  @ApiPropertyOptional({ type: [CustomerPropertyResponseDto] })
+  @Expose()
+  @Type(() => CustomerPropertyResponseDto)
+  properties?: CustomerPropertyResponseDto[];
 
   // ==================== Audit Fields ====================
   @ApiProperty()

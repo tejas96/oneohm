@@ -135,18 +135,8 @@ export class CustomerService {
       }
     }
 
-    // Check for consumer number conflicts (if being updated)
-    if (updateDto.consumerNumber) {
-      const existingByConsumerNumber = await this.customerRepository.findByConsumerNumber(
-        organizationId,
-        updateDto.consumerNumber,
-      );
-      if (existingByConsumerNumber && existingByConsumerNumber.id !== id) {
-        throw new ConflictException(
-          `Customer with consumer number '${updateDto.consumerNumber}' already exists`,
-        );
-      }
-    }
+    // Note: Consumer number is now on CustomerPropertyEntity
+    // Use CustomerPropertyRepository for consumer number operations
 
     const updated = await this.customerRepository.update(id, {
       ...updateDto,
@@ -206,16 +196,24 @@ export class CustomerService {
   }
 
   /**
-   * Get customer statistics by status
+   * Get customer statistics by status (optimized single query)
    */
   async getStatusStatistics(organizationId: string): Promise<Record<string, number>> {
-    const statuses = Object.values(CustomerStatus);
-    const stats: Record<string, number> = {};
+    const stats = await this.customerRepository.getStatusStats(organizationId);
 
-    for (const status of statuses) {
-      stats[status] = await this.customerRepository.countByStatus(organizationId, status);
+    // Initialize all statuses with 0
+    const result: Record<string, number> = {
+      [CustomerStatus.LEAD]: 0,
+      [CustomerStatus.PROSPECT]: 0,
+      [CustomerStatus.ACTIVE]: 0,
+      [CustomerStatus.INACTIVE]: 0,
+    };
+
+    // Fill in actual counts from the single grouped query
+    for (const stat of stats) {
+      result[stat.status] = stat.count;
     }
 
-    return stats;
+    return result;
   }
 }

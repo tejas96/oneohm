@@ -6,13 +6,13 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUUID,
   Matches,
   MaxLength,
 } from 'class-validator';
 
 /**
- * DTO for creating a new customer
+ * DTO for creating a new customer profile
+ * Note: Property/site details are now in CreateCustomerPropertyDto
  */
 export class CreateCustomerDto {
   // ==================== Personal Info ====================
@@ -58,38 +58,10 @@ export class CreateCustomerDto {
   @MaxLength(20)
   alternatePhone?: string;
 
-  // ==================== Consumer Details ====================
-  @ApiPropertyOptional({
-    example: 'CN123456789',
-    description: 'Electricity consumer number',
-  })
-  @IsString()
-  @IsOptional()
-  @MaxLength(50)
-  consumerNumber?: string;
-
-  @ApiPropertyOptional({
-    example: 'Rajesh Kumar House',
-    description: 'Name on electricity bill',
-  })
-  @IsString()
-  @IsOptional()
-  @MaxLength(255)
-  consumerName?: string;
-
-  @ApiPropertyOptional({
-    example: '5 KW',
-    description: 'Current sanctioned load',
-  })
-  @IsString()
-  @IsOptional()
-  @MaxLength(50)
-  currentLoad?: string;
-
-  // ==================== Address ====================
+  // ==================== Address (Billing/Mailing) ====================
   @ApiPropertyOptional({
     example: '123, MG Road, Koramangala',
-    description: 'Complete address',
+    description: 'Billing/mailing address',
   })
   @IsString()
   @IsOptional()
@@ -119,33 +91,6 @@ export class CreateCustomerDto {
   @MaxLength(10)
   pincode?: string;
 
-  @ApiPropertyOptional({
-    example: 'POINT(12.9352 77.6245)',
-    description: 'Geographic coordinates in POINT format',
-  })
-  @IsString()
-  @IsOptional()
-  locationCoordinates?: string;
-
-  // ==================== Property Details ====================
-  @ApiPropertyOptional({
-    example: 'Kumar Residence',
-    description: 'Property name',
-  })
-  @IsString()
-  @IsOptional()
-  @MaxLength(255)
-  propertyName?: string;
-
-  @ApiPropertyOptional({
-    example: 'residential',
-    description: 'Type of property (residential, commercial, etc.)',
-  })
-  @IsString()
-  @IsOptional()
-  @MaxLength(50)
-  propertyType?: string;
-
   // ==================== Source Tracking ====================
   @ApiPropertyOptional({
     example: 'website',
@@ -164,14 +109,6 @@ export class CreateCustomerDto {
   @IsOptional()
   @MaxLength(50)
   referralCode?: string;
-
-  @ApiPropertyOptional({
-    example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'Reseller ID if customer came through reseller',
-  })
-  @IsUUID()
-  @IsOptional()
-  resellerId?: string;
 
   // ==================== Status ====================
   @ApiPropertyOptional({
