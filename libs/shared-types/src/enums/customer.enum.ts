@@ -11,15 +11,47 @@ export enum CustomerStatus {
 
 /**
  * Property Type Enum
- * Note: Initially using flexible VARCHAR in DB, but defining common types here
- * May be expanded to separate table if needed in future
+ * Represents different types of installation sites
  */
 export enum PropertyType {
   RESIDENTIAL = 'residential',
+  RESIDENTIAL_APARTMENT = 'residential_apartment',
   COMMERCIAL = 'commercial',
   INDUSTRIAL = 'industrial',
   AGRICULTURAL = 'agricultural',
   INSTITUTIONAL = 'institutional',
+}
+
+/**
+ * Property Status Enum
+ * Represents the status of a customer property/opportunity
+ */
+export enum PropertyStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  PENDING_VERIFICATION = 'pending_verification',
+}
+
+/**
+ * Lead Temperature Enum
+ * Indicates conversion likelihood and follow-up priority
+ * - HOT: High interest, follow-up in 3 days
+ * - WARM: Moderate interest, follow-up in 10 days
+ * - COLD: Low interest, follow-up in 15 days
+ */
+export enum LeadTemperature {
+  HOT = 'hot',
+  WARM = 'warm',
+  COLD = 'cold',
+}
+
+/**
+ * Connection Type Enum
+ * Electricity connection phase type
+ */
+export enum ConnectionType {
+  SINGLE_PHASE = 'single_phase',
+  THREE_PHASE = 'three_phase',
 }
 
 /**
