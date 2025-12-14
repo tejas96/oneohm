@@ -13,6 +13,9 @@ export default (): Configuration => ({
     host: process.env.BACKEND_HOST!,
     apiPrefix: process.env.BACKEND_API_PREFIX!,
     corsOrigin: process.env.CORS_ORIGIN!,
+    baseUrl:
+      process.env.BASE_URL ||
+      `http://${process.env.BACKEND_HOST || 'localhost'}:${process.env.BACKEND_PORT || 8085}`,
   },
 
   database: {

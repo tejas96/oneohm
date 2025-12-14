@@ -9,6 +9,7 @@ export interface AppConfig {
   host: string;
   apiPrefix: string;
   corsOrigin: string;
+  baseUrl: string;
 }
 
 export interface DatabaseConfig {

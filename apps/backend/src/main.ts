@@ -90,10 +90,11 @@ async function bootstrap(): Promise<void> {
 
   // Start server
   const port = configService.app.port;
+  const baseUrl = configService.app.baseUrl;
   await app.listen(port);
 
-  logger.log(`🚀 Application is running on: http://localhost:${port}`);
-  logger.log(`📝 API Documentation: http://localhost:${port}/api-docs`);
+  logger.log(`🚀 Application is running on: ${baseUrl}`);
+  logger.log(`📝 API Documentation: ${baseUrl}/api-docs`);
   logger.log(`🌍 Environment: ${configService.environment}`);
 }
 

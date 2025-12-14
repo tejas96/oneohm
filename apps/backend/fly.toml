@@ -15,6 +15,7 @@ primary_region = 'bom'  # Mumbai region
   BACKEND_PORT = '8085'
   BACKEND_HOST = '0.0.0.0'
   BACKEND_API_PREFIX = '/api/v1'
+  BASE_URL = 'https://oneohm-epc-backend.fly.dev'
   TZ = 'Asia/Kolkata'
   
   # Database (non-sensitive - host is internal)
