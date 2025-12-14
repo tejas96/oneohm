@@ -73,6 +73,7 @@ async function bootstrap(): Promise<void> {
     .addTag('Organizations', 'Organization management endpoints')
     .addTag('Organization Settings', 'Organization settings management')
     .addTag('Customers', 'Customer profile management')
+    .addTag('Customer Properties', 'Customer property/installation site management')
     .addTag('Employees', 'Employee profile management')
     .addTag('Resellers', 'Reseller profile management')
     .addTag('IAM - Roles', 'Role-based access control')
