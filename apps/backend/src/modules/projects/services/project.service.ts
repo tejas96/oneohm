@@ -263,6 +263,14 @@ export class ProjectService {
     // Determine project type from quote
     const projectType = quote.projectType;
 
+    // Get customer name and site address from property or customer
+    const customerName =
+      quote.property?.consumerName ||
+      `${quote.customer.firstName} ${quote.customer.lastName || ''}`.trim() ||
+      'Customer';
+    const siteAddress =
+      quote.property?.address || quote.customer.address || 'To be confirmed';
+
     // Create project from quote data
     const project = await this.projectRepository.create({
       organizationId,
@@ -271,9 +279,9 @@ export class ProjectService {
       projectManagerId: quote.salesPersonId, // Sales person becomes project manager initially
       createdBy,
       projectNumber,
-      name: `${quote.customer.consumerName || 'Customer'} - ${quote.systemSizeKw}kW Solar Installation`.trim(),
+      name: `${customerName} - ${quote.systemSizeKw}kW Solar Installation`.trim(),
       description: `Solar installation project converted from quote ${quote.quoteNumber}`,
-      siteAddress: quote.customer.address || 'To be confirmed',
+      siteAddress,
       systemSizeKw: quote.systemSizeKw,
       projectType,
       status: ProjectStatus.DRAFT,
@@ -284,6 +292,7 @@ export class ProjectService {
         convertedFromQuote: true,
         quoteNumber: quote.quoteNumber,
         originalQuoteAmount: quote.finalPrice,
+        propertyId: quote.propertyId,
       },
     });
 

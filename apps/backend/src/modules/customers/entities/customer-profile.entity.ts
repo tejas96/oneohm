@@ -1,9 +1,9 @@
 import { CustomerStatus } from '@oneohm-epc/shared-types';
-import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
+import { CustomerPropertyEntity } from './customer-property.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
-import { ResellerProfileEntity } from '../../resellers/entities/reseller-profile.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -16,7 +16,6 @@ import { UserEntity } from '../../users/entities/user.entity';
 @Index(['organizationId', 'status', 'deletedAt'])
 @Index(['phone'], { where: 'deleted_at IS NULL' })
 @Index(['email'], { where: 'deleted_at IS NULL' })
-@Index(['consumerNumber'], { where: 'deleted_at IS NULL' })
 export class CustomerProfileEntity extends BaseEntity {
   // ==================== RELATIONSHIPS ====================
   @Column({ name: 'user_id', type: 'uuid' })
@@ -33,6 +32,10 @@ export class CustomerProfileEntity extends BaseEntity {
   @JoinColumn({ name: 'organization_id' })
   organization?: OrganizationEntity;
 
+  // ==================== PROPERTIES (One-to-Many) ====================
+  @OneToMany(() => CustomerPropertyEntity, (property) => property.customer)
+  properties?: CustomerPropertyEntity[];
+
   // ==================== Personal Info ====================
   @Column({ name: 'first_name', type: 'varchar', length: 100 })
   firstName!: string;
@@ -40,7 +43,7 @@ export class CustomerProfileEntity extends BaseEntity {
   @Column({ name: 'last_name', type: 'varchar', length: 100, nullable: true })
   lastName?: string;
 
-  // ==================== Contact Info (Organization-Specific) ====================
+  // ==================== Contact Info ====================
   @Column({ type: 'varchar', length: 255, nullable: true })
   email?: string;
 
@@ -50,17 +53,7 @@ export class CustomerProfileEntity extends BaseEntity {
   @Column({ name: 'alternate_phone', type: 'varchar', length: 20, nullable: true })
   alternatePhone?: string;
 
-  // ==================== Consumer Details ====================
-  @Column({ name: 'consumer_number', type: 'varchar', length: 50, nullable: true })
-  consumerNumber?: string;
-
-  @Column({ name: 'consumer_name', type: 'varchar', length: 255, nullable: true })
-  consumerName?: string;
-
-  @Column({ name: 'current_load', type: 'varchar', length: 50, nullable: true })
-  currentLoad?: string;
-
-  // ==================== Address ====================
+  // ==================== Address (Billing/Mailing) ====================
   @Column({ type: 'text', nullable: true })
   address?: string;
 
@@ -76,29 +69,12 @@ export class CustomerProfileEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 10, nullable: true })
   pincode?: string;
 
-  @Column({ name: 'location_coordinates', type: 'point', nullable: true })
-  locationCoordinates?: string; // Stored as "POINT(lat lng)" string
-
-  // ==================== Property Details ====================
-  @Column({ name: 'property_name', type: 'varchar', length: 255, nullable: true })
-  propertyName?: string;
-
-  @Column({ name: 'property_type', type: 'varchar', length: 50, nullable: true })
-  propertyType?: string;
-
   // ==================== Source Tracking ====================
   @Column({ name: 'lead_source', type: 'varchar', length: 50, nullable: true })
   leadSource?: string;
 
   @Column({ name: 'referral_code', type: 'varchar', length: 50, nullable: true })
   referralCode?: string;
-
-  @Column({ name: 'reseller_id', type: 'uuid', nullable: true })
-  resellerId?: string;
-
-  @ManyToOne(() => ResellerProfileEntity)
-  @JoinColumn({ name: 'reseller_id' })
-  reseller?: ResellerProfileEntity;
 
   // ==================== Status ====================
   @Column({
@@ -115,14 +91,6 @@ export class CustomerProfileEntity extends BaseEntity {
   @Column({ name: 'created_by', type: 'uuid', nullable: true })
   createdBy?: string;
 
-  @ManyToOne(() => UserEntity)
-  @JoinColumn({ name: 'created_by' })
-  creator?: UserEntity;
-
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy?: string;
-
-  @ManyToOne(() => UserEntity)
-  @JoinColumn({ name: 'updated_by' })
-  updater?: UserEntity;
 }

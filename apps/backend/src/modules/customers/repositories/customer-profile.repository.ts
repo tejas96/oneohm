@@ -77,7 +77,7 @@ export class CustomerProfileRepository {
   async findAll(organizationId: string): Promise<CustomerProfileEntity[]> {
     return this.repository.find({
       where: { organizationId, deletedAt: IsNull() },
-      relations: ['user', 'organization', 'reseller'],
+      relations: ['user', 'organization', 'properties'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -94,18 +94,50 @@ export class CustomerProfileRepository {
     });
   }
 
+  /**
+   * Find customer by consumer number (searches through properties)
+   * @deprecated Consumer number is now on CustomerPropertyEntity
+   * Consider using CustomerPropertyRepository.findByConsumerNumber instead
+   */
   async findByConsumerNumber(
     organizationId: string,
     consumerNumber: string,
   ): Promise<CustomerProfileEntity | null> {
-    return this.repository.findOne({
-      where: { organizationId, consumerNumber, deletedAt: IsNull() },
-    });
+    return this.repository
+      .createQueryBuilder('customer')
+      .innerJoin('customer.properties', 'property')
+      .where('customer.organizationId = :organizationId', { organizationId })
+      .andWhere('property.consumerNumber = :consumerNumber', { consumerNumber })
+      .andWhere('customer.deletedAt IS NULL')
+      .andWhere('property.deletedAt IS NULL')
+      .getOne();
   }
 
   async countByStatus(organizationId: string, status: CustomerStatus): Promise<number> {
     return this.repository.count({
       where: { organizationId, status, deletedAt: IsNull() },
     });
+  }
+
+  /**
+   * Get status statistics in a single query
+   * Returns count of customers grouped by status
+   */
+  async getStatusStats(
+    organizationId: string,
+  ): Promise<{ status: CustomerStatus; count: number }[]> {
+    const result = await this.repository
+      .createQueryBuilder('customer')
+      .select('customer.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .where('customer.organization_id = :organizationId', { organizationId })
+      .andWhere('customer.deleted_at IS NULL')
+      .groupBy('customer.status')
+      .getRawMany<{ status: CustomerStatus; count: string }>();
+
+    return result.map((r) => ({
+      status: r.status,
+      count: parseInt(r.count, 10),
+    }));
   }
 }

@@ -11,6 +11,7 @@ import {
   OrganizationContext,
 } from '@oneohm-epc/shared-utils';
 
+import { toDto, toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
@@ -38,7 +39,7 @@ import { CustomerService } from '../services/customer.service';
  * - Add PermissionGuard and @RequirePermission decorators back
  */
 @ApiTags('Customers')
-@ApiBearerAuth('JWT-auth')
+@ApiBearerAuth()
 @Controller('customers')
 @UseGuards(JwtAuthGuard) // TODO: Add PermissionGuard back when IAM is ready
 export class CustomerController {
@@ -66,7 +67,7 @@ export class CustomerController {
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
     const customer = await this.customerService.create(organizationId, createDto, currentUser.id);
-    return customer as unknown as CustomerResponseDto;
+    return toDto(CustomerResponseDto, customer);
   }
 
   /**
@@ -84,7 +85,7 @@ export class CustomerController {
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto[]> {
     const customers = await this.customerService.findAll(organizationId);
-    return customers as unknown as CustomerResponseDto[];
+    return toDtoArray(CustomerResponseDto, customers);
   }
 
   /**
@@ -103,7 +104,7 @@ export class CustomerController {
     @CurrentUser() _currentUser: CurrentUserType,
   ): Promise<CustomerResponseDto> {
     const customer = await this.customerService.findById(id, organizationId);
-    return customer as unknown as CustomerResponseDto;
+    return toDto(CustomerResponseDto, customer);
   }
 
   /**
@@ -134,7 +135,7 @@ export class CustomerController {
       updateDto,
       currentUser.id,
     );
-    return customer as unknown as CustomerResponseDto;
+    return toDto(CustomerResponseDto, customer);
   }
 
   /**
@@ -159,7 +160,7 @@ export class CustomerController {
       statusDto.status,
       currentUser.id,
     );
-    return customer as unknown as CustomerResponseDto;
+    return toDto(CustomerResponseDto, customer);
   }
 
   /**

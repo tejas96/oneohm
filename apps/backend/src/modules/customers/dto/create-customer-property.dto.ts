@@ -1,0 +1,229 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  ConnectionType,
+  LeadTemperature,
+  PropertyStatus,
+  PropertyType,
+} from '@oneohm-epc/shared-types';
+import {
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  Min,
+} from 'class-validator';
+
+/**
+ * DTO for creating a new customer property (installation site)
+ */
+export class CreateCustomerPropertyDto {
+  // ==================== Customer Reference ====================
+  @ApiProperty({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Customer profile ID',
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  customerId!: string;
+
+  // ==================== Property Details ====================
+  @ApiPropertyOptional({
+    example: 'Kumar Residence',
+    description: 'Property/building name',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  propertyName?: string;
+
+  @ApiPropertyOptional({
+    enum: PropertyType,
+    example: PropertyType.RESIDENTIAL,
+    description: 'Type of property',
+  })
+  @IsEnum(PropertyType)
+  @IsOptional()
+  propertyType?: PropertyType;
+
+  // ==================== Address ====================
+  @ApiPropertyOptional({
+    example: '123, MG Road, Koramangala',
+    description: 'Site address',
+  })
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @ApiPropertyOptional({ example: 'Bangalore', description: 'City' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  city?: string;
+
+  @ApiPropertyOptional({ example: 'Karnataka', description: 'State' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  state?: string;
+
+  @ApiPropertyOptional({ example: 'India', description: 'Country' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  country?: string;
+
+  @ApiPropertyOptional({ example: '560095', description: 'PIN code' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(10)
+  pincode?: string;
+
+  @ApiPropertyOptional({
+    example: 'POINT(12.9352 77.6245)',
+    description: 'GPS coordinates in POINT format',
+  })
+  @IsString()
+  @IsOptional()
+  locationCoordinates?: string;
+
+  // ==================== Electricity/Consumer Details ====================
+  @ApiPropertyOptional({
+    example: 'CN123456789',
+    description: 'Electricity consumer number',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(50)
+  consumerNumber?: string;
+
+  @ApiPropertyOptional({
+    example: 'Rajesh Kumar',
+    description: 'Name on electricity bill',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  consumerName?: string;
+
+  @ApiPropertyOptional({
+    example: '5 KW',
+    description: 'Current sanctioned load',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(50)
+  currentLoad?: string;
+
+  @ApiPropertyOptional({
+    example: 'MSEDCL',
+    description: 'Electricity distribution company',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  discomName?: string;
+
+  @ApiPropertyOptional({
+    enum: ConnectionType,
+    example: ConnectionType.SINGLE_PHASE,
+    description: 'Electricity connection type',
+  })
+  @IsEnum(ConnectionType)
+  @IsOptional()
+  connectionType?: ConnectionType;
+
+  @ApiPropertyOptional({
+    example: 5.0,
+    description: 'Sanctioned load in KW',
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  sanctionedLoad?: number;
+
+  @ApiPropertyOptional({
+    example: 'MTR123456',
+    description: 'Electricity meter number',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(50)
+  meterNumber?: string;
+
+  // ==================== Site Details ====================
+  @ApiPropertyOptional({
+    example: 3500,
+    description: 'Average monthly electricity bill in INR',
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  monthlyBill?: number;
+
+  @ApiPropertyOptional({
+    example: 500,
+    description: 'Available roof area in square feet',
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  roofAreaSqft?: number;
+
+  // ==================== Lead Tracking ====================
+  @ApiPropertyOptional({
+    enum: LeadTemperature,
+    example: LeadTemperature.WARM,
+    description: 'Lead temperature (hot/warm/cold)',
+  })
+  @IsEnum(LeadTemperature)
+  @IsOptional()
+  leadTemperature?: LeadTemperature;
+
+  @ApiPropertyOptional({
+    example: '2025-01-20',
+    description: 'Next follow-up date',
+  })
+  @IsDateString()
+  @IsOptional()
+  nextFollowUpDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Notes for next follow-up',
+  })
+  @IsString()
+  @IsOptional()
+  followUpNotes?: string;
+
+  // ==================== Flags ====================
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Is this the primary property for the customer',
+  })
+  @IsBoolean()
+  @IsOptional()
+  isPrimary?: boolean;
+
+  // ==================== Status ====================
+  @ApiPropertyOptional({
+    enum: PropertyStatus,
+    example: PropertyStatus.ACTIVE,
+    description: 'Property status',
+  })
+  @IsEnum(PropertyStatus)
+  @IsOptional()
+  status?: PropertyStatus;
+
+  // ==================== Notes ====================
+  @ApiPropertyOptional({
+    description: 'Additional notes about the property',
+  })
+  @IsString()
+  @IsOptional()
+  notes?: string;
+}
+
