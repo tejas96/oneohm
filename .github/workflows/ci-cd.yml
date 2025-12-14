@@ -308,10 +308,13 @@ jobs:
       - name: Check if backend is affected
         id: check-backend
         run: |
-          if npx nx print-affected --select=projects | grep -q "backend"; then
+          AFFECTED=$(npx nx show projects --affected --json 2>/dev/null || echo "[]")
+          if echo "$AFFECTED" | grep -q '"backend"'; then
             echo "affected=true" >> $GITHUB_OUTPUT
+            echo "✅ Backend is affected"
           else
             echo "affected=false" >> $GITHUB_OUTPUT
+            echo "⏭️ Backend is not affected"
           fi
 
       - name: Setup Fly CLI
@@ -367,10 +370,13 @@ jobs:
       - name: Check if web is affected
         id: check-web
         run: |
-          if npx nx print-affected --select=projects | grep -q "web"; then
+          AFFECTED=$(npx nx show projects --affected --json 2>/dev/null || echo "[]")
+          if echo "$AFFECTED" | grep -q '"web"'; then
             echo "affected=true" >> $GITHUB_OUTPUT
+            echo "✅ Web is affected"
           else
             echo "affected=false" >> $GITHUB_OUTPUT
+            echo "⏭️ Web is not affected"
           fi
 
       - name: Deploy Web
