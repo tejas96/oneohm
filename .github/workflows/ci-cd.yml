@@ -323,7 +323,8 @@ jobs:
 
       - name: Deploy Backend to Fly.io
         if: steps.check-backend.outputs.affected == 'true'
-        run: flyctl deploy --config apps/backend/fly.toml --remote-only
+        # Using --depot=false to use legacy builder (more reliable than depot)
+        run: flyctl deploy --config apps/backend/fly.toml --remote-only --depot=false
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
