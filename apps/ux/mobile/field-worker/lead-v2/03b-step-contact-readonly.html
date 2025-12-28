@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Add Property - Contact | OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        secondary: '#0d74b8',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
+    <div class="max-w-md mx-auto min-h-screen flex flex-col">
+        
+        <!-- Header -->
+        <header class="sticky top-0 z-10 px-4 pt-4">
+            <div class="bg-white/90 backdrop-blur-lg rounded-2xl px-4 py-3 flex items-center justify-between shadow-lg">
+                <a href="01-my-leads-list.html" class="p-2 -ml-2 rounded-xl hover:bg-gray-100">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <!-- Progress -->
+                <div class="flex items-center gap-2">
+                    <div class="flex gap-1.5">
+                        <div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
+                        <div class="w-2 h-2 rounded-full bg-gray-300"></div>
+                        <div class="w-2 h-2 rounded-full bg-gray-300"></div>
+                        <div class="w-2 h-2 rounded-full bg-gray-300"></div>
+                    </div>
+                    <span class="text-xs font-medium text-gray-500 ml-1">1 of 4</span>
+                </div>
+                <div class="w-10"></div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="flex-1 px-6 py-6">
+            <!-- Title -->
+            <div class="mb-6">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary/10 rounded-full mb-3">
+                    <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <span class="text-xs font-semibold text-secondary uppercase tracking-wide">Add Property</span>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900 mb-1">Existing Customer</h1>
+                <p class="text-gray-500 text-sm">Adding new property for this customer</p>
+            </div>
+
+            <!-- Customer Info Card (Read-only) -->
+            <div class="bg-white border-2 border-gray-200 rounded-2xl p-5 mb-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 bg-gradient-to-br from-green-400 to-teal-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                        PS
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-gray-900 text-lg">Priya Sharma</h3>
+                        <p class="text-sm text-gray-500">+91 87654 32109</p>
+                        <p class="text-xs text-gray-400 mt-1">priya.sharma@email.com</p>
+                    </div>
+                    <div class="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded-full">
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        <span class="text-xs font-medium text-gray-500">Locked</span>
+                    </div>
+                </div>
+                
+                <!-- Existing Properties -->
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Existing Properties</p>
+                    <div class="flex items-center gap-2 text-sm text-gray-600">
+                        <span>🏠</span>
+                        <span>Home - Andheri West</span>
+                        <span class="text-xs text-gray-400">(Primary)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Message -->
+            <div class="p-4 bg-secondary/5 border border-secondary/20 rounded-2xl">
+                <div class="flex gap-3">
+                    <div class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-secondary" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-800">Contact details are locked</p>
+                        <p class="text-xs text-gray-600 mt-0.5">You're adding a new property for an existing customer. To edit contact details, go back and select "Edit" on the customer.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Action -->
+        <footer class="sticky bottom-0 p-4 pb-8">
+            <a href="04-step-property.html" class="block w-full py-4 bg-gradient-to-r from-primary to-secondary text-white font-semibold text-center rounded-2xl shadow-xl shadow-primary/25 flex items-center justify-center gap-2">
+                <span>Continue to Property</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                </svg>
+            </a>
+        </footer>
+
+    </div>
+</body>
+</html>
+

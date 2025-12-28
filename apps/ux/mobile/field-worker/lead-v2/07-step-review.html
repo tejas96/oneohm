@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>New Lead - Review | OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        secondary: '#0d74b8',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
+    <div class="max-w-md mx-auto min-h-screen flex flex-col">
+        
+        <!-- Header -->
+        <header class="sticky top-0 z-10 px-4 pt-4">
+            <div class="bg-white/90 backdrop-blur-lg rounded-2xl px-4 py-3 flex items-center justify-between shadow-lg">
+                <a href="06-step-technical.html" class="p-2 -ml-2 rounded-xl hover:bg-gray-100">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <!-- Progress -->
+                <div class="flex items-center gap-2">
+                    <div class="flex gap-1.5">
+                        <div class="w-2 h-2 rounded-full bg-primary"></div>
+                        <div class="w-2 h-2 rounded-full bg-primary"></div>
+                        <div class="w-2 h-2 rounded-full bg-primary"></div>
+                        <div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
+                    </div>
+                    <span class="text-xs font-medium text-gray-500 ml-1">4 of 4</span>
+                </div>
+                <div class="w-10"></div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="flex-1 px-6 py-6 overflow-y-auto">
+            <!-- Title -->
+            <div class="mb-6">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full mb-3">
+                    <svg class="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                    <span class="text-xs font-semibold text-primary uppercase tracking-wide">Almost Done</span>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900 mb-1">Review Details</h1>
+                <p class="text-gray-500 text-sm">Make sure everything looks right</p>
+            </div>
+
+            <!-- Review Sections -->
+            <div class="space-y-4">
+                <!-- Contact Section -->
+                <div class="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden shadow-sm">
+                    <div class="flex items-center justify-between p-4 border-b border-gray-100">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                                <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </svg>
+                            </div>
+                            <span class="font-semibold text-gray-700 text-sm">Contact</span>
+                        </div>
+                        <a href="03-step-contact.html" class="text-xs font-semibold text-primary">Edit</a>
+                    </div>
+                    <div class="p-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-teal-500 rounded-full flex items-center justify-center text-white font-bold">RK</div>
+                            <div>
+                                <p class="font-bold text-gray-900">Rajesh Kumar</p>
+                                <p class="text-sm text-gray-500">+91 98765 43210</p>
+                            </div>
+                            <div class="ml-auto">
+                                <span class="px-2 py-1 bg-amber-100 text-amber-600 text-xs font-bold rounded-full">WARM</span>
+                            </div>
+                        </div>
+                        <div class="mt-3 text-xs text-gray-500">
+                            Walk-in • rajesh@email.com
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Property Section -->
+                <div class="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden shadow-sm">
+                    <div class="flex items-center justify-between p-4 border-b border-gray-100">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 bg-secondary/10 rounded-full flex items-center justify-center">
+                                <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                                </svg>
+                            </div>
+                            <span class="font-semibold text-gray-700 text-sm">Property</span>
+                        </div>
+                        <a href="04-step-property.html" class="text-xs font-semibold text-primary">Edit</a>
+                    </div>
+                    <div class="p-4">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-lg">🏠</span>
+                            <span class="font-semibold text-gray-900">Residential</span>
+                        </div>
+                        <p class="text-sm text-gray-600">123, MG Road, Near Bus Stand</p>
+                        <p class="text-sm text-gray-600">Sangli, Maharashtra - 416416</p>
+                    </div>
+                </div>
+
+                <!-- Technical Section -->
+                <div class="bg-white rounded-2xl border-2 border-gray-200 overflow-hidden shadow-sm">
+                    <div class="flex items-center justify-between p-4 border-b border-gray-100">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+                                </svg>
+                            </div>
+                            <span class="font-semibold text-gray-700 text-sm">Technical</span>
+                        </div>
+                        <a href="06-step-technical.html" class="text-xs font-semibold text-primary">Edit</a>
+                    </div>
+                    <div class="p-4">
+                        <div class="space-y-2 text-sm">
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-500">Consumer #</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 bg-gray-300 rounded-full" title="Not provided"></span>
+                                    <span class="text-gray-400 italic">Not provided</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-500">Connection</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 bg-yellow-400 rounded-full" title="Customer provided"></span>
+                                    <span class="text-gray-900">Single Phase</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-500">Sanctioned Load</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 bg-yellow-400 rounded-full" title="Customer provided"></span>
+                                    <span class="text-gray-900">5 KW</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-500">DISCOM</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 bg-gray-300 rounded-full" title="Not provided"></span>
+                                    <span class="text-gray-400 italic">Not provided</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Action -->
+        <footer class="sticky bottom-0 p-4 pb-8 bg-gradient-to-t from-green-50 to-transparent pt-8">
+            <a href="08-success.html" class="block w-full py-4 bg-gradient-to-r from-primary to-secondary text-white font-bold text-center rounded-2xl shadow-xl shadow-primary/25 flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span>Create Lead</span>
+            </a>
+        </footer>
+
+    </div>
+</body>
+</html>
+

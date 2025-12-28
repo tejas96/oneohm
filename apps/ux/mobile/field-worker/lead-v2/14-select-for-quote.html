@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Create Quote | OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        secondary: '#0d74b8',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-md mx-auto bg-white min-h-screen relative">
+        
+        <!-- Header -->
+        <div class="sticky top-0 z-10 bg-white border-b border-gray-100">
+            <div class="px-4 py-4 flex items-center gap-3">
+                <a href="../dashboard-fieldworker.html" class="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <div class="flex-1">
+                    <h1 class="text-lg font-bold text-gray-900">Create Quote</h1>
+                    <p class="text-xs text-gray-500">Select customer & property</p>
+                </div>
+            </div>
+            
+            <!-- Search -->
+            <div class="px-4 pb-4">
+                <div class="relative">
+                    <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input type="text" placeholder="Search by name or phone..." class="w-full pl-12 pr-4 py-3 bg-gray-100 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white transition-colors">
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer List -->
+        <div class="p-4 space-y-3 pb-32">
+            
+            <!-- Customer Card 1 -->
+            <div class="flex items-center gap-4 p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-primary/50 transition-colors active:scale-[0.98]" onclick="showPropertySheet('rk')">
+                <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
+                    RK
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2">
+                        <p class="font-semibold text-gray-900">Rajesh Kumar</p>
+                        <span class="px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold rounded-full">HOT</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-0.5">+91 98765 43210 • 2 Properties</p>
+                    <p class="text-xs text-gray-400">Sangli, Maharashtra</p>
+                </div>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </div>
+
+            <!-- Customer Card 2 -->
+            <div class="flex items-center gap-4 p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-primary/50 transition-colors active:scale-[0.98]" onclick="showPropertySheet('ps')">
+                <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-teal-500 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
+                    PS
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2">
+                        <p class="font-semibold text-gray-900">Priya Sharma</p>
+                        <span class="px-2 py-0.5 bg-amber-100 text-amber-600 text-[10px] font-bold rounded-full">WARM</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-0.5">+91 87654 32109 • 1 Property</p>
+                    <p class="text-xs text-gray-400">Mumbai, Maharashtra</p>
+                </div>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </div>
+
+            <!-- Customer Card 3 -->
+            <div class="flex items-center gap-4 p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-primary/50 transition-colors active:scale-[0.98]" onclick="showPropertySheet('am')">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
+                    AM
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2">
+                        <p class="font-semibold text-gray-900">Amit Mehta</p>
+                        <span class="px-2 py-0.5 bg-blue-100 text-blue-600 text-[10px] font-bold rounded-full">COLD</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-0.5">+91 76543 21098 • 3 Properties</p>
+                    <p class="text-xs text-gray-400">Pune, Maharashtra</p>
+                </div>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </div>
+
+            <!-- Customer Card 4 -->
+            <div class="flex items-center gap-4 p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-primary/50 transition-colors active:scale-[0.98]" onclick="showPropertySheet('sk')">
+                <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
+                    SK
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2">
+                        <p class="font-semibold text-gray-900">Sunita Kapoor</p>
+                        <span class="px-2 py-0.5 bg-amber-100 text-amber-600 text-[10px] font-bold rounded-full">WARM</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-0.5">+91 65432 10987 • 1 Property</p>
+                    <p class="text-xs text-gray-400">Nashik, Maharashtra</p>
+                </div>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </div>
+
+            <!-- Customer Card 5 -->
+            <div class="flex items-center gap-4 p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-primary/50 transition-colors active:scale-[0.98]" onclick="showPropertySheet('vr')">
+                <div class="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
+                    VR
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2">
+                        <p class="font-semibold text-gray-900">Vijay Rao</p>
+                        <span class="px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-bold rounded-full">HOT</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-0.5">+91 54321 09876 • 2 Properties</p>
+                    <p class="text-xs text-gray-400">Kolhapur, Maharashtra</p>
+                </div>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </div>
+
+        </div>
+
+        <!-- Property Selection Bottom Sheet -->
+        <div id="propertySheet" class="fixed inset-0 z-50 hidden">
+            <!-- Backdrop -->
+            <div class="absolute inset-0 bg-black/50" onclick="hidePropertySheet()"></div>
+            
+            <!-- Sheet -->
+            <div class="absolute bottom-0 left-0 right-0 max-w-md mx-auto bg-white rounded-t-3xl transform transition-transform duration-300">
+                <!-- Handle -->
+                <div class="flex justify-center pt-3 pb-2">
+                    <div class="w-10 h-1 bg-gray-300 rounded-full"></div>
+                </div>
+
+                <!-- Header -->
+                <div class="px-6 pb-4 border-b border-gray-100">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center text-white font-bold">
+                            RK
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-gray-900">Rajesh Kumar</h2>
+                            <p class="text-sm text-gray-500">Select property for quote</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Properties List -->
+                <div class="p-4 space-y-3 max-h-[50vh] overflow-y-auto">
+                    <!-- Property 1 -->
+                    <a href="../create-quote-wizard.html" class="flex items-center gap-4 p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-primary/50 transition-colors">
+                        <span class="text-2xl">🏠</span>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2">
+                                <p class="font-semibold text-gray-900">Home - MG Road</p>
+                                <span class="px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] font-semibold rounded">PRIMARY</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-0.5">Residential • <span class="text-red-600 font-semibold">Hot</span> • Est: 5 KW</p>
+                            <p class="text-xs text-gray-400">Sangli, Maharashtra</p>
+                        </div>
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </a>
+
+                    <!-- Property 2 -->
+                    <a href="../create-quote-wizard.html" class="flex items-center gap-4 p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-primary/50 transition-colors">
+                        <span class="text-2xl">🏢</span>
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-900">Shop - Market Area</p>
+                            <p class="text-xs text-gray-500 mt-0.5">Commercial • <span class="text-blue-600 font-semibold">Cold</span> • Est: 10 KW</p>
+                            <p class="text-xs text-gray-400">Sangli Market, Maharashtra</p>
+                        </div>
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </a>
+                </div>
+
+                <!-- Cancel Button -->
+                <div class="p-4 border-t border-gray-100">
+                    <button onclick="hidePropertySheet()" class="w-full py-3 text-gray-600 font-semibold rounded-xl hover:bg-gray-100 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function showPropertySheet(customerId) {
+            document.getElementById('propertySheet').classList.remove('hidden');
+        }
+        
+        function hidePropertySheet() {
+            document.getElementById('propertySheet').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
+

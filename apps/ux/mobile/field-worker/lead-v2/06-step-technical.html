@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>New Lead - Technical | OneOhm Solar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        secondary: '#0d74b8',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
+    <div class="max-w-md mx-auto min-h-screen flex flex-col">
+        
+        <!-- Header -->
+        <header class="sticky top-0 z-10 px-4 pt-4">
+            <div class="bg-white/90 backdrop-blur-lg rounded-2xl px-4 py-3 flex items-center justify-between shadow-lg">
+                <a href="04-step-property.html" class="p-2 -ml-2 rounded-xl hover:bg-gray-100">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <!-- Progress -->
+                <div class="flex items-center gap-2">
+                    <div class="flex gap-1.5">
+                        <div class="w-2 h-2 rounded-full bg-primary"></div>
+                        <div class="w-2 h-2 rounded-full bg-primary"></div>
+                        <div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
+                        <div class="w-2 h-2 rounded-full bg-gray-300"></div>
+                    </div>
+                    <span class="text-xs font-medium text-gray-500 ml-1">3 of 4</span>
+                </div>
+                <a href="07-step-review.html" class="text-sm font-semibold text-gray-400">Skip</a>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="flex-1 px-6 py-6 overflow-y-auto">
+            <!-- Title -->
+            <div class="mb-6">
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary/10 rounded-full mb-3">
+                    <span class="text-xs font-semibold text-secondary uppercase tracking-wide">Optional</span>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900 mb-1">Technical Details</h1>
+                <p class="text-gray-500 text-sm">From electricity bill if available</p>
+            </div>
+
+            <!-- Form -->
+            <div class="space-y-5">
+                <!-- Consumer Number -->
+                <div>
+                    <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Consumer Number</label>
+                    <div class="mt-2 relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                        </div>
+                        <input type="text" placeholder="From your electricity bill" class="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-primary focus:bg-white focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- Consumer Name -->
+                <div>
+                    <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Consumer Name</label>
+                    <div class="mt-2">
+                        <input type="text" placeholder="Name on electricity bill" class="w-full px-4 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-primary focus:bg-white focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- DISCOM -->
+                <div>
+                    <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Electricity Provider (DISCOM)</label>
+                    <div class="mt-2 relative">
+                        <select class="w-full px-4 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl appearance-none focus:border-primary focus:bg-white focus:outline-none text-gray-700">
+                            <option value="">Select provider</option>
+                            <option value="msedcl">MSEDCL</option>
+                            <option value="best">BEST</option>
+                            <option value="tata_power">Tata Power</option>
+                            <option value="adani">Adani Electricity</option>
+                            <option value="bescom">BESCOM</option>
+                            <option value="gescom">GESCOM</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Connection Type -->
+                <div>
+                    <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Connection Type</label>
+                    <div class="mt-3 flex gap-3">
+                        <button class="flex-1 py-4 px-4 border-2 border-primary bg-primary/5 rounded-xl text-center">
+                            <span class="text-xl">⚡</span>
+                            <span class="block text-sm font-semibold text-primary mt-1">Single Phase</span>
+                        </button>
+                        <button class="flex-1 py-4 px-4 border-2 border-gray-200 rounded-xl text-center hover:border-gray-300">
+                            <span class="text-xl">⚡⚡⚡</span>
+                            <span class="block text-sm font-semibold text-gray-600 mt-1">Three Phase</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sanctioned Load -->
+                <div>
+                    <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Sanctioned Load</label>
+                    <div class="mt-2 flex items-center gap-4">
+                        <button class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                            </svg>
+                        </button>
+                        <div class="flex-1 text-center">
+                            <span class="text-2xl font-bold text-gray-900">5</span>
+                            <span class="text-lg text-gray-500 ml-1">KW</span>
+                        </div>
+                        <button class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary hover:bg-primary/20">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Meter Number -->
+                <div>
+                    <label class="text-xs font-medium text-gray-500 uppercase tracking-wide">Meter Number</label>
+                    <div class="mt-2">
+                        <input type="text" placeholder="Optional" class="w-full px-4 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-primary focus:bg-white focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tip -->
+            <div class="mt-6 p-4 bg-secondary/5 border border-secondary/20 rounded-2xl">
+                <div class="flex gap-3">
+                    <div class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-secondary" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-800">Don't have the bill?</p>
+                        <p class="text-xs text-gray-600 mt-0.5">Skip this step. You can verify details during the Site Visit.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom Actions -->
+        <footer class="sticky bottom-0 p-4 pb-8 bg-gradient-to-t from-green-50 to-transparent pt-8">
+            <div class="flex gap-3">
+                <a href="04-step-property.html" class="flex-1 py-4 border-2 border-gray-200 bg-white text-gray-700 font-semibold text-center rounded-2xl">
+                    Back
+                </a>
+                <a href="07-step-review.html" class="flex-1 py-4 bg-gradient-to-r from-primary to-secondary text-white font-semibold text-center rounded-2xl shadow-lg shadow-primary/25 flex items-center justify-center gap-2">
+                    <span>Review</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
+                </a>
+            </div>
+            <a href="07-step-review.html" class="block w-full py-3 mt-2 text-center text-sm font-medium text-gray-500 hover:text-gray-700">
+                Skip & Review →
+            </a>
+        </footer>
+
+    </div>
+</body>
+</html>
+
