@@ -43,7 +43,7 @@ export class CustomerProfileRepository {
   ): Promise<[CustomerProfileEntity[], number]> {
     return this.repository.findAndCount({
       where: { organizationId, deletedAt: IsNull() },
-      relations: ['user'],
+      relations: ['user', 'properties'],
       skip: (page - 1) * limit,
       take: limit,
       order: { createdAt: 'DESC' },
@@ -74,10 +74,33 @@ export class CustomerProfileRepository {
     return (result.affected ?? 0) > 0;
   }
 
+  /**
+   * @deprecated Use findByOrganization with pagination instead
+   * Find all customers for an organization without pagination
+   */
   async findAll(organizationId: string): Promise<CustomerProfileEntity[]> {
     return this.repository.find({
       where: { organizationId, deletedAt: IsNull() },
       relations: ['user', 'organization', 'properties'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /**
+   * Find customers created by a specific user
+   * Used for field workers to see only their own customers
+   */
+  async findByCreatedBy(
+    organizationId: string,
+    createdBy: string,
+    page = 1,
+    limit = 20,
+  ): Promise<[CustomerProfileEntity[], number]> {
+    return this.repository.findAndCount({
+      where: { organizationId, createdBy, deletedAt: IsNull() },
+      relations: ['user', 'organization', 'properties'],
+      skip: (page - 1) * limit,
+      take: limit,
       order: { createdAt: 'DESC' },
     });
   }
@@ -106,7 +129,7 @@ export class CustomerProfileRepository {
     return this.repository
       .createQueryBuilder('customer')
       .innerJoin('customer.properties', 'property')
-      .where('customer.organizationId = :organizationId', { organizationId })
+      .where('customer.organization_id = :organizationId', { organizationId })
       .andWhere('property.consumerNumber = :consumerNumber', { consumerNumber })
       .andWhere('customer.deletedAt IS NULL')
       .andWhere('property.deletedAt IS NULL')
@@ -139,5 +162,57 @@ export class CustomerProfileRepository {
       status: r.status,
       count: parseInt(r.count, 10),
     }));
+  }
+
+  /**
+   * Search customers by name, phone, or email
+   * Searches within the organization context
+   *
+   * @param organizationId - Organization to search in
+   * @param searchQuery - Search term (searches first name, last name, phone, email)
+   * @param createdBy - Optional: filter by creator (for field workers)
+   * @param page - Page number
+   * @param limit - Items per page
+   * @returns Matching customers with pagination
+   */
+  async search(
+    organizationId: string,
+    searchQuery: string,
+    createdBy?: string,
+    page = 1,
+    limit = 20,
+  ): Promise<[CustomerProfileEntity[], number]> {
+    // Search across multiple fields (case-insensitive)
+    const searchTerm = `%${searchQuery.toLowerCase()}%`;
+
+    const qb = this.repository
+      .createQueryBuilder('customer')
+      .leftJoinAndSelect('customer.user', 'user')
+      .leftJoinAndSelect('customer.organization', 'organization')
+      .leftJoinAndSelect('customer.properties', 'properties', 'properties.deleted_at IS NULL')
+      .where('customer.organization_id = :organizationId', { organizationId })
+      .andWhere('customer.deleted_at IS NULL')
+      .andWhere(
+        `(
+          LOWER(customer.first_name) LIKE :searchTerm OR
+          LOWER(customer.last_name) LIKE :searchTerm OR
+          LOWER(CONCAT(customer.first_name, ' ', customer.last_name)) LIKE :searchTerm OR
+          customer.phone LIKE :searchTerm OR
+          LOWER(customer.email) LIKE :searchTerm OR
+          LOWER(customer.city) LIKE :searchTerm
+        )`,
+        { searchTerm },
+      );
+
+    // Filter by creator if specified (for field workers)
+    if (createdBy) {
+      qb.andWhere('customer.created_by = :createdBy', { createdBy });
+    }
+
+    qb.orderBy('customer.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    return qb.getManyAndCount();
   }
 }

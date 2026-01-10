@@ -217,4 +217,3 @@ export class CreateCustomerPropertiesTable1765200000000 implements MigrationInte
     await queryRunner.query(`DROP TABLE IF EXISTS customer_properties;`);
   }
 }
-

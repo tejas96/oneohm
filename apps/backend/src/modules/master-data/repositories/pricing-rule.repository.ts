@@ -41,13 +41,13 @@ export class PricingRuleRepository {
    * Find active pricing rule for a product with full context
    * Considers project type and effective dates
    * Returns the highest priority matching rule
-   * 
+   *
    * Fallback Chain (single optimized query):
    * 1. Exact project_type match (highest priority)
    * 2. Fallback to 'residential' (for DCR panels)
    * 3. Fallback to 'commercial' (for Non-DCR panels)
    * 4. Fallback to NULL project_type (universal)
-   * 
+   *
    * Business Logic:
    * - DCR panels: residential pricing applies to residential_apartment too
    * - Non-DCR panels: commercial pricing applies to residential (above 3KW), industrial, agricultural
@@ -79,7 +79,7 @@ export class PricingRuleRepository {
           OR rule.project_type = :commercial 
           OR rule.project_type IS NULL)`,
         {
-        projectType,
+          projectType,
           residential: ProjectType.RESIDENTIAL,
           commercial: ProjectType.COMMERCIAL,
         },

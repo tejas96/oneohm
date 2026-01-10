@@ -91,4 +91,3 @@ export class UpdateSubsidyConfigurationDto {
   @IsOptional()
   effectiveTo?: string;
 }
-

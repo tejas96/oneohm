@@ -152,4 +152,3 @@ export class CreateQuoteConfigurationDto {
   @IsOptional()
   notes?: string;
 }
-

@@ -115,4 +115,3 @@ export class InstallationPricingListResponseDto {
   @Expose()
   limit!: number;
 }
-

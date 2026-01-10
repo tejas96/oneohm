@@ -28,7 +28,7 @@ export const createDataSourceOptions = (
     migrations: [`${__dirname}/../database/migrations/**/*{.ts,.js}`],
     subscribers: [`${__dirname}/../**/*.subscriber{.ts,.js}`],
     synchronize: false, // Always false - use migrations
-    logging: dbConfig.logging || nodeEnv === 'development',
+    logging: dbConfig.logging ? true : ['error', 'warn', 'migration'], // Only log errors/warnings, not all queries
     logger: 'advanced-console',
     ssl: dbConfig.ssl
       ? {

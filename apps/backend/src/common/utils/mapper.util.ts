@@ -1,3 +1,4 @@
+import { type PaginatedResponse } from '@oneohm-epc/shared-types';
 import { ClassConstructor, plainToInstance } from 'class-transformer';
 
 /**
@@ -13,8 +14,8 @@ import { ClassConstructor, plainToInstance } from 'class-transformer';
  * // Array of entities
  * const dtos = toDtoArray(CustomerResponseDto, entities);
  *
- * // In service layer
- * return toDto(CustomerPropertyResponseDto, property);
+ * // Paginated response (proper format)
+ * return toPaginatedResponse(DtoClass, result.data, result.total, page, limit);
  */
 
 /**
@@ -44,10 +45,45 @@ export function toDtoArray<T, V>(DtoClass: ClassConstructor<T>, entities: V[]): 
 }
 
 /**
- * Convert paginated result to DTO format
+ * Convert paginated result to proper PaginatedResponse format
+ * This is the preferred method for returning paginated data from controllers.
+ *
  * @param DtoClass The DTO class constructor
- * @param data Object with data array and metadata
- * @returns Object with transformed data array and preserved metadata
+ * @param data Array of entities to transform
+ * @param total Total count of items (for pagination meta)
+ * @param page Current page number
+ * @param limit Items per page
+ * @returns PaginatedResponse with data and meta
+ *
+ * @example
+ * // In controller
+ * const { data, total } = await this.service.findAll(orgId, page, limit);
+ * return toPaginatedResponse(ResponseDto, data, total, page, limit);
+ */
+export function toPaginatedResponse<T, V>(
+  DtoClass: ClassConstructor<T>,
+  data: V[],
+  total: number,
+  page: number,
+  limit: number,
+): PaginatedResponse<T> {
+  return {
+    data: toDtoArray(DtoClass, data),
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit) || 1,
+    },
+  };
+}
+
+/**
+ * @deprecated Use toPaginatedResponse instead for proper PaginatedResponse format
+ * Convert paginated result to DTO format (legacy format without meta)
+ * @param DtoClass The DTO class constructor
+ * @param result Object with data array and total count
+ * @returns Object with transformed data array and total count
  */
 export function toDtoPaginated<T, V>(
   DtoClass: ClassConstructor<T>,
@@ -58,4 +94,3 @@ export function toDtoPaginated<T, V>(
     total: result.total,
   };
 }
-

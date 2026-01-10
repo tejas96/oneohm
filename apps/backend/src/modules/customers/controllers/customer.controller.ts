@@ -1,6 +1,16 @@
-import { Body, Controller, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { CustomerStatus } from '@oneohm-epc/shared-types';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  ParseUUIDPipe,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { CustomerStatus, type PaginatedResponse } from '@oneohm-epc/shared-types';
 import {
   ApiAction,
   ApiCreate,
@@ -11,7 +21,7 @@ import {
   OrganizationContext,
 } from '@oneohm-epc/shared-utils';
 
-import { toDto, toDtoArray } from '../../../common/utils';
+import { toDto, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
@@ -72,20 +82,77 @@ export class CustomerController {
 
   /**
    * Get all customers
+   * Supports filtering by creator (createdBy=me for field workers)
+   * Supports search by name, phone, email, or city
    */
   // @RequirePermission('customers:read') // TODO: Re-enable
   @ApiReadAll({
     summary: 'Get all customers',
     description:
-      'Retrieve all customers for the specified organization. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      'Retrieve customers for the specified organization. Use createdBy=me to get only customers created by the current user. Use search query to filter by name, phone, email, or city. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
     responseType: CustomerResponseDto,
+  })
+  @ApiQuery({
+    name: 'createdBy',
+    required: false,
+    type: String,
+    description: 'Filter by creator. Use "me" for current user\'s customers',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search query to filter by name, phone, email, or city (min 2 characters)',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 20)',
   })
   async findAll(
     @OrganizationContext() organizationId: string,
-    @CurrentUser() _currentUser: CurrentUserType,
-  ): Promise<CustomerResponseDto[]> {
-    const customers = await this.customerService.findAll(organizationId);
-    return toDtoArray(CustomerResponseDto, customers);
+    @CurrentUser() currentUser: CurrentUserType,
+    @Query('createdBy') createdBy?: string,
+    @Query('search') search?: string,
+    @Query('page', new ParseIntPipe({ optional: true })) page = 1,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
+  ): Promise<PaginatedResponse<CustomerResponseDto>> {
+    // Determine the creator filter
+    const creatorId = createdBy === 'me' ? currentUser.id : undefined;
+
+    // If search query provided, use search method
+    if (search && search.trim().length >= 2) {
+      const result = await this.customerService.search(
+        organizationId,
+        search.trim(),
+        creatorId,
+        page,
+        limit,
+      );
+      return toPaginatedResponse(CustomerResponseDto, result.data, result.total, page, limit);
+    }
+
+    // If createdBy=me, filter by current user (for field workers)
+    if (createdBy === 'me') {
+      const result = await this.customerService.findByCreator(
+        organizationId,
+        currentUser.id,
+        page,
+        limit,
+      );
+      return toPaginatedResponse(CustomerResponseDto, result.data, result.total, page, limit);
+    }
+
+    // Default: return all customers with proper pagination
+    const result = await this.customerService.findAll(organizationId, page, limit);
+    return toPaginatedResponse(CustomerResponseDto, result.data, result.total, page, limit);
   }
 
   /**
@@ -184,12 +251,24 @@ export class CustomerController {
    * Get customer statistics by status
    */
   // @RequirePermission('customers:read') // TODO: Re-enable
-  @ApiAction({
-    path: 'statistics/status',
+  @Get('statistics/status')
+  @ApiOperation({
     summary: 'Get customer status statistics',
     description:
       'Returns count of customers grouped by status for the specified organization. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
-    responseType: Object,
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Status statistics',
+    schema: {
+      type: 'object',
+      properties: {
+        lead: { type: 'number', example: 5 },
+        prospect: { type: 'number', example: 10 },
+        active: { type: 'number', example: 25 },
+        inactive: { type: 'number', example: 3 },
+      },
+    },
   })
   async getStatusStatistics(
     @OrganizationContext() organizationId: string,

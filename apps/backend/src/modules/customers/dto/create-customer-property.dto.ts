@@ -226,4 +226,3 @@ export class CreateCustomerPropertyDto {
   @IsOptional()
   notes?: string;
 }
-

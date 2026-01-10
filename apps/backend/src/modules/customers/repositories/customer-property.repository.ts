@@ -122,16 +122,10 @@ export class CustomerPropertyRepository {
    */
   async setPrimary(propertyId: string, customerId: string, updatedBy?: string): Promise<void> {
     // First, unset all primary flags for this customer
-    await this.repository.update(
-      { customerId, deletedAt: IsNull() },
-      { isPrimary: false },
-    );
+    await this.repository.update({ customerId, deletedAt: IsNull() }, { isPrimary: false });
 
     // Then set the specified property as primary
-    await this.repository.update(
-      { id: propertyId },
-      { isPrimary: true, updatedBy },
-    );
+    await this.repository.update({ id: propertyId }, { isPrimary: true, updatedBy });
   }
 
   async countByCustomer(customerId: string): Promise<number> {
@@ -140,10 +134,7 @@ export class CustomerPropertyRepository {
     });
   }
 
-  async countByTemperature(
-    organizationId: string,
-    temperature: LeadTemperature,
-  ): Promise<number> {
+  async countByTemperature(organizationId: string, temperature: LeadTemperature): Promise<number> {
     return this.repository.count({
       where: { organizationId, leadTemperature: temperature, deletedAt: IsNull() },
     });

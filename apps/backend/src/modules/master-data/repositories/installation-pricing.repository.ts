@@ -33,7 +33,7 @@ export class InstallationPricingRepository {
   /**
    * Find installation pricing for a specific system size
    * This is the main method used by the quote calculator
-   * 
+   *
    * Fallback Logic:
    * - First tries to find pricing for the exact project type
    * - If not found, falls back to 'residential' pricing (same for all project types)

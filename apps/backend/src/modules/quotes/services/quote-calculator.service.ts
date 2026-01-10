@@ -23,11 +23,16 @@ import {
   InstallationPricingRepository,
   QuoteConfigurationRepository,
 } from '../../master-data/repositories';
-import { CalculateQuoteDto, CalculateQuoteResponseDto, PanelOverrideDto, InverterOverrideDto } from '../dto/calculator';
+import {
+  CalculateQuoteDto,
+  CalculateQuoteResponseDto,
+  PanelOverrideDto,
+  InverterOverrideDto,
+} from '../dto/calculator';
 
 /**
  * Quote Calculator Service v2
- * 
+ *
  * Handles all quote calculation business logic including:
  * - Panel selection and quantity calculation (with override support)
  * - Inverter selection and combination logic (with override support)
@@ -36,7 +41,7 @@ import { CalculateQuoteDto, CalculateQuoteResponseDto, PanelOverrideDto, Inverte
  * - Subsidy calculation with tiered rates and max amount cap
  * - GST calculation (configurable split)
  * - Validation and warnings
- * 
+ *
  * Key Features:
  * - Project type aware pricing
  * - Override support for panels and inverters
@@ -238,12 +243,7 @@ export class QuoteCalculatorService {
   ): Promise<CalculatedPanelConfig[]> {
     // If overrides provided, validate and use them
     if (overrides && overrides.length > 0) {
-      return this.calculatePanelsWithOverrides(
-        organizationId,
-        projectType,
-        overrides,
-        warnings,
-      );
+      return this.calculatePanelsWithOverrides(organizationId, projectType, overrides, warnings);
     }
 
     // Auto-calculate panels
@@ -251,7 +251,13 @@ export class QuoteCalculatorService {
 
     // Calculate DCR panels if needed
     if (dcrSizeKw > 0) {
-      const dcrPanel = await this.findPanel(organizationId, true, preferredBrand, preferredTechnology, preferredWattage);
+      const dcrPanel = await this.findPanel(
+        organizationId,
+        true,
+        preferredBrand,
+        preferredTechnology,
+        preferredWattage,
+      );
       if (!dcrPanel) {
         throw new BadRequestException(
           `No DCR panel found${preferredBrand ? ` for brand ${preferredBrand}` : ''}${preferredTechnology ? ` with ${preferredTechnology} technology` : ''}. Please try different options or contact administrator.`,
@@ -269,7 +275,13 @@ export class QuoteCalculatorService {
 
     // Calculate Non-DCR panels if needed
     if (nonDcrSizeKw > 0) {
-      const nonDcrPanel = await this.findPanel(organizationId, false, preferredBrand, preferredTechnology, preferredWattage);
+      const nonDcrPanel = await this.findPanel(
+        organizationId,
+        false,
+        preferredBrand,
+        preferredTechnology,
+        preferredWattage,
+      );
       if (!nonDcrPanel) {
         throw new BadRequestException(
           `No Non-DCR panel found${preferredBrand ? ` for brand ${preferredBrand}` : ''}${preferredTechnology ? ` with ${preferredTechnology} technology` : ''}. Please try different options or contact administrator.`,
@@ -374,7 +386,13 @@ export class QuoteCalculatorService {
     preferredTechnology?: string,
     preferredWattage?: number,
   ): Promise<ProductEntity | null> {
-    return this.productRepo.findSolarPanel(organizationId, isDcr, preferredBrand, preferredTechnology, preferredWattage);
+    return this.productRepo.findSolarPanel(
+      organizationId,
+      isDcr,
+      preferredBrand,
+      preferredTechnology,
+      preferredWattage,
+    );
   }
 
   /**
@@ -452,7 +470,7 @@ export class QuoteCalculatorService {
   /**
    * Calculate inverter configuration with combination logic
    * Supports user overrides for custom inverter selection
-   * 
+   *
    * OPTIMIZATION PRIORITY:
    * 1. Minimum COST (primary factor)
    * 2. Minimum inverter count (tie-breaker)
@@ -516,16 +534,16 @@ export class QuoteCalculatorService {
       const lineTotal = pricing.basePrice * quantity;
       const gstAmount = (lineTotal * pricing.gstRate) / 100;
 
-        return {
-          productId: inverter.id,
-          name: inverter.name,
-          brand: inverter.brand || 'Unknown',
-          capacityKw: Number(inverter.specifications?.inverter?.capacityKw || 0),
-          quantity,
+      return {
+        productId: inverter.id,
+        name: inverter.name,
+        brand: inverter.brand || 'Unknown',
+        capacityKw: Number(inverter.specifications?.inverter?.capacityKw || 0),
+        quantity,
         unitPrice: pricing.basePrice,
-          lineTotal,
-          gstAmount,
-        };
+        lineTotal,
+        gstAmount,
+      };
     });
 
     const totalCapacityKw = invertersWithPricing.reduce(
@@ -642,13 +660,13 @@ export class QuoteCalculatorService {
 
   /**
    * Find optimal inverter combination with minimal overage
-   * 
+   *
    * Algorithm:
    * 1. Try exact match first
    * 2. Find smallest single inverter >= required (single option)
    * 3. Find optimal combination using multiple inverters (combo option)
    * 4. Compare and pick the one with least overage
-   * 
+   *
    * Examples:
    * - 10KW 1-phase: 6KW + 4KW = 10KW (exact) or 5KW + 5KW = 10KW
    * - 13.5KW 3-phase: 15KW single (better than 12KW + 8KW = 20KW)
@@ -713,14 +731,14 @@ export class QuoteCalculatorService {
 
   /**
    * Build optimal combination with MINIMUM OVERAGE
-   * 
+   *
    * Algorithm: Explore multiple starting points and pick the combination with least overage.
-   * 
+   *
    * For 26KW with options [8, 10, 15, 20, 25, 36]:
    * - Try starting with 25: 25 + 8 = 33KW (7 over) ← old greedy picked this
    * - Try starting with 20: 20 + 8 = 28KW (2 over) ← BETTER!
    * - Try starting with 15: 15 + 15 = 30KW (4 over) or 15 + 10 + 8 = 33KW
-   * 
+   *
    * The key insight: starting with a smaller "anchor" inverter can lead to better totals.
    */
   private buildOptimalCombination(
@@ -729,7 +747,7 @@ export class QuoteCalculatorService {
     requiredKw: number,
   ): Array<{ inverter: ProductEntity; quantity: number }> {
     type Combination = Array<{ inverter: ProductEntity; quantity: number }>;
-    
+
     const getCombinationTotal = (combo: Combination): number => {
       return combo.reduce(
         (sum, c) => sum + Number(c.inverter.specifications?.inverter?.capacityKw || 0) * c.quantity,
@@ -747,7 +765,7 @@ export class QuoteCalculatorService {
 
       // Try 1, 2, or more of this anchor (up to what makes sense)
       const maxAnchorCount = Math.ceil(requiredKw / anchorCapacity);
-      
+
       for (let anchorCount = 1; anchorCount <= maxAnchorCount && anchorCount <= 3; anchorCount++) {
         const combination: Combination = [{ inverter: anchor, quantity: anchorCount }];
         let remaining = requiredKw - anchorCapacity * anchorCount;
@@ -765,7 +783,7 @@ export class QuoteCalculatorService {
         // Fill remaining with smallest suitable inverters
         for (const filler of sortedAsc) {
           if (filler.id === anchor.id) continue; // Already used as anchor
-          
+
           const fillerCapacity = Number(filler.specifications?.inverter?.capacityKw || 0);
           if (fillerCapacity <= 0) continue;
 
@@ -787,8 +805,8 @@ export class QuoteCalculatorService {
         // If still remaining, add smallest >= remaining
         if (remaining > 0) {
           const smallestSuitable = sortedAsc.find(
-            (inv) => 
-              inv.id !== anchor.id && 
+            (inv) =>
+              inv.id !== anchor.id &&
               Number(inv.specifications?.inverter?.capacityKw || 0) >= remaining,
           );
           if (smallestSuitable) {
@@ -818,7 +836,7 @@ export class QuoteCalculatorService {
         const inv1 = sortedDesc[i];
         const inv2 = sortedDesc[j];
         if (!inv1 || !inv2) continue;
-        
+
         const cap1 = Number(inv1.specifications?.inverter?.capacityKw || 0);
         const cap2 = Number(inv2.specifications?.inverter?.capacityKw || 0);
 
@@ -883,11 +901,11 @@ export class QuoteCalculatorService {
         }
       } else if (sortedDesc.length > 0 && sortedDesc[0]) {
         const largest = sortedDesc[0];
-          const existing = combination.find((c) => c.inverter.id === largest.id);
-          if (existing) {
-            existing.quantity += 1;
-          } else {
-            combination.push({ inverter: largest, quantity: 1 });
+        const existing = combination.find((c) => c.inverter.id === largest.id);
+        if (existing) {
+          existing.quantity += 1;
+        } else {
+          combination.push({ inverter: largest, quantity: 1 });
         }
       }
     }
@@ -897,12 +915,12 @@ export class QuoteCalculatorService {
 
   /**
    * Find COST-OPTIMAL inverter combination
-   * 
+   *
    * PRIORITY:
    * 1. Minimum TOTAL COST (primary)
    * 2. Minimum inverter count (tie-breaker)
    * 3. Minimum capacity overage (secondary tie-breaker)
-   * 
+   *
    * This method explores all valid combinations and picks the cheapest one.
    */
   private findCostOptimalInverterCombination(
@@ -1065,7 +1083,7 @@ export class QuoteCalculatorService {
 
   /**
    * Calculate structure cost from installation pricing by structure type (direct lookup)
-   * 
+   *
    * Structure types map to cost_components fields:
    * - aluminum_rail -> struct_aluminum_rail
    * - rcc_3x6, elevated_6x9 -> struct_rcc_elevated
@@ -1112,7 +1130,10 @@ export class QuoteCalculatorService {
     let productId = '';
     let productName = `${structureType} Structure`;
 
-    const structureProduct = await this.productRepo.findMountingStructure(organizationId, structureType);
+    const structureProduct = await this.productRepo.findMountingStructure(
+      organizationId,
+      structureType,
+    );
     if (structureProduct) {
       productId = structureProduct.id;
       productName = structureProduct.name;
@@ -1180,8 +1201,14 @@ export class QuoteCalculatorService {
 
     // Total (excluding structure_cost as it's in the structure line item)
     const totalBeforeTax =
-      electricalWork + fixedMaterial + variableFloor + installationLabor +
-      loadingUnloading + msedclCharges + supervision + transport;
+      electricalWork +
+      fixedMaterial +
+      variableFloor +
+      installationLabor +
+      loadingUnloading +
+      msedclCharges +
+      supervision +
+      transport;
 
     const gstRate = Number(pricing.gstRate || 18);
     const gstAmount = (totalBeforeTax * gstRate) / 100;
@@ -1290,7 +1317,7 @@ export class QuoteCalculatorService {
 
   /**
    * Calculate final pricing using actual per-item GST rates
-   * 
+   *
    * GST Rates (as per product pricing rules):
    * - Panels: 5% GST (solar equipment)
    * - Inverters: 5% GST (solar equipment)
@@ -1331,7 +1358,7 @@ export class QuoteCalculatorService {
     // For backward compatibility, map 5% GST to gst12Amount field
     // (gst12Amount now represents lower-rate GST from equipment)
     const gst12Amount = gst5Amount;
-    
+
     const totalGst = gst12Amount + gst18Amount;
     const totalPrice = basePrice + totalGst;
 

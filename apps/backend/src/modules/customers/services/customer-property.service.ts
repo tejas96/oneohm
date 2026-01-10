@@ -116,7 +116,10 @@ export class CustomerPropertyService {
   /**
    * Find all properties for a customer
    */
-  async findByCustomer(customerId: string, organizationId: string): Promise<CustomerPropertyEntity[]> {
+  async findByCustomer(
+    customerId: string,
+    organizationId: string,
+  ): Promise<CustomerPropertyEntity[]> {
     // Verify customer belongs to organization
     const customer = await this.customerRepository.findById(customerId);
     if (customer?.organizationId !== organizationId) {
@@ -242,7 +245,11 @@ export class CustomerPropertyService {
   /**
    * Set property as primary
    */
-  async setPrimary(id: string, organizationId: string, updatedBy?: string): Promise<CustomerPropertyEntity> {
+  async setPrimary(
+    id: string,
+    organizationId: string,
+    updatedBy?: string,
+  ): Promise<CustomerPropertyEntity> {
     this.logger.log(`Setting property ${id} as primary`);
 
     const property = await this.findById(id, organizationId);
@@ -310,4 +317,3 @@ export class CustomerPropertyService {
     return date;
   }
 }
-

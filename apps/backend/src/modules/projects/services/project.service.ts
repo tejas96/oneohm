@@ -268,8 +268,7 @@ export class ProjectService {
       quote.property?.consumerName ||
       `${quote.customer.firstName} ${quote.customer.lastName || ''}`.trim() ||
       'Customer';
-    const siteAddress =
-      quote.property?.address || quote.customer.address || 'To be confirmed';
+    const siteAddress = quote.property?.address || quote.customer.address || 'To be confirmed';
 
     // Create project from quote data
     const project = await this.projectRepository.create({

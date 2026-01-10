@@ -4,9 +4,10 @@ import {
   PropertyStatus,
   PropertyType,
 } from '@oneohm-epc/shared-types';
-import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 
 import { CustomerProfileEntity } from './customer-profile.entity';
+import type { SiteVisitEntity } from './site-visit.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 
@@ -39,6 +40,10 @@ export class CustomerPropertyEntity extends BaseEntity {
   @ManyToOne(() => OrganizationEntity)
   @JoinColumn({ name: 'organization_id' })
   organization?: OrganizationEntity;
+
+  // ==================== SITE VISIT (One-to-One) ====================
+  @OneToOne('SiteVisitEntity', 'customerProperty')
+  siteVisit?: SiteVisitEntity;
 
   // ==================== PROPERTY DETAILS ====================
   @Column({ name: 'property_name', type: 'varchar', length: 255, nullable: true })
@@ -140,4 +145,3 @@ export class CustomerPropertyEntity extends BaseEntity {
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy?: string;
 }
-

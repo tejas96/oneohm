@@ -8,3 +8,8 @@ export * from './customer-response.dto';
 export * from './create-customer-property.dto';
 export * from './update-customer-property.dto';
 export * from './customer-property-response.dto';
+
+// Site Visit DTOs
+export * from './create-site-visit.dto';
+export * from './update-site-visit.dto';
+export * from './site-visit-response.dto';

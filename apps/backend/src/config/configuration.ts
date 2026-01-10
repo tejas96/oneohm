@@ -57,13 +57,15 @@ export default (): Configuration => ({
   },
 
   storage: {
-    type: process.env.STORAGE_TYPE as 'local' | 's3' | 'azure' | 'gcp',
+    type: process.env.STORAGE_TYPE as 'local' | 's3' | 'tigris' | 'azure' | 'gcp',
     localPath: process.env.STORAGE_LOCAL_PATH,
-    maxFileSize: parseInt(process.env.STORAGE_MAX_FILE_SIZE!, 10),
-    awsRegion: process.env.AWS_REGION,
+    maxFileSize: parseInt(process.env.STORAGE_MAX_FILE_SIZE || '10485760', 10), // 10MB default
+    awsRegion: process.env.AWS_REGION || 'auto',
     awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID,
     awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     awsS3Bucket: process.env.AWS_S3_BUCKET,
+    s3Endpoint: process.env.S3_ENDPOINT, // For Tigris: https://fly.storage.tigris.dev
+    presignedUrlExpiry: parseInt(process.env.PRESIGNED_URL_EXPIRY || '3600', 10),
   },
 
   security: {

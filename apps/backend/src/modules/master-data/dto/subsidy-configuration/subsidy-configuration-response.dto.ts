@@ -101,4 +101,3 @@ export class SubsidyConfigurationListResponseDto {
   @Expose()
   limit!: number;
 }
-

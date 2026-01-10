@@ -216,4 +216,3 @@ export class UpdateCustomerPropertyDto {
   @IsOptional()
   notes?: string;
 }
-

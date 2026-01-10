@@ -146,4 +146,3 @@ export class CustomerPropertyResponseDto {
   @Expose()
   updatedBy?: string;
 }
-

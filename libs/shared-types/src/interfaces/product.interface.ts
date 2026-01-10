@@ -152,4 +152,3 @@ export interface ProductSpecifications {
   /** Additional flexible fields for custom specifications */
   additional?: Record<string, unknown>;
 }
-

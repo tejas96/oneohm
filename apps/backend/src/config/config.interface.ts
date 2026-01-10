@@ -51,13 +51,21 @@ export interface MailConfig {
 }
 
 export interface StorageConfig {
-  type: 'local' | 's3' | 'azure' | 'gcp';
+  type: 'local' | 's3' | 'tigris' | 'azure' | 'gcp';
   localPath?: string;
   maxFileSize: number;
+  /** AWS/Tigris region */
   awsRegion?: string;
+  /** AWS/Tigris access key */
   awsAccessKeyId?: string;
+  /** AWS/Tigris secret key */
   awsSecretAccessKey?: string;
+  /** S3/Tigris bucket name */
   awsS3Bucket?: string;
+  /** Custom S3 endpoint for Tigris or other S3-compatible storage */
+  s3Endpoint?: string;
+  /** Presigned URL expiry in seconds (default: 3600) */
+  presignedUrlExpiry?: number;
 }
 
 export interface SecurityConfig {
