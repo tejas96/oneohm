@@ -104,10 +104,38 @@ export class CustomerService {
   }
 
   /**
-   * Find all customers for an organization
+   * Find all customers for an organization (with pagination)
    */
-  async findAll(organizationId: string): Promise<CustomerProfileEntity[]> {
-    return this.customerRepository.findAll(organizationId);
+  async findAll(
+    organizationId: string,
+    page = 1,
+    limit = 20,
+  ): Promise<{ data: CustomerProfileEntity[]; total: number }> {
+    const [data, total] = await this.customerRepository.findByOrganization(
+      organizationId,
+      page,
+      limit,
+    );
+    return { data, total };
+  }
+
+  /**
+   * Find customers created by a specific user (for field workers)
+   * Returns data in FindAllResponse format for consistency
+   */
+  async findByCreator(
+    organizationId: string,
+    createdBy: string,
+    page = 1,
+    limit = 20,
+  ): Promise<{ data: CustomerProfileEntity[]; total: number }> {
+    const [data, total] = await this.customerRepository.findByCreatedBy(
+      organizationId,
+      createdBy,
+      page,
+      limit,
+    );
+    return { data, total };
   }
 
   /**
@@ -215,5 +243,41 @@ export class CustomerService {
     }
 
     return result;
+  }
+
+  /**
+   * Search customers by query string
+   * Searches across name, phone, email, and city
+   *
+   * @param organizationId - Organization to search in
+   * @param query - Search query string
+   * @param createdBy - Optional: filter by creator ID (for field workers)
+   * @param page - Page number
+   * @param limit - Items per page
+   */
+  async search(
+    organizationId: string,
+    query: string,
+    createdBy?: string,
+    page = 1,
+    limit = 20,
+  ): Promise<{ data: CustomerProfileEntity[]; total: number }> {
+    this.logger.log(`Searching customers: query="${query}", org=${organizationId}`);
+
+    // Return empty results for empty or very short queries
+    if (!query || query.trim().length < 2) {
+      return { data: [], total: 0 };
+    }
+
+    const [data, total] = await this.customerRepository.search(
+      organizationId,
+      query.trim(),
+      createdBy,
+      page,
+      limit,
+    );
+
+    this.logger.log(`Search found ${total} results for query="${query}"`);
+    return { data, total };
   }
 }
