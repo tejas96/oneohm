@@ -64,7 +64,7 @@ export class UpdatePricingRuleDto {
   projectType?: ProjectType;
 
   @ApiPropertyOptional({
-    example: { pricePerWatt: 26.00, gstRate: 5, currency: 'INR' },
+    example: { pricePerWatt: 26.0, gstRate: 5, currency: 'INR' },
     description: 'Pricing formula configuration',
   })
   @IsObject()
@@ -92,4 +92,3 @@ export class UpdatePricingRuleDto {
   @IsOptional()
   isActive?: boolean;
 }
-

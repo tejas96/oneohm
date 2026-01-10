@@ -244,7 +244,9 @@ describe('QuoteCalculatorService', () => {
         .mockResolvedValue(mockStructure as ProductEntity);
 
       // Mock pricing rule - use findByProductIdWithContext
-      jest.spyOn(pricingRuleRepo, 'findByProductIdWithContext').mockResolvedValue(mockPricingRule as any);
+      jest
+        .spyOn(pricingRuleRepo, 'findByProductIdWithContext')
+        .mockResolvedValue(mockPricingRule as any);
 
       const input: CalculateQuoteDto = {
         customerId: 'customer-001',
@@ -299,7 +301,9 @@ describe('QuoteCalculatorService', () => {
         .mockResolvedValue(mockStructure as ProductEntity);
 
       // Mock pricing rule
-      jest.spyOn(pricingRuleRepo, 'findByProductIdWithContext').mockResolvedValue(mockPricingRule as any);
+      jest
+        .spyOn(pricingRuleRepo, 'findByProductIdWithContext')
+        .mockResolvedValue(mockPricingRule as any);
 
       const input: CalculateQuoteDto = {
         customerId: 'customer-001',
@@ -339,7 +343,9 @@ describe('QuoteCalculatorService', () => {
         .mockResolvedValue(mockStructure as ProductEntity);
 
       // Mock pricing rule
-      jest.spyOn(pricingRuleRepo, 'findByProductIdWithContext').mockResolvedValue(mockPricingRule as any);
+      jest
+        .spyOn(pricingRuleRepo, 'findByProductIdWithContext')
+        .mockResolvedValue(mockPricingRule as any);
 
       const input: CalculateQuoteDto = {
         customerId: 'customer-001',
@@ -579,7 +585,9 @@ describe('QuoteCalculatorService', () => {
       jest
         .spyOn(productRepo, 'findSolarPanel')
         .mockResolvedValue(panelWithNominal as ProductEntity);
-      jest.spyOn(pricingRuleRepo, 'findByProductIdWithContext').mockResolvedValue(mockPricingRule as any);
+      jest
+        .spyOn(pricingRuleRepo, 'findByProductIdWithContext')
+        .mockResolvedValue(mockPricingRule as any);
 
       const result = await (service as any).calculatePanelQuantity(
         panelWithNominal,

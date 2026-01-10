@@ -85,4 +85,3 @@ export const SECURITY_RATE_LIMIT_KEY = 'security_rate_limit';
  */
 export const SecurityRateLimit = (config: SecurityRateLimitConfig): MethodDecorator =>
   SetMetadata(SECURITY_RATE_LIMIT_KEY, config);
-

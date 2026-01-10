@@ -36,10 +36,7 @@ const getDataSourceConfig = () => {
     username: process.env.DATABASE_USER || 'postgres',
     password: process.env.DATABASE_PASSWORD || 'postgres',
     database: process.env.DATABASE_NAME || 'oneohm_epc',
-    ssl:
-      process.env.DATABASE_SSL === 'true'
-        ? { rejectUnauthorized: false }
-        : false,
+    ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
     migrations: [migrationsPath],
     migrationsTableName: 'typeorm_migrations',
     logging: process.env.NODE_ENV !== 'production',
@@ -53,14 +50,10 @@ const getDataSourceConfig = () => {
 };
 
 // Sleep helper for retry delays
-const sleep = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Connect with retry logic
-async function connectWithRetry(
-  dataSource: DataSource,
-  retries = MAX_RETRIES,
-): Promise<void> {
+async function connectWithRetry(dataSource: DataSource, retries = MAX_RETRIES): Promise<void> {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       console.log(`🔌 Connection attempt ${attempt}/${retries}...`);
@@ -68,14 +61,11 @@ async function connectWithRetry(
       console.log('✅ Database connection established');
       return;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error(`❌ Connection attempt ${attempt} failed: ${errorMessage}`);
 
       if (attempt === retries) {
-        throw new Error(
-          `Failed to connect to database after ${retries} attempts`,
-        );
+        throw new Error(`Failed to connect to database after ${retries} attempts`);
       }
 
       const delay = INITIAL_RETRY_DELAY * Math.pow(2, attempt - 1);

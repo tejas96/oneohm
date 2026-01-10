@@ -1,9 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  GstConfig,
-  WattageRoundingConfig,
-  PaymentMilestoneConfig,
-} from '@oneohm-epc/shared-types';
+import { GstConfig, WattageRoundingConfig, PaymentMilestoneConfig } from '@oneohm-epc/shared-types';
 import { Expose, Type } from 'class-transformer';
 
 /**
@@ -99,4 +95,3 @@ export class QuoteConfigurationListResponseDto {
   @Expose()
   limit!: number;
 }
-

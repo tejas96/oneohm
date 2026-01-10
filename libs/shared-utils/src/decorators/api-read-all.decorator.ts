@@ -1,5 +1,11 @@
 import { type Type, applyDecorators, Get, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiExtraModels, ApiOperation, ApiQuery, ApiResponse, getSchemaPath } from '@nestjs/swagger';
+import {
+  ApiExtraModels,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  getSchemaPath,
+} from '@nestjs/swagger';
 
 /**
  * Pagination response wrapper type for Swagger
@@ -61,7 +67,7 @@ export function ApiReadAll<TResponse>(options: {
     /** Description for Swagger */
     description?: string;
     /** Enum values - can pass enum directly (UserStatus) or as array (Object.values(UserStatus)) */
-     
+
     enum?: any;
     /** Example value */
     example?: unknown;

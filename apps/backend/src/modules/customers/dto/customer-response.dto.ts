@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CustomerStatus } from '@oneohm-epc/shared-types';
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
 import { CustomerPropertyResponseDto } from './customer-property-response.dto';
 
@@ -83,6 +83,15 @@ export class CustomerResponseDto {
   @Expose()
   @Type(() => CustomerPropertyResponseDto)
   properties?: CustomerPropertyResponseDto[];
+
+  /**
+   * Count of properties for this customer
+   * Computed from properties array length
+   */
+  @ApiProperty({ description: 'Number of properties associated with this customer' })
+  @Expose()
+  @Transform(({ obj }) => obj.properties?.length ?? 0)
+  propertyCount!: number;
 
   // ==================== Audit Fields ====================
   @ApiProperty()

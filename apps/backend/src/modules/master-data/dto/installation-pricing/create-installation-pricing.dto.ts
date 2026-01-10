@@ -126,4 +126,3 @@ export class CreateInstallationPricingDto {
   @IsOptional()
   notes?: string;
 }
-

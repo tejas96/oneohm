@@ -1,5 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PricingRuleType, ProductType, ProjectType, PricingRuleFormula } from '@oneohm-epc/shared-types';
+import {
+  PricingRuleType,
+  ProductType,
+  ProjectType,
+  PricingRuleFormula,
+} from '@oneohm-epc/shared-types';
 import { Expose, Type } from 'class-transformer';
 
 /**
@@ -95,4 +100,3 @@ export class PricingRulesListResponseDto {
   @Expose()
   limit!: number;
 }
-

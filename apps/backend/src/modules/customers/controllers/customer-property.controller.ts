@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseIntPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -21,19 +22,23 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { LeadTemperature } from '@oneohm-epc/shared-types';
+import { LeadTemperature, type PaginatedResponse } from '@oneohm-epc/shared-types';
 import { OrganizationContext } from '@oneohm-epc/shared-utils';
 
-import { toDto, toDtoArray, toDtoPaginated } from '../../../common/utils';
+import { toDto, toDtoArray, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
 import {
   CreateCustomerPropertyDto,
+  CreateSiteVisitDto,
   CustomerPropertyResponseDto,
+  SiteVisitResponseDto,
   UpdateCustomerPropertyDto,
+  UpdateSiteVisitDto,
 } from '../dto';
 import { CustomerPropertyService } from '../services/customer-property.service';
+import { SiteVisitService } from '../services/site-visit.service';
 
 /**
  * Customer Property Controller
@@ -48,7 +53,10 @@ import { CustomerPropertyService } from '../services/customer-property.service';
 @Controller('customer-properties')
 @UseGuards(JwtAuthGuard)
 export class CustomerPropertyController {
-  constructor(private readonly propertyService: CustomerPropertyService) {}
+  constructor(
+    private readonly propertyService: CustomerPropertyService,
+    private readonly siteVisitService: SiteVisitService,
+  ) {}
 
   /**
    * Create a new customer property
@@ -85,8 +93,18 @@ export class CustomerPropertyController {
     summary: 'Get all properties',
     description: 'Retrieve all customer properties for the organization with pagination.',
   })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 20)' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 20)',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'List of properties',
@@ -94,11 +112,11 @@ export class CustomerPropertyController {
   })
   async findAll(
     @OrganizationContext() organizationId: string,
-    @Query('page') page = 1,
-    @Query('limit') limit = 20,
-  ): Promise<{ data: CustomerPropertyResponseDto[]; total: number }> {
+    @Query('page', new ParseIntPipe({ optional: true })) page = 1,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
+  ): Promise<PaginatedResponse<CustomerPropertyResponseDto>> {
     const result = await this.propertyService.findAll(organizationId, page, limit);
-    return toDtoPaginated(CustomerPropertyResponseDto, result);
+    return toPaginatedResponse(CustomerPropertyResponseDto, result.data, result.total, page, limit);
   }
 
   /**
@@ -310,7 +328,8 @@ export class CustomerPropertyController {
   @Patch(':id/set-primary')
   @ApiOperation({
     summary: 'Set property as primary',
-    description: 'Set this property as the primary property for the customer. Unsets other properties.',
+    description:
+      'Set this property as the primary property for the customer. Unsets other properties.',
   })
   @ApiParam({ name: 'id', type: String, description: 'Property ID' })
   @ApiResponse({
@@ -348,5 +367,126 @@ export class CustomerPropertyController {
   ): Promise<void> {
     await this.propertyService.delete(id, organizationId, currentUser.id);
   }
-}
 
+  // ==================== SITE VISIT NESTED ROUTES ====================
+
+  /**
+   * Create site visit for property
+   */
+  @Post(':id/site-visit')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Create site visit for property',
+    description:
+      'Creates a new site visit for the specified property. Only one visit per property is allowed.',
+  })
+  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Site visit created successfully',
+    type: SiteVisitResponseDto,
+  })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Property not found' })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Site visit already exists for this property',
+  })
+  async createSiteVisit(
+    @Param('id', ParseUUIDPipe) propertyId: string,
+    @Body() createDto: CreateSiteVisitDto,
+    @OrganizationContext() organizationId: string,
+  ): Promise<SiteVisitResponseDto> {
+    const siteVisit = await this.siteVisitService.create(propertyId, organizationId, createDto);
+    return toDto(SiteVisitResponseDto, siteVisit);
+  }
+
+  /**
+   * Get site visit for property
+   */
+  @Get(':id/site-visit')
+  @ApiOperation({
+    summary: 'Get site visit for property',
+    description: 'Retrieve the site visit for a specific property.',
+  })
+  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Site visit details',
+    type: SiteVisitResponseDto,
+  })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Site visit not found' })
+  async getSiteVisit(
+    @Param('id', ParseUUIDPipe) propertyId: string,
+    @OrganizationContext() organizationId: string,
+  ): Promise<SiteVisitResponseDto> {
+    const siteVisit = await this.siteVisitService.findByPropertyId(propertyId, organizationId);
+    return toDto(SiteVisitResponseDto, siteVisit);
+  }
+
+  /**
+   * Update site visit for property
+   */
+  @Patch(':id/site-visit')
+  @ApiOperation({
+    summary: 'Update site visit for property',
+    description: 'Update the site visit for a specific property.',
+  })
+  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Site visit updated successfully',
+    type: SiteVisitResponseDto,
+  })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Site visit not found' })
+  async updateSiteVisit(
+    @Param('id', ParseUUIDPipe) propertyId: string,
+    @Body() updateDto: UpdateSiteVisitDto,
+    @OrganizationContext() organizationId: string,
+  ): Promise<SiteVisitResponseDto> {
+    const siteVisit = await this.siteVisitService.update(propertyId, organizationId, updateDto);
+    return toDto(SiteVisitResponseDto, siteVisit);
+  }
+
+  /**
+   * Complete site visit for property
+   */
+  @Post(':id/site-visit/complete')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Mark site visit as completed',
+    description: 'Mark the site visit for a property as completed.',
+  })
+  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Site visit marked as completed',
+    type: SiteVisitResponseDto,
+  })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Site visit not found' })
+  async completeSiteVisit(
+    @Param('id', ParseUUIDPipe) propertyId: string,
+    @OrganizationContext() organizationId: string,
+  ): Promise<SiteVisitResponseDto> {
+    const siteVisit = await this.siteVisitService.complete(propertyId, organizationId);
+    return toDto(SiteVisitResponseDto, siteVisit);
+  }
+
+  /**
+   * Delete site visit for property
+   */
+  @Delete(':id/site-visit')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Delete site visit for property',
+    description: 'Soft delete the site visit for a property.',
+  })
+  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
+  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Site visit deleted successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Site visit not found' })
+  async deleteSiteVisit(
+    @Param('id', ParseUUIDPipe) propertyId: string,
+    @OrganizationContext() organizationId: string,
+  ): Promise<void> {
+    await this.siteVisitService.delete(propertyId, organizationId);
+  }
+}

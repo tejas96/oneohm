@@ -97,8 +97,7 @@ export class UpdateSubsidyConfiguration1765094987000 implements MigrationInterfa
       DROP COLUMN IF EXISTS "scheme_code"
     `);
 
-    // Note: We don't convert varchar back to enum as it would require 
+    // Note: We don't convert varchar back to enum as it would require
     // recreating the enum type. The varchar columns will work fine.
   }
 }
-

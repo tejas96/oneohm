@@ -1,9 +1,4 @@
-import {
-  PhaseType,
-  PanelTechnology,
-  StructureType,
-  ProjectType,
-} from '../enums/product.enum';
+import { PhaseType, PanelTechnology, StructureType, ProjectType } from '../enums/product.enum';
 import { SubsidySchemeType, DcrPreference } from '../enums/quote.enum';
 
 /**
@@ -687,4 +682,3 @@ export interface QuoteConfigSnapshot {
   /** Timestamp of snapshot */
   snapshotAt: string;
 }
-

@@ -238,7 +238,10 @@ export class ProductSpecificationsDto {
   @Type(() => InverterSpecificationsDto)
   inverter?: InverterSpecificationsDto;
 
-  @ApiPropertyOptional({ type: StructureSpecificationsDto, description: 'Structure specific fields' })
+  @ApiPropertyOptional({
+    type: StructureSpecificationsDto,
+    description: 'Structure specific fields',
+  })
   @IsObject()
   @IsOptional()
   @ValidateNested()

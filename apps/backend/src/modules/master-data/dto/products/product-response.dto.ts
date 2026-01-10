@@ -1,5 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProductStatus, ProductType, UnitOfMeasure, ProductSpecifications } from '@oneohm-epc/shared-types';
+import {
+  ProductStatus,
+  ProductType,
+  UnitOfMeasure,
+  ProductSpecifications,
+} from '@oneohm-epc/shared-types';
 import { Expose, Type } from 'class-transformer';
 
 /**

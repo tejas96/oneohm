@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProjectType, PhaseType, DcrPreference, StructureType, PanelTechnology } from '@oneohm-epc/shared-types';
+import {
+  ProjectType,
+  PhaseType,
+  DcrPreference,
+  StructureType,
+  PanelTechnology,
+} from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -133,7 +139,8 @@ export class CalculateQuoteDto {
 
   @ApiPropertyOptional({
     enum: PanelTechnology,
-    description: 'Preferred panel technology (PERC or TOPCON). If not specified, highest wattage panel is selected.',
+    description:
+      'Preferred panel technology (PERC or TOPCON). If not specified, highest wattage panel is selected.',
     example: PanelTechnology.TOPCON,
   })
   @IsEnum(PanelTechnology)
@@ -141,7 +148,8 @@ export class CalculateQuoteDto {
   preferredPanelTechnology?: PanelTechnology;
 
   @ApiPropertyOptional({
-    description: 'Preferred panel wattage (e.g., 570 for 560-580Wp range). Used to select specific panel variant.',
+    description:
+      'Preferred panel wattage (e.g., 570 for 560-580Wp range). Used to select specific panel variant.',
     example: 570,
   })
   @IsNumber()
