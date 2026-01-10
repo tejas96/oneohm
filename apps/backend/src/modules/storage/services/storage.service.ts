@@ -197,6 +197,6 @@ export class StorageService {
     }
 
     // Must only contain allowed characters
-    return /^[a-zA-Z0-9_\-\/\.]+$/.test(fileKey);
+    return /^[a-zA-Z0-9_\-/.]+$/.test(fileKey);
   }
 }
