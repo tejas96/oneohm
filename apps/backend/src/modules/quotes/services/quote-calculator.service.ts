@@ -363,6 +363,8 @@ export class QuoteCalculatorService {
         pricePerWatt,
         lineTotal,
         gstAmount,
+        productWarrantyYears: panel.productWarrantyYears,
+        performanceWarrantyYears: panel.performanceWarrantyYears,
       });
     }
 
@@ -448,6 +450,8 @@ export class QuoteCalculatorService {
       pricePerWatt,
       lineTotal,
       gstAmount,
+      productWarrantyYears: panel.productWarrantyYears,
+      performanceWarrantyYears: panel.performanceWarrantyYears,
     };
   }
 
@@ -543,6 +547,7 @@ export class QuoteCalculatorService {
         unitPrice: pricing.basePrice,
         lineTotal,
         gstAmount,
+        productWarrantyYears: inverter.productWarrantyYears,
       };
     });
 
@@ -618,6 +623,7 @@ export class QuoteCalculatorService {
         unitPrice: basePrice,
         lineTotal,
         gstAmount,
+        productWarrantyYears: inverter.productWarrantyYears,
       });
     }
 

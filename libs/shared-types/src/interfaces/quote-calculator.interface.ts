@@ -173,7 +173,7 @@ export type PricingFormula =
  * { pricePerWatt: 25.75, gstRate: 5, isDcr: true }
  *
  * // Inverter pricing
- * { basePrice: 15800, gstRate: 5, phaseType: '1_phase' }
+ * { basePrice: 15800, gstRate: 5, phaseType: 'single_phase' }
  *
  * // With volume discounts
  * {
@@ -496,6 +496,10 @@ export interface CalculatedPanelConfig {
   lineTotal: number;
   /** GST amount */
   gstAmount: number;
+  /** Product warranty in years */
+  productWarrantyYears?: number;
+  /** Performance warranty in years */
+  performanceWarrantyYears?: number;
 }
 
 /**
@@ -512,6 +516,8 @@ export interface CalculatedInverterConfig {
     unitPrice: number;
     lineTotal: number;
     gstAmount: number;
+    /** Product warranty in years */
+    productWarrantyYears?: number;
   }[];
   /** Total inverter capacity */
   totalCapacityKw: number;

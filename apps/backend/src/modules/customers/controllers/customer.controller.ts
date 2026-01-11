@@ -175,7 +175,7 @@ export class CustomerController {
   }
 
   /**
-   * Update customer
+   * Update customer (partial update)
    */
   // @RequirePermission('customers:update') // TODO: Re-enable
   @ApiUpdate({
@@ -183,6 +183,7 @@ export class CustomerController {
     description:
       'Update customer information. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
     responseType: CustomerResponseDto,
+    method: 'PATCH', // Use PATCH for partial updates
     additionalErrors: [
       {
         status: 409,

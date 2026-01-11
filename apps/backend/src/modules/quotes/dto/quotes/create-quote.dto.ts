@@ -49,6 +49,14 @@ export class CreateQuoteDto {
   @IsOptional()
   resellerId?: string;
 
+  @ApiPropertyOptional({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Property ID for installation site',
+  })
+  @IsUUID()
+  @IsOptional()
+  propertyId?: string;
+
   // ==================== Quote Info ====================
   @ApiPropertyOptional({
     example: '2025-01-15',

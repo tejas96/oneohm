@@ -81,7 +81,7 @@ export class SurveyResponseDto {
       panelType: 'MCB',
       panelCapacity: 60,
       voltage: 240,
-      phaseType: 'single',
+      phaseType: 'single_phase',
     },
   })
   @Expose()
