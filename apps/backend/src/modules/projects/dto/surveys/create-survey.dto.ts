@@ -132,7 +132,7 @@ export class CreateSurveyDto {
       panelType: 'MCB',
       panelCapacity: 60,
       voltage: 240,
-      phaseType: 'single',
+      phaseType: 'single_phase',
       distanceToPanel: 15,
     },
     description: 'Electrical system details',

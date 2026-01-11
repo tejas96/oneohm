@@ -54,6 +54,12 @@ export class CalculatedPanelDto {
 
   @ApiProperty({ description: 'GST amount in INR', example: 15552 })
   gstAmount!: number;
+
+  @ApiPropertyOptional({ description: 'Product warranty in years', example: 12 })
+  productWarrantyYears?: number;
+
+  @ApiPropertyOptional({ description: 'Performance warranty in years', example: 30 })
+  performanceWarrantyYears?: number;
 }
 
 /**
@@ -83,6 +89,9 @@ export class InverterItemDto {
 
   @ApiProperty({ description: 'GST amount in INR', example: 8100 })
   gstAmount!: number;
+
+  @ApiPropertyOptional({ description: 'Product warranty in years', example: 8 })
+  productWarrantyYears?: number;
 }
 
 /**

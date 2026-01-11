@@ -121,7 +121,7 @@ export class UpdateSurveyDto {
       panelType: 'MCB',
       panelCapacity: 60,
       voltage: 240,
-      phaseType: 'single',
+      phaseType: 'single_phase',
       distanceToPanel: 15,
       existingInverter: false,
     },

@@ -119,7 +119,7 @@ export interface StructureProductSpecs {
  * {
  *   inverter: {
  *     capacityKw: 5,
- *     phaseType: "1_phase",
+ *     phaseType: "single_phase",
  *     minSystemSizeKw: 1,
  *     maxSystemSizeKw: 6,
  *     mpptCount: 2

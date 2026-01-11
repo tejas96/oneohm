@@ -68,8 +68,8 @@ export enum UnitOfMeasure {
  * Defines electrical phase types for inverters
  */
 export enum PhaseType {
-  SINGLE_PHASE = '1_phase',
-  THREE_PHASE = '3_phase',
+  SINGLE_PHASE = 'single_phase',
+  THREE_PHASE = 'three_phase',
 }
 
 /**

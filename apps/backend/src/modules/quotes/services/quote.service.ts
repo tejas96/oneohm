@@ -72,6 +72,7 @@ export class QuoteService {
     const quote = await this.quoteRepository.create({
       organizationId,
       customerId: createDto.customerId,
+      propertyId: createDto.propertyId,
       salesPersonId: createDto.salesPersonId,
       resellerId: createDto.resellerId,
       quoteNumber,

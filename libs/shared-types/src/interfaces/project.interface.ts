@@ -17,7 +17,7 @@ export interface ElectricalDetails {
   panelType?: string;
   panelCapacity?: number; // In amps
   voltage?: number; // In volts
-  phaseType?: 'single' | 'three';
+  phaseType?: 'single_phase' | 'three_phase';
   distanceToPanel?: number; // In meters
   existingInverter?: boolean;
   gridConnectionType?: string;

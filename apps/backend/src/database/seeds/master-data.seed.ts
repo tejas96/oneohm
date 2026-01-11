@@ -21,7 +21,7 @@ import { v4 as uuidv4 } from 'uuid';
 // Target Organization ID
 // Production: 9f6d06b2-d7b6-48f6-ba38-66af76c4ca27
 // Local Dev: 7e5ce9c8-9c17-4a86-8fcd-da9ce182467b
-const ORG_ID = process.env.SEED_ORG_ID || '9f6d06b2-d7b6-48f6-ba38-66af76c4ca27';
+const ORG_ID = process.env.SEED_ORG_ID || '7e5ce9c8-9c17-4a86-8fcd-da9ce182467b';
 
 // =====================================================
 // Category IDs (Pre-generated for reference)
@@ -117,6 +117,21 @@ export async function seedMasterData(dataSource: DataSource): Promise<void> {
 
   try {
     console.log('🌱 Seeding master data for organization:', ORG_ID);
+
+    // =====================================================
+    // 0. CLEANUP EXISTING DATA (in correct order for FK constraints)
+    // =====================================================
+    console.log('🧹 Cleaning up existing master data...');
+    
+    // Delete in reverse dependency order
+    await queryRunner.query(`DELETE FROM quote_configurations WHERE organization_id = $1`, [ORG_ID]);
+    await queryRunner.query(`DELETE FROM subsidy_configurations WHERE organization_id = $1`, [ORG_ID]);
+    await queryRunner.query(`DELETE FROM installation_pricing WHERE organization_id = $1`, [ORG_ID]);
+    await queryRunner.query(`DELETE FROM pricing_rules WHERE organization_id = $1`, [ORG_ID]);
+    await queryRunner.query(`DELETE FROM products WHERE organization_id = $1`, [ORG_ID]);
+    await queryRunner.query(`DELETE FROM product_categories WHERE organization_id = $1`, [ORG_ID]);
+    
+    console.log('✅ Cleanup completed');
 
     // =====================================================
     // 1. PRODUCT CATEGORIES
@@ -986,7 +1001,7 @@ async function insertProducts(queryRunner: any): Promise<void> {
       common: { capacity: inv.capacity, phases: 1, voltage: '230V' },
       inverter: {
         capacityKw: inv.capacity,
-        phaseType: '1_phase',
+        phaseType: 'single_phase',
         minSystemSizeKw: inv.minSize,
         maxSystemSizeKw: inv.maxSize,
       },
@@ -1022,7 +1037,7 @@ async function insertProducts(queryRunner: any): Promise<void> {
       common: { capacity: inv.capacity, phases: 3, voltage: '415V' },
       inverter: {
         capacityKw: inv.capacity,
-        phaseType: '3_phase',
+        phaseType: 'three_phase',
         minSystemSizeKw: inv.minSize,
         maxSystemSizeKw: inv.maxSize,
       },

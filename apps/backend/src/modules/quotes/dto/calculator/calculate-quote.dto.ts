@@ -81,6 +81,14 @@ export class CalculateQuoteDto {
   @IsNotEmpty()
   customerId!: string;
 
+  @ApiPropertyOptional({
+    description: 'Property ID for the installation site',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @IsUUID()
+  @IsOptional()
+  propertyId?: string;
+
   @ApiProperty({
     enum: ProjectType,
     description: 'Type of project',
