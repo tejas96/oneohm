@@ -69,6 +69,10 @@ export class QuoteCalculatorService {
   ): Promise<CalculateQuoteResponseDto> {
     const warnings: ValidationWarning[] = [];
 
+    // 0. Validate input for conflicting override types
+    this.validateOverrideConflicts(input);
+    this.validateDcrPreferenceManualCounts(input);
+
     // 1. Get organization's quote configuration
     const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
 
@@ -94,34 +98,104 @@ export class QuoteCalculatorService {
       input.dcrPreference || DcrPreference.AUTO_SPLIT,
     );
 
-    // 4. Calculate panel configuration (with override support)
-    const panels = await this.calculatePanels(
-      organizationId,
-      dcrSizeKw,
-      nonDcrSizeKw,
-      input.preferredPanelBrand,
-      input.preferredPanelTechnology,
-      input.preferredPanelWattage,
-      input.projectType,
-      quoteConfig,
-      input.panelOverrides,
-      warnings,
-    );
+    // 4. Calculate panel configuration
+    // Supports: auto-calculation, panelOverrides (specific products), or manual counts (quantity constraint)
+    let panels: CalculatedPanelConfig[];
+    let actualDcrSizeKw = dcrSizeKw;
+    let actualNonDcrSizeKw = nonDcrSizeKw;
+
+    if (input.manualDcrPanelCount !== undefined || input.manualNonDcrPanelCount !== undefined) {
+      // Use quantity-constrained calculation
+      const panelResult = await this.calculatePanelsWithQuantityConstraint(
+        organizationId,
+        input.dcrPreference || DcrPreference.AUTO_SPLIT,
+        input.manualDcrPanelCount,
+        input.manualNonDcrPanelCount,
+        dcrSizeKw,
+        nonDcrSizeKw,
+        input.preferredPanelBrand,
+        input.preferredPanelTechnology,
+        input.projectType,
+        quoteConfig,
+        warnings,
+      );
+
+      // Check if error was returned
+      if ('error' in panelResult) {
+        throw new BadRequestException({
+          message: panelResult.error,
+          errorCode: panelResult.errorCode,
+          suggestion: panelResult.suggestion,
+        });
+      }
+
+      panels = panelResult.panels;
+      actualDcrSizeKw = panelResult.actualDcrSizeKw;
+      actualNonDcrSizeKw = panelResult.actualNonDcrSizeKw;
+    } else {
+      // Use standard calculation (auto or with overrides)
+      panels = await this.calculatePanels(
+        organizationId,
+        dcrSizeKw,
+        nonDcrSizeKw,
+        input.preferredPanelBrand,
+        input.preferredPanelTechnology,
+        input.preferredPanelWattage,
+        input.projectType,
+        quoteConfig,
+        input.panelOverrides,
+        warnings,
+      );
+
+      // Calculate actual DCR/Non-DCR sizes from panels
+      const dcrPanel = panels.find((p) => p.isDcr);
+      const nonDcrPanel = panels.find((p) => !p.isDcr);
+      actualDcrSizeKw = dcrPanel ? dcrPanel.totalWattage / 1000 : 0;
+      actualNonDcrSizeKw = nonDcrPanel ? nonDcrPanel.totalWattage / 1000 : 0;
+    }
 
     // Calculate actual wattage from panels
     const actualTotalWattage = panels.reduce((sum, p) => sum + p.totalWattage, 0);
     const actualSystemSizeKw = actualTotalWattage / 1000;
 
-    // 5. Calculate inverter configuration (with override support)
-    const inverters = await this.calculateInverters(
-      organizationId,
-      input.systemSizeKw,
-      input.phaseType,
-      input.preferredInverterBrand,
-      input.projectType,
-      input.inverterOverrides,
-      warnings,
-    );
+    // 5. Calculate inverter configuration
+    // Supports: auto-calculation, inverterOverrides (specific products), or manual count (quantity constraint)
+    let inverters: CalculatedInverterConfig;
+
+    if (input.manualInverterCount !== undefined) {
+      // Use quantity-constrained calculation
+      const inverterResult = await this.calculateInvertersWithQuantityConstraint(
+        organizationId,
+        input.systemSizeKw,
+        input.phaseType,
+        input.manualInverterCount,
+        input.preferredInverterBrand,
+        input.projectType,
+        warnings,
+      );
+
+      // Check if error was returned
+      if ('error' in inverterResult) {
+        throw new BadRequestException({
+          message: inverterResult.error,
+          errorCode: inverterResult.errorCode,
+          suggestion: inverterResult.suggestion,
+        });
+      }
+
+      inverters = inverterResult;
+    } else {
+      // Use standard calculation (auto or with overrides)
+      inverters = await this.calculateInverters(
+        organizationId,
+        input.systemSizeKw,
+        input.phaseType,
+        input.preferredInverterBrand,
+        input.projectType,
+        input.inverterOverrides,
+        warnings,
+      );
+    }
 
     // 6. Calculate structure cost (from installation pricing with product multiplier)
     const structure = await this.calculateStructure(
@@ -139,10 +213,11 @@ export class QuoteCalculatorService {
       input.distanceKm || 0,
     );
 
-    // 8. Calculate subsidy (skip if NON_DCR_ONLY)
+    // 8. Calculate subsidy using ACTUAL DCR size (important for manual count scenarios)
+    // This ensures subsidy is calculated correctly when user changes panel counts
     const subsidy = await this.calculateSubsidy(
       organizationId,
-      dcrSizeKw,
+      actualDcrSizeKw, // Use actual, not requested
       input.projectType,
       input.subsidyApplicable,
       input.dcrPreference,
@@ -153,6 +228,15 @@ export class QuoteCalculatorService {
 
     // 10. Calculate effective price
     const effectivePrice = pricing.finalPrice - subsidy.amount;
+
+    // Determine if any overrides or manual counts were used
+    const hasOverrides = !!(
+      input.panelOverrides?.length ||
+      input.inverterOverrides?.length ||
+      input.manualDcrPanelCount !== undefined ||
+      input.manualNonDcrPanelCount !== undefined ||
+      input.manualInverterCount !== undefined
+    );
 
     return {
       systemConfig: {
@@ -170,11 +254,63 @@ export class QuoteCalculatorService {
       effectivePrice,
       completionWeeks: quoteConfig.defaultCompletionWeeks,
       warnings: warnings.length > 0 ? warnings : undefined,
-      hasOverrides: !!(input.panelOverrides?.length || input.inverterOverrides?.length),
+      hasOverrides,
       actualTotalWattage,
       actualSystemSizeKw,
+      actualDcrSizeKw,
+      actualNonDcrSizeKw,
       calculatedAt: new Date().toISOString(),
     };
+  }
+
+  /**
+   * Validate that override types don't conflict
+   * panelOverrides and manual panel counts cannot be used together
+   * inverterOverrides and manual inverter count cannot be used together
+   */
+  private validateOverrideConflicts(input: CalculateQuoteDto): void {
+    // Check panel override conflicts
+    if (
+      input.panelOverrides?.length &&
+      (input.manualDcrPanelCount !== undefined || input.manualNonDcrPanelCount !== undefined)
+    ) {
+      throw new BadRequestException(
+        'Cannot use both panelOverrides and manual panel counts. ' +
+          'Use panelOverrides to specify exact products, or manual counts to let the system find optimal products.',
+      );
+    }
+
+    // Check inverter override conflicts
+    if (input.inverterOverrides?.length && input.manualInverterCount !== undefined) {
+      throw new BadRequestException(
+        'Cannot use both inverterOverrides and manual inverter count. ' +
+          'Use inverterOverrides to specify exact products, or manual count to let the system find optimal combination.',
+      );
+    }
+  }
+
+  /**
+   * Validate that manual panel counts match the DCR preference
+   * - DCR_ONLY: Only manualDcrPanelCount is valid
+   * - NON_DCR_ONLY: Only manualNonDcrPanelCount is valid
+   * - AUTO_SPLIT: Both are valid
+   */
+  private validateDcrPreferenceManualCounts(input: CalculateQuoteDto): void {
+    const dcrPreference = input.dcrPreference || DcrPreference.AUTO_SPLIT;
+
+    if (dcrPreference === DcrPreference.DCR_ONLY && input.manualNonDcrPanelCount !== undefined) {
+      throw new BadRequestException(
+        'Cannot set Non-DCR panel count when DCR preference is DCR_ONLY. ' +
+          'Remove manualNonDcrPanelCount or change dcrPreference.',
+      );
+    }
+
+    if (dcrPreference === DcrPreference.NON_DCR_ONLY && input.manualDcrPanelCount !== undefined) {
+      throw new BadRequestException(
+        'Cannot set DCR panel count when DCR preference is NON_DCR_ONLY. ' +
+          'Remove manualDcrPanelCount or change dcrPreference.',
+      );
+    }
   }
 
   /**
@@ -376,6 +512,262 @@ export class QuoteCalculatorService {
     }
 
     return panels;
+  }
+
+  /**
+   * Calculate panels with quantity constraints
+   *
+   * User specifies exactly how many panels they want (DCR and/or Non-DCR).
+   * Backend finds suitable panel wattage so that: count * wattage >= required capacity.
+   * System size MUST be met or exceeded (never below).
+   *
+   * @returns Object with panels and actual capacities, or error with suggestions
+   */
+  private async calculatePanelsWithQuantityConstraint(
+    organizationId: string,
+    dcrPreference: DcrPreference,
+    targetDcrCount: number | undefined,
+    targetNonDcrCount: number | undefined,
+    originalDcrSizeKw: number,
+    originalNonDcrSizeKw: number,
+    preferredBrand: string | undefined,
+    preferredTechnology: string | undefined,
+    projectType: ProjectType,
+    quoteConfig: QuoteConfiguration,
+    warnings: ValidationWarning[],
+  ): Promise<
+    | {
+        panels: CalculatedPanelConfig[];
+        actualDcrSizeKw: number;
+        actualNonDcrSizeKw: number;
+      }
+    | { error: string; errorCode: string; suggestion: { dcr?: number; nonDcr?: number } }
+  > {
+    const panels: CalculatedPanelConfig[] = [];
+    let actualDcrSizeKw = 0;
+    let actualNonDcrSizeKw = 0;
+
+    // Handle DCR panels
+    if (originalDcrSizeKw > 0 && targetDcrCount !== undefined) {
+      const dcrResult = await this.findPanelForCount(
+        organizationId,
+        true,
+        targetDcrCount,
+        originalDcrSizeKw,
+        preferredBrand,
+        preferredTechnology,
+        projectType,
+        quoteConfig,
+        warnings,
+      );
+
+      if ('error' in dcrResult) {
+        return {
+          error: dcrResult.error,
+          errorCode: 'INVALID_DCR_PANEL_QUANTITY',
+          suggestion: { dcr: dcrResult.suggestion },
+        };
+      }
+
+      panels.push(dcrResult.panel);
+      actualDcrSizeKw = dcrResult.actualSizeKw;
+    } else if (originalDcrSizeKw > 0) {
+      // No manual count specified, use auto-calculation
+      const dcrPanel = await this.findPanel(
+        organizationId,
+        true,
+        preferredBrand,
+        preferredTechnology,
+      );
+      if (!dcrPanel) {
+        throw new BadRequestException(
+          `No DCR panel found${preferredBrand ? ` for brand ${preferredBrand}` : ''}. Please try different options.`,
+        );
+      }
+      const dcrConfig = await this.calculatePanelQuantity(
+        dcrPanel,
+        originalDcrSizeKw,
+        organizationId,
+        projectType,
+        quoteConfig,
+      );
+      panels.push(dcrConfig);
+      actualDcrSizeKw = dcrConfig.totalWattage / 1000;
+    }
+
+    // Handle Non-DCR panels
+    if (originalNonDcrSizeKw > 0 && targetNonDcrCount !== undefined) {
+      const nonDcrResult = await this.findPanelForCount(
+        organizationId,
+        false,
+        targetNonDcrCount,
+        originalNonDcrSizeKw,
+        preferredBrand,
+        preferredTechnology,
+        projectType,
+        quoteConfig,
+        warnings,
+      );
+
+      if ('error' in nonDcrResult) {
+        return {
+          error: nonDcrResult.error,
+          errorCode: 'INVALID_NON_DCR_PANEL_QUANTITY',
+          suggestion: { nonDcr: nonDcrResult.suggestion },
+        };
+      }
+
+      panels.push(nonDcrResult.panel);
+      actualNonDcrSizeKw = nonDcrResult.actualSizeKw;
+    } else if (originalNonDcrSizeKw > 0) {
+      // No manual count specified, use auto-calculation
+      const nonDcrPanel = await this.findPanel(
+        organizationId,
+        false,
+        preferredBrand,
+        preferredTechnology,
+      );
+      if (!nonDcrPanel) {
+        throw new BadRequestException(
+          `No Non-DCR panel found${preferredBrand ? ` for brand ${preferredBrand}` : ''}. Please try different options.`,
+        );
+      }
+      const nonDcrConfig = await this.calculatePanelQuantity(
+        nonDcrPanel,
+        originalNonDcrSizeKw,
+        organizationId,
+        projectType,
+        quoteConfig,
+      );
+      panels.push(nonDcrConfig);
+      actualNonDcrSizeKw = nonDcrConfig.totalWattage / 1000;
+    }
+
+    return { panels, actualDcrSizeKw, actualNonDcrSizeKw };
+  }
+
+  /**
+   * Find suitable panel for a specific count that meets capacity requirement
+   *
+   * The logic:
+   * 1. Calculate required wattage per panel: requiredKw * 1000 / targetCount
+   * 2. Find panels with wattage >= required wattage per panel
+   * 3. Pick the one with minimum overage (smallest wattage that still works)
+   * 4. If no panel can meet the requirement, suggest the minimum count needed
+   */
+  private async findPanelForCount(
+    organizationId: string,
+    isDcr: boolean,
+    targetCount: number,
+    requiredSizeKw: number,
+    preferredBrand: string | undefined,
+    preferredTechnology: string | undefined,
+    projectType: ProjectType,
+    quoteConfig: QuoteConfiguration,
+    warnings: ValidationWarning[],
+  ): Promise<
+    | { panel: CalculatedPanelConfig; actualSizeKw: number }
+    | { error: string; suggestion: number }
+  > {
+    // Calculate required wattage per panel to meet capacity with target count
+    const requiredWattagePerPanel = (requiredSizeKw * 1000) / targetCount;
+
+    // Find all panels with wattage >= required
+    const suitablePanels = await this.productRepo.findAllSolarPanels(
+      organizationId,
+      isDcr,
+      preferredBrand,
+      preferredTechnology,
+      requiredWattagePerPanel, // minWattage filter
+    );
+
+    if (suitablePanels.length === 0) {
+      // No panel can meet requirement - suggest minimum count with highest wattage panel
+      const bestPanel = await this.productRepo.findSolarPanel(
+        organizationId,
+        isDcr,
+        preferredBrand,
+        preferredTechnology,
+      );
+
+      if (!bestPanel) {
+        throw new BadRequestException(
+          `No ${isDcr ? 'DCR' : 'Non-DCR'} panel found${preferredBrand ? ` for brand ${preferredBrand}` : ''}. Please try different options.`,
+        );
+      }
+
+      const specs = bestPanel.specifications?.panel;
+      const bestWattage = specs?.wattage || ((specs?.minWattage || 0) + (specs?.maxWattage || 0)) / 2;
+      const roundedWattage = this.roundWattage(bestWattage, quoteConfig.wattageRounding);
+      const suggestedCount = Math.ceil((requiredSizeKw * 1000) / roundedWattage);
+
+      return {
+        error: `Cannot achieve ${requiredSizeKw}kW ${isDcr ? 'DCR' : 'Non-DCR'} capacity with ${targetCount} panels. ` +
+          `Available panels have maximum ${roundedWattage}W, which would provide ${((targetCount * roundedWattage) / 1000).toFixed(2)}kW. ` +
+          `Minimum ${suggestedCount} panels needed.`,
+        suggestion: suggestedCount,
+      };
+    }
+
+    // Pick panel with minimum wattage (least overage) - sorted ascending by findAllSolarPanels
+    const selectedPanel = suitablePanels[0]!;
+    const specs = selectedPanel.specifications?.panel;
+
+    if (!specs) {
+      throw new BadRequestException(`Panel ${selectedPanel.name} missing specifications`);
+    }
+
+    const nominalWattage = specs.wattage ?? ((specs.minWattage ?? 0) + (specs.maxWattage ?? 0)) / 2;
+    const roundedWattage = this.roundWattage(nominalWattage, quoteConfig.wattageRounding);
+    const totalWattage = targetCount * roundedWattage;
+    const actualSizeKw = totalWattage / 1000;
+
+    // Get pricing
+    const pricingRule = await this.pricingRuleRepo.findByProductIdWithContext(
+      organizationId,
+      selectedPanel.id,
+      projectType,
+    );
+    const pricePerWatt = pricingRule?.formula?.pricePerWatt || 0;
+    const gstRate = pricingRule?.formula?.gstRate || 12;
+
+    if (!pricingRule) {
+      warnings.push({
+        code: 'MISSING_PRICING_RULE',
+        message: `No pricing rule found for panel ${selectedPanel.name}. Using default price.`,
+        severity: 'warning',
+      });
+    }
+
+    const lineTotal = totalWattage * pricePerWatt;
+    const gstAmount = (lineTotal * gstRate) / 100;
+
+    // Add info warning if capacity significantly exceeds required
+    if (actualSizeKw > requiredSizeKw * 1.25) {
+      warnings.push({
+        code: 'PANEL_CAPACITY_OVERSIZED',
+        message: `${isDcr ? 'DCR' : 'Non-DCR'} panel capacity (${actualSizeKw.toFixed(2)}kW) is significantly more than required (${requiredSizeKw}kW) to meet the quantity constraint.`,
+        severity: 'info',
+      });
+    }
+
+    const panelConfig: CalculatedPanelConfig = {
+      productId: selectedPanel.id,
+      name: selectedPanel.name,
+      brand: selectedPanel.brand || 'Unknown',
+      isDcr: specs.isDcr ?? false,
+      technology: specs.technology,
+      wattagePerPanel: roundedWattage,
+      quantity: targetCount,
+      totalWattage,
+      pricePerWatt,
+      lineTotal,
+      gstAmount,
+      productWarrantyYears: selectedPanel.productWarrantyYears,
+      performanceWarrantyYears: selectedPanel.performanceWarrantyYears,
+    };
+
+    return { panel: panelConfig, actualSizeKw };
   }
 
   /**
@@ -651,6 +1043,246 @@ export class QuoteCalculatorService {
       totalCost,
       totalGst,
     };
+  }
+
+  /**
+   * Calculate inverters with a quantity constraint
+   *
+   * User specifies exactly how many inverter units they want.
+   * Backend finds the optimal combination of inverters that:
+   * 1. Uses exactly the target number of total units
+   * 2. Meets or exceeds the required system size (must not go below)
+   * 3. Minimizes capacity overage
+   *
+   * @param targetQuantity - Exact number of inverter units user wants
+   * @returns Either a valid configuration or an error with suggested valid quantities
+   */
+  private async calculateInvertersWithQuantityConstraint(
+    organizationId: string,
+    systemSizeKw: number,
+    phaseType: PhaseType,
+    targetQuantity: number,
+    preferredBrand: string | undefined,
+    projectType: ProjectType,
+    warnings: ValidationWarning[],
+  ): Promise<
+    CalculatedInverterConfig | { error: string; errorCode: string; suggestion: number[] }
+  > {
+    // Get available inverters
+    const availableInverters = await this.findInverters(organizationId, phaseType, preferredBrand);
+
+    if (availableInverters.length === 0) {
+      throw new BadRequestException(
+        `No ${phaseType} inverters found${preferredBrand ? ` for brand ${preferredBrand}` : ''}. Please try a different brand or contact administrator.`,
+      );
+    }
+
+    // Pre-fetch pricing for all available inverters in a single batch query (N+1 optimization)
+    const productIds = availableInverters.map((inv) => inv.id);
+    const pricingRulesMap = await this.pricingRuleRepo.findByProductIdsWithContext(
+      organizationId,
+      productIds,
+      projectType,
+    );
+
+    const inverterPricing = new Map<string, { basePrice: number; gstRate: number }>();
+    for (const inv of availableInverters) {
+      const pricingRule = pricingRulesMap.get(inv.id);
+      inverterPricing.set(inv.id, {
+        basePrice: pricingRule?.formula?.basePrice || 0,
+        gstRate: pricingRule?.formula?.gstRate || 5,
+      });
+    }
+
+    // Find combination with exactly targetQuantity units that meets capacity requirement
+    const combination = this.findCombinationWithQuantity(
+      availableInverters,
+      systemSizeKw,
+      targetQuantity,
+    );
+
+    // If no valid combination found, suggest closest valid quantities
+    if (!combination) {
+      const validQuantities = this.findValidInverterQuantities(
+        availableInverters,
+        systemSizeKw,
+        targetQuantity,
+      );
+      return {
+        error: `Cannot form ${systemSizeKw}kW system with exactly ${targetQuantity} inverter(s). ` +
+          `The available inverters cannot be combined to meet the required capacity with this quantity.`,
+        errorCode: 'INVALID_INVERTER_QUANTITY',
+        suggestion: validQuantities,
+      };
+    }
+
+    // Build result with pricing
+    const invertersWithPricing = combination.map(({ inverter, quantity }) => {
+      const pricing = inverterPricing.get(inverter.id) || { basePrice: 0, gstRate: 5 };
+      const lineTotal = pricing.basePrice * quantity;
+      const gstAmount = (lineTotal * pricing.gstRate) / 100;
+
+      return {
+        productId: inverter.id,
+        name: inverter.name,
+        brand: inverter.brand || 'Unknown',
+        capacityKw: Number(inverter.specifications?.inverter?.capacityKw || 0),
+        quantity,
+        unitPrice: pricing.basePrice,
+        lineTotal,
+        gstAmount,
+        productWarrantyYears: inverter.productWarrantyYears,
+      };
+    });
+
+    const totalCapacityKw = invertersWithPricing.reduce(
+      (sum, inv) => sum + inv.capacityKw * inv.quantity,
+      0,
+    );
+    const totalCost = invertersWithPricing.reduce((sum, inv) => sum + inv.lineTotal, 0);
+    const totalGst = invertersWithPricing.reduce((sum, inv) => sum + inv.gstAmount, 0);
+
+    // Add info warning if capacity significantly exceeds required
+    if (totalCapacityKw > systemSizeKw * 1.2) {
+      warnings.push({
+        code: 'INVERTER_CAPACITY_OVERSIZED',
+        message: `Total inverter capacity (${totalCapacityKw}kW) is significantly more than system size (${systemSizeKw}kW) to meet the quantity constraint.`,
+        severity: 'info',
+      });
+    }
+
+    return {
+      inverters: invertersWithPricing,
+      totalCapacityKw,
+      totalCost,
+      totalGst,
+    };
+  }
+
+  /**
+   * Find inverter combination with exactly targetCount units that meets capacity requirement
+   *
+   * Uses backtracking to find all valid combinations and picks the one with minimum overage.
+   *
+   * @param inverters - Available inverter products
+   * @param requiredKw - Minimum capacity required
+   * @param targetCount - Exact number of inverter units
+   * @returns Best combination or null if not possible
+   */
+  private findCombinationWithQuantity(
+    inverters: ProductEntity[],
+    requiredKw: number,
+    targetCount: number,
+  ): Array<{ inverter: ProductEntity; quantity: number }> | null {
+    type Combination = Array<{ inverter: ProductEntity; quantity: number }>;
+
+    const getInverterCapacity = (inv: ProductEntity): number => {
+      return Number(inv.specifications?.inverter?.capacityKw || 0);
+    };
+
+    // Sort by capacity descending for more efficient search
+    const sortedInverters = [...inverters]
+      .filter(inv => getInverterCapacity(inv) > 0)
+      .sort((a, b) => getInverterCapacity(b) - getInverterCapacity(a));
+
+    if (sortedInverters.length === 0) return null;
+
+    let bestCombination: Combination | null = null;
+    let bestOverage = Infinity;
+
+    // Safety limit to prevent runaway recursion in edge cases
+    const MAX_ITERATIONS = 10000;
+    let iterations = 0;
+
+    // Recursive backtracking
+    const backtrack = (
+      index: number,
+      currentCombo: Combination,
+      currentCount: number,
+      currentCapacity: number,
+    ): void => {
+      // Safety guard: stop if too many iterations
+      if (++iterations > MAX_ITERATIONS) return;
+
+      // Prune: already exceeded target count
+      if (currentCount > targetCount) return;
+
+      // Check if we've reached target count
+      if (currentCount === targetCount) {
+        if (currentCapacity >= requiredKw) {
+          const overage = currentCapacity - requiredKw;
+          if (overage < bestOverage) {
+            bestOverage = overage;
+            bestCombination = currentCombo.map(c => ({ ...c }));
+          }
+        }
+        return;
+      }
+
+      // Prune: can't possibly reach target count with remaining inverters
+      const remainingCount = targetCount - currentCount;
+      if (index >= sortedInverters.length) return;
+
+      // For each inverter starting from current index
+      for (let i = index; i < sortedInverters.length; i++) {
+        const inv = sortedInverters[i];
+        if (!inv) continue;
+        const capacity = getInverterCapacity(inv);
+
+        // Try different quantities of this inverter
+        for (let qty = 1; qty <= remainingCount; qty++) {
+          const newCapacity = currentCapacity + capacity * qty;
+          const newCount = currentCount + qty;
+
+          // Early termination: if we've reached target count and meet capacity
+          if (newCount === targetCount && newCapacity >= requiredKw) {
+            const overage = newCapacity - requiredKw;
+            if (overage < bestOverage) {
+              bestOverage = overage;
+              bestCombination = [...currentCombo, { inverter: inv, quantity: qty }];
+            }
+            // Continue to find potentially better combinations
+          }
+
+          // Recurse with next inverter
+          if (newCount < targetCount) {
+            currentCombo.push({ inverter: inv, quantity: qty });
+            backtrack(i + 1, currentCombo, newCount, newCapacity);
+            currentCombo.pop();
+          }
+        }
+      }
+    };
+
+    backtrack(0, [], 0, 0);
+    return bestCombination;
+  }
+
+  /**
+   * Find valid inverter quantities close to the target that can meet capacity requirement
+   *
+   * @returns Array of up to 3 valid quantities, sorted by closeness to target
+   */
+  private findValidInverterQuantities(
+    inverters: ProductEntity[],
+    requiredKw: number,
+    targetCount: number,
+  ): number[] {
+    const validQuantities: number[] = [];
+    const maxSearch = Math.max(10, targetCount + 5);
+
+    // Search around the target quantity
+    for (let qty = 1; qty <= maxSearch; qty++) {
+      const combination = this.findCombinationWithQuantity(inverters, requiredKw, qty);
+      if (combination) {
+        validQuantities.push(qty);
+      }
+    }
+
+    // Sort by closeness to target and return top 3
+    return validQuantities
+      .sort((a, b) => Math.abs(a - targetCount) - Math.abs(b - targetCount))
+      .slice(0, 3);
   }
 
   /**

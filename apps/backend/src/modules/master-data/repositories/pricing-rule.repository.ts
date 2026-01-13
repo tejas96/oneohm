@@ -111,6 +111,80 @@ export class PricingRuleRepository {
   }
 
   /**
+   * Find pricing rules for multiple products in a single query
+   * Returns a Map of productId -> PricingRuleEntity for efficient lookup
+   *
+   * @param productIds - Array of product IDs to fetch pricing for
+   * @returns Map with productId as key and pricing rule as value
+   */
+  async findByProductIdsWithContext(
+    organizationId: string,
+    productIds: string[],
+    projectType?: ProjectType,
+    asOfDate?: Date,
+  ): Promise<Map<string, PricingRuleEntity>> {
+    if (productIds.length === 0) {
+      return new Map();
+    }
+
+    const date = asOfDate || new Date();
+    const dateStr = date.toISOString().split('T')[0];
+
+    // Use a subquery to get the best rule for each product
+    // This approach fetches all matching rules and groups by product
+    const query = this.repository
+      .createQueryBuilder('rule')
+      .where('rule.organization_id = :organizationId', { organizationId })
+      .andWhere('rule.product_id IN (:...productIds)', { productIds })
+      .andWhere('rule.is_active = true')
+      .andWhere('rule.deleted_at IS NULL')
+      .andWhere('rule.effective_from <= :date', { date: dateStr })
+      .andWhere('(rule.effective_to IS NULL OR rule.effective_to >= :date)', { date: dateStr });
+
+    if (projectType) {
+      query.andWhere(
+        `(rule.project_type = :projectType 
+          OR rule.project_type = :residential 
+          OR rule.project_type = :commercial 
+          OR rule.project_type IS NULL)`,
+        {
+          projectType,
+          residential: ProjectType.RESIDENTIAL,
+          commercial: ProjectType.COMMERCIAL,
+        },
+      );
+    }
+
+    // Order by product_id first (for grouping), then by priority
+    query.orderBy('rule.product_id', 'ASC');
+    if (projectType) {
+      query.addOrderBy(
+        `CASE 
+          WHEN rule.project_type = '${projectType}' THEN 0
+          WHEN rule.project_type = '${ProjectType.RESIDENTIAL}' THEN 1
+          WHEN rule.project_type = '${ProjectType.COMMERCIAL}' THEN 2
+          WHEN rule.project_type IS NULL THEN 3
+          ELSE 4
+        END`,
+        'ASC',
+      );
+    }
+    query.addOrderBy('rule.priority', 'DESC');
+
+    const allRules = await query.getMany();
+
+    // Group by productId, keeping only the first (best) rule for each
+    const resultMap = new Map<string, PricingRuleEntity>();
+    for (const rule of allRules) {
+      if (rule.productId && !resultMap.has(rule.productId)) {
+        resultMap.set(rule.productId, rule);
+      }
+    }
+
+    return resultMap;
+  }
+
+  /**
    * Find all pricing rules for a product
    */
   async findAllByProductId(

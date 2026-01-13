@@ -219,6 +219,60 @@ export class ProductRepository {
   }
 
   /**
+   * Find ALL solar panels by DCR status and optional brand/technology preference
+   * Returns all matching panels sorted by wattage ascending (for quantity-constrained selection)
+   *
+   * Used when user specifies a manual panel count and backend needs to find
+   * the best wattage panel to meet the required capacity.
+   *
+   * @param organizationId - Organization ID
+   * @param isDcr - Whether to find DCR or Non-DCR panels
+   * @param preferredBrand - Optional brand filter
+   * @param preferredTechnology - Optional technology filter (PERC/TOPCON)
+   * @param minWattage - Optional minimum wattage filter (panels with wattage >= this value)
+   * @returns Array of matching panels sorted by wattage ascending
+   */
+  async findAllSolarPanels(
+    organizationId: string,
+    isDcr: boolean,
+    preferredBrand?: string,
+    preferredTechnology?: string,
+    minWattage?: number,
+  ): Promise<ProductEntity[]> {
+    const query = this.repository
+      .createQueryBuilder('product')
+      .where('product.organization_id = :organizationId', { organizationId })
+      .andWhere('product.type = :type', { type: ProductType.SOLAR_PANEL })
+      .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
+      .andWhere('product.deleted_at IS NULL')
+      .andWhere("product.specifications->'panel'->>'isDcr' = :isDcr", {
+        isDcr: isDcr.toString(),
+      });
+
+    if (preferredBrand) {
+      query.andWhere('LOWER(product.brand) = LOWER(:brand)', { brand: preferredBrand });
+    }
+
+    if (preferredTechnology) {
+      query.andWhere("LOWER(product.specifications->'panel'->>'technology') = LOWER(:technology)", {
+        technology: preferredTechnology,
+      });
+    }
+
+    // Filter by minimum wattage if specified (for quantity-constrained selection)
+    if (minWattage) {
+      query.andWhere("(product.specifications->'panel'->>'wattage')::int >= :minWattage", {
+        minWattage,
+      });
+    }
+
+    // Order by wattage ascending (prefer lower wattage panels to minimize overage)
+    query.orderBy("(product.specifications->'panel'->>'wattage')::int", 'ASC');
+
+    return query.getMany();
+  }
+
+  /**
    * Find all inverters by phase type and optional brand preference
    * Returns inverters ordered by capacity descending (for combination algorithm)
    */

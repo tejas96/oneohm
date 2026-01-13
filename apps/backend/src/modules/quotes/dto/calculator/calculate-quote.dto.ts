@@ -236,6 +236,62 @@ export class CalculateQuoteDto {
   @Type(() => InverterOverrideDto)
   @IsOptional()
   inverterOverrides?: InverterOverrideDto[];
+
+  // ==================== MANUAL QUANTITY FIELDS ====================
+  // These allow users to specify target quantities without selecting specific products.
+  // Backend will find optimal product combinations to match the requested quantity
+  // while meeting/exceeding the required system capacity.
+  // NOTE: Cannot be used together with panelOverrides/inverterOverrides.
+
+  @ApiPropertyOptional({
+    description: `
+      Target inverter count for manual adjustment.
+      Backend finds optimal inverter combination with exactly this many units
+      that meets or exceeds the system size.
+      Cannot be used together with inverterOverrides.
+      Example: For 50kW, user wants 3 inverters instead of auto-calculated 2.
+    `,
+    example: 3,
+    minimum: 1,
+    maximum: 20,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  @Max(20)
+  manualInverterCount?: number;
+
+  @ApiPropertyOptional({
+    description: `
+      Target DCR panel count for manual adjustment.
+      Backend finds suitable DCR panel wattage so that count * wattage >= required DCR capacity.
+      Cannot be used together with panelOverrides.
+      Only valid when dcrPreference is DCR_ONLY or AUTO_SPLIT.
+      Example: User wants 20 DCR panels instead of auto-calculated 18.
+    `,
+    example: 20,
+    minimum: 1,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  manualDcrPanelCount?: number;
+
+  @ApiPropertyOptional({
+    description: `
+      Target Non-DCR panel count for manual adjustment.
+      Backend finds suitable Non-DCR panel wattage so that count * wattage >= required Non-DCR capacity.
+      Cannot be used together with panelOverrides.
+      Only valid when dcrPreference is NON_DCR_ONLY or AUTO_SPLIT.
+      Example: User wants 15 Non-DCR panels instead of auto-calculated 12.
+    `,
+    example: 15,
+    minimum: 1,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  manualNonDcrPanelCount?: number;
 }
 
 /**
