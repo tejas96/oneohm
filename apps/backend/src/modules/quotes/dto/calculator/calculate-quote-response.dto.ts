@@ -358,6 +358,18 @@ export class CalculateQuoteResponseDto {
   })
   actualSystemSizeKw!: number;
 
+  @ApiProperty({
+    description: 'Actual DCR capacity in KW from selected panels (may differ from requested when manual counts used)',
+    example: 3.0,
+  })
+  actualDcrSizeKw!: number;
+
+  @ApiProperty({
+    description: 'Actual Non-DCR capacity in KW from selected panels (may differ from requested when manual counts used)',
+    example: 0,
+  })
+  actualNonDcrSizeKw!: number;
+
   @ApiProperty({ description: 'Calculation timestamp' })
   calculatedAt!: string;
 }
