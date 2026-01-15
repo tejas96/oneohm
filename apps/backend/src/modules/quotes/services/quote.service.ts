@@ -98,7 +98,7 @@ export class QuoteService {
     });
 
     // Generate payment milestones if not provided
-    // Use loan milestones (10%/85%/5%) if wantsLoan is true, otherwise use default (30/30/30/10)
+    // Default milestones: 10%/85%/5% (Advance/Installation/Commissioning)
     const paymentMilestones =
       createDto.paymentMilestones ||
       this.getPaymentMilestones(pricing.finalPrice, createDto.wantsLoan ?? false);
