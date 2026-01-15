@@ -7,16 +7,18 @@
 
 /**
  * Loan Application Status
+ * Simplified for tracking customer loan interest with external banks
  */
 export enum LoanStatus {
+  /** Customer expressed interest in loan financing */
   INITIATED = 'initiated',
-  DOCUMENTS_PENDING = 'documents_pending',
-  SUBMITTED = 'submitted',
-  UNDER_REVIEW = 'under_review',
-  SITE_VISIT_PENDING = 'site_visit_pending',
+  /** Customer has applied to bank */
+  APPLIED = 'applied',
+  /** Bank has approved the loan */
   APPROVED = 'approved',
-  DISBURSED = 'disbursed',
+  /** Bank has rejected the loan */
   REJECTED = 'rejected',
+  /** Customer cancelled the loan request */
   CANCELLED = 'cancelled',
 }
 

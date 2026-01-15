@@ -133,6 +133,15 @@ export class CreateQuoteDto {
   @IsOptional()
   isSubsidyApplicable?: boolean;
 
+  // ==================== Loan Financing ====================
+  @ApiPropertyOptional({
+    example: false,
+    description: 'Customer wants loan financing. If true, uses 10%/85%/5% payment milestones instead of standard 30/30/30/10.',
+  })
+  @IsBoolean()
+  @IsOptional()
+  wantsLoan?: boolean;
+
   // ==================== Notes ====================
   @ApiPropertyOptional({
     example: 'High priority customer, offer best pricing',

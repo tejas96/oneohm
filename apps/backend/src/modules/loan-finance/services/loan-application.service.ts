@@ -11,6 +11,8 @@ import { LoanApplicationRepository } from '../repositories/loan-application.repo
 
 /**
  * Service for Loan Application business logic
+ * Simplified for tracking customer loan interest with external banks.
+ * We don't provide loans - customers get them from banks.
  */
 @Injectable()
 export class LoanApplicationService {
@@ -21,16 +23,18 @@ export class LoanApplicationService {
   // ============================================
 
   async create(createDto: CreateLoanApplicationDto): Promise<LoanApplicationResponseDto> {
-    // Generate application number
-    const applicationNumber = await this.loanApplicationRepository.generateApplicationNumber();
-
-    // Set application date to today if not provided
-    const applicationDate = new Date();
+    // Check for existing loan application for this property
+    if (createDto.propertyId) {
+      const existing = await this.loanApplicationRepository.findByProperty(createDto.propertyId);
+      if (existing) {
+        throw new BadRequestException(
+          `A loan application already exists for property ${createDto.propertyId}`,
+        );
+      }
+    }
 
     const application = await this.loanApplicationRepository.create({
       ...createDto,
-      applicationNumber,
-      applicationDate,
       status: createDto.status || LoanStatus.INITIATED,
     });
 
@@ -102,16 +106,13 @@ export class LoanApplicationService {
   // QUERY METHODS
   // ============================================
 
-  async findByOrganization(organizationId: string): Promise<LoanApplicationResponseDto[]> {
-    const applications = await this.loanApplicationRepository.findByOrganization(organizationId);
-    return plainToInstance(LoanApplicationResponseDto, applications, {
-      excludeExtraneousValues: true,
-    });
-  }
+  async findByProperty(propertyId: string): Promise<LoanApplicationResponseDto | null> {
+    const application = await this.loanApplicationRepository.findByProperty(propertyId);
+    if (!application) {
+      return null;
+    }
 
-  async findByProject(projectId: string): Promise<LoanApplicationResponseDto[]> {
-    const applications = await this.loanApplicationRepository.findByProject(projectId);
-    return plainToInstance(LoanApplicationResponseDto, applications, {
+    return plainToInstance(LoanApplicationResponseDto, application, {
       excludeExtraneousValues: true,
     });
   }
@@ -123,296 +124,21 @@ export class LoanApplicationService {
     });
   }
 
-  async findByApplicationNumber(applicationNumber: string): Promise<LoanApplicationResponseDto> {
-    const application =
-      await this.loanApplicationRepository.findByApplicationNumber(applicationNumber);
-
-    if (!application) {
-      throw new NotFoundException(`Loan application with number ${applicationNumber} not found`);
-    }
-
-    return plainToInstance(LoanApplicationResponseDto, application, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  async findByStatus(status: LoanStatus): Promise<LoanApplicationResponseDto[]> {
-    const applications = await this.loanApplicationRepository.findByStatus(status);
-    return plainToInstance(LoanApplicationResponseDto, applications, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  // ============================================
-  // JAN SAMARTH OPERATIONS
-  // ============================================
-
-  async submitToJanSamarth(
-    id: string,
-    janSamarthApplicationId: string,
-  ): Promise<LoanApplicationResponseDto> {
-    const application = await this.loanApplicationRepository.findById(id);
-
-    if (!application) {
-      throw new NotFoundException(`Loan application with ID ${id} not found`);
-    }
-
-    if (application.janSamarthApplicationId) {
-      throw new BadRequestException('Application already submitted to Jan Samarth portal');
-    }
-
-    const updated = await this.loanApplicationRepository.update(id, {
-      janSamarthApplicationId,
-      janSamarthSubmittedAt: new Date(),
-      status: LoanStatus.SUBMITTED,
-    });
-
-    if (!updated) {
-      throw new NotFoundException(`Failed to update loan application with ID ${id}`);
-    }
-
-    return plainToInstance(LoanApplicationResponseDto, updated, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  async findByJanSamarthId(janSamarthApplicationId: string): Promise<LoanApplicationResponseDto> {
-    const application =
-      await this.loanApplicationRepository.findByJanSamarthId(janSamarthApplicationId);
-
-    if (!application) {
-      throw new NotFoundException(
-        `Loan application with Jan Samarth ID ${janSamarthApplicationId} not found`,
-      );
-    }
-
-    return plainToInstance(LoanApplicationResponseDto, application, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  async findSubmittedToJanSamarth(): Promise<LoanApplicationResponseDto[]> {
-    const applications = await this.loanApplicationRepository.findSubmittedToJanSamarth();
-    return plainToInstance(LoanApplicationResponseDto, applications, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  async findPendingJanSamarthSubmission(): Promise<LoanApplicationResponseDto[]> {
-    const applications = await this.loanApplicationRepository.findPendingJanSamarthSubmission();
-    return plainToInstance(LoanApplicationResponseDto, applications, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  // ============================================
-  // SITE VISIT OPERATIONS
-  // ============================================
-
-  async scheduleSiteVisit(id: string, scheduledDate: Date): Promise<LoanApplicationResponseDto> {
-    const application = await this.loanApplicationRepository.findById(id);
-
-    if (!application) {
-      throw new NotFoundException(`Loan application with ID ${id} not found`);
-    }
-
-    const updated = await this.loanApplicationRepository.update(id, {
-      siteVisitScheduledDate: scheduledDate,
-      status: LoanStatus.SITE_VISIT_PENDING,
-    });
-
-    if (!updated) {
-      throw new NotFoundException(`Failed to update loan application with ID ${id}`);
-    }
-
-    return plainToInstance(LoanApplicationResponseDto, updated, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  async completeSiteVisit(id: string, report: string): Promise<LoanApplicationResponseDto> {
-    const application = await this.loanApplicationRepository.findById(id);
-
-    if (!application) {
-      throw new NotFoundException(`Loan application with ID ${id} not found`);
-    }
-
-    if (!application.siteVisitScheduledDate) {
-      throw new BadRequestException('Site visit not scheduled for this application');
-    }
-
-    const updated = await this.loanApplicationRepository.update(id, {
-      siteVisitCompletedDate: new Date(),
-      siteVisitReport: report,
-      status: LoanStatus.UNDER_REVIEW,
-    });
-
-    if (!updated) {
-      throw new NotFoundException(`Failed to update loan application with ID ${id}`);
-    }
-
-    return plainToInstance(LoanApplicationResponseDto, updated, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  async findPendingSiteVisits(): Promise<LoanApplicationResponseDto[]> {
-    const applications = await this.loanApplicationRepository.findPendingSiteVisits();
-    return plainToInstance(LoanApplicationResponseDto, applications, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  async findCompletedSiteVisits(): Promise<LoanApplicationResponseDto[]> {
-    const applications = await this.loanApplicationRepository.findCompletedSiteVisits();
-    return plainToInstance(LoanApplicationResponseDto, applications, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  // ============================================
-  // APPROVAL OPERATIONS
-  // ============================================
-
-  async approve(
-    id: string,
-    approvedAmount: number,
-    approvedByLender: string,
-  ): Promise<LoanApplicationResponseDto> {
-    const application = await this.loanApplicationRepository.findById(id);
-
-    if (!application) {
-      throw new NotFoundException(`Loan application with ID ${id} not found`);
-    }
-
-    const updated = await this.loanApplicationRepository.update(id, {
-      approvedAmount,
-      approvedByLender,
-      approvedAt: new Date(),
-      status: LoanStatus.APPROVED,
-    });
-
-    if (!updated) {
-      throw new NotFoundException(`Failed to update loan application with ID ${id}`);
-    }
-
-    return plainToInstance(LoanApplicationResponseDto, updated, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  async reject(id: string, rejectionReason: string): Promise<LoanApplicationResponseDto> {
-    const application = await this.loanApplicationRepository.findById(id);
-
-    if (!application) {
-      throw new NotFoundException(`Loan application with ID ${id} not found`);
-    }
-
-    const updated = await this.loanApplicationRepository.update(id, {
-      rejectionReason,
-      rejectedAt: new Date(),
-      status: LoanStatus.REJECTED,
-    });
-
-    if (!updated) {
-      throw new NotFoundException(`Failed to update loan application with ID ${id}`);
-    }
-
-    return plainToInstance(LoanApplicationResponseDto, updated, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  // ============================================
-  // DISBURSEMENT OPERATIONS
-  // ============================================
-
-  async disburse(
-    id: string,
-    disbursementAmount: number,
-    disbursementReference: string,
-  ): Promise<LoanApplicationResponseDto> {
-    const application = await this.loanApplicationRepository.findById(id);
-
-    if (!application) {
-      throw new NotFoundException(`Loan application with ID ${id} not found`);
-    }
-
-    if (application.status !== LoanStatus.APPROVED) {
-      throw new BadRequestException('Only approved applications can be disbursed');
-    }
-
-    const updated = await this.loanApplicationRepository.update(id, {
-      disbursementAmount,
-      disbursementReference,
-      disbursementDate: new Date(),
-      status: LoanStatus.DISBURSED,
-    });
-
-    if (!updated) {
-      throw new NotFoundException(`Failed to update loan application with ID ${id}`);
-    }
-
-    return plainToInstance(LoanApplicationResponseDto, updated, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  async findByDisbursementDateRange(
-    startDate: Date,
-    endDate: Date,
-  ): Promise<LoanApplicationResponseDto[]> {
-    const applications = await this.loanApplicationRepository.findByDisbursementDateRange(
-      startDate,
-      endDate,
-    );
-    return plainToInstance(LoanApplicationResponseDto, applications, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  // ============================================
-  // STATISTICS
-  // ============================================
-
-  async getStatsByOrganization(organizationId: string): Promise<Record<string, unknown>> {
-    return this.loanApplicationRepository.getStatsByOrganization(organizationId);
-  }
-
   // ============================================
   // VALIDATION
   // ============================================
 
+  /**
+   * Validate status transitions for loan tracking.
+   * Simplified flow: initiated -> applied -> approved/rejected/cancelled
+   */
   private validateStatusTransition(currentStatus: LoanStatus, newStatus: LoanStatus): void {
     const validTransitions: Record<LoanStatus, LoanStatus[]> = {
-      [LoanStatus.INITIATED]: [
-        LoanStatus.DOCUMENTS_PENDING,
-        LoanStatus.SUBMITTED,
-        LoanStatus.CANCELLED,
-      ],
-      [LoanStatus.DOCUMENTS_PENDING]: [LoanStatus.SUBMITTED, LoanStatus.CANCELLED],
-      [LoanStatus.SUBMITTED]: [
-        LoanStatus.UNDER_REVIEW,
-        LoanStatus.SITE_VISIT_PENDING,
-        LoanStatus.REJECTED,
-        LoanStatus.CANCELLED,
-      ],
-      [LoanStatus.UNDER_REVIEW]: [
-        LoanStatus.SITE_VISIT_PENDING,
-        LoanStatus.APPROVED,
-        LoanStatus.REJECTED,
-        LoanStatus.CANCELLED,
-      ],
-      [LoanStatus.SITE_VISIT_PENDING]: [
-        LoanStatus.UNDER_REVIEW,
-        LoanStatus.APPROVED,
-        LoanStatus.REJECTED,
-        LoanStatus.CANCELLED,
-      ],
-      [LoanStatus.APPROVED]: [LoanStatus.DISBURSED, LoanStatus.CANCELLED],
-      [LoanStatus.DISBURSED]: [],
-      [LoanStatus.REJECTED]: [],
-      [LoanStatus.CANCELLED]: [],
+      [LoanStatus.INITIATED]: [LoanStatus.APPLIED, LoanStatus.CANCELLED],
+      [LoanStatus.APPLIED]: [LoanStatus.APPROVED, LoanStatus.REJECTED, LoanStatus.CANCELLED],
+      [LoanStatus.APPROVED]: [], // Final state
+      [LoanStatus.REJECTED]: [], // Final state
+      [LoanStatus.CANCELLED]: [], // Final state
     };
 
     const allowedStatuses = validTransitions[currentStatus] || [];

@@ -2,55 +2,94 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LoanStatus } from '@oneohm-epc/shared-types';
 import { Expose, Type } from 'class-transformer';
 
+import { LoanDocumentResponseDto } from './loan-document-response.dto';
+import { CustomerPropertyResponseDto } from '../../customers/dto/customer-property-response.dto';
 import { CustomerResponseDto } from '../../customers/dto/customer-response.dto';
-import { OrganizationResponseDto } from '../../organizations/dto/organization-response.dto';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
 
+/**
+ * Response DTO for Loan Application
+ * Simplified for tracking customer loan interest with external banks
+ */
 export class LoanApplicationResponseDto {
-  @ApiProperty() @Expose() id: string;
-  @ApiProperty() @Expose() organizationId: string;
-  @ApiProperty() @Expose() projectId: string;
-  @ApiProperty() @Expose() customerId: string;
-  @ApiProperty() @Expose() applicationNumber: string;
-  @ApiProperty() @Expose() applicationDate: Date;
-  @ApiProperty() @Expose() loanAmount: number;
-  @ApiProperty() @Expose() loanTenureMonths: number;
-  @ApiPropertyOptional() @Expose() interestRate?: number;
-  @ApiPropertyOptional() @Expose() lenderName?: string;
-  @ApiPropertyOptional() @Expose() lenderContact?: string;
-  @ApiPropertyOptional() @Expose() janSamarthApplicationId?: string;
-  @ApiPropertyOptional() @Expose() janSamarthSubmittedAt?: Date;
-  @ApiProperty({ enum: LoanStatus }) @Expose() status: LoanStatus;
-  @ApiPropertyOptional() @Expose() siteVisitScheduledDate?: Date;
-  @ApiPropertyOptional() @Expose() siteVisitCompletedDate?: Date;
-  @ApiPropertyOptional() @Expose() siteVisitReport?: string;
-  @ApiPropertyOptional() @Expose() approvedAmount?: number;
-  @ApiPropertyOptional() @Expose() approvedAt?: Date;
-  @ApiPropertyOptional() @Expose() approvedByLender?: string;
-  @ApiPropertyOptional() @Expose() disbursementDate?: Date;
-  @ApiPropertyOptional() @Expose() disbursementAmount?: number;
-  @ApiPropertyOptional() @Expose() disbursementReference?: string;
-  @ApiPropertyOptional() @Expose() rejectionReason?: string;
-  @ApiPropertyOptional() @Expose() rejectedAt?: Date;
-  @ApiPropertyOptional() @Expose() notes?: string;
-  @ApiProperty() @Expose() createdAt: Date;
-  @ApiProperty() @Expose() updatedAt: Date;
-  @ApiPropertyOptional() @Expose() deletedAt?: Date;
-  @ApiPropertyOptional() @Expose() createdBy?: string;
-  @ApiPropertyOptional() @Expose() updatedBy?: string;
-
-  @ApiPropertyOptional({ type: OrganizationResponseDto })
+  @ApiProperty({ description: 'Loan application ID' })
   @Expose()
-  @Type(() => OrganizationResponseDto)
-  organization?: OrganizationResponseDto;
+  id: string;
 
-  @ApiPropertyOptional({ type: CustomerResponseDto })
+  @ApiPropertyOptional({ description: 'Property ID' })
+  @Expose()
+  propertyId?: string;
+
+  @ApiProperty({ description: 'Customer ID' })
+  @Expose()
+  customerId: string;
+
+  @ApiPropertyOptional({
+    description: "Bank's loan reference number (entered by finance team)",
+  })
+  @Expose()
+  bankReferenceNumber?: string;
+
+  @ApiPropertyOptional({ description: 'Lender/Bank name' })
+  @Expose()
+  lenderName?: string;
+
+  @ApiPropertyOptional({ description: 'Lender contact' })
+  @Expose()
+  lenderContact?: string;
+
+  @ApiPropertyOptional({ description: 'Requested loan amount' })
+  @Expose()
+  loanAmount?: number;
+
+  @ApiProperty({ description: 'Loan status', enum: LoanStatus })
+  @Expose()
+  status: LoanStatus;
+
+  @ApiPropertyOptional({ description: 'Notes' })
+  @Expose()
+  notes?: string;
+
+  @ApiProperty({ description: 'Created timestamp' })
+  @Expose()
+  createdAt: Date;
+
+  @ApiProperty({ description: 'Updated timestamp' })
+  @Expose()
+  updatedAt: Date;
+
+  @ApiPropertyOptional({ description: 'Deleted timestamp (soft delete)' })
+  @Expose()
+  deletedAt?: Date;
+
+  @ApiPropertyOptional({ description: 'Created by user ID' })
+  @Expose()
+  createdBy?: string;
+
+  @ApiPropertyOptional({ description: 'Updated by user ID' })
+  @Expose()
+  updatedBy?: string;
+
+  @ApiPropertyOptional({ description: 'Property details', type: CustomerPropertyResponseDto })
+  @Expose()
+  @Type(() => CustomerPropertyResponseDto)
+  property?: CustomerPropertyResponseDto;
+
+  @ApiPropertyOptional({ description: 'Customer details', type: CustomerResponseDto })
   @Expose()
   @Type(() => CustomerResponseDto)
   customer?: CustomerResponseDto;
 
-  @ApiPropertyOptional({ type: UserResponseDto })
+  @ApiPropertyOptional({ description: 'Created by user details', type: UserResponseDto })
   @Expose()
   @Type(() => UserResponseDto)
   createdByUser?: UserResponseDto;
+
+  @ApiPropertyOptional({
+    description: 'Loan documents (KYC)',
+    type: [LoanDocumentResponseDto],
+  })
+  @Expose()
+  @Type(() => LoanDocumentResponseDto)
+  documents?: LoanDocumentResponseDto[];
 }

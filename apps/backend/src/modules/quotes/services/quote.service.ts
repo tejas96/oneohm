@@ -98,8 +98,10 @@ export class QuoteService {
     });
 
     // Generate payment milestones if not provided
+    // Use loan milestones (10%/85%/5%) if wantsLoan is true, otherwise use default (30/30/30/10)
     const paymentMilestones =
-      createDto.paymentMilestones || this.generateDefaultPaymentMilestones(pricing.finalPrice);
+      createDto.paymentMilestones ||
+      this.getPaymentMilestones(pricing.finalPrice, createDto.wantsLoan ?? false);
 
     // Create initial version
     await this.quoteVersionRepository.create({
@@ -245,6 +247,48 @@ export class QuoteService {
         order: 4,
       },
     ];
+  }
+
+  /**
+   * Generate payment milestones for loan-financed projects
+   * Uses 10%/85%/5% split instead of standard 30/30/30/10
+   */
+  private generateLoanPaymentMilestones(finalPrice: number): PaymentMilestone[] {
+    return [
+      {
+        stage: PaymentMilestoneStage.ADVANCE,
+        name: 'Advance Payment',
+        percentage: 10,
+        amount: Math.round(finalPrice * 0.1 * 100) / 100,
+        description: 'To be paid upon order confirmation (minimal advance for loan customers)',
+        order: 1,
+      },
+      {
+        stage: PaymentMilestoneStage.INSTALLATION_COMPLETE,
+        name: 'Installation Complete',
+        percentage: 85,
+        amount: Math.round(finalPrice * 0.85 * 100) / 100,
+        description: 'To be paid upon installation completion (via bank loan disbursement)',
+        order: 2,
+      },
+      {
+        stage: PaymentMilestoneStage.COMMISSIONING,
+        name: 'Commissioning & Net Metering',
+        percentage: 5,
+        amount: Math.round(finalPrice * 0.05 * 100) / 100,
+        description: 'To be paid after commissioning and net metering',
+        order: 3,
+      },
+    ];
+  }
+
+  /**
+   * Get payment milestones based on loan status
+   */
+  getPaymentMilestones(finalPrice: number, wantsLoan: boolean): PaymentMilestone[] {
+    return wantsLoan
+      ? this.generateLoanPaymentMilestones(finalPrice)
+      : this.generateDefaultPaymentMilestones(finalPrice);
   }
 
   /**

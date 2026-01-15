@@ -14,6 +14,7 @@ export class LoanDocumentResponseDto {
   @ApiPropertyOptional() @Expose() verifiedAt?: Date;
   @ApiPropertyOptional() @Expose() verifiedBy?: string;
   @ApiProperty() @Expose() createdAt: Date;
+  @ApiPropertyOptional() @Expose() updatedAt?: Date;
   @ApiPropertyOptional() @Expose() createdBy?: string;
 
   @ApiPropertyOptional({ type: UserResponseDto })

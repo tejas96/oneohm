@@ -119,6 +119,10 @@ export class CustomerPropertyResponseDto {
   @Expose()
   isPrimary!: boolean;
 
+  @ApiProperty({ description: 'Customer wants loan financing for this property' })
+  @Expose()
+  wantsLoan!: boolean;
+
   // ==================== Status ====================
   @ApiProperty({ enum: PropertyStatus })
   @Expose()

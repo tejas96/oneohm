@@ -127,6 +127,9 @@ export class CustomerPropertyEntity extends BaseEntity {
   @Column({ name: 'is_primary', type: 'boolean', default: false })
   isPrimary!: boolean;
 
+  @Column({ name: 'wants_loan', type: 'boolean', default: false })
+  wantsLoan!: boolean;
+
   // ==================== STATUS ====================
   @Column({ type: 'varchar', length: 20, default: PropertyStatus.ACTIVE })
   status!: PropertyStatus;
