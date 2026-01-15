@@ -126,8 +126,9 @@ export class CreateQuoteConfigurationDto {
     type: [PaymentMilestoneDto],
     description: 'Payment milestones',
     example: [
-      { stage: 'advance', name: 'Advance', percentage: 40, order: 1 },
-      { stage: 'material_delivery', name: 'Material Delivery', percentage: 30, order: 2 },
+      { stage: 'advance', name: 'Advance', percentage: 10, order: 1 },
+      { stage: 'installation_complete', name: 'Installation Complete', percentage: 85, order: 2 },
+      { stage: 'commissioning', name: 'Commissioning', percentage: 5, order: 3 },
     ],
   })
   @IsArray()

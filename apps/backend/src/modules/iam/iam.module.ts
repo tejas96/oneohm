@@ -7,6 +7,7 @@ import { UsersModule } from '../users/users.module';
 import { FeatureController } from './controllers/feature.controller';
 import { PermissionController } from './controllers/permission.controller';
 import { RoleController } from './controllers/role.controller';
+import { UserRoleController } from './controllers/user-role.controller';
 import { FeatureGuard } from './guards/feature.guard';
 import { PermissionGuard } from './guards/permission.guard';
 import { RoleGuard } from './guards/role.guard';
@@ -46,7 +47,7 @@ import { IamService } from './services/iam.service';
     forwardRef(() => OrganizationsModule), // ← Use forwardRef to break circular dependency
     forwardRef(() => UsersModule), // ← Use forwardRef to break circular dependency
   ],
-  controllers: [RoleController, PermissionController, FeatureController],
+  controllers: [RoleController, PermissionController, FeatureController, UserRoleController],
   providers: [
     // Repositories
     FeatureRepository,

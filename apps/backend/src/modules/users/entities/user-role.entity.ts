@@ -1,6 +1,7 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { UserEntity } from './user.entity';
+import { RoleEntity } from '../../iam/entities/role.entity';
 
 @Entity('user_roles')
 // Note: Unique indexes use COALESCE for NULL organization_id (platform-level roles)
@@ -26,6 +27,11 @@ export class UserRoleEntity {
   // ===== NEW IAM: Dynamic Role ID =====
   @Column({ name: 'role_id', type: 'uuid', nullable: true })
   roleId?: string | null;
+
+  // ===== IAM ROLE RELATION =====
+  @ManyToOne(() => RoleEntity, { nullable: true })
+  @JoinColumn({ name: 'role_id' })
+  iamRole?: RoleEntity;
 
   // ===== ORGANIZATION (For multi-tenant role assignment) =====
   @Column({ name: 'organization_id', type: 'uuid', nullable: true })

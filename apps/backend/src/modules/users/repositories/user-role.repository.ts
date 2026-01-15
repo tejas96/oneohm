@@ -124,12 +124,14 @@ export class UserRoleRepository {
     roleId: string;
     role: string; // Legacy role code (required by entity)
     organizationId?: string | null;
+    createdBy?: string;
   }): Promise<UserRoleEntity> {
     const userRole = this.repository.create({
       userId: data.userId,
       roleId: data.roleId,
       role: data.role,
       organizationId: data.organizationId || null,
+      createdBy: data.createdBy,
     });
     return this.repository.save(userRole);
   }
@@ -156,5 +158,48 @@ export class UserRoleRepository {
       .getCount();
 
     return count > 0;
+  }
+
+  /**
+   * Find user roles with role details (for API responses)
+   * Includes role code, name from the IAM roles table
+   */
+  async findByUserIdWithRoles(userId: string): Promise<UserRoleEntity[]> {
+    return this.repository.find({
+      where: { userId },
+      relations: ['iamRole', 'user'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /**
+   * Find all users with a specific role
+   * @param roleId - The IAM role ID
+   * @returns Array of user role assignments with user details
+   */
+  async findByRoleId(roleId: string): Promise<UserRoleEntity[]> {
+    return this.repository.find({
+      where: { roleId },
+      relations: ['user', 'iamRole'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  /**
+   * Delete a user role assignment by ID
+   * @param id - The user_roles.id
+   */
+  async deleteById(id: string): Promise<void> {
+    await this.repository.delete({ id });
+  }
+
+  /**
+   * Find a user role by ID with relations
+   */
+  async findById(id: string): Promise<UserRoleEntity | null> {
+    return this.repository.findOne({
+      where: { id },
+      relations: ['user', 'iamRole'],
+    });
   }
 }
