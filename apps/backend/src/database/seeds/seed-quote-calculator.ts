@@ -552,15 +552,9 @@ export async function seedQuoteCalculatorData(
           roundUpThreshold: 5,
         }),
         JSON.stringify([
-          { stage: 'advance', name: 'Advance', percentage: 40, order: 1 },
-          { stage: 'material_delivery', name: 'Material Delivery', percentage: 30, order: 2 },
-          {
-            stage: 'installation_complete',
-            name: 'Installation Complete',
-            percentage: 20,
-            order: 3,
-          },
-          { stage: 'commissioning', name: 'Commissioning', percentage: 10, order: 4 },
+          { stage: 'advance', name: 'Advance', percentage: 10, order: 1 },
+          { stage: 'installation_complete', name: 'Installation Complete', percentage: 85, order: 2 },
+          { stage: 'commissioning', name: 'Commissioning', percentage: 5, order: 3 },
         ]),
         true,
         true,

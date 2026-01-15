@@ -204,6 +204,8 @@ export interface PricingRuleFormula {
   phaseType?: PhaseType;
   /** Structure type for structure pricing */
   structureType?: StructureType;
+  /** Cost multiplier for structures: basePrice × multiplier × systemSizeKw */
+  multiplier?: number;
   /** Capacity range for inverter/battery pricing */
   capacityRange?: {
     min: number;
@@ -334,6 +336,10 @@ export interface InstallationCostComponents {
   safety_equipment?: number;
   /** Documentation charges */
   documentation?: number;
+
+  // ==================== Profitability ====================
+  /** Profitability percentage for this system size tier */
+  profitability_percent?: number;
 
   /** Allow any additional custom cost components */
   [key: string]: number | undefined;

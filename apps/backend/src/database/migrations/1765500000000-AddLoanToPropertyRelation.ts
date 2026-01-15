@@ -120,19 +120,12 @@ export class AddLoanToPropertyRelation1765500000000 implements MigrationInterfac
 
     // Check if column exists and rename it
     if (await queryRunner.hasColumn('loan_applications', 'application_number')) {
-      await queryRunner.renameColumn('loan_applications', 'application_number', 'bank_reference_number');
-
-      // Make it nullable (entered by finance team after customer applies to bank)
-      await queryRunner.changeColumn(
-        'loan_applications',
-        'bank_reference_number',
-        new TableColumn({
-          name: 'bank_reference_number',
-          type: 'varchar',
-          length: '50',
-          isNullable: true,
-        }),
-      );
+      // Use raw SQL for rename and nullability change to avoid TypeORM constraint handling issues
+      await queryRunner.query(`ALTER TABLE loan_applications RENAME COLUMN application_number TO bank_reference_number`);
+      await queryRunner.query(`ALTER TABLE loan_applications ALTER COLUMN bank_reference_number DROP NOT NULL`);
+      // Drop unique constraint if it exists (was created with isUnique: true in original migration)
+      await queryRunner.query(`ALTER TABLE loan_applications DROP CONSTRAINT IF EXISTS "UQ_loan_applications_application_number"`);
+      await queryRunner.query(`ALTER TABLE loan_applications DROP CONSTRAINT IF EXISTS "loan_applications_application_number_key"`);
     }
 
     // ============================================
@@ -178,24 +171,12 @@ export class AddLoanToPropertyRelation1765500000000 implements MigrationInterfac
     // The original migration set loan_amount as NOT NULL with a CHECK constraint.
     // But for tracking external bank loans, we may not know the amount initially.
     // We also need to drop the check constraint that requires loan_amount > 0.
-    try {
-      await queryRunner.query(`ALTER TABLE loan_applications DROP CONSTRAINT IF EXISTS chk_loan_applications_amount`);
-    } catch {
-      // Constraint might not exist
-    }
+    // Note: Using raw SQL instead of TypeORM's changeColumn to avoid internal constraint handling issues
+    await queryRunner.query(`ALTER TABLE loan_applications DROP CONSTRAINT IF EXISTS chk_loan_applications_amount`);
 
     if (await queryRunner.hasColumn('loan_applications', 'loan_amount')) {
-      await queryRunner.changeColumn(
-        'loan_applications',
-        'loan_amount',
-        new TableColumn({
-          name: 'loan_amount',
-          type: 'decimal',
-          precision: 15,
-          scale: 2,
-          isNullable: true, // Now nullable for tracking interest before knowing amount
-        }),
-      );
+      // Use raw SQL to alter the column - avoids TypeORM trying to manage constraints internally
+      await queryRunner.query(`ALTER TABLE loan_applications ALTER COLUMN loan_amount DROP NOT NULL`);
     }
 
     // ============================================
@@ -352,23 +333,11 @@ export class AddLoanToPropertyRelation1765500000000 implements MigrationInterfac
     // RENAME bank_reference_number BACK TO application_number
     // ============================================
     if (await queryRunner.hasColumn('loan_applications', 'bank_reference_number')) {
-      await queryRunner.renameColumn(
-        'loan_applications',
-        'bank_reference_number',
-        'application_number',
-      );
-
-      // Make it non-nullable again
-      await queryRunner.changeColumn(
-        'loan_applications',
-        'application_number',
-        new TableColumn({
-          name: 'application_number',
-          type: 'varchar',
-          length: '50',
-          isNullable: false,
-        }),
-      );
+      // Use raw SQL for rename and nullability change for consistency with up migration
+      await queryRunner.query(`ALTER TABLE loan_applications RENAME COLUMN bank_reference_number TO application_number`);
+      // Note: Setting NOT NULL requires handling existing NULL values first
+      await queryRunner.query(`UPDATE loan_applications SET application_number = 'UNKNOWN-' || id WHERE application_number IS NULL`);
+      await queryRunner.query(`ALTER TABLE loan_applications ALTER COLUMN application_number SET NOT NULL`);
 
       // Re-create the unique index
       await queryRunner.createIndex(

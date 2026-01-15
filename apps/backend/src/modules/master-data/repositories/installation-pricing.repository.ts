@@ -37,6 +37,9 @@ export class InstallationPricingRepository {
    * Fallback Logic:
    * - First tries to find pricing for the exact project type
    * - If not found, falls back to 'residential' pricing (same for all project types)
+   *
+   * Note: System size is rounded UP to the nearest integer to match pricing tiers.
+   * This ensures 3.5 KW uses 4 KW pricing tier (not falling between gaps).
    */
   async findBySystemSize(
     organizationId: string,
@@ -47,10 +50,14 @@ export class InstallationPricingRepository {
     const date = asOfDate || new Date();
     const dateStr: string = date.toISOString().split('T')[0] || '';
 
+    // Round UP to ensure we get pricing for the capacity needed
+    // This handles fractional system sizes: 3.5 KW → 4 KW tier, 1.2 KW → 2 KW tier
+    const roundedSizeKw = Math.ceil(systemSizeKw);
+
     // Try exact project type match first
     let pricing = await this.findBySystemSizeAndProjectType(
       organizationId,
-      systemSizeKw,
+      roundedSizeKw,
       projectType,
       dateStr,
     );
@@ -59,7 +66,7 @@ export class InstallationPricingRepository {
     if (!pricing && projectType !== ProjectType.RESIDENTIAL) {
       pricing = await this.findBySystemSizeAndProjectType(
         organizationId,
-        systemSizeKw,
+        roundedSizeKw,
         ProjectType.RESIDENTIAL,
         dateStr,
       );

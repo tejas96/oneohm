@@ -184,7 +184,7 @@ export class InverterSpecificationsDto {
 export class StructureSpecificationsDto {
   @ApiProperty({
     enum: StructureType,
-    example: StructureType.ELEVATED,
+    example: StructureType.ELEVATED_6X9,
     description: 'Type of mounting structure',
   })
   @IsEnum(StructureType)

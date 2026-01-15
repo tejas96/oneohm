@@ -210,57 +210,16 @@ export class QuoteService {
   }
 
   /**
-   * Generate default payment milestones
+   * Generate default payment milestones (10%/85%/5% split)
    */
   private generateDefaultPaymentMilestones(finalPrice: number): PaymentMilestone[] {
     return [
       {
         stage: PaymentMilestoneStage.ADVANCE,
         name: 'Advance Payment',
-        percentage: 30,
-        amount: Math.round(finalPrice * 0.3 * 100) / 100,
+        percentage: 10,
+        amount: Math.round(finalPrice * 0.1 * 100) / 100,
         description: 'To be paid upon order confirmation',
-        order: 1,
-      },
-      {
-        stage: PaymentMilestoneStage.MATERIAL_PROCUREMENT,
-        name: 'Material Procurement',
-        percentage: 30,
-        amount: Math.round(finalPrice * 0.3 * 100) / 100,
-        description: 'To be paid before material delivery',
-        order: 2,
-      },
-      {
-        stage: PaymentMilestoneStage.INSTALLATION_COMPLETE,
-        name: 'Installation Complete',
-        percentage: 30,
-        amount: Math.round(finalPrice * 0.3 * 100) / 100,
-        description: 'To be paid upon installation completion',
-        order: 3,
-      },
-      {
-        stage: PaymentMilestoneStage.COMMISSIONING,
-        name: 'Commissioning & Net Metering',
-        percentage: 10,
-        amount: Math.round(finalPrice * 0.1 * 100) / 100,
-        description: 'To be paid after commissioning and net metering',
-        order: 4,
-      },
-    ];
-  }
-
-  /**
-   * Generate payment milestones for loan-financed projects
-   * Uses 10%/85%/5% split instead of standard 30/30/30/10
-   */
-  private generateLoanPaymentMilestones(finalPrice: number): PaymentMilestone[] {
-    return [
-      {
-        stage: PaymentMilestoneStage.ADVANCE,
-        name: 'Advance Payment',
-        percentage: 10,
-        amount: Math.round(finalPrice * 0.1 * 100) / 100,
-        description: 'To be paid upon order confirmation (minimal advance for loan customers)',
         order: 1,
       },
       {
@@ -268,7 +227,7 @@ export class QuoteService {
         name: 'Installation Complete',
         percentage: 85,
         amount: Math.round(finalPrice * 0.85 * 100) / 100,
-        description: 'To be paid upon installation completion (via bank loan disbursement)',
+        description: 'To be paid upon installation completion',
         order: 2,
       },
       {
@@ -283,12 +242,10 @@ export class QuoteService {
   }
 
   /**
-   * Get payment milestones based on loan status
+   * Get payment milestones (10%/85%/5% split for all projects)
    */
-  getPaymentMilestones(finalPrice: number, wantsLoan: boolean): PaymentMilestone[] {
-    return wantsLoan
-      ? this.generateLoanPaymentMilestones(finalPrice)
-      : this.generateDefaultPaymentMilestones(finalPrice);
+  getPaymentMilestones(finalPrice: number, _wantsLoan?: boolean): PaymentMilestone[] {
+    return this.generateDefaultPaymentMilestones(finalPrice);
   }
 
   /**

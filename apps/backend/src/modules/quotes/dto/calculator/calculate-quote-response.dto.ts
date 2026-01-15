@@ -370,6 +370,18 @@ export class CalculateQuoteResponseDto {
   })
   actualNonDcrSizeKw!: number;
 
+  @ApiProperty({
+    description: 'Profitability percentage for this system size tier',
+    example: 15,
+  })
+  profitabilityPercent!: number;
+
+  @ApiProperty({
+    description: 'Calculated profitability amount in INR (based on finalPrice)',
+    example: 42675,
+  })
+  profitabilityAmount!: number;
+
   @ApiProperty({ description: 'Calculation timestamp' })
   calculatedAt!: string;
 }

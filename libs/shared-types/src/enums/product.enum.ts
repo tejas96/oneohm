@@ -87,6 +87,14 @@ export enum PanelTechnology {
 /**
  * Structure Type Enum
  * Defines mounting structure types
+ *
+ * Pricing formula: basePrice × multiplier × systemSizeKw
+ * Multipliers:
+ * - ALUMINUM_RAIL: 1.0
+ * - RCC_3X6: 2.2
+ * - ELEVATED_6X9: 2.5
+ * - SUPER_ELEVATED: 3.2
+ * - GROUND_MOUNT: 3.5
  */
 export enum StructureType {
   ALUMINUM_RAIL = 'aluminum_rail',
@@ -94,11 +102,6 @@ export enum StructureType {
   ELEVATED_6X9 = 'elevated_6x9',
   SUPER_ELEVATED = 'super_elevated',
   GROUND_MOUNT = 'ground_mount',
-  // Legacy types (kept for backward compatibility)
-  GI_STRUCTURE = 'gi_structure',
-  FLUSH_MOUNT = 'flush_mount',
-  ELEVATED = 'elevated',
-  CARPORT = 'carport',
 }
 
 /**
