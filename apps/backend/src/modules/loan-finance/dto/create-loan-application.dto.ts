@@ -1,59 +1,31 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LoanStatus } from '@oneohm-epc/shared-types';
-import { Type } from 'class-transformer';
-import {
-  IsDate,
-  IsDecimal,
-  IsEnum,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUUID,
-  Min,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 
 /**
  * DTO for Creating Loan Application
+ * Simplified for tracking customer loan interest with external banks
  */
 export class CreateLoanApplicationDto {
-  @ApiProperty({ description: 'Organization ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiProperty({ description: 'Property ID', example: '123e4567-e89b-12d3-a456-426614174001' })
   @IsUUID()
   @IsNotEmpty()
-  organizationId: string;
-
-  @ApiProperty({ description: 'Project ID', example: '123e4567-e89b-12d3-a456-426614174001' })
-  @IsUUID()
-  @IsNotEmpty()
-  projectId: string;
+  propertyId: string;
 
   @ApiProperty({ description: 'Customer ID', example: '123e4567-e89b-12d3-a456-426614174002' })
   @IsUUID()
   @IsNotEmpty()
   customerId: string;
 
-  @ApiPropertyOptional({ description: 'Application date', example: '2024-01-15' })
-  @IsDate()
+  @ApiPropertyOptional({
+    description: "Bank's loan reference number (entered by finance team after customer applies)",
+    example: 'HDFC-LN-2024-12345',
+  })
+  @IsString()
   @IsOptional()
-  @Type(() => Date)
-  applicationDate?: Date;
+  bankReferenceNumber?: string;
 
-  @ApiProperty({ description: 'Loan amount', example: 500000, minimum: 1 })
-  @IsDecimal({ decimal_digits: '0,2' })
-  @Min(0.01)
-  loanAmount: number;
-
-  @ApiProperty({ description: 'Loan tenure in months', example: 60, minimum: 1 })
-  @IsInt()
-  @Min(1)
-  loanTenureMonths: number;
-
-  @ApiPropertyOptional({ description: 'Interest rate %', example: 8.5 })
-  @IsDecimal({ decimal_digits: '0,2' })
-  @IsOptional()
-  interestRate?: number;
-
-  @ApiPropertyOptional({ description: 'Lender name', example: 'HDFC Bank' })
+  @ApiPropertyOptional({ description: 'Lender/Bank name', example: 'HDFC Bank' })
   @IsString()
   @IsOptional()
   lenderName?: string;
@@ -63,17 +35,23 @@ export class CreateLoanApplicationDto {
   @IsOptional()
   lenderContact?: string;
 
-  @ApiPropertyOptional({ description: 'Jan Samarth application ID', example: 'JS2024001234' })
-  @IsString()
+  @ApiPropertyOptional({
+    description: 'Requested loan amount for reference',
+    example: 500000,
+    minimum: 0.01,
+  })
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Loan amount must have at most 2 decimal places' })
   @IsOptional()
-  janSamarthApplicationId?: string;
+  @Min(0.01, { message: 'Loan amount must be greater than 0' })
+  @Max(999999999999.99, { message: 'Loan amount exceeds maximum allowed value' })
+  loanAmount?: number;
 
   @ApiPropertyOptional({ description: 'Status', enum: LoanStatus, example: LoanStatus.INITIATED })
   @IsEnum(LoanStatus)
   @IsOptional()
   status?: LoanStatus;
 
-  @ApiPropertyOptional({ description: 'Notes', example: 'Customer prefers 5-year tenure' })
+  @ApiPropertyOptional({ description: 'Notes', example: 'Customer prefers HDFC Bank' })
   @IsString()
   @IsOptional()
   notes?: string;
@@ -85,4 +63,12 @@ export class CreateLoanApplicationDto {
   @IsUUID()
   @IsOptional()
   createdBy?: string;
+
+  @ApiPropertyOptional({
+    description: 'Updated by user ID',
+    example: '123e4567-e89b-12d3-a456-426614174003',
+  })
+  @IsUUID()
+  @IsOptional()
+  updatedBy?: string;
 }

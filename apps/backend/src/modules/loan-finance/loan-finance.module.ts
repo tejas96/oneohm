@@ -9,14 +9,15 @@ import { LoanApplicationService, LoanDocumentService } from './services';
 /**
  * Loan & Finance Module
  *
+ * Simplified module for tracking customer loan interest with external banks.
+ * We don't provide loans - customers get them from banks.
+ *
  * Handles:
- * - Loan applications with auto-numbering (LA-{YEAR}-{NUMBER})
- * - Loan documents with verification tracking
- * - Jan Samarth portal integration
- * - Site visit scheduling and completion
- * - Approval and rejection workflows
- * - Disbursement tracking
- * - Loan lifecycle management
+ * - Loan application tracking (customer interest in external bank loans)
+ * - Bank reference number management (entered by finance team)
+ * - Loan documents with verification tracking (KYC documents)
+ * - Basic status tracking (initiated, applied, approved, rejected, cancelled)
+ * - Sales team follow-up support
  */
 @Module({
   imports: [TypeOrmModule.forFeature([LoanApplicationEntity, LoanDocumentEntity])],

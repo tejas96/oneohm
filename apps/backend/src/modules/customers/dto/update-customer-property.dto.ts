@@ -198,6 +198,14 @@ export class UpdateCustomerPropertyDto {
   @IsOptional()
   isPrimary?: boolean;
 
+  @ApiPropertyOptional({
+    example: false,
+    description: 'Customer wants loan financing for this property',
+  })
+  @IsBoolean()
+  @IsOptional()
+  wantsLoan?: boolean;
+
   // ==================== Status ====================
   @ApiPropertyOptional({
     enum: PropertyStatus,
