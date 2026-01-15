@@ -197,12 +197,12 @@ export class QuoteCalculatorService {
       );
     }
 
-    // 6. Calculate structure cost (from installation pricing with product multiplier)
+    // 6. Calculate structure cost (from pricing rules with basePrice × multiplier × systemSizeKw)
     const structure = await this.calculateStructure(
       organizationId,
       input.systemSizeKw,
       input.structureType,
-      installationPricing,
+      input.projectType,
     );
 
     // 7. Calculate installation costs
@@ -226,7 +226,18 @@ export class QuoteCalculatorService {
     // 9. Calculate pricing summary
     const pricing = this.calculatePricing(panels, inverters, structure, installation, quoteConfig);
 
-    // 10. Calculate effective price
+    // 10. Calculate profitability and add to total price
+    const profitabilityPercent = Number(
+      installationPricing.costComponents?.profitability_percent || 0,
+    );
+    // Calculate margin on base pricing (before adding margin)
+    const profitabilityAmount = Math.round((pricing.finalPrice * profitabilityPercent) / 100);
+
+    // Add margin to the pricing
+    pricing.totalPrice = Math.round((pricing.totalPrice + profitabilityAmount) * 100) / 100;
+    pricing.finalPrice = Math.round((pricing.finalPrice + profitabilityAmount) * 100) / 100;
+
+    // 11. Calculate effective price (final price with margin, minus subsidy)
     const effectivePrice = pricing.finalPrice - subsidy.amount;
 
     // Determine if any overrides or manual counts were used
@@ -259,6 +270,8 @@ export class QuoteCalculatorService {
       actualSystemSizeKw,
       actualDcrSizeKw,
       actualNonDcrSizeKw,
+      profitabilityPercent,
+      profitabilityAmount,
       calculatedAt: new Date().toISOString(),
     };
   }
@@ -1720,18 +1733,22 @@ export class QuoteCalculatorService {
   }
 
   /**
-   * Calculate structure cost from installation pricing by structure type (direct lookup)
+   * Calculate structure cost from pricing rules
    *
-   * Structure types map to cost_components fields:
-   * - aluminum_rail -> struct_aluminum_rail
-   * - rcc_3x6, elevated_6x9 -> struct_rcc_elevated
-   * - super_elevated, ground_mount -> struct_super_ground
+   * Formula: basePrice × multiplier × systemSizeKw
+   *
+   * Multipliers by structure type:
+   * - ALUMINUM_RAIL: 1.0
+   * - RCC_3X6: 2.2
+   * - ELEVATED_6X9: 2.5
+   * - SUPER_ELEVATED: 3.2
+   * - GROUND_MOUNT: 3.5
    */
   private async calculateStructure(
     organizationId: string,
     systemSizeKw: number,
     structureType: StructureType,
-    installationPricing: InstallationPricing,
+    projectType: ProjectType,
   ): Promise<{
     productId: string;
     name: string;
@@ -1741,53 +1758,45 @@ export class QuoteCalculatorService {
     lineTotal: number;
     gstAmount: number;
   }> {
-    // Get structure cost based on structure type (direct lookup)
-    const costComponents = installationPricing.costComponents;
-    let structureCost = 0;
-
-    // Map structure types to cost component fields
-    switch (structureType) {
-      case StructureType.ALUMINUM_RAIL:
-      case StructureType.FLUSH_MOUNT:
-        structureCost = Number(costComponents.struct_aluminum_rail || 0);
-        break;
-      case StructureType.RCC_3X6:
-      case StructureType.ELEVATED_6X9:
-      case StructureType.ELEVATED:
-      case StructureType.GI_STRUCTURE:
-        structureCost = Number(costComponents.struct_rcc_elevated || 0);
-        break;
-      case StructureType.SUPER_ELEVATED:
-      case StructureType.GROUND_MOUNT:
-      case StructureType.CARPORT:
-        structureCost = Number(costComponents.struct_super_ground || 0);
-        break;
-    }
-
-    // Find structure product for product info
-    let productId = '';
-    let productName = `${structureType} Structure`;
-
+    // 1. Find structure product
     const structureProduct = await this.productRepo.findMountingStructure(
       organizationId,
       structureType,
     );
-    if (structureProduct) {
-      productId = structureProduct.id;
-      productName = structureProduct.name;
+
+    if (!structureProduct) {
+      throw new BadRequestException(`Mounting structure not found for type: ${structureType}`);
     }
 
-    const lineTotal = structureCost;
-    const gstRate = Number(installationPricing.gstRate || 18);
-    const gstAmount = (lineTotal * gstRate) / 100;
+    // 2. Get pricing rule for this structure product
+    const pricingRule = await this.pricingRuleRepo.findByProductIdWithContext(
+      organizationId,
+      structureProduct.id,
+      projectType,
+    );
+
+    if (!pricingRule) {
+      throw new BadRequestException(
+        `Pricing rule not found for structure: ${structureProduct.name}`,
+      );
+    }
+
+    // 3. Calculate: basePrice × multiplier × systemSizeKw
+    const formula = pricingRule.formula;
+    const basePrice = Number(formula.basePrice || 700);
+    const multiplier = Number(formula.multiplier || 1.0);
+    const gstRate = Number(formula.gstRate || 18);
+
+    const structureCost = basePrice * multiplier * systemSizeKw;
+    const gstAmount = (structureCost * gstRate) / 100;
 
     return {
-      productId,
-      name: productName,
+      productId: structureProduct.id,
+      name: structureProduct.name,
       structureType,
       quantity: 1,
-      unitPrice: lineTotal,
-      lineTotal,
+      unitPrice: structureCost,
+      lineTotal: structureCost,
       gstAmount,
     };
   }

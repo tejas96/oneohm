@@ -124,6 +124,21 @@ export async function seedMasterData(dataSource: DataSource): Promise<void> {
     console.log('🧹 Cleaning up existing master data...');
     
     // Delete in reverse dependency order
+    // First, clean up quote-related tables that reference products
+    // quote_line_items -> quote_versions -> quotes (cascade delete path)
+    await queryRunner.query(`
+      DELETE FROM quote_line_items 
+      WHERE quote_version_id IN (
+        SELECT qv.id FROM quote_versions qv 
+        JOIN quotes q ON qv.quote_id = q.id 
+        WHERE q.organization_id = $1
+      )`, [ORG_ID]);
+    await queryRunner.query(`
+      DELETE FROM quote_versions 
+      WHERE quote_id IN (SELECT id FROM quotes WHERE organization_id = $1)`, [ORG_ID]);
+    await queryRunner.query(`DELETE FROM quotes WHERE organization_id = $1`, [ORG_ID]);
+    
+    // Then clean up master data tables
     await queryRunner.query(`DELETE FROM quote_configurations WHERE organization_id = $1`, [ORG_ID]);
     await queryRunner.query(`DELETE FROM subsidy_configurations WHERE organization_id = $1`, [ORG_ID]);
     await queryRunner.query(`DELETE FROM installation_pricing WHERE organization_id = $1`, [ORG_ID]);
@@ -150,6 +165,12 @@ export async function seedMasterData(dataSource: DataSource): Promise<void> {
     // =====================================================
     console.log('💰 Inserting pricing rules...');
     await insertPricingRules(queryRunner);
+
+    // =====================================================
+    // 3b. STRUCTURE PRICING RULES (must run after products are inserted)
+    // =====================================================
+    console.log('🏗️ Inserting structure pricing rules...');
+    await insertStructurePricingRules(queryRunner);
 
     // =====================================================
     // 4. INSTALLATION PRICING
@@ -1545,22 +1566,144 @@ async function insertPricingRules(queryRunner: any): Promise<void> {
 }
 
 // =====================================================
+// STRUCTURE PRICING RULES
+// =====================================================
+/**
+ * Insert pricing rules for mounting structures
+ * Uses the formula: basePrice × multiplier × systemSizeKw
+ *
+ * Multipliers:
+ * - Aluminum Rail: 1.0
+ * - RCC 3X6: 2.2
+ * - Elevated 6X9: 2.5
+ * - Super Elevated: 3.2
+ * - Ground Mount: 3.5
+ */
+async function insertStructurePricingRules(queryRunner: any): Promise<void> {
+  // Map product CODE to pricing rule config
+  // Product codes are stable identifiers in the database
+  const structurePricingRules = [
+    {
+      productCode: 'STRUCT-RAIL-MOUNT',
+      ruleCode: 'PRICE-STRUCT-RAIL',
+      name: 'Aluminum Rail Mount I&C',
+      formula: { basePrice: 700, multiplier: 1.0, gstRate: 18 },
+    },
+    {
+      productCode: 'STRUCT-RCC-3X6',
+      ruleCode: 'PRICE-STRUCT-3X6',
+      name: '3 feet X 6 Feet Structure I&C',
+      formula: { basePrice: 700, multiplier: 2.2, gstRate: 18 },
+    },
+    {
+      productCode: 'STRUCT-ELEVATED-6X9',
+      ruleCode: 'PRICE-STRUCT-6X9',
+      name: 'Elevated 6x9 Feet Structure I&C',
+      formula: { basePrice: 700, multiplier: 2.5, gstRate: 18 },
+    },
+    {
+      productCode: 'STRUCT-SUPER-ELEVATED',
+      ruleCode: 'PRICE-STRUCT-SE',
+      name: 'Super Elevated Structure I&C',
+      formula: { basePrice: 700, multiplier: 3.2, gstRate: 18 },
+    },
+    {
+      productCode: 'STRUCT-GROUND-MOUNT',
+      ruleCode: 'PRICE-STRUCT-GM',
+      name: 'Ground Mount Structure I&C',
+      formula: { basePrice: 700, multiplier: 3.5, gstRate: 18 },
+    },
+  ];
+
+  let insertedCount = 0;
+
+  for (const rule of structurePricingRules) {
+    // Look up product ID by CODE (stable identifier, not sample UUIDs)
+    const productResult = await queryRunner.query(
+      `SELECT id FROM products 
+       WHERE organization_id = $1 
+       AND code = $2
+       AND deleted_at IS NULL
+       LIMIT 1`,
+      [ORG_ID, rule.productCode],
+    );
+
+    if (productResult.length > 0) {
+      const productId = productResult[0].id;
+      const formulaJson = JSON.stringify(rule.formula);
+
+      // Insert pricing rule linked to actual product ID from database
+      await queryRunner.query(
+        `INSERT INTO pricing_rules (
+          id, organization_id, name, code, description, rule_type, 
+          product_id, product_type, formula, effective_from, priority, is_active, 
+          created_at, updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()
+        ) ON CONFLICT (organization_id, code) DO UPDATE SET
+          formula = $9,
+          updated_at = NOW()`,
+        [
+          uuidv4(), // id
+          ORG_ID, // organization_id
+          rule.name, // name
+          rule.ruleCode, // code
+          `Installation charges for ${rule.name}`, // description
+          'base_price', // rule_type
+          productId, // product_id (from DB lookup)
+          'mounting_structure', // product_type
+          formulaJson, // formula
+          '2024-01-01', // effective_from
+          10, // priority
+          true, // is_active
+        ],
+      );
+      insertedCount++;
+    } else {
+      console.warn(`  ⚠ Product not found for structure pricing rule: ${rule.productCode}`);
+    }
+  }
+
+  console.log(`  ✓ Inserted ${insertedCount} structure pricing rules`);
+}
+
+// =====================================================
 // INSTALLATION PRICING (1-100 KW)
 // =====================================================
+
+/**
+ * Get profitability percentage based on system size
+ * Profitability tiers:
+ * - 1 KW: 25%
+ * - 2 KW: 20%
+ * - 3 KW: 18%
+ * - 4-5 KW: 16%
+ * - 6-10 KW: 15%
+ * - 11-30 KW: 15%
+ * - 31-70 KW: 14%
+ * - 71-100 KW: 13%
+ */
+function getProfitabilityPercent(kw: number): number {
+  if (kw === 1) return 25;
+  if (kw === 2) return 20;
+  if (kw === 3) return 18;
+  if (kw >= 4 && kw <= 5) return 16;
+  if (kw >= 6 && kw <= 10) return 15;
+  if (kw >= 11 && kw <= 30) return 15;
+  if (kw >= 31 && kw <= 70) return 14;
+  if (kw >= 71 && kw <= 100) return 13;
+  return 13; // Default for > 100 KW
+}
+
 async function insertInstallationPricing(queryRunner: any): Promise<void> {
-  // Installation pricing data with per-structure-type costs
-  // struct_aluminum_rail: ₹700/KW (linear)
-  // struct_rcc_elevated: Variable values for RCC 3X6 and Elevated 6X9 structures
-  // struct_super_ground: ₹2500/KW (linear) for Super Elevated and Ground Mount
+  // Installation pricing data - structure costs are now calculated separately via pricing rules
+  // Structure pricing uses formula: basePrice × multiplier × systemSizeKw (see insertStructurePricingRules)
   const installationData = [
     {
       kw: 1,
       electrical: 3500,
       material: 8500,
       floor: 1516,
-      struct_aluminum_rail: 700,
-      struct_rcc_elevated: 1500,
-      struct_super_ground: 2500,
       labor: 1500,
       msedcl: 1500,
       loading: 1500,
@@ -1570,9 +1713,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 3500,
       material: 8500,
       floor: 3032,
-      struct_aluminum_rail: 1400,
-      struct_rcc_elevated: 3000,
-      struct_super_ground: 5000,
       labor: 3000,
       msedcl: 1500,
       loading: 1500,
@@ -1582,9 +1722,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 4200,
       material: 8500,
       floor: 4548,
-      struct_aluminum_rail: 2100,
-      struct_rcc_elevated: 4400,
-      struct_super_ground: 7500,
       labor: 4400,
       msedcl: 1500,
       loading: 1500,
@@ -1594,9 +1731,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 4800,
       material: 8500,
       floor: 6064,
-      struct_aluminum_rail: 2800,
-      struct_rcc_elevated: 5600,
-      struct_super_ground: 10000,
       labor: 5600,
       msedcl: 1500,
       loading: 2000,
@@ -1606,9 +1740,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 6000,
       material: 8500,
       floor: 7580,
-      struct_aluminum_rail: 3500,
-      struct_rcc_elevated: 7000,
-      struct_super_ground: 12500,
       labor: 7000,
       msedcl: 2000,
       loading: 2000,
@@ -1618,9 +1749,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 6500,
       material: 8500,
       floor: 9096,
-      struct_aluminum_rail: 4200,
-      struct_rcc_elevated: 8400,
-      struct_super_ground: 15000,
       labor: 8400,
       msedcl: 2000,
       loading: 2000,
@@ -1630,9 +1758,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 7200,
       material: 17807,
       floor: 10612,
-      struct_aluminum_rail: 4900,
-      struct_rcc_elevated: 9000,
-      struct_super_ground: 17500,
       labor: 9000,
       msedcl: 2000,
       loading: 2000,
@@ -1642,9 +1767,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 8000,
       material: 17807,
       floor: 12128,
-      struct_aluminum_rail: 5600,
-      struct_rcc_elevated: 9600,
-      struct_super_ground: 20000,
       labor: 9600,
       msedcl: 2500,
       loading: 2500,
@@ -1654,9 +1776,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 8500,
       material: 17857,
       floor: 13644,
-      struct_aluminum_rail: 6300,
-      struct_rcc_elevated: 10800,
-      struct_super_ground: 22500,
       labor: 10800,
       msedcl: 2500,
       loading: 2500,
@@ -1666,9 +1785,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 8500,
       material: 17857,
       floor: 15160,
-      struct_aluminum_rail: 7000,
-      struct_rcc_elevated: 12000,
-      struct_super_ground: 25000,
       labor: 12000,
       msedcl: 2500,
       loading: 2500,
@@ -1678,9 +1794,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 10000,
       material: 17857,
       floor: 16676,
-      struct_aluminum_rail: 7700,
-      struct_rcc_elevated: 13000,
-      struct_super_ground: 27500,
       labor: 13000,
       msedcl: 2500,
       loading: 2500,
@@ -1690,9 +1803,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 10000,
       material: 17857,
       floor: 18192,
-      struct_aluminum_rail: 8400,
-      struct_rcc_elevated: 14400,
-      struct_super_ground: 30000,
       labor: 14400,
       msedcl: 2500,
       loading: 2500,
@@ -1702,9 +1812,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 12000,
       material: 17857,
       floor: 19708,
-      struct_aluminum_rail: 9100,
-      struct_rcc_elevated: 15600,
-      struct_super_ground: 32500,
       labor: 15600,
       msedcl: 2500,
       loading: 2500,
@@ -1714,9 +1821,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 12000,
       material: 17857,
       floor: 21224,
-      struct_aluminum_rail: 9800,
-      struct_rcc_elevated: 17000,
-      struct_super_ground: 35000,
       labor: 17000,
       msedcl: 2500,
       loading: 2500,
@@ -1726,9 +1830,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 12000,
       material: 22711,
       floor: 22740,
-      struct_aluminum_rail: 10500,
-      struct_rcc_elevated: 18000,
-      struct_super_ground: 37500,
       labor: 18000,
       msedcl: 2500,
       loading: 2500,
@@ -1738,9 +1839,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 12000,
       material: 22711,
       floor: 16825,
-      struct_aluminum_rail: 11200,
-      struct_rcc_elevated: 18000,
-      struct_super_ground: 40000,
       labor: 18000,
       msedcl: 2200,
       loading: 2500,
@@ -1750,9 +1848,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 12000,
       material: 22711,
       floor: 16825,
-      struct_aluminum_rail: 11900,
-      struct_rcc_elevated: 19000,
-      struct_super_ground: 42500,
       labor: 19000,
       msedcl: 2200,
       loading: 2500,
@@ -1762,9 +1857,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 15000,
       material: 22711,
       floor: 19225,
-      struct_aluminum_rail: 12600,
-      struct_rcc_elevated: 20000,
-      struct_super_ground: 45000,
       labor: 20000,
       msedcl: 2200,
       loading: 2500,
@@ -1774,9 +1866,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 15000,
       material: 22711,
       floor: 19225,
-      struct_aluminum_rail: 13300,
-      struct_rcc_elevated: 22000,
-      struct_super_ground: 47500,
       labor: 22000,
       msedcl: 2200,
       loading: 2500,
@@ -1786,9 +1875,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 15000,
       material: 22711,
       floor: 19225,
-      struct_aluminum_rail: 14000,
-      struct_rcc_elevated: 24000,
-      struct_super_ground: 50000,
       labor: 24000,
       msedcl: 2200,
       loading: 3000,
@@ -1798,9 +1884,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 15000,
       material: 22711,
       floor: 27580,
-      struct_aluminum_rail: 14700,
-      struct_rcc_elevated: 25200,
-      struct_super_ground: 52500,
       labor: 25200,
       msedcl: 4800,
       loading: 3500,
@@ -1810,9 +1893,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 15000,
       material: 22711,
       floor: 27580,
-      struct_aluminum_rail: 15400,
-      struct_rcc_elevated: 26400,
-      struct_super_ground: 55000,
       labor: 26400,
       msedcl: 4800,
       loading: 3500,
@@ -1822,9 +1902,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 15000,
       material: 22711,
       floor: 27580,
-      struct_aluminum_rail: 16100,
-      struct_rcc_elevated: 27600,
-      struct_super_ground: 57500,
       labor: 27600,
       msedcl: 4800,
       loading: 3500,
@@ -1834,9 +1911,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 15000,
       material: 22711,
       floor: 27580,
-      struct_aluminum_rail: 16800,
-      struct_rcc_elevated: 28800,
-      struct_super_ground: 60000,
       labor: 28800,
       msedcl: 4800,
       loading: 3500,
@@ -1846,9 +1920,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 20000,
       material: 22711,
       floor: 27580,
-      struct_aluminum_rail: 17500,
-      struct_rcc_elevated: 30000,
-      struct_super_ground: 62500,
       labor: 30000,
       msedcl: 4800,
       loading: 3500,
@@ -1858,9 +1929,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 20000,
       material: 60939,
       floor: 27580,
-      struct_aluminum_rail: 18200,
-      struct_rcc_elevated: 31200,
-      struct_super_ground: 65000,
       labor: 31200,
       msedcl: 4800,
       loading: 3500,
@@ -1870,9 +1938,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 20000,
       material: 60939,
       floor: 27580,
-      struct_aluminum_rail: 18900,
-      struct_rcc_elevated: 32400,
-      struct_super_ground: 67500,
       labor: 32400,
       msedcl: 4800,
       loading: 3500,
@@ -1882,9 +1947,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 20000,
       material: 60939,
       floor: 27580,
-      struct_aluminum_rail: 19600,
-      struct_rcc_elevated: 33600,
-      struct_super_ground: 70000,
       labor: 33600,
       msedcl: 4800,
       loading: 3500,
@@ -1894,9 +1956,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 20000,
       material: 60939,
       floor: 27580,
-      struct_aluminum_rail: 20300,
-      struct_rcc_elevated: 34800,
-      struct_super_ground: 72500,
       labor: 34800,
       msedcl: 4800,
       loading: 3500,
@@ -1906,9 +1965,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 20000,
       material: 60939,
       floor: 27580,
-      struct_aluminum_rail: 21000,
-      struct_rcc_elevated: 36000,
-      struct_super_ground: 75000,
       labor: 36000,
       msedcl: 4800,
       loading: 4000,
@@ -1918,9 +1974,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 25000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 21700,
-      struct_rcc_elevated: 37200,
-      struct_super_ground: 77500,
       labor: 37200,
       msedcl: 7000,
       loading: 4000,
@@ -1930,9 +1983,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 25000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 22400,
-      struct_rcc_elevated: 38400,
-      struct_super_ground: 80000,
       labor: 38400,
       msedcl: 7000,
       loading: 4000,
@@ -1942,9 +1992,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 25000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 23100,
-      struct_rcc_elevated: 39600,
-      struct_super_ground: 82500,
       labor: 39600,
       msedcl: 7000,
       loading: 4000,
@@ -1954,9 +2001,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 25000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 23800,
-      struct_rcc_elevated: 40800,
-      struct_super_ground: 85000,
       labor: 40800,
       msedcl: 7000,
       loading: 4000,
@@ -1966,9 +2010,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 25000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 24500,
-      struct_rcc_elevated: 42000,
-      struct_super_ground: 87500,
       labor: 42000,
       msedcl: 7000,
       loading: 5000,
@@ -1978,9 +2019,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 25000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 25200,
-      struct_rcc_elevated: 43200,
-      struct_super_ground: 90000,
       labor: 43200,
       msedcl: 7000,
       loading: 5000,
@@ -1990,9 +2028,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 25000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 25900,
-      struct_rcc_elevated: 44400,
-      struct_super_ground: 92500,
       labor: 44400,
       msedcl: 7000,
       loading: 5000,
@@ -2002,9 +2037,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 26600,
-      struct_rcc_elevated: 45600,
-      struct_super_ground: 95000,
       labor: 45600,
       msedcl: 7000,
       loading: 5000,
@@ -2014,9 +2046,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 27300,
-      struct_rcc_elevated: 46800,
-      struct_super_ground: 97500,
       labor: 46800,
       msedcl: 7000,
       loading: 5000,
@@ -2026,9 +2055,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 28000,
-      struct_rcc_elevated: 48000,
-      struct_super_ground: 100000,
       labor: 48000,
       msedcl: 7000,
       loading: 5000,
@@ -2038,9 +2064,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 28700,
-      struct_rcc_elevated: 49200,
-      struct_super_ground: 102500,
       labor: 49200,
       msedcl: 7000,
       loading: 5000,
@@ -2050,9 +2073,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 29400,
-      struct_rcc_elevated: 50400,
-      struct_super_ground: 105000,
       labor: 50400,
       msedcl: 7000,
       loading: 5000,
@@ -2062,9 +2082,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 30100,
-      struct_rcc_elevated: 51600,
-      struct_super_ground: 107500,
       labor: 51600,
       msedcl: 7000,
       loading: 5000,
@@ -2074,9 +2091,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 30800,
-      struct_rcc_elevated: 52800,
-      struct_super_ground: 110000,
       labor: 52800,
       msedcl: 7000,
       loading: 5000,
@@ -2086,9 +2100,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 31500,
-      struct_rcc_elevated: 54000,
-      struct_super_ground: 112500,
       labor: 54000,
       msedcl: 7000,
       loading: 5000,
@@ -2098,9 +2109,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 32200,
-      struct_rcc_elevated: 55200,
-      struct_super_ground: 115000,
       labor: 55200,
       msedcl: 7000,
       loading: 5000,
@@ -2110,9 +2118,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 32900,
-      struct_rcc_elevated: 56400,
-      struct_super_ground: 117500,
       labor: 56400,
       msedcl: 7000,
       loading: 5000,
@@ -2122,9 +2127,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 33600,
-      struct_rcc_elevated: 57600,
-      struct_super_ground: 120000,
       labor: 57600,
       msedcl: 7000,
       loading: 5000,
@@ -2134,9 +2136,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 60939,
       floor: 44500,
-      struct_aluminum_rail: 34300,
-      struct_rcc_elevated: 58800,
-      struct_super_ground: 122500,
       labor: 58800,
       msedcl: 7000,
       loading: 5000,
@@ -2146,9 +2145,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 63456,
       floor: 44500,
-      struct_aluminum_rail: 35000,
-      struct_rcc_elevated: 60000,
-      struct_super_ground: 125000,
       labor: 60000,
       msedcl: 7000,
       loading: 5000,
@@ -2158,9 +2154,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 35700,
-      struct_rcc_elevated: 61200,
-      struct_super_ground: 127500,
       labor: 61200,
       msedcl: 9000,
       loading: 5000,
@@ -2170,9 +2163,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 36400,
-      struct_rcc_elevated: 62400,
-      struct_super_ground: 130000,
       labor: 62400,
       msedcl: 9000,
       loading: 5000,
@@ -2182,9 +2172,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 37100,
-      struct_rcc_elevated: 63600,
-      struct_super_ground: 132500,
       labor: 63600,
       msedcl: 9000,
       loading: 5000,
@@ -2194,9 +2181,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 37800,
-      struct_rcc_elevated: 64800,
-      struct_super_ground: 135000,
       labor: 64800,
       msedcl: 9000,
       loading: 5000,
@@ -2206,9 +2190,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 38500,
-      struct_rcc_elevated: 66000,
-      struct_super_ground: 137500,
       labor: 66000,
       msedcl: 9000,
       loading: 5000,
@@ -2218,9 +2199,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 39200,
-      struct_rcc_elevated: 67200,
-      struct_super_ground: 140000,
       labor: 67200,
       msedcl: 9000,
       loading: 5000,
@@ -2230,9 +2208,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 30000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 39900,
-      struct_rcc_elevated: 68400,
-      struct_super_ground: 142500,
       labor: 68400,
       msedcl: 9000,
       loading: 5000,
@@ -2242,9 +2217,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 40000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 40600,
-      struct_rcc_elevated: 69600,
-      struct_super_ground: 145000,
       labor: 69600,
       msedcl: 9000,
       loading: 5000,
@@ -2254,9 +2226,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 40000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 41300,
-      struct_rcc_elevated: 70800,
-      struct_super_ground: 147500,
       labor: 70800,
       msedcl: 9000,
       loading: 5000,
@@ -2266,9 +2235,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 40000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 42000,
-      struct_rcc_elevated: 72000,
-      struct_super_ground: 150000,
       labor: 72000,
       msedcl: 9000,
       loading: 5000,
@@ -2278,9 +2244,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 40000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 42700,
-      struct_rcc_elevated: 73200,
-      struct_super_ground: 152500,
       labor: 73200,
       msedcl: 9000,
       loading: 8000,
@@ -2290,9 +2253,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 40000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 43400,
-      struct_rcc_elevated: 74400,
-      struct_super_ground: 155000,
       labor: 74400,
       msedcl: 9000,
       loading: 8000,
@@ -2302,9 +2262,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 40000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 44100,
-      struct_rcc_elevated: 75600,
-      struct_super_ground: 157500,
       labor: 75600,
       msedcl: 9000,
       loading: 8000,
@@ -2314,9 +2271,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 40000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 44800,
-      struct_rcc_elevated: 76800,
-      struct_super_ground: 160000,
       labor: 76800,
       msedcl: 9000,
       loading: 8000,
@@ -2326,9 +2280,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 40000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 45500,
-      struct_rcc_elevated: 78000,
-      struct_super_ground: 162500,
       labor: 78000,
       msedcl: 9000,
       loading: 8000,
@@ -2338,9 +2289,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 40000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 46200,
-      struct_rcc_elevated: 79200,
-      struct_super_ground: 165000,
       labor: 79200,
       msedcl: 9000,
       loading: 8000,
@@ -2350,9 +2298,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 40000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 46900,
-      struct_rcc_elevated: 80400,
-      struct_super_ground: 167500,
       labor: 80400,
       msedcl: 9000,
       loading: 8000,
@@ -2362,9 +2307,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 40000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 47600,
-      struct_rcc_elevated: 81600,
-      struct_super_ground: 170000,
       labor: 81600,
       msedcl: 9000,
       loading: 8000,
@@ -2374,9 +2316,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 40000,
       material: 63456,
       floor: 60000,
-      struct_aluminum_rail: 48300,
-      struct_rcc_elevated: 82800,
-      struct_super_ground: 172500,
       labor: 82800,
       msedcl: 9000,
       loading: 8000,
@@ -2386,9 +2325,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 40000,
       material: 83964,
       floor: 60000,
-      struct_aluminum_rail: 49000,
-      struct_rcc_elevated: 84000,
-      struct_super_ground: 175000,
       labor: 84000,
       msedcl: 9000,
       loading: 8000,
@@ -2398,9 +2334,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 40000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 49700,
-      struct_rcc_elevated: 85200,
-      struct_super_ground: 177500,
       labor: 85200,
       msedcl: 11000,
       loading: 8000,
@@ -2410,9 +2343,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 50000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 50400,
-      struct_rcc_elevated: 86400,
-      struct_super_ground: 180000,
       labor: 86400,
       msedcl: 11000,
       loading: 8000,
@@ -2422,9 +2352,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 50000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 51100,
-      struct_rcc_elevated: 87600,
-      struct_super_ground: 182500,
       labor: 87600,
       msedcl: 11000,
       loading: 8000,
@@ -2434,9 +2361,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 50000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 51800,
-      struct_rcc_elevated: 88800,
-      struct_super_ground: 185000,
       labor: 88800,
       msedcl: 11000,
       loading: 8000,
@@ -2446,9 +2370,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 50000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 52500,
-      struct_rcc_elevated: 90000,
-      struct_super_ground: 187500,
       labor: 90000,
       msedcl: 11000,
       loading: 8000,
@@ -2458,9 +2379,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 50000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 53200,
-      struct_rcc_elevated: 91200,
-      struct_super_ground: 190000,
       labor: 91200,
       msedcl: 11000,
       loading: 8000,
@@ -2470,9 +2388,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 50000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 53900,
-      struct_rcc_elevated: 92400,
-      struct_super_ground: 192500,
       labor: 92400,
       msedcl: 11000,
       loading: 8000,
@@ -2482,9 +2397,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 50000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 54600,
-      struct_rcc_elevated: 93600,
-      struct_super_ground: 195000,
       labor: 93600,
       msedcl: 11000,
       loading: 8000,
@@ -2494,9 +2406,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 50000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 55300,
-      struct_rcc_elevated: 94800,
-      struct_super_ground: 197500,
       labor: 94800,
       msedcl: 11000,
       loading: 8000,
@@ -2506,9 +2415,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 50000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 56000,
-      struct_rcc_elevated: 96000,
-      struct_super_ground: 200000,
       labor: 96000,
       msedcl: 11000,
       loading: 8000,
@@ -2518,9 +2424,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 50000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 56700,
-      struct_rcc_elevated: 97200,
-      struct_super_ground: 202500,
       labor: 97200,
       msedcl: 11000,
       loading: 10000,
@@ -2530,9 +2433,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 50000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 57400,
-      struct_rcc_elevated: 98400,
-      struct_super_ground: 205000,
       labor: 98400,
       msedcl: 11000,
       loading: 10000,
@@ -2542,9 +2442,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 50000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 58100,
-      struct_rcc_elevated: 99600,
-      struct_super_ground: 207500,
       labor: 99600,
       msedcl: 11000,
       loading: 10000,
@@ -2554,9 +2451,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 50000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 58800,
-      struct_rcc_elevated: 100800,
-      struct_super_ground: 210000,
       labor: 100800,
       msedcl: 11000,
       loading: 10000,
@@ -2566,9 +2460,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 50000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 59500,
-      struct_rcc_elevated: 102000,
-      struct_super_ground: 212500,
       labor: 102000,
       msedcl: 11000,
       loading: 10000,
@@ -2578,9 +2469,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 50000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 60200,
-      struct_rcc_elevated: 103200,
-      struct_super_ground: 215000,
       labor: 103200,
       msedcl: 11000,
       loading: 10000,
@@ -2590,9 +2478,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 50000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 60900,
-      struct_rcc_elevated: 104400,
-      struct_super_ground: 217500,
       labor: 104400,
       msedcl: 11000,
       loading: 10000,
@@ -2602,9 +2487,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 70000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 61600,
-      struct_rcc_elevated: 105600,
-      struct_super_ground: 220000,
       labor: 105600,
       msedcl: 11000,
       loading: 10000,
@@ -2614,9 +2496,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 70000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 62300,
-      struct_rcc_elevated: 106800,
-      struct_super_ground: 222500,
       labor: 106800,
       msedcl: 11000,
       loading: 10000,
@@ -2626,9 +2505,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 70000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 63000,
-      struct_rcc_elevated: 108000,
-      struct_super_ground: 225000,
       labor: 108000,
       msedcl: 11000,
       loading: 10000,
@@ -2638,9 +2514,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 70000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 63700,
-      struct_rcc_elevated: 109200,
-      struct_super_ground: 227500,
       labor: 109200,
       msedcl: 11000,
       loading: 10000,
@@ -2650,9 +2523,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 70000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 64400,
-      struct_rcc_elevated: 110400,
-      struct_super_ground: 230000,
       labor: 110400,
       msedcl: 11000,
       loading: 10000,
@@ -2662,9 +2532,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 70000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 65100,
-      struct_rcc_elevated: 111600,
-      struct_super_ground: 232500,
       labor: 111600,
       msedcl: 11000,
       loading: 10000,
@@ -2674,9 +2541,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 70000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 65800,
-      struct_rcc_elevated: 112800,
-      struct_super_ground: 235000,
       labor: 112800,
       msedcl: 11000,
       loading: 10000,
@@ -2686,9 +2550,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 70000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 66500,
-      struct_rcc_elevated: 114000,
-      struct_super_ground: 237500,
       labor: 114000,
       msedcl: 11000,
       loading: 10000,
@@ -2698,9 +2559,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 70000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 67200,
-      struct_rcc_elevated: 115200,
-      struct_super_ground: 240000,
       labor: 115200,
       msedcl: 11000,
       loading: 10000,
@@ -2710,9 +2568,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 70000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 67900,
-      struct_rcc_elevated: 116400,
-      struct_super_ground: 242500,
       labor: 116400,
       msedcl: 11000,
       loading: 10000,
@@ -2722,9 +2577,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 70000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 68600,
-      struct_rcc_elevated: 117600,
-      struct_super_ground: 245000,
       labor: 117600,
       msedcl: 11000,
       loading: 10000,
@@ -2734,9 +2586,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 70000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 69300,
-      struct_rcc_elevated: 118800,
-      struct_super_ground: 247500,
       labor: 118800,
       msedcl: 11000,
       loading: 10000,
@@ -2746,9 +2595,6 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
       electrical: 70000,
       material: 83964,
       floor: 75000,
-      struct_aluminum_rail: 70000,
-      struct_rcc_elevated: 120000,
-      struct_super_ground: 250000,
       labor: 120000,
       msedcl: 11000,
       loading: 10000,
@@ -2756,16 +2602,16 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
   ];
 
   for (const data of installationData) {
+    // Structure costs are now calculated separately via pricing rules (insertStructurePricingRules)
     const costComponents = JSON.stringify({
       electrical_work: data.electrical,
       fixed_material: data.material,
       variable_floor: data.floor,
-      struct_aluminum_rail: data.struct_aluminum_rail,
-      struct_rcc_elevated: data.struct_rcc_elevated,
-      struct_super_ground: data.struct_super_ground,
       installation_labor: data.labor,
       msedcl_charges: data.msedcl,
       loading_unloading: data.loading,
+      // Profitability percentage for this system size tier
+      profitability_percent: getProfitabilityPercent(data.kw),
     });
 
     const name = `Installation Charges ${data.kw}KW`;
@@ -2901,10 +2747,9 @@ async function insertQuoteConfiguration(queryRunner: any): Promise<void> {
   });
   const wattageRounding = JSON.stringify({ roundTo: 10, roundUpThreshold: 5 });
   const paymentMilestones = JSON.stringify([
-    { stage: 'advance', name: 'Advance', percentage: 40, order: 1 },
-    { stage: 'material_delivery', name: 'Material Delivery', percentage: 30, order: 2 },
-    { stage: 'installation_complete', name: 'Installation Complete', percentage: 20, order: 3 },
-    { stage: 'commissioning', name: 'Commissioning', percentage: 10, order: 4 },
+    { stage: 'advance', name: 'Advance', percentage: 10, order: 1 },
+    { stage: 'installation_complete', name: 'Installation Complete', percentage: 85, order: 2 },
+    { stage: 'commissioning', name: 'Commissioning', percentage: 5, order: 3 },
   ]);
 
   await queryRunner.query(
