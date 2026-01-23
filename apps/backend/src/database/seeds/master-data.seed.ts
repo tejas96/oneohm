@@ -1089,13 +1089,13 @@ async function insertProducts(queryRunner: any): Promise<void> {
   }
 
   // Mounting Structures
+  // Note: Pricing multipliers are stored in pricing_rules table, not here
   const structures = [
     {
       code: 'STRUCT-RAIL-MOUNT',
       name: 'Aluminum Rail Mount Structure',
       type: 'aluminum_rail',
       weight: 15,
-      multiplier: 1.0,
       catId: CATEGORY_IDS.ROOF_STRUCT,
     },
     {
@@ -1103,7 +1103,6 @@ async function insertProducts(queryRunner: any): Promise<void> {
       name: '3 feet X 6 Feet Structure',
       type: 'rcc_3x6',
       weight: 20,
-      multiplier: 2.5,
       catId: CATEGORY_IDS.ROOF_STRUCT,
     },
     {
@@ -1111,7 +1110,6 @@ async function insertProducts(queryRunner: any): Promise<void> {
       name: 'Elevated 6x9 Feet Structure',
       type: 'elevated_6x9',
       weight: 35,
-      multiplier: 4.15,
       catId: CATEGORY_IDS.ROOF_STRUCT,
     },
     {
@@ -1119,7 +1117,6 @@ async function insertProducts(queryRunner: any): Promise<void> {
       name: 'Super Elevated 10x14 Feet Structure',
       type: 'super_elevated',
       weight: 50,
-      multiplier: 6.35,
       catId: CATEGORY_IDS.ROOF_STRUCT,
     },
     {
@@ -1127,7 +1124,6 @@ async function insertProducts(queryRunner: any): Promise<void> {
       name: 'Ground Mount Structure',
       type: 'ground_mount',
       weight: 40,
-      multiplier: 4.65,
       catId: CATEGORY_IDS.GROUND_STRUCT,
     },
   ];
@@ -1138,7 +1134,7 @@ async function insertProducts(queryRunner: any): Promise<void> {
       structure: {
         structureType: struct.type,
         material: 'Aluminum',
-        costMultiplier: struct.multiplier,
+        // Note: costMultiplier removed - pricing is in pricing_rules table
       },
     });
     await queryRunner.query(
@@ -1582,36 +1578,38 @@ async function insertPricingRules(queryRunner: any): Promise<void> {
 async function insertStructurePricingRules(queryRunner: any): Promise<void> {
   // Map product CODE to pricing rule config
   // Product codes are stable identifiers in the database
+  // Formula: basePrice × multiplier × systemSizeKw
+  // Updated multipliers as per business requirements (2026-01-16)
   const structurePricingRules = [
     {
       productCode: 'STRUCT-RAIL-MOUNT',
       ruleCode: 'PRICE-STRUCT-RAIL',
       name: 'Aluminum Rail Mount I&C',
-      formula: { basePrice: 700, multiplier: 1.0, gstRate: 18 },
+      formula: { basePrice: 700, multiplier: 1.2, gstRate: 18 }, // 700 × 1.2 = ₹840/KW
     },
     {
       productCode: 'STRUCT-RCC-3X6',
       ruleCode: 'PRICE-STRUCT-3X6',
       name: '3 feet X 6 Feet Structure I&C',
-      formula: { basePrice: 700, multiplier: 2.2, gstRate: 18 },
+      formula: { basePrice: 700, multiplier: 4, gstRate: 18 }, // 700 × 4 = ₹2,800/KW
     },
     {
       productCode: 'STRUCT-ELEVATED-6X9',
       ruleCode: 'PRICE-STRUCT-6X9',
       name: 'Elevated 6x9 Feet Structure I&C',
-      formula: { basePrice: 700, multiplier: 2.5, gstRate: 18 },
+      formula: { basePrice: 700, multiplier: 8, gstRate: 18 }, // 700 × 8 = ₹5,600/KW
     },
     {
       productCode: 'STRUCT-SUPER-ELEVATED',
       ruleCode: 'PRICE-STRUCT-SE',
       name: 'Super Elevated Structure I&C',
-      formula: { basePrice: 700, multiplier: 3.2, gstRate: 18 },
+      formula: { basePrice: 700, multiplier: 12, gstRate: 18 }, // 700 × 12 = ₹8,400/KW
     },
     {
       productCode: 'STRUCT-GROUND-MOUNT',
       ruleCode: 'PRICE-STRUCT-GM',
       name: 'Ground Mount Structure I&C',
-      formula: { basePrice: 700, multiplier: 3.5, gstRate: 18 },
+      formula: { basePrice: 700, multiplier: 10, gstRate: 18 }, // 700 × 10 = ₹7,000/KW
     },
   ];
 
