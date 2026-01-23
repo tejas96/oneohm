@@ -143,9 +143,7 @@ export class QuoteCalculatorController {
       isSubsidyApplicable: input.subsidyApplicable,
       internalNotes: input.internalNotes,
       customerNotes: input.customerNotes,
-      discountAmount: input.discountPercent
-        ? (calculation.pricing.totalPrice * input.discountPercent) / 100
-        : 0,
+      discountAmount: input.discountAmount || 0,
       projectCompletionWeeks: calculation.completionWeeks,
       lineItems,
     };

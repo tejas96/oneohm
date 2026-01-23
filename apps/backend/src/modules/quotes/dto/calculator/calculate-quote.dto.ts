@@ -299,16 +299,14 @@ export class CalculateQuoteDto {
  */
 export class CreateQuoteFromCalculationDto extends CalculateQuoteDto {
   @ApiPropertyOptional({
-    description: 'Discount percentage to apply',
-    example: 5,
+    description: 'Discount amount in INR',
+    example: 5000,
     minimum: 0,
-    maximum: 50,
   })
   @IsNumber()
   @IsOptional()
   @Min(0)
-  @Max(50)
-  discountPercent?: number;
+  discountAmount?: number;
 
   @ApiPropertyOptional({
     description: 'Internal notes for the quote',
