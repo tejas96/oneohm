@@ -12,6 +12,7 @@
  */
 
 import { DataSource } from 'typeorm';
+
 import dataSource from '../ormconfig';
 
 const USER_EMAIL = process.argv[2] || 'sanjay.oneohm@gmail.com';
@@ -62,7 +63,7 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
     // 3. ENSURE FIELD_WORKER ROLE EXISTS
     // ===========================================================================
     console.log('\n👷 Ensuring field_worker role exists...');
-    let roleResult = await queryRunner.query(
+    const roleResult = await queryRunner.query(
       `SELECT id, code, name FROM roles 
        WHERE organization_id = $1 AND code = 'field_worker'`,
       [org.id]
@@ -98,7 +99,7 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
     // 4. ENSURE QUOTES FEATURE EXISTS
     // ===========================================================================
     console.log('\n📦 Ensuring quotes feature exists...');
-    let featureResult = await queryRunner.query(
+    const featureResult = await queryRunner.query(
       `SELECT id, code, name FROM features WHERE code = 'quotes'`
     );
 
@@ -129,7 +130,7 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
     // 5. ENSURE QUOTE PRICE BREAKDOWN PERMISSION EXISTS
     // ===========================================================================
     console.log('\n🔐 Ensuring quote price breakdown permission exists...');
-    let permResult = await queryRunner.query(
+    const permResult = await queryRunner.query(
       `SELECT id, code, name FROM permissions WHERE code = 'quotes:view_price_breakdown'`
     );
 
@@ -313,4 +314,4 @@ async function main() {
   }
 }
 
-main();
+void main();
