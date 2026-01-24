@@ -7,12 +7,12 @@ import {
 } from '@nestjs/common';
 import { LeadTemperature, PropertyStatus, QuoteStatus } from '@oneohm-epc/shared-types';
 
+import { QuoteRepository } from '../../quotes/repositories/quote.repository';
 import { CreateCustomerPropertyDto } from '../dto/create-customer-property.dto';
 import { UpdateCustomerPropertyDto } from '../dto/update-customer-property.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
 import { CustomerPropertyRepository } from '../repositories/customer-property.repository';
-import { QuoteRepository } from '../../quotes/repositories/quote.repository';
 
 /**
  * Extended type for properties with quote info
