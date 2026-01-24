@@ -7,6 +7,15 @@ import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialE
 import { QuoteEntity } from '../entities/quote.entity';
 
 /**
+ * Latest quote info for property enrichment
+ */
+export interface LatestQuoteInfo {
+  quoteNumber: string;
+  status: QuoteStatus;
+  quoteDate: Date;
+}
+
+/**
  * Quote Repository
  * Handles database operations for quotes
  */
@@ -192,5 +201,55 @@ export class QuoteRepository {
       .set({ status, updatedAt: new Date() })
       .where('id IN (:...quoteIds)', { quoteIds })
       .execute();
+  }
+
+  /**
+   * Find latest quote for each property ID (batch lookup)
+   * Uses PostgreSQL DISTINCT ON for efficient single-query retrieval
+   *
+   * @param propertyIds - Array of property IDs to look up
+   * @param organizationId - Organization context
+   * @returns Map of propertyId -> latest quote info
+   */
+  async findLatestByPropertyIds(
+    propertyIds: string[],
+    organizationId: string,
+  ): Promise<Map<string, LatestQuoteInfo>> {
+    // Early return for empty array (no properties = no quotes to look up)
+    if (propertyIds.length === 0) {
+      return new Map();
+    }
+
+    // PostgreSQL DISTINCT ON gives us the first row per property_id
+    // Combined with ORDER BY quoteDate DESC, we get the latest quote per property
+    const quotes = await this.repository
+      .createQueryBuilder('quote')
+      .select([
+        'quote.propertyId',
+        'quote.quoteNumber',
+        'quote.status',
+        'quote.quoteDate',
+      ])
+      .distinctOn(['quote.propertyId'])
+      .where('quote.propertyId IN (:...propertyIds)', { propertyIds })
+      .andWhere('quote.organizationId = :organizationId', { organizationId })
+      .andWhere('quote.deletedAt IS NULL')
+      .orderBy('quote.propertyId')
+      .addOrderBy('quote.quoteDate', 'DESC')
+      .getMany();
+
+    // Convert to Map for O(1) lookup
+    const result = new Map<string, LatestQuoteInfo>();
+    for (const quote of quotes) {
+      if (quote.propertyId) {
+        result.set(quote.propertyId, {
+          quoteNumber: quote.quoteNumber,
+          status: quote.status,
+          quoteDate: quote.quoteDate,
+        });
+      }
+    }
+
+    return result;
   }
 }
