@@ -4,6 +4,7 @@ import {
   LeadTemperature,
   PropertyStatus,
   PropertyType,
+  QuoteStatus,
 } from '@oneohm-epc/shared-types';
 import { Exclude, Expose } from 'class-transformer';
 
@@ -149,4 +150,27 @@ export class CustomerPropertyResponseDto {
   @ApiPropertyOptional()
   @Expose()
   updatedBy?: string;
+
+  // ==================== Quote Info (enriched from quotes table) ====================
+  @ApiPropertyOptional({
+    description: 'Latest quote number for this property',
+    example: 'QT-ONEOHM-2026-0001',
+  })
+  @Expose()
+  latestQuoteNumber?: string;
+
+  @ApiPropertyOptional({
+    enum: QuoteStatus,
+    description: 'Status of the latest quote',
+    example: 'sent',
+  })
+  @Expose()
+  latestQuoteStatus?: QuoteStatus;
+
+  @ApiPropertyOptional({
+    description: 'Date of the latest quote (official quote date)',
+    example: '2026-01-24',
+  })
+  @Expose()
+  latestQuoteDate?: Date;
 }

@@ -5,13 +5,23 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { LeadTemperature, PropertyStatus } from '@oneohm-epc/shared-types';
+import { LeadTemperature, PropertyStatus, QuoteStatus } from '@oneohm-epc/shared-types';
 
 import { CreateCustomerPropertyDto } from '../dto/create-customer-property.dto';
 import { UpdateCustomerPropertyDto } from '../dto/update-customer-property.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
 import { CustomerPropertyRepository } from '../repositories/customer-property.repository';
+import { QuoteRepository } from '../../quotes/repositories/quote.repository';
+
+/**
+ * Extended type for properties with quote info
+ */
+type PropertyWithQuoteInfo = CustomerPropertyEntity & {
+  latestQuoteNumber?: string;
+  latestQuoteStatus?: QuoteStatus;
+  latestQuoteDate?: Date;
+};
 
 /**
  * Customer Property Service
@@ -24,6 +34,7 @@ export class CustomerPropertyService {
   constructor(
     private readonly propertyRepository: CustomerPropertyRepository,
     private readonly customerRepository: CustomerProfileRepository,
+    private readonly quoteRepository: QuoteRepository,
   ) {}
 
   /**
@@ -114,19 +125,49 @@ export class CustomerPropertyService {
   }
 
   /**
-   * Find all properties for a customer
+   * Find all properties for a customer WITH quote info
+   *
+   * Uses two queries:
+   * 1. Get properties for customer
+   * 2. Batch lookup latest quotes for all property IDs
+   *
+   * This avoids N+1 queries and is performant for customers with many properties.
    */
   async findByCustomer(
     customerId: string,
     organizationId: string,
-  ): Promise<CustomerPropertyEntity[]> {
+  ): Promise<PropertyWithQuoteInfo[]> {
     // Verify customer belongs to organization
     const customer = await this.customerRepository.findById(customerId);
     if (customer?.organizationId !== organizationId) {
       throw new NotFoundException(`Customer with ID '${customerId}' not found`);
     }
 
-    return this.propertyRepository.findByCustomer(customerId);
+    // Query 1: Get properties
+    const properties = await this.propertyRepository.findByCustomer(customerId);
+
+    // Early return if no properties (skip quote lookup)
+    if (properties.length === 0) {
+      return [];
+    }
+
+    // Query 2: Get latest quotes for all properties (single batch query)
+    const propertyIds = properties.map((p) => p.id);
+    const quoteMap = await this.quoteRepository.findLatestByPropertyIds(
+      propertyIds,
+      organizationId,
+    );
+
+    // Enrich properties with quote data
+    return properties.map((property) => {
+      const quoteInfo = quoteMap.get(property.id);
+      return {
+        ...property,
+        latestQuoteNumber: quoteInfo?.quoteNumber,
+        latestQuoteStatus: quoteInfo?.status,
+        latestQuoteDate: quoteInfo?.quoteDate,
+      };
+    });
   }
 
   /**
