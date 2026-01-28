@@ -1,13 +1,13 @@
 /**
  * Assign Field Worker Role + Quote Price Breakdown Permission
- * 
+ *
  * This script:
  * 1. Finds the user by email
  * 2. Ensures the field_worker role exists
  * 3. Creates quote price breakdown permission if not exists
  * 4. Assigns the field_worker role to the user
  * 5. Assigns the permission to the role
- * 
+ *
  * Usage: npx ts-node -r tsconfig-paths/register src/database/seeds/assign-field-worker-role.ts <email>
  */
 
@@ -34,7 +34,7 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
     console.log('👤 Finding user...');
     const userResult = await queryRunner.query(
       `SELECT id, email, first_name, last_name FROM users WHERE email = $1`,
-      [USER_EMAIL]
+      [USER_EMAIL],
     );
 
     if (!userResult || userResult.length === 0) {
@@ -48,9 +48,7 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
     // 2. GET ORGANIZATION
     // ===========================================================================
     console.log('\n🏢 Getting organization...');
-    const orgResult = await queryRunner.query(
-      `SELECT id, name, code FROM organizations LIMIT 1`
-    );
+    const orgResult = await queryRunner.query(`SELECT id, name, code FROM organizations LIMIT 1`);
 
     if (!orgResult || orgResult.length === 0) {
       throw new Error('No organization found');
@@ -66,7 +64,7 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
     const roleResult = await queryRunner.query(
       `SELECT id, code, name FROM roles 
        WHERE organization_id = $1 AND code = 'field_worker'`,
-      [org.id]
+      [org.id],
     );
 
     let fieldWorkerRole;
@@ -86,7 +84,7 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
           name = EXCLUDED.name,
           description = EXCLUDED.description
         RETURNING id, code, name`,
-        [org.id]
+        [org.id],
       );
       fieldWorkerRole = createRoleResult[0];
       console.log(`✅ Created field_worker role: ${fieldWorkerRole.id}`);
@@ -100,7 +98,7 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
     // ===========================================================================
     console.log('\n📦 Ensuring quotes feature exists...');
     const featureResult = await queryRunner.query(
-      `SELECT id, code, name FROM features WHERE code = 'quotes'`
+      `SELECT id, code, name FROM features WHERE code = 'quotes'`,
     );
 
     let quotesFeature;
@@ -117,7 +115,7 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
         )
         ON CONFLICT (code) DO UPDATE SET
           name = EXCLUDED.name
-        RETURNING id, code, name`
+        RETURNING id, code, name`,
       );
       quotesFeature = createFeatureResult[0];
       console.log(`✅ Created quotes feature: ${quotesFeature.id}`);
@@ -131,7 +129,7 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
     // ===========================================================================
     console.log('\n🔐 Ensuring quote price breakdown permission exists...');
     const permResult = await queryRunner.query(
-      `SELECT id, code, name FROM permissions WHERE code = 'quotes:view_price_breakdown'`
+      `SELECT id, code, name FROM permissions WHERE code = 'quotes:view_price_breakdown'`,
     );
 
     let priceBreakdownPermission;
@@ -153,13 +151,17 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
           name = EXCLUDED.name,
           description = EXCLUDED.description
         RETURNING id, code, name`,
-        [quotesFeature.id]
+        [quotesFeature.id],
       );
       priceBreakdownPermission = createPermResult[0];
-      console.log(`✅ Created permission: ${priceBreakdownPermission.code} (${priceBreakdownPermission.id})`);
+      console.log(
+        `✅ Created permission: ${priceBreakdownPermission.code} (${priceBreakdownPermission.id})`,
+      );
     } else {
       priceBreakdownPermission = permResult[0];
-      console.log(`✅ Found existing permission: ${priceBreakdownPermission.code} (${priceBreakdownPermission.id})`);
+      console.log(
+        `✅ Found existing permission: ${priceBreakdownPermission.code} (${priceBreakdownPermission.id})`,
+      );
     }
 
     // ===========================================================================
@@ -170,7 +172,7 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
       `INSERT INTO role_permissions (role_id, permission_id, created_at)
        VALUES ($1, $2, CURRENT_TIMESTAMP)
        ON CONFLICT (role_id, permission_id) DO NOTHING`,
-      [fieldWorkerRole.id, priceBreakdownPermission.id]
+      [fieldWorkerRole.id, priceBreakdownPermission.id],
     );
     console.log(`✅ Permission assigned to role`);
 
@@ -178,17 +180,16 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
     const basicQuotePerms = ['quotes:read', 'quotes:create', 'quotes:update'];
     for (const permCode of basicQuotePerms) {
       // Check if permission exists
-      const existingPerm = await queryRunner.query(
-        `SELECT id FROM permissions WHERE code = $1`,
-        [permCode]
-      );
-      
+      const existingPerm = await queryRunner.query(`SELECT id FROM permissions WHERE code = $1`, [
+        permCode,
+      ]);
+
       if (existingPerm && existingPerm.length > 0) {
         await queryRunner.query(
           `INSERT INTO role_permissions (role_id, permission_id, created_at)
            VALUES ($1, $2, CURRENT_TIMESTAMP)
            ON CONFLICT (role_id, permission_id) DO NOTHING`,
-          [fieldWorkerRole.id, existingPerm[0].id]
+          [fieldWorkerRole.id, existingPerm[0].id],
         );
         console.log(`✅ Added ${permCode} to field_worker role`);
       } else {
@@ -206,18 +207,18 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
           RETURNING id`,
           [
             quotesFeature.id,
-            permCode.replace(':', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            permCode.replace(':', ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
             permCode,
             `${permCode.split(':')[1]} quotes`,
-            permCode.split(':')[1]
-          ]
+            permCode.split(':')[1],
+          ],
         );
-        
+
         await queryRunner.query(
           `INSERT INTO role_permissions (role_id, permission_id, created_at)
            VALUES ($1, $2, CURRENT_TIMESTAMP)
            ON CONFLICT (role_id, permission_id) DO NOTHING`,
-          [fieldWorkerRole.id, newPerm[0].id]
+          [fieldWorkerRole.id, newPerm[0].id],
         );
         console.log(`✅ Created and added ${permCode} to field_worker role`);
       }
@@ -227,12 +228,12 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
     // 7. ASSIGN ROLE TO USER
     // ===========================================================================
     console.log('\n👤 Assigning field_worker role to user...');
-    
+
     // Check if user already has this role
     const existingUserRole = await queryRunner.query(
       `SELECT id FROM user_roles 
        WHERE user_id = $1 AND role_id = $2 AND organization_id = $3`,
-      [user.id, fieldWorkerRole.id, org.id]
+      [user.id, fieldWorkerRole.id, org.id],
     );
 
     if (existingUserRole && existingUserRole.length > 0) {
@@ -242,7 +243,7 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
         `INSERT INTO user_roles (user_id, role, role_id, organization_id, created_at)
          VALUES ($1, 'field_worker', $2, $3, CURRENT_TIMESTAMP)
          ON CONFLICT DO NOTHING`,
-        [user.id, fieldWorkerRole.id, org.id]
+        [user.id, fieldWorkerRole.id, org.id],
       );
       console.log(`✅ Assigned field_worker role to user`);
     }
@@ -251,25 +252,20 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
     // 8. ADD CUSTOMER & LEAD PERMISSIONS (field worker essentials)
     // ===========================================================================
     console.log('\n📋 Adding customer/lead permissions to field_worker role...');
-    
-    const fieldWorkerPerms = [
-      'customers:read',
-      'customers:create', 
-      'customers:update',
-    ];
+
+    const fieldWorkerPerms = ['customers:read', 'customers:create', 'customers:update'];
 
     for (const permCode of fieldWorkerPerms) {
-      const perm = await queryRunner.query(
-        `SELECT id FROM permissions WHERE code = $1`,
-        [permCode]
-      );
-      
+      const perm = await queryRunner.query(`SELECT id FROM permissions WHERE code = $1`, [
+        permCode,
+      ]);
+
       if (perm && perm.length > 0) {
         await queryRunner.query(
           `INSERT INTO role_permissions (role_id, permission_id, created_at)
            VALUES ($1, $2, CURRENT_TIMESTAMP)
            ON CONFLICT (role_id, permission_id) DO NOTHING`,
-          [fieldWorkerRole.id, perm[0].id]
+          [fieldWorkerRole.id, perm[0].id],
         );
         console.log(`✅ Added ${permCode} to field_worker role`);
       }
@@ -285,7 +281,6 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
     console.log(`✅ Role: field_worker`);
     console.log(`✅ Permission: quotes:view_price_breakdown`);
     console.log(`✅ Organization: ${org.name}\n`);
-
   } catch (error) {
     await queryRunner.rollbackTransaction();
     console.error('\n❌ Error:', error);
@@ -298,13 +293,13 @@ async function assignFieldWorkerRole(ds: DataSource): Promise<void> {
 // Main execution
 async function main() {
   console.log('🚀 Starting role assignment...\n');
-  
+
   try {
     await dataSource.initialize();
     console.log('✅ Database connected\n');
-    
+
     await assignFieldWorkerRole(dataSource);
-    
+
     await dataSource.destroy();
     console.log('✅ Database connection closed');
     process.exit(0);

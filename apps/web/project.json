@@ -47,7 +47,7 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "eslint apps/web/app --ext .ts,.tsx --config eslint.config.mjs"
+        "command": "eslint apps/web/app apps/web/components apps/web/lib apps/web/providers --ext .ts,.tsx --config eslint.config.mjs"
       }
     },
     "format": {

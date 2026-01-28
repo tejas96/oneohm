@@ -224,12 +224,7 @@ export class QuoteRepository {
     // Combined with ORDER BY quoteDate DESC, we get the latest quote per property
     const quotes = await this.repository
       .createQueryBuilder('quote')
-      .select([
-        'quote.propertyId',
-        'quote.quoteNumber',
-        'quote.status',
-        'quote.quoteDate',
-      ])
+      .select(['quote.propertyId', 'quote.quoteNumber', 'quote.status', 'quote.quoteDate'])
       .distinctOn(['quote.propertyId'])
       .where('quote.propertyId IN (:...propertyIds)', { propertyIds })
       .andWhere('quote.organizationId = :organizationId', { organizationId })

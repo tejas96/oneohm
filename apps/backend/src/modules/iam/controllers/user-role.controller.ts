@@ -19,10 +19,7 @@ import { UserRoleEntity } from '../../users/entities/user-role.entity';
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { ProfileService } from '../../users/services/profile.service';
 import { RequirePermission } from '../decorators/require-permission.decorator';
-import {
-  AssignUserRoleDto,
-  BulkAssignUserRoleDto,
-} from '../dto/user-roles/assign-user-role.dto';
+import { AssignUserRoleDto, BulkAssignUserRoleDto } from '../dto/user-roles/assign-user-role.dto';
 import {
   UserRoleResponseDto,
   BulkAssignResponseDto,
@@ -57,7 +54,11 @@ export class UserRoleController {
     description:
       'Assign an IAM role to a user in an organization. Supports lookup by roleId or roleCode.',
   })
-  @ApiResponse({ status: 201, description: 'Role assigned successfully', type: UserRoleResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Role assigned successfully',
+    type: UserRoleResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({ status: 404, description: 'Role or user not found' })
   async assignRole(
@@ -107,9 +108,14 @@ export class UserRoleController {
   @RequirePermission('iam:user-roles:assign')
   @ApiOperation({
     summary: 'Bulk assign role to users',
-    description: 'Assign an IAM role to multiple users at once. Skips users who already have the role.',
+    description:
+      'Assign an IAM role to multiple users at once. Skips users who already have the role.',
   })
-  @ApiResponse({ status: 201, description: 'Bulk assignment completed', type: BulkAssignResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Bulk assignment completed',
+    type: BulkAssignResponseDto,
+  })
   async bulkAssignRole(
     @Body() dto: BulkAssignUserRoleDto,
     @CurrentUser() currentUser: CurrentUserType,
@@ -186,7 +192,11 @@ export class UserRoleController {
     summary: 'Get users by role',
     description: 'Get all users who have a specific role assigned',
   })
-  @ApiResponse({ status: 200, description: 'Users with role retrieved', type: [UserRoleResponseDto] })
+  @ApiResponse({
+    status: 200,
+    description: 'Users with role retrieved',
+    type: [UserRoleResponseDto],
+  })
   async getUsersByRole(
     @Param('roleId', ParseUUIDPipe) roleId: string,
   ): Promise<UserRoleResponseDto[]> {
@@ -205,9 +215,7 @@ export class UserRoleController {
   })
   @ApiResponse({ status: 200, description: 'Role removed successfully' })
   @ApiResponse({ status: 404, description: 'Role assignment not found' })
-  async removeRole(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{ message: string }> {
+  async removeRole(@Param('id', ParseUUIDPipe) id: string): Promise<{ message: string }> {
     // Check if assignment exists
     const existing = await this.userRoleRepository.findById(id);
     if (!existing) {
@@ -257,10 +265,7 @@ export class UserRoleController {
   /**
    * Validate user exists and has profile in organization
    */
-  private async validateUserInOrganization(
-    userId: string,
-    organizationId: string,
-  ): Promise<void> {
+  private async validateUserInOrganization(userId: string, organizationId: string): Promise<void> {
     try {
       await this.profileService.verifyUserHasAccessToOrg(userId, organizationId);
     } catch {
@@ -282,9 +287,7 @@ export class UserRoleController {
     return {
       id: entity.id,
       userId: entity.userId,
-      userName: user
-        ? `${user.firstName} ${user.lastName ?? ''}`.trim()
-        : undefined,
+      userName: user ? `${user.firstName} ${user.lastName ?? ''}`.trim() : undefined,
       userEmail: user?.email,
       roleId: entity.roleId ?? '',
       roleCode: iamRole?.code ?? entity.role,

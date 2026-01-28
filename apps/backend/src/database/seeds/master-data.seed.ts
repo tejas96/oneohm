@@ -122,30 +122,42 @@ export async function seedMasterData(dataSource: DataSource): Promise<void> {
     // 0. CLEANUP EXISTING DATA (in correct order for FK constraints)
     // =====================================================
     console.log('🧹 Cleaning up existing master data...');
-    
+
     // Delete in reverse dependency order
     // First, clean up quote-related tables that reference products
     // quote_line_items -> quote_versions -> quotes (cascade delete path)
-    await queryRunner.query(`
+    await queryRunner.query(
+      `
       DELETE FROM quote_line_items 
       WHERE quote_version_id IN (
         SELECT qv.id FROM quote_versions qv 
         JOIN quotes q ON qv.quote_id = q.id 
         WHERE q.organization_id = $1
-      )`, [ORG_ID]);
-    await queryRunner.query(`
+      )`,
+      [ORG_ID],
+    );
+    await queryRunner.query(
+      `
       DELETE FROM quote_versions 
-      WHERE quote_id IN (SELECT id FROM quotes WHERE organization_id = $1)`, [ORG_ID]);
+      WHERE quote_id IN (SELECT id FROM quotes WHERE organization_id = $1)`,
+      [ORG_ID],
+    );
     await queryRunner.query(`DELETE FROM quotes WHERE organization_id = $1`, [ORG_ID]);
-    
+
     // Then clean up master data tables
-    await queryRunner.query(`DELETE FROM quote_configurations WHERE organization_id = $1`, [ORG_ID]);
-    await queryRunner.query(`DELETE FROM subsidy_configurations WHERE organization_id = $1`, [ORG_ID]);
-    await queryRunner.query(`DELETE FROM installation_pricing WHERE organization_id = $1`, [ORG_ID]);
+    await queryRunner.query(`DELETE FROM quote_configurations WHERE organization_id = $1`, [
+      ORG_ID,
+    ]);
+    await queryRunner.query(`DELETE FROM subsidy_configurations WHERE organization_id = $1`, [
+      ORG_ID,
+    ]);
+    await queryRunner.query(`DELETE FROM installation_pricing WHERE organization_id = $1`, [
+      ORG_ID,
+    ]);
     await queryRunner.query(`DELETE FROM pricing_rules WHERE organization_id = $1`, [ORG_ID]);
     await queryRunner.query(`DELETE FROM products WHERE organization_id = $1`, [ORG_ID]);
     await queryRunner.query(`DELETE FROM product_categories WHERE organization_id = $1`, [ORG_ID]);
-    
+
     console.log('✅ Cleanup completed');
 
     // =====================================================

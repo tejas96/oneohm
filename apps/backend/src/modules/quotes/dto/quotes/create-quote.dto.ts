@@ -136,7 +136,8 @@ export class CreateQuoteDto {
   // ==================== Loan Financing ====================
   @ApiPropertyOptional({
     example: false,
-    description: 'Customer wants loan financing. Payment milestones are 10%/85%/5% for all projects.',
+    description:
+      'Customer wants loan financing. Payment milestones are 10%/85%/5% for all projects.',
   })
   @IsBoolean()
   @IsOptional()

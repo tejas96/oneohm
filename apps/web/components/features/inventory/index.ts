@@ -1,0 +1,2 @@
+// Export inventory components
+export {};

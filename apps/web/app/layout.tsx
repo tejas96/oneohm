@@ -1,9 +1,23 @@
 import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+
+import { Providers } from '@/providers';
+
 import './globals.css';
 
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+
 export const metadata: Metadata = {
-  title: 'OneOhm EPC',
-  description: 'OneOhm EPC Application',
+  title: {
+    default: 'OneOhm EPC',
+    template: '%s | OneOhm EPC',
+  },
+  description: 'OneOhm Solar EPC Management Platform',
+  keywords: ['solar', 'EPC', 'energy', 'management', 'CRM'],
 };
 
 // eslint-disable-next-line import/no-default-export -- Next.js requires default export for layouts
@@ -13,8 +27,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>): React.JSX.Element {
   return (
-    <html lang="en">
-      <body className="antialiased">{children}</body>
+    <html lang="en" className={inter.variable}>
+      <body className="min-h-screen bg-background font-sans antialiased">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

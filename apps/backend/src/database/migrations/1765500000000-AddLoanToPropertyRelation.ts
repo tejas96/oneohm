@@ -121,11 +121,19 @@ export class AddLoanToPropertyRelation1765500000000 implements MigrationInterfac
     // Check if column exists and rename it
     if (await queryRunner.hasColumn('loan_applications', 'application_number')) {
       // Use raw SQL for rename and nullability change to avoid TypeORM constraint handling issues
-      await queryRunner.query(`ALTER TABLE loan_applications RENAME COLUMN application_number TO bank_reference_number`);
-      await queryRunner.query(`ALTER TABLE loan_applications ALTER COLUMN bank_reference_number DROP NOT NULL`);
+      await queryRunner.query(
+        `ALTER TABLE loan_applications RENAME COLUMN application_number TO bank_reference_number`,
+      );
+      await queryRunner.query(
+        `ALTER TABLE loan_applications ALTER COLUMN bank_reference_number DROP NOT NULL`,
+      );
       // Drop unique constraint if it exists (was created with isUnique: true in original migration)
-      await queryRunner.query(`ALTER TABLE loan_applications DROP CONSTRAINT IF EXISTS "UQ_loan_applications_application_number"`);
-      await queryRunner.query(`ALTER TABLE loan_applications DROP CONSTRAINT IF EXISTS "loan_applications_application_number_key"`);
+      await queryRunner.query(
+        `ALTER TABLE loan_applications DROP CONSTRAINT IF EXISTS "UQ_loan_applications_application_number"`,
+      );
+      await queryRunner.query(
+        `ALTER TABLE loan_applications DROP CONSTRAINT IF EXISTS "loan_applications_application_number_key"`,
+      );
     }
 
     // ============================================
@@ -172,11 +180,15 @@ export class AddLoanToPropertyRelation1765500000000 implements MigrationInterfac
     // But for tracking external bank loans, we may not know the amount initially.
     // We also need to drop the check constraint that requires loan_amount > 0.
     // Note: Using raw SQL instead of TypeORM's changeColumn to avoid internal constraint handling issues
-    await queryRunner.query(`ALTER TABLE loan_applications DROP CONSTRAINT IF EXISTS chk_loan_applications_amount`);
+    await queryRunner.query(
+      `ALTER TABLE loan_applications DROP CONSTRAINT IF EXISTS chk_loan_applications_amount`,
+    );
 
     if (await queryRunner.hasColumn('loan_applications', 'loan_amount')) {
       // Use raw SQL to alter the column - avoids TypeORM trying to manage constraints internally
-      await queryRunner.query(`ALTER TABLE loan_applications ALTER COLUMN loan_amount DROP NOT NULL`);
+      await queryRunner.query(
+        `ALTER TABLE loan_applications ALTER COLUMN loan_amount DROP NOT NULL`,
+      );
     }
 
     // ============================================
@@ -334,10 +346,16 @@ export class AddLoanToPropertyRelation1765500000000 implements MigrationInterfac
     // ============================================
     if (await queryRunner.hasColumn('loan_applications', 'bank_reference_number')) {
       // Use raw SQL for rename and nullability change for consistency with up migration
-      await queryRunner.query(`ALTER TABLE loan_applications RENAME COLUMN bank_reference_number TO application_number`);
+      await queryRunner.query(
+        `ALTER TABLE loan_applications RENAME COLUMN bank_reference_number TO application_number`,
+      );
       // Note: Setting NOT NULL requires handling existing NULL values first
-      await queryRunner.query(`UPDATE loan_applications SET application_number = 'UNKNOWN-' || id WHERE application_number IS NULL`);
-      await queryRunner.query(`ALTER TABLE loan_applications ALTER COLUMN application_number SET NOT NULL`);
+      await queryRunner.query(
+        `UPDATE loan_applications SET application_number = 'UNKNOWN-' || id WHERE application_number IS NULL`,
+      );
+      await queryRunner.query(
+        `ALTER TABLE loan_applications ALTER COLUMN application_number SET NOT NULL`,
+      );
 
       // Re-create the unique index
       await queryRunner.createIndex(
