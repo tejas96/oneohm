@@ -226,7 +226,7 @@ class ApiClient {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    return await response.json();
+    return response.json() as Promise<T>;
   }
 }
 

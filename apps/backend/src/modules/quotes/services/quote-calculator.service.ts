@@ -679,8 +679,7 @@ export class QuoteCalculatorService {
     quoteConfig: QuoteConfiguration,
     warnings: ValidationWarning[],
   ): Promise<
-    | { panel: CalculatedPanelConfig; actualSizeKw: number }
-    | { error: string; suggestion: number }
+    { panel: CalculatedPanelConfig; actualSizeKw: number } | { error: string; suggestion: number }
   > {
     // Calculate required wattage per panel to meet capacity with target count
     const requiredWattagePerPanel = (requiredSizeKw * 1000) / targetCount;
@@ -710,12 +709,14 @@ export class QuoteCalculatorService {
       }
 
       const specs = bestPanel.specifications?.panel;
-      const bestWattage = specs?.wattage || ((specs?.minWattage || 0) + (specs?.maxWattage || 0)) / 2;
+      const bestWattage =
+        specs?.wattage || ((specs?.minWattage || 0) + (specs?.maxWattage || 0)) / 2;
       const roundedWattage = this.roundWattage(bestWattage, quoteConfig.wattageRounding);
       const suggestedCount = Math.ceil((requiredSizeKw * 1000) / roundedWattage);
 
       return {
-        error: `Cannot achieve ${requiredSizeKw}kW ${isDcr ? 'DCR' : 'Non-DCR'} capacity with ${targetCount} panels. ` +
+        error:
+          `Cannot achieve ${requiredSizeKw}kW ${isDcr ? 'DCR' : 'Non-DCR'} capacity with ${targetCount} panels. ` +
           `Available panels have maximum ${roundedWattage}W, which would provide ${((targetCount * roundedWattage) / 1000).toFixed(2)}kW. ` +
           `Minimum ${suggestedCount} panels needed.`,
         suggestion: suggestedCount,
@@ -1122,7 +1123,8 @@ export class QuoteCalculatorService {
         targetQuantity,
       );
       return {
-        error: `Cannot form ${systemSizeKw}kW system with exactly ${targetQuantity} inverter(s). ` +
+        error:
+          `Cannot form ${systemSizeKw}kW system with exactly ${targetQuantity} inverter(s). ` +
           `The available inverters cannot be combined to meet the required capacity with this quantity.`,
         errorCode: 'INVALID_INVERTER_QUANTITY',
         suggestion: validQuantities,
@@ -1195,7 +1197,7 @@ export class QuoteCalculatorService {
 
     // Sort by capacity descending for more efficient search
     const sortedInverters = [...inverters]
-      .filter(inv => getInverterCapacity(inv) > 0)
+      .filter((inv) => getInverterCapacity(inv) > 0)
       .sort((a, b) => getInverterCapacity(b) - getInverterCapacity(a));
 
     if (sortedInverters.length === 0) return null;
@@ -1226,7 +1228,7 @@ export class QuoteCalculatorService {
           const overage = currentCapacity - requiredKw;
           if (overage < bestOverage) {
             bestOverage = overage;
-            bestCombination = currentCombo.map(c => ({ ...c }));
+            bestCombination = currentCombo.map((c) => ({ ...c }));
           }
         }
         return;

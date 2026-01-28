@@ -129,7 +129,6 @@ async function seedUserRolePermissions(ds: DataSource): Promise<void> {
     }
     console.log('\n📝 Note: These permissions need to be manually assigned to admin roles.');
     console.log('   Use the IAM API or database to assign to super_admin/admin roles.\n');
-
   } catch (error) {
     await queryRunner.rollbackTransaction();
     console.error('\n❌ Error:', error);
