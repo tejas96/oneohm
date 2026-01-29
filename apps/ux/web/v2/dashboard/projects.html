@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects Dashboard - OneOhm Solar EPC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        'primary-dark': '#5ea031',
+                        secondary: '#0d74b8',
+                        'secondary-dark': '#025580',
+                        warning: '#EAB308',
+                        error: '#DC2626',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        .glass-card {
+            background: linear-gradient(135deg, #76c044 0%, #5ea031 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .sidebar { transition: width 200ms ease; }
+        .sidebar.collapsed { width: 64px; }
+        .sidebar.collapsed .sidebar-text { display: none; }
+        .sidebar.collapsed .sidebar-header-text { display: none; }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeInUp 0.4s ease forwards; }
+        .animation-delay-100 { animation-delay: 0.1s; }
+        .animation-delay-200 { animation-delay: 0.2s; }
+        .animation-delay-300 { animation-delay: 0.3s; }
+        .animation-delay-400 { animation-delay: 0.4s; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 3px; }
+        
+        /* Progress Ring */
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        .progress-ring circle {
+            transition: stroke-dashoffset 0.5s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar w-72 bg-white border-r border-gray-200 flex flex-col fixed h-full z-30">
+            <div class="h-16 flex items-center justify-between px-4 border-b border-gray-100">
+                <div class="flex items-center space-x-3">
+                    <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-10 w-auto">
+                    <span class="sidebar-header-text font-bold text-gray-800">OneOhm</span>
+                </div>
+                <button onclick="toggleSidebar()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg id="toggleIcon" class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <nav class="flex-1 overflow-y-auto custom-scrollbar py-4 px-3">
+                <!-- OVERVIEW -->
+                <div class="mb-6">
+                    <p class="sidebar-text text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Overview</p>
+                    <a href="index.html" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        <span class="sidebar-text">Dashboard</span>
+                    </a>
+                </div>
+                
+                <!-- PROJECTS - Active -->
+                <div class="mb-6">
+                    <p class="sidebar-text text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Projects</p>
+                    <a href="projects.html" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl bg-primary/10 text-primary border-l-4 border-primary -ml-px">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                        <span class="sidebar-text font-medium">Projects Dashboard</span>
+                    </a>
+                    <a href="#" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors mt-1">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <span class="sidebar-text">Calendar</span>
+                    </a>
+                    <a href="#" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                        </svg>
+                        <span class="sidebar-text">Tasks</span>
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="border-t border-gray-200 p-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">PM</div>
+                    <div class="sidebar-text flex-1 min-w-0">
+                        <p class="font-medium text-gray-800 truncate">Project Manager</p>
+                        <p class="text-xs text-gray-500">Operations</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <div id="mainContent" class="flex-1 ml-72 transition-all duration-200">
+            <!-- Header -->
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-20">
+                <div class="flex-1 max-w-xl">
+                    <button class="w-full flex items-center space-x-3 px-4 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 transition-colors text-left">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        <span class="text-gray-400 flex-1">Search projects...</span>
+                    </button>
+                </div>
+                <div class="flex items-center space-x-4 ml-6">
+                    <button class="relative p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                        <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                    </button>
+                    <button class="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                        <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">PM</div>
+                    </button>
+                </div>
+            </header>
+            
+            <!-- Page Content -->
+            <main class="p-6">
+                <!-- Greeting -->
+                <div class="mb-8 animate-fade-in opacity-0">
+                    <h1 class="text-2xl font-bold text-gray-800">Projects Dashboard</h1>
+                    <p class="text-gray-500 mt-1">Track project progress, milestones, and team workload</p>
+                </div>
+                
+                <!-- Bento Grid -->
+                <div class="grid grid-cols-12 gap-6">
+                    <!-- Hero Card: Active Projects -->
+                    <div class="col-span-12 lg:col-span-5 glass-card rounded-2xl p-6 text-white animate-fade-in opacity-0 animation-delay-100 min-h-[240px]">
+                        <div class="relative z-10">
+                            <p class="text-white/80 text-sm font-medium">Active Projects</p>
+                            <p class="text-4xl font-bold mt-2">24</p>
+                            <div class="flex items-center mt-2">
+                                <span class="flex items-center text-sm bg-white/20 px-2 py-1 rounded-full">
+                                    18 on track · 4 at risk · 2 delayed
+                                </span>
+                            </div>
+                            <div class="mt-6 grid grid-cols-3 gap-4">
+                                <div class="text-center p-3 bg-white/10 rounded-xl">
+                                    <p class="text-2xl font-bold">₹2.4Cr</p>
+                                    <p class="text-xs text-white/70">Total Value</p>
+                                </div>
+                                <div class="text-center p-3 bg-white/10 rounded-xl">
+                                    <p class="text-2xl font-bold">156</p>
+                                    <p class="text-xs text-white/70">kWp Capacity</p>
+                                </div>
+                                <div class="text-center p-3 bg-white/10 rounded-xl">
+                                    <p class="text-2xl font-bold">8</p>
+                                    <p class="text-xs text-white/70">Completing Soon</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Ring Cards -->
+                    <div class="col-span-12 lg:col-span-7 grid grid-cols-3 gap-4">
+                        <!-- On Track -->
+                        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-200 flex flex-col items-center">
+                            <svg class="progress-ring w-24 h-24" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#E5E7EB" stroke-width="10"/>
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#76c044" stroke-width="10" stroke-dasharray="251.2" stroke-dashoffset="50" stroke-linecap="round"/>
+                            </svg>
+                            <p class="text-2xl font-bold text-gray-800 mt-2">75%</p>
+                            <p class="text-sm text-gray-500">On Track</p>
+                            <p class="text-xs text-primary font-medium mt-1">18 projects</p>
+                        </div>
+                        
+                        <!-- At Risk -->
+                        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-200 flex flex-col items-center">
+                            <svg class="progress-ring w-24 h-24" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#E5E7EB" stroke-width="10"/>
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#EAB308" stroke-width="10" stroke-dasharray="251.2" stroke-dashoffset="210" stroke-linecap="round"/>
+                            </svg>
+                            <p class="text-2xl font-bold text-gray-800 mt-2">17%</p>
+                            <p class="text-sm text-gray-500">At Risk</p>
+                            <p class="text-xs text-warning font-medium mt-1">4 projects</p>
+                        </div>
+                        
+                        <!-- Delayed -->
+                        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-200 flex flex-col items-center">
+                            <svg class="progress-ring w-24 h-24" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#E5E7EB" stroke-width="10"/>
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#DC2626" stroke-width="10" stroke-dasharray="251.2" stroke-dashoffset="230" stroke-linecap="round"/>
+                            </svg>
+                            <p class="text-2xl font-bold text-gray-800 mt-2">8%</p>
+                            <p class="text-sm text-gray-500">Delayed</p>
+                            <p class="text-xs text-error font-medium mt-1">2 projects</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Active Projects List -->
+                    <div class="col-span-12 lg:col-span-8 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-300">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="font-semibold text-gray-800">Active Projects</h3>
+                            <div class="flex space-x-2">
+                                <button class="px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-lg">All</button>
+                                <button class="px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-lg">On Track</button>
+                                <button class="px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-lg">At Risk</button>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <!-- Project 1 -->
+                            <div class="p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center space-x-2">
+                                            <h4 class="font-medium text-gray-800">Sharma Residence - 10kWp</h4>
+                                            <span class="px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">On Track</span>
+                                        </div>
+                                        <p class="text-sm text-gray-500 mt-1">Pune, Maharashtra · PRJ-2025-042</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm font-medium text-gray-800">₹8.5L</p>
+                                        <p class="text-xs text-gray-500">Est. Value</p>
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <div class="flex items-center justify-between text-sm mb-2">
+                                        <span class="text-gray-600">Progress</span>
+                                        <span class="font-medium text-primary">65%</span>
+                                    </div>
+                                    <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                        <div class="h-full bg-primary rounded-full" style="width: 65%"></div>
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex items-center justify-between">
+                                    <div class="flex items-center space-x-4 text-xs text-gray-500">
+                                        <span class="flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                            </svg>
+                                            Due: Feb 15, 2026
+                                        </span>
+                                        <span class="flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                            </svg>
+                                            Vikram P.
+                                        </span>
+                                    </div>
+                                    <span class="text-xs text-primary">Installation Phase</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Project 2 -->
+                            <div class="p-4 border border-warning/30 rounded-xl bg-warning/5 hover:bg-warning/10 transition-colors">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center space-x-2">
+                                            <h4 class="font-medium text-gray-800">Tata Industries - 50kWp</h4>
+                                            <span class="px-2 py-0.5 text-xs font-medium bg-warning/10 text-warning rounded-full">At Risk</span>
+                                        </div>
+                                        <p class="text-sm text-gray-500 mt-1">Mumbai, Maharashtra · PRJ-2025-038</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm font-medium text-gray-800">₹35L</p>
+                                        <p class="text-xs text-gray-500">Est. Value</p>
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <div class="flex items-center justify-between text-sm mb-2">
+                                        <span class="text-gray-600">Progress</span>
+                                        <span class="font-medium text-warning">40%</span>
+                                    </div>
+                                    <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                        <div class="h-full bg-warning rounded-full" style="width: 40%"></div>
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex items-center justify-between">
+                                    <div class="flex items-center space-x-4 text-xs text-gray-500">
+                                        <span class="flex items-center text-warning">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                            </svg>
+                                            Material Delay
+                                        </span>
+                                        <span class="flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                            </svg>
+                                            Amit K.
+                                        </span>
+                                    </div>
+                                    <span class="text-xs text-warning">Procurement Phase</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Project 3 -->
+                            <div class="p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center space-x-2">
+                                            <h4 class="font-medium text-gray-800">Green Valley School - 25kWp</h4>
+                                            <span class="px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">On Track</span>
+                                        </div>
+                                        <p class="text-sm text-gray-500 mt-1">Nashik, Maharashtra · PRJ-2025-045</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm font-medium text-gray-800">₹18L</p>
+                                        <p class="text-xs text-gray-500">Est. Value</p>
+                                    </div>
+                                </div>
+                                <div class="mt-4">
+                                    <div class="flex items-center justify-between text-sm mb-2">
+                                        <span class="text-gray-600">Progress</span>
+                                        <span class="font-medium text-primary">85%</span>
+                                    </div>
+                                    <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                        <div class="h-full bg-primary rounded-full" style="width: 85%"></div>
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex items-center justify-between">
+                                    <div class="flex items-center space-x-4 text-xs text-gray-500">
+                                        <span class="flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                            </svg>
+                                            Due: Jan 30, 2026
+                                        </span>
+                                        <span class="flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                            </svg>
+                                            Sunita M.
+                                        </span>
+                                    </div>
+                                    <span class="text-xs text-primary">Testing Phase</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Milestones -->
+                    <div class="col-span-12 lg:col-span-4 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-300">
+                        <h3 class="font-semibold text-gray-800 mb-4">Upcoming Milestones</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-3 h-3 rounded-full bg-primary mt-1.5 flex-shrink-0"></div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-800">Site Survey Complete</p>
+                                    <p class="text-xs text-gray-500">Sharma Residence</p>
+                                    <p class="text-xs text-primary mt-1">Today</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <div class="w-3 h-3 rounded-full bg-secondary mt-1.5 flex-shrink-0"></div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-800">Material Delivery</p>
+                                    <p class="text-xs text-gray-500">Tata Industries</p>
+                                    <p class="text-xs text-secondary mt-1">Tomorrow</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <div class="w-3 h-3 rounded-full bg-warning mt-1.5 flex-shrink-0"></div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-800">Installation Start</p>
+                                    <p class="text-xs text-gray-500">Green Valley School</p>
+                                    <p class="text-xs text-warning mt-1">Jan 30</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <div class="w-3 h-3 rounded-full bg-purple-500 mt-1.5 flex-shrink-0"></div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-800">Grid Connection</p>
+                                    <p class="text-xs text-gray-500">Patil Warehouse</p>
+                                    <p class="text-xs text-purple-600 mt-1">Feb 2</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <div class="w-3 h-3 rounded-full bg-gray-300 mt-1.5 flex-shrink-0"></div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-gray-800">Commissioning</p>
+                                    <p class="text-xs text-gray-500">Kumar Hospital</p>
+                                    <p class="text-xs text-gray-400 mt-1">Feb 8</p>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="#" class="block mt-4 text-center text-sm text-primary hover:text-primary-dark font-medium">View All Milestones →</a>
+                    </div>
+                    
+                    <!-- Team Workload -->
+                    <div class="col-span-12 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400">
+                        <h3 class="font-semibold text-gray-800 mb-6">Team Workload</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="p-4 bg-gray-50 rounded-xl text-center">
+                                <div class="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold mx-auto">VP</div>
+                                <p class="font-medium text-gray-800 mt-3">Vikram P.</p>
+                                <p class="text-xs text-gray-500">Execution Engineer</p>
+                                <div class="mt-3">
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-gray-500">Capacity</span>
+                                        <span class="text-primary font-medium">85%</span>
+                                    </div>
+                                    <div class="h-1.5 bg-gray-200 rounded-full">
+                                        <div class="h-full bg-primary rounded-full" style="width: 85%"></div>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">5 active projects</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-xl text-center">
+                                <div class="w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold mx-auto">AK</div>
+                                <p class="font-medium text-gray-800 mt-3">Amit K.</p>
+                                <p class="text-xs text-gray-500">Execution Engineer</p>
+                                <div class="mt-3">
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-gray-500">Capacity</span>
+                                        <span class="text-warning font-medium">95%</span>
+                                    </div>
+                                    <div class="h-1.5 bg-gray-200 rounded-full">
+                                        <div class="h-full bg-warning rounded-full" style="width: 95%"></div>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">6 active projects</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-xl text-center">
+                                <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold mx-auto">SM</div>
+                                <p class="font-medium text-gray-800 mt-3">Sunita M.</p>
+                                <p class="text-xs text-gray-500">Execution Engineer</p>
+                                <div class="mt-3">
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-gray-500">Capacity</span>
+                                        <span class="text-primary font-medium">60%</span>
+                                    </div>
+                                    <div class="h-1.5 bg-gray-200 rounded-full">
+                                        <div class="h-full bg-primary rounded-full" style="width: 60%"></div>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">4 active projects</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-xl text-center">
+                                <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-bold mx-auto">RK</div>
+                                <p class="font-medium text-gray-800 mt-3">Rahul K.</p>
+                                <p class="text-xs text-gray-500">Liaison Officer</p>
+                                <div class="mt-3">
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-gray-500">Capacity</span>
+                                        <span class="text-primary font-medium">70%</span>
+                                    </div>
+                                    <div class="h-1.5 bg-gray-200 rounded-full">
+                                        <div class="h-full bg-primary rounded-full" style="width: 70%"></div>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">8 liaison tasks</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            sidebar.classList.toggle('collapsed');
+            mainContent.style.marginLeft = sidebar.classList.contains('collapsed') ? '64px' : '288px';
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (sidebarCollapsed) toggleSidebar();
+        });
+    </script>
+</body>
+</html>

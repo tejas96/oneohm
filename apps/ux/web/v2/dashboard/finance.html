@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Dashboard - OneOhm Solar EPC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        'primary-dark': '#5ea031',
+                        secondary: '#0d74b8',
+                        'secondary-dark': '#025580',
+                        warning: '#EAB308',
+                        error: '#DC2626',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        .glass-card {
+            background: linear-gradient(135deg, #025580 0%, #0d74b8 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .sidebar { transition: width 200ms ease; }
+        .sidebar.collapsed { width: 64px; }
+        .sidebar.collapsed .sidebar-text { display: none; }
+        .sidebar.collapsed .sidebar-header-text { display: none; }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeInUp 0.4s ease forwards; }
+        .animation-delay-100 { animation-delay: 0.1s; }
+        .animation-delay-200 { animation-delay: 0.2s; }
+        .animation-delay-300 { animation-delay: 0.3s; }
+        .animation-delay-400 { animation-delay: 0.4s; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar w-72 bg-white border-r border-gray-200 flex flex-col fixed h-full z-30">
+            <div class="h-16 flex items-center justify-between px-4 border-b border-gray-100">
+                <div class="flex items-center space-x-3">
+                    <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-10 w-auto">
+                    <span class="sidebar-header-text font-bold text-gray-800">OneOhm</span>
+                </div>
+                <button onclick="toggleSidebar()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg id="toggleIcon" class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <nav class="flex-1 overflow-y-auto custom-scrollbar py-4 px-3">
+                <!-- OVERVIEW -->
+                <div class="mb-6">
+                    <p class="sidebar-text text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Overview</p>
+                    <a href="index.html" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        <span class="sidebar-text">Dashboard</span>
+                    </a>
+                </div>
+                
+                <!-- FINANCE - Active -->
+                <div class="mb-6">
+                    <p class="sidebar-text text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Finance</p>
+                    <a href="finance.html" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl bg-secondary/10 text-secondary border-l-4 border-secondary -ml-px">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span class="sidebar-text font-medium">Finance Dashboard</span>
+                    </a>
+                    <a href="#" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors mt-1">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        <span class="sidebar-text">Payments</span>
+                    </a>
+                    <a href="#" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"/>
+                        </svg>
+                        <span class="sidebar-text">Invoices</span>
+                    </a>
+                    <a href="#" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span class="sidebar-text">Reports</span>
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="border-t border-gray-200 p-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold">FM</div>
+                    <div class="sidebar-text flex-1 min-w-0">
+                        <p class="font-medium text-gray-800 truncate">Finance Manager</p>
+                        <p class="text-xs text-gray-500">Accounts</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <div id="mainContent" class="flex-1 ml-72 transition-all duration-200">
+            <!-- Header -->
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-20">
+                <div class="flex-1 max-w-xl">
+                    <button class="w-full flex items-center space-x-3 px-4 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl border border-gray-200 transition-colors text-left">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        <span class="text-gray-400 flex-1">Search payments, invoices...</span>
+                    </button>
+                </div>
+                <div class="flex items-center space-x-4 ml-6">
+                    <button class="relative p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                        <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                    </button>
+                    <button class="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                        <div class="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold text-sm">FM</div>
+                    </button>
+                </div>
+            </header>
+            
+            <!-- Page Content -->
+            <main class="p-6">
+                <!-- Greeting -->
+                <div class="mb-8 animate-fade-in opacity-0">
+                    <h1 class="text-2xl font-bold text-gray-800">Finance Dashboard</h1>
+                    <p class="text-gray-500 mt-1">Track collections, outstanding payments, and financial health</p>
+                </div>
+                
+                <!-- Bento Grid -->
+                <div class="grid grid-cols-12 gap-6">
+                    <!-- Hero Card: Total Collections -->
+                    <div class="col-span-12 lg:col-span-5 glass-card rounded-2xl p-6 text-white animate-fade-in opacity-0 animation-delay-100 min-h-[240px]">
+                        <div class="relative z-10">
+                            <p class="text-white/80 text-sm font-medium">Total Collections (This Month)</p>
+                            <p class="text-4xl font-bold mt-2">₹32.5L</p>
+                            <div class="flex items-center mt-2">
+                                <span class="flex items-center text-sm bg-white/20 px-2 py-1 rounded-full">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                                    </svg>
+                                    28.5% vs last month
+                                </span>
+                            </div>
+                            <div class="mt-6 grid grid-cols-2 gap-4">
+                                <div class="p-3 bg-white/10 rounded-xl">
+                                    <p class="text-2xl font-bold">₹18.2L</p>
+                                    <p class="text-xs text-white/70">Outstanding</p>
+                                </div>
+                                <div class="p-3 bg-white/10 rounded-xl">
+                                    <p class="text-2xl font-bold">15</p>
+                                    <p class="text-xs text-white/70">Pending Invoices</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- KPI Cards -->
+                    <div class="col-span-12 lg:col-span-7 grid grid-cols-2 gap-4">
+                        <!-- Collection Rate -->
+                        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-200">
+                            <div class="flex items-start justify-between">
+                                <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                                <span class="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full">↑ 5.2%</span>
+                            </div>
+                            <p class="text-3xl font-bold text-gray-800 mt-4">78%</p>
+                            <p class="text-sm text-gray-500 mt-1">Collection Rate</p>
+                        </div>
+                        
+                        <!-- Overdue Amount -->
+                        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-200">
+                            <div class="flex items-start justify-between">
+                                <div class="w-10 h-10 rounded-xl bg-error/10 flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                                <span class="text-xs font-medium text-error bg-error/10 px-2 py-1 rounded-full">Action Needed</span>
+                            </div>
+                            <p class="text-3xl font-bold text-gray-800 mt-4">₹5.8L</p>
+                            <p class="text-sm text-gray-500 mt-1">Overdue Amount</p>
+                        </div>
+                        
+                        <!-- Pending Payments -->
+                        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-300">
+                            <div class="flex items-start justify-between">
+                                <div class="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                                <span class="text-xs font-medium text-warning bg-warning/10 px-2 py-1 rounded-full">Due Soon</span>
+                            </div>
+                            <p class="text-3xl font-bold text-gray-800 mt-4">₹12.4L</p>
+                            <p class="text-sm text-gray-500 mt-1">Due This Week</p>
+                        </div>
+                        
+                        <!-- Avg Collection Days -->
+                        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-300">
+                            <div class="flex items-start justify-between">
+                                <div class="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                </div>
+                                <span class="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">↓ 3 days</span>
+                            </div>
+                            <p class="text-3xl font-bold text-gray-800 mt-4">22</p>
+                            <p class="text-sm text-gray-500 mt-1">Avg Collection Days</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Aging Analysis -->
+                    <div class="col-span-12 lg:col-span-7 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400">
+                        <h3 class="font-semibold text-gray-800 mb-6">Receivables Aging</h3>
+                        <div class="space-y-4">
+                            <!-- Current -->
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm text-gray-600">Current (0-30 days)</span>
+                                    <span class="text-sm font-medium text-primary">₹8.5L</span>
+                                </div>
+                                <div class="h-4 bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-primary rounded-full" style="width: 47%"></div>
+                                </div>
+                            </div>
+                            <!-- 31-60 Days -->
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm text-gray-600">31-60 Days</span>
+                                    <span class="text-sm font-medium text-secondary">₹4.2L</span>
+                                </div>
+                                <div class="h-4 bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-secondary rounded-full" style="width: 23%"></div>
+                                </div>
+                            </div>
+                            <!-- 61-90 Days -->
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm text-gray-600">61-90 Days</span>
+                                    <span class="text-sm font-medium text-warning">₹2.8L</span>
+                                </div>
+                                <div class="h-4 bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-warning rounded-full" style="width: 15%"></div>
+                                </div>
+                            </div>
+                            <!-- 90+ Days -->
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm text-gray-600">90+ Days (Overdue)</span>
+                                    <span class="text-sm font-medium text-error">₹2.7L</span>
+                                </div>
+                                <div class="h-4 bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-error rounded-full" style="width: 15%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-6 p-4 bg-gray-50 rounded-xl">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Total Outstanding</p>
+                                    <p class="text-xs text-gray-500">Across all aging buckets</p>
+                                </div>
+                                <p class="text-2xl font-bold text-gray-800">₹18.2L</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Schedule -->
+                    <div class="col-span-12 lg:col-span-5 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold text-gray-800">Expected Payments</h3>
+                            <span class="text-sm text-gray-500">This Week</span>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-3 bg-primary/5 rounded-xl border-l-4 border-primary">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Sharma Residence</p>
+                                    <p class="text-xs text-gray-500">2nd Installment</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-gray-800">₹2.5L</p>
+                                    <p class="text-xs text-primary">Today</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-secondary/5 rounded-xl border-l-4 border-secondary">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Tata Industries</p>
+                                    <p class="text-xs text-gray-500">1st Installment</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-gray-800">₹12L</p>
+                                    <p class="text-xs text-secondary">Jan 30</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-warning/5 rounded-xl border-l-4 border-warning">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Green Valley School</p>
+                                    <p class="text-xs text-gray-500">Final Payment</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-gray-800">₹4.5L</p>
+                                    <p class="text-xs text-warning">Jan 31</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-xl border-l-4 border-gray-300">
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Kumar Hospital</p>
+                                    <p class="text-xs text-gray-500">Advance</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-gray-800">₹3.2L</p>
+                                    <p class="text-xs text-gray-500">Feb 2</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Transactions -->
+                    <div class="col-span-12 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="font-semibold text-gray-800">Recent Transactions</h3>
+                            <a href="#" class="text-sm text-secondary hover:text-secondary-dark font-medium">View All →</a>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                        <th class="pb-4">Transaction</th>
+                                        <th class="pb-4">Project</th>
+                                        <th class="pb-4">Type</th>
+                                        <th class="pb-4">Amount</th>
+                                        <th class="pb-4">Status</th>
+                                        <th class="pb-4">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="py-4">
+                                            <div class="flex items-center space-x-3">
+                                                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <p class="font-medium text-gray-800">TXN-2025-1842</p>
+                                                    <p class="text-xs text-gray-500">Payment Received</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-4"><span class="text-sm text-gray-600">Sharma Residence</span></td>
+                                        <td class="py-4"><span class="text-sm text-gray-600">2nd Installment</span></td>
+                                        <td class="py-4"><span class="text-sm font-medium text-primary">+ ₹2,50,000</span></td>
+                                        <td class="py-4"><span class="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">Completed</span></td>
+                                        <td class="py-4"><span class="text-sm text-gray-500">Today, 10:30 AM</span></td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="py-4">
+                                            <div class="flex items-center space-x-3">
+                                                <div class="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center">
+                                                    <svg class="w-5 h-5 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <p class="font-medium text-gray-800">PO-2025-0456</p>
+                                                    <p class="text-xs text-gray-500">Vendor Payment</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-4"><span class="text-sm text-gray-600">Tata Industries</span></td>
+                                        <td class="py-4"><span class="text-sm text-gray-600">Material Purchase</span></td>
+                                        <td class="py-4"><span class="text-sm font-medium text-error">- ₹8,50,000</span></td>
+                                        <td class="py-4"><span class="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">Completed</span></td>
+                                        <td class="py-4"><span class="text-sm text-gray-500">Yesterday</span></td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="py-4">
+                                            <div class="flex items-center space-x-3">
+                                                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <p class="font-medium text-gray-800">TXN-2025-1838</p>
+                                                    <p class="text-xs text-gray-500">Payment Received</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-4"><span class="text-sm text-gray-600">Green Valley School</span></td>
+                                        <td class="py-4"><span class="text-sm text-gray-600">Advance</span></td>
+                                        <td class="py-4"><span class="text-sm font-medium text-primary">+ ₹5,40,000</span></td>
+                                        <td class="py-4"><span class="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">Completed</span></td>
+                                        <td class="py-4"><span class="text-sm text-gray-500">Jan 25, 2026</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            sidebar.classList.toggle('collapsed');
+            mainContent.style.marginLeft = sidebar.classList.contains('collapsed') ? '64px' : '288px';
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (sidebarCollapsed) toggleSidebar();
+        });
+    </script>
+</body>
+</html>
