@@ -2,10 +2,10 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectPriority, ProjectStatus, type ProjectMetadata } from '@oneohm-epc/shared-types';
 import { Expose, Type } from 'class-transformer';
 
+import { CustomerPropertyResponseDto } from '../../../customers/dto/customer-property-response.dto';
 import { MaterialResponseDto } from '../materials/material-response.dto';
 import { MilestoneResponseDto } from '../milestones/milestone-response.dto';
 import { SurveyResponseDto } from '../surveys/survey-response.dto';
-import { CustomerPropertyResponseDto } from '../../../customers/dto/customer-property-response.dto';
 
 /**
  * Project Response DTO
