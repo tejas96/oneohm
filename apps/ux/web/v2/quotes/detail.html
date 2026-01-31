@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote QT-2026-0042 - OneOhm Solar EPC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        'primary-dark': '#5ea031',
+                        secondary: '#0d74b8',
+                        warning: '#EAB308',
+                        error: '#DC2626',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .page-container { margin-left: 296px; margin-top: 56px; min-height: calc(100vh - 56px); background: #f4f4f5; }
+        
+        /* Tabs */
+        .tab-btn { padding: 12px 16px; font-size: 14px; font-weight: 500; color: #71717a; border-bottom: 2px solid transparent; transition: all 150ms; }
+        .tab-btn:hover { color: #09090b; }
+        .tab-btn.active { color: #76c044; border-bottom-color: #76c044; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Timeline */
+        .timeline { position: relative; padding-left: 24px; }
+        .timeline::before { content: ''; position: absolute; left: 7px; top: 8px; bottom: 8px; width: 2px; background: #e4e4e7; }
+        .timeline-item { position: relative; padding-bottom: 16px; }
+        .timeline-item:last-child { padding-bottom: 0; }
+        .timeline-dot { position: absolute; left: -24px; top: 4px; width: 16px; height: 16px; border-radius: 50%; background: white; border: 2px solid #e4e4e7; }
+        .timeline-dot.primary { border-color: #76c044; background: #76c044; }
+        
+        @media (max-width: 1024px) {
+            .page-container { margin-left: 56px; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 z-50 flex items-center px-4">
+        <a href="../dashboard/index.html" class="flex items-center">
+            <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto">
+        </a>
+        <div class="flex-1 flex justify-center">
+            <div class="w-full max-w-md">
+                <div class="flex items-center px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                    <svg class="w-4 h-4 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <span class="text-gray-400 text-sm">Search...</span>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button class="p-2 hover:bg-gray-100 rounded-lg"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></button>
+            <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">RK</div>
+        </div>
+    </header>
+    
+    <!-- Sidebar Rail -->
+    <aside class="fixed left-0 top-14 w-14 h-[calc(100vh-56px)] bg-white border-r border-gray-200 flex flex-col items-center py-2 z-40">
+        <a href="../dashboard/index.html" class="w-11 h-11 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-lg mb-1" title="Dashboard">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        </a>
+        <a href="../crm/customers.html" class="w-11 h-11 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-lg mb-1" title="Sales & CRM">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </a>
+        <a href="list.html" class="w-11 h-11 flex items-center justify-center text-primary bg-primary/10 rounded-lg border-l-2 border-primary" title="Quotations">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        </a>
+    </aside>
+    
+    <!-- Quotes Sub-nav Panel -->
+    <aside class="fixed left-14 top-14 w-60 h-[calc(100vh-56px)] bg-white border-r border-gray-200 z-30 overflow-y-auto">
+        <div class="p-4 border-b border-gray-100">
+            <h2 class="font-semibold text-gray-800">Quotations</h2>
+        </div>
+        <nav class="p-2">
+            <div class="mb-4">
+                <p class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Quotes</p>
+                <a href="list.html" class="flex items-center gap-3 px-3 py-2 text-sm font-medium text-primary bg-primary/10 rounded-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    All Quotes
+                </a>
+            </div>
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="page-container p-6">
+        <!-- Breadcrumb -->
+        <nav class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+            <a href="list.html" class="hover:text-gray-900">Quotes</a>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="text-gray-900 font-medium">QT-2026-0042</span>
+        </nav>
+        
+        <!-- Page Header -->
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <h1 class="text-2xl font-bold text-gray-900">QT-2026-0042</h1>
+                    <span class="px-2.5 py-1 text-xs font-semibold bg-yellow-100 text-yellow-800 rounded-full">Sent</span>
+                </div>
+                <p class="text-gray-500">Created on Jan 28, 2026 • Valid until Feb 12, 2026</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    Edit
+                </button>
+                <button class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                    Duplicate
+                </button>
+                <button class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Download PDF
+                </button>
+                <button class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                    Resend
+                </button>
+            </div>
+        </div>
+        
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <!-- Customer Card -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center text-primary font-bold">RS</div>
+                    <div>
+                        <a href="../crm/customer-detail.html" class="font-medium text-gray-900 hover:text-primary">Rajesh Sharma</a>
+                        <p class="text-sm text-gray-500">+91 98765 43210</p>
+                    </div>
+                </div>
+                <div class="text-sm">
+                    <p class="text-gray-600">rajesh.sharma@gmail.com</p>
+                    <p class="text-gray-500 mt-1">123, MG Road, Koramangala, Bangalore</p>
+                </div>
+            </div>
+            
+            <!-- Property Card -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+                <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    <span class="font-medium text-gray-900">Property</span>
+                </div>
+                <a href="../crm/property-detail.html" class="block">
+                    <p class="font-medium text-gray-900 hover:text-primary">Koramangala Residence</p>
+                    <p class="text-sm text-gray-500 mt-1">456, 5th Block, Koramangala, Bangalore - 560034</p>
+                </a>
+                <div class="flex items-center gap-2 mt-3">
+                    <span class="px-2 py-0.5 text-xs bg-gray-100 rounded">Residential</span>
+                    <span class="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded">Wants Loan</span>
+                </div>
+            </div>
+            
+            <!-- System Config Card -->
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+                <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                    <span class="font-medium text-gray-900">System Configuration</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <p class="text-xs text-gray-500">System Size</p>
+                        <p class="font-bold text-gray-900">5 kW</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500">Panel Type</p>
+                        <p class="font-medium text-gray-900">Monocrystalline</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500">No. of Panels</p>
+                        <p class="font-medium text-gray-900">12</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500">Inverter</p>
+                        <p class="font-medium text-gray-900">5 kW Hybrid</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quote Details -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Line Items -->
+            <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm">
+                <div class="p-4 border-b border-gray-100">
+                    <h3 class="font-semibold text-gray-900">Quote Items</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-medium text-gray-500">Item</th>
+                                <th class="px-4 py-3 text-center font-medium text-gray-500">Qty</th>
+                                <th class="px-4 py-3 text-right font-medium text-gray-500">Unit Price</th>
+                                <th class="px-4 py-3 text-right font-medium text-gray-500">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <!-- Solar Panels Section -->
+                            <tr class="bg-gray-50">
+                                <td colspan="4" class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Solar Panels</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3">
+                                    <p class="font-medium text-gray-900">Mono PERC 545W Panel</p>
+                                    <p class="text-xs text-gray-500">Tier-1 | 25 Year Warranty</p>
+                                </td>
+                                <td class="px-4 py-3 text-center">12</td>
+                                <td class="px-4 py-3 text-right">₹18,500</td>
+                                <td class="px-4 py-3 text-right font-medium">₹2,22,000</td>
+                            </tr>
+                            <!-- Inverter Section -->
+                            <tr class="bg-gray-50">
+                                <td colspan="4" class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Inverter</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3">
+                                    <p class="font-medium text-gray-900">5 kW Hybrid Inverter</p>
+                                    <p class="text-xs text-gray-500">With MPPT | WiFi Monitoring</p>
+                                </td>
+                                <td class="px-4 py-3 text-center">1</td>
+                                <td class="px-4 py-3 text-right">₹42,000</td>
+                                <td class="px-4 py-3 text-right font-medium">₹42,000</td>
+                            </tr>
+                            <!-- Mounting Section -->
+                            <tr class="bg-gray-50">
+                                <td colspan="4" class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Mounting & Wiring</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3">
+                                    <p class="font-medium text-gray-900">Mounting Structure</p>
+                                    <p class="text-xs text-gray-500">GI Hot-dip Galvanized</p>
+                                </td>
+                                <td class="px-4 py-3 text-center">1</td>
+                                <td class="px-4 py-3 text-right">₹25,000</td>
+                                <td class="px-4 py-3 text-right font-medium">₹25,000</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3">
+                                    <p class="font-medium text-gray-900">DC/AC Cables & Accessories</p>
+                                </td>
+                                <td class="px-4 py-3 text-center">1</td>
+                                <td class="px-4 py-3 text-right">₹12,000</td>
+                                <td class="px-4 py-3 text-right font-medium">₹12,000</td>
+                            </tr>
+                            <!-- Installation Section -->
+                            <tr class="bg-gray-50">
+                                <td colspan="4" class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Installation</td>
+                            </tr>
+                            <tr>
+                                <td class="px-4 py-3">
+                                    <p class="font-medium text-gray-900">Installation & Commissioning</p>
+                                </td>
+                                <td class="px-4 py-3 text-center">1</td>
+                                <td class="px-4 py-3 text-right">₹24,000</td>
+                                <td class="px-4 py-3 text-right font-medium">₹24,000</td>
+                            </tr>
+                        </tbody>
+                        <tfoot class="bg-gray-50 border-t-2 border-gray-200">
+                            <tr>
+                                <td colspan="3" class="px-4 py-3 text-right font-medium text-gray-600">Subtotal</td>
+                                <td class="px-4 py-3 text-right font-medium text-gray-900">₹3,25,000</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="px-4 py-3 text-right font-medium text-gray-600">GST (12%)</td>
+                                <td class="px-4 py-3 text-right font-medium text-gray-900">₹39,000</td>
+                            </tr>
+                            <tr class="text-lg">
+                                <td colspan="3" class="px-4 py-3 text-right font-bold text-gray-900">Total</td>
+                                <td class="px-4 py-3 text-right font-bold text-primary">₹3,64,000</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Subsidy & Summary -->
+            <div class="space-y-6">
+                <!-- Subsidy Card -->
+                <div class="bg-green-50 rounded-xl border border-green-200 p-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span class="font-semibold text-green-800">PM Surya Ghar Subsidy</span>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-green-700">Scheme</span>
+                            <span class="font-medium text-green-800">Central Govt.</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-green-700">Eligible Subsidy</span>
+                            <span class="font-bold text-green-800">₹78,000</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-green-200">
+                        <div class="flex justify-between text-lg">
+                            <span class="font-medium text-green-800">Net Payable</span>
+                            <span class="font-bold text-green-800">₹2,86,000</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Stats -->
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+                    <h4 class="font-semibold text-gray-900 mb-3">Quick Stats</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Estimated Generation</span>
+                            <span class="font-medium text-gray-900">600 units/month</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Monthly Savings</span>
+                            <span class="font-medium text-green-600">₹4,500</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Payback Period</span>
+                            <span class="font-medium text-gray-900">4.2 years</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">25 Year Savings</span>
+                            <span class="font-medium text-green-600">₹13.5 Lakhs</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tabs Section -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div class="border-b border-gray-200 flex">
+                <button class="tab-btn active" onclick="switchTab('versions')">Versions</button>
+                <button class="tab-btn" onclick="switchTab('documents')">Documents</button>
+                <button class="tab-btn" onclick="switchTab('activity')">Activity</button>
+            </div>
+            
+            <!-- Versions Tab -->
+            <div id="tab-versions" class="tab-content active p-4">
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between p-3 bg-primary/5 rounded-lg border border-primary/20">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs">v2</span>
+                            <div>
+                                <p class="font-medium text-gray-900">Version 2 (Current)</p>
+                                <p class="text-xs text-gray-500">Jan 28, 2026 at 10:30 AM • by Ravi Kumar</p>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 text-xs font-medium bg-primary/20 text-primary rounded">Active</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-bold text-xs">v1</span>
+                            <div>
+                                <p class="font-medium text-gray-900">Version 1</p>
+                                <p class="text-xs text-gray-500">Jan 22, 2026 at 3:45 PM • by Ravi Kumar</p>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded">Rejected</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Documents Tab -->
+            <div id="tab-documents" class="tab-content p-4">
+                <div class="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center mb-4">
+                    <svg class="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                    <p class="text-gray-600 mb-2">Drag and drop files here, or click to browse</p>
+                    <button class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium">Upload Document</button>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zm-3 9v6h2v-6h3l-4-4-4 4h3z"/></svg>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">Quote_QT-2026-0042.pdf</p>
+                                <p class="text-xs text-gray-500">1.2 MB • Generated Jan 28, 2026</p>
+                            </div>
+                        </div>
+                        <button class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Activity Tab -->
+            <div id="tab-activity" class="tab-content p-4">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-dot primary"></div>
+                        <div>
+                            <p class="text-sm text-gray-900">Quote <span class="font-medium">sent to customer</span> via email</p>
+                            <p class="text-xs text-gray-500 mt-1">Jan 28, 2026 at 10:45 AM • by Ravi Kumar</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div>
+                            <p class="text-sm text-gray-900">Quote <span class="font-medium">viewed by customer</span></p>
+                            <p class="text-xs text-gray-500 mt-1">Jan 28, 2026 at 2:15 PM</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div>
+                            <p class="text-sm text-gray-900">Version 2 created - <span class="font-medium">Updated system size to 5kW</span></p>
+                            <p class="text-xs text-gray-500 mt-1">Jan 28, 2026 at 10:30 AM • by Ravi Kumar</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div>
+                            <p class="text-sm text-gray-900">Version 1 <span class="font-medium text-red-600">rejected by customer</span></p>
+                            <p class="text-xs text-gray-500 mt-1">Jan 25, 2026 at 11:00 AM</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div>
+                            <p class="text-sm text-gray-900">Quote <span class="font-medium">created</span> with 3kW system</p>
+                            <p class="text-xs text-gray-500 mt-1">Jan 22, 2026 at 3:45 PM • by Ravi Kumar</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+    </script>
+</body>
+</html>

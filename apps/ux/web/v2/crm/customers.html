@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Customers - OneOhm Solar EPC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        'primary-dark': '#5ea031',
+                        secondary: '#0d74b8',
+                        warning: '#EAB308',
+                        error: '#DC2626',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* ==================== GLOBAL HEADER ==================== */
+        .global-header {
+            height: 56px;
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+        }
+        
+        /* ==================== RAIL (Icon Strip) ==================== */
+        .rail {
+            width: 56px;
+            background: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            position: fixed;
+            top: 56px;
+            left: 0;
+            height: calc(100vh - 56px);
+            display: flex;
+            flex-direction: column;
+            z-index: 40;
+        }
+        
+        .rail-top {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding-top: 8px;
+        }
+        
+        .rail-bottom {
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 8px;
+            border-top: 1px solid #f3f4f6;
+        }
+        
+        .rail-icon {
+            width: 56px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280;
+            cursor: pointer;
+            position: relative;
+            transition: all 150ms ease;
+        }
+        
+        .rail-icon:hover {
+            background: #f9fafb;
+            color: #374151;
+        }
+        
+        .rail-icon.active {
+            background: rgba(118, 192, 68, 0.08);
+            color: #76c044;
+            border-left: 3px solid #76c044;
+        }
+        
+        .rail-icon .badge {
+            position: absolute;
+            top: 6px;
+            right: 10px;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            font-size: 10px;
+            font-weight: 600;
+            background: #ef4444;
+            color: white;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .rail-icon .tooltip {
+            position: absolute;
+            left: 60px;
+            background: #1f2937;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 150ms ease;
+            z-index: 100;
+        }
+        
+        .rail-icon:hover .tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .rail-user {
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .rail-user:hover {
+            background: #f9fafb;
+        }
+        
+        /* ==================== PANEL (Expandable Detail) ==================== */
+        .panel {
+            width: 240px;
+            background: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            position: fixed;
+            top: 56px;
+            left: 56px;
+            height: calc(100vh - 56px);
+            display: flex;
+            flex-direction: column;
+            z-index: 35;
+            transition: transform 200ms ease, opacity 200ms ease;
+        }
+        
+        .panel.collapsed {
+            transform: translateX(-240px);
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .panel-header {
+            height: 48px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #f3f4f6;
+            flex-shrink: 0;
+        }
+        
+        .panel-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .panel-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .panel-container.hidden {
+            display: none !important;
+        }
+        
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+        
+        .panel-section {
+            padding: 0 8px;
+            margin-bottom: 8px;
+        }
+        
+        .section-header {
+            font-size: 11px;
+            font-weight: 600;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 12px 8px 6px 8px;
+        }
+        
+        .panel-item {
+            height: 36px;
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+            color: #374151;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 100ms ease;
+            text-decoration: none;
+        }
+        
+        .panel-item:hover {
+            background: #f9fafb;
+        }
+        
+        .panel-item.active {
+            background: rgba(118, 192, 68, 0.12);
+            color: #5ea031;
+            font-weight: 500;
+        }
+        
+        .panel-item svg {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        
+        .panel-item .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        
+        .panel-item .status-dot.hot { background: #ef4444; }
+        .panel-item .status-dot.warm { background: #eab308; }
+        .panel-item .status-dot.cold { background: #60a5fa; }
+        
+        .panel-item.sub-item {
+            padding-left: 28px;
+            font-size: 13px;
+            color: #6b7280;
+        }
+        
+        .panel-item.sub-item:hover {
+            color: #374151;
+        }
+        
+        .panel-item span:not(.badge):not(.status-dot) {
+            flex: 1;
+        }
+        
+        .panel-item .panel-badge {
+            margin-left: auto;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: rgba(118, 192, 68, 0.15);
+            color: #76c044;
+        }
+        
+        .panel-item .panel-badge.warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        .panel-item .panel-badge.error {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        /* Layout */
+        .page-container { margin-left: 296px; margin-top: 56px; min-height: calc(100vh - 56px); background: #f4f4f5; transition: margin-left 200ms ease; }
+        .page-container.panel-collapsed { margin-left: 56px; }
+        
+        /* Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #D1D5DB; }
+        
+        /* Status badges */
+        .badge-lead { background: #e0f2fe; color: #0369a1; }
+        .badge-prospect { background: #fef3c7; color: #92400e; }
+        .badge-active { background: #dcfce7; color: #166534; }
+        .badge-inactive { background: #f4f4f5; color: #71717a; }
+        
+        /* Lead source tags */
+        .tag-website { background: #f3e8ff; color: #7c3aed; }
+        .tag-referral { background: #fce7f3; color: #be185d; }
+        .tag-walk-in { background: #ecfdf5; color: #047857; }
+        .tag-social { background: #fff7ed; color: #c2410c; }
+        
+        /* Table row hover */
+        .table-row:hover { background: #f9fafb; }
+        .table-row.selected { background: rgba(118, 192, 68, 0.08); }
+        
+        /* Checkbox */
+        .checkbox { width: 18px; height: 18px; border: 1px solid #e4e4e7; border-radius: 4px; cursor: pointer; appearance: none; background: white; }
+        .checkbox:checked { background: #76c044; border-color: #76c044; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center; }
+        
+        /* Dropdown */
+        .dropdown-menu { display: none; position: absolute; right: 0; top: 100%; min-width: 180px; background: white; border: 1px solid #e4e4e7; border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); z-index: 50; padding: 4px; }
+        .dropdown-menu.show { display: block; }
+        .dropdown-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 14px; border-radius: 6px; cursor: pointer; transition: background 150ms; }
+        .dropdown-item:hover { background: #f4f4f5; }
+        .dropdown-item.danger { color: #dc2626; }
+        
+        /* Filter tabs */
+        .filter-tab { padding: 8px 16px; font-size: 13px; font-weight: 500; color: #71717a; background: transparent; border: none; border-radius: 6px; cursor: pointer; transition: all 150ms; }
+        .filter-tab:hover { color: #09090b; }
+        .filter-tab.active { background: white; color: #09090b; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
+        
+        /* Pagination */
+        .page-btn { padding: 6px 12px; border: 1px solid #e4e4e7; border-radius: 6px; background: white; font-size: 13px; cursor: pointer; transition: all 150ms; }
+        .page-btn:hover:not(:disabled) { background: #f4f4f5; }
+        .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .page-btn.active { background: #76c044; color: white; border-color: #76c044; }
+        
+        /* Mobile card view */
+        @media (max-width: 1024px) {
+            .page-container { margin-left: 56px; }
+            .desktop-table { display: none; }
+            .mobile-cards { display: block; }
+        }
+        @media (min-width: 1025px) {
+            .mobile-cards { display: none; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Global Header -->
+    <header class="global-header">
+        <div class="flex items-center">
+            <a href="../dashboard/index.html">
+                <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto">
+            </a>
+        </div>
+        <div class="flex-1 ml-6 mr-4">
+            <button class="w-full max-w-md flex items-center space-x-3 px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors text-left">
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <span class="text-gray-400 flex-1 text-sm">Search...</span>
+                <kbd class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-200 rounded">⌘K</kbd>
+            </button>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button class="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                </svg>
+                <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
+            </button>
+            <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+                <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">RK</div>
+            </button>
+        </div>
+    </header>
+    
+    <!-- Full Rail Sidebar -->
+    <aside class="rail">
+        <div class="rail-top">
+            <!-- Home -->
+            <a href="../dashboard/index.html" class="rail-icon" title="Dashboard">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                <span class="tooltip">Dashboard</span>
+            </a>
+            
+            <!-- Sales & CRM (Active) -->
+            <a href="customers.html" class="rail-icon active" title="Sales & CRM">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <span class="badge">12</span>
+                <span class="tooltip">Sales & CRM</span>
+            </a>
+            
+            <!-- Quotations -->
+            <a href="../quotes/list.html" class="rail-icon" title="Quotations">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <span class="tooltip">Quotations</span>
+            </a>
+            
+            <!-- Projects -->
+            <a href="../dashboard/projects.html" class="rail-icon" title="Projects">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                </svg>
+                <span class="tooltip">Projects</span>
+            </a>
+            
+            <!-- Inventory -->
+            <a href="../dashboard/inventory.html" class="rail-icon" title="Inventory">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
+                <span class="tooltip">Inventory</span>
+            </a>
+            
+            <!-- Finance -->
+            <a href="../dashboard/finance.html" class="rail-icon" title="Finance">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                <span class="tooltip">Finance</span>
+            </a>
+            
+            <!-- Service -->
+            <a href="#" class="rail-icon" title="Service & AMC">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <span class="tooltip">Service & AMC</span>
+            </a>
+            
+            <!-- Analytics -->
+            <a href="#" class="rail-icon" title="Analytics">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                <span class="tooltip">Analytics</span>
+            </a>
+        </div>
+        
+        <div class="rail-bottom">
+            <!-- Toggle Panel -->
+            <div class="rail-icon" onclick="togglePanel()" id="panelToggleBtn" title="Toggle Panel">
+                <svg id="toggleIconExpand" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+                </svg>
+                <svg id="toggleIconCollapse" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+                </svg>
+                <span class="tooltip">Toggle Panel (⌘\)</span>
+            </div>
+            
+            <!-- Help -->
+            <a href="#" class="rail-icon" title="Help">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span class="tooltip">Help</span>
+            </a>
+        </div>
+        
+        <!-- User Avatar -->
+        <div class="rail-user">
+            <div class="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">RK</div>
+        </div>
+    </aside>
+    
+    <!-- CRM Panel -->
+    <aside id="panel" class="panel">
+        <div class="panel-header">
+            <span class="panel-title">Sales & CRM</span>
+            <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
+                </svg>
+            </button>
+        </div>
+        <div class="panel-content custom-scrollbar">
+            <!-- Customers -->
+            <div class="panel-section">
+                <div class="section-header">Customers</div>
+                <a href="customers.html" class="panel-item active">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span>All Customers</span>
+                    <span class="panel-badge">156</span>
+                </a>
+                <a href="customer-detail.html" class="panel-item">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    <span>Customer 360</span>
+                </a>
+            </div>
+            
+            <!-- Properties -->
+            <div class="panel-section">
+                <div class="section-header">Properties</div>
+                <a href="properties.html" class="panel-item">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    <span>All Properties</span>
+                    <span class="panel-badge">89</span>
+                </a>
+                <a href="properties.html?temp=hot" class="panel-item sub-item">
+                    <span class="status-dot hot"></span>
+                    <span>Hot</span>
+                    <span class="panel-badge error">5</span>
+                </a>
+                <a href="properties.html?temp=warm" class="panel-item sub-item">
+                    <span class="status-dot warm"></span>
+                    <span>Warm</span>
+                    <span class="panel-badge warning">18</span>
+                </a>
+                <a href="properties.html?temp=cold" class="panel-item sub-item">
+                    <span class="status-dot cold"></span>
+                    <span>Cold</span>
+                    <span class="panel-badge">24</span>
+                </a>
+                <a href="site-visits.html" class="panel-item">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span>Site Visits</span>
+                </a>
+            </div>
+            
+            <!-- Pipeline -->
+            <div class="panel-section">
+                <div class="section-header">Pipeline</div>
+                <a href="pipeline.html" class="panel-item">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    <span>Sales Pipeline</span>
+                </a>
+            </div>
+            
+            <!-- Follow-ups -->
+            <div class="panel-section">
+                <div class="section-header">Follow-ups</div>
+                <a href="followups.html" class="panel-item">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Today</span>
+                    <span class="panel-badge warning">8</span>
+                </a>
+                <a href="followups.html?filter=overdue" class="panel-item">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <span>Overdue</span>
+                    <span class="panel-badge error">3</span>
+                </a>
+                <a href="followups.html?filter=upcoming" class="panel-item">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    <span>Upcoming</span>
+                </a>
+            </div>
+        </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="page-container p-6">
+        <!-- Page Header -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">All Customers</h1>
+                <p class="text-gray-500 text-sm mt-1">Manage your customers and track their journey</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <!-- Export Dropdown -->
+                <div class="relative">
+                    <button onclick="toggleDropdown('exportDropdown')" class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                        Export
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="exportDropdown" class="dropdown-menu">
+                        <div class="dropdown-item">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Export as CSV
+                        </div>
+                        <div class="dropdown-item">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Export as Excel
+                        </div>
+                    </div>
+                </div>
+                <!-- Add Customer Button -->
+                <button class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    Add Customer
+                </button>
+            </div>
+        </div>
+        
+        <!-- Filters & Search -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-6">
+            <div class="p-4 flex flex-col lg:flex-row lg:items-center gap-4">
+                <!-- Search -->
+                <div class="relative flex-1 max-w-md">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" placeholder="Search by name, phone, email..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                </div>
+                
+                <!-- Status Tabs -->
+                <div class="flex items-center bg-gray-100 rounded-lg p-1">
+                    <button class="filter-tab active">All</button>
+                    <button class="filter-tab">Lead</button>
+                    <button class="filter-tab">Prospect</button>
+                    <button class="filter-tab">Active</button>
+                    <button class="filter-tab">Inactive</button>
+                </div>
+                
+                <!-- Lead Source Filter -->
+                <select class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary appearance-none bg-white pr-8 bg-no-repeat bg-right" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E&quot;); background-position: right 8px center;">
+                    <option>All Sources</option>
+                    <option>Website</option>
+                    <option>Referral</option>
+                    <option>Walk-in</option>
+                    <option>Social Media</option>
+                    <option>Exhibition</option>
+                </select>
+            </div>
+            
+            <!-- Bulk Actions (shown when items selected) -->
+            <div id="bulkActions" class="hidden px-4 py-3 bg-primary/5 border-t border-gray-100 flex items-center gap-4">
+                <span class="text-sm text-gray-600"><strong id="selectedCount">0</strong> selected</span>
+                <button class="text-sm text-gray-600 hover:text-gray-900">Change Status</button>
+                <button class="text-sm text-gray-600 hover:text-gray-900">Export Selected</button>
+                <button class="text-sm text-red-600 hover:text-red-700">Delete</button>
+                <button onclick="clearSelection()" class="ml-auto text-sm text-gray-500 hover:text-gray-700">Clear selection</button>
+            </div>
+        </div>
+        
+        <!-- Desktop Table -->
+        <div class="desktop-table bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="w-12 px-4 py-3">
+                            <input type="checkbox" class="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                        </th>
+                        <th class="px-4 py-3 text-left font-medium text-gray-500">Customer</th>
+                        <th class="px-4 py-3 text-left font-medium text-gray-500">Email</th>
+                        <th class="px-4 py-3 text-left font-medium text-gray-500">City</th>
+                        <th class="px-4 py-3 text-left font-medium text-gray-500">Properties</th>
+                        <th class="px-4 py-3 text-left font-medium text-gray-500">Lead Source</th>
+                        <th class="px-4 py-3 text-left font-medium text-gray-500">Status</th>
+                        <th class="px-4 py-3 text-left font-medium text-gray-500">Created</th>
+                        <th class="w-12 px-4 py-3"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    <!-- Row 1 -->
+                    <tr class="table-row">
+                        <td class="px-4 py-3"><input type="checkbox" class="checkbox row-checkbox" onchange="updateBulkActions()"></td>
+                        <td class="px-4 py-3">
+                            <a href="customer-detail.html" class="flex items-center gap-3 hover:text-primary">
+                                <div class="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold text-sm">RS</div>
+                                <div>
+                                    <div class="font-medium text-gray-900">Rajesh Sharma</div>
+                                    <div class="text-gray-500 text-xs">+91 98765 43210</div>
+                                </div>
+                            </a>
+                        </td>
+                        <td class="px-4 py-3 text-gray-600">rajesh.sharma@gmail.com</td>
+                        <td class="px-4 py-3 text-gray-600">Bangalore</td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">2</span></td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium tag-referral rounded-full">Referral</span></td>
+                        <td class="px-4 py-3"><span class="px-2.5 py-0.5 text-xs font-semibold badge-active rounded-full">Active</span></td>
+                        <td class="px-4 py-3 text-gray-500">Jan 15, 2026</td>
+                        <td class="px-4 py-3">
+                            <div class="relative">
+                                <button onclick="toggleDropdown('row1Dropdown')" class="p-1 hover:bg-gray-100 rounded">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                                </button>
+                                <div id="row1Dropdown" class="dropdown-menu">
+                                    <a href="customer-detail.html" class="dropdown-item">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        View Details
+                                    </a>
+                                    <div class="dropdown-item">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        Edit
+                                    </div>
+                                    <div class="dropdown-item">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                        Add Property
+                                    </div>
+                                    <div class="dropdown-item">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        Create Quote
+                                    </div>
+                                    <div class="h-px bg-gray-200 my-1"></div>
+                                    <div class="dropdown-item danger">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        Delete
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- Row 2 -->
+                    <tr class="table-row">
+                        <td class="px-4 py-3"><input type="checkbox" class="checkbox row-checkbox" onchange="updateBulkActions()"></td>
+                        <td class="px-4 py-3">
+                            <a href="customer-detail.html" class="flex items-center gap-3 hover:text-primary">
+                                <div class="w-9 h-9 rounded-full bg-secondary/15 flex items-center justify-center text-secondary font-semibold text-sm">PK</div>
+                                <div>
+                                    <div class="font-medium text-gray-900">Priya Kulkarni</div>
+                                    <div class="text-gray-500 text-xs">+91 87654 32109</div>
+                                </div>
+                            </a>
+                        </td>
+                        <td class="px-4 py-3 text-gray-600">priya.k@company.com</td>
+                        <td class="px-4 py-3 text-gray-600">Pune</td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">1</span></td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium tag-website rounded-full">Website</span></td>
+                        <td class="px-4 py-3"><span class="px-2.5 py-0.5 text-xs font-semibold badge-prospect rounded-full">Prospect</span></td>
+                        <td class="px-4 py-3 text-gray-500">Jan 18, 2026</td>
+                        <td class="px-4 py-3">
+                            <button class="p-1 hover:bg-gray-100 rounded">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <!-- Row 3 -->
+                    <tr class="table-row">
+                        <td class="px-4 py-3"><input type="checkbox" class="checkbox row-checkbox" onchange="updateBulkActions()"></td>
+                        <td class="px-4 py-3">
+                            <a href="customer-detail.html" class="flex items-center gap-3 hover:text-primary">
+                                <div class="w-9 h-9 rounded-full bg-warning/15 flex items-center justify-center text-warning font-semibold text-sm">AV</div>
+                                <div>
+                                    <div class="font-medium text-gray-900">Amit Verma</div>
+                                    <div class="text-gray-500 text-xs">+91 76543 21098</div>
+                                </div>
+                            </a>
+                        </td>
+                        <td class="px-4 py-3 text-gray-600">amit.verma@email.com</td>
+                        <td class="px-4 py-3 text-gray-600">Mumbai</td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">3</span></td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium tag-walk-in rounded-full">Walk-in</span></td>
+                        <td class="px-4 py-3"><span class="px-2.5 py-0.5 text-xs font-semibold badge-lead rounded-full">Lead</span></td>
+                        <td class="px-4 py-3 text-gray-500">Jan 20, 2026</td>
+                        <td class="px-4 py-3">
+                            <button class="p-1 hover:bg-gray-100 rounded">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <!-- Row 4 -->
+                    <tr class="table-row">
+                        <td class="px-4 py-3"><input type="checkbox" class="checkbox row-checkbox" onchange="updateBulkActions()"></td>
+                        <td class="px-4 py-3">
+                            <a href="customer-detail.html" class="flex items-center gap-3 hover:text-primary">
+                                <div class="w-9 h-9 rounded-full bg-error/15 flex items-center justify-center text-error font-semibold text-sm">SG</div>
+                                <div>
+                                    <div class="font-medium text-gray-900">Sneha Gupta</div>
+                                    <div class="text-gray-500 text-xs">+91 65432 10987</div>
+                                </div>
+                            </a>
+                        </td>
+                        <td class="px-4 py-3 text-gray-600">sneha.g@gmail.com</td>
+                        <td class="px-4 py-3 text-gray-600">Delhi</td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">1</span></td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium tag-social rounded-full">Social Media</span></td>
+                        <td class="px-4 py-3"><span class="px-2.5 py-0.5 text-xs font-semibold badge-active rounded-full">Active</span></td>
+                        <td class="px-4 py-3 text-gray-500">Jan 22, 2026</td>
+                        <td class="px-4 py-3">
+                            <button class="p-1 hover:bg-gray-100 rounded">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <!-- Row 5 -->
+                    <tr class="table-row">
+                        <td class="px-4 py-3"><input type="checkbox" class="checkbox row-checkbox" onchange="updateBulkActions()"></td>
+                        <td class="px-4 py-3">
+                            <a href="customer-detail.html" class="flex items-center gap-3 hover:text-primary">
+                                <div class="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold text-sm">MK</div>
+                                <div>
+                                    <div class="font-medium text-gray-900">Mukesh Kumar</div>
+                                    <div class="text-gray-500 text-xs">+91 54321 09876</div>
+                                </div>
+                            </a>
+                        </td>
+                        <td class="px-4 py-3 text-gray-600">mukesh.k@business.com</td>
+                        <td class="px-4 py-3 text-gray-600">Chennai</td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">0</span></td>
+                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium tag-referral rounded-full">Referral</span></td>
+                        <td class="px-4 py-3"><span class="px-2.5 py-0.5 text-xs font-semibold badge-inactive rounded-full">Inactive</span></td>
+                        <td class="px-4 py-3 text-gray-500">Jan 10, 2026</td>
+                        <td class="px-4 py-3">
+                            <button class="p-1 hover:bg-gray-100 rounded">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <!-- Pagination -->
+            <div class="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+                <span class="text-sm text-gray-500">Showing 1-5 of 156 customers</span>
+                <div class="flex gap-1">
+                    <button class="page-btn" disabled>Previous</button>
+                    <button class="page-btn active">1</button>
+                    <button class="page-btn">2</button>
+                    <button class="page-btn">3</button>
+                    <span class="px-2 py-1 text-gray-400">...</span>
+                    <button class="page-btn">32</button>
+                    <button class="page-btn">Next</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Cards View -->
+        <div class="mobile-cards space-y-3">
+            <!-- Card 1 -->
+            <div class="bg-white rounded-xl border border-gray-200 p-4">
+                <div class="flex items-start justify-between">
+                    <a href="customer-detail.html" class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold">RS</div>
+                        <div>
+                            <div class="font-medium text-gray-900">Rajesh Sharma</div>
+                            <div class="text-gray-500 text-sm">+91 98765 43210</div>
+                        </div>
+                    </a>
+                    <span class="px-2.5 py-0.5 text-xs font-semibold badge-active rounded-full">Active</span>
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">Bangalore</span>
+                    <span class="px-2 py-0.5 text-xs font-medium tag-referral rounded">Referral</span>
+                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">2 properties</span>
+                </div>
+                <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
+                    <span class="text-xs text-gray-500">Jan 15, 2026</span>
+                    <div class="flex gap-2">
+                        <button class="px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded">Edit</button>
+                        <a href="customer-detail.html" class="px-3 py-1 text-xs font-medium bg-primary text-white rounded">View</a>
+                    </div>
+                </div>
+            </div>
+            <!-- Card 2 -->
+            <div class="bg-white rounded-xl border border-gray-200 p-4">
+                <div class="flex items-start justify-between">
+                    <a href="customer-detail.html" class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-secondary/15 flex items-center justify-center text-secondary font-semibold">PK</div>
+                        <div>
+                            <div class="font-medium text-gray-900">Priya Kulkarni</div>
+                            <div class="text-gray-500 text-sm">+91 87654 32109</div>
+                        </div>
+                    </a>
+                    <span class="px-2.5 py-0.5 text-xs font-semibold badge-prospect rounded-full">Prospect</span>
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">Pune</span>
+                    <span class="px-2 py-0.5 text-xs font-medium tag-website rounded">Website</span>
+                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">1 property</span>
+                </div>
+                <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
+                    <span class="text-xs text-gray-500">Jan 18, 2026</span>
+                    <div class="flex gap-2">
+                        <button class="px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded">Edit</button>
+                        <a href="customer-detail.html" class="px-3 py-1 text-xs font-medium bg-primary text-white rounded">View</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        // Toggle dropdown
+        function toggleDropdown(id) {
+            const dropdown = document.getElementById(id);
+            const allDropdowns = document.querySelectorAll('.dropdown-menu');
+            
+            allDropdowns.forEach(d => {
+                if (d.id !== id) d.classList.remove('show');
+            });
+            
+            dropdown.classList.toggle('show');
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dropdown-menu') && !e.target.closest('button')) {
+                document.querySelectorAll('.dropdown-menu').forEach(d => d.classList.remove('show'));
+            }
+        });
+        
+        // Filter tabs
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        // Select all checkbox
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+            rowCheckboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+                cb.closest('.table-row').classList.toggle('selected', selectAll.checked);
+            });
+            updateBulkActions();
+        }
+        
+        // Update bulk actions visibility
+        function updateBulkActions() {
+            const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+            const bulkActions = document.getElementById('bulkActions');
+            const selectedCount = document.getElementById('selectedCount');
+            
+            if (checkedBoxes.length > 0) {
+                bulkActions.classList.remove('hidden');
+                selectedCount.textContent = checkedBoxes.length;
+            } else {
+                bulkActions.classList.add('hidden');
+            }
+            
+            // Update row highlighting
+            document.querySelectorAll('.row-checkbox').forEach(cb => {
+                cb.closest('.table-row').classList.toggle('selected', cb.checked);
+            });
+        }
+        
+        // Clear selection
+        function clearSelection() {
+            document.getElementById('selectAll').checked = false;
+            document.querySelectorAll('.row-checkbox').forEach(cb => {
+                cb.checked = false;
+                cb.closest('.table-row').classList.remove('selected');
+            });
+            document.getElementById('bulkActions').classList.add('hidden');
+        }
+        
+        // Panel toggle functionality (matches dashboard behavior)
+        let panelVisible = localStorage.getItem('panelVisible') !== 'false'; // Default to visible
+        
+        function togglePanel() {
+            panelVisible = !panelVisible;
+            updatePanelState();
+            localStorage.setItem('panelVisible', panelVisible);
+        }
+        
+        function updatePanelState() {
+            const panel = document.getElementById('panel');
+            const mainContent = document.querySelector('.page-container');
+            const expandIcon = document.getElementById('toggleIconExpand');
+            const collapseIcon = document.getElementById('toggleIconCollapse');
+            
+            if (panelVisible) {
+                panel.classList.remove('collapsed');
+                mainContent.classList.remove('panel-collapsed');
+                if (expandIcon) expandIcon.classList.add('hidden');
+                if (collapseIcon) collapseIcon.classList.remove('hidden');
+            } else {
+                panel.classList.add('collapsed');
+                mainContent.classList.add('panel-collapsed');
+                if (expandIcon) expandIcon.classList.remove('hidden');
+                if (collapseIcon) collapseIcon.classList.add('hidden');
+            }
+        }
+        
+        // Initialize panel state on load
+        document.addEventListener('DOMContentLoaded', function() {
+            updatePanelState();
+        });
+        
+        // Keyboard shortcut for panel toggle
+        document.addEventListener('keydown', function(e) {
+            if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+                e.preventDefault();
+                togglePanel();
+            }
+        });
+    </script>
+</body>
+</html>

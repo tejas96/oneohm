@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer 360 - Rajesh Sharma - OneOhm Solar EPC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        'primary-dark': '#5ea031',
+                        secondary: '#0d74b8',
+                        warning: '#EAB308',
+                        error: '#DC2626',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .page-container { margin-left: 296px; margin-top: 56px; min-height: calc(100vh - 56px); background: #f4f4f5; }
+        
+        /* Inline editing */
+        .editable { display: flex; align-items: center; gap: 8px; padding: 4px 8px; margin: -4px -8px; border-radius: 6px; cursor: pointer; transition: background 150ms; }
+        .editable:hover { background: #f4f4f5; }
+        .editable .edit-icon { opacity: 0; transition: opacity 150ms; }
+        .editable:hover .edit-icon { opacity: 1; }
+        .editable-input { width: 100%; padding: 6px 10px; border: 1px solid #76c044; border-radius: 6px; font-size: 14px; outline: none; box-shadow: 0 0 0 3px rgba(118, 192, 68, 0.1); }
+        
+        /* Tabs */
+        .tab-btn { padding: 12px 16px; font-size: 14px; font-weight: 500; color: #71717a; border-bottom: 2px solid transparent; transition: all 150ms; }
+        .tab-btn:hover { color: #09090b; }
+        .tab-btn.active { color: #76c044; border-bottom-color: #76c044; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Temperature dots */
+        .temp-hot { background: #ef4444; }
+        .temp-warm { background: #eab308; }
+        .temp-cold { background: #60a5fa; }
+        
+        /* Timeline */
+        .timeline { position: relative; padding-left: 24px; }
+        .timeline::before { content: ''; position: absolute; left: 7px; top: 8px; bottom: 8px; width: 2px; background: #e4e4e7; }
+        .timeline-item { position: relative; padding-bottom: 16px; }
+        .timeline-item:last-child { padding-bottom: 0; }
+        .timeline-dot { position: absolute; left: -24px; top: 4px; width: 16px; height: 16px; border-radius: 50%; background: white; border: 2px solid #e4e4e7; }
+        .timeline-dot.primary { border-color: #76c044; background: #76c044; }
+        .timeline-dot.secondary { border-color: #0d74b8; background: #0d74b8; }
+        
+        /* Property cards */
+        .property-card { transition: all 150ms; border: 2px solid transparent; }
+        .property-card:hover { border-color: #76c044; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        
+        @media (max-width: 1024px) {
+            .page-container { margin-left: 56px; }
+            .three-col { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 640px) {
+            .page-container { margin-left: 0; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 z-50 flex items-center px-4">
+        <a href="../dashboard/index.html" class="flex items-center">
+            <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto">
+        </a>
+        <div class="flex-1 flex justify-center">
+            <div class="w-full max-w-md">
+                <div class="flex items-center px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                    <svg class="w-4 h-4 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <span class="text-gray-400 text-sm">Search...</span>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button class="p-2 hover:bg-gray-100 rounded-lg"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></button>
+            <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">RK</div>
+        </div>
+    </header>
+    
+    <!-- Sidebar Rail -->
+    <aside class="fixed left-0 top-14 w-14 h-[calc(100vh-56px)] bg-white border-r border-gray-200 flex flex-col items-center py-2 z-40">
+        <a href="../dashboard/index.html" class="w-11 h-11 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-lg mb-1" title="Dashboard">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        </a>
+        <a href="customers.html" class="w-11 h-11 flex items-center justify-center text-primary bg-primary/10 rounded-lg border-l-2 border-primary" title="Sales & CRM">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </a>
+    </aside>
+    
+    <!-- CRM Sub-nav Panel -->
+    <aside class="fixed left-14 top-14 w-60 h-[calc(100vh-56px)] bg-white border-r border-gray-200 z-30 overflow-y-auto">
+        <div class="p-4 border-b border-gray-100">
+            <h2 class="font-semibold text-gray-800">Sales & CRM</h2>
+        </div>
+        <nav class="p-2">
+            <div class="mb-4">
+                <p class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Customers</p>
+                <a href="customers.html" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    All Customers
+                </a>
+                <a href="customer-detail.html" class="flex items-center gap-3 px-3 py-2 text-sm font-medium text-primary bg-primary/10 rounded-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    Customer 360
+                </a>
+            </div>
+            <div class="mb-4">
+                <p class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Properties</p>
+                <a href="properties.html" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    All Properties
+                </a>
+            </div>
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="page-container p-6">
+        <!-- Breadcrumb -->
+        <nav class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+            <a href="customers.html" class="hover:text-gray-900">Customers</a>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            <span class="text-gray-900 font-medium">Rajesh Sharma</span>
+        </nav>
+        
+        <!-- Page Header -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+            <div class="flex items-center gap-4">
+                <div class="w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center text-primary font-bold text-2xl">RS</div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                        Rajesh Sharma
+                        <span class="px-2.5 py-0.5 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Active</span>
+                    </h1>
+                    <p class="text-gray-500">Customer since Jan 15, 2026</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    Edit
+                </button>
+                <button class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    Add Property
+                </button>
+                <button class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Create Quote
+                </button>
+            </div>
+        </div>
+        
+        <!-- Three Column Layout -->
+        <div class="three-col grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+            <!-- Left Column: Profile Card -->
+            <div class="lg:col-span-3">
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <div class="p-4 border-b border-gray-100">
+                        <h3 class="font-semibold text-gray-900">Contact Information</h3>
+                    </div>
+                    <div class="p-4 space-y-4">
+                        <!-- Phone (inline editable) -->
+                        <div>
+                            <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</label>
+                            <div class="editable mt-1" onclick="startEdit(this, '+91 98765 43210')">
+                                <span class="text-gray-900">+91 98765 43210</span>
+                                <svg class="w-4 h-4 text-gray-400 edit-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            </div>
+                        </div>
+                        <!-- Email -->
+                        <div>
+                            <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Email</label>
+                            <div class="editable mt-1" onclick="startEdit(this, 'rajesh.sharma@gmail.com')">
+                                <span class="text-gray-900">rajesh.sharma@gmail.com</span>
+                                <svg class="w-4 h-4 text-gray-400 edit-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            </div>
+                        </div>
+                        <!-- Alternate Phone -->
+                        <div>
+                            <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Alternate Phone</label>
+                            <div class="editable mt-1" onclick="startEdit(this, '+91 98765 00000')">
+                                <span class="text-gray-900">+91 98765 00000</span>
+                                <svg class="w-4 h-4 text-gray-400 edit-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            </div>
+                        </div>
+                        <div class="h-px bg-gray-100"></div>
+                        <!-- Billing Address -->
+                        <div>
+                            <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Billing Address</label>
+                            <div class="editable mt-1" onclick="startEdit(this, '123, MG Road, Koramangala')">
+                                <span class="text-gray-900">123, MG Road, Koramangala</span>
+                                <svg class="w-4 h-4 text-gray-400 edit-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            </div>
+                            <p class="text-sm text-gray-600 mt-1">Bangalore, Karnataka - 560034</p>
+                        </div>
+                        <div class="h-px bg-gray-100"></div>
+                        <!-- Lead Source -->
+                        <div>
+                            <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Lead Source</label>
+                            <div class="mt-1">
+                                <span class="px-2.5 py-1 text-xs font-medium bg-pink-100 text-pink-700 rounded-full">Referral</span>
+                            </div>
+                        </div>
+                        <!-- Created By -->
+                        <div>
+                            <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</label>
+                            <div class="flex items-center gap-2 mt-1">
+                                <div class="w-6 h-6 rounded-full bg-secondary/15 flex items-center justify-center text-secondary font-semibold text-xs">AK</div>
+                                <span class="text-sm text-gray-900">Arun Kumar</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Center Column: Properties -->
+            <div class="lg:col-span-5">
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+                        <h3 class="font-semibold text-gray-900">Properties <span class="text-gray-400 font-normal">(2)</span></h3>
+                        <button class="text-sm text-primary font-medium hover:underline">+ Add Property</button>
+                    </div>
+                    <div class="p-4 space-y-3">
+                        <!-- Property Card 1 -->
+                        <a href="property-detail.html" class="property-card block bg-gray-50 rounded-lg p-4 cursor-pointer">
+                            <div class="flex items-start justify-between mb-2">
+                                <div>
+                                    <h4 class="font-medium text-gray-900">Koramangala Residence</h4>
+                                    <p class="text-sm text-gray-500">456, 5th Block, Koramangala</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full temp-hot"></span>
+                                    <span class="text-xs font-medium text-red-600">Hot</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <span class="px-2 py-0.5 text-xs bg-white border border-gray-200 rounded">Residential</span>
+                                <span class="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded flex items-center gap-1">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    Wants Loan
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-500">₹8,500/month</span>
+                                <span class="px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 rounded">Quote Sent</span>
+                            </div>
+                        </a>
+                        
+                        <!-- Property Card 2 -->
+                        <a href="property-detail.html" class="property-card block bg-gray-50 rounded-lg p-4 cursor-pointer">
+                            <div class="flex items-start justify-between mb-2">
+                                <div>
+                                    <h4 class="font-medium text-gray-900">HSR Layout Office</h4>
+                                    <p class="text-sm text-gray-500">789, Sector 4, HSR Layout</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full temp-warm"></span>
+                                    <span class="text-xs font-medium text-yellow-600">Warm</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <span class="px-2 py-0.5 text-xs bg-white border border-gray-200 rounded">Commercial</span>
+                            </div>
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-500">₹25,000/month</span>
+                                <span class="px-2 py-0.5 text-xs font-medium bg-gray-200 text-gray-700 rounded">No Quote</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column: Activity Timeline -->
+            <div class="lg:col-span-4">
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <div class="p-4 border-b border-gray-100">
+                        <h3 class="font-semibold text-gray-900">Recent Activity</h3>
+                    </div>
+                    <div class="p-4">
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <div class="timeline-dot primary"></div>
+                                <div>
+                                    <p class="text-sm text-gray-900">Quote <span class="font-medium">QT-2026-0042</span> sent to customer</p>
+                                    <p class="text-xs text-gray-500 mt-1">2 hours ago</p>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot secondary"></div>
+                                <div>
+                                    <p class="text-sm text-gray-900">Site visit completed for <span class="font-medium">Koramangala Residence</span></p>
+                                    <p class="text-xs text-gray-500 mt-1">Yesterday at 2:30 PM</p>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div>
+                                    <p class="text-sm text-gray-900">Property <span class="font-medium">HSR Layout Office</span> added</p>
+                                    <p class="text-xs text-gray-500 mt-1">Jan 20, 2026</p>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div>
+                                    <p class="text-sm text-gray-900">Lead temperature changed to <span class="font-medium text-red-600">Hot</span></p>
+                                    <p class="text-xs text-gray-500 mt-1">Jan 18, 2026</p>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div>
+                                    <p class="text-sm text-gray-900">Customer created by <span class="font-medium">Arun Kumar</span></p>
+                                    <p class="text-xs text-gray-500 mt-1">Jan 15, 2026</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tabs Section -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div class="border-b border-gray-200 flex overflow-x-auto">
+                <button class="tab-btn active" onclick="switchTab('quotes')">Quotes</button>
+                <button class="tab-btn" onclick="switchTab('documents')">Documents</button>
+                <button class="tab-btn" onclick="switchTab('projects')">Projects</button>
+                <button class="tab-btn" onclick="switchTab('activity')">All Activity</button>
+            </div>
+            
+            <!-- Quotes Tab -->
+            <div id="tab-quotes" class="tab-content active p-4">
+                <table class="w-full text-sm">
+                    <thead class="border-b border-gray-200">
+                        <tr>
+                            <th class="text-left py-3 px-2 font-medium text-gray-500">Quote #</th>
+                            <th class="text-left py-3 px-2 font-medium text-gray-500">Property</th>
+                            <th class="text-left py-3 px-2 font-medium text-gray-500">System Size</th>
+                            <th class="text-left py-3 px-2 font-medium text-gray-500">Total Value</th>
+                            <th class="text-left py-3 px-2 font-medium text-gray-500">Status</th>
+                            <th class="text-left py-3 px-2 font-medium text-gray-500">Date</th>
+                            <th class="py-3 px-2"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        <tr class="hover:bg-gray-50">
+                            <td class="py-3 px-2 font-medium text-primary">QT-2026-0042</td>
+                            <td class="py-3 px-2 text-gray-600">Koramangala Residence</td>
+                            <td class="py-3 px-2 text-gray-600">5 kW</td>
+                            <td class="py-3 px-2 text-gray-900 font-medium">₹3,25,000</td>
+                            <td class="py-3 px-2"><span class="px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">Sent</span></td>
+                            <td class="py-3 px-2 text-gray-500">Jan 28, 2026</td>
+                            <td class="py-3 px-2">
+                                <a href="../quotes/detail.html" class="text-primary text-sm hover:underline">View</a>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-50">
+                            <td class="py-3 px-2 font-medium text-primary">QT-2026-0038</td>
+                            <td class="py-3 px-2 text-gray-600">Koramangala Residence</td>
+                            <td class="py-3 px-2 text-gray-600">3 kW</td>
+                            <td class="py-3 px-2 text-gray-900 font-medium">₹2,10,000</td>
+                            <td class="py-3 px-2"><span class="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded-full">Rejected</span></td>
+                            <td class="py-3 px-2 text-gray-500">Jan 22, 2026</td>
+                            <td class="py-3 px-2">
+                                <a href="../quotes/detail.html" class="text-primary text-sm hover:underline">View</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Documents Tab -->
+            <div id="tab-documents" class="tab-content p-4">
+                <div class="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center mb-4">
+                    <svg class="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                    <p class="text-gray-600 mb-2">Drag and drop files here, or click to browse</p>
+                    <button class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium">Upload Document</button>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zm-3 9v6h2v-6h3l-4-4-4 4h3z"/></svg>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">Electricity_Bill_Jan.pdf</p>
+                                <p class="text-xs text-gray-500">245 KB • Uploaded Jan 18, 2026</p>
+                            </div>
+                        </div>
+                        <button class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-8 h-8 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM9 13h6v2H9v-2zm0 4h6v2H9v-2z"/></svg>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">Site_Photos.zip</p>
+                                <p class="text-xs text-gray-500">12.4 MB • Uploaded Jan 20, 2026</p>
+                            </div>
+                        </div>
+                        <button class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Projects Tab -->
+            <div id="tab-projects" class="tab-content p-8">
+                <div class="text-center">
+                    <svg class="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    <h3 class="text-gray-900 font-medium mb-1">No projects yet</h3>
+                    <p class="text-gray-500 text-sm mb-4">Projects will appear here once a quote is accepted</p>
+                </div>
+            </div>
+            
+            <!-- Activity Tab -->
+            <div id="tab-activity" class="tab-content p-4">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-dot primary"></div>
+                        <div>
+                            <p class="text-sm text-gray-900"><span class="font-medium">Quote QT-2026-0042</span> sent to customer via email</p>
+                            <p class="text-xs text-gray-500 mt-1">Jan 28, 2026 at 10:30 AM • by Ravi Kumar</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div>
+                            <p class="text-sm text-gray-900"><span class="font-medium">Quote QT-2026-0042</span> created with system size 5 kW</p>
+                            <p class="text-xs text-gray-500 mt-1">Jan 28, 2026 at 9:15 AM • by Ravi Kumar</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot secondary"></div>
+                        <div>
+                            <p class="text-sm text-gray-900"><span class="font-medium">Site visit</span> completed for Koramangala Residence</p>
+                            <p class="text-xs text-gray-500 mt-1">Jan 27, 2026 at 2:30 PM • by Field Team</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div>
+                            <p class="text-sm text-gray-900">Document <span class="font-medium">Site_Photos.zip</span> uploaded</p>
+                            <p class="text-xs text-gray-500 mt-1">Jan 20, 2026 at 4:00 PM • by Arun Kumar</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div>
+                            <p class="text-sm text-gray-900">Property <span class="font-medium">HSR Layout Office</span> added</p>
+                            <p class="text-xs text-gray-500 mt-1">Jan 20, 2026 at 11:00 AM • by Arun Kumar</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        // Tab switching
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+        
+        // Inline editing (simplified demo)
+        function startEdit(element, currentValue) {
+            const span = element.querySelector('span');
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentValue;
+            input.className = 'editable-input';
+            
+            element.innerHTML = '';
+            element.appendChild(input);
+            input.focus();
+            input.select();
+            
+            input.addEventListener('blur', () => finishEdit(element, input.value));
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') finishEdit(element, input.value);
+                if (e.key === 'Escape') finishEdit(element, currentValue);
+            });
+        }
+        
+        function finishEdit(element, value) {
+            element.innerHTML = `
+                <span class="text-gray-900">${value}</span>
+                <svg class="w-4 h-4 text-gray-400 edit-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+            `;
+            element.onclick = () => startEdit(element, value);
+        }
+    </script>
+</body>
+</html>

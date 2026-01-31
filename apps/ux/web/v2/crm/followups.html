@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Follow-ups - OneOhm Solar EPC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#76c044',
+                        'primary-dark': '#5ea031',
+                        secondary: '#0d74b8',
+                        warning: '#EAB308',
+                        error: '#DC2626',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .page-container { margin-left: 296px; margin-top: 56px; min-height: calc(100vh - 56px); background: #f4f4f5; }
+        
+        /* Tabs */
+        .followup-tab { padding: 12px 20px; font-size: 14px; font-weight: 500; color: #71717a; border-bottom: 2px solid transparent; transition: all 150ms; display: flex; align-items: center; gap: 8px; }
+        .followup-tab:hover { color: #09090b; }
+        .followup-tab.active { color: #76c044; border-bottom-color: #76c044; }
+        .followup-tab .badge { padding: 2px 8px; font-size: 11px; font-weight: 600; border-radius: 9999px; }
+        .followup-tab.active .badge { background: rgba(118, 192, 68, 0.15); color: #76c044; }
+        .followup-tab .badge.overdue { background: #fee2e2; color: #dc2626; }
+        
+        /* Temperature dots */
+        .temp-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .temp-dot.hot { background: #ef4444; }
+        .temp-dot.warm { background: #eab308; }
+        .temp-dot.cold { background: #60a5fa; }
+        
+        /* Follow-up item */
+        .followup-item { background: white; border: 1px solid #e4e4e7; border-radius: 12px; padding: 16px; transition: all 150ms; }
+        .followup-item:hover { border-color: #76c044; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
+        .followup-item.overdue { border-left: 4px solid #dc2626; }
+        
+        @media (max-width: 1024px) {
+            .page-container { margin-left: 56px; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 z-50 flex items-center px-4">
+        <a href="../dashboard/index.html" class="flex items-center">
+            <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto">
+        </a>
+        <div class="flex-1 flex justify-center">
+            <div class="w-full max-w-md">
+                <div class="flex items-center px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                    <svg class="w-4 h-4 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <span class="text-gray-400 text-sm">Search...</span>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button class="p-2 hover:bg-gray-100 rounded-lg"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></button>
+            <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">RK</div>
+        </div>
+    </header>
+    
+    <!-- Sidebar Rail -->
+    <aside class="fixed left-0 top-14 w-14 h-[calc(100vh-56px)] bg-white border-r border-gray-200 flex flex-col items-center py-2 z-40">
+        <a href="../dashboard/index.html" class="w-11 h-11 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-lg mb-1" title="Dashboard">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        </a>
+        <a href="customers.html" class="w-11 h-11 flex items-center justify-center text-primary bg-primary/10 rounded-lg border-l-2 border-primary" title="Sales & CRM">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </a>
+    </aside>
+    
+    <!-- CRM Sub-nav Panel -->
+    <aside class="fixed left-14 top-14 w-60 h-[calc(100vh-56px)] bg-white border-r border-gray-200 z-30 overflow-y-auto">
+        <div class="p-4 border-b border-gray-100">
+            <h2 class="font-semibold text-gray-800">Sales & CRM</h2>
+        </div>
+        <nav class="p-2">
+            <div class="mb-4">
+                <p class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Customers</p>
+                <a href="customers.html" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    All Customers
+                </a>
+            </div>
+            <div class="mb-4">
+                <p class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Properties</p>
+                <a href="properties.html" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    All Properties
+                </a>
+            </div>
+            <div class="mb-4">
+                <p class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Pipeline</p>
+                <a href="pipeline.html" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    Sales Pipeline
+                </a>
+            </div>
+            <div>
+                <p class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Follow-ups</p>
+                <a href="followups.html" class="flex items-center gap-3 px-3 py-2 text-sm font-medium text-primary bg-primary/10 rounded-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Today
+                    <span class="ml-auto px-2 py-0.5 text-xs font-semibold bg-yellow-100 text-yellow-700 rounded-full">8</span>
+                </a>
+                <a href="followups.html?filter=overdue" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    Overdue
+                    <span class="ml-auto px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-700 rounded-full">3</span>
+                </a>
+                <a href="followups.html?filter=upcoming" class="flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    Upcoming
+                    <span class="ml-auto px-2 py-0.5 text-xs font-semibold bg-gray-200 text-gray-600 rounded-full">15</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="page-container p-6">
+        <!-- Page Header -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Follow-ups</h1>
+                <p class="text-gray-500 text-sm mt-1">Stay on top of your customer follow-ups</p>
+            </div>
+        </div>
+        
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white rounded-xl border border-gray-200 p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">Today</p>
+                        <p class="text-2xl font-bold text-gray-900">8</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl border border-red-200 p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">Overdue</p>
+                        <p class="text-2xl font-bold text-red-600">3</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl border border-gray-200 p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">This Week</p>
+                        <p class="text-2xl font-bold text-gray-900">15</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div class="border-b border-gray-200 flex">
+                <button class="followup-tab active" onclick="switchTab('today')">
+                    Today
+                    <span class="badge bg-gray-200 text-gray-600">8</span>
+                </button>
+                <button class="followup-tab" onclick="switchTab('overdue')">
+                    Overdue
+                    <span class="badge overdue">3</span>
+                </button>
+                <button class="followup-tab" onclick="switchTab('upcoming')">
+                    Upcoming
+                    <span class="badge bg-gray-200 text-gray-600">15</span>
+                </button>
+            </div>
+            
+            <!-- Today Tab -->
+            <div id="tab-today" class="tab-content active p-4">
+                <div class="space-y-3">
+                    <!-- Item 1 -->
+                    <div class="followup-item">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold">RS</div>
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <a href="customer-detail.html" class="font-medium text-gray-900 hover:text-primary">Rajesh Sharma</a>
+                                        <span class="temp-dot hot"></span>
+                                        <span class="text-xs text-red-600 font-medium">Hot</span>
+                                    </div>
+                                    <a href="property-detail.html" class="text-sm text-gray-500 hover:text-gray-700">Koramangala Residence • 456, 5th Block</a>
+                                    <p class="text-sm text-gray-600 mt-2">Follow up on quote sent yesterday. Customer wants to discuss financing options.</p>
+                                </div>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <p class="text-sm font-medium text-yellow-600">Due today</p>
+                                <p class="text-xs text-gray-500 mt-1">10:00 AM</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+                            <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
+                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                Complete
+                            </button>
+                            <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">
+                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                Reschedule
+                            </button>
+                            <a href="../quotes/detail.html" class="px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg ml-auto">
+                                View Quote →
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Item 2 -->
+                    <div class="followup-item">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-full bg-secondary/15 flex items-center justify-center text-secondary font-semibold">PK</div>
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <a href="customer-detail.html" class="font-medium text-gray-900 hover:text-primary">Priya Kulkarni</a>
+                                        <span class="temp-dot hot"></span>
+                                        <span class="text-xs text-red-600 font-medium">Hot</span>
+                                    </div>
+                                    <a href="property-detail.html" class="text-sm text-gray-500 hover:text-gray-700">Jayanagar Villa • 234, 4th Block</a>
+                                    <p class="text-sm text-gray-600 mt-2">Confirm project start date. Customer accepted quote.</p>
+                                </div>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <p class="text-sm font-medium text-yellow-600">Due today</p>
+                                <p class="text-xs text-gray-500 mt-1">2:00 PM</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+                            <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Complete</button>
+                            <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Reschedule</button>
+                            <button class="px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg ml-auto">
+                                Create Project →
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Item 3 -->
+                    <div class="followup-item">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-full bg-warning/15 flex items-center justify-center text-warning font-semibold">AV</div>
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <a href="customer-detail.html" class="font-medium text-gray-900 hover:text-primary">Amit Verma</a>
+                                        <span class="temp-dot warm"></span>
+                                        <span class="text-xs text-yellow-600 font-medium">Warm</span>
+                                    </div>
+                                    <a href="property-detail.html" class="text-sm text-gray-500 hover:text-gray-700">HSR Layout Office • 789, Sector 4</a>
+                                    <p class="text-sm text-gray-600 mt-2">Schedule site visit for commercial property assessment.</p>
+                                </div>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <p class="text-sm font-medium text-yellow-600">Due today</p>
+                                <p class="text-xs text-gray-500 mt-1">4:30 PM</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+                            <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Complete</button>
+                            <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Reschedule</button>
+                            <button class="px-3 py-1.5 text-sm font-medium text-secondary hover:bg-secondary/10 rounded-lg ml-auto">
+                                Schedule Visit →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Overdue Tab -->
+            <div id="tab-overdue" class="tab-content p-4">
+                <div class="space-y-3">
+                    <!-- Overdue Item 1 -->
+                    <div class="followup-item overdue">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-full bg-error/15 flex items-center justify-center text-error font-semibold">SG</div>
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <a href="customer-detail.html" class="font-medium text-gray-900 hover:text-primary">Sneha Gupta</a>
+                                        <span class="temp-dot cold"></span>
+                                        <span class="text-xs text-blue-600 font-medium">Cold</span>
+                                    </div>
+                                    <a href="property-detail.html" class="text-sm text-gray-500 hover:text-gray-700">Whitefield Factory • Industrial Area</a>
+                                    <p class="text-sm text-gray-600 mt-2">Re-engage cold lead. Last contact was 2 weeks ago.</p>
+                                </div>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <p class="text-sm font-medium text-red-600">2 days overdue</p>
+                                <p class="text-xs text-gray-500 mt-1">Was Jan 29</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+                            <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Complete</button>
+                            <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Reschedule</button>
+                            <button class="px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg ml-auto">
+                                Create Quote →
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Overdue Item 2 -->
+                    <div class="followup-item overdue">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold">MK</div>
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <a href="customer-detail.html" class="font-medium text-gray-900 hover:text-primary">Mukesh Kumar</a>
+                                        <span class="temp-dot warm"></span>
+                                        <span class="text-xs text-yellow-600 font-medium">Warm</span>
+                                    </div>
+                                    <a href="property-detail.html" class="text-sm text-gray-500 hover:text-gray-700">Indiranagar Apartment • 100 Feet Road</a>
+                                    <p class="text-sm text-gray-600 mt-2">Customer viewed quote but hasn't responded. Follow up needed.</p>
+                                </div>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <p class="text-sm font-medium text-red-600">1 day overdue</p>
+                                <p class="text-xs text-gray-500 mt-1">Was Jan 30</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+                            <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Complete</button>
+                            <button class="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Reschedule</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Upcoming Tab -->
+            <div id="tab-upcoming" class="tab-content p-4">
+                <div class="space-y-3">
+                    <div class="followup-item">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-full bg-secondary/15 flex items-center justify-center text-secondary font-semibold">VR</div>
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="font-medium text-gray-900">Vikram Rao</span>
+                                        <span class="temp-dot warm"></span>
+                                        <span class="text-xs text-yellow-600 font-medium">Warm</span>
+                                    </div>
+                                    <span class="text-sm text-gray-500">Electronic City Residence</span>
+                                    <p class="text-sm text-gray-600 mt-2">Send revised quote with updated pricing.</p>
+                                </div>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <p class="text-sm font-medium text-gray-600">Tomorrow</p>
+                                <p class="text-xs text-gray-500 mt-1">Feb 1, 11:00 AM</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="followup-item">
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-start gap-4">
+                                <div class="w-10 h-10 rounded-full bg-warning/15 flex items-center justify-center text-warning font-semibold">NK</div>
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="font-medium text-gray-900">Neha Kapoor</span>
+                                        <span class="temp-dot cold"></span>
+                                        <span class="text-xs text-blue-600 font-medium">Cold</span>
+                                    </div>
+                                    <span class="text-sm text-gray-500">Marathahalli Apartment</span>
+                                    <p class="text-sm text-gray-600 mt-2">Initial outreach for new lead from website.</p>
+                                </div>
+                            </div>
+                            <div class="text-right flex-shrink-0">
+                                <p class="text-sm font-medium text-gray-600">Feb 3</p>
+                                <p class="text-xs text-gray-500 mt-1">9:00 AM</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.followup-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.closest('.followup-tab').classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById('tab-' + tabName).classList.add('active');
+        }
+        
+        // Initially show the content
+        document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+        document.querySelector('.tab-content.active').style.display = 'block';
+        
+        // Update tab display on click
+        document.querySelectorAll('.followup-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+                const activeTab = document.querySelector('.tab-content.active');
+                if (activeTab) activeTab.style.display = 'block';
+            });
+        });
+    </script>
+</body>
+</html>
