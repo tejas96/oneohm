@@ -41,6 +41,7 @@ import {
   SurveyService,
   TaskTemplateService,
 } from './services';
+import { CustomersModule } from '../customers/customers.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { QuotesModule } from '../quotes/quotes.module';
 
@@ -63,6 +64,7 @@ import { QuotesModule } from '../quotes/quotes.module';
     ]),
     OrganizationsModule,
     QuotesModule,
+    CustomersModule,
   ],
   controllers: [
     ProjectController,

@@ -159,7 +159,8 @@ export class SiteVisitRepository {
    * Update a site visit
    */
   async update(id: string, updates: Partial<SiteVisitEntity>): Promise<SiteVisitEntity | null> {
-    await this.repository.update({ id }, updates);
+    // Use type assertion to avoid TypeScript recursion issues with circular entity references
+    await this.repository.update({ id }, updates as Record<string, unknown>);
     return this.findById(id);
   }
 

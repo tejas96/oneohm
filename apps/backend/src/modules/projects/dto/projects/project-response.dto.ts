@@ -1,48 +1,52 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  ProjectPriority,
-  ProjectStatus,
-  type GpsCoordinates,
-  type ProjectMetadata,
-} from '@oneohm-epc/shared-types';
+import { ProjectPriority, ProjectStatus, type ProjectMetadata } from '@oneohm-epc/shared-types';
 import { Expose, Type } from 'class-transformer';
 
 import { MaterialResponseDto } from '../materials/material-response.dto';
 import { MilestoneResponseDto } from '../milestones/milestone-response.dto';
 import { SurveyResponseDto } from '../surveys/survey-response.dto';
+import { CustomerPropertyResponseDto } from '../../../customers/dto/customer-property-response.dto';
 
 /**
  * Project Response DTO
  * Serialized response for project entities
+ *
+ * Note: organizationId, customerId, siteAddress, and siteCoordinates are
+ * available via the nested property relation:
+ * - property.organizationId
+ * - property.customerId
+ * - property.address
+ * - property.locationCoordinates
+ *
+ * Business Rule: One property can have only one project (OneToOne relationship)
  */
 export class ProjectResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()
   id!: string;
 
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiProperty({
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Property ID (customer/org/address derived from property)',
+  })
   @Expose()
-  organizationId!: string;
+  propertyId!: string;
 
-  @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiProperty({
+    type: () => CustomerPropertyResponseDto,
+    description: 'Property with address, customer, and organization details',
+  })
   @Expose()
-  quoteId?: string;
-
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
-  @Expose()
-  customerId!: string;
-
-  @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
-  @Expose()
-  projectManagerId?: string;
-
-  @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
-  @Expose()
-  leadTechnicianId?: string;
+  @Type(() => CustomerPropertyResponseDto)
+  property!: CustomerPropertyResponseDto;
 
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()
   createdBy!: string;
+
+  @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Expose()
+  updatedBy?: string;
 
   @ApiProperty({ example: 'PRJ-ONEOHM-2025-0001' })
   @Expose()
@@ -55,16 +59,6 @@ export class ProjectResponseDto {
   @ApiPropertyOptional({ example: '5kW rooftop solar installation' })
   @Expose()
   description?: string;
-
-  @ApiProperty({ example: '123 Solar Street, Green City, GC 12345' })
-  @Expose()
-  siteAddress!: string;
-
-  @ApiPropertyOptional({
-    example: { latitude: 28.6139, longitude: 77.209 },
-  })
-  @Expose()
-  siteCoordinates?: GpsCoordinates;
 
   @ApiProperty({ example: 5.5 })
   @Expose()
@@ -96,19 +90,11 @@ export class ProjectResponseDto {
 
   @ApiPropertyOptional({ example: '2025-02-01' })
   @Expose()
-  plannedStartDate?: Date;
+  startDate?: Date;
 
   @ApiPropertyOptional({ example: '2025-03-15' })
   @Expose()
-  plannedEndDate?: Date;
-
-  @ApiPropertyOptional({ example: '2025-02-03' })
-  @Expose()
-  actualStartDate?: Date;
-
-  @ApiPropertyOptional({ example: null })
-  @Expose()
-  actualEndDate?: Date;
+  endDate?: Date;
 
   @ApiPropertyOptional({ example: 350000 })
   @Expose()

@@ -1,6 +1,6 @@
 import { UserStatus } from '@oneohm-epc/shared-types';
 import * as bcrypt from 'bcrypt';
-import { BeforeInsert, BeforeUpdate, Column, Entity, Index } from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, DeleteDateColumn, Entity, Index } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
 
@@ -70,9 +70,9 @@ export class UserEntity extends BaseEntity {
   status!: UserStatus;
 
   // ===== SOFT DELETE =====
-  @Column({
+  @DeleteDateColumn({
     name: 'deleted_at',
-    type: 'timestamp with time zone',
+    type: 'timestamptz',
     nullable: true,
   })
   deletedAt?: Date;

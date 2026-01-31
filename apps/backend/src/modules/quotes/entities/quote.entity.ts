@@ -40,7 +40,7 @@ export class QuoteEntity extends BaseEntity {
   @Column({ type: 'uuid', name: 'property_id', nullable: true })
   propertyId?: string;
 
-  @ManyToOne(() => CustomerPropertyEntity, { nullable: true })
+  @ManyToOne(() => CustomerPropertyEntity, (property) => property.quotes, { nullable: true })
   @JoinColumn({ name: 'property_id' })
   property?: CustomerPropertyEntity;
 

@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ProjectPriority, ProjectStatus, QuoteStatus } from '@oneohm-epc/shared-types';
 
+import { CustomerPropertyRepository } from '../../customers/repositories/customer-property.repository';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { QuoteService } from '../../quotes/services/quote.service';
 import { CreateProjectDto, UpdateProjectDto } from '../dto';
@@ -10,6 +11,11 @@ import { MilestoneRepository, ProjectRepository } from '../repositories';
 /**
  * Project Service
  * Business logic for project management
+ *
+ * Note: organizationId and customerId are derived from property relation.
+ * All projects require a valid propertyId.
+ *
+ * Business Rule: One property can have only one project (OneToOne relationship)
  */
 @Injectable()
 export class ProjectService {
@@ -18,50 +24,63 @@ export class ProjectService {
     private readonly milestoneRepository: MilestoneRepository,
     private readonly organizationRepository: OrganizationRepository,
     private readonly quoteService: QuoteService,
+    private readonly customerPropertyRepository: CustomerPropertyRepository,
   ) {}
 
   /**
    * Create a new project
+   * Requires a valid propertyId that belongs to the organization
+   * Enforces OneToOne constraint: one property can have only one project
    */
   async create(
     organizationId: string,
     createDto: CreateProjectDto,
     createdBy: string,
   ): Promise<ProjectEntity> {
+    // Validate property exists and belongs to org
+    const property = await this.customerPropertyRepository.findByIdAndOrganization(
+      createDto.propertyId,
+      organizationId,
+    );
+    if (!property) {
+      throw new NotFoundException(`Property with ID ${createDto.propertyId} not found`);
+    }
+
+    // Check OneToOne constraint: property must not have existing project
+    const existingProject = await this.projectRepository.findOneByPropertyId(
+      createDto.propertyId,
+      organizationId,
+    );
+    if (existingProject) {
+      throw new BadRequestException(
+        `Property already has a project (${existingProject.projectNumber}). One property can only have one project.`,
+      );
+    }
+
     // Get organization for project number generation
     const org = await this.organizationRepository.findOneById(organizationId);
-
     if (!org) {
       throw new NotFoundException(`Organization with ID ${organizationId} not found`);
     }
 
     // Generate project number
-    const projectNumber = await this.generateProjectNumber(org.code);
+    const projectNumber = await this.generateProjectNumber(organizationId, org.code);
 
-    // Create project
+    // Create project - organizationId, customerId, siteAddress, siteCoordinates
+    // are derived from property relation
     const project = await this.projectRepository.create({
-      organizationId,
-      quoteId: createDto.quoteId,
-      customerId: createDto.customerId,
-      projectManagerId: createDto.projectManagerId,
-      leadTechnicianId: createDto.leadTechnicianId,
+      propertyId: createDto.propertyId,
       createdBy,
       projectNumber,
       name: createDto.name,
       description: createDto.description,
-      siteAddress: createDto.siteAddress,
-      siteCoordinates: createDto.siteCoordinates,
       systemSizeKw: createDto.systemSizeKw,
       projectType: createDto.projectType,
       status: createDto.status || ProjectStatus.DRAFT,
       priority: createDto.priority || ProjectPriority.NORMAL,
       progressPercentage: createDto.progressPercentage || 0,
-      plannedStartDate: createDto.plannedStartDate
-        ? new Date(createDto.plannedStartDate)
-        : undefined,
-      plannedEndDate: createDto.plannedEndDate ? new Date(createDto.plannedEndDate) : undefined,
-      actualStartDate: createDto.actualStartDate ? new Date(createDto.actualStartDate) : undefined,
-      actualEndDate: createDto.actualEndDate ? new Date(createDto.actualEndDate) : undefined,
+      startDate: createDto.startDate ? new Date(createDto.startDate) : undefined,
+      endDate: createDto.endDate ? new Date(createDto.endDate) : undefined,
       estimatedCost: createDto.estimatedCost,
       actualCost: createDto.actualCost,
       notes: createDto.notes,
@@ -82,8 +101,6 @@ export class ProjectService {
       status?: ProjectStatus;
       priority?: ProjectPriority;
       customerId?: string;
-      projectManagerId?: string;
-      quoteId?: string;
       projectType?: string;
       fromDate?: string;
       toDate?: string;
@@ -114,24 +131,23 @@ export class ProjectService {
 
   /**
    * Update a project
+   * Note: propertyId cannot be changed after creation
    */
   async update(
     id: string,
     organizationId: string,
     updateDto: UpdateProjectDto,
+    updatedBy: string,
   ): Promise<ProjectEntity> {
-    // Verify project exists
+    // Verify project exists (repository handles org validation via property)
     await this.projectRepository.findById(id, organizationId);
 
     // Prepare update data
     const updateData: Record<string, unknown> = {
       ...updateDto,
-      plannedStartDate: updateDto.plannedStartDate
-        ? new Date(updateDto.plannedStartDate)
-        : undefined,
-      plannedEndDate: updateDto.plannedEndDate ? new Date(updateDto.plannedEndDate) : undefined,
-      actualStartDate: updateDto.actualStartDate ? new Date(updateDto.actualStartDate) : undefined,
-      actualEndDate: updateDto.actualEndDate ? new Date(updateDto.actualEndDate) : undefined,
+      updatedBy,
+      startDate: updateDto.startDate ? new Date(updateDto.startDate) : undefined,
+      endDate: updateDto.endDate ? new Date(updateDto.endDate) : undefined,
     };
 
     // Remove undefined values
@@ -174,15 +190,17 @@ export class ProjectService {
     // Validate status transition
     this.validateStatusTransition(project.status, newStatus);
 
-    // Update actual dates based on status
+    // Update dates based on status
     const updateData: Record<string, unknown> = { status: newStatus };
 
-    if (newStatus === ProjectStatus.IN_PROGRESS && !project.actualStartDate) {
-      updateData.actualStartDate = new Date();
+    // Set startDate when project starts if not already set
+    if (newStatus === ProjectStatus.IN_PROGRESS && !project.startDate) {
+      updateData.startDate = new Date();
     }
 
-    if (newStatus === ProjectStatus.COMPLETED && !project.actualEndDate) {
-      updateData.actualEndDate = new Date();
+    // Set endDate and mark as 100% when completed
+    if (newStatus === ProjectStatus.COMPLETED && !project.endDate) {
+      updateData.endDate = new Date();
       updateData.progressPercentage = 100;
     }
 
@@ -223,14 +241,9 @@ export class ProjectService {
   }
 
   /**
-   * Find projects by quote
-   */
-  async findByQuote(quoteId: string, organizationId: string): Promise<ProjectEntity[]> {
-    return this.projectRepository.findByQuote(quoteId, organizationId);
-  }
-
-  /**
    * Convert a quote to a project
+   * Quote must have a propertyId assigned
+   * Enforces OneToOne constraint: one property can have only one project
    */
   async convertFromQuote(
     quoteId: string,
@@ -245,10 +258,22 @@ export class ProjectService {
       throw new BadRequestException('Only accepted quotes can be converted to projects');
     }
 
-    // Check if project already exists for this quote
-    const existingProjects = await this.projectRepository.findByQuote(quoteId, organizationId);
-    if (existingProjects.length > 0) {
-      throw new BadRequestException('A project already exists for this quote');
+    // Validate quote has propertyId - required for project creation
+    if (!quote.propertyId) {
+      throw new BadRequestException(
+        'Cannot convert quote to project: Quote must have a property assigned',
+      );
+    }
+
+    // Check OneToOne constraint: property must not have existing project
+    const existingProject = await this.projectRepository.findOneByPropertyId(
+      quote.propertyId,
+      organizationId,
+    );
+    if (existingProject) {
+      throw new BadRequestException(
+        `Property already has a project (${existingProject.projectNumber}). One property can only have one project.`,
+      );
     }
 
     // Get organization for project number generation
@@ -258,29 +283,26 @@ export class ProjectService {
     }
 
     // Generate project number
-    const projectNumber = await this.generateProjectNumber(org.code);
+    const projectNumber = await this.generateProjectNumber(organizationId, org.code);
 
     // Determine project type from quote
     const projectType = quote.projectType;
 
-    // Get customer name and site address from property or customer
+    // Get customer name from property or customer
     const customerName =
       quote.property?.consumerName ||
       `${quote.customer.firstName} ${quote.customer.lastName || ''}`.trim() ||
       'Customer';
-    const siteAddress = quote.property?.address || quote.customer.address || 'To be confirmed';
 
     // Create project from quote data
+    // Note: quoteId and projectManagerId are no longer stored on project entity
+    // Quote info is stored in metadata for reference
     const project = await this.projectRepository.create({
-      organizationId,
-      quoteId,
-      customerId: quote.customerId,
-      projectManagerId: quote.salesPersonId, // Sales person becomes project manager initially
+      propertyId: quote.propertyId,
       createdBy,
       projectNumber,
       name: `${customerName} - ${quote.systemSizeKw}kW Solar Installation`.trim(),
       description: `Solar installation project converted from quote ${quote.quoteNumber}`,
-      siteAddress,
       systemSizeKw: quote.systemSizeKw,
       projectType,
       status: ProjectStatus.DRAFT,
@@ -290,8 +312,8 @@ export class ProjectService {
       metadata: {
         convertedFromQuote: true,
         quoteNumber: quote.quoteNumber,
+        quoteId, // Store for reference
         originalQuoteAmount: quote.finalPrice,
-        propertyId: quote.propertyId,
       },
     });
 
@@ -300,19 +322,23 @@ export class ProjectService {
 
   /**
    * Generate unique project number
+   * @param organizationId - UUID of the organization (for querying)
+   * @param orgCode - Organization code (for project number prefix)
    */
-  private async generateProjectNumber(orgCode: string): Promise<string> {
+  private async generateProjectNumber(organizationId: string, orgCode: string): Promise<string> {
     const year = new Date().getFullYear();
     const prefix = `PRJ-${orgCode}-${year}`;
 
     // Find the last project number for this organization and year
-    const { projects } = await this.projectRepository.findAll(orgCode, 1, 1, {
-      search: prefix,
-    });
+    // IMPORTANT: This includes soft-deleted projects to ensure unique numbers
+    const lastProjectNumber = await this.projectRepository.findLastProjectNumber(
+      organizationId,
+      prefix,
+    );
 
     let nextNumber = 1;
-    if (projects.length > 0 && projects[0]?.projectNumber) {
-      const parts = projects[0].projectNumber.split('-');
+    if (lastProjectNumber) {
+      const parts = lastProjectNumber.split('-');
       const lastNumber = parts[parts.length - 1];
       if (lastNumber) {
         nextNumber = parseInt(lastNumber, 10) + 1;
