@@ -11,6 +11,7 @@ import { CustomerStatus, UserProfileType, UserStatus } from '@oneohm-epc/shared-
 
 import { UserRepository } from '../../users/repositories/user.repository';
 import { ProfileService } from '../../users/services/profile.service';
+import { AvailabilityResponseDto } from '../dto/check-availability.dto';
 import { CreateCustomerDto } from '../dto/create-customer.dto';
 import { UpdateCustomerDto } from '../dto/update-customer.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
@@ -279,5 +280,71 @@ export class CustomerService {
 
     this.logger.log(`Search found ${total} results for query="${query}"`);
     return { data, total };
+  }
+
+  /**
+   * Check if phone/email is already registered for a customer in this organization
+   * Used to prevent duplicate customer creation in the lead wizard
+   *
+   * @param organizationId - Organization to check in
+   * @param phone - Phone number to check (optional, with country code e.g. +919876543210)
+   * @param email - Email to check (optional)
+   * @param excludeCustomerId - Customer ID to exclude from check (for edit mode)
+   * @throws BadRequestException if neither phone nor email is provided
+   */
+  async checkAvailability(
+    organizationId: string,
+    phone?: string,
+    email?: string,
+    excludeCustomerId?: string,
+  ): Promise<AvailabilityResponseDto> {
+    // Validate that at least one of phone or email is provided
+    if (!phone && !email) {
+      throw new BadRequestException('At least one of phone or email is required');
+    }
+
+    this.logger.log(
+      `Checking availability: phone=${phone || 'N/A'}, email=${email || 'N/A'}, org=${organizationId}`,
+    );
+
+    const result: AvailabilityResponseDto = {
+      phoneExists: false,
+      emailExists: false,
+    };
+
+    // Check phone availability
+    if (phone) {
+      // Step 1: Find user by phone in the users table
+      const user = await this.userRepository.findByPhone(phone);
+
+      if (user) {
+        // Step 2: Check if this user has a customer profile in this organization
+        const existingProfile = await this.customerRepository.findByUserAndOrganization(
+          user.id,
+          organizationId,
+        );
+
+        // Phone exists if profile found AND it's not the excluded customer (edit mode)
+        if (existingProfile && existingProfile.id !== excludeCustomerId) {
+          result.phoneExists = true;
+          result.phoneError = 'This phone number is already registered';
+          this.logger.log(`Phone ${phone} already exists for customer ${existingProfile.id}`);
+        }
+      }
+    }
+
+    // Check email availability
+    if (email) {
+      const existingByEmail = await this.customerRepository.findByEmail(organizationId, email);
+
+      // Email exists if found AND it's not the excluded customer (edit mode)
+      if (existingByEmail && existingByEmail.id !== excludeCustomerId) {
+        result.emailExists = true;
+        result.emailError = 'This email is already registered';
+        this.logger.log(`Email ${email} already exists for customer ${existingByEmail.id}`);
+      }
+    }
+
+    return result;
   }
 }

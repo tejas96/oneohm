@@ -29,6 +29,8 @@ import { type CurrentUserType } from '../../auth/types';
 // import { RequirePermission } from '../../iam/decorators/require-permission.decorator';
 // import { PermissionGuard } from '../../iam/guards/permission.guard';
 import {
+  AvailabilityResponseDto,
+  CheckAvailabilityQueryDto,
   CreateCustomerDto,
   CustomerResponseDto,
   UpdateCustomerDto,
@@ -153,6 +155,54 @@ export class CustomerController {
     // Default: return all customers with proper pagination
     const result = await this.customerService.findAll(organizationId, page, limit);
     return toPaginatedResponse(CustomerResponseDto, result.data, result.total, page, limit);
+  }
+
+  /**
+   * Check if phone/email is already registered
+   * Used to prevent duplicate customer creation in the lead wizard
+   * NOTE: This MUST be defined BEFORE :id routes to avoid route conflicts
+   */
+  // @RequirePermission('customers:read') // TODO: Re-enable
+  @Get('check-availability')
+  @ApiOperation({
+    summary: 'Check phone/email availability',
+    description:
+      'Check if a phone number or email is already registered for a customer in this organization. Used to prevent duplicate customer creation. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+  })
+  @ApiQuery({
+    name: 'phone',
+    required: false,
+    type: String,
+    description: 'Phone number to check (with country code, e.g., +919876543210)',
+  })
+  @ApiQuery({
+    name: 'email',
+    required: false,
+    type: String,
+    description: 'Email address to check',
+  })
+  @ApiQuery({
+    name: 'excludeCustomerId',
+    required: false,
+    type: String,
+    description: 'Customer ID to exclude from check (for edit mode)',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Availability check result',
+    type: AvailabilityResponseDto,
+  })
+  async checkAvailability(
+    @OrganizationContext() organizationId: string,
+    @Query() queryDto: CheckAvailabilityQueryDto,
+    @CurrentUser() _currentUser: CurrentUserType,
+  ): Promise<AvailabilityResponseDto> {
+    return this.customerService.checkAvailability(
+      organizationId,
+      queryDto.phone,
+      queryDto.email,
+      queryDto.excludeCustomerId,
+    );
   }
 
   /**
