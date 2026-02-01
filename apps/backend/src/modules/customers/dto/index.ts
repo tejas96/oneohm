@@ -3,6 +3,7 @@ export * from './create-customer.dto';
 export * from './update-customer.dto';
 export * from './update-customer-status.dto';
 export * from './customer-response.dto';
+export * from './check-availability.dto';
 
 // Customer Property DTOs
 export * from './create-customer-property.dto';
