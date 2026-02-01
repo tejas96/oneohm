@@ -127,3 +127,40 @@ export interface TaskChecklistItem {
 export interface TaskChecklist {
   items: TaskChecklistItem[];
 }
+
+/**
+ * Project
+ * Represents a solar installation project
+ *
+ * Note: organizationId, customerId, siteAddress, and siteCoordinates are
+ * derived from the required property relation:
+ * - property.organizationId
+ * - property.customerId
+ * - property.address
+ * - property.locationCoordinates
+ *
+ * Business Rule: One property can have only one project (OneToOne relationship)
+ */
+export interface Project {
+  id: string;
+  propertyId: string; // Required - customer/org/address derived from property (OneToOne)
+  createdBy: string;
+  updatedBy?: string;
+  projectNumber: string;
+  name: string;
+  description?: string;
+  systemSizeKw: number;
+  projectType: string;
+  status: string;
+  priority: string;
+  progressPercentage: number;
+  startDate?: string;
+  endDate?: string;
+  estimatedCost?: number;
+  actualCost?: number;
+  notes?: string;
+  metadata?: ProjectMetadata;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+}

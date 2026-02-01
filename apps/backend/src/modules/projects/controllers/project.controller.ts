@@ -31,6 +31,8 @@ import { ProjectService } from '../services/project.service';
 /**
  * Project Controller
  * Handles HTTP requests for project management
+ *
+ * Business Rule: One property can have only one project (OneToOne relationship)
  */
 @ApiTags('Projects & Installation')
 @ApiBearerAuth()
@@ -45,7 +47,8 @@ export class ProjectController {
   @Post()
   @ApiCreate({
     summary: 'Create a new project',
-    description: 'Creates a new solar installation project',
+    description:
+      'Creates a new solar installation project. Note: One property can only have one project.',
     responseType: ProjectResponseDto,
   })
   async create(
@@ -96,18 +99,6 @@ export class ProjectController {
     description: 'Filter by customer ID',
   })
   @ApiQuery({
-    name: 'projectManagerId',
-    required: false,
-    type: String,
-    description: 'Filter by project manager ID',
-  })
-  @ApiQuery({
-    name: 'quoteId',
-    required: false,
-    type: String,
-    description: 'Filter by quote ID',
-  })
-  @ApiQuery({
     name: 'projectType',
     required: false,
     type: String,
@@ -139,8 +130,6 @@ export class ProjectController {
     @Query('status') status?: ProjectStatus,
     @Query('priority') priority?: ProjectPriority,
     @Query('customerId') customerId?: string,
-    @Query('projectManagerId') projectManagerId?: string,
-    @Query('quoteId') quoteId?: string,
     @Query('projectType') projectType?: string,
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
@@ -153,8 +142,6 @@ export class ProjectController {
       status,
       priority,
       customerId,
-      projectManagerId,
-      quoteId,
       projectType,
       fromDate,
       toDate,
@@ -210,7 +197,7 @@ export class ProjectController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateProjectDto,
   ): Promise<ProjectResponseDto> {
-    const project = await this.projectService.update(id, organizationId, updateDto);
+    const project = await this.projectService.update(id, organizationId, updateDto, currentUser.id);
 
     return plainToInstance(ProjectResponseDto, project, {
       excludeExtraneousValues: true,
@@ -287,7 +274,8 @@ export class ProjectController {
   @Post('convert-from-quote/:quoteId')
   @ApiOperation({
     summary: 'Convert quote to project',
-    description: 'Create a new project from an approved/accepted quote',
+    description:
+      'Create a new project from an approved/accepted quote. Note: One property can only have one project.',
   })
   async convertFromQuote(
     @OrganizationContext() organizationId: string,

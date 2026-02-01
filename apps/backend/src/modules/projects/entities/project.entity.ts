@@ -1,61 +1,36 @@
 import {
   ProjectPriority,
   ProjectStatus,
-  type GpsCoordinates,
   type ProjectMetadata,
 } from '@oneohm-epc/shared-types';
-import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';
 
 import { ProjectMaterialEntity } from './project-material.entity';
 import { ProjectMilestoneEntity } from './project-milestone.entity';
 import { SiteSurveyEntity } from './site-survey.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
-import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
-import { OrganizationEntity } from '../../organizations/entities/organization.entity';
-import { QuoteEntity } from '../../quotes/entities/quote.entity';
+import { CustomerPropertyEntity } from '../../customers/entities/customer-property.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
  * Project Entity
  * Represents a solar installation project from quote acceptance to handover
+ *
+ * Note: organizationId, customerId, siteAddress, and siteCoordinates are derived
+ * from the required property relation (property.organizationId, property.customerId,
+ * property.address, property.locationCoordinates)
+ *
+ * Business Rule: One Property can have only ONE Project (OneToOne relationship)
  */
 @Entity('projects')
 export class ProjectEntity extends BaseEntity {
   // ==================== Relations ====================
-  @Column({ type: 'uuid', name: 'organization_id' })
-  organizationId!: string;
+  @Column({ type: 'uuid', name: 'property_id' })
+  propertyId!: string;
 
-  @ManyToOne(() => OrganizationEntity)
-  @JoinColumn({ name: 'organization_id' })
-  organization!: OrganizationEntity;
-
-  @Column({ type: 'uuid', name: 'quote_id', nullable: true })
-  quoteId?: string;
-
-  @ManyToOne(() => QuoteEntity, { nullable: true })
-  @JoinColumn({ name: 'quote_id' })
-  quote?: QuoteEntity;
-
-  @Column({ type: 'uuid', name: 'customer_id' })
-  customerId!: string;
-
-  @ManyToOne(() => CustomerProfileEntity)
-  @JoinColumn({ name: 'customer_id' })
-  customer!: CustomerProfileEntity;
-
-  @Column({ type: 'uuid', name: 'project_manager_id', nullable: true })
-  projectManagerId?: string;
-
-  @ManyToOne(() => UserEntity, { nullable: true })
-  @JoinColumn({ name: 'project_manager_id' })
-  projectManager?: UserEntity;
-
-  @Column({ type: 'uuid', name: 'lead_technician_id', nullable: true })
-  leadTechnicianId?: string;
-
-  @ManyToOne(() => UserEntity, { nullable: true })
-  @JoinColumn({ name: 'lead_technician_id' })
-  leadTechnician?: UserEntity;
+  @OneToOne(() => CustomerPropertyEntity, (property) => property.project)
+  @JoinColumn({ name: 'property_id' })
+  property!: CustomerPropertyEntity;
 
   @Column({ type: 'uuid', name: 'created_by' })
   createdBy!: string;
@@ -63,6 +38,13 @@ export class ProjectEntity extends BaseEntity {
   @ManyToOne(() => UserEntity)
   @JoinColumn({ name: 'created_by' })
   creator!: UserEntity;
+
+  @Column({ type: 'uuid', name: 'updated_by', nullable: true })
+  updatedBy?: string;
+
+  @ManyToOne(() => UserEntity, { nullable: true })
+  @JoinColumn({ name: 'updated_by' })
+  updater?: UserEntity;
 
   // Child relations
   @OneToMany(() => ProjectMilestoneEntity, (milestone) => milestone.project)
@@ -84,13 +66,7 @@ export class ProjectEntity extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   description?: string;
 
-  // ==================== Site Details ====================
-  @Column({ type: 'text', name: 'site_address' })
-  siteAddress!: string;
-
-  @Column({ type: 'jsonb', name: 'site_coordinates', nullable: true })
-  siteCoordinates?: GpsCoordinates;
-
+  // ==================== System Details ====================
   @Column({ type: 'decimal', precision: 10, scale: 2, name: 'system_size_kw' })
   systemSizeKw!: number;
 
@@ -116,17 +92,11 @@ export class ProjectEntity extends BaseEntity {
   progressPercentage!: number;
 
   // ==================== Dates ====================
-  @Column({ type: 'date', nullable: true, name: 'planned_start_date' })
-  plannedStartDate?: Date;
+  @Column({ type: 'date', nullable: true, name: 'start_date' })
+  startDate?: Date;
 
-  @Column({ type: 'date', nullable: true, name: 'planned_end_date' })
-  plannedEndDate?: Date;
-
-  @Column({ type: 'date', nullable: true, name: 'actual_start_date' })
-  actualStartDate?: Date;
-
-  @Column({ type: 'date', nullable: true, name: 'actual_end_date' })
-  actualEndDate?: Date;
+  @Column({ type: 'date', nullable: true, name: 'end_date' })
+  endDate?: Date;
 
   // ==================== Financials ====================
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true, name: 'estimated_cost' })

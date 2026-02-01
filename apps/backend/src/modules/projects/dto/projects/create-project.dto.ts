@@ -17,40 +17,21 @@ import {
 
 /**
  * DTO for creating a new project
+ *
+ * Note: organizationId and customerId are derived from the required propertyId.
+ * Site address and coordinates are derived from property.address and property.locationCoordinates.
+ *
+ * Business Rule: One property can have only one project (OneToOne relationship)
  */
 export class CreateProjectDto {
   // ==================== Relations ====================
-  @ApiPropertyOptional({
-    example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'Quote ID (if project is derived from a quote)',
-  })
-  @IsUUID()
-  @IsOptional()
-  quoteId?: string;
-
   @ApiProperty({
     example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'Customer ID',
+    description: 'Property ID (required - customer and organization derived from property)',
   })
   @IsUUID()
   @IsNotEmpty()
-  customerId!: string;
-
-  @ApiPropertyOptional({
-    example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'Project manager ID',
-  })
-  @IsUUID()
-  @IsOptional()
-  projectManagerId?: string;
-
-  @ApiPropertyOptional({
-    example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'Lead technician ID',
-  })
-  @IsUUID()
-  @IsOptional()
-  leadTechnicianId?: string;
+  propertyId!: string;
 
   // ==================== Project Info ====================
   @ApiProperty({
@@ -70,23 +51,7 @@ export class CreateProjectDto {
   @IsOptional()
   description?: string;
 
-  // ==================== Site Details ====================
-  @ApiProperty({
-    example: '123 Solar Street, Green City, GC 12345',
-    description: 'Installation site address',
-  })
-  @IsString()
-  @IsNotEmpty()
-  siteAddress!: string;
-
-  @ApiPropertyOptional({
-    example: { latitude: 28.6139, longitude: 77.209, altitude: 216 },
-    description: 'GPS coordinates of the site',
-  })
-  @IsObject()
-  @IsOptional()
-  siteCoordinates?: { latitude: number; longitude: number; altitude?: number };
-
+  // ==================== System Details ====================
   @ApiProperty({
     example: 5.5,
     description: 'System size in kilowatts',
@@ -143,35 +108,19 @@ export class CreateProjectDto {
   // ==================== Dates ====================
   @ApiPropertyOptional({
     example: '2025-02-01',
-    description: 'Planned project start date',
+    description: 'Project start date',
   })
   @IsDateString()
   @IsOptional()
-  plannedStartDate?: string;
+  startDate?: string;
 
   @ApiPropertyOptional({
     example: '2025-03-15',
-    description: 'Planned project end date',
+    description: 'Project end date',
   })
   @IsDateString()
   @IsOptional()
-  plannedEndDate?: string;
-
-  @ApiPropertyOptional({
-    example: '2025-02-03',
-    description: 'Actual project start date',
-  })
-  @IsDateString()
-  @IsOptional()
-  actualStartDate?: string;
-
-  @ApiPropertyOptional({
-    example: '2025-03-20',
-    description: 'Actual project end date',
-  })
-  @IsDateString()
-  @IsOptional()
-  actualEndDate?: string;
+  endDate?: string;
 
   // ==================== Financials ====================
   @ApiPropertyOptional({

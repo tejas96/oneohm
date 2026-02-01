@@ -9,47 +9,19 @@ import {
   IsObject,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
   Min,
 } from 'class-validator';
 
 /**
  * DTO for updating an existing project
+ *
+ * Note: propertyId cannot be changed after creation since it determines
+ * the organization and customer associations, and enforces OneToOne relationship.
  */
 export class UpdateProjectDto {
-  // ==================== Relations ====================
-  @ApiPropertyOptional({
-    example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'Quote ID',
-  })
-  @IsUUID()
-  @IsOptional()
-  quoteId?: string;
-
-  @ApiPropertyOptional({
-    example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'Customer ID',
-  })
-  @IsUUID()
-  @IsOptional()
-  customerId?: string;
-
-  @ApiPropertyOptional({
-    example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'Project manager ID',
-  })
-  @IsUUID()
-  @IsOptional()
-  projectManagerId?: string;
-
-  @ApiPropertyOptional({
-    example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'Lead technician ID',
-  })
-  @IsUUID()
-  @IsOptional()
-  leadTechnicianId?: string;
+  // Note: propertyId is not updatable - it determines org/customer associations
+  // and enforces the OneToOne relationship with Property
 
   // ==================== Project Info ====================
   @ApiPropertyOptional({
@@ -69,23 +41,7 @@ export class UpdateProjectDto {
   @IsOptional()
   description?: string;
 
-  // ==================== Site Details ====================
-  @ApiPropertyOptional({
-    example: '123 Solar Street, Green City, GC 12345',
-    description: 'Installation site address',
-  })
-  @IsString()
-  @IsOptional()
-  siteAddress?: string;
-
-  @ApiPropertyOptional({
-    example: { latitude: 28.6139, longitude: 77.209, altitude: 216 },
-    description: 'GPS coordinates of the site',
-  })
-  @IsObject()
-  @IsOptional()
-  siteCoordinates?: { latitude: number; longitude: number; altitude?: number };
-
+  // ==================== System Details ====================
   @ApiPropertyOptional({
     example: 5.5,
     description: 'System size in kilowatts',
@@ -139,35 +95,19 @@ export class UpdateProjectDto {
   // ==================== Dates ====================
   @ApiPropertyOptional({
     example: '2025-02-01',
-    description: 'Planned project start date',
+    description: 'Project start date',
   })
   @IsDateString()
   @IsOptional()
-  plannedStartDate?: string;
+  startDate?: string;
 
   @ApiPropertyOptional({
     example: '2025-03-15',
-    description: 'Planned project end date',
+    description: 'Project end date',
   })
   @IsDateString()
   @IsOptional()
-  plannedEndDate?: string;
-
-  @ApiPropertyOptional({
-    example: '2025-02-03',
-    description: 'Actual project start date',
-  })
-  @IsDateString()
-  @IsOptional()
-  actualStartDate?: string;
-
-  @ApiPropertyOptional({
-    example: '2025-03-20',
-    description: 'Actual project end date',
-  })
-  @IsDateString()
-  @IsOptional()
-  actualEndDate?: string;
+  endDate?: string;
 
   // ==================== Financials ====================
   @ApiPropertyOptional({

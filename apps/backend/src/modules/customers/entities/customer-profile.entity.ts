@@ -91,6 +91,14 @@ export class CustomerProfileEntity extends BaseEntity {
   @Column({ name: 'created_by', type: 'uuid', nullable: true })
   createdBy?: string;
 
+  @ManyToOne(() => UserEntity, { createForeignKeyConstraints: false })
+  @JoinColumn({ name: 'created_by' })
+  creator?: UserEntity;
+
   @Column({ name: 'updated_by', type: 'uuid', nullable: true })
   updatedBy?: string;
+
+  @ManyToOne(() => UserEntity, { createForeignKeyConstraints: false })
+  @JoinColumn({ name: 'updated_by' })
+  updater?: UserEntity;
 }
