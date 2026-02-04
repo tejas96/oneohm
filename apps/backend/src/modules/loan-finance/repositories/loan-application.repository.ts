@@ -28,7 +28,7 @@ export class LoanApplicationRepository {
   async findAll(): Promise<LoanApplicationEntity[]> {
     return this.repository.find({
       where: { deletedAt: IsNull() },
-      relations: ['property', 'customer', 'documents', 'createdByUser', 'updatedByUser'],
+      relations: ['property', 'customer', 'createdByUser', 'updatedByUser'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -36,7 +36,7 @@ export class LoanApplicationRepository {
   async findById(id: string): Promise<LoanApplicationEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['property', 'customer', 'documents', 'createdByUser', 'updatedByUser'],
+      relations: ['property', 'customer', 'createdByUser', 'updatedByUser'],
     });
   }
 
@@ -60,14 +60,14 @@ export class LoanApplicationRepository {
   async findByProperty(propertyId: string): Promise<LoanApplicationEntity | null> {
     return this.repository.findOne({
       where: { propertyId, deletedAt: IsNull() },
-      relations: ['property', 'customer', 'documents'],
+      relations: ['property', 'customer'],
     });
   }
 
   async findByCustomer(customerId: string): Promise<LoanApplicationEntity[]> {
     return this.repository.find({
       where: { customerId, deletedAt: IsNull() },
-      relations: ['property', 'documents'],
+      relations: ['property'],
       order: { createdAt: 'DESC' },
     });
   }

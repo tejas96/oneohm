@@ -5,8 +5,9 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { LeadTemperature, PropertyStatus, QuoteStatus } from '@oneohm-epc/shared-types';
+import { LeadTemperature, LoanStatus, PropertyStatus, QuoteStatus } from '@oneohm-epc/shared-types';
 
+import { LoanApplicationRepository } from '../../loan-finance/repositories/loan-application.repository';
 import { QuoteRepository } from '../../quotes/repositories/quote.repository';
 import { CreateCustomerPropertyDto } from '../dto/create-customer-property.dto';
 import { UpdateCustomerPropertyDto } from '../dto/update-customer-property.dto';
@@ -35,6 +36,7 @@ export class CustomerPropertyService {
     private readonly propertyRepository: CustomerPropertyRepository,
     private readonly customerRepository: CustomerProfileRepository,
     private readonly quoteRepository: QuoteRepository,
+    private readonly loanApplicationRepository: LoanApplicationRepository,
   ) {}
 
   /**
@@ -203,6 +205,19 @@ export class CustomerPropertyService {
 
     // Verify property exists and belongs to organization
     const property = await this.findById(id, organizationId);
+
+    // Validate loan status if trying to disable loan
+    if (property.wantsLoan === true && updateDto.wantsLoan === false) {
+      const loanApp = await this.loanApplicationRepository.findByProperty(id);
+      if (loanApp) {
+        const finalizedStatuses = [LoanStatus.APPROVED, LoanStatus.REJECTED];
+        if (finalizedStatuses.includes(loanApp.status)) {
+          throw new BadRequestException(
+            `Cannot disable loan financing. This loan has been ${loanApp.status} by the bank and cannot be modified.`,
+          );
+        }
+      }
+    }
 
     // Check for consumer number conflicts (if being updated)
     if (updateDto.consumerNumber && updateDto.consumerNumber !== property.consumerNumber) {

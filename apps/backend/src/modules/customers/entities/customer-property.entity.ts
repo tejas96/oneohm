@@ -1,6 +1,7 @@
 import {
   ConnectionType,
   LeadTemperature,
+  type PropertyDocument,
   PropertyStatus,
   PropertyType,
 } from '@oneohm-epc/shared-types';
@@ -142,6 +143,15 @@ export class CustomerPropertyEntity extends BaseEntity {
 
   @Column({ name: 'wants_loan', type: 'boolean', default: false })
   wantsLoan!: boolean;
+
+  // ==================== DOCUMENTS ====================
+  /**
+   * Property-level documents (identity docs, KYC, etc.)
+   * Stored as JSONB array: [{ url, tag, fileName }, ...]
+   * Used when customer uploads documents without loan application
+   */
+  @Column({ type: 'jsonb', default: [] })
+  documents!: PropertyDocument[];
 
   // ==================== STATUS ====================
   @Column({ type: 'varchar', length: 20, default: PropertyStatus.ACTIVE })

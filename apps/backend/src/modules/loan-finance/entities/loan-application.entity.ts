@@ -1,7 +1,6 @@
 import { LoanStatus } from '@oneohm-epc/shared-types';
-import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
-import { LoanDocumentEntity } from './loan-document.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
 import { CustomerPropertyEntity } from '../../customers/entities/customer-property.entity';
@@ -12,6 +11,9 @@ import { UserEntity } from '../../users/entities/user.entity';
  * Simplified for tracking customer loan interest with external banks.
  * We don't provide loans - customers get them from banks.
  * This entity tracks the loan reference and status for sales team follow-up.
+ *
+ * Note: Documents are now stored in CustomerPropertyEntity.documents JSONB column.
+ * Use property.documents.filter(d => d.isLoanDoc) to get loan documents.
  */
 @Entity('loan_applications')
 @Index(['propertyId'], { where: 'deleted_at IS NULL' })
@@ -35,9 +37,6 @@ export class LoanApplicationEntity extends BaseEntity {
 
   @Column({ name: 'customer_id', type: 'uuid' })
   customerId: string;
-
-  @OneToMany(() => LoanDocumentEntity, (document) => document.loanApplication)
-  documents: LoanDocumentEntity[];
 
   // ============================================
   // BANK REFERENCE (entered by finance team after customer applies)
