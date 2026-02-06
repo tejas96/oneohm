@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buttons | OneOhm Design System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { DEFAULT: '#76c044', dark: '#5ea031', light: '#8fd35f' },
+                        secondary: { DEFAULT: '#0d74b8', dark: '#0a5c92' },
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Button Base Styles */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: none;
+            outline: none;
+        }
+        
+        .btn:focus-visible {
+            outline: 2px solid #76c044;
+            outline-offset: 2px;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Sizes */
+        .btn-sm { height: 32px; padding: 0 12px; font-size: 13px; }
+        .btn-md { height: 40px; padding: 0 16px; font-size: 14px; }
+        .btn-lg { height: 48px; padding: 0 24px; font-size: 15px; }
+        .btn-xl { height: 48px; padding: 0 32px; font-size: 16px; }
+        
+        /* Primary */
+        .btn-primary {
+            background: #76c044;
+            color: white;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: #5ea031;
+        }
+        .btn-primary:active:not(:disabled) {
+            background: #4d8528;
+        }
+        
+        /* Secondary */
+        .btn-secondary {
+            background: #0d74b8;
+            color: white;
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background: #0a5c92;
+        }
+        .btn-secondary:active:not(:disabled) {
+            background: #084a76;
+        }
+        
+        /* Outline */
+        .btn-outline {
+            background: transparent;
+            border: 1.5px solid #e4e4e7;
+            color: #3f3f46;
+        }
+        .btn-outline:hover:not(:disabled) {
+            background: #f4f4f5;
+            border-color: #d4d4d8;
+        }
+        .btn-outline:active:not(:disabled) {
+            background: #e4e4e7;
+        }
+        
+        /* Ghost */
+        .btn-ghost {
+            background: transparent;
+            color: #52525b;
+        }
+        .btn-ghost:hover:not(:disabled) {
+            background: #f4f4f5;
+        }
+        .btn-ghost:active:not(:disabled) {
+            background: #e4e4e7;
+        }
+        
+        /* Danger */
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+        .btn-danger:hover:not(:disabled) {
+            background: #b91c1c;
+        }
+        .btn-danger:active:not(:disabled) {
+            background: #991b1b;
+        }
+        
+        /* Danger Outline */
+        .btn-danger-outline {
+            background: transparent;
+            border: 1.5px solid #fecaca;
+            color: #dc2626;
+        }
+        .btn-danger-outline:hover:not(:disabled) {
+            background: #fef2f2;
+            border-color: #fca5a5;
+        }
+        
+        /* Link */
+        .btn-link {
+            background: transparent;
+            color: #0d74b8;
+            padding: 0;
+            height: auto;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        .btn-link:hover:not(:disabled) {
+            color: #0a5c92;
+        }
+        
+        /* Success */
+        .btn-success {
+            background: #22c55e;
+            color: white;
+        }
+        .btn-success:hover:not(:disabled) {
+            background: #16a34a;
+        }
+        
+        /* Warning */
+        .btn-warning {
+            background: #eab308;
+            color: #422006;
+        }
+        .btn-warning:hover:not(:disabled) {
+            background: #ca8a04;
+        }
+        
+        /* Icon Only */
+        .btn-icon {
+            padding: 0;
+            aspect-ratio: 1;
+        }
+        .btn-icon.btn-sm { width: 32px; }
+        .btn-icon.btn-md { width: 40px; }
+        .btn-icon.btn-lg { width: 48px; }
+        
+        /* Loading Spinner */
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+        }
+        .btn-loading::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        .btn-primary.btn-loading::after,
+        .btn-secondary.btn-loading::after,
+        .btn-danger.btn-loading::after,
+        .btn-success.btn-loading::after {
+            border-color: white;
+            border-right-color: transparent;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Full Width */
+        .btn-full { width: 100%; }
+        
+        /* Rounded Pill */
+        .btn-pill { border-radius: 9999px; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-100 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-semibold text-gray-900">Buttons</h1>
+                        <p class="text-sm text-gray-500">OneOhm Design System</p>
+                    </div>
+                </div>
+                <a href="design-system.html" class="text-sm text-gray-500 hover:text-primary flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back to Design System
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        <!-- Variants Section -->
+        <section class="mb-12">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Variants</h2>
+            <p class="text-gray-500 mb-6">Different button styles for various use cases.</p>
+            
+            <div class="bg-white rounded-lg border border-gray-100 p-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                    <div class="text-center">
+                        <button class="btn btn-primary btn-md mb-3">Primary</button>
+                        <p class="text-xs text-gray-500">Main actions</p>
+                    </div>
+                    <div class="text-center">
+                        <button class="btn btn-secondary btn-md mb-3">Secondary</button>
+                        <p class="text-xs text-gray-500">Secondary actions</p>
+                    </div>
+                    <div class="text-center">
+                        <button class="btn btn-outline btn-md mb-3">Outline</button>
+                        <p class="text-xs text-gray-500">Neutral actions</p>
+                    </div>
+                    <div class="text-center">
+                        <button class="btn btn-ghost btn-md mb-3">Ghost</button>
+                        <p class="text-xs text-gray-500">Subtle actions</p>
+                    </div>
+                    <div class="text-center">
+                        <button class="btn btn-danger btn-md mb-3">Danger</button>
+                        <p class="text-xs text-gray-500">Destructive</p>
+                    </div>
+                    <div class="text-center">
+                        <button class="btn btn-success btn-md mb-3">Success</button>
+                        <p class="text-xs text-gray-500">Positive actions</p>
+                    </div>
+                    <div class="text-center">
+                        <button class="btn btn-link btn-md mb-3">Link Button</button>
+                        <p class="text-xs text-gray-500">Navigation</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sizes Section -->
+        <section class="mb-12">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Sizes</h2>
+            <p class="text-gray-500 mb-6">Buttons come in multiple sizes to fit different contexts.</p>
+            
+            <div class="bg-white rounded-lg border border-gray-100 p-4">
+                <div class="flex items-end gap-4 flex-wrap">
+                    <div class="text-center">
+                        <button class="btn btn-primary btn-sm mb-2">Small</button>
+                        <p class="text-xs text-gray-500">32px</p>
+                    </div>
+                    <div class="text-center">
+                        <button class="btn btn-primary btn-md mb-2">Medium</button>
+                        <p class="text-xs text-gray-500">40px</p>
+                    </div>
+                    <div class="text-center">
+                        <button class="btn btn-primary btn-lg mb-2">Large</button>
+                        <p class="text-xs text-gray-500">48px</p>
+                    </div>
+                    <div class="text-center">
+                        <button class="btn btn-primary btn-xl mb-2">Extra Large</button>
+                        <p class="text-xs text-gray-500">56px</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- With Icons Section -->
+        <section class="mb-12">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">With Icons</h2>
+            <p class="text-gray-500 mb-6">Buttons can include icons for better visual clarity.</p>
+            
+            <div class="bg-white rounded-lg border border-gray-100 p-4">
+                <div class="flex flex-wrap gap-4">
+                    <!-- Leading Icon -->
+                    <button class="btn btn-primary btn-md">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Add Customer
+                    </button>
+                    
+                    <!-- Trailing Icon -->
+                    <button class="btn btn-secondary btn-md">
+                        Download
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                    </button>
+                    
+                    <!-- Both Icons -->
+                    <button class="btn btn-outline btn-md">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                        </svg>
+                        Filter
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
+                    
+                    <!-- Danger with Icon -->
+                    <button class="btn btn-danger btn-md">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Icon Only Buttons -->
+        <section class="mb-12">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Icon Only</h2>
+            <p class="text-gray-500 mb-6">Square buttons containing only an icon.</p>
+            
+            <div class="bg-white rounded-lg border border-gray-100 p-4">
+                <div class="flex flex-wrap gap-4 items-end">
+                    <div class="text-center">
+                        <button class="btn btn-primary btn-icon btn-sm mb-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                        </button>
+                        <p class="text-xs text-gray-500">SM</p>
+                    </div>
+                    <div class="text-center">
+                        <button class="btn btn-secondary btn-icon btn-md mb-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                        </button>
+                        <p class="text-xs text-gray-500">MD</p>
+                    </div>
+                    <div class="text-center">
+                        <button class="btn btn-outline btn-icon btn-lg mb-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </button>
+                        <p class="text-xs text-gray-500">LG</p>
+                    </div>
+                    <div class="text-center">
+                        <button class="btn btn-ghost btn-icon btn-md mb-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+                            </svg>
+                        </button>
+                        <p class="text-xs text-gray-500">Ghost</p>
+                    </div>
+                    <div class="text-center">
+                        <button class="btn btn-danger btn-icon btn-md mb-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                        <p class="text-xs text-gray-500">Danger</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- States Section -->
+        <section class="mb-12">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">States</h2>
+            <p class="text-gray-500 mb-6">Different interactive states of buttons.</p>
+            
+            <div class="bg-white rounded-lg border border-gray-100 p-4">
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="text-center">
+                        <p class="text-xs text-gray-500 mb-3">Default</p>
+                        <button class="btn btn-primary btn-md">Button</button>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs text-gray-500 mb-3">Hover</p>
+                        <button class="btn btn-md" style="background: #5ea031; color: white;">Button</button>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs text-gray-500 mb-3">Active</p>
+                        <button class="btn btn-md" style="background: #4d8528; color: white;">Button</button>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs text-gray-500 mb-3">Disabled</p>
+                        <button class="btn btn-primary btn-md" disabled>Button</button>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs text-gray-500 mb-3">Loading</p>
+                        <button class="btn btn-primary btn-md btn-loading">Button</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pill Buttons -->
+        <section class="mb-12">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Pill Shape</h2>
+            <p class="text-gray-500 mb-6">Fully rounded buttons for a softer look.</p>
+            
+            <div class="bg-white rounded-lg border border-gray-100 p-4">
+                <div class="flex flex-wrap gap-4">
+                    <button class="btn btn-primary btn-md btn-pill">Primary Pill</button>
+                    <button class="btn btn-secondary btn-md btn-pill">Secondary Pill</button>
+                    <button class="btn btn-outline btn-md btn-pill">Outline Pill</button>
+                    <button class="btn btn-ghost btn-md btn-pill">Ghost Pill</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Full Width -->
+        <section class="mb-12">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Full Width</h2>
+            <p class="text-gray-500 mb-6">Buttons that span the full width of their container.</p>
+            
+            <div class="bg-white rounded-lg border border-gray-100 p-4 max-w-md">
+                <div class="space-y-3">
+                    <button class="btn btn-primary btn-lg btn-full">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                        </svg>
+                        Sign In
+                    </button>
+                    <button class="btn btn-outline btn-lg btn-full">Create Account</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Button Groups -->
+        <section class="mb-12">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Button Groups</h2>
+            <p class="text-gray-500 mb-6">Grouped buttons for related actions.</p>
+            
+            <div class="bg-white rounded-lg border border-gray-100 p-4">
+                <div class="space-y-6">
+                    <!-- Connected Group -->
+                    <div>
+                        <p class="text-sm text-gray-500 mb-3">Connected</p>
+                        <div class="inline-flex rounded-lg overflow-hidden border border-gray-100">
+                            <button class="btn btn-ghost btn-md rounded-none border-r border-gray-100 bg-gray-50">Day</button>
+                            <button class="btn btn-primary btn-md rounded-none">Week</button>
+                            <button class="btn btn-ghost btn-md rounded-none border-l border-gray-100">Month</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Spaced Group -->
+                    <div>
+                        <p class="text-sm text-gray-500 mb-3">Spaced</p>
+                        <div class="flex gap-2">
+                            <button class="btn btn-outline btn-md">Cancel</button>
+                            <button class="btn btn-primary btn-md">Save Changes</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Icon Group -->
+                    <div>
+                        <p class="text-sm text-gray-500 mb-3">Icon Group</p>
+                        <div class="inline-flex rounded-lg overflow-hidden border border-gray-100">
+                            <button class="btn btn-ghost btn-icon btn-md rounded-none border-r border-gray-100">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                                </svg>
+                            </button>
+                            <button class="btn btn-ghost btn-icon btn-md rounded-none border-r border-gray-100 bg-gray-100">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                                </svg>
+                            </button>
+                            <button class="btn btn-ghost btn-icon btn-md rounded-none">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CSS Code -->
+        <section class="mb-12">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">CSS Classes</h2>
+            <p class="text-gray-500 mb-6">Reference for all button classes.</p>
+            
+            <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                <pre class="text-sm text-gray-300 font-mono"><code>/* Base */
+.btn { ... }
+
+/* Variants */
+.btn-primary    /* Green background, white text */
+.btn-secondary  /* Blue background, white text */
+.btn-outline    /* Border only, transparent bg */
+.btn-ghost      /* No border, transparent bg */
+.btn-danger     /* Red background, white text */
+.btn-success    /* Green background, white text */
+.btn-warning    /* Amber background */
+.btn-link       /* Text with underline */
+
+/* Sizes */
+.btn-sm  /* 32px height */
+.btn-md  /* 40px height (default) */
+.btn-lg  /* 48px height */
+.btn-xl  /* 56px height */
+
+/* Modifiers */
+.btn-icon     /* Square, icon-only button */
+.btn-pill     /* Fully rounded */
+.btn-full     /* Full width */
+.btn-loading  /* Shows spinner */
+
+/* States */
+:disabled     /* Opacity 0.5, cursor not-allowed */
+:focus-visible/* Green outline ring */</code></pre>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

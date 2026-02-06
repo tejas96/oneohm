@@ -5,33 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verify OTP - OneOhm Solar EPC</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#76c044',
-                        'primary-dark': '#5ea031',
-                        'primary-light': '#8fd055',
-                        secondary: '#0d74b8',
-                        'secondary-dark': '#025580',
-                    }
+                        primary: {
+                            DEFAULT: '#76c044',
+                            dark: '#5ea031',
+                            light: '#8fd35f',
+                        },
+                        secondary: {
+                            DEFAULT: '#0d74b8',
+                            dark: '#0a5c92',
+                        },
+                        success: '#22c55e',
+                        warning: '#eab308',
+                        error: '#dc2626',
+                        info: '#0ea5e9',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
                 }
             }
         }
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', system-ui, sans-serif; }
+        
         .otp-input:focus {
             border-color: #76c044;
             box-shadow: 0 0 0 4px rgba(118, 192, 68, 0.1);
         }
+        
         .gradient-text {
             background: linear-gradient(135deg, #76c044 0%, #0d74b8 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+        }
+        
+        input:focus-visible, button:focus-visible {
+            outline: 2px solid #76c044;
+            outline-offset: 2px;
         }
     </style>
 </head>
@@ -49,7 +67,7 @@
         </div>
 
         <!-- OTP Card -->
-        <div class="bg-white rounded-2xl shadow-xl p-8">
+        <div class="bg-white rounded-lg shadow-xl p-8">
             <!-- Icon -->
             <div class="flex justify-center mb-6">
                 <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
@@ -61,7 +79,7 @@
 
             <!-- Heading -->
             <div class="text-center mb-8">
-                <h2 class="text-2xl font-bold text-gray-900 mb-2">Verify OTP</h2>
+                <h2 class="text-xl font-semibold text-gray-900 mb-2">Verify OTP</h2>
                 <p class="text-gray-500 text-sm">
                     Enter the 6-digit code sent to<br>
                     <span class="font-semibold text-gray-700">+91 98765 *****</span>
@@ -71,12 +89,12 @@
             <!-- OTP Input Boxes -->
             <form id="otpForm">
                 <div class="flex justify-center space-x-3 mb-6">
-                    <input type="text" maxlength="1" class="otp-input w-12 h-14 text-center text-2xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none transition-all" data-index="0">
-                    <input type="text" maxlength="1" class="otp-input w-12 h-14 text-center text-2xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none transition-all" data-index="1">
-                    <input type="text" maxlength="1" class="otp-input w-12 h-14 text-center text-2xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none transition-all" data-index="2">
-                    <input type="text" maxlength="1" class="otp-input w-12 h-14 text-center text-2xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none transition-all" data-index="3">
-                    <input type="text" maxlength="1" class="otp-input w-12 h-14 text-center text-2xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none transition-all" data-index="4">
-                    <input type="text" maxlength="1" class="otp-input w-12 h-14 text-center text-2xl font-bold border-2 border-gray-200 rounded-xl focus:outline-none transition-all" data-index="5">
+                    <input type="text" maxlength="1" class="otp-input w-12 h-14 text-center text-xl font-semibold border-2 border-gray-100 rounded-lg focus:outline-none transition-all" data-index="0">
+                    <input type="text" maxlength="1" class="otp-input w-12 h-14 text-center text-xl font-semibold border-2 border-gray-100 rounded-lg focus:outline-none transition-all" data-index="1">
+                    <input type="text" maxlength="1" class="otp-input w-12 h-14 text-center text-xl font-semibold border-2 border-gray-100 rounded-lg focus:outline-none transition-all" data-index="2">
+                    <input type="text" maxlength="1" class="otp-input w-12 h-14 text-center text-xl font-semibold border-2 border-gray-100 rounded-lg focus:outline-none transition-all" data-index="3">
+                    <input type="text" maxlength="1" class="otp-input w-12 h-14 text-center text-xl font-semibold border-2 border-gray-100 rounded-lg focus:outline-none transition-all" data-index="4">
+                    <input type="text" maxlength="1" class="otp-input w-12 h-14 text-center text-xl font-semibold border-2 border-gray-100 rounded-lg focus:outline-none transition-all" data-index="5">
                 </div>
 
                 <!-- Timer -->
@@ -87,15 +105,15 @@
                         </svg>
                         <span class="text-sm">Resend OTP in <span id="timer" class="font-semibold text-primary">00:45</span></span>
                     </div>
-                    <button type="button" id="resendBtn" class="hidden text-sm font-semibold text-primary hover:text-primary-dark transition-colors">
+                    <button type="button" id="resendBtn" class="hidden text-[13px] font-medium text-primary hover:text-primary-dark transition-colors">
                         Resend OTP
                     </button>
                 </div>
 
                 <!-- Verify Button -->
-                <button type="submit" class="w-full bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white font-semibold py-3.5 px-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] shadow-lg hover:shadow-xl mb-4">
+                <a href="../dashboard/index.html" class="block w-full text-center bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white font-semibold py-3.5 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] shadow-lg hover:shadow-xl mb-4">
                     Verify & Login
-                </button>
+                </a>
 
                 <!-- Change Number Link -->
                 <div class="text-center">

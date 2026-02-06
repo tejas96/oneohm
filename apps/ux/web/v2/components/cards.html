@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cards | OneOhm Design System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { DEFAULT: '#76c044', dark: '#5ea031' },
+                        secondary: { DEFAULT: '#0d74b8' },
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-100 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-semibold text-gray-900">Cards</h1>
+                        <p class="text-sm text-gray-500">OneOhm Design System</p>
+                    </div>
+                </div>
+                <a href="design-system.html" class="text-sm text-gray-500 hover:text-primary flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back to Design System
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        <!-- Basic Card -->
+        <section class="mb-12">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Basic Card</h2>
+            <p class="text-gray-500 mb-6">Simple container with padding and border.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white rounded-lg border border-gray-100 p-4">
+                    <p class="text-gray-700">This is a basic card with content. It provides a clean container for any type of content.</p>
+                </div>
+                <div class="bg-white rounded-lg border border-gray-100 p-4 shadow-sm">
+                    <p class="text-gray-700">A card with subtle shadow for slight elevation.</p>
+                </div>
+                <div class="bg-white rounded-lg border border-gray-100 p-4 shadow-md">
+                    <p class="text-gray-700">A card with medium shadow for more prominence.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Card with Header -->
+        <section class="mb-12">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Card with Header</h2>
+            <p class="text-gray-500 mb-6">Cards with a distinct header section.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100">
+                        <h3 class="font-semibold text-gray-900">Card Title</h3>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-gray-500">Card content goes here. The header is separated by a subtle border.</p>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Customer Details</h3>
+                            <p class="text-sm text-gray-500">Last updated 2 hours ago</p>
+                        </div>
+                        <button class="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded-lg transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-gray-500">Card with header containing title, subtitle, and action button.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Card with Footer -->
+        <section class="mb-12">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Card with Footer</h2>
+            <p class="text-gray-500 mb-6">Cards with action buttons in the footer.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
+                    <div class="p-6">
+                        <h3 class="font-semibold text-gray-900 mb-2">Confirm Action</h3>
+                        <p class="text-gray-500">Are you sure you want to proceed with this action?</p>
+                    </div>
+                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                        <button class="px-4 py-2 text-gray-500 hover:text-gray-900 text-sm font-medium">Cancel</button>
+                        <button class="px-3 py-1.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors">Confirm</button>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
+                    <div class="p-6">
+                        <h3 class="font-semibold text-gray-900 mb-2">Delete Quote</h3>
+                        <p class="text-gray-500">This action cannot be undone. All data will be permanently removed.</p>
+                    </div>
+                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+                        <span class="text-xs text-gray-500">Quote #QT-2024-0142</span>
+                        <div class="flex gap-3">
+                            <button class="px-4 py-2 text-gray-500 hover:text-gray-900 text-sm font-medium">Cancel</button>
+                            <button class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Full Card (Header + Body + Footer) -->
+        <section class="mb-12">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Full Card</h2>
+            <p class="text-gray-500 mb-6">Complete card with header, body, and footer.</p>
+            
+            <div class="max-w-md">
+                <div class="bg-white rounded-lg border border-gray-100 overflow-hidden shadow-sm">
+                    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                        <h3 class="font-semibold text-gray-900">Quote Summary</h3>
+                        <span class="px-2.5 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">Active</span>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Customer</span>
+                            <span class="font-medium text-gray-900">Rajesh Kumar</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">System Size</span>
+                            <span class="font-medium text-gray-900">5 kW</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Total Amount</span>
+                            <span class="font-semibold text-primary">₹3,25,000</span>
+                        </div>
+                    </div>
+                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3">
+                        <button class="flex-1 px-3 py-1.5 border border-gray-100 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-50 transition-colors">View Details</button>
+                        <button class="flex-1 px-3 py-1.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors">Download PDF</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Card -->
+        <section class="mb-12">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Interactive Card</h2>
+            <p class="text-gray-500 mb-6">Clickable cards with hover effects.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <a href="#" class="block bg-white rounded-lg border border-gray-100 p-4 hover:border-primary hover:shadow-md transition-all group">
+                    <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-1 group-hover:text-primary transition-colors">Customers</h3>
+                    <p class="text-sm text-gray-500">Manage all your customers and leads</p>
+                </a>
+                
+                <a href="#" class="block bg-white rounded-lg border border-gray-100 p-4 hover:border-primary hover:shadow-md transition-all group">
+                    <div class="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-secondary/20 transition-colors">
+                        <svg class="w-6 h-6 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-1 group-hover:text-secondary transition-colors">Quotes</h3>
+                    <p class="text-sm text-gray-500">Create and manage solar quotes</p>
+                </a>
+                
+                <a href="#" class="block bg-white rounded-lg border border-gray-100 p-4 hover:border-primary hover:shadow-md transition-all group">
+                    <div class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-amber-200 transition-colors">
+                        <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-1 group-hover:text-amber-600 transition-colors">Projects</h3>
+                    <p class="text-sm text-gray-500">Track ongoing installations</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- Stats Card -->
+        <section class="mb-12">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Stats Card</h2>
+            <p class="text-gray-500 mb-6">Dashboard-style cards for displaying metrics.</p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white rounded-lg border border-gray-100 p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                        </div>
+                        <span class="flex items-center text-xs font-medium text-green-600">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+                            </svg>
+                            12%
+                        </span>
+                    </div>
+                    <p class="text-xl font-semibold text-gray-900">1,248</p>
+                    <p class="text-sm text-gray-500">Total Customers</p>
+                </div>
+                
+                <div class="bg-white rounded-lg border border-gray-100 p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-10 h-10 bg-secondary/10 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                        </div>
+                        <span class="flex items-center text-xs font-medium text-green-600">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+                            </svg>
+                            8%
+                        </span>
+                    </div>
+                    <p class="text-xl font-semibold text-gray-900">342</p>
+                    <p class="text-sm text-gray-500">Active Quotes</p>
+                </div>
+                
+                <div class="bg-white rounded-lg border border-gray-100 p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <span class="flex items-center text-xs font-medium text-red-600">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                            </svg>
+                            3%
+                        </span>
+                    </div>
+                    <p class="text-xl font-semibold text-gray-900">₹2.4 Cr</p>
+                    <p class="text-sm text-gray-500">Revenue MTD</p>
+                </div>
+                
+                <div class="bg-white rounded-lg border border-gray-100 p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <span class="flex items-center text-xs font-medium text-green-600">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+                            </svg>
+                            24%
+                        </span>
+                    </div>
+                    <p class="text-xl font-semibold text-gray-900">89</p>
+                    <p class="text-sm text-gray-500">Completed Projects</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Profile Card -->
+        <section class="mb-12">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Profile Card</h2>
+            <p class="text-gray-500 mb-6">Cards for displaying user or customer profiles.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Simple Profile -->
+                <div class="bg-white rounded-lg border border-gray-100 p-4 text-center">
+                    <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span class="text-2xl font-semibold text-primary">RK</span>
+                    </div>
+                    <h3 class="font-semibold text-gray-900">Rajesh Kumar</h3>
+                    <p class="text-sm text-gray-500 mb-4">rajesh.kumar@email.com</p>
+                    <div class="flex justify-center gap-2">
+                        <span class="px-2.5 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">Active</span>
+                        <span class="px-2.5 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">Hot Lead</span>
+                    </div>
+                </div>
+                
+                <!-- Detailed Profile -->
+                <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
+                    <div class="h-20 bg-gradient-to-r from-primary to-primary-dark"></div>
+                    <div class="px-6 pb-6">
+                        <div class="w-16 h-16 bg-white rounded-full border-4 border-white shadow-sm flex items-center justify-center -mt-8 mb-4">
+                            <span class="text-xl font-semibold text-primary">PK</span>
+                        </div>
+                        <h3 class="font-semibold text-gray-900">Priya Kulkarni</h3>
+                        <p class="text-sm text-gray-500 mb-3">Property Owner • Mumbai</p>
+                        <div class="flex gap-4 text-sm">
+                            <div>
+                                <p class="font-semibold text-gray-900">2</p>
+                                <p class="text-gray-500">Properties</p>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-900">3</p>
+                                <p class="text-gray-500">Quotes</p>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-900">1</p>
+                                <p class="text-gray-500">Project</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Horizontal Profile -->
+                <div class="bg-white rounded-lg border border-gray-100 p-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 bg-secondary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span class="text-lg font-semibold text-secondary">AM</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-semibold text-gray-900">Amit Mehta</h3>
+                            <p class="text-sm text-gray-500 truncate">amit.mehta@company.com</p>
+                        </div>
+                        <button class="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded-lg transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- List Card -->
+        <section class="mb-12">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">List Card</h2>
+            <p class="text-gray-500 mb-6">Cards containing list items.</p>
+            
+            <div class="max-w-md">
+                <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100">
+                        <h3 class="font-semibold text-gray-900">Recent Activity</h3>
+                    </div>
+                    <div class="divide-y divide-gray-100">
+                        <div class="px-6 py-4 flex items-center gap-4 hover:bg-gray-50 transition-colors">
+                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900">Quote accepted</p>
+                                <p class="text-xs text-gray-500">Rajesh Kumar • 2 hours ago</p>
+                            </div>
+                        </div>
+                        <div class="px-6 py-4 flex items-center gap-4 hover:bg-gray-50 transition-colors">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900">New lead created</p>
+                                <p class="text-xs text-gray-500">Priya Sharma • 5 hours ago</p>
+                            </div>
+                        </div>
+                        <div class="px-6 py-4 flex items-center gap-4 hover:bg-gray-50 transition-colors">
+                            <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900">Site visit scheduled</p>
+                                <p class="text-xs text-gray-500">Tomorrow at 10:00 AM</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-6 py-4 border-t border-gray-100">
+                        <a href="#" class="text-sm text-primary font-medium hover:underline">View all activity →</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

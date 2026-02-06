@@ -5,33 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - OneOhm Solar EPC</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#76c044',
-                        'primary-dark': '#5ea031',
-                        'primary-light': '#8fd055',
-                        secondary: '#0d74b8',
-                        'secondary-dark': '#025580',
-                        'secondary-light': '#1089e0',
-                        warning: '#EAB308',
-                        error: '#DC2626',
-                    }
+                        primary: {
+                            DEFAULT: '#76c044',
+                            dark: '#5ea031',
+                            light: '#8fd35f',
+                            50: '#f3fae8',
+                            100: '#e4f4cc',
+                            500: '#76c044',
+                            600: '#5ea031',
+                        },
+                        secondary: {
+                            DEFAULT: '#0d74b8',
+                            dark: '#0a5c92',
+                            light: '#2b8fd4',
+                        },
+                        success: '#22c55e',
+                        warning: '#eab308',
+                        error: '#dc2626',
+                        info: '#0ea5e9',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
                 }
             }
         }
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', system-ui, sans-serif; }
         
         /* ==================== GLOBAL HEADER ==================== */
         .global-header {
-            height: 56px;
+            height: 48px;
             background: #ffffff;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid #f4f4f5;
             position: fixed;
             top: 0;
             left: 0;
@@ -39,18 +52,18 @@
             z-index: 50;
             display: flex;
             align-items: center;
-            padding: 0 16px;
+            padding: 0 12px;
         }
         
         /* ==================== RAIL (Icon Strip) ==================== */
         .rail {
-            width: 56px;
+            width: 48px;
             background: #ffffff;
-            border-right: 1px solid #e5e7eb;
+            border-right: 1px solid #f4f4f5;
             position: fixed;
-            top: 56px;
+            top: 48px;
             left: 0;
-            height: calc(100vh - 56px);
+            height: calc(100vh - 48px);
             display: flex;
             flex-direction: column;
             z-index: 40;
@@ -60,31 +73,31 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            padding-top: 8px;
+            padding-top: 6px;
         }
         
         .rail-bottom {
             display: flex;
             flex-direction: column;
-            padding-bottom: 8px;
-            border-top: 1px solid #f3f4f6;
+            padding-bottom: 6px;
+            border-top: 1px solid #f4f4f5;
         }
         
         .rail-icon {
-            width: 56px;
-            height: 44px;
+            width: 48px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #6b7280;
+            color: #71717a;
             cursor: pointer;
             position: relative;
             transition: all 150ms ease;
         }
         
         .rail-icon:hover {
-            background: #f9fafb;
-            color: #374151;
+            background: #f4f4f5;
+            color: #3f3f46;
         }
         
         .rail-icon.active {
@@ -132,8 +145,8 @@
         }
         
         .rail-user {
-            width: 56px;
-            height: 56px;
+            width: 48px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -146,13 +159,13 @@
         
         /* ==================== PANEL (Expandable Detail) ==================== */
         .panel {
-            width: 240px;
+            width: 200px;
             background: #ffffff;
-            border-right: 1px solid #e5e7eb;
+            border-right: 1px solid #f4f4f5;
             position: fixed;
-            top: 56px;
-            left: 56px;
-            height: calc(100vh - 56px);
+            top: 48px;
+            left: 48px;
+            height: calc(100vh - 48px);
             display: flex;
             flex-direction: column;
             z-index: 35;
@@ -313,15 +326,15 @@
         
         /* ==================== MAIN CONTENT ==================== */
         .main-content {
-            margin-left: 296px;
-            margin-top: 56px;
-            min-height: calc(100vh - 56px);
+            margin-left: 248px;
+            margin-top: 48px;
+            min-height: calc(100vh - 48px);
             background: #f3f4f6;
             transition: margin-left 200ms ease;
         }
         
         .main-content.panel-collapsed {
-            margin-left: 56px;
+            margin-left: 48px;
         }
         
         /* ==================== GLASSMORPHISM ==================== */
@@ -392,12 +405,12 @@
         
         <!-- Center: Search Bar -->
         <div class="flex-1 ml-6 mr-4">
-            <button onclick="openCommandPalette()" class="w-full max-w-md flex items-center space-x-3 px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors text-left">
+            <button onclick="openCommandPalette()" class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors text-left">
                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
                 <span class="text-gray-400 flex-1 text-sm">Search...</span>
-                <kbd class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-200 rounded">⌘K</kbd>
+                <kbd class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-100 rounded">⌘K</kbd>
                 </button>
             </div>
             
@@ -410,7 +423,7 @@
             </div>
                     
                     <!-- Notifications -->
-            <button class="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <button class="relative p-2 hover:bg-gray-50 rounded-lg transition-colors">
                 <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                             </svg>
@@ -418,7 +431,7 @@
             </button>
             
             <!-- Settings -->
-            <button class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <button class="p-2 hover:bg-gray-50 rounded-lg transition-colors">
                 <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -426,7 +439,7 @@
             </button>
             
             <!-- Profile -->
-            <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+            <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors">
                 <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
                     RK
                             </div>
@@ -764,8 +777,8 @@
                 </div>
                 <div class="panel-section">
                     <div class="section-header">Create</div>
-                    <a href="../quotes/detail.html?mode=quick" class="panel-item">Quick Quote</a>
-                    <a href="../quotes/detail.html?mode=builder" class="panel-item">Quote Builder</a>
+                    <a href="../quotes/builder.html" class="panel-item">Quick Quote</a>
+                    <a href="../quotes/builder.html" class="panel-item">Quote Builder</a>
                     <a href="../quotes/detail.html?mode=template" class="panel-item">From Template</a>
                 </div>
                 <div class="panel-section">
@@ -861,6 +874,13 @@
                 </button>
             </div>
             <div class="panel-content custom-scrollbar">
+                <div class="panel-section">
+                    <div class="section-header">Loan Applications</div>
+                    <a href="../loans/list.html" class="panel-item">All Applications <span class="badge">12</span></a>
+                    <a href="../loans/list.html?status=initiated" class="panel-item">Initiated <span class="badge info">5</span></a>
+                    <a href="../loans/list.html?status=applied" class="panel-item">Applied to Bank <span class="badge warning">4</span></a>
+                    <a href="../loans/list.html?status=approved" class="panel-item">Approved <span class="badge success">3</span></a>
+                </div>
                 <div class="panel-section">
                     <div class="section-header">Payments</div>
                     <a href="finance.html" class="panel-item">All Payments</a>
@@ -1043,27 +1063,27 @@
     
     <!-- ==================== MAIN CONTENT ==================== -->
     <main id="mainContent" class="main-content">
-        <div class="p-6">
+        <div class="p-5">
                 <!-- Greeting Section -->
-                <div class="mb-8 animate-fade-in opacity-0">
-                    <h1 class="text-2xl font-bold text-gray-800" id="greeting">Good Morning, Rajesh!</h1>
-                    <p class="text-gray-500 mt-1">You have <span class="font-semibold text-primary">3 pending approvals</span> and <span class="font-semibold text-secondary">5 hot leads</span> to follow up</p>
-                    <div class="flex space-x-3 mt-4">
-                        <a href="#" class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors">View Approvals</a>
-                        <a href="#" class="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">View Leads</a>
+                <div class="mb-6 animate-fade-in opacity-0">
+                    <h1 class="text-xl font-semibold text-gray-800" id="greeting">Good Morning, Rajesh!</h1>
+                    <p class="text-gray-500 text-[13px] mt-0.5">You have <span class="font-medium text-primary">3 pending approvals</span> and <span class="font-medium text-secondary">5 hot leads</span> to follow up</p>
+                    <div class="flex space-x-2 mt-3">
+                        <a href="#" class="px-3 py-1.5 bg-primary text-white rounded-md text-[13px] font-medium hover:bg-primary-dark transition-colors">View Approvals</a>
+                        <a href="../crm/customers.html" class="px-3 py-1.5 bg-white border border-gray-100 text-gray-700 rounded-md text-[13px] font-medium hover:bg-gray-50 transition-colors">View Leads</a>
                     </div>
                 </div>
                 
                 <!-- Bento Grid Dashboard -->
-                <div class="grid grid-cols-12 gap-6">
+                <div class="grid grid-cols-12 gap-4">
                     <!-- Hero Metric Card (Large - spans 5 cols) -->
-                    <div class="col-span-12 lg:col-span-5 glass-card rounded-2xl p-6 text-white animate-fade-in opacity-0 animation-delay-100 min-h-[240px]">
+                    <div class="col-span-12 lg:col-span-5 glass-card rounded-lg p-4 text-white animate-fade-in opacity-0 animation-delay-100 min-h-[200px]">
                         <div class="relative z-10">
-                            <p class="text-white/80 text-sm font-medium">Total Revenue This Month</p>
-                            <p class="text-4xl font-bold mt-2">₹45,67,890</p>
-                            <div class="flex items-center mt-2">
-                                <span class="flex items-center text-sm bg-white/20 px-2 py-1 rounded-full">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <p class="text-white/80 text-xs font-medium">Total Revenue This Month</p>
+                            <p class="text-3xl font-semibold mt-1.5">₹45,67,890</p>
+                            <div class="flex items-center mt-1.5">
+                                <span class="flex items-center text-xs bg-white/20 px-2 py-0.5 rounded-full">
+                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                                     </svg>
                                     23.5% vs last month
@@ -1083,53 +1103,53 @@
                     </div>
                     
                     <!-- KPI Cards Grid (4 cards in 2x2) -->
-                    <div class="col-span-12 lg:col-span-7 grid grid-cols-2 gap-4">
+                    <div class="col-span-12 lg:col-span-7 grid grid-cols-2 gap-3">
                         <!-- KPI 1: New Leads -->
-                        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-200">
+                        <div class="bg-white rounded-lg p-4 border border-gray-100 hover:shadow-sm transition-shadow animate-fade-in opacity-0 animation-delay-200">
                             <div class="flex items-start justify-between">
-                                <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
                                     </svg>
                                 </div>
-                                <span class="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">+12 today</span>
+                                <span class="text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">+12 today</span>
                             </div>
-                            <p class="text-3xl font-bold text-gray-800 mt-4">156</p>
-                            <p class="text-sm text-gray-500 mt-1">New Leads</p>
+                            <p class="text-2xl font-semibold text-gray-800 mt-3">156</p>
+                            <p class="text-xs text-gray-500 mt-0.5">New Leads</p>
                         </div>
                         
                         <!-- KPI 2: Active Projects -->
-                        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-200">
+                        <div class="bg-white rounded-lg p-4 border border-gray-100 hover:shadow-sm transition-shadow animate-fade-in opacity-0 animation-delay-200">
                             <div class="flex items-start justify-between">
-                                <div class="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                                     </svg>
                                 </div>
-                                <span class="text-xs font-medium text-secondary bg-secondary/10 px-2 py-1 rounded-full">72% on track</span>
+                                <span class="text-[11px] font-medium text-secondary bg-secondary/10 px-1.5 py-0.5 rounded">72% on track</span>
                             </div>
-                            <p class="text-3xl font-bold text-gray-800 mt-4">24</p>
-                            <p class="text-sm text-gray-500 mt-1">Active Projects</p>
+                            <p class="text-2xl font-semibold text-gray-800 mt-3">24</p>
+                            <p class="text-xs text-gray-500 mt-0.5">Active Projects</p>
                         </div>
                         
                         <!-- KPI 3: Pending Quotes -->
-                        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-300">
+                        <div class="bg-white rounded-lg p-4 border border-gray-100 hover:shadow-sm transition-shadow animate-fade-in opacity-0 animation-delay-300">
                             <div class="flex items-start justify-between">
-                                <div class="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                                     </svg>
                                 </div>
-                                <span class="text-xs font-medium text-warning bg-warning/10 px-2 py-1 rounded-full">₹8.2L value</span>
+                                <span class="text-[11px] font-medium text-warning bg-warning/10 px-1.5 py-0.5 rounded">₹8.2L value</span>
                             </div>
-                            <p class="text-3xl font-bold text-gray-800 mt-4">18</p>
-                            <p class="text-sm text-gray-500 mt-1">Pending Quotes</p>
+                            <p class="text-2xl font-semibold text-gray-800 mt-3">18</p>
+                            <p class="text-xs text-gray-500 mt-0.5">Pending Quotes</p>
                         </div>
                         
                         <!-- KPI 4: Conversion Rate -->
-                        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-300">
+                        <div class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-300">
                             <div class="flex items-start justify-between">
-                                <div class="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                                <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
                                     <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                                     </svg>
@@ -1142,12 +1162,12 @@
                     </div>
                     
                     <!-- Chart Card (Wide) -->
-                    <div class="col-span-12 lg:col-span-8 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400">
+                    <div class="col-span-12 lg:col-span-8 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400">
                         <div class="flex items-center justify-between mb-6">
                             <h3 class="font-semibold text-gray-800">Revenue Trend</h3>
                             <div class="flex space-x-2">
                                 <button class="px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-lg">Monthly</button>
-                                <button class="px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-lg">Weekly</button>
+                                <button class="px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50 rounded-lg">Weekly</button>
                             </div>
                         </div>
                         <!-- Chart Placeholder -->
@@ -1198,13 +1218,13 @@
                             </div>
                             <div class="flex-1 flex flex-col items-center">
                                 <div class="w-full bg-primary rounded-t" style="height: 95%"></div>
-                                <span class="text-xs text-gray-600 font-medium mt-2">Dec</span>
+                                <span class="text-xs text-gray-500 font-medium mt-2">Dec</span>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Quick Actions Card -->
-                    <div class="col-span-12 lg:col-span-4 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400">
+                    <div class="col-span-12 lg:col-span-4 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400">
                         <h3 class="font-semibold text-gray-800 mb-4 flex items-center">
                             <svg class="w-5 h-5 text-primary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
@@ -1212,7 +1232,7 @@
                             Quick Actions
                         </h3>
                         <div class="space-y-3">
-                            <button class="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-primary/5 hover:border-primary/20 rounded-xl border border-gray-100 transition-colors text-left">
+                            <button class="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-primary/5 hover:border-primary/20 rounded-lg border border-gray-100 transition-colors text-left">
                                 <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                                     <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
@@ -1220,7 +1240,7 @@
                                 </div>
                                 <span class="font-medium text-gray-700">New Lead</span>
                             </button>
-                            <button class="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-secondary/5 hover:border-secondary/20 rounded-xl border border-gray-100 transition-colors text-left">
+                            <button class="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-secondary/5 hover:border-secondary/20 rounded-lg border border-gray-100 transition-colors text-left">
                                 <div class="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
                                     <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -1228,7 +1248,7 @@
                                 </div>
                                 <span class="font-medium text-gray-700">Create Quote</span>
                             </button>
-                            <button class="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-warning/5 hover:border-warning/20 rounded-xl border border-gray-100 transition-colors text-left">
+                            <button class="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-warning/5 hover:border-warning/20 rounded-lg border border-gray-100 transition-colors text-left">
                                 <div class="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
                                     <svg class="w-5 h-5 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
@@ -1236,7 +1256,7 @@
                                 </div>
                                 <span class="font-medium text-gray-700">Start Project</span>
                             </button>
-                            <button class="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-purple-50 hover:border-purple-200 rounded-xl border border-gray-100 transition-colors text-left">
+                            <button class="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-purple-50 hover:border-purple-200 rounded-lg border border-gray-100 transition-colors text-left">
                                 <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
                                     <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
@@ -1248,42 +1268,42 @@
                     </div>
                     
                     <!-- Activity Feed -->
-                    <div class="col-span-12 lg:col-span-5 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-500">
+                    <div class="col-span-12 lg:col-span-5 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-500">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="font-semibold text-gray-800">Recent Activity</h3>
                             <a href="#" class="text-sm text-primary hover:text-primary-dark font-medium">View All</a>
                         </div>
                         <div class="space-y-4">
                             <div class="flex items-start space-x-3">
-                                <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">RK</div>
+                                <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-medium flex-shrink-0">RK</div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm text-gray-800"><span class="font-medium">Rajesh</span> created Quote <span class="text-primary font-medium">Q-2542</span></p>
                                     <p class="text-xs text-gray-400 mt-0.5">2 minutes ago</p>
                                 </div>
                             </div>
                             <div class="flex items-start space-x-3">
-                                <div class="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center text-secondary text-xs font-bold flex-shrink-0">PS</div>
+                                <div class="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center text-secondary text-xs font-medium flex-shrink-0">PS</div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm text-gray-800"><span class="font-medium">Priya</span> approved PO <span class="text-secondary font-medium">PO-1823</span></p>
                                     <p class="text-xs text-gray-400 mt-0.5">15 minutes ago</p>
                                 </div>
                             </div>
                             <div class="flex items-start space-x-3">
-                                <div class="w-8 h-8 rounded-full bg-warning/20 flex items-center justify-center text-warning text-xs font-bold flex-shrink-0">AK</div>
+                                <div class="w-8 h-8 rounded-full bg-warning/20 flex items-center justify-center text-warning text-xs font-medium flex-shrink-0">AK</div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm text-gray-800"><span class="font-medium">Amit</span> added new lead <span class="font-medium">Sharma Industries</span></p>
                                     <p class="text-xs text-gray-400 mt-0.5">1 hour ago</p>
                                 </div>
                             </div>
                             <div class="flex items-start space-x-3">
-                                <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-xs font-bold flex-shrink-0">SM</div>
+                                <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-xs font-medium flex-shrink-0">SM</div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm text-gray-800"><span class="font-medium">Sunita</span> completed project <span class="text-primary font-medium">PRJ-2024</span></p>
                                     <p class="text-xs text-gray-400 mt-0.5">2 hours ago</p>
                                 </div>
                             </div>
                             <div class="flex items-start space-x-3">
-                                <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-xs font-bold flex-shrink-0">VK</div>
+                                <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-xs font-medium flex-shrink-0">VK</div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm text-gray-800"><span class="font-medium">Vikram</span> received payment <span class="text-primary font-medium">₹2.5L</span></p>
                                     <p class="text-xs text-gray-400 mt-0.5">3 hours ago</p>
@@ -1293,7 +1313,7 @@
                     </div>
                     
                     <!-- Alerts Card -->
-                    <div class="col-span-12 lg:col-span-4 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-500">
+                    <div class="col-span-12 lg:col-span-4 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-500">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="font-semibold text-gray-800 flex items-center">
                                 <svg class="w-5 h-5 text-error mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1301,24 +1321,24 @@
                                 </svg>
                                 Requires Attention
                             </h3>
-                            <span class="bg-error/10 text-error text-xs font-bold px-2 py-1 rounded-full">5</span>
+                            <span class="bg-error/10 text-error text-xs font-medium px-2 py-1 rounded-full">5</span>
                         </div>
                         <div class="space-y-3">
-                            <div class="flex items-center justify-between p-3 bg-error/5 rounded-xl border border-error/10">
+                            <div class="flex items-center justify-between p-3 bg-error/5 rounded-lg border border-error/10">
                                 <div class="flex items-center space-x-3">
                                     <div class="w-2 h-2 bg-error rounded-full"></div>
                                     <span class="text-sm text-gray-700">3 Overdue Follow-ups</span>
                                 </div>
                                 <a href="#" class="text-xs text-error font-medium hover:underline">View</a>
                             </div>
-                            <div class="flex items-center justify-between p-3 bg-warning/5 rounded-xl border border-warning/10">
+                            <div class="flex items-center justify-between p-3 bg-warning/5 rounded-lg border border-warning/10">
                                 <div class="flex items-center space-x-3">
                                     <div class="w-2 h-2 bg-warning rounded-full"></div>
                                     <span class="text-sm text-gray-700">2 Pending Approvals</span>
                                 </div>
                                 <a href="#" class="text-xs text-warning font-medium hover:underline">Review</a>
                             </div>
-                            <div class="flex items-center justify-between p-3 bg-orange-50 rounded-xl border border-orange-100">
+                            <div class="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-100">
                                 <div class="flex items-center space-x-3">
                                     <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
                                     <span class="text-sm text-gray-700">Low Stock: Panel XYZ</span>
@@ -1329,21 +1349,21 @@
                     </div>
                     
                     <!-- Calendar Card -->
-                    <div class="col-span-12 lg:col-span-3 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-500">
+                    <div class="col-span-12 lg:col-span-3 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-500">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="font-semibold text-gray-800">Today</h3>
                         <span class="text-sm text-gray-500">Jan 30, 2026</span>
                         </div>
                         <div class="space-y-3">
-                            <div class="p-3 bg-primary/5 rounded-xl border-l-4 border-primary">
+                            <div class="p-3 bg-primary/5 rounded-lg border-l-4 border-primary">
                                 <p class="text-sm font-medium text-gray-800">10:00 - Site Visit</p>
                                 <p class="text-xs text-gray-500 mt-0.5">Sharma Residence, Pune</p>
                             </div>
-                            <div class="p-3 bg-secondary/5 rounded-xl border-l-4 border-secondary">
+                            <div class="p-3 bg-secondary/5 rounded-lg border-l-4 border-secondary">
                                 <p class="text-sm font-medium text-gray-800">14:00 - Team Meeting</p>
                                 <p class="text-xs text-gray-500 mt-0.5">Weekly sync-up</p>
                             </div>
-                            <div class="p-3 bg-warning/5 rounded-xl border-l-4 border-warning">
+                            <div class="p-3 bg-warning/5 rounded-lg border-l-4 border-warning">
                                 <p class="text-sm font-medium text-gray-800">16:30 - Client Call</p>
                                 <p class="text-xs text-gray-500 mt-0.5">Tata Solar - Quote Discussion</p>
                             </div>
@@ -1358,7 +1378,7 @@
     <div id="commandPalette" class="fixed inset-0 z-[100] hidden">
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeCommandPalette()"></div>
         <div class="relative max-w-xl mx-auto mt-24">
-            <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div class="bg-white rounded-lg shadow-2xl overflow-hidden">
                 <!-- Search Input -->
                 <div class="flex items-center px-4 border-b border-gray-100">
                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1397,13 +1417,13 @@
                         </svg>
                         <span class="text-sm text-gray-700">Go to Dashboard</span>
                     </a>
-                    <a href="#" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg">
+                    <a href="../crm/customers.html" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg">
                         <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
                         <span class="text-sm text-gray-700">Go to Leads</span>
                     </a>
-                    <a href="#" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg">
+                    <a href="../quotes/list.html" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg">
                         <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                         </svg>
@@ -1414,7 +1434,7 @@
                     <div class="px-3 py-2 mt-2">
                         <p class="text-xs font-semibold text-gray-400 uppercase">Actions</p>
                     </div>
-                    <a href="#" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg">
+                    <a href="../crm/create-customer.html" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg">
                         <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                         </svg>
@@ -1435,7 +1455,7 @@
                 </div>
                 
                 <!-- Footer -->
-                <div class="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
+                <div class="px-3 py-2 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
                     <div class="flex items-center space-x-4">
                         <span>↑↓ Navigate</span>
                         <span>↵ Select</span>

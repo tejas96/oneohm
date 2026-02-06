@@ -1,0 +1,245 @@
+<!-- 
+    Activity Timeline Component
+    Usage: Include this file and use the timeline markup structure
+    Requires Tailwind CSS
+-->
+
+<!-- Activity Timeline Example -->
+<div class="activity-timeline">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Activity Timeline</h3>
+        <div class="flex items-center gap-2">
+            <select class="text-xs px-2 py-1 border border-gray-100 rounded-lg bg-white focus:outline-none focus:border-primary">
+                <option value="all">All Activities</option>
+                <option value="calls">Calls</option>
+                <option value="visits">Site Visits</option>
+                <option value="quotes">Quotes</option>
+                <option value="status">Status Changes</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- Timeline -->
+    <div class="relative">
+        <!-- Timeline Line -->
+        <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+        
+        <!-- Timeline Items -->
+        <div class="space-y-6">
+            <!-- Today Marker -->
+            <div class="relative flex items-center gap-4 pl-10">
+                <div class="absolute left-2.5 w-3 h-3 rounded-full bg-primary border-2 border-white shadow"></div>
+                <span class="text-xs font-semibold text-primary uppercase tracking-wide">Today</span>
+            </div>
+            
+            <!-- Quote Sent -->
+            <div class="relative pl-10">
+                <div class="absolute left-1.5 w-5 h-5 rounded-full bg-blue-100 border-2 border-white shadow flex items-center justify-center">
+                    <svg class="w-2.5 h-2.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <div class="bg-white rounded-lg border border-gray-100 p-4 shadow-sm">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="text-sm font-medium text-gray-900">Quotation Sent</div>
+                            <div class="text-xs text-gray-500 mt-1">5 kW System - ₹2,44,670</div>
+                        </div>
+                        <span class="text-xs text-gray-400">10:30 AM</span>
+                    </div>
+                    <div class="mt-3 flex items-center gap-2">
+                        <span class="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded">Quote #QT-2026-00124</span>
+                        <a href="#" class="text-xs text-primary hover:text-primary-dark font-medium">View Quote →</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Yesterday Marker -->
+            <div class="relative flex items-center gap-4 pl-10">
+                <div class="absolute left-2.5 w-3 h-3 rounded-full bg-gray-300 border-2 border-white shadow"></div>
+                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Yesterday</span>
+            </div>
+            
+            <!-- Site Visit Completed -->
+            <div class="relative pl-10">
+                <div class="absolute left-1.5 w-5 h-5 rounded-full bg-green-100 border-2 border-white shadow flex items-center justify-center">
+                    <svg class="w-2.5 h-2.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </div>
+                <div class="bg-white rounded-lg border border-gray-100 p-4 shadow-sm">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="text-sm font-medium text-gray-900">Site Visit Completed</div>
+                            <div class="text-xs text-gray-500 mt-1">Technical assessment by Amit Patel</div>
+                        </div>
+                        <span class="text-xs text-gray-400">2:45 PM</span>
+                    </div>
+                    <div class="mt-3 p-3 bg-gray-50 rounded-lg text-xs text-gray-500">
+                        <strong>Assessment:</strong> Suitable for 5kW system. RCC flat roof, no shading issues. 
+                        Recommended elevated mounting structure.
+                    </div>
+                    <div class="mt-3 flex items-center gap-3">
+                        <div class="flex -space-x-2">
+                            <img src="https://via.placeholder.com/32" alt="" class="w-6 h-6 rounded-full border-2 border-white">
+                            <img src="https://via.placeholder.com/32" alt="" class="w-6 h-6 rounded-full border-2 border-white">
+                            <img src="https://via.placeholder.com/32" alt="" class="w-6 h-6 rounded-full border-2 border-white">
+                        </div>
+                        <span class="text-xs text-gray-500">4 photos uploaded</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Jan 28 Marker -->
+            <div class="relative flex items-center gap-4 pl-10">
+                <div class="absolute left-2.5 w-3 h-3 rounded-full bg-gray-300 border-2 border-white shadow"></div>
+                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Jan 28, 2026</span>
+            </div>
+            
+            <!-- Status Changed -->
+            <div class="relative pl-10">
+                <div class="absolute left-1.5 w-5 h-5 rounded-full bg-yellow-100 border-2 border-white shadow flex items-center justify-center">
+                    <svg class="w-2.5 h-2.5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                </div>
+                <div class="bg-white rounded-lg border border-gray-100 p-4 shadow-sm">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="text-sm font-medium text-gray-900">Status Changed</div>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-500 rounded">Contacted</span>
+                                <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                                </svg>
+                                <span class="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded">Site Visit Scheduled</span>
+                            </div>
+                        </div>
+                        <span class="text-xs text-gray-400">4:20 PM</span>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">by Rohit Kumar</div>
+                </div>
+            </div>
+            
+            <!-- Call Made -->
+            <div class="relative pl-10">
+                <div class="absolute left-1.5 w-5 h-5 rounded-full bg-indigo-100 border-2 border-white shadow flex items-center justify-center">
+                    <svg class="w-2.5 h-2.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                    </svg>
+                </div>
+                <div class="bg-white rounded-lg border border-gray-100 p-4 shadow-sm">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="text-sm font-medium text-gray-900">Phone Call</div>
+                            <div class="text-xs text-gray-500 mt-1">Discussed system options and pricing</div>
+                        </div>
+                        <span class="text-xs text-gray-400">11:15 AM</span>
+                    </div>
+                    <div class="mt-2 flex items-center gap-2 text-xs text-gray-500">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Duration: 12 mins • by Rohit Kumar
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Jan 25 Marker -->
+            <div class="relative flex items-center gap-4 pl-10">
+                <div class="absolute left-2.5 w-3 h-3 rounded-full bg-gray-300 border-2 border-white shadow"></div>
+                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Jan 25, 2026</span>
+            </div>
+            
+            <!-- Lead Created -->
+            <div class="relative pl-10">
+                <div class="absolute left-1.5 w-5 h-5 rounded-full bg-primary/20 border-2 border-white shadow flex items-center justify-center">
+                    <svg class="w-2.5 h-2.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                </div>
+                <div class="bg-white rounded-lg border border-gray-100 p-4 shadow-sm">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <div class="text-sm font-medium text-gray-900">Lead Created</div>
+                            <div class="text-xs text-gray-500 mt-1">Customer registered from website inquiry</div>
+                        </div>
+                        <span class="text-xs text-gray-400">9:00 AM</span>
+                    </div>
+                    <div class="mt-2 flex items-center gap-2">
+                        <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-500 rounded">Source: Website</span>
+                        <span class="px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-700 rounded flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
+                            Warm Lead
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Load More -->
+    <div class="mt-6 text-center">
+        <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
+            Load More Activity
+        </button>
+    </div>
+</div>
+
+<!-- Compact Timeline Variant (for sidebars) -->
+<div class="activity-timeline-compact hidden">
+    <div class="space-y-3">
+        <!-- Item -->
+        <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-gray-900">Quotation Sent</div>
+                <div class="text-xs text-gray-500">Today, 10:30 AM</div>
+            </div>
+        </div>
+        <!-- Item -->
+        <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-gray-900">Site Visit Completed</div>
+                <div class="text-xs text-gray-500">Yesterday, 2:45 PM</div>
+            </div>
+        </div>
+        <!-- Item -->
+        <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+                <div class="text-sm font-medium text-gray-900">Phone Call</div>
+                <div class="text-xs text-gray-500">Jan 28, 11:15 AM</div>
+            </div>
+        </div>
+    </div>
+    <button class="mt-4 w-full py-2 text-xs font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors">
+        View Full Timeline
+    </button>
+</div>
+
+<style>
+/* Additional timeline animations */
+.activity-timeline .bg-white {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.activity-timeline .bg-white:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+</style>

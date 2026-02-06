@@ -1,0 +1,406 @@
+<!-- 
+    Edit Property Modal Component
+    Usage: Include this file and call openEditPropertyModal(propertyId, propertyData) 
+    Requires Tailwind CSS
+-->
+
+<!-- Modal Overlay -->
+<div id="editPropertyModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onclick="closeEditPropertyModal()"></div>
+    
+    <!-- Modal Container -->
+    <div class="fixed inset-0 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <!-- Modal Content -->
+            <div class="relative w-full max-w-2xl bg-white rounded-lg shadow-xl transform transition-all max-h-[90vh] flex flex-col">
+                <!-- Header -->
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+                    <h2 class="text-lg font-semibold text-gray-900">Edit Property</h2>
+                    <button onclick="closeEditPropertyModal()" class="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded-lg transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Scrollable Form Body -->
+                <div class="flex-1 overflow-y-auto p-4">
+                    <!-- Property Details -->
+                    <div class="space-y-5">
+                        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Property Details</h3>
+                        
+                        <!-- Property Name & Type -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Property Name <span class="text-red-500">*</span></label>
+                                <input type="text" id="editPropertyName" placeholder="e.g., Home, Office" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Property Type <span class="text-red-500">*</span></label>
+                                <select id="editPropertyType" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]">
+                                    <option value="residential">Residential</option>
+                                    <option value="commercial">Commercial</option>
+                                    <option value="industrial">Industrial</option>
+                                    <option value="agricultural">Agricultural</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Address -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-gray-500">Street Address <span class="text-red-500">*</span></label>
+                            <input type="text" id="editPropertyAddress" placeholder="Enter full address" 
+                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                        </div>
+                        
+                        <!-- City, State, Pincode -->
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">City <span class="text-red-500">*</span></label>
+                                <input type="text" id="editPropertyCity" placeholder="Enter city" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">State <span class="text-red-500">*</span></label>
+                                <select id="editPropertyState" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]">
+                                    <option value="maharashtra">Maharashtra</option>
+                                    <option value="karnataka">Karnataka</option>
+                                    <option value="tamil_nadu">Tamil Nadu</option>
+                                    <option value="gujarat">Gujarat</option>
+                                    <option value="rajasthan">Rajasthan</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Pincode <span class="text-red-500">*</span></label>
+                                <input type="text" id="editPropertyPincode" placeholder="6 digits" maxlength="6" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                        </div>
+                        
+                        <!-- GPS Coordinates -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Latitude</label>
+                                <input type="text" id="editPropertyLat" placeholder="e.g., 18.5204" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Longitude</label>
+                                <input type="text" id="editPropertyLng" placeholder="e.g., 73.8567" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Divider -->
+                    <div class="my-6 border-t border-gray-100"></div>
+                    
+                    <!-- Electricity Details -->
+                    <div class="space-y-5">
+                        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Electricity Details</h3>
+                        
+                        <!-- Consumer Number & Name -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Consumer Number</label>
+                                <input type="text" id="editConsumerNumber" placeholder="Enter consumer number" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Consumer Name</label>
+                                <input type="text" id="editConsumerName" placeholder="Name on electricity bill" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                        </div>
+                        
+                        <!-- DISCOM & Meter Number -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">DISCOM Name <span class="text-red-500">*</span></label>
+                                <select id="editDiscomName" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]">
+                                    <option value="">Select DISCOM...</option>
+                                    <option value="msedcl">MSEDCL (Maharashtra)</option>
+                                    <option value="bescom">BESCOM (Bangalore)</option>
+                                    <option value="tneb">TANGEDCO (Tamil Nadu)</option>
+                                    <option value="torrent">Torrent Power</option>
+                                    <option value="tata_power">Tata Power</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Meter Number</label>
+                                <input type="text" id="editMeterNumber" placeholder="Enter meter number" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                        </div>
+                        
+                        <!-- Connection Type & Load -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Connection Type <span class="text-red-500">*</span></label>
+                                <select id="editConnectionType" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]">
+                                    <option value="single_phase">Single Phase</option>
+                                    <option value="three_phase">Three Phase</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Sanctioned Load (kW) <span class="text-red-500">*</span></label>
+                                <input type="number" id="editSanctionedLoad" placeholder="e.g., 5" step="0.1" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                        </div>
+                        
+                        <!-- Monthly Bill -->
+                        <div class="w-1/2 space-y-2">
+                            <label class="block text-xs font-medium text-gray-500">Avg. Monthly Bill (₹)</label>
+                            <input type="number" id="editMonthlyBill" placeholder="e.g., 5000" 
+                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                        </div>
+                    </div>
+                    
+                    <!-- Divider -->
+                    <div class="my-6 border-t border-gray-100"></div>
+                    
+                    <!-- Technical Details -->
+                    <div class="space-y-5">
+                        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Technical Details</h3>
+                        
+                        <!-- Shading Analysis -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-gray-500">Shading Analysis</label>
+                            <select id="editShadingAnalysis" 
+                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]">
+                                <option value="">Not assessed</option>
+                                <option value="no_shading">No Shading</option>
+                                <option value="minimal">Minimal Shading</option>
+                                <option value="moderate">Moderate Shading</option>
+                                <option value="significant">Significant Shading</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Roof Area & Type -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Available Roof Area (sq ft)</label>
+                                <input type="number" id="editRoofArea" placeholder="e.g., 500" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Roof Type</label>
+                                <select id="editRoofType" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]">
+                                    <option value="">Not assessed</option>
+                                    <option value="rcc">RCC (Flat)</option>
+                                    <option value="sheet">Metal Sheet</option>
+                                    <option value="tile">Tile Roof</option>
+                                    <option value="ground">Ground Mount</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Divider -->
+                    <div class="my-6 border-t border-gray-100"></div>
+                    
+                    <!-- Lead Status -->
+                    <div class="space-y-5">
+                        <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Lead Status</h3>
+                        
+                        <!-- Temperature -->
+                        <div class="space-y-3">
+                            <label class="block text-xs font-medium text-gray-500">Lead Temperature</label>
+                            <div class="flex gap-3">
+                                <label class="relative cursor-pointer">
+                                    <input type="radio" name="editTemperature" value="hot" class="peer sr-only">
+                                    <div class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-red-500 peer-checked:bg-red-50 text-xs font-medium text-gray-500 transition-all">
+                                        <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                                        Hot
+                                    </div>
+                                </label>
+                                <label class="relative cursor-pointer">
+                                    <input type="radio" name="editTemperature" value="warm" class="peer sr-only" checked>
+                                    <div class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-yellow-500 peer-checked:bg-yellow-50 text-xs font-medium text-gray-500 transition-all">
+                                        <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                                        Warm
+                                    </div>
+                                </label>
+                                <label class="relative cursor-pointer">
+                                    <input type="radio" name="editTemperature" value="cold" class="peer sr-only">
+                                    <div class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-blue-500 peer-checked:bg-blue-50 text-xs font-medium text-gray-500 transition-all">
+                                        <span class="w-3 h-3 rounded-full bg-blue-400"></span>
+                                        Cold
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Primary Property Toggle -->
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <label class="flex items-center justify-between cursor-pointer">
+                                <div>
+                                    <div class="font-medium text-gray-900">Primary Property</div>
+                                    <div class="text-xs text-gray-500">Set as customer's main property</div>
+                                </div>
+                                <div class="relative">
+                                    <input type="checkbox" id="editIsPrimary" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-primary transition-colors"></div>
+                                    <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"></div>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <!-- Wants Loan Toggle -->
+                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                            <label class="flex items-center justify-between cursor-pointer">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-gray-900">Interested in Loan</div>
+                                        <div class="text-xs text-gray-500">Customer wants financing</div>
+                                    </div>
+                                </div>
+                                <div class="relative">
+                                    <input type="checkbox" id="editWantsLoan" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-primary transition-colors"></div>
+                                    <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"></div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex-shrink-0">
+                    <button onclick="closeEditPropertyModal()" class="px-4 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium text-sm transition-colors">
+                        Cancel
+                    </button>
+                    <button onclick="savePropertyChanges()" class="px-6 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Store current property being edited
+    let currentEditPropertyId = null;
+    
+    function openEditPropertyModal(propertyId, propertyData) {
+        currentEditPropertyId = propertyId;
+        const modal = document.getElementById('editPropertyModal');
+        
+        // Populate form with existing data
+        if (propertyData) {
+            document.getElementById('editPropertyName').value = propertyData.name || '';
+            document.getElementById('editPropertyType').value = propertyData.type || 'residential';
+            document.getElementById('editPropertyAddress').value = propertyData.address || '';
+            document.getElementById('editPropertyCity').value = propertyData.city || '';
+            document.getElementById('editPropertyState').value = propertyData.state || 'maharashtra';
+            document.getElementById('editPropertyPincode').value = propertyData.pincode || '';
+            document.getElementById('editPropertyLat').value = propertyData.latitude || '';
+            document.getElementById('editPropertyLng').value = propertyData.longitude || '';
+            document.getElementById('editConsumerNumber').value = propertyData.consumerNumber || '';
+            document.getElementById('editConsumerName').value = propertyData.consumerName || '';
+            document.getElementById('editDiscomName').value = propertyData.discom || '';
+            document.getElementById('editMeterNumber').value = propertyData.meterNumber || '';
+            document.getElementById('editConnectionType').value = propertyData.connectionType || 'single_phase';
+            document.getElementById('editSanctionedLoad').value = propertyData.sanctionedLoad || '';
+            document.getElementById('editMonthlyBill').value = propertyData.monthlyBill || '';
+            document.getElementById('editShadingAnalysis').value = propertyData.shadingAnalysis || '';
+            document.getElementById('editRoofArea').value = propertyData.roofArea || '';
+            document.getElementById('editRoofType').value = propertyData.roofType || '';
+            document.getElementById('editIsPrimary').checked = propertyData.isPrimary || false;
+            document.getElementById('editWantsLoan').checked = propertyData.wantsLoan || false;
+            
+            // Set temperature radio
+            if (propertyData.temperature) {
+                const tempRadio = document.querySelector(`input[name="editTemperature"][value="${propertyData.temperature}"]`);
+                if (tempRadio) tempRadio.checked = true;
+            }
+        }
+        
+        // Show modal
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeEditPropertyModal() {
+        const modal = document.getElementById('editPropertyModal');
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+        currentEditPropertyId = null;
+    }
+    
+    function savePropertyChanges() {
+        // Validate required fields
+        const propertyName = document.getElementById('editPropertyName').value.trim();
+        const propertyType = document.getElementById('editPropertyType').value;
+        const address = document.getElementById('editPropertyAddress').value.trim();
+        const city = document.getElementById('editPropertyCity').value.trim();
+        const discom = document.getElementById('editDiscomName').value;
+        const connectionType = document.getElementById('editConnectionType').value;
+        const sanctionedLoad = document.getElementById('editSanctionedLoad').value;
+        
+        if (!propertyName || !propertyType || !address || !city || !discom || !connectionType || !sanctionedLoad) {
+            alert('Please fill all required fields');
+            return;
+        }
+        
+        // Collect all data
+        const propertyData = {
+            id: currentEditPropertyId,
+            name: propertyName,
+            type: propertyType,
+            address,
+            city,
+            state: document.getElementById('editPropertyState').value,
+            pincode: document.getElementById('editPropertyPincode').value,
+            latitude: document.getElementById('editPropertyLat').value,
+            longitude: document.getElementById('editPropertyLng').value,
+            consumerNumber: document.getElementById('editConsumerNumber').value,
+            consumerName: document.getElementById('editConsumerName').value,
+            discom,
+            meterNumber: document.getElementById('editMeterNumber').value,
+            connectionType,
+            sanctionedLoad: parseFloat(sanctionedLoad),
+            monthlyBill: document.getElementById('editMonthlyBill').value ? parseFloat(document.getElementById('editMonthlyBill').value) : null,
+            shadingAnalysis: document.getElementById('editShadingAnalysis').value,
+            roofArea: document.getElementById('editRoofArea').value ? parseFloat(document.getElementById('editRoofArea').value) : null,
+            roofType: document.getElementById('editRoofType').value,
+            temperature: document.querySelector('input[name="editTemperature"]:checked')?.value,
+            isPrimary: document.getElementById('editIsPrimary').checked,
+            wantsLoan: document.getElementById('editWantsLoan').checked,
+        };
+        
+        // In production, this would submit to the API
+        console.log('Saving property:', propertyData);
+        
+        // Show success and close
+        alert('Property updated successfully!');
+        closeEditPropertyModal();
+        
+        // Optionally refresh the page or update the UI
+        // window.location.reload();
+    }
+    
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeEditPropertyModal();
+        }
+    });
+</script>

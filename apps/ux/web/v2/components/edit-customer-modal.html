@@ -1,0 +1,206 @@
+<!-- 
+    Edit Customer Modal Component
+    Usage: Include this file and call openEditCustomerModal(customerId) 
+    Requires Tailwind CSS
+-->
+
+<!-- Modal Overlay -->
+<div id="editCustomerModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+    <!-- Backdrop -->
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" onclick="closeEditCustomerModal()"></div>
+    
+    <!-- Modal Container -->
+    <div class="fixed inset-0 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <!-- Modal Content -->
+            <div class="relative w-full max-w-lg bg-white rounded-lg shadow-xl transform transition-all">
+                <!-- Header -->
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                    <h2 class="text-lg font-semibold text-gray-900">Edit Customer</h2>
+                    <button onclick="closeEditCustomerModal()" class="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded-lg transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Form Body -->
+                <div class="p-6 space-y-5">
+                    <!-- Name Row -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-gray-500">First Name <span class="text-red-500">*</span></label>
+                            <input type="text" id="editFirstName" placeholder="Enter first name" 
+                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-gray-500">Last Name <span class="text-red-500">*</span></label>
+                            <input type="text" id="editLastName" placeholder="Enter last name" 
+                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                        </div>
+                    </div>
+                    
+                    <!-- Phone -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-medium text-gray-500">Phone Number <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">+91</span>
+                            <input type="tel" id="editPhone" placeholder="98765 43210" maxlength="10" 
+                                class="w-full pl-12 pr-4 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                        </div>
+                    </div>
+                    
+                    <!-- Email -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-medium text-gray-500">Email Address</label>
+                        <input type="email" id="editEmail" placeholder="customer@example.com" 
+                            class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                    </div>
+                    
+                    <!-- Alternate Phone -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-medium text-gray-500">Alternate Phone</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">+91</span>
+                            <input type="tel" id="editAlternatePhone" placeholder="Optional" maxlength="10" 
+                                class="w-full pl-12 pr-4 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                        </div>
+                    </div>
+                    
+                    <!-- Status -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-medium text-gray-500">Status</label>
+                        <select id="editStatus" 
+                            class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]">
+                            <option value="new_lead">New Lead</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="qualified">Qualified</option>
+                            <option value="site_visit_scheduled">Site Visit Scheduled</option>
+                            <option value="site_visit_done">Site Visit Done</option>
+                            <option value="quotation_sent">Quotation Sent</option>
+                            <option value="negotiation">Negotiation</option>
+                            <option value="converted">Converted</option>
+                            <option value="lost">Lost</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Lead Source -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-medium text-gray-500">Lead Source</label>
+                        <select id="editLeadSource" 
+                            class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]">
+                            <option value="">Select source...</option>
+                            <option value="referral">Referral</option>
+                            <option value="walk_in">Walk-in</option>
+                            <option value="social_media">Social Media</option>
+                            <option value="website">Website</option>
+                            <option value="exhibition">Exhibition</option>
+                            <option value="direct_approach">Direct Approach</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Referral Code -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-medium text-gray-500">Referral Code</label>
+                        <input type="text" id="editReferralCode" placeholder="Enter referral code if any" 
+                            class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+                    <button onclick="closeEditCustomerModal()" class="px-4 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium text-sm transition-colors">
+                        Cancel
+                    </button>
+                    <button onclick="saveCustomerChanges()" class="px-6 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Store current customer being edited
+    let currentEditCustomerId = null;
+    
+    function openEditCustomerModal(customerId, customerData) {
+        currentEditCustomerId = customerId;
+        const modal = document.getElementById('editCustomerModal');
+        
+        // Populate form with existing data
+        if (customerData) {
+            document.getElementById('editFirstName').value = customerData.firstName || '';
+            document.getElementById('editLastName').value = customerData.lastName || '';
+            document.getElementById('editPhone').value = customerData.phone || '';
+            document.getElementById('editEmail').value = customerData.email || '';
+            document.getElementById('editAlternatePhone').value = customerData.alternatePhone || '';
+            document.getElementById('editStatus').value = customerData.status || 'new_lead';
+            document.getElementById('editLeadSource').value = customerData.leadSource || '';
+            document.getElementById('editReferralCode').value = customerData.referralCode || '';
+        }
+        
+        // Show modal with animation
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeEditCustomerModal() {
+        const modal = document.getElementById('editCustomerModal');
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+        currentEditCustomerId = null;
+    }
+    
+    function saveCustomerChanges() {
+        // Validate
+        const firstName = document.getElementById('editFirstName').value.trim();
+        const lastName = document.getElementById('editLastName').value.trim();
+        const phone = document.getElementById('editPhone').value.trim();
+        
+        if (!firstName || !lastName || !phone) {
+            alert('Please fill all required fields');
+            return;
+        }
+        
+        if (phone.length < 10) {
+            alert('Please enter a valid phone number');
+            return;
+        }
+        
+        // Collect data
+        const customerData = {
+            id: currentEditCustomerId,
+            firstName,
+            lastName,
+            phone,
+            email: document.getElementById('editEmail').value.trim(),
+            alternatePhone: document.getElementById('editAlternatePhone').value.trim(),
+            status: document.getElementById('editStatus').value,
+            leadSource: document.getElementById('editLeadSource').value,
+            referralCode: document.getElementById('editReferralCode').value.trim(),
+        };
+        
+        // In production, this would submit to the API
+        console.log('Saving customer:', customerData);
+        
+        // Show success and close
+        alert('Customer updated successfully!');
+        closeEditCustomerModal();
+        
+        // Optionally refresh the page or update the UI
+        // window.location.reload();
+    }
+    
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeEditCustomerModal();
+        }
+    });
+</script>

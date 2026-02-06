@@ -1,0 +1,475 @@
+<!-- 
+    Document Manager Component
+    Usage: Include this file and call initDocumentManager(containerId, documents, options)
+    Requires Tailwind CSS
+-->
+
+<!-- Document Manager Template -->
+<div id="documentManagerTemplate" class="hidden">
+    <!-- Document Manager Container -->
+    <div class="document-manager space-y-4">
+        <!-- Header with Upload Button -->
+        <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Documents</h3>
+            <button onclick="openUploadModal()" class="px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Upload
+            </button>
+        </div>
+        
+        <!-- Document Categories -->
+        <div class="space-y-3">
+            <!-- Identity Documents -->
+            <div class="border border-gray-100 rounded-lg overflow-hidden">
+                <button onclick="toggleSection('identity')" class="w-full px-3 py-2 bg-gray-50 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"/>
+                            </svg>
+                        </div>
+                        <div class="text-left">
+                            <div class="text-sm font-medium text-gray-900">Identity Documents</div>
+                            <div class="text-xs text-gray-500">Aadhaar, PAN, Photo</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-medium text-gray-500">2/3</span>
+                        <svg class="w-5 h-5 text-gray-400 section-chevron transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                </button>
+                <div id="identity-section" class="hidden divide-y divide-gray-100">
+                    <!-- Aadhaar -->
+                    <div class="p-4 flex items-center justify-between bg-white">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">Aadhaar Card</div>
+                                <div class="text-xs text-gray-500">aadhaar_front.jpg • Uploaded Jan 15</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">Verified</span>
+                            <button class="p-1.5 text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                            </button>
+                            <button class="p-1.5 text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- PAN -->
+                    <div class="p-4 flex items-center justify-between bg-white">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">PAN Card</div>
+                                <div class="text-xs text-gray-500">pan_card.pdf • Uploaded Jan 15</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-700 rounded">Pending</span>
+                            <button class="p-1.5 text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                            </button>
+                            <button class="p-1.5 text-green-500 hover:text-green-700 hover:bg-green-50 rounded transition-colors" title="Verify">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Photo - Missing -->
+                    <div class="p-4 flex items-center justify-between bg-white">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-gray-500">Passport Photo</div>
+                                <div class="text-xs text-gray-400">Required for application</div>
+                            </div>
+                        </div>
+                        <button class="px-3 py-1.5 text-xs font-medium text-primary border border-primary rounded-lg hover:bg-primary/10 transition-colors">
+                            Upload
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Property Documents -->
+            <div class="border border-gray-100 rounded-lg overflow-hidden">
+                <button onclick="toggleSection('property')" class="w-full px-3 py-2 bg-gray-50 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                            </svg>
+                        </div>
+                        <div class="text-left">
+                            <div class="text-sm font-medium text-gray-900">Property Documents</div>
+                            <div class="text-xs text-gray-500">Electricity bill, Ownership proof</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-medium text-gray-500">1/2</span>
+                        <svg class="w-5 h-5 text-gray-400 section-chevron transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                </button>
+                <div id="property-section" class="hidden divide-y divide-gray-100">
+                    <!-- Electricity Bill -->
+                    <div class="p-4 flex items-center justify-between bg-white">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">Latest Electricity Bill</div>
+                                <div class="text-xs text-gray-500">electricity_bill_jan.pdf • Uploaded Jan 20</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">Verified</span>
+                            <button class="p-1.5 text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-colors">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Ownership Proof - Missing -->
+                    <div class="p-4 flex items-center justify-between bg-white">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center border-2 border-dashed border-gray-300">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="text-sm font-medium text-gray-500">Ownership Proof</div>
+                                <div class="text-xs text-gray-400">Property deed or registry</div>
+                            </div>
+                        </div>
+                        <button class="px-3 py-1.5 text-xs font-medium text-primary border border-primary rounded-lg hover:bg-primary/10 transition-colors">
+                            Upload
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Site Visit Photos -->
+            <div class="border border-gray-100 rounded-lg overflow-hidden">
+                <button onclick="toggleSection('sitevisit')" class="w-full px-3 py-2 bg-gray-50 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                        <div class="text-left">
+                            <div class="text-sm font-medium text-gray-900">Site Visit Photos</div>
+                            <div class="text-xs text-gray-500">Roof, meter, surroundings</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-medium text-gray-500">4 photos</span>
+                        <svg class="w-5 h-5 text-gray-400 section-chevron transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                </button>
+                <div id="sitevisit-section" class="hidden p-4 bg-white">
+                    <div class="grid grid-cols-4 gap-3">
+                        <div class="aspect-square rounded-lg overflow-hidden bg-gray-200 relative group cursor-pointer">
+                            <img src="https://via.placeholder.com/150?text=Roof" alt="Roof" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                <button class="p-1.5 bg-white rounded text-gray-700 hover:bg-gray-50">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="aspect-square rounded-lg overflow-hidden bg-gray-200 relative group cursor-pointer">
+                            <img src="https://via.placeholder.com/150?text=Meter" alt="Meter" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                <button class="p-1.5 bg-white rounded text-gray-700 hover:bg-gray-50">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="aspect-square rounded-lg overflow-hidden bg-gray-200 relative group cursor-pointer">
+                            <img src="https://via.placeholder.com/150?text=Panel" alt="Panel" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                <button class="p-1.5 bg-white rounded text-gray-700 hover:bg-gray-50">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div id="uploadModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeUploadModal()"></div>
+    <div class="fixed inset-0 overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative w-full max-w-md bg-white rounded-lg shadow-xl">
+                <!-- Header -->
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                    <h2 class="text-lg font-semibold text-gray-900">Upload Document</h2>
+                    <button onclick="closeUploadModal()" class="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded-lg transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Body -->
+                <div class="p-6 space-y-5">
+                    <!-- Document Type -->
+                    <div class="space-y-2">
+                        <label class="block text-xs font-medium text-gray-500">Document Type <span class="text-red-500">*</span></label>
+                        <select id="uploadDocType" 
+                            class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]">
+                            <option value="">Select document type...</option>
+                            <optgroup label="Identity Documents">
+                                <option value="aadhaar">Aadhaar Card</option>
+                                <option value="pan">PAN Card</option>
+                                <option value="photo">Passport Photo</option>
+                            </optgroup>
+                            <optgroup label="Property Documents">
+                                <option value="electricity_bill">Electricity Bill</option>
+                                <option value="ownership_proof">Ownership Proof</option>
+                                <option value="noc">NOC from Society</option>
+                            </optgroup>
+                            <optgroup label="Site Visit">
+                                <option value="roof_photo">Roof Photo</option>
+                                <option value="meter_photo">Meter Photo</option>
+                                <option value="surroundings">Surroundings Photo</option>
+                            </optgroup>
+                            <optgroup label="Loan Documents">
+                                <option value="bank_statement">Bank Statement</option>
+                                <option value="salary_slip">Salary Slip</option>
+                                <option value="itr">ITR</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    
+                    <!-- Drop Zone -->
+                    <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer">
+                        <svg class="w-10 h-10 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
+                        <div class="text-xs font-medium text-gray-500">Drop files here or click to browse</div>
+                        <div class="text-xs text-gray-500 mt-1">PDF, JPG, PNG up to 10MB</div>
+                        <input type="file" id="fileInput" class="hidden" accept=".pdf,.jpg,.jpeg,.png" multiple>
+                    </div>
+                    
+                    <!-- Selected Files Preview -->
+                    <div id="selectedFiles" class="hidden space-y-2">
+                        <!-- Files will be listed here -->
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+                    <button onclick="closeUploadModal()" class="px-4 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium text-sm transition-colors">
+                        Cancel
+                    </button>
+                    <button onclick="uploadDocuments()" class="px-6 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
+                        Upload
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Document Preview Modal -->
+<div id="previewModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+    <div class="fixed inset-0 bg-black/80" onclick="closePreviewModal()"></div>
+    <div class="fixed inset-4 flex items-center justify-center">
+        <div class="relative max-w-4xl max-h-full">
+            <button onclick="closePreviewModal()" class="absolute -top-10 right-0 p-2 text-white hover:text-gray-300 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+            <img id="previewImage" src="" alt="Document Preview" class="max-w-full max-h-[80vh] rounded-lg shadow-2xl">
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleSection(sectionId) {
+        const section = document.getElementById(`${sectionId}-section`);
+        const isHidden = section.classList.contains('hidden');
+        
+        // Toggle section
+        section.classList.toggle('hidden');
+        
+        // Rotate chevron
+        const button = section.previousElementSibling;
+        const chevron = button.querySelector('.section-chevron');
+        if (isHidden) {
+            chevron.style.transform = 'rotate(180deg)';
+        } else {
+            chevron.style.transform = 'rotate(0deg)';
+        }
+    }
+    
+    function openUploadModal() {
+        document.getElementById('uploadModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeUploadModal() {
+        document.getElementById('uploadModal').classList.add('hidden');
+        document.body.style.overflow = '';
+        // Reset form
+        document.getElementById('uploadDocType').value = '';
+        document.getElementById('selectedFiles').innerHTML = '';
+        document.getElementById('selectedFiles').classList.add('hidden');
+    }
+    
+    function openPreviewModal(imageSrc) {
+        document.getElementById('previewImage').src = imageSrc;
+        document.getElementById('previewModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closePreviewModal() {
+        document.getElementById('previewModal').classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+    
+    function uploadDocuments() {
+        const docType = document.getElementById('uploadDocType').value;
+        if (!docType) {
+            alert('Please select a document type');
+            return;
+        }
+        
+        // In production, this would upload to the API
+        alert('Documents uploaded successfully!');
+        closeUploadModal();
+    }
+    
+    // File input handling
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const selectedFiles = document.getElementById('selectedFiles');
+        
+        if (dropZone && fileInput) {
+            dropZone.addEventListener('click', () => fileInput.click());
+            
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-primary', 'bg-primary/5');
+            });
+            
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('border-primary', 'bg-primary/5');
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-primary', 'bg-primary/5');
+                handleFiles(e.dataTransfer.files);
+            });
+            
+            fileInput.addEventListener('change', () => {
+                handleFiles(fileInput.files);
+            });
+        }
+    });
+    
+    function handleFiles(files) {
+        const selectedFiles = document.getElementById('selectedFiles');
+        selectedFiles.innerHTML = '';
+        
+        if (files.length > 0) {
+            selectedFiles.classList.remove('hidden');
+            
+            Array.from(files).forEach((file, index) => {
+                const fileEl = document.createElement('div');
+                fileEl.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+                fileEl.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-gray-900">${file.name}</div>
+                            <div class="text-xs text-gray-500">${(file.size / 1024).toFixed(1)} KB</div>
+                        </div>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="p-1 text-gray-400 hover:text-red-500 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                `;
+                selectedFiles.appendChild(fileEl);
+            });
+        }
+    }
+    
+    // Close modals on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeUploadModal();
+            closePreviewModal();
+        }
+    });
+</script>

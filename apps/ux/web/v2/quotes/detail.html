@@ -5,25 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quote QT-2026-0042 - OneOhm Solar EPC</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#76c044',
-                        'primary-dark': '#5ea031',
-                        secondary: '#0d74b8',
-                        warning: '#EAB308',
-                        error: '#DC2626',
-                    }
+                        primary: {
+                            DEFAULT: '#76c044',
+                            dark: '#5ea031',
+                            light: '#8fd35f',
+                        },
+                        secondary: {
+                            DEFAULT: '#0d74b8',
+                            dark: '#0a5c92',
+                        },
+                        success: '#22c55e',
+                        warning: '#eab308',
+                        error: '#dc2626',
+                        info: '#0ea5e9',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
                 }
             }
         }
     </script>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .page-container { margin-left: 296px; margin-top: 56px; min-height: calc(100vh - 56px); background: #f4f4f5; }
+        body { font-family: 'Inter', system-ui, sans-serif; }
+        .page-container { margin-left: 248px; margin-top: 48px; min-height: calc(100vh - 48px); background: #f4f4f5; }
         
         /* Tabs */
         .tab-btn { padding: 12px 16px; font-size: 14px; font-weight: 500; color: #71717a; border-bottom: 2px solid transparent; transition: all 150ms; }
@@ -41,45 +52,45 @@
         .timeline-dot.primary { border-color: #76c044; background: #76c044; }
         
         @media (max-width: 1024px) {
-            .page-container { margin-left: 56px; }
+            .page-container { margin-left: 48px; }
         }
     </style>
 </head>
 <body class="bg-gray-100">
     <!-- Header -->
-    <header class="fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 z-50 flex items-center px-4">
+    <header class="fixed top-0 left-0 right-0 h-12 bg-white border-b border-gray-100 z-50 flex items-center px-4">
         <a href="../dashboard/index.html" class="flex items-center">
             <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto">
         </a>
         <div class="flex-1 flex justify-center">
             <div class="w-full max-w-md">
-                <div class="flex items-center px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                <div class="flex items-center px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-100">
                     <svg class="w-4 h-4 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     <span class="text-gray-400 text-sm">Search...</span>
                 </div>
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <button class="p-2 hover:bg-gray-100 rounded-lg"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></button>
+            <button class="p-2 hover:bg-gray-50 rounded-lg"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></button>
             <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">RK</div>
         </div>
     </header>
     
     <!-- Sidebar Rail -->
-    <aside class="fixed left-0 top-14 w-14 h-[calc(100vh-56px)] bg-white border-r border-gray-200 flex flex-col items-center py-2 z-40">
-        <a href="../dashboard/index.html" class="w-11 h-11 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-lg mb-1" title="Dashboard">
+    <aside class="fixed left-0 top-12 w-12 h-[calc(100vh-48px)] bg-white border-r border-gray-100 flex flex-col items-center py-2 z-40">
+        <a href="../dashboard/index.html" class="w-10 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 rounded-lg mb-1" title="Dashboard">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
         </a>
-        <a href="../crm/customers.html" class="w-11 h-11 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-lg mb-1" title="Sales & CRM">
+        <a href="../crm/customers.html" class="w-10 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 rounded-lg mb-1" title="Sales & CRM">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         </a>
-        <a href="list.html" class="w-11 h-11 flex items-center justify-center text-primary bg-primary/10 rounded-lg border-l-2 border-primary" title="Quotations">
+        <a href="list.html" class="w-10 h-9 flex items-center justify-center text-primary bg-primary/10 rounded-lg border-l-2 border-primary" title="Quotations">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
         </a>
     </aside>
     
     <!-- Quotes Sub-nav Panel -->
-    <aside class="fixed left-14 top-14 w-60 h-[calc(100vh-56px)] bg-white border-r border-gray-200 z-30 overflow-y-auto">
+    <aside class="fixed left-12 top-12 w-52 h-[calc(100vh-48px)] bg-white border-r border-gray-100 z-30 overflow-y-auto">
         <div class="p-4 border-b border-gray-100">
             <h2 class="font-semibold text-gray-800">Quotations</h2>
         </div>
@@ -95,7 +106,7 @@
     </aside>
     
     <!-- Main Content -->
-    <main class="page-container p-6">
+    <main class="page-container p-4">
         <!-- Breadcrumb -->
         <nav class="flex items-center gap-2 text-sm text-gray-500 mb-4">
             <a href="list.html" class="hover:text-gray-900">Quotes</a>
@@ -107,35 +118,45 @@
         <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
             <div>
                 <div class="flex items-center gap-3 mb-2">
-                    <h1 class="text-2xl font-bold text-gray-900">QT-2026-0042</h1>
+                    <h1 class="text-xl font-semibold text-gray-900">QT-2026-0042</h1>
                     <span class="px-2.5 py-1 text-xs font-semibold bg-yellow-100 text-yellow-800 rounded-full">Sent</span>
                 </div>
                 <p class="text-gray-500">Created on Jan 28, 2026 • Valid until Feb 12, 2026</p>
             </div>
-            <div class="flex items-center gap-3">
-                <button class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50">
+            <div class="flex items-center gap-2 flex-wrap">
+                <!-- Secondary Actions -->
+                <a href="builder.html" class="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     Edit
-                </button>
-                <button class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50">
+                </a>
+                <button onclick="duplicateQuote()" class="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                     Duplicate
                 </button>
-                <button class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50">
+                <button onclick="downloadPDF()" class="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                    Download PDF
+                    PDF
                 </button>
-                <button class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                    Resend
+                
+                <!-- Status Actions Divider -->
+                <div class="w-px h-8 bg-gray-200 mx-1"></div>
+                
+                <!-- Status Actions (contextual based on current status) -->
+                <button onclick="openRejectModal()" class="flex items-center gap-2 px-3 py-2 border border-red-200 text-red-600 rounded-lg font-medium text-sm hover:bg-red-50">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    Reject
+                </button>
+                <button onclick="openAcceptModal()" class="flex items-center gap-2 px-3 py-1.5 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    Mark Accepted
                 </button>
             </div>
         </div>
         
         <!-- Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <!-- Customer Card -->
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+            <div class="bg-white rounded-lg border border-gray-100 p-4">
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center text-primary font-bold">RS</div>
                     <div>
@@ -144,13 +165,13 @@
                     </div>
                 </div>
                 <div class="text-sm">
-                    <p class="text-gray-600">rajesh.sharma@gmail.com</p>
+                    <p class="text-gray-500">rajesh.sharma@gmail.com</p>
                     <p class="text-gray-500 mt-1">123, MG Road, Koramangala, Bangalore</p>
                 </div>
             </div>
             
             <!-- Property Card -->
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+            <div class="bg-white rounded-lg border border-gray-100 p-4">
                 <div class="flex items-center gap-2 mb-3">
                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                     <span class="font-medium text-gray-900">Property</span>
@@ -166,7 +187,7 @@
             </div>
             
             <!-- System Config Card -->
-            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+            <div class="bg-white rounded-lg border border-gray-100 p-4">
                 <div class="flex items-center gap-2 mb-3">
                     <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
                     <span class="font-medium text-gray-900">System Configuration</span>
@@ -193,20 +214,20 @@
         </div>
         
         <!-- Quote Details -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
             <!-- Line Items -->
-            <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div class="lg:col-span-2 bg-white rounded-lg border border-gray-100">
                 <div class="p-4 border-b border-gray-100">
                     <h3 class="font-semibold text-gray-900">Quote Items</h3>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
-                        <thead class="bg-gray-50 border-b border-gray-200">
+                        <thead class="bg-gray-50 border-b border-gray-100">
                             <tr>
-                                <th class="px-4 py-3 text-left font-medium text-gray-500">Item</th>
-                                <th class="px-4 py-3 text-center font-medium text-gray-500">Qty</th>
-                                <th class="px-4 py-3 text-right font-medium text-gray-500">Unit Price</th>
-                                <th class="px-4 py-3 text-right font-medium text-gray-500">Total</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-500">Item</th>
+                                <th class="px-3 py-2 text-center font-medium text-gray-500">Qty</th>
+                                <th class="px-3 py-2 text-right font-medium text-gray-500">Unit Price</th>
+                                <th class="px-3 py-2 text-right font-medium text-gray-500">Total</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
@@ -215,73 +236,73 @@
                                 <td colspan="4" class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Solar Panels</td>
                             </tr>
                             <tr>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-2">
                                     <p class="font-medium text-gray-900">Mono PERC 545W Panel</p>
                                     <p class="text-xs text-gray-500">Tier-1 | 25 Year Warranty</p>
                                 </td>
-                                <td class="px-4 py-3 text-center">12</td>
-                                <td class="px-4 py-3 text-right">₹18,500</td>
-                                <td class="px-4 py-3 text-right font-medium">₹2,22,000</td>
+                                <td class="px-3 py-2 text-center">12</td>
+                                <td class="px-3 py-2 text-right">₹18,500</td>
+                                <td class="px-3 py-2 text-right font-medium">₹2,22,000</td>
                             </tr>
                             <!-- Inverter Section -->
                             <tr class="bg-gray-50">
                                 <td colspan="4" class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Inverter</td>
                             </tr>
                             <tr>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-2">
                                     <p class="font-medium text-gray-900">5 kW Hybrid Inverter</p>
                                     <p class="text-xs text-gray-500">With MPPT | WiFi Monitoring</p>
                                 </td>
-                                <td class="px-4 py-3 text-center">1</td>
-                                <td class="px-4 py-3 text-right">₹42,000</td>
-                                <td class="px-4 py-3 text-right font-medium">₹42,000</td>
+                                <td class="px-3 py-2 text-center">1</td>
+                                <td class="px-3 py-2 text-right">₹42,000</td>
+                                <td class="px-3 py-2 text-right font-medium">₹42,000</td>
                             </tr>
                             <!-- Mounting Section -->
                             <tr class="bg-gray-50">
                                 <td colspan="4" class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Mounting & Wiring</td>
                             </tr>
                             <tr>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-2">
                                     <p class="font-medium text-gray-900">Mounting Structure</p>
                                     <p class="text-xs text-gray-500">GI Hot-dip Galvanized</p>
                                 </td>
-                                <td class="px-4 py-3 text-center">1</td>
-                                <td class="px-4 py-3 text-right">₹25,000</td>
-                                <td class="px-4 py-3 text-right font-medium">₹25,000</td>
+                                <td class="px-3 py-2 text-center">1</td>
+                                <td class="px-3 py-2 text-right">₹25,000</td>
+                                <td class="px-3 py-2 text-right font-medium">₹25,000</td>
                             </tr>
                             <tr>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-2">
                                     <p class="font-medium text-gray-900">DC/AC Cables & Accessories</p>
                                 </td>
-                                <td class="px-4 py-3 text-center">1</td>
-                                <td class="px-4 py-3 text-right">₹12,000</td>
-                                <td class="px-4 py-3 text-right font-medium">₹12,000</td>
+                                <td class="px-3 py-2 text-center">1</td>
+                                <td class="px-3 py-2 text-right">₹12,000</td>
+                                <td class="px-3 py-2 text-right font-medium">₹12,000</td>
                             </tr>
                             <!-- Installation Section -->
                             <tr class="bg-gray-50">
                                 <td colspan="4" class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Installation</td>
                             </tr>
                             <tr>
-                                <td class="px-4 py-3">
+                                <td class="px-4 py-2">
                                     <p class="font-medium text-gray-900">Installation & Commissioning</p>
                                 </td>
-                                <td class="px-4 py-3 text-center">1</td>
-                                <td class="px-4 py-3 text-right">₹24,000</td>
-                                <td class="px-4 py-3 text-right font-medium">₹24,000</td>
+                                <td class="px-3 py-2 text-center">1</td>
+                                <td class="px-3 py-2 text-right">₹24,000</td>
+                                <td class="px-3 py-2 text-right font-medium">₹24,000</td>
                             </tr>
                         </tbody>
-                        <tfoot class="bg-gray-50 border-t-2 border-gray-200">
+                        <tfoot class="bg-gray-50 border-t-2 border-gray-100">
                             <tr>
-                                <td colspan="3" class="px-4 py-3 text-right font-medium text-gray-600">Subtotal</td>
-                                <td class="px-4 py-3 text-right font-medium text-gray-900">₹3,25,000</td>
+                                <td colspan="3" class="px-3 py-2 text-right font-medium text-gray-500">Subtotal</td>
+                                <td class="px-3 py-2 text-right font-medium text-gray-900">₹3,25,000</td>
                             </tr>
                             <tr>
-                                <td colspan="3" class="px-4 py-3 text-right font-medium text-gray-600">GST (12%)</td>
-                                <td class="px-4 py-3 text-right font-medium text-gray-900">₹39,000</td>
+                                <td colspan="3" class="px-3 py-2 text-right font-medium text-gray-500">GST (12%)</td>
+                                <td class="px-3 py-2 text-right font-medium text-gray-900">₹39,000</td>
                             </tr>
                             <tr class="text-lg">
-                                <td colspan="3" class="px-4 py-3 text-right font-bold text-gray-900">Total</td>
-                                <td class="px-4 py-3 text-right font-bold text-primary">₹3,64,000</td>
+                                <td colspan="3" class="px-3 py-2 text-right font-bold text-gray-900">Total</td>
+                                <td class="px-3 py-2 text-right font-bold text-primary">₹3,64,000</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -291,7 +312,7 @@
             <!-- Subsidy & Summary -->
             <div class="space-y-6">
                 <!-- Subsidy Card -->
-                <div class="bg-green-50 rounded-xl border border-green-200 p-4">
+                <div class="bg-green-50 rounded-lg border border-green-200 p-4">
                     <div class="flex items-center gap-2 mb-3">
                         <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         <span class="font-semibold text-green-800">PM Surya Ghar Subsidy</span>
@@ -315,7 +336,7 @@
                 </div>
                 
                 <!-- Quick Stats -->
-                <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
+                <div class="bg-white rounded-lg border border-gray-100 p-4">
                     <h4 class="font-semibold text-gray-900 mb-3">Quick Stats</h4>
                     <div class="space-y-3">
                         <div class="flex justify-between text-sm">
@@ -340,8 +361,8 @@
         </div>
         
         <!-- Tabs Section -->
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
-            <div class="border-b border-gray-200 flex">
+        <div class="bg-white rounded-lg border border-gray-100">
+            <div class="border-b border-gray-100 flex">
                 <button class="tab-btn active" onclick="switchTab('versions')">Versions</button>
                 <button class="tab-btn" onclick="switchTab('documents')">Documents</button>
                 <button class="tab-btn" onclick="switchTab('activity')">Activity</button>
@@ -362,7 +383,7 @@
                     </div>
                     <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div class="flex items-center gap-3">
-                            <span class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-bold text-xs">v1</span>
+                            <span class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-500 font-bold text-xs">v1</span>
                             <div>
                                 <p class="font-medium text-gray-900">Version 1</p>
                                 <p class="text-xs text-gray-500">Jan 22, 2026 at 3:45 PM • by Ravi Kumar</p>
@@ -375,10 +396,10 @@
             
             <!-- Documents Tab -->
             <div id="tab-documents" class="tab-content p-4">
-                <div class="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center mb-4">
+                <div class="border-2 border-dashed border-gray-100 rounded-lg p-8 text-center mb-4">
                     <svg class="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
-                    <p class="text-gray-600 mb-2">Drag and drop files here, or click to browse</p>
-                    <button class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium">Upload Document</button>
+                    <p class="text-gray-500 mb-2">Drag and drop files here, or click to browse</p>
+                    <button class="px-3 py-1.5 bg-primary text-white rounded-lg text-sm font-medium">Upload Document</button>
                 </div>
                 <div class="space-y-2">
                     <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -389,7 +410,7 @@
                                 <p class="text-xs text-gray-500">1.2 MB • Generated Jan 28, 2026</p>
                             </div>
                         </div>
-                        <button class="text-gray-400 hover:text-gray-600">
+                        <button class="text-gray-400 hover:text-gray-500">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                         </button>
                     </div>
@@ -439,6 +460,164 @@
         </div>
     </main>
     
+    <!-- Accept Modal -->
+    <div id="acceptModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeAcceptModal()"></div>
+        <div class="fixed inset-0 overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative w-full max-w-md bg-white rounded-lg shadow-xl">
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-semibold text-gray-900">Mark Quote as Accepted</h3>
+                        <p class="text-sm text-gray-500">Customer has accepted this quotation</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="space-y-2">
+                    <label class="block text-xs font-medium text-gray-500">Acceptance Date</label>
+                    <input type="date" id="acceptDate" class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-xs font-medium text-gray-500">Notes (Optional)</label>
+                    <textarea id="acceptNotes" rows="2" placeholder="Any additional notes..." class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none"></textarea>
+                </div>
+                <div class="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" id="createProjectCheck" checked class="w-4 h-4 mt-1 rounded border-gray-300 text-primary focus:ring-primary">
+                        <div>
+                            <div class="text-sm font-medium text-gray-900">Create Project Automatically</div>
+                            <p class="text-xs text-gray-500 mt-1">A new project will be created from this accepted quote</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+                    <div class="p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3 rounded-b-2xl">
+                        <button onclick="closeModal('acceptModal')" class="px-3 py-1.5 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50">Cancel</button>
+                        <button onclick="confirmAccept()" class="px-3 py-1.5 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark">Confirm Acceptance</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reject Modal -->
+    <div id="rejectModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeRejectModal()"></div>
+        <div class="fixed inset-0 overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative w-full max-w-md bg-white rounded-lg shadow-xl">
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-semibold text-gray-900">Mark Quote as Rejected</h3>
+                        <p class="text-sm text-gray-500">Customer has rejected this quotation</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="space-y-2">
+                    <label class="block text-xs font-medium text-gray-500">Rejection Reason <span class="text-red-500">*</span></label>
+                    <select id="rejectReason" class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                        <option value="">Select a reason...</option>
+                        <option value="price">Price too high</option>
+                        <option value="competitor">Chose competitor</option>
+                        <option value="timing">Bad timing / delayed project</option>
+                        <option value="requirements">Requirements changed</option>
+                        <option value="financing">Financing issues</option>
+                        <option value="other">Other reason</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-xs font-medium text-gray-500">Additional Details</label>
+                    <textarea id="rejectNotes" rows="3" placeholder="Provide more context about the rejection..." class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none"></textarea>
+                </div>
+                <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" id="createRevisionCheck" class="w-4 h-4 mt-1 rounded border-gray-300 text-primary focus:ring-primary">
+                        <div>
+                            <div class="text-sm font-medium text-gray-900">Create New Revision</div>
+                            <p class="text-xs text-gray-500 mt-1">Start working on a revised quote based on feedback</p>
+                        </div>
+                    </label>
+                        </div>
+                    </div>
+                    <div class="p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3 rounded-b-2xl">
+                        <button onclick="closeModal('rejectModal')" class="px-3 py-1.5 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50">Cancel</button>
+                        <button onclick="confirmReject()" class="px-4 py-2 bg-red-600 text-white rounded-lg font-medium text-sm hover:bg-red-700">Confirm Rejection</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Convert to Project Modal -->
+    <div id="projectModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal('projectModal')"></div>
+        <div class="fixed inset-0 overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative w-full max-w-lg bg-white rounded-lg shadow-xl">
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-semibold text-gray-900">Convert to Project</h3>
+                        <p class="text-sm text-gray-500">Create an installation project from this quote</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="space-y-2">
+                    <label class="block text-xs font-medium text-gray-500">Project Name</label>
+                    <input type="text" id="projectName" value="Solar Installation - Rajesh Sharma" class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="block text-xs font-medium text-gray-500">Estimated Start Date</label>
+                        <input type="date" id="projectStartDate" class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-xs font-medium text-gray-500">Priority</label>
+                        <select id="projectPriority" class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                            <option value="normal">Normal</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="p-4 bg-gray-50 rounded-lg space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">System Size:</span>
+                        <span class="font-medium">5 kW</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Project Value:</span>
+                        <span class="font-medium">₹3,64,000</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Net Payable (after subsidy):</span>
+                        <span class="font-bold text-primary">₹2,86,000</span>
+                    </div>
+                        </div>
+                    </div>
+                    <div class="p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3 rounded-b-2xl">
+                        <button onclick="closeModal('projectModal')" class="px-3 py-1.5 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50">Cancel</button>
+                        <button onclick="createProject()" class="px-3 py-1.5 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark">Create Project</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         function switchTab(tabName) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -446,6 +625,97 @@
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
             document.getElementById('tab-' + tabName).classList.add('active');
         }
+        
+        // Modal Functions
+        function openAcceptModal() {
+            document.getElementById('acceptModal').classList.remove('hidden');
+            document.getElementById('acceptDate').valueAsDate = new Date();
+        }
+        
+        function closeAcceptModal() {
+            document.getElementById('acceptModal').classList.add('hidden');
+        }
+        
+        function openRejectModal() {
+            document.getElementById('rejectModal').classList.remove('hidden');
+        }
+        
+        function closeRejectModal() {
+            document.getElementById('rejectModal').classList.add('hidden');
+        }
+        
+        function openProjectModal() {
+            document.getElementById('projectModal').classList.remove('hidden');
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+        
+        function confirmAccept() {
+            const createProject = document.getElementById('createProjectCheck').checked;
+            closeModal('acceptModal');
+            
+            // Show success toast (in real app, this would call API)
+            alert('Quote marked as Accepted!');
+            
+            if (createProject) {
+                openProjectModal();
+            } else {
+                // Redirect to quotes list
+                window.location.href = 'list.html';
+            }
+        }
+        
+        function confirmReject() {
+            const reason = document.getElementById('rejectReason').value;
+            if (!reason) {
+                alert('Please select a rejection reason');
+                return;
+            }
+            
+            const createRevision = document.getElementById('createRevisionCheck').checked;
+            closeModal('rejectModal');
+            
+            // Show success toast
+            alert('Quote marked as Rejected.');
+            
+            if (createRevision) {
+                // Redirect to quote builder with pre-filled data
+                window.location.href = 'builder.html?revision=QT-2026-0042';
+            } else {
+                window.location.href = 'list.html';
+            }
+        }
+        
+        function createProject() {
+            const projectName = document.getElementById('projectName').value;
+            closeModal('projectModal');
+            
+            // Show success and redirect to projects
+            alert(`Project "${projectName}" created successfully!`);
+            window.location.href = '../projects/detail.html';
+        }
+        
+        function duplicateQuote() {
+            if (confirm('Create a duplicate of this quote?')) {
+                window.location.href = 'builder.html?duplicate=QT-2026-0042';
+            }
+        }
+        
+        function downloadPDF() {
+            alert('Downloading PDF...');
+        }
+        
+        // Close modals when clicking outside
+        document.addEventListener('click', function(e) {
+            ['acceptModal', 'rejectModal', 'projectModal'].forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (e.target === modal) {
+                    closeModal(modalId);
+                }
+            });
+        });
     </script>
 </body>
 </html>

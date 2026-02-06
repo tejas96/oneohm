@@ -5,25 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notifications - OneOhm Solar EPC</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#76c044',
-                        'primary-dark': '#5ea031',
-                        secondary: '#0d74b8',
-                        'secondary-dark': '#025580',
-                        warning: '#EAB308',
-                        error: '#DC2626',
-                    }
+                        primary: {
+                            DEFAULT: '#76c044',
+                            dark: '#5ea031',
+                            light: '#8fd35f',
+                        },
+                        secondary: {
+                            DEFAULT: '#0d74b8',
+                            dark: '#0a5c92',
+                        },
+                        success: '#22c55e',
+                        warning: '#eab308',
+                        error: '#dc2626',
+                        info: '#0ea5e9',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
                 }
             }
         }
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', system-ui, sans-serif; }
         
         .sidebar { transition: width 200ms ease; }
         .sidebar.collapsed { width: 64px; }
@@ -46,13 +56,13 @@
 <body class="bg-gray-100">
     <div class="flex min-h-screen">
         <!-- Sidebar -->
-        <aside id="sidebar" class="sidebar w-72 bg-white border-r border-gray-200 flex flex-col fixed h-full z-30">
+        <aside id="sidebar" class="sidebar w-72 bg-white border-r border-gray-100 flex flex-col fixed h-full z-30">
             <div class="h-16 flex items-center justify-between px-4 border-b border-gray-100">
                 <div class="flex items-center space-x-3">
                     <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-10 w-auto">
                     <span class="sidebar-header-text font-bold text-gray-800">OneOhm</span>
                 </div>
-                <button onclick="toggleSidebar()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                <button onclick="toggleSidebar()" class="p-2 hover:bg-gray-50 rounded-lg transition-colors">
                     <svg id="toggleIcon" class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
                     </svg>
@@ -63,25 +73,25 @@
                 <!-- OVERVIEW -->
                 <div class="mb-6">
                     <p class="sidebar-text text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Overview</p>
-                    <a href="../dashboard/index.html" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors">
+                    <a href="../dashboard/index.html" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                         </svg>
                         <span class="sidebar-text">Dashboard</span>
                     </a>
-                    <a href="notifications.html" class="flex items-center justify-between px-3 py-2.5 rounded-xl bg-primary/10 text-primary border-l-4 border-primary -ml-px mt-1">
+                    <a href="notifications.html" class="flex items-center justify-between px-3 py-2 rounded-lg bg-primary/10 text-primary border-l-4 border-primary -ml-px mt-1">
                         <div class="flex items-center space-x-3">
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                             </svg>
                             <span class="sidebar-text font-medium">Notifications</span>
                         </div>
-                        <span class="bg-error text-white text-xs font-bold px-2 py-0.5 rounded-full">3</span>
+                        <span class="bg-error text-white text-xs font-medium px-2 py-0.5 rounded-full">3</span>
                     </a>
                 </div>
             </nav>
             
-            <div class="border-t border-gray-200 p-4">
+            <div class="border-t border-gray-100 p-4">
                 <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">RK</div>
                     <div class="sidebar-text flex-1 min-w-0">
@@ -95,22 +105,22 @@
         <!-- Main Content -->
         <div id="mainContent" class="flex-1 ml-72 transition-all duration-200">
             <!-- Header -->
-            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-20">
+            <header class="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-6 sticky top-0 z-20">
                 <div class="flex-1 max-w-xl">
                     <div class="relative">
-                        <input type="text" placeholder="Search notifications..." class="w-full px-4 py-2.5 pl-10 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors">
+                        <input type="text" placeholder="Search notifications..." class="w-full px-4 py-2 pl-10 bg-gray-50 border border-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors">
                         <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
                     </div>
                 </div>
                 <div class="flex items-center space-x-4 ml-6">
-                    <button class="relative p-2 bg-primary/10 rounded-xl">
+                    <button class="relative p-2 bg-primary/10 rounded-lg">
                         <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                         </svg>
                     </button>
-                    <button class="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                    <button class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-lg transition-colors">
                         <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">RK</div>
                     </button>
                 </div>
@@ -121,11 +131,11 @@
                 <!-- Header -->
                 <div class="flex items-center justify-between mb-8 animate-fade-in opacity-0">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-800">Notifications</h1>
+                        <h1 class="text-xl font-semibold text-gray-800">Notifications</h1>
                         <p class="text-gray-500 mt-1">Stay updated with all your alerts and activities</p>
                     </div>
                     <div class="flex items-center space-x-3">
-                        <button class="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                        <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 rounded-lg transition-colors">
                             Mark all as read
                         </button>
                         <button class="px-4 py-2 text-sm font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors">
@@ -137,13 +147,13 @@
                 <!-- Filter Tabs -->
                 <div class="flex items-center space-x-2 mb-6 animate-fade-in opacity-0 animation-delay-100">
                     <button class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg">All</button>
-                    <button class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <button class="px-4 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
                         Unread
                         <span class="ml-1 px-1.5 py-0.5 text-xs bg-error text-white rounded-full">3</span>
                     </button>
-                    <button class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Approvals</button>
-                    <button class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Mentions</button>
-                    <button class="px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">System</button>
+                    <button class="px-4 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">Approvals</button>
+                    <button class="px-4 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">Mentions</button>
+                    <button class="px-4 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">System</button>
                 </div>
                 
                 <!-- Notifications List -->
@@ -153,7 +163,7 @@
                         <h3 class="text-sm font-semibold text-gray-500 mb-3">Today</h3>
                         <div class="space-y-3">
                             <!-- Unread Notification -->
-                            <div class="bg-primary/5 border-l-4 border-primary rounded-xl p-4 hover:bg-primary/10 transition-colors cursor-pointer">
+                            <div class="bg-primary/5 border-l-4 border-primary rounded-lg p-4 hover:bg-primary/10 transition-colors cursor-pointer">
                                 <div class="flex items-start space-x-4">
                                     <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary flex-shrink-0">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -164,20 +174,20 @@
                                         <div class="flex items-start justify-between">
                                             <div>
                                                 <p class="font-medium text-gray-800">Quote Approved</p>
-                                                <p class="text-sm text-gray-600 mt-1">Quote <span class="text-primary font-medium">Q-2542</span> for Sharma Residence has been approved by the customer.</p>
+                                                <p class="text-sm text-gray-500 mt-1">Quote <span class="text-primary font-medium">Q-2542</span> for Sharma Residence has been approved by the customer.</p>
                                             </div>
                                             <span class="text-xs text-gray-400 flex-shrink-0 ml-4">10 min ago</span>
                                         </div>
                                         <div class="flex items-center space-x-3 mt-3">
                                             <button class="px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">View Quote</button>
-                                            <button class="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Create Project</button>
+                                            <button class="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Create Project</button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             
                             <!-- Unread Notification - Approval Required -->
-                            <div class="bg-warning/5 border-l-4 border-warning rounded-xl p-4 hover:bg-warning/10 transition-colors cursor-pointer">
+                            <div class="bg-warning/5 border-l-4 border-warning rounded-lg p-4 hover:bg-warning/10 transition-colors cursor-pointer">
                                 <div class="flex items-start space-x-4">
                                     <div class="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center text-warning flex-shrink-0">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,21 +198,21 @@
                                         <div class="flex items-start justify-between">
                                             <div>
                                                 <p class="font-medium text-gray-800">Approval Required</p>
-                                                <p class="text-sm text-gray-600 mt-1">Purchase Order <span class="text-warning font-medium">PO-2025-0456</span> requires your approval. Amount: ₹2.8L</p>
+                                                <p class="text-sm text-gray-500 mt-1">Purchase Order <span class="text-warning font-medium">PO-2025-0456</span> requires your approval. Amount: ₹2.8L</p>
                                             </div>
                                             <span class="text-xs text-gray-400 flex-shrink-0 ml-4">25 min ago</span>
                                         </div>
                                         <div class="flex items-center space-x-3 mt-3">
                                             <button class="px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">Approve</button>
                                             <button class="px-3 py-1.5 text-xs font-medium text-error bg-error/10 rounded-lg hover:bg-error/20 transition-colors">Reject</button>
-                                            <button class="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">View Details</button>
+                                            <button class="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">View Details</button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             
                             <!-- Unread Notification - Overdue -->
-                            <div class="bg-error/5 border-l-4 border-error rounded-xl p-4 hover:bg-error/10 transition-colors cursor-pointer">
+                            <div class="bg-error/5 border-l-4 border-error rounded-lg p-4 hover:bg-error/10 transition-colors cursor-pointer">
                                 <div class="flex items-start space-x-4">
                                     <div class="w-10 h-10 rounded-full bg-error/20 flex items-center justify-center text-error flex-shrink-0">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -213,7 +223,7 @@
                                         <div class="flex items-start justify-between">
                                             <div>
                                                 <p class="font-medium text-gray-800">Overdue Follow-up</p>
-                                                <p class="text-sm text-gray-600 mt-1">You have 3 overdue follow-ups for leads. The oldest is <span class="text-error font-medium">Kumar Industries</span> (5 days overdue).</p>
+                                                <p class="text-sm text-gray-500 mt-1">You have 3 overdue follow-ups for leads. The oldest is <span class="text-error font-medium">Kumar Industries</span> (5 days overdue).</p>
                                             </div>
                                             <span class="text-xs text-gray-400 flex-shrink-0 ml-4">1 hour ago</span>
                                         </div>
@@ -225,7 +235,7 @@
                             </div>
                             
                             <!-- Read Notification -->
-                            <div class="bg-white border border-gray-100 rounded-xl p-4 hover:bg-gray-50 transition-colors cursor-pointer">
+                            <div class="bg-white border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
                                 <div class="flex items-start space-x-4">
                                     <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary flex-shrink-0">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -236,7 +246,7 @@
                                         <div class="flex items-start justify-between">
                                             <div>
                                                 <p class="font-medium text-gray-800">New Lead Assigned</p>
-                                                <p class="text-sm text-gray-600 mt-1"><span class="text-secondary font-medium">Priya Sharma</span> assigned a new lead "Tata Steel Complex" to you.</p>
+                                                <p class="text-sm text-gray-500 mt-1"><span class="text-secondary font-medium">Priya Sharma</span> assigned a new lead "Tata Steel Complex" to you.</p>
                                             </div>
                                             <span class="text-xs text-gray-400 flex-shrink-0 ml-4">2 hours ago</span>
                                         </div>
@@ -250,7 +260,7 @@
                     <div class="mb-6">
                         <h3 class="text-sm font-semibold text-gray-500 mb-3">Yesterday</h3>
                         <div class="space-y-3">
-                            <div class="bg-white border border-gray-100 rounded-xl p-4 hover:bg-gray-50 transition-colors cursor-pointer">
+                            <div class="bg-white border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
                                 <div class="flex items-start space-x-4">
                                     <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -261,7 +271,7 @@
                                         <div class="flex items-start justify-between">
                                             <div>
                                                 <p class="font-medium text-gray-800">Payment Received</p>
-                                                <p class="text-sm text-gray-600 mt-1">Payment of <span class="text-primary font-medium">₹2,50,000</span> received from Sharma Residence (2nd Installment).</p>
+                                                <p class="text-sm text-gray-500 mt-1">Payment of <span class="text-primary font-medium">₹2,50,000</span> received from Sharma Residence (2nd Installment).</p>
                                             </div>
                                             <span class="text-xs text-gray-400 flex-shrink-0 ml-4">Yesterday, 3:45 PM</span>
                                         </div>
@@ -269,7 +279,7 @@
                                 </div>
                             </div>
                             
-                            <div class="bg-white border border-gray-100 rounded-xl p-4 hover:bg-gray-50 transition-colors cursor-pointer">
+                            <div class="bg-white border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
                                 <div class="flex items-start space-x-4">
                                     <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 flex-shrink-0">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -280,7 +290,7 @@
                                         <div class="flex items-start justify-between">
                                             <div>
                                                 <p class="font-medium text-gray-800">Project Milestone Completed</p>
-                                                <p class="text-sm text-gray-600 mt-1">Project <span class="text-purple-600 font-medium">Green Valley School</span> completed the "Installation" milestone.</p>
+                                                <p class="text-sm text-gray-500 mt-1">Project <span class="text-purple-600 font-medium">Green Valley School</span> completed the "Installation" milestone.</p>
                                             </div>
                                             <span class="text-xs text-gray-400 flex-shrink-0 ml-4">Yesterday, 11:20 AM</span>
                                         </div>
@@ -288,7 +298,7 @@
                                 </div>
                             </div>
                             
-                            <div class="bg-white border border-gray-100 rounded-xl p-4 hover:bg-gray-50 transition-colors cursor-pointer">
+                            <div class="bg-white border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
                                 <div class="flex items-start space-x-4">
                                     <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 flex-shrink-0">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -299,7 +309,7 @@
                                         <div class="flex items-start justify-between">
                                             <div>
                                                 <p class="font-medium text-gray-800">Stock Delivered</p>
-                                                <p class="text-sm text-gray-600 mt-1">50 Solar Panels (540W Mono) from <span class="text-green-600 font-medium">Waaree Energies</span> delivered to warehouse.</p>
+                                                <p class="text-sm text-gray-500 mt-1">50 Solar Panels (540W Mono) from <span class="text-green-600 font-medium">Waaree Energies</span> delivered to warehouse.</p>
                                             </div>
                                             <span class="text-xs text-gray-400 flex-shrink-0 ml-4">Yesterday, 9:00 AM</span>
                                         </div>
@@ -313,7 +323,7 @@
                     <div class="mb-6">
                         <h3 class="text-sm font-semibold text-gray-500 mb-3">Earlier</h3>
                         <div class="space-y-3">
-                            <div class="bg-white border border-gray-100 rounded-xl p-4 hover:bg-gray-50 transition-colors cursor-pointer">
+                            <div class="bg-white border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
                                 <div class="flex items-start space-x-4">
                                     <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 flex-shrink-0">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -325,7 +335,7 @@
                                         <div class="flex items-start justify-between">
                                             <div>
                                                 <p class="font-medium text-gray-800">System Update</p>
-                                                <p class="text-sm text-gray-600 mt-1">New features added: Command Palette (Cmd+K) for quick navigation. Try it now!</p>
+                                                <p class="text-sm text-gray-500 mt-1">New features added: Command Palette (Cmd+K) for quick navigation. Try it now!</p>
                                             </div>
                                             <span class="text-xs text-gray-400 flex-shrink-0 ml-4">Jan 26, 2026</span>
                                         </div>
@@ -337,7 +347,7 @@
                     
                     <!-- Load More -->
                     <div class="text-center py-4">
-                        <button class="px-6 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                        <button class="px-6 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
                             Load More Notifications
                         </button>
                     </div>

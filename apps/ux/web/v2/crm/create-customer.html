@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Customer - OneOhm Solar EPC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: '#76c044',
+                            dark: '#5ea031',
+                            light: '#8fd35f',
+                        },
+                        secondary: {
+                            DEFAULT: '#0d74b8',
+                            dark: '#0a5c92',
+                        },
+                        success: '#22c55e',
+                        warning: '#eab308',
+                        error: '#dc2626',
+                        info: '#0ea5e9',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; }
+    </style>
+</head>
+<body class="font-sans bg-gray-50 min-h-screen text-[13px]">
+    <!-- Global Header -->
+    <header class="h-12 bg-white border-b border-gray-100 fixed top-0 left-0 right-0 z-50 flex items-center px-3">
+        <div class="flex items-center">
+            <a href="../dashboard/index.html">
+                <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto">
+            </a>
+        </div>
+        <div class="flex-1 ml-6 mr-4">
+            <div class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors text-left cursor-pointer">
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <span class="text-gray-400 flex-1 text-sm">Search...</span>
+                <kbd class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-100 rounded">⌘K</kbd>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button class="relative p-2 hover:bg-gray-50 rounded-lg transition-colors">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                </svg>
+                <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
+            </button>
+            <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors">
+                <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">RK</div>
+            </button>
+        </div>
+    </header>
+    
+    <!-- Rail Sidebar -->
+    <aside class="w-12 bg-white border-r border-gray-100 fixed top-12 left-0 h-[calc(100vh-48px)] flex flex-col z-40">
+        <div class="flex-1 flex flex-col pt-2">
+            <a href="../dashboard/index.html" class="w-10 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all relative group">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                <span class="absolute left-16 bg-gray-900 text-white px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">Dashboard</span>
+            </a>
+            <a href="customers.html" class="w-10 h-9 flex items-center justify-center text-primary bg-primary/10 border-l-[3px] border-primary transition-all relative group">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <span class="absolute top-1.5 right-2.5 min-w-[18px] h-[18px] px-1 text-[10px] font-semibold bg-red-500 text-white rounded-full flex items-center justify-center">12</span>
+                <span class="absolute left-16 bg-gray-900 text-white px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">Sales & CRM</span>
+            </a>
+            <a href="../quotes/list.html" class="w-10 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all relative group">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <span class="absolute left-16 bg-gray-900 text-white px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">Quotations</span>
+            </a>
+            <a href="../dashboard/projects.html" class="w-10 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all relative group">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                </svg>
+                <span class="absolute left-16 bg-gray-900 text-white px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">Projects</span>
+            </a>
+        </div>
+        <div class="pb-2 border-t border-gray-100">
+            <a href="#" class="w-10 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all relative group">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span class="absolute left-16 bg-gray-900 text-white px-2.5 py-1.5 rounded-md text-xs font-medium whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">Help</span>
+            </a>
+        </div>
+        <div class="w-12 h-12 flex items-center justify-center cursor-pointer hover:bg-gray-50">
+            <div class="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">RK</div>
+        </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="ml-12 mt-12 min-h-[calc(100vh-48px)] bg-gray-50">
+        <div class="max-w-3xl mx-auto py-8 px-6">
+            <!-- Back Link & Title -->
+            <div class="mb-8">
+                <a href="customers.html" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back to Customers
+                </a>
+                <h1 class="text-xl font-semibold text-gray-900">Create New Customer</h1>
+                <p class="text-gray-500 text-sm mt-1">Add a new customer and their property details</p>
+            </div>
+            
+            <!-- Step Indicator -->
+            <div class="mb-8">
+                <div class="flex items-center justify-between relative">
+                    <!-- Progress Line Background -->
+                    <div class="absolute top-5 left-0 right-0 h-0.5 bg-gray-200"></div>
+                    <!-- Progress Line Active -->
+                    <div id="progressLine" class="absolute top-5 left-0 h-0.5 bg-primary transition-all duration-300" style="width: 0%"></div>
+                    
+                    <!-- Step 1 -->
+                    <div class="relative z-10 flex flex-col items-center">
+                        <div id="step1Indicator" class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm shadow-lg shadow-primary/30">1</div>
+                        <span class="mt-2 text-xs font-medium text-primary">Customer</span>
+                    </div>
+                    <!-- Step 2 -->
+                    <div class="relative z-10 flex flex-col items-center">
+                        <div id="step2Indicator" class="w-10 h-10 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-semibold text-sm">2</div>
+                        <span class="mt-2 text-xs font-medium text-gray-500">Property</span>
+                    </div>
+                    <!-- Step 3 -->
+                    <div class="relative z-10 flex flex-col items-center">
+                        <div id="step3Indicator" class="w-10 h-10 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-semibold text-sm">3</div>
+                        <span class="mt-2 text-xs font-medium text-gray-500">Electricity</span>
+                    </div>
+                    <!-- Step 4 -->
+                    <div class="relative z-10 flex flex-col items-center">
+                        <div id="step4Indicator" class="w-10 h-10 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-semibold text-sm">4</div>
+                        <span class="mt-2 text-xs font-medium text-gray-500">Lead Status</span>
+                    </div>
+                    <!-- Step 5 -->
+                    <div class="relative z-10 flex flex-col items-center">
+                        <div id="step5Indicator" class="w-10 h-10 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-semibold text-sm">5</div>
+                        <span class="mt-2 text-xs font-medium text-gray-500">Review</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Form Card -->
+            <div class="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
+                <!-- Step 1: Customer Information -->
+                <div id="step1" class="step-content">
+                    <div class="px-6 py-5 border-b border-gray-100">
+                        <h2 class="text-lg font-semibold text-gray-900">Customer Information</h2>
+                        <p class="text-sm text-gray-500 mt-1">Enter the customer's personal details</p>
+                    </div>
+                    <div class="p-6 space-y-5">
+                        <!-- Phone with availability check -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-gray-500">Phone Number <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">+91</span>
+                                <input type="tel" id="phone" placeholder="98765 43210" maxlength="10" 
+                                    class="w-full pl-12 pr-10 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                                    oninput="checkPhoneAvailability(this.value)">
+                                <div id="phoneStatus" class="absolute right-3 top-1/2 -translate-y-1/2 hidden">
+                                    <!-- Will show check or error icon -->
+                                </div>
+                            </div>
+                            <p id="phoneError" class="text-xs text-red-500 hidden">This phone number is already registered</p>
+                        </div>
+                        
+                        <!-- Name Row -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">First Name <span class="text-red-500">*</span></label>
+                                <input type="text" id="firstName" placeholder="Enter first name" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Last Name <span class="text-red-500">*</span></label>
+                                <input type="text" id="lastName" placeholder="Enter last name" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-gray-500">Email Address</label>
+                            <input type="email" id="email" placeholder="customer@example.com" 
+                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                        </div>
+                        
+                        <!-- Alternate Phone -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-gray-500">Alternate Phone</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">+91</span>
+                                <input type="tel" id="alternatePhone" placeholder="Optional" maxlength="10" 
+                                    class="w-full pl-12 pr-4 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                        </div>
+                        
+                        <!-- Lead Source -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-gray-500">Lead Source</label>
+                            <select id="leadSource" 
+                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]">
+                                <option value="">Select source...</option>
+                                <option value="referral">Referral</option>
+                                <option value="walk_in">Walk-in</option>
+                                <option value="social_media">Social Media</option>
+                                <option value="website">Website</option>
+                                <option value="exhibition">Exhibition</option>
+                                <option value="direct_approach">Direct Approach</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 2: Property Details -->
+                <div id="step2" class="step-content hidden">
+                    <div class="px-6 py-5 border-b border-gray-100">
+                        <h2 class="text-lg font-semibold text-gray-900">Property Details</h2>
+                        <p class="text-sm text-gray-500 mt-1">Add the property where solar installation is planned</p>
+                    </div>
+                    <div class="p-6 space-y-5">
+                        <!-- Property Name & Type -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Property Name <span class="text-red-500">*</span></label>
+                                <input type="text" id="propertyName" placeholder="e.g., Home, Office" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Property Type <span class="text-red-500">*</span></label>
+                                <select id="propertyType" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]">
+                                    <option value="">Select type...</option>
+                                    <option value="residential">Residential</option>
+                                    <option value="commercial">Commercial</option>
+                                    <option value="industrial">Industrial</option>
+                                    <option value="agricultural">Agricultural</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Address -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-gray-500">Street Address <span class="text-red-500">*</span></label>
+                            <input type="text" id="address" placeholder="Enter full address" 
+                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                        </div>
+                        
+                        <!-- City & State -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">City <span class="text-red-500">*</span></label>
+                                <input type="text" id="city" placeholder="Enter city" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">State <span class="text-red-500">*</span></label>
+                                <select id="state" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]">
+                                    <option value="">Select state...</option>
+                                    <option value="maharashtra">Maharashtra</option>
+                                    <option value="karnataka">Karnataka</option>
+                                    <option value="tamil_nadu">Tamil Nadu</option>
+                                    <option value="gujarat">Gujarat</option>
+                                    <option value="rajasthan">Rajasthan</option>
+                                    <option value="uttar_pradesh">Uttar Pradesh</option>
+                                    <option value="madhya_pradesh">Madhya Pradesh</option>
+                                    <option value="delhi">Delhi</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Pincode -->
+                        <div class="w-1/2 space-y-2">
+                            <label class="block text-xs font-medium text-gray-500">Pincode <span class="text-red-500">*</span></label>
+                            <input type="text" id="pincode" placeholder="Enter pincode" maxlength="6" 
+                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 3: Electricity Details -->
+                <div id="step3" class="step-content hidden">
+                    <div class="px-6 py-5 border-b border-gray-100">
+                        <h2 class="text-lg font-semibold text-gray-900">Electricity Details</h2>
+                        <p class="text-sm text-gray-500 mt-1">Enter the property's electricity connection information</p>
+                    </div>
+                    <div class="p-6 space-y-5">
+                        <!-- Consumer Number & Name -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Consumer Number</label>
+                                <input type="text" id="consumerNumber" placeholder="Enter consumer number" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Consumer Name</label>
+                                <input type="text" id="consumerName" placeholder="Name on electricity bill" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                        </div>
+                        
+                        <!-- DISCOM -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-gray-500">DISCOM Name <span class="text-red-500">*</span></label>
+                            <select id="discomName" 
+                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]">
+                                <option value="">Select DISCOM...</option>
+                                <option value="msedcl">MSEDCL (Maharashtra)</option>
+                                <option value="bescom">BESCOM (Bangalore)</option>
+                                <option value="tneb">TANGEDCO (Tamil Nadu)</option>
+                                <option value="torrent">Torrent Power</option>
+                                <option value="tata_power">Tata Power</option>
+                                <option value="adani">Adani Electricity</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Connection Type & Sanctioned Load -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Connection Type <span class="text-red-500">*</span></label>
+                                <select id="connectionType" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]">
+                                    <option value="">Select type...</option>
+                                    <option value="single_phase">Single Phase</option>
+                                    <option value="three_phase">Three Phase</option>
+                                </select>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Sanctioned Load (kW) <span class="text-red-500">*</span></label>
+                                <input type="number" id="sanctionedLoad" placeholder="e.g., 5" step="0.1" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                        </div>
+                        
+                        <!-- Meter Number & Monthly Bill -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Meter Number</label>
+                                <input type="text" id="meterNumber" placeholder="Enter meter number" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Avg. Monthly Bill (₹)</label>
+                                <input type="number" id="monthlyBill" placeholder="e.g., 3000" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 4: Lead Status -->
+                <div id="step4" class="step-content hidden">
+                    <div class="px-6 py-5 border-b border-gray-100">
+                        <h2 class="text-lg font-semibold text-gray-900">Lead Status</h2>
+                        <p class="text-sm text-gray-500 mt-1">Set the lead temperature and follow-up schedule</p>
+                    </div>
+                    <div class="p-6 space-y-5">
+                        <!-- Lead Temperature -->
+                        <div class="space-y-3">
+                            <label class="block text-xs font-medium text-gray-500">Lead Temperature <span class="text-red-500">*</span></label>
+                            <div class="grid grid-cols-3 gap-3">
+                                <label class="relative cursor-pointer">
+                                    <input type="radio" name="leadTemperature" value="hot" class="peer sr-only">
+                                    <div class="p-4 rounded-lg border-2 border-gray-100 peer-checked:border-red-500 peer-checked:bg-red-50 transition-all hover:border-gray-300">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-4 h-4 rounded-full bg-red-500"></div>
+                                            <div>
+                                                <div class="font-medium text-gray-900">Hot</div>
+                                                <div class="text-xs text-gray-500">High priority</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="relative cursor-pointer">
+                                    <input type="radio" name="leadTemperature" value="warm" class="peer sr-only" checked>
+                                    <div class="p-4 rounded-lg border-2 border-gray-100 peer-checked:border-yellow-500 peer-checked:bg-yellow-50 transition-all hover:border-gray-300">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-4 h-4 rounded-full bg-yellow-500"></div>
+                                            <div>
+                                                <div class="font-medium text-gray-900">Warm</div>
+                                                <div class="text-xs text-gray-500">Medium priority</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="relative cursor-pointer">
+                                    <input type="radio" name="leadTemperature" value="cold" class="peer sr-only">
+                                    <div class="p-4 rounded-lg border-2 border-gray-100 peer-checked:border-blue-500 peer-checked:bg-blue-50 transition-all hover:border-gray-300">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-4 h-4 rounded-full bg-blue-400"></div>
+                                            <div>
+                                                <div class="font-medium text-gray-900">Cold</div>
+                                                <div class="text-xs text-gray-500">Low priority</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Next Follow-up Date -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-gray-500">Next Follow-up Date</label>
+                            <input type="date" id="nextFollowUpDate" 
+                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
+                            <p class="text-xs text-gray-500">Leave empty to auto-calculate based on temperature</p>
+                        </div>
+                        
+                        <!-- Follow-up Notes -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-gray-500">Follow-up Notes</label>
+                            <textarea id="followUpNotes" rows="3" placeholder="Add any notes for follow-up..." 
+                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea>
+                        </div>
+                        
+                        <!-- Loan Interest -->
+                        <div class="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                            <label class="flex items-center justify-between cursor-pointer">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-gray-900">Interested in Loan Financing?</div>
+                                        <div class="text-xs text-gray-500">Customer wants solar loan assistance</div>
+                                    </div>
+                                </div>
+                                <div class="relative">
+                                    <input type="checkbox" id="wantsLoan" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-primary transition-colors"></div>
+                                    <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"></div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 5: Review -->
+                <div id="step5" class="step-content hidden">
+                    <div class="px-6 py-5 border-b border-gray-100">
+                        <h2 class="text-lg font-semibold text-gray-900">Review & Submit</h2>
+                        <p class="text-sm text-gray-500 mt-1">Review all details before creating the customer</p>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <!-- Customer Summary -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Customer Information</h3>
+                                <button onclick="goToStep(1)" class="text-sm text-primary hover:text-primary-dark font-medium">Edit</button>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-500">Name</span>
+                                    <span id="reviewName" class="text-sm font-medium text-gray-900">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-500">Phone</span>
+                                    <span id="reviewPhone" class="text-sm font-medium text-gray-900">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-500">Email</span>
+                                    <span id="reviewEmail" class="text-sm font-medium text-gray-900">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-500">Lead Source</span>
+                                    <span id="reviewSource" class="text-sm font-medium text-gray-900">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Property Summary -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Property Details</h3>
+                                <button onclick="goToStep(2)" class="text-sm text-primary hover:text-primary-dark font-medium">Edit</button>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-500">Property</span>
+                                    <span id="reviewProperty" class="text-sm font-medium text-gray-900">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-500">Address</span>
+                                    <span id="reviewAddress" class="text-sm font-medium text-gray-900 text-right max-w-[200px]">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Electricity Summary -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Electricity Details</h3>
+                                <button onclick="goToStep(3)" class="text-sm text-primary hover:text-primary-dark font-medium">Edit</button>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg space-y-2">
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-500">DISCOM</span>
+                                    <span id="reviewDiscom" class="text-sm font-medium text-gray-900">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-500">Connection</span>
+                                    <span id="reviewConnection" class="text-sm font-medium text-gray-900">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-500">Monthly Bill</span>
+                                    <span id="reviewBill" class="text-sm font-medium text-gray-900">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Lead Status Summary -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Lead Status</h3>
+                                <button onclick="goToStep(4)" class="text-sm text-primary hover:text-primary-dark font-medium">Edit</button>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm text-gray-500">Temperature</span>
+                                    <span id="reviewTemperature" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full">-</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-sm text-gray-500">Loan Interest</span>
+                                    <span id="reviewLoan" class="text-sm font-medium text-gray-900">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Billing Address Same as Property -->
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" id="billingAddressSame" checked 
+                                    class="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary">
+                                <div>
+                                    <div class="font-medium text-gray-900">Billing address same as property address</div>
+                                    <div class="text-xs text-gray-500">Uncheck to enter a different billing address</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Footer Actions -->
+                <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+                    <button id="backBtn" onclick="previousStep()" class="px-4 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium text-sm transition-colors hidden">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                            </svg>
+                            Back
+                        </span>
+                    </button>
+                    <div class="ml-auto flex items-center gap-3">
+                        <a href="customers.html" class="px-4 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium text-sm transition-colors">
+                            Cancel
+                        </a>
+                        <button id="nextBtn" onclick="nextStep()" class="px-6 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark transition-colors flex items-center gap-2">
+                            Continue
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                            </svg>
+                        </button>
+                        <button id="submitBtn" onclick="submitForm()" class="px-6 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark transition-colors hidden flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Create Customer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 5;
+        
+        function updateStepIndicators() {
+            for (let i = 1; i <= totalSteps; i++) {
+                const indicator = document.getElementById(`step${i}Indicator`);
+                const label = indicator.nextElementSibling;
+                
+                if (i < currentStep) {
+                    // Completed
+                    indicator.className = 'w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm';
+                    indicator.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+                    label.className = 'mt-2 text-xs font-medium text-primary';
+                } else if (i === currentStep) {
+                    // Current
+                    indicator.className = 'w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm shadow-lg shadow-primary/30';
+                    indicator.textContent = i;
+                    label.className = 'mt-2 text-xs font-medium text-primary';
+                } else {
+                    // Future
+                    indicator.className = 'w-10 h-10 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center font-semibold text-sm';
+                    indicator.textContent = i;
+                    label.className = 'mt-2 text-xs font-medium text-gray-500';
+                }
+            }
+            
+            // Update progress line
+            const progressLine = document.getElementById('progressLine');
+            const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            progressLine.style.width = `${progress}%`;
+        }
+        
+        function showStep(step) {
+            // Hide all steps
+            document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
+            // Show current step
+            document.getElementById(`step${step}`).classList.remove('hidden');
+            
+            // Update buttons
+            const backBtn = document.getElementById('backBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (step === 1) {
+                backBtn.classList.add('hidden');
+            } else {
+                backBtn.classList.remove('hidden');
+            }
+            
+            if (step === totalSteps) {
+                nextBtn.classList.add('hidden');
+                submitBtn.classList.remove('hidden');
+                updateReviewSection();
+            } else {
+                nextBtn.classList.remove('hidden');
+                submitBtn.classList.add('hidden');
+            }
+            
+            updateStepIndicators();
+        }
+        
+        function nextStep() {
+            if (validateStep(currentStep)) {
+                if (currentStep < totalSteps) {
+                    currentStep++;
+                    showStep(currentStep);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
+        }
+        
+        function previousStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                showStep(currentStep);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+        
+        function goToStep(step) {
+            currentStep = step;
+            showStep(currentStep);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        function validateStep(step) {
+            // Basic validation - in production, add proper validation
+            if (step === 1) {
+                const phone = document.getElementById('phone').value;
+                const firstName = document.getElementById('firstName').value;
+                const lastName = document.getElementById('lastName').value;
+                
+                if (!phone || phone.length < 10) {
+                    alert('Please enter a valid phone number');
+                    return false;
+                }
+                if (!firstName.trim()) {
+                    alert('Please enter first name');
+                    return false;
+                }
+                if (!lastName.trim()) {
+                    alert('Please enter last name');
+                    return false;
+                }
+            }
+            if (step === 2) {
+                const propertyName = document.getElementById('propertyName').value;
+                const propertyType = document.getElementById('propertyType').value;
+                const address = document.getElementById('address').value;
+                const city = document.getElementById('city').value;
+                
+                if (!propertyName.trim() || !propertyType || !address.trim() || !city.trim()) {
+                    alert('Please fill all required property fields');
+                    return false;
+                }
+            }
+            if (step === 3) {
+                const discomName = document.getElementById('discomName').value;
+                const connectionType = document.getElementById('connectionType').value;
+                const sanctionedLoad = document.getElementById('sanctionedLoad').value;
+                
+                if (!discomName || !connectionType || !sanctionedLoad) {
+                    alert('Please fill all required electricity fields');
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        function updateReviewSection() {
+            // Customer info
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            document.getElementById('reviewName').textContent = `${firstName} ${lastName}`;
+            document.getElementById('reviewPhone').textContent = '+91 ' + document.getElementById('phone').value;
+            document.getElementById('reviewEmail').textContent = document.getElementById('email').value || '-';
+            
+            const sourceSelect = document.getElementById('leadSource');
+            document.getElementById('reviewSource').textContent = sourceSelect.options[sourceSelect.selectedIndex]?.text || '-';
+            
+            // Property
+            const propName = document.getElementById('propertyName').value;
+            const propType = document.getElementById('propertyType');
+            document.getElementById('reviewProperty').textContent = `${propName} (${propType.options[propType.selectedIndex]?.text || ''})`;
+            
+            const city = document.getElementById('city').value;
+            const state = document.getElementById('state');
+            document.getElementById('reviewAddress').textContent = `${city}, ${state.options[state.selectedIndex]?.text || ''}`;
+            
+            // Electricity
+            const discom = document.getElementById('discomName');
+            document.getElementById('reviewDiscom').textContent = discom.options[discom.selectedIndex]?.text || '-';
+            
+            const connType = document.getElementById('connectionType');
+            const load = document.getElementById('sanctionedLoad').value;
+            document.getElementById('reviewConnection').textContent = `${connType.options[connType.selectedIndex]?.text || ''} - ${load} kW`;
+            
+            const bill = document.getElementById('monthlyBill').value;
+            document.getElementById('reviewBill').textContent = bill ? `₹${parseInt(bill).toLocaleString('en-IN')}` : '-';
+            
+            // Lead status
+            const temp = document.querySelector('input[name="leadTemperature"]:checked')?.value || 'warm';
+            const tempEl = document.getElementById('reviewTemperature');
+            if (temp === 'hot') {
+                tempEl.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700';
+                tempEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500"></span> Hot';
+            } else if (temp === 'warm') {
+                tempEl.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700';
+                tempEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-yellow-500"></span> Warm';
+            } else {
+                tempEl.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700';
+                tempEl.innerHTML = '<span class="w-2 h-2 rounded-full bg-blue-400"></span> Cold';
+            }
+            
+            document.getElementById('reviewLoan').textContent = document.getElementById('wantsLoan').checked ? 'Yes' : 'No';
+        }
+        
+        function submitForm() {
+            // In production, this would submit to the API
+            alert('Customer created successfully!');
+            window.location.href = 'customers.html';
+        }
+        
+        // Simulated phone availability check
+        let phoneCheckTimeout;
+        function checkPhoneAvailability(phone) {
+            clearTimeout(phoneCheckTimeout);
+            const statusEl = document.getElementById('phoneStatus');
+            const errorEl = document.getElementById('phoneError');
+            
+            if (phone.length < 10) {
+                statusEl.classList.add('hidden');
+                errorEl.classList.add('hidden');
+                return;
+            }
+            
+            // Show loading
+            statusEl.innerHTML = '<svg class="animate-spin w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+            statusEl.classList.remove('hidden');
+            
+            // Simulate API call
+            phoneCheckTimeout = setTimeout(() => {
+                // For demo, numbers ending in 0 are "taken"
+                const isTaken = phone.endsWith('0');
+                
+                if (isTaken) {
+                    statusEl.innerHTML = '<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+                    errorEl.classList.remove('hidden');
+                } else {
+                    statusEl.innerHTML = '<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+                    errorEl.classList.add('hidden');
+                }
+            }, 500);
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            showStep(1);
+            
+            // Set default follow-up date (3 days from now for warm leads)
+            const today = new Date();
+            today.setDate(today.getDate() + 10);
+            document.getElementById('nextFollowUpDate').value = today.toISOString().split('T')[0];
+        });
+    </script>
+</body>
+</html>

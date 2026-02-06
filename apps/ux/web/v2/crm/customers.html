@@ -5,30 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>All Customers - OneOhm Solar EPC</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#76c044',
-                        'primary-dark': '#5ea031',
-                        secondary: '#0d74b8',
-                        warning: '#EAB308',
-                        error: '#DC2626',
-                    }
+                        primary: {
+                            DEFAULT: '#76c044',
+                            dark: '#5ea031',
+                            light: '#8fd35f',
+                            50: '#f3fae8',
+                            100: '#e4f4cc',
+                            500: '#76c044',
+                            600: '#5ea031',
+                        },
+                        secondary: {
+                            DEFAULT: '#0d74b8',
+                            dark: '#0a5c92',
+                            light: '#2b8fd4',
+                        },
+                        success: '#22c55e',
+                        warning: '#eab308',
+                        error: '#dc2626',
+                        info: '#0ea5e9',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
                 }
             }
         }
     </script>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', system-ui, sans-serif; }
         
         /* ==================== GLOBAL HEADER ==================== */
         .global-header {
-            height: 56px;
+            height: 48px;
             background: #ffffff;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid #f4f4f5;
             position: fixed;
             top: 0;
             left: 0;
@@ -36,18 +52,18 @@
             z-index: 50;
             display: flex;
             align-items: center;
-            padding: 0 16px;
+            padding: 0 12px;
         }
         
         /* ==================== RAIL (Icon Strip) ==================== */
         .rail {
-            width: 56px;
+            width: 48px;
             background: #ffffff;
-            border-right: 1px solid #e5e7eb;
+            border-right: 1px solid #f4f4f5;
             position: fixed;
-            top: 56px;
+            top: 48px;
             left: 0;
-            height: calc(100vh - 56px);
+            height: calc(100vh - 48px);
             display: flex;
             flex-direction: column;
             z-index: 40;
@@ -68,20 +84,20 @@
         }
         
         .rail-icon {
-            width: 56px;
-            height: 44px;
+            width: 48px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #6b7280;
+            color: #71717a;
             cursor: pointer;
             position: relative;
             transition: all 150ms ease;
         }
         
         .rail-icon:hover {
-            background: #f9fafb;
-            color: #374151;
+            background: #f4f4f5;
+            color: #3f3f46;
         }
         
         .rail-icon.active {
@@ -129,8 +145,8 @@
         }
         
         .rail-user {
-            width: 56px;
-            height: 56px;
+            width: 48px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -143,13 +159,13 @@
         
         /* ==================== PANEL (Expandable Detail) ==================== */
         .panel {
-            width: 240px;
+            width: 200px;
             background: #ffffff;
-            border-right: 1px solid #e5e7eb;
+            border-right: 1px solid #f4f4f5;
             position: fixed;
-            top: 56px;
-            left: 56px;
-            height: calc(100vh - 56px);
+            top: 48px;
+            left: 48px;
+            height: calc(100vh - 48px);
             display: flex;
             flex-direction: column;
             z-index: 35;
@@ -157,25 +173,25 @@
         }
         
         .panel.collapsed {
-            transform: translateX(-240px);
+            transform: translateX(-200px);
             opacity: 0;
             pointer-events: none;
         }
         
         .panel-header {
-            height: 48px;
-            padding: 0 16px;
+            height: 40px;
+            padding: 0 12px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 1px solid #f3f4f6;
+            border-bottom: 1px solid #f4f4f5;
             flex-shrink: 0;
         }
         
         .panel-title {
-            font-size: 15px;
+            font-size: 13px;
             font-weight: 600;
-            color: #111827;
+            color: #18181b;
         }
         
         .panel-container {
@@ -200,23 +216,23 @@
         }
         
         .section-header {
-            font-size: 11px;
-            font-weight: 600;
-            color: #9ca3af;
+            font-size: 10px;
+            font-weight: 500;
+            color: #a1a1aa;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            padding: 12px 8px 6px 8px;
+            padding: 10px 8px 4px 8px;
         }
         
         .panel-item {
-            height: 36px;
-            padding: 0 12px;
+            height: 30px;
+            padding: 0 10px;
             display: flex;
             align-items: center;
-            color: #374151;
-            font-size: 14px;
+            color: #52525b;
+            font-size: 13px;
             cursor: pointer;
-            border-radius: 8px;
+            border-radius: 6px;
             transition: all 100ms ease;
             text-decoration: none;
         }
@@ -232,17 +248,17 @@
         }
         
         .panel-item svg {
-            width: 18px;
-            height: 18px;
-            margin-right: 10px;
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
             flex-shrink: 0;
         }
         
         .panel-item .status-dot {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
-            margin-right: 10px;
+            margin-right: 8px;
             flex-shrink: 0;
         }
         
@@ -251,13 +267,13 @@
         .panel-item .status-dot.cold { background: #60a5fa; }
         
         .panel-item.sub-item {
-            padding-left: 28px;
-            font-size: 13px;
-            color: #6b7280;
+            padding-left: 24px;
+            font-size: 12px;
+            color: #71717a;
         }
         
         .panel-item.sub-item:hover {
-            color: #374151;
+            color: #3f3f46;
         }
         
         .panel-item span:not(.badge):not(.status-dot) {
@@ -266,27 +282,27 @@
         
         .panel-item .panel-badge {
             margin-left: auto;
-            font-size: 12px;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 12px;
-            background: rgba(118, 192, 68, 0.15);
-            color: #76c044;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 1px 6px;
+            border-radius: 4px;
+            background: rgba(118, 192, 68, 0.1);
+            color: #5ea031;
         }
         
         .panel-item .panel-badge.warning {
-            background: #fef3c7;
-            color: #d97706;
+            background: #fef9c3;
+            color: #a16207;
         }
         
         .panel-item .panel-badge.error {
-            background: #fee2e2;
-            color: #dc2626;
+            background: #fef2f2;
+            color: #b91c1c;
         }
         
         /* Layout */
-        .page-container { margin-left: 296px; margin-top: 56px; min-height: calc(100vh - 56px); background: #f4f4f5; transition: margin-left 200ms ease; }
-        .page-container.panel-collapsed { margin-left: 56px; }
+        .page-container { margin-left: 248px; margin-top: 48px; min-height: calc(100vh - 48px); background: #fafafa; transition: margin-left 200ms ease; }
+        .page-container.panel-collapsed { margin-left: 48px; }
         
         /* Scrollbar */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -294,47 +310,47 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 3px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #D1D5DB; }
         
-        /* Status badges */
-        .badge-lead { background: #e0f2fe; color: #0369a1; }
-        .badge-prospect { background: #fef3c7; color: #92400e; }
-        .badge-active { background: #dcfce7; color: #166534; }
-        .badge-inactive { background: #f4f4f5; color: #71717a; }
+        /* Status badges - consistent with design system */
+        .badge-lead { background: #dbeafe; color: #1d4ed8; }     /* blue-100/blue-700 */
+        .badge-prospect { background: #fef3c7; color: #b45309; } /* amber-100/amber-700 */
+        .badge-active { background: #dcfce7; color: #15803d; }   /* green-100/green-700 */
+        .badge-inactive { background: #f4f4f5; color: #71717a; } /* gray-100/gray-500 */
         
-        /* Lead source tags */
-        .tag-website { background: #f3e8ff; color: #7c3aed; }
-        .tag-referral { background: #fce7f3; color: #be185d; }
-        .tag-walk-in { background: #ecfdf5; color: #047857; }
-        .tag-social { background: #fff7ed; color: #c2410c; }
+        /* Lead source tags - consistent with design system */
+        .tag-website { background: #f3e8ff; color: #7c3aed; }    /* purple-100/purple-600 */
+        .tag-referral { background: #fce7f3; color: #be185d; }   /* pink-100/pink-700 */
+        .tag-walk-in { background: #d1fae5; color: #047857; }    /* emerald-100/emerald-700 */
+        .tag-social { background: #ffedd5; color: #c2410c; }     /* orange-100/orange-700 */
         
         /* Table row hover */
         .table-row:hover { background: #f9fafb; }
         .table-row.selected { background: rgba(118, 192, 68, 0.08); }
         
         /* Checkbox */
-        .checkbox { width: 18px; height: 18px; border: 1px solid #e4e4e7; border-radius: 4px; cursor: pointer; appearance: none; background: white; }
-        .checkbox:checked { background: #76c044; border-color: #76c044; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center; }
+        .checkbox { width: 15px; height: 15px; border: 1px solid #d4d4d8; border-radius: 3px; cursor: pointer; appearance: none; background: white; }
+        .checkbox:checked { background: #76c044; border-color: #76c044; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center; }
         
         /* Dropdown */
-        .dropdown-menu { display: none; position: absolute; right: 0; top: 100%; min-width: 180px; background: white; border: 1px solid #e4e4e7; border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); z-index: 50; padding: 4px; }
+        .dropdown-menu { display: none; position: absolute; right: 0; top: 100%; min-width: 160px; background: white; border: 1px solid #e4e4e7; border-radius: 6px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); z-index: 50; padding: 3px; }
         .dropdown-menu.show { display: block; }
-        .dropdown-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 14px; border-radius: 6px; cursor: pointer; transition: background 150ms; }
+        .dropdown-item { display: flex; align-items: center; gap: 6px; padding: 6px 10px; font-size: 13px; border-radius: 4px; cursor: pointer; transition: background 150ms; color: #52525b; }
         .dropdown-item:hover { background: #f4f4f5; }
         .dropdown-item.danger { color: #dc2626; }
         
         /* Filter tabs */
-        .filter-tab { padding: 8px 16px; font-size: 13px; font-weight: 500; color: #71717a; background: transparent; border: none; border-radius: 6px; cursor: pointer; transition: all 150ms; }
-        .filter-tab:hover { color: #09090b; }
-        .filter-tab.active { background: white; color: #09090b; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
+        .filter-tab { padding: 6px 12px; font-size: 12px; font-weight: 500; color: #71717a; background: transparent; border: none; border-radius: 5px; cursor: pointer; transition: all 150ms; }
+        .filter-tab:hover { color: #18181b; }
+        .filter-tab.active { background: white; color: #18181b; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05); }
         
         /* Pagination */
-        .page-btn { padding: 6px 12px; border: 1px solid #e4e4e7; border-radius: 6px; background: white; font-size: 13px; cursor: pointer; transition: all 150ms; }
+        .page-btn { padding: 5px 10px; border: 1px solid #e4e4e7; border-radius: 5px; background: white; font-size: 12px; cursor: pointer; transition: all 150ms; }
         .page-btn:hover:not(:disabled) { background: #f4f4f5; }
         .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .page-btn.active { background: #76c044; color: white; border-color: #76c044; }
         
         /* Mobile card view */
         @media (max-width: 1024px) {
-            .page-container { margin-left: 56px; }
+            .page-container { margin-left: 48px; }
             .desktop-table { display: none; }
             .mobile-cards { display: block; }
         }
@@ -352,22 +368,22 @@
             </a>
         </div>
         <div class="flex-1 ml-6 mr-4">
-            <button class="w-full max-w-md flex items-center space-x-3 px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-colors text-left">
+            <button class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors text-left">
                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
                 <span class="text-gray-400 flex-1 text-sm">Search...</span>
-                <kbd class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-200 rounded">⌘K</kbd>
+                <kbd class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-100 rounded">⌘K</kbd>
             </button>
         </div>
         <div class="flex items-center space-x-2">
-            <button class="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <button class="relative p-2 hover:bg-gray-50 rounded-lg transition-colors">
                 <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                 </svg>
                 <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
             </button>
-            <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+            <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors">
                 <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">RK</div>
             </button>
         </div>
@@ -555,17 +571,17 @@
     </aside>
     
     <!-- Main Content -->
-    <main class="page-container p-6">
+    <main class="page-container p-4">
         <!-- Page Header -->
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-5">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">All Customers</h1>
-                <p class="text-gray-500 text-sm mt-1">Manage your customers and track their journey</p>
+                <h1 class="text-xl font-semibold text-gray-900">All Customers</h1>
+                <p class="text-gray-500 text-xs mt-0.5">Manage your customers and track their journey</p>
             </div>
             <div class="flex items-center gap-3">
                 <!-- Export Dropdown -->
                 <div class="relative">
-                    <button onclick="toggleDropdown('exportDropdown')" class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors">
+                    <button onclick="toggleDropdown('exportDropdown')" class="flex items-center gap-2 px-3 py-1.5 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                         Export
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -582,20 +598,20 @@
                     </div>
                 </div>
                 <!-- Add Customer Button -->
-                <button class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark transition-colors">
+                <a href="create-customer.html" class="flex items-center gap-2 px-3 py-1.5 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
                     Add Customer
-                </button>
+                </a>
             </div>
         </div>
         
         <!-- Filters & Search -->
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-6">
+        <div class="bg-white rounded-lg border border-gray-100 mb-6">
             <div class="p-4 flex flex-col lg:flex-row lg:items-center gap-4">
                 <!-- Search -->
                 <div class="relative flex-1 max-w-md">
                     <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    <input type="text" placeholder="Search by name, phone, email..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                    <input type="text" placeholder="Search by name, phone, email..." class="w-full pl-10 pr-4 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
                 </div>
                 
                 <!-- Status Tabs -->
@@ -608,7 +624,7 @@
                 </div>
                 
                 <!-- Lead Source Filter -->
-                <select class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary appearance-none bg-white pr-8 bg-no-repeat bg-right" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E&quot;); background-position: right 8px center;">
+                <select class="px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary appearance-none bg-white pr-8 bg-no-repeat bg-right" style="background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E&quot;); background-position: right 8px center;">
                     <option>All Sources</option>
                     <option>Website</option>
                     <option>Referral</option>
@@ -619,76 +635,76 @@
             </div>
             
             <!-- Bulk Actions (shown when items selected) -->
-            <div id="bulkActions" class="hidden px-4 py-3 bg-primary/5 border-t border-gray-100 flex items-center gap-4">
-                <span class="text-sm text-gray-600"><strong id="selectedCount">0</strong> selected</span>
-                <button class="text-sm text-gray-600 hover:text-gray-900">Change Status</button>
-                <button class="text-sm text-gray-600 hover:text-gray-900">Export Selected</button>
+            <div id="bulkActions" class="hidden px-3 py-2 bg-primary/5 border-t border-gray-100 flex items-center gap-4">
+                <span class="text-sm text-gray-500"><strong id="selectedCount">0</strong> selected</span>
+                <button class="text-sm text-gray-500 hover:text-gray-900">Change Status</button>
+                <button class="text-sm text-gray-500 hover:text-gray-900">Export Selected</button>
                 <button class="text-sm text-red-600 hover:text-red-700">Delete</button>
                 <button onclick="clearSelection()" class="ml-auto text-sm text-gray-500 hover:text-gray-700">Clear selection</button>
             </div>
         </div>
         
         <!-- Desktop Table -->
-        <div class="desktop-table bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50 border-b border-gray-200">
+        <div class="desktop-table bg-white rounded-lg border border-gray-100 overflow-hidden">
+            <table class="w-full text-[13px]">
+                <thead class="bg-gray-50/80 border-b border-gray-100">
                     <tr>
-                        <th class="w-12 px-4 py-3">
+                        <th class="w-10 px-3 py-2">
                             <input type="checkbox" class="checkbox" id="selectAll" onchange="toggleSelectAll()">
                         </th>
-                        <th class="px-4 py-3 text-left font-medium text-gray-500">Customer</th>
-                        <th class="px-4 py-3 text-left font-medium text-gray-500">Email</th>
-                        <th class="px-4 py-3 text-left font-medium text-gray-500">City</th>
-                        <th class="px-4 py-3 text-left font-medium text-gray-500">Properties</th>
-                        <th class="px-4 py-3 text-left font-medium text-gray-500">Lead Source</th>
-                        <th class="px-4 py-3 text-left font-medium text-gray-500">Status</th>
-                        <th class="px-4 py-3 text-left font-medium text-gray-500">Created</th>
-                        <th class="w-12 px-4 py-3"></th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Customer</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Email</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">City</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Properties</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Lead Source</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Status</th>
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Created</th>
+                        <th class="w-10 px-3 py-2"></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     <!-- Row 1 -->
-                    <tr class="table-row">
-                        <td class="px-4 py-3"><input type="checkbox" class="checkbox row-checkbox" onchange="updateBulkActions()"></td>
-                        <td class="px-4 py-3">
-                            <a href="customer-detail.html" class="flex items-center gap-3 hover:text-primary">
-                                <div class="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold text-sm">RS</div>
+                    <tr class="table-row hover:bg-gray-50/50 transition-colors">
+                        <td class="px-3 py-2"><input type="checkbox" class="checkbox row-checkbox" onchange="updateBulkActions()"></td>
+                        <td class="px-3 py-2">
+                            <a href="customer-detail.html" class="flex items-center gap-2.5 hover:text-primary">
+                                <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs">RS</div>
                                 <div>
                                     <div class="font-medium text-gray-900">Rajesh Sharma</div>
-                                    <div class="text-gray-500 text-xs">+91 98765 43210</div>
+                                    <div class="text-gray-400 text-[11px]">+91 98765 43210</div>
                                 </div>
                             </a>
                         </td>
-                        <td class="px-4 py-3 text-gray-600">rajesh.sharma@gmail.com</td>
-                        <td class="px-4 py-3 text-gray-600">Bangalore</td>
-                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">2</span></td>
-                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium tag-referral rounded-full">Referral</span></td>
-                        <td class="px-4 py-3"><span class="px-2.5 py-0.5 text-xs font-semibold badge-active rounded-full">Active</span></td>
-                        <td class="px-4 py-3 text-gray-500">Jan 15, 2026</td>
-                        <td class="px-4 py-3">
+                        <td class="px-3 py-2 text-gray-500">rajesh.sharma@gmail.com</td>
+                        <td class="px-3 py-2 text-gray-500">Bangalore</td>
+                        <td class="px-3 py-2"><span class="px-1.5 py-0.5 text-[11px] font-medium bg-gray-100 text-gray-500 rounded">2</span></td>
+                        <td class="px-3 py-2"><span class="px-1.5 py-0.5 text-[11px] font-medium bg-pink-50 text-pink-700 rounded">Referral</span></td>
+                        <td class="px-3 py-2"><span class="px-1.5 py-0.5 text-[11px] font-medium bg-green-50 text-green-700 rounded">Active</span></td>
+                        <td class="px-3 py-2 text-gray-400">Jan 15, 2026</td>
+                        <td class="px-3 py-2">
                             <div class="relative">
-                                <button onclick="toggleDropdown('row1Dropdown')" class="p-1 hover:bg-gray-100 rounded">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                                <button onclick="toggleDropdown('row1Dropdown')" class="p-1 hover:bg-gray-50 rounded">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
                                 </button>
                                 <div id="row1Dropdown" class="dropdown-menu">
                                     <a href="customer-detail.html" class="dropdown-item">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                         View Details
                                     </a>
-                                    <div class="dropdown-item">
+                                    <div class="dropdown-item" onclick="openEditModal('Rajesh Sharma', 'rajesh.sharma@gmail.com', '+91 98765 43210')">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                         Edit
                                     </div>
-                                    <div class="dropdown-item">
+                                    <a href="add-property.html" class="dropdown-item">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                                         Add Property
-                                    </div>
-                                    <div class="dropdown-item">
+                                    </a>
+                                    <a href="../quotes/builder.html" class="dropdown-item">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                                         Create Quote
-                                    </div>
+                                    </a>
                                     <div class="h-px bg-gray-200 my-1"></div>
-                                    <div class="dropdown-item danger">
+                                    <div class="dropdown-item danger" onclick="openDeleteModal('Rajesh Sharma')">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                         Delete
                                     </div>
@@ -697,106 +713,206 @@
                         </td>
                     </tr>
                     <!-- Row 2 -->
-                    <tr class="table-row">
-                        <td class="px-4 py-3"><input type="checkbox" class="checkbox row-checkbox" onchange="updateBulkActions()"></td>
-                        <td class="px-4 py-3">
-                            <a href="customer-detail.html" class="flex items-center gap-3 hover:text-primary">
-                                <div class="w-9 h-9 rounded-full bg-secondary/15 flex items-center justify-center text-secondary font-semibold text-sm">PK</div>
+                    <tr class="table-row hover:bg-gray-50/50 transition-colors">
+                        <td class="px-3 py-2"><input type="checkbox" class="checkbox row-checkbox" onchange="updateBulkActions()"></td>
+                        <td class="px-3 py-2">
+                            <a href="customer-detail.html" class="flex items-center gap-2.5 hover:text-primary">
+                                <div class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center text-secondary font-medium text-xs">PK</div>
                                 <div>
                                     <div class="font-medium text-gray-900">Priya Kulkarni</div>
-                                    <div class="text-gray-500 text-xs">+91 87654 32109</div>
+                                    <div class="text-gray-400 text-[11px]">+91 87654 32109</div>
                                 </div>
                             </a>
                         </td>
-                        <td class="px-4 py-3 text-gray-600">priya.k@company.com</td>
-                        <td class="px-4 py-3 text-gray-600">Pune</td>
-                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">1</span></td>
-                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium tag-website rounded-full">Website</span></td>
-                        <td class="px-4 py-3"><span class="px-2.5 py-0.5 text-xs font-semibold badge-prospect rounded-full">Prospect</span></td>
-                        <td class="px-4 py-3 text-gray-500">Jan 18, 2026</td>
-                        <td class="px-4 py-3">
-                            <button class="p-1 hover:bg-gray-100 rounded">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
-                            </button>
+                        <td class="px-3 py-2 text-gray-500">priya.k@company.com</td>
+                        <td class="px-3 py-2 text-gray-500">Pune</td>
+                        <td class="px-3 py-2"><span class="px-1.5 py-0.5 text-[11px] font-medium bg-gray-100 text-gray-500 rounded">1</span></td>
+                        <td class="px-3 py-2"><span class="px-1.5 py-0.5 text-[11px] font-medium bg-purple-50 text-purple-700 rounded">Website</span></td>
+                        <td class="px-3 py-2"><span class="px-1.5 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-700 rounded">Prospect</span></td>
+                        <td class="px-3 py-2 text-gray-400">Jan 18, 2026</td>
+                        <td class="px-3 py-2">
+                            <div class="relative">
+                                <button onclick="toggleDropdown('row2Dropdown')" class="p-1 hover:bg-gray-50 rounded">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                                </button>
+                                <div id="row2Dropdown" class="dropdown-menu">
+                                    <a href="customer-detail.html" class="dropdown-item">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        View Details
+                                    </a>
+                                    <div class="dropdown-item" onclick="openEditModal('Priya Kulkarni', 'priya.k@company.com', '+91 87654 32109')">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        Edit
+                                    </div>
+                                    <a href="add-property.html" class="dropdown-item">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                        Add Property
+                                    </a>
+                                    <a href="../quotes/builder.html" class="dropdown-item">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        Create Quote
+                                    </a>
+                                    <div class="h-px bg-gray-200 my-1"></div>
+                                    <div class="dropdown-item danger" onclick="openDeleteModal('Priya Kulkarni')">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        Delete
+                                    </div>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     <!-- Row 3 -->
-                    <tr class="table-row">
-                        <td class="px-4 py-3"><input type="checkbox" class="checkbox row-checkbox" onchange="updateBulkActions()"></td>
-                        <td class="px-4 py-3">
-                            <a href="customer-detail.html" class="flex items-center gap-3 hover:text-primary">
-                                <div class="w-9 h-9 rounded-full bg-warning/15 flex items-center justify-center text-warning font-semibold text-sm">AV</div>
+                    <tr class="table-row hover:bg-gray-50/50 transition-colors">
+                        <td class="px-3 py-2"><input type="checkbox" class="checkbox row-checkbox" onchange="updateBulkActions()"></td>
+                        <td class="px-3 py-2">
+                            <a href="customer-detail.html" class="flex items-center gap-2.5 hover:text-primary">
+                                <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-medium text-xs">AV</div>
                                 <div>
                                     <div class="font-medium text-gray-900">Amit Verma</div>
-                                    <div class="text-gray-500 text-xs">+91 76543 21098</div>
+                                    <div class="text-gray-400 text-[11px]">+91 76543 21098</div>
                                 </div>
                             </a>
                         </td>
-                        <td class="px-4 py-3 text-gray-600">amit.verma@email.com</td>
-                        <td class="px-4 py-3 text-gray-600">Mumbai</td>
-                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">3</span></td>
-                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium tag-walk-in rounded-full">Walk-in</span></td>
-                        <td class="px-4 py-3"><span class="px-2.5 py-0.5 text-xs font-semibold badge-lead rounded-full">Lead</span></td>
-                        <td class="px-4 py-3 text-gray-500">Jan 20, 2026</td>
-                        <td class="px-4 py-3">
-                            <button class="p-1 hover:bg-gray-100 rounded">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
-                            </button>
+                        <td class="px-3 py-2 text-gray-500">amit.verma@email.com</td>
+                        <td class="px-3 py-2 text-gray-500">Mumbai</td>
+                        <td class="px-3 py-2"><span class="px-1.5 py-0.5 text-[11px] font-medium bg-gray-100 text-gray-500 rounded">3</span></td>
+                        <td class="px-3 py-2"><span class="px-1.5 py-0.5 text-[11px] font-medium bg-emerald-50 text-emerald-700 rounded">Walk-in</span></td>
+                        <td class="px-3 py-2"><span class="px-1.5 py-0.5 text-[11px] font-medium bg-blue-50 text-blue-700 rounded">Lead</span></td>
+                        <td class="px-3 py-2 text-gray-400">Jan 20, 2026</td>
+                        <td class="px-3 py-2">
+                            <div class="relative">
+                                <button onclick="toggleDropdown('row3Dropdown')" class="p-1 hover:bg-gray-50 rounded">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                                </button>
+                                <div id="row3Dropdown" class="dropdown-menu">
+                                    <a href="customer-detail.html" class="dropdown-item">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        View Details
+                                    </a>
+                                    <div class="dropdown-item" onclick="openEditModal('Amit Verma', 'amit.verma@email.com', '+91 76543 21098')">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        Edit
+                                    </div>
+                                    <a href="add-property.html" class="dropdown-item">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                        Add Property
+                                    </a>
+                                    <a href="../quotes/builder.html" class="dropdown-item">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        Create Quote
+                                    </a>
+                                    <div class="h-px bg-gray-200 my-1"></div>
+                                    <div class="dropdown-item danger" onclick="openDeleteModal('Amit Verma')">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        Delete
+                                    </div>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     <!-- Row 4 -->
-                    <tr class="table-row">
-                        <td class="px-4 py-3"><input type="checkbox" class="checkbox row-checkbox" onchange="updateBulkActions()"></td>
-                        <td class="px-4 py-3">
-                            <a href="customer-detail.html" class="flex items-center gap-3 hover:text-primary">
-                                <div class="w-9 h-9 rounded-full bg-error/15 flex items-center justify-center text-error font-semibold text-sm">SG</div>
+                    <tr class="table-row hover:bg-gray-50/50 transition-colors">
+                        <td class="px-3 py-2"><input type="checkbox" class="checkbox row-checkbox" onchange="updateBulkActions()"></td>
+                        <td class="px-3 py-2">
+                            <a href="customer-detail.html" class="flex items-center gap-2.5 hover:text-primary">
+                                <div class="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-700 font-medium text-xs">SG</div>
                                 <div>
                                     <div class="font-medium text-gray-900">Sneha Gupta</div>
-                                    <div class="text-gray-500 text-xs">+91 65432 10987</div>
+                                    <div class="text-gray-400 text-[11px]">+91 65432 10987</div>
                                 </div>
                             </a>
                         </td>
-                        <td class="px-4 py-3 text-gray-600">sneha.g@gmail.com</td>
-                        <td class="px-4 py-3 text-gray-600">Delhi</td>
-                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">1</span></td>
-                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium tag-social rounded-full">Social Media</span></td>
-                        <td class="px-4 py-3"><span class="px-2.5 py-0.5 text-xs font-semibold badge-active rounded-full">Active</span></td>
-                        <td class="px-4 py-3 text-gray-500">Jan 22, 2026</td>
-                        <td class="px-4 py-3">
-                            <button class="p-1 hover:bg-gray-100 rounded">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
-                            </button>
+                        <td class="px-3 py-2 text-gray-500">sneha.g@gmail.com</td>
+                        <td class="px-3 py-2 text-gray-500">Delhi</td>
+                        <td class="px-3 py-2"><span class="px-1.5 py-0.5 text-[11px] font-medium bg-gray-100 text-gray-500 rounded">1</span></td>
+                        <td class="px-3 py-2"><span class="px-1.5 py-0.5 text-[11px] font-medium bg-orange-50 text-orange-700 rounded">Social Media</span></td>
+                        <td class="px-3 py-2"><span class="px-1.5 py-0.5 text-[11px] font-medium bg-green-50 text-green-700 rounded">Active</span></td>
+                        <td class="px-3 py-2 text-gray-400">Jan 22, 2026</td>
+                        <td class="px-3 py-2">
+                            <div class="relative">
+                                <button onclick="toggleDropdown('row4Dropdown')" class="p-1 hover:bg-gray-50 rounded">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                                </button>
+                                <div id="row4Dropdown" class="dropdown-menu">
+                                    <a href="customer-detail.html" class="dropdown-item">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        View Details
+                                    </a>
+                                    <div class="dropdown-item" onclick="openEditModal('Sneha Gupta', 'sneha.g@gmail.com', '+91 65432 10987')">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        Edit
+                                    </div>
+                                    <a href="add-property.html" class="dropdown-item">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                        Add Property
+                                    </a>
+                                    <a href="../quotes/builder.html" class="dropdown-item">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        Create Quote
+                                    </a>
+                                    <div class="h-px bg-gray-200 my-1"></div>
+                                    <div class="dropdown-item danger" onclick="openDeleteModal('Sneha Gupta')">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        Delete
+                                    </div>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     <!-- Row 5 -->
-                    <tr class="table-row">
-                        <td class="px-4 py-3"><input type="checkbox" class="checkbox row-checkbox" onchange="updateBulkActions()"></td>
-                        <td class="px-4 py-3">
-                            <a href="customer-detail.html" class="flex items-center gap-3 hover:text-primary">
-                                <div class="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold text-sm">MK</div>
+                    <tr class="table-row hover:bg-gray-50/50 transition-colors">
+                        <td class="px-3 py-2"><input type="checkbox" class="checkbox row-checkbox" onchange="updateBulkActions()"></td>
+                        <td class="px-3 py-2">
+                            <a href="customer-detail.html" class="flex items-center gap-2.5 hover:text-primary">
+                                <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs">MK</div>
                                 <div>
                                     <div class="font-medium text-gray-900">Mukesh Kumar</div>
                                     <div class="text-gray-500 text-xs">+91 54321 09876</div>
                                 </div>
                             </a>
                         </td>
-                        <td class="px-4 py-3 text-gray-600">mukesh.k@business.com</td>
-                        <td class="px-4 py-3 text-gray-600">Chennai</td>
-                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">0</span></td>
-                        <td class="px-4 py-3"><span class="px-2 py-0.5 text-xs font-medium tag-referral rounded-full">Referral</span></td>
-                        <td class="px-4 py-3"><span class="px-2.5 py-0.5 text-xs font-semibold badge-inactive rounded-full">Inactive</span></td>
-                        <td class="px-4 py-3 text-gray-500">Jan 10, 2026</td>
-                        <td class="px-4 py-3">
-                            <button class="p-1 hover:bg-gray-100 rounded">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
-                            </button>
+                        <td class="px-3 py-2 text-gray-500">mukesh.k@business.com</td>
+                        <td class="px-3 py-2 text-gray-500">Chennai</td>
+                        <td class="px-4 py-2"><span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">0</span></td>
+                        <td class="px-4 py-2"><span class="px-2 py-0.5 text-xs font-medium tag-referral rounded-full">Referral</span></td>
+                        <td class="px-4 py-2"><span class="px-2.5 py-0.5 text-xs font-semibold badge-inactive rounded-full">Inactive</span></td>
+                        <td class="px-3 py-2 text-gray-500">Jan 10, 2026</td>
+                        <td class="px-4 py-2">
+                            <div class="relative">
+                                <button onclick="toggleDropdown('row5Dropdown')" class="p-1 hover:bg-gray-50 rounded">
+                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                                </button>
+                                <div id="row5Dropdown" class="dropdown-menu">
+                                    <a href="customer-detail.html" class="dropdown-item">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        View Details
+                                    </a>
+                                    <div class="dropdown-item" onclick="openEditModal('Mukesh Kumar', 'mukesh.k@business.com', '+91 54321 09876')">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                        Edit
+                                    </div>
+                                    <a href="add-property.html" class="dropdown-item">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                        Add Property
+                                    </a>
+                                    <a href="../quotes/builder.html" class="dropdown-item">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        Create Quote
+                                    </a>
+                                    <div class="h-px bg-gray-200 my-1"></div>
+                                    <div class="dropdown-item danger" onclick="openDeleteModal('Mukesh Kumar')">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        Delete
+                                    </div>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
             
             <!-- Pagination -->
-            <div class="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+            <div class="px-3 py-2 border-t border-gray-100 flex items-center justify-between">
                 <span class="text-sm text-gray-500">Showing 1-5 of 156 customers</span>
                 <div class="flex gap-1">
                     <button class="page-btn" disabled>Previous</button>
@@ -813,7 +929,7 @@
         <!-- Mobile Cards View -->
         <div class="mobile-cards space-y-3">
             <!-- Card 1 -->
-            <div class="bg-white rounded-xl border border-gray-200 p-4">
+            <div class="bg-white rounded-lg border border-gray-100 p-4">
                 <div class="flex items-start justify-between">
                     <a href="customer-detail.html" class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold">RS</div>
@@ -825,20 +941,20 @@
                     <span class="px-2.5 py-0.5 text-xs font-semibold badge-active rounded-full">Active</span>
                 </div>
                 <div class="mt-3 flex flex-wrap gap-2">
-                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">Bangalore</span>
+                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-500 rounded">Bangalore</span>
                     <span class="px-2 py-0.5 text-xs font-medium tag-referral rounded">Referral</span>
-                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">2 properties</span>
+                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-500 rounded">2 properties</span>
                 </div>
                 <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
                     <span class="text-xs text-gray-500">Jan 15, 2026</span>
                     <div class="flex gap-2">
-                        <button class="px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded">Edit</button>
+                        <button class="px-3 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 rounded">Edit</button>
                         <a href="customer-detail.html" class="px-3 py-1 text-xs font-medium bg-primary text-white rounded">View</a>
                     </div>
                 </div>
             </div>
             <!-- Card 2 -->
-            <div class="bg-white rounded-xl border border-gray-200 p-4">
+            <div class="bg-white rounded-lg border border-gray-100 p-4">
                 <div class="flex items-start justify-between">
                     <a href="customer-detail.html" class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-secondary/15 flex items-center justify-center text-secondary font-semibold">PK</div>
@@ -850,14 +966,14 @@
                     <span class="px-2.5 py-0.5 text-xs font-semibold badge-prospect rounded-full">Prospect</span>
                 </div>
                 <div class="mt-3 flex flex-wrap gap-2">
-                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">Pune</span>
+                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-500 rounded">Pune</span>
                     <span class="px-2 py-0.5 text-xs font-medium tag-website rounded">Website</span>
-                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded">1 property</span>
+                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-500 rounded">1 property</span>
                 </div>
                 <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
                     <span class="text-xs text-gray-500">Jan 18, 2026</span>
                     <div class="flex gap-2">
-                        <button class="px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded">Edit</button>
+                        <button class="px-3 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 rounded">Edit</button>
                         <a href="customer-detail.html" class="px-3 py-1 text-xs font-medium bg-primary text-white rounded">View</a>
                     </div>
                 </div>
@@ -972,7 +1088,198 @@
                 e.preventDefault();
                 togglePanel();
             }
+            // Close modals on escape
+            if (e.key === 'Escape') {
+                closeEditModal();
+                closeDeleteModal();
+            }
         });
+        
+        // ==================== EDIT MODAL ====================
+        let currentEditCustomer = null;
+        
+        function openEditModal(name, email, phone) {
+            currentEditCustomer = { name, email, phone };
+            const modal = document.getElementById('editModal');
+            
+            // Split name into first and last
+            const nameParts = name.split(' ');
+            document.getElementById('editFirstName').value = nameParts[0] || '';
+            document.getElementById('editLastName').value = nameParts.slice(1).join(' ') || '';
+            document.getElementById('editEmail').value = email || '';
+            document.getElementById('editPhone').value = phone.replace('+91 ', '').replace(/\s/g, '') || '';
+            
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeEditModal() {
+            const modal = document.getElementById('editModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+            currentEditCustomer = null;
+        }
+        
+        function saveCustomerChanges() {
+            const firstName = document.getElementById('editFirstName').value.trim();
+            const lastName = document.getElementById('editLastName').value.trim();
+            const phone = document.getElementById('editPhone').value.trim();
+            
+            if (!firstName || !phone) {
+                alert('Please fill required fields');
+                return;
+            }
+            
+            // In production, submit to API
+            console.log('Saving:', { firstName, lastName, phone, email: document.getElementById('editEmail').value });
+            
+            // Show success toast
+            showToast('Customer updated successfully!');
+            closeEditModal();
+        }
+        
+        // ==================== DELETE MODAL ====================
+        let customerToDelete = null;
+        
+        function openDeleteModal(customerName) {
+            customerToDelete = customerName;
+            document.getElementById('deleteCustomerName').textContent = customerName;
+            const modal = document.getElementById('deleteModal');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeDeleteModal() {
+            const modal = document.getElementById('deleteModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+            customerToDelete = null;
+        }
+        
+        function confirmDelete() {
+            if (customerToDelete) {
+                // In production, submit to API
+                console.log('Deleting customer:', customerToDelete);
+                showToast('Customer deleted successfully!', 'error');
+                closeDeleteModal();
+                // Optionally refresh or remove row from table
+            }
+        }
+        
+        // ==================== TOAST NOTIFICATION ====================
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            const bgColor = type === 'error' ? 'bg-red-600' : 'bg-primary';
+            toast.className = `fixed bottom-4 right-4 ${bgColor} text-white px-4 py-2 rounded-lg shadow-2xl flex items-center gap-3 z-[100] animate-pulse`;
+            toast.innerHTML = `
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${type === 'error' ? 'M5 13l4 4L19 7' : 'M5 13l4 4L19 7'}"/>
+                </svg>
+                ${message}
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
     </script>
+    
+    <!-- Edit Customer Modal -->
+    <div id="editModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeEditModal()"></div>
+        <div class="fixed inset-0 overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative w-full max-w-lg bg-white rounded-lg shadow-xl">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                        <h2 class="text-lg font-semibold text-gray-900">Edit Customer</h2>
+                        <button onclick="closeEditModal()" class="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Form Body -->
+                    <div class="p-6 space-y-5">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">First Name <span class="text-red-500">*</span></label>
+                                <input type="text" id="editFirstName" placeholder="Enter first name" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-xs font-medium text-gray-500">Last Name</label>
+                                <input type="text" id="editLastName" placeholder="Enter last name" 
+                                    class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-gray-500">Phone Number <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">+91</span>
+                                <input type="tel" id="editPhone" placeholder="98765 43210" maxlength="10" 
+                                    class="w-full pl-12 pr-4 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <label class="block text-xs font-medium text-gray-500">Email Address</label>
+                            <input type="email" id="editEmail" placeholder="customer@example.com" 
+                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                        </div>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+                        <button onclick="closeEditModal()" class="px-4 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium text-sm">
+                            Cancel
+                        </button>
+                        <button onclick="saveCustomerChanges()" class="px-6 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeDeleteModal()"></div>
+        <div class="fixed inset-0 overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative w-full max-w-md bg-white rounded-lg shadow-xl">
+                    <!-- Icon -->
+                    <div class="pt-6 text-center">
+                        <div class="mx-auto w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                            <svg class="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Delete Customer</h3>
+                        <p class="text-gray-500 text-sm px-6">
+                            Are you sure you want to delete <span id="deleteCustomerName" class="font-semibold text-gray-900"></span>? This action cannot be undone.
+                        </p>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="flex items-center justify-center gap-3 p-4">
+                        <button onclick="closeDeleteModal()" class="flex-1 px-4 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium text-sm border border-gray-100">
+                            Cancel
+                        </button>
+                        <button onclick="confirmDelete()" class="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg font-medium text-sm hover:bg-red-700 flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
