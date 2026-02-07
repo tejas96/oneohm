@@ -33,10 +33,6 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
-  // TODO: Add global filters and interceptors
-  // app.useGlobalFilters(new HttpExceptionFilter());
-  // app.useGlobalInterceptors(new RequestLoggingInterceptor());
-
   // TODO: Add rate limiting
   // app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
 

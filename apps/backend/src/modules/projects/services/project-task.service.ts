@@ -1,40 +1,46 @@
+import { randomUUID } from 'crypto';
+
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   type PaginatedResponse,
   type StatisticsResponse,
+  type TaskActivityEntry,
+  type TaskActivityType,
   TaskStatus,
 } from '@oneohm-epc/shared-types';
 
 import { type CreateProjectTaskDto, type UpdateProjectTaskDto } from '../dto';
-import {
-  type ProjectTaskEntity,
-  type TaskTimeLogEntity,
-  type TaskActivityLogEntity,
-} from '../entities';
-import {
-  ProjectTaskRepository,
-  TaskTimeLogRepository,
-  TaskActivityLogRepository,
-} from '../repositories';
+import { type ProjectTaskEntity } from '../entities';
+import { ProjectTaskRepository } from '../repositories';
+
+/**
+ * Service Constants
+ * Centralized configuration values for task service operations
+ */
+const SERVICE_CONSTANTS = {
+  DEFAULT_ACTIVITY_LOG_LIMIT: 100,
+} as const;
 
 /**
  * ProjectTaskService
- * Business logic for project tasks with time tracking and activity logging
+ * Business logic for project tasks with embedded activity logging
  */
 @Injectable()
 export class ProjectTaskService {
-  constructor(
-    private readonly taskRepository: ProjectTaskRepository,
-    private readonly timeLogRepository: TaskTimeLogRepository,
-    private readonly activityLogRepository: TaskActivityLogRepository,
-  ) {}
+  constructor(private readonly taskRepository: ProjectTaskRepository) {}
 
   /**
    * Create a new project task
    */
   async create(createDto: CreateProjectTaskDto, currentUserId: string): Promise<ProjectTaskEntity> {
+    // projectId is set from route param by controller, validate it exists
+    if (!createDto.projectId) {
+      throw new BadRequestException('Project ID is required');
+    }
+    const projectId = createDto.projectId;
+
     // Check if code already exists
-    const codeExists = await this.taskRepository.existsByCode(createDto.code, createDto.projectId);
+    const codeExists = await this.taskRepository.existsByCode(createDto.code, projectId);
     if (codeExists) {
       throw new BadRequestException(
         `Task with code ${createDto.code} already exists in this project`,
@@ -44,7 +50,7 @@ export class ProjectTaskService {
     // Validate dependencies
     if (createDto.dependsOnTaskIds && createDto.dependsOnTaskIds.length > 0) {
       for (const depId of createDto.dependsOnTaskIds) {
-        const dependencyTask = await this.taskRepository.findById(depId, createDto.projectId);
+        const dependencyTask = await this.taskRepository.findById(depId, projectId);
         if (!dependencyTask) {
           throw new BadRequestException(`Dependency task with ID ${depId} not found`);
         }
@@ -53,6 +59,7 @@ export class ProjectTaskService {
 
     return this.taskRepository.create({
       ...createDto,
+      projectId,
       createdBy: currentUserId,
       updatedBy: currentUserId,
     });
@@ -112,7 +119,8 @@ export class ProjectTaskService {
   }
 
   /**
-   * Update project task
+   * Update project task with activity logging in a single transaction
+   * Ensures atomicity - if update or activity log fails, both are rolled back
    */
   async update(
     id: string,
@@ -146,72 +154,107 @@ export class ProjectTaskService {
     // Auto-set dates based on status
     const statusChanges: Record<string, unknown> = {};
     if (updateDto.status === TaskStatus.IN_PROGRESS) {
-      if (!existingTask.actualStartDate) {
-        statusChanges.actualStartDate = new Date();
+      if (!existingTask.startDate) {
+        statusChanges.startDate = new Date();
       }
     }
-    if (updateDto.status === TaskStatus.COMPLETED || updateDto.status === TaskStatus.CANCELLED) {
-      if (!existingTask.actualEndDate) {
-        statusChanges.actualEndDate = new Date();
+    if (updateDto.status === TaskStatus.DONE || updateDto.status === TaskStatus.CANCELLED) {
+      if (!existingTask.endDate) {
+        statusChanges.endDate = new Date();
       }
-      if (updateDto.status === TaskStatus.COMPLETED) {
+      if (updateDto.status === TaskStatus.DONE) {
         statusChanges.completionPercentage = 100;
       }
     }
 
-    const updated = await this.taskRepository.update(id, projectId, {
-      ...updateDto,
-      ...statusChanges,
-      updatedBy: currentUserId,
-    });
+    // Build activity log entries based on changes
+    const activityEntries: TaskActivityEntry[] = this.buildActivityEntries(
+      existingTask,
+      updateDto,
+      currentUserId,
+    );
+
+    // Perform update with activity logs in a single transaction
+    const updated = await this.taskRepository.updateWithActivityLogs(
+      id,
+      projectId,
+      {
+        ...updateDto,
+        ...statusChanges,
+        updatedBy: currentUserId,
+      },
+      activityEntries,
+    );
 
     if (!updated) {
       throw new NotFoundException(`Task with ID ${id} not found`);
     }
 
-    // Log important field changes
+    return updated;
+  }
+
+  /**
+   * Build activity log entries based on changes between existing task and update DTO
+   * @private
+   */
+  private buildActivityEntries(
+    existingTask: ProjectTaskEntity,
+    updateDto: UpdateProjectTaskDto,
+    currentUserId: string,
+  ): TaskActivityEntry[] {
+    const entries: TaskActivityEntry[] = [];
+    const now = new Date().toISOString();
+
+    // Log status changes
     if (updateDto.status && updateDto.status !== existingTask.status) {
-      await this.createActivityLog(
-        id,
-        'status_changed',
-        currentUserId,
-        'status',
-        existingTask.status,
-        updateDto.status,
-      );
+      entries.push({
+        id: randomUUID(),
+        activityType: 'status_changed',
+        userId: currentUserId,
+        fieldName: 'status',
+        oldValue: existingTask.status,
+        newValue: updateDto.status,
+        createdAt: now,
+      });
     }
 
-    if (
-      updateDto.assignedToUserId &&
-      updateDto.assignedToUserId !== existingTask.assignedToUserId
-    ) {
-      await this.createActivityLog(
-        id,
-        'assigned',
-        currentUserId,
-        'assignedToUserId',
-        existingTask.assignedToUserId,
-        updateDto.assignedToUserId,
-      );
+    // Log assignment changes
+    if (updateDto.assignedToUserId && updateDto.assignedToUserId !== existingTask.assignedToUserId) {
+      entries.push({
+        id: randomUUID(),
+        activityType: 'assigned',
+        userId: currentUserId,
+        fieldName: 'assignedToUserId',
+        oldValue: existingTask.assignedToUserId,
+        newValue: updateDto.assignedToUserId,
+        createdAt: now,
+      });
     }
 
+    // Log priority changes
     if (updateDto.priority && updateDto.priority !== existingTask.priority) {
-      await this.createActivityLog(
-        id,
-        'updated',
-        currentUserId,
-        'priority',
-        existingTask.priority,
-        updateDto.priority,
-      );
+      entries.push({
+        id: randomUUID(),
+        activityType: 'priority_changed',
+        userId: currentUserId,
+        fieldName: 'priority',
+        oldValue: existingTask.priority,
+        newValue: updateDto.priority,
+        createdAt: now,
+      });
     }
 
     // Log general update if no specific field changes tracked
-    if (!updateDto.status && !updateDto.assignedToUserId && !updateDto.priority) {
-      await this.createActivityLog(id, 'updated', currentUserId);
+    if (entries.length === 0) {
+      entries.push({
+        id: randomUUID(),
+        activityType: 'updated',
+        userId: currentUserId,
+        createdAt: now,
+      });
     }
 
-    return updated;
+    return entries;
   }
 
   /**
@@ -256,79 +299,25 @@ export class ProjectTaskService {
     };
 
     if (completionPercentage === 100) {
-      statusUpdate.status = TaskStatus.COMPLETED;
+      statusUpdate.status = TaskStatus.DONE;
     }
 
     return this.update(id, projectId, statusUpdate, currentUserId);
   }
 
   /**
-   * Log time for task
-   * Creates a time log entry and updates task's logged hours
-   */
-  async logTime(
-    id: string,
-    projectId: string,
-    hoursToAdd: number,
-    workDescription: string | undefined,
-    isBillable: boolean | undefined,
-    workDate: Date | undefined,
-    currentUserId: string,
-  ): Promise<ProjectTaskEntity> {
-    const task = await this.findById(id, projectId);
-
-    if (hoursToAdd < 0) {
-      throw new BadRequestException('Hours to add must be positive');
-    }
-
-    // Create time log entry
-    await this.timeLogRepository.create({
-      taskId: id,
-      userId: currentUserId,
-      timeSpentHours: hoursToAdd,
-      workDate: workDate ?? new Date(),
-      workDescription,
-      isBillable: isBillable ?? true,
-      createdBy: currentUserId,
-    });
-
-    // Update task's logged hours
-    const newLoggedHours = task.loggedHours + hoursToAdd;
-
-    const updated = await this.taskRepository.update(id, projectId, {
-      loggedHours: newLoggedHours,
-      updatedBy: currentUserId,
-    });
-
-    if (!updated) {
-      throw new NotFoundException(`Task with ID ${id} not found`);
-    }
-
-    // Create activity log
-    await this.createActivityLog(
-      id,
-      'time_logged',
-      currentUserId,
-      'loggedHours',
-      task.loggedHours.toString(),
-      newLoggedHours.toString(),
-    );
-
-    return updated;
-  }
-
-  /**
-   * Get all time logs for a task
-   */
-  async getTaskTimeLogs(taskId: string): Promise<TaskTimeLogEntity[]> {
-    return this.timeLogRepository.findByTaskId(taskId);
-  }
-
-  /**
    * Get activity log for a task
+   * @param taskId - Task ID
+   * @param projectId - Project ID
+   * @param limit - Maximum number of entries to return (defaults to 100)
    */
-  async getTaskActivityLog(taskId: string, limit = 100): Promise<TaskActivityLogEntity[]> {
-    return this.activityLogRepository.findByTaskId(taskId, limit);
+  async getTaskActivityLog(
+    taskId: string,
+    projectId: string,
+    limit: number = SERVICE_CONSTANTS.DEFAULT_ACTIVITY_LOG_LIMIT,
+  ): Promise<TaskActivityEntry[]> {
+    const task = await this.findById(taskId, projectId);
+    return (task.activityLog || []).slice(0, limit);
   }
 
   /**
@@ -371,23 +360,143 @@ export class ProjectTaskService {
   }
 
   /**
+   * Get tasks for Kanban board by status with pagination
+   */
+  async getKanbanColumn(
+    projectId: string,
+    status: TaskStatus,
+    page: number,
+    limit: number,
+  ): Promise<PaginatedResponse<ProjectTaskEntity>> {
+    const { data, total } = await this.taskRepository.findForKanban(projectId, status, page, limit);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Move task to new status/position (Kanban drag-drop)
+   * Uses optimistic locking and transactions for atomicity
+   */
+  async moveTask(
+    id: string,
+    projectId: string,
+    newStatus: TaskStatus,
+    newKanbanOrder: number,
+    expectedVersion: number,
+    currentUserId: string,
+  ): Promise<ProjectTaskEntity> {
+    const existingTask = await this.findById(id, projectId);
+
+    // Check dependencies if moving to IN_PROGRESS
+    if (newStatus === TaskStatus.IN_PROGRESS && existingTask.dependsOnTaskIds?.length) {
+      const depsComplete = await this.taskRepository.areAllDependenciesComplete(
+        existingTask.dependsOnTaskIds,
+      );
+      if (!depsComplete) {
+        throw new BadRequestException(
+          'Cannot start task: some dependencies are not yet complete',
+        );
+      }
+    }
+
+    // Build activity entry if status changed
+    const activityEntry: TaskActivityEntry | undefined =
+      newStatus !== existingTask.status
+        ? {
+            id: randomUUID(),
+            activityType: 'status_changed',
+            userId: currentUserId,
+            fieldName: 'status',
+            oldValue: existingTask.status,
+            newValue: newStatus,
+            createdAt: new Date().toISOString(),
+          }
+        : undefined;
+
+    // Perform move with activity log in a single transaction
+    const updated = await this.taskRepository.moveTaskWithActivityLog(
+      id,
+      projectId,
+      newStatus,
+      newKanbanOrder,
+      expectedVersion,
+      activityEntry,
+    );
+
+    if (!updated) {
+      throw new BadRequestException(
+        'Task was modified by another user. Please refresh and try again.',
+      );
+    }
+
+    return updated;
+  }
+
+  /**
+   * Get all tasks assigned to a user across all projects (My Tasks)
+   */
+  async getMyTasks(
+    userId: string,
+    page: number,
+    limit: number,
+    filters: {
+      status?: TaskStatus;
+      priority?: string;
+    } = {},
+  ): Promise<PaginatedResponse<ProjectTaskEntity>> {
+    const { data, total } = await this.taskRepository.findByUserId(userId, page, limit, filters);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
    * Create activity log entry (private helper)
+   * Prepends a new entry to the task's activityLog JSONB array
+   *
+   * @param taskId - Task ID
+   * @param projectId - Project ID
+   * @param activityType - Type of activity (type-safe)
+   * @param userId - ID of user who performed the action
+   * @param fieldName - Name of field that changed (optional)
+   * @param oldValue - Previous value (optional)
+   * @param newValue - New value (optional)
    */
   private async createActivityLog(
     taskId: string,
-    activityType: string,
+    projectId: string,
+    activityType: TaskActivityType,
     userId: string,
     fieldName?: string,
     oldValue?: string,
     newValue?: string,
   ): Promise<void> {
-    await this.activityLogRepository.create({
-      taskId,
+    const newEntry: TaskActivityEntry = {
+      id: randomUUID(),
       activityType,
       userId,
       fieldName,
       oldValue,
       newValue,
-    });
+      createdAt: new Date().toISOString(),
+    };
+
+    // Prepend the new entry to the activity log array (automatically capped at 100 entries)
+    await this.taskRepository.prependActivityLogEntry(taskId, projectId, newEntry);
   }
 }

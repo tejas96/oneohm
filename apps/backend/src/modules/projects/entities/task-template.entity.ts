@@ -10,7 +10,6 @@ import { BaseEntity } from '../../../common/entities/base.entity';
  */
 @Entity('task_templates')
 @Index(['organizationId', 'deletedAt'])
-@Index(['milestoneTemplateId', 'deletedAt'])
 @Index(['isActive', 'deletedAt'])
 export class TaskTemplateEntity extends BaseEntity {
   // ==================== Relations ====================
@@ -22,9 +21,6 @@ export class TaskTemplateEntity extends BaseEntity {
 
   @Column({ name: 'organization_id', type: 'uuid' })
   organizationId!: string;
-
-  @Column({ name: 'milestone_template_id', type: 'uuid', nullable: true })
-  milestoneTemplateId?: string;
 
   // ==================== Template Info ====================
 

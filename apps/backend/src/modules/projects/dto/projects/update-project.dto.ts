@@ -132,14 +132,6 @@ export class UpdateProjectDto {
 
   // ==================== Additional Data ====================
   @ApiPropertyOptional({
-    example: 'Customer requests weekend-only installation',
-    description: 'Additional notes',
-  })
-  @IsString()
-  @IsOptional()
-  notes?: string;
-
-  @ApiPropertyOptional({
     example: { tags: ['priority', 'referral'], customField1: 'value1' },
     description: 'Additional project metadata',
   })

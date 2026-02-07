@@ -129,6 +129,34 @@ export interface TaskChecklist {
 }
 
 /**
+ * Task Activity Types
+ * Defines the valid types of activities that can be logged for a task
+ */
+export type TaskActivityType =
+  | 'status_changed'
+  | 'assigned'
+  | 'updated'
+  | 'created'
+  | 'priority_changed'
+  | 'progress_updated'
+  | 'commented';
+
+/**
+ * Task Activity Entry
+ * Represents a single activity/change in a task's history
+ * Stored as JSONB array in the task entity
+ */
+export interface TaskActivityEntry {
+  id: string; // UUID for uniqueness
+  activityType: TaskActivityType;
+  userId?: string;
+  fieldName?: string;
+  oldValue?: string;
+  newValue?: string;
+  createdAt: string; // ISO date string
+}
+
+/**
  * Project
  * Represents a solar installation project
  *
@@ -158,7 +186,6 @@ export interface Project {
   endDate?: string;
   estimatedCost?: number;
   actualCost?: number;
-  notes?: string;
   metadata?: ProjectMetadata;
   createdAt: string;
   updatedAt: string;

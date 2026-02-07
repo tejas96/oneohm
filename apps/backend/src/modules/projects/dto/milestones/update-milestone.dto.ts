@@ -93,35 +93,19 @@ export class UpdateMilestoneDto {
   // ==================== Dates ====================
   @ApiPropertyOptional({
     example: '2025-02-01',
-    description: 'Planned start date',
+    description: 'Start date',
   })
   @IsDateString()
   @IsOptional()
-  plannedStartDate?: string;
+  startDate?: string;
 
   @ApiPropertyOptional({
     example: '2025-02-05',
-    description: 'Planned end date',
+    description: 'End date',
   })
   @IsDateString()
   @IsOptional()
-  plannedEndDate?: string;
-
-  @ApiPropertyOptional({
-    example: '2025-02-02',
-    description: 'Actual start date',
-  })
-  @IsDateString()
-  @IsOptional()
-  actualStartDate?: string;
-
-  @ApiPropertyOptional({
-    example: '2025-02-04',
-    description: 'Actual end date',
-  })
-  @IsDateString()
-  @IsOptional()
-  actualEndDate?: string;
+  endDate?: string;
 
   // ==================== Dependencies & Deliverables ====================
   @ApiPropertyOptional({
@@ -149,13 +133,4 @@ export class UpdateMilestoneDto {
   @IsArray()
   @IsOptional()
   deliverables?: MilestoneDeliverable[];
-
-  // ==================== Additional Data ====================
-  @ApiPropertyOptional({
-    example: 'Completed ahead of schedule',
-    description: 'Additional notes',
-  })
-  @IsString()
-  @IsOptional()
-  notes?: string;
 }

@@ -79,10 +79,10 @@ export class TaskTemplateService {
   }
 
   /**
-   * Find templates by milestone template
+   * Find all active templates for an organization
    */
-  async findByMilestoneTemplate(milestoneTemplateId: string): Promise<TaskTemplateEntity[]> {
-    return this.templateRepository.findByMilestoneTemplate(milestoneTemplateId);
+  async findAllActive(organizationId: string): Promise<TaskTemplateEntity[]> {
+    return this.templateRepository.findAllActive(organizationId);
   }
 
   /**

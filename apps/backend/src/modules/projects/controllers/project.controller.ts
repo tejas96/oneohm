@@ -292,4 +292,34 @@ export class ProjectController {
       excludeExtraneousValues: true,
     });
   }
+
+  /**
+   * Get project timeline data for Gantt visualization
+   */
+  @Get(':id/timeline')
+  @ApiOperation({
+    summary: 'Get project timeline',
+    description: 'Retrieve timeline data including tasks and milestones for Gantt visualization',
+  })
+  async getTimeline(
+    @OrganizationContext() organizationId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ReturnType<typeof this.projectService.getProjectTimeline>> {
+    return this.projectService.getProjectTimeline(id, organizationId);
+  }
+
+  /**
+   * Get project progress statistics
+   */
+  @Get(':id/progress')
+  @ApiOperation({
+    summary: 'Get project progress',
+    description: 'Retrieve progress statistics including task counts by status and overdue tasks',
+  })
+  async getProgress(
+    @OrganizationContext() organizationId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ReturnType<typeof this.projectService.getProjectProgress>> {
+    return this.projectService.getProjectProgress(id, organizationId);
+  }
 }

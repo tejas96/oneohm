@@ -143,13 +143,4 @@ export class CreateMaterialDto {
   @IsDateString()
   @IsOptional()
   allocationDate?: string;
-
-  // ==================== Additional Data ====================
-  @ApiPropertyOptional({
-    example: 'Store in dry location, handle with care',
-    description: 'Additional notes',
-  })
-  @IsString()
-  @IsOptional()
-  notes?: string;
 }

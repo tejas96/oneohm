@@ -47,7 +47,6 @@ export class MaterialService {
       status: createDto.status || MaterialStatus.REQUIRED,
       procurementDate: createDto.procurementDate ? new Date(createDto.procurementDate) : undefined,
       allocationDate: createDto.allocationDate ? new Date(createDto.allocationDate) : undefined,
-      notes: createDto.notes,
     });
 
     return this.materialRepository.findById(material.id, createDto.projectId);

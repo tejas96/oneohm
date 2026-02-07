@@ -1,19 +1,30 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   ParseUUIDPipe,
   Patch,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiConflictResponse,
+  ApiNotFoundResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   type PaginatedResponse,
   type StatisticsResponse,
+  type TaskActivityEntry,
   TaskPriority,
   TaskStatus,
 } from '@oneohm-epc/shared-types';
@@ -25,13 +36,23 @@ import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
 import {
   CreateProjectTaskDto,
-  CreateTaskTimeLogDto,
+  MoveTaskDto,
   ProjectTaskResponseDto,
-  TaskActivityLogResponseDto,
-  TaskTimeLogResponseDto,
   UpdateProjectTaskDto,
 } from '../dto';
 import { ProjectTaskService } from '../services';
+
+/**
+ * Task Constants
+ * Centralized configuration values for task operations
+ */
+const TASK_CONSTANTS = {
+  DEFAULT_PAGE: 1,
+  DEFAULT_LIMIT: 20,
+  DEFAULT_KANBAN_LIMIT: 50,
+  DEFAULT_ACTIVITY_LOG_LIMIT: 100,
+  MAX_ACTIVITY_LOG_ENTRIES: 100,
+} as const;
 
 @ApiTags('Project Tasks')
 @ApiBearerAuth()
@@ -67,18 +88,15 @@ export class ProjectTaskController {
   @ApiQuery({ name: 'search', required: false, type: String })
   async findAll(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
+    @Query('page', new DefaultValuePipe(TASK_CONSTANTS.DEFAULT_PAGE), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(TASK_CONSTANTS.DEFAULT_LIMIT), ParseIntPipe) limit: number,
     @Query('milestoneId') milestoneId?: string,
     @Query('assignedToUserId') assignedToUserId?: string,
     @Query('status') status?: TaskStatus,
     @Query('priority') priority?: string,
     @Query('search') search?: string,
   ): Promise<PaginatedResponse<ProjectTaskResponseDto>> {
-    const pageNum = page ? parseInt(page, 10) : 1;
-    const limitNum = limit ? parseInt(limit, 10) : 20;
-
-    const result = await this.taskService.findAll(projectId, pageNum, limitNum, {
+    const result = await this.taskService.findAll(projectId, page, limit, {
       milestoneId,
       assignedToUserId,
       status,
@@ -100,6 +118,54 @@ export class ProjectTaskController {
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<StatisticsResponse<TaskStatus>> {
     return this.taskService.getStatistics(projectId);
+  }
+
+  @Get('kanban')
+  @ApiOperation({ summary: 'Get tasks for Kanban board by status' })
+  @ApiQuery({ name: 'status', required: true, enum: TaskStatus })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 50 })
+  @ApiBadRequestResponse({ description: 'Invalid status value' })
+  async getKanbanColumn(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Query('status') status: TaskStatus,
+    @Query('page', new DefaultValuePipe(TASK_CONSTANTS.DEFAULT_PAGE), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(TASK_CONSTANTS.DEFAULT_KANBAN_LIMIT), ParseIntPipe)
+    limit: number,
+  ): Promise<PaginatedResponse<ProjectTaskResponseDto>> {
+    const result = await this.taskService.getKanbanColumn(projectId, status, page, limit);
+
+    return {
+      data: plainToInstance(ProjectTaskResponseDto, result.data, {
+        excludeExtraneousValues: true,
+      }),
+      meta: result.meta,
+    };
+  }
+
+  @Post(':id/move')
+  @ApiOperation({ summary: 'Move task to new status/position (Kanban drag-drop)' })
+  @ApiBadRequestResponse({ description: 'Invalid input or dependencies not complete' })
+  @ApiNotFoundResponse({ description: 'Task not found' })
+  @ApiConflictResponse({ description: 'Version mismatch - task was modified by another user' })
+  async moveTask(
+    @CurrentUser() currentUser: CurrentUserType,
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() moveDto: MoveTaskDto,
+  ): Promise<ProjectTaskResponseDto> {
+    const task = await this.taskService.moveTask(
+      id,
+      projectId,
+      moveDto.status,
+      moveDto.kanbanOrder,
+      moveDto.version,
+      currentUser.id,
+    );
+
+    return plainToInstance(ProjectTaskResponseDto, task, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Get('overdue')
@@ -148,6 +214,7 @@ export class ProjectTaskController {
 
   @Get(':id')
   @ApiReadOne({ responseType: ProjectTaskResponseDto, summary: 'Get project task by ID' })
+  @ApiNotFoundResponse({ description: 'Task not found' })
   async findOne(
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -160,6 +227,8 @@ export class ProjectTaskController {
 
   @Patch(':id')
   @ApiUpdate({ responseType: ProjectTaskResponseDto, summary: 'Update project task' })
+  @ApiNotFoundResponse({ description: 'Task not found' })
+  @ApiBadRequestResponse({ description: 'Invalid input or duplicate code' })
   async update(
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
@@ -174,6 +243,8 @@ export class ProjectTaskController {
 
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update task status' })
+  @ApiNotFoundResponse({ description: 'Task not found' })
+  @ApiBadRequestResponse({ description: 'Invalid status value' })
   async updateStatus(
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
@@ -188,6 +259,8 @@ export class ProjectTaskController {
 
   @Patch(':id/assign')
   @ApiOperation({ summary: 'Assign task to user' })
+  @ApiNotFoundResponse({ description: 'Task not found' })
+  @ApiBadRequestResponse({ description: 'Invalid user ID' })
   async assignTask(
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
@@ -202,6 +275,8 @@ export class ProjectTaskController {
 
   @Patch(':id/progress')
   @ApiOperation({ summary: 'Update task progress' })
+  @ApiNotFoundResponse({ description: 'Task not found' })
+  @ApiBadRequestResponse({ description: 'Invalid progress value (must be 0-100)' })
   async updateProgress(
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
@@ -219,52 +294,17 @@ export class ProjectTaskController {
     });
   }
 
-  @Post(':id/time-logs')
-  @ApiOperation({ summary: 'Log time for task' })
-  async logTime(
-    @CurrentUser() currentUser: CurrentUserType,
-    @Param('projectId', ParseUUIDPipe) projectId: string,
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() timeLogDto: CreateTaskTimeLogDto,
-  ): Promise<ProjectTaskResponseDto> {
-    const task = await this.taskService.logTime(
-      id,
-      projectId,
-      timeLogDto.timeSpentHours,
-      timeLogDto.workDescription,
-      timeLogDto.isBillable,
-      timeLogDto.workDate,
-      currentUser.id,
-    );
-    return plainToInstance(ProjectTaskResponseDto, task, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  @Get(':id/time-logs')
-  @ApiOperation({ summary: 'Get all time logs for a task' })
-  async getTimeLogs(
-    @Param('projectId', ParseUUIDPipe) projectId: string,
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<TaskTimeLogResponseDto[]> {
-    const timeLogs = await this.taskService.getTaskTimeLogs(id);
-    return plainToInstance(TaskTimeLogResponseDto, timeLogs, {
-      excludeExtraneousValues: true,
-    });
-  }
-
   @Get(':id/activity-log')
   @ApiOperation({ summary: 'Get activity history for a task' })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 100 })
+  @ApiNotFoundResponse({ description: 'Task not found' })
   async getActivityLog(
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('limit') limit?: number,
-  ): Promise<TaskActivityLogResponseDto[]> {
-    const activityLog = await this.taskService.getTaskActivityLog(id, limit);
-    return plainToInstance(TaskActivityLogResponseDto, activityLog, {
-      excludeExtraneousValues: true,
-    });
+    @Query('limit', new DefaultValuePipe(TASK_CONSTANTS.DEFAULT_ACTIVITY_LOG_LIMIT), ParseIntPipe)
+    limit: number,
+  ): Promise<TaskActivityEntry[]> {
+    return this.taskService.getTaskActivityLog(id, projectId, limit);
   }
 
   @Delete(':id')

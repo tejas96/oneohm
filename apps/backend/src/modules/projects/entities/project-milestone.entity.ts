@@ -55,17 +55,11 @@ export class ProjectMilestoneEntity extends BaseEntity {
   progressPercentage!: number;
 
   // ==================== Dates ====================
-  @Column({ type: 'date', nullable: true, name: 'planned_start_date' })
-  plannedStartDate?: Date;
+  @Column({ type: 'date', nullable: true, name: 'start_date' })
+  startDate?: Date;
 
-  @Column({ type: 'date', nullable: true, name: 'planned_end_date' })
-  plannedEndDate?: Date;
-
-  @Column({ type: 'date', nullable: true, name: 'actual_start_date' })
-  actualStartDate?: Date;
-
-  @Column({ type: 'date', nullable: true, name: 'actual_end_date' })
-  actualEndDate?: Date;
+  @Column({ type: 'date', nullable: true, name: 'end_date' })
+  endDate?: Date;
 
   // ==================== Dependencies & Deliverables ====================
   @Column({ type: 'jsonb', nullable: true })
@@ -74,11 +68,14 @@ export class ProjectMilestoneEntity extends BaseEntity {
   @Column({ type: 'jsonb', nullable: true })
   deliverables?: MilestoneDeliverable[];
 
-  // ==================== Additional Data ====================
-  @Column({ type: 'text', nullable: true })
-  notes?: string;
-
   // ==================== Soft Delete ====================
   @DeleteDateColumn({ type: 'timestamp', nullable: true, name: 'deleted_at' })
   deletedAt?: Date;
+
+  // ==================== Audit Fields ====================
+  @Column({ name: 'created_by', type: 'uuid', nullable: true })
+  createdBy?: string;
+
+  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
+  updatedBy?: string;
 }

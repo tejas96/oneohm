@@ -77,12 +77,13 @@ export class TaskTemplateRepository {
   }
 
   /**
-   * Find templates by milestone template ID
+   * Find all active templates for an organization
    */
-  async findByMilestoneTemplate(milestoneTemplateId: string): Promise<TaskTemplateEntity[]> {
+  async findAllActive(organizationId: string): Promise<TaskTemplateEntity[]> {
     return this.repository.find({
       where: {
-        milestoneTemplateId,
+        organizationId,
+        isActive: true,
         deletedAt: IsNull(),
       },
       order: {

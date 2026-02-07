@@ -57,19 +57,11 @@ export class MilestoneResponseDto {
 
   @ApiPropertyOptional({ example: '2025-02-01' })
   @Expose()
-  plannedStartDate?: Date;
+  startDate?: Date;
 
   @ApiPropertyOptional({ example: '2025-02-05' })
   @Expose()
-  plannedEndDate?: Date;
-
-  @ApiPropertyOptional({ example: '2025-02-02' })
-  @Expose()
-  actualStartDate?: Date;
-
-  @ApiPropertyOptional({ example: '2025-02-04' })
-  @Expose()
-  actualEndDate?: Date;
+  endDate?: Date;
 
   @ApiPropertyOptional({
     example: ['123e4567-e89b-12d3-a456-426614174000'],
@@ -85,10 +77,6 @@ export class MilestoneResponseDto {
   @Expose()
   deliverables?: MilestoneDeliverable[];
 
-  @ApiPropertyOptional({ example: 'Completed ahead of schedule' })
-  @Expose()
-  notes?: string;
-
   @ApiProperty({ example: '2025-01-15T10:30:00Z' })
   @Expose()
   createdAt!: Date;
@@ -96,6 +84,14 @@ export class MilestoneResponseDto {
   @ApiProperty({ example: '2025-02-04T14:20:00Z' })
   @Expose()
   updatedAt!: Date;
+
+  @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Expose()
+  createdBy?: string;
+
+  @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Expose()
+  updatedBy?: string;
 
   @ApiPropertyOptional({ example: null })
   @Expose()

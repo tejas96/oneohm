@@ -1,12 +1,17 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { ProjectPriority, ProjectStatus, QuoteStatus } from '@oneohm-epc/shared-types';
+import { ProjectPriority, ProjectStatus, QuoteStatus, TaskStatus } from '@oneohm-epc/shared-types';
 
 import { CustomerPropertyRepository } from '../../customers/repositories/customer-property.repository';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { QuoteService } from '../../quotes/services/quote.service';
 import { CreateProjectDto, UpdateProjectDto } from '../dto';
 import { ProjectEntity } from '../entities/project.entity';
-import { MilestoneRepository, ProjectRepository } from '../repositories';
+import {
+  MilestoneRepository,
+  ProjectRepository,
+  ProjectTaskRepository,
+  TaskTemplateRepository,
+} from '../repositories';
 
 /**
  * Project Service
@@ -25,6 +30,8 @@ export class ProjectService {
     private readonly organizationRepository: OrganizationRepository,
     private readonly quoteService: QuoteService,
     private readonly customerPropertyRepository: CustomerPropertyRepository,
+    private readonly taskTemplateRepository: TaskTemplateRepository,
+    private readonly taskRepository: ProjectTaskRepository,
   ) {}
 
   /**
@@ -83,11 +90,74 @@ export class ProjectService {
       endDate: createDto.endDate ? new Date(createDto.endDate) : undefined,
       estimatedCost: createDto.estimatedCost,
       actualCost: createDto.actualCost,
-      notes: createDto.notes,
       metadata: createDto.metadata,
     });
 
+    // Auto-apply task templates after project creation
+    await this.applyTaskTemplates(project.id, organizationId, createdBy);
+
     return this.projectRepository.findById(project.id, organizationId);
+  }
+
+  /**
+   * Auto-apply active task templates to a project
+   * Creates tasks from templates and resolves dependencies
+   */
+  private async applyTaskTemplates(
+    projectId: string,
+    organizationId: string,
+    createdBy: string,
+  ): Promise<void> {
+    // Get all active task templates for the organization
+    const templates = await this.taskTemplateRepository.findAllActive(organizationId);
+
+    if (templates.length === 0) {
+      return;
+    }
+
+    // Map from template code to created task ID (for dependency resolution)
+    const codeToTaskId = new Map<string, string>();
+
+    // First pass: create all tasks
+    for (const template of templates) {
+      const task = await this.taskRepository.create({
+        projectId,
+        taskTemplateId: template.id,
+        name: template.name,
+        code: template.code,
+        description: template.description,
+        kanbanOrder: template.sequenceOrder * 100, // Space out for insertion
+        status: TaskStatus.BACKLOG,
+        checklist: template.checklistTemplate,
+        labels: template.type ? [template.type] : undefined,
+        createdBy,
+        updatedBy: createdBy,
+      });
+
+      codeToTaskId.set(template.code, task.id);
+    }
+
+    // Second pass: resolve dependencies (template.dependsOnTaskCodes -> task.dependsOnTaskIds)
+    for (const template of templates) {
+      if (template.dependsOnTaskCodes && template.dependsOnTaskCodes.length > 0) {
+        const taskId = codeToTaskId.get(template.code);
+        if (!taskId) continue;
+
+        const dependsOnTaskIds: string[] = [];
+        for (const depCode of template.dependsOnTaskCodes) {
+          const depTaskId = codeToTaskId.get(depCode);
+          if (depTaskId) {
+            dependsOnTaskIds.push(depTaskId);
+          }
+        }
+
+        if (dependsOnTaskIds.length > 0) {
+          await this.taskRepository.update(taskId, projectId, {
+            dependsOnTaskIds,
+          });
+        }
+      }
+    }
   }
 
   /**
@@ -346,6 +416,110 @@ export class ProjectService {
     }
 
     return `${prefix}-${String(nextNumber).padStart(4, '0')}`;
+  }
+
+  /**
+   * Get project timeline data for Gantt visualization
+   * Returns tasks with their dates, dependencies, and status
+   */
+  async getProjectTimeline(
+    projectId: string,
+    organizationId: string,
+  ): Promise<{
+    project: { id: string; name: string; startDate?: Date; endDate?: Date };
+    tasks: Array<{
+      id: string;
+      name: string;
+      code: string;
+      status: TaskStatus;
+      startDate?: Date;
+      endDate?: Date;
+      dependsOnTaskIds: string[];
+      assignedToUserId?: string;
+      completionPercentage: number;
+    }>;
+    milestones: Array<{
+      id: string;
+      name: string;
+      dueDate?: Date;
+      status: string;
+    }>;
+  }> {
+    const project = await this.findById(projectId, organizationId);
+
+    // Get all tasks for timeline (get all tasks without pagination)
+    const { data: tasks } = await this.taskRepository.findAll(projectId, 1, 10000, {});
+
+    // Get milestones
+    const milestones = await this.milestoneRepository.findByProject(projectId);
+
+    return {
+      project: {
+        id: project.id,
+        name: project.name,
+        startDate: project.startDate,
+        endDate: project.endDate,
+      },
+      tasks: tasks.map((task) => ({
+        id: task.id,
+        name: task.name,
+        code: task.code,
+        status: task.status,
+        startDate: task.startDate,
+        endDate: task.endDate,
+        dependsOnTaskIds: task.dependsOnTaskIds || [],
+        assignedToUserId: task.assignedToUserId,
+        completionPercentage: task.completionPercentage || 0,
+      })),
+      milestones: milestones.map((m) => ({
+        id: m.id,
+        name: m.name,
+        dueDate: m.endDate,
+        status: m.status,
+      })),
+    };
+  }
+
+  /**
+   * Get project progress statistics
+   */
+  async getProjectProgress(
+    projectId: string,
+    organizationId: string,
+  ): Promise<{
+    totalTasks: number;
+    statusCounts: Record<TaskStatus, number>;
+    completionPercentage: number;
+    overdueTasksCount: number;
+    blockedTasksCount: number;
+    upcomingDeadlines: Array<{ id: string; name: string; endDate: Date }>;
+  }> {
+    const project = await this.findById(projectId, organizationId);
+
+    // Get task statistics - returns Record<TaskStatus, number>
+    const statusCounts = await this.taskRepository.countByStatus(projectId);
+
+    // Calculate total tasks from status counts
+    const totalTasks = Object.values(statusCounts).reduce((sum, count) => sum + count, 0);
+
+    // Get overdue tasks count
+    const overdueTasks = await this.taskRepository.findOverdue(projectId);
+
+    // Get upcoming deadlines (next 7 days)
+    const upcomingTasks = await this.taskRepository.findUpcomingDeadlines(projectId, 7);
+
+    return {
+      totalTasks,
+      statusCounts,
+      completionPercentage: project.progressPercentage,
+      overdueTasksCount: overdueTasks.length,
+      blockedTasksCount: statusCounts[TaskStatus.BLOCKED] || 0,
+      upcomingDeadlines: upcomingTasks.map((task) => ({
+        id: task.id,
+        name: task.name,
+        endDate: task.endDate!,
+      })),
+    };
   }
 
   /**
