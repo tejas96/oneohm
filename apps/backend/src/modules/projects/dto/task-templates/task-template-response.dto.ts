@@ -11,10 +11,6 @@ export class TaskTemplateResponseDto {
   @Expose()
   organizationId!: string;
 
-  @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
-  @Expose()
-  milestoneTemplateId?: string;
-
   @ApiProperty({ example: 'Panel Installation' })
   @Expose()
   name!: string;

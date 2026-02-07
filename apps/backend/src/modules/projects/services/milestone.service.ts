@@ -43,15 +43,10 @@ export class MilestoneService {
       status: createDto.status || MilestoneStatus.PENDING,
       sequenceOrder: createDto.sequenceOrder,
       progressPercentage: createDto.progressPercentage || 0,
-      plannedStartDate: createDto.plannedStartDate
-        ? new Date(createDto.plannedStartDate)
-        : undefined,
-      plannedEndDate: createDto.plannedEndDate ? new Date(createDto.plannedEndDate) : undefined,
-      actualStartDate: createDto.actualStartDate ? new Date(createDto.actualStartDate) : undefined,
-      actualEndDate: createDto.actualEndDate ? new Date(createDto.actualEndDate) : undefined,
+      startDate: createDto.startDate ? new Date(createDto.startDate) : undefined,
+      endDate: createDto.endDate ? new Date(createDto.endDate) : undefined,
       dependencies: createDto.dependencies,
       deliverables: createDto.deliverables,
-      notes: createDto.notes,
     });
 
     // Recalculate project progress
@@ -115,12 +110,8 @@ export class MilestoneService {
     // Prepare update data
     const updateData: Record<string, unknown> = {
       ...updateDto,
-      plannedStartDate: updateDto.plannedStartDate
-        ? new Date(updateDto.plannedStartDate)
-        : undefined,
-      plannedEndDate: updateDto.plannedEndDate ? new Date(updateDto.plannedEndDate) : undefined,
-      actualStartDate: updateDto.actualStartDate ? new Date(updateDto.actualStartDate) : undefined,
-      actualEndDate: updateDto.actualEndDate ? new Date(updateDto.actualEndDate) : undefined,
+      startDate: updateDto.startDate ? new Date(updateDto.startDate) : undefined,
+      endDate: updateDto.endDate ? new Date(updateDto.endDate) : undefined,
     };
 
     // Remove undefined values
@@ -195,15 +186,15 @@ export class MilestoneService {
       await this.checkDependenciesCompleted(projectId, milestone.dependencies);
     }
 
-    // Update actual dates based on status
+    // Update dates based on status
     const updateData: Record<string, unknown> = { status: newStatus };
 
-    if (newStatus === MilestoneStatus.IN_PROGRESS && !milestone.actualStartDate) {
-      updateData.actualStartDate = new Date();
+    if (newStatus === MilestoneStatus.IN_PROGRESS && !milestone.startDate) {
+      updateData.startDate = new Date();
     }
 
-    if (newStatus === MilestoneStatus.COMPLETED && !milestone.actualEndDate) {
-      updateData.actualEndDate = new Date();
+    if (newStatus === MilestoneStatus.COMPLETED && !milestone.endDate) {
+      updateData.endDate = new Date();
       updateData.progressPercentage = 100;
     }
 

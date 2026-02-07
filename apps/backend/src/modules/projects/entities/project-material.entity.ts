@@ -67,11 +67,14 @@ export class ProjectMaterialEntity extends BaseEntity {
   @Column({ type: 'date', nullable: true, name: 'allocation_date' })
   allocationDate?: Date;
 
-  // ==================== Additional Data ====================
-  @Column({ type: 'text', nullable: true })
-  notes?: string;
-
   // ==================== Soft Delete ====================
   @DeleteDateColumn({ type: 'timestamp', nullable: true, name: 'deleted_at' })
   deletedAt?: Date;
+
+  // ==================== Audit Fields ====================
+  @Column({ name: 'created_by', type: 'uuid', nullable: true })
+  createdBy?: string;
+
+  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
+  updatedBy?: string;
 }

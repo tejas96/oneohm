@@ -104,10 +104,6 @@ export class ProjectResponseDto {
   @Expose()
   actualCost?: number;
 
-  @ApiPropertyOptional({ example: 'Customer requests weekend-only installation' })
-  @Expose()
-  notes?: string;
-
   @ApiPropertyOptional({
     example: { tags: ['priority', 'referral'] },
   })

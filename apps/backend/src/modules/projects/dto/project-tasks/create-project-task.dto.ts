@@ -2,19 +2,16 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   TaskPriority,
   TaskStatus,
-  TaskType,
   type TaskChecklist,
   type FileAttachment,
 } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
   IsArray,
-  IsBoolean,
   IsDate,
   IsEnum,
   IsInt,
   IsNotEmpty,
-  IsNumber,
   IsObject,
   IsOptional,
   IsString,
@@ -25,10 +22,10 @@ import {
 } from 'class-validator';
 
 export class CreateProjectTaskDto {
-  @ApiProperty({ description: 'Project ID', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiPropertyOptional({ description: 'Project ID (populated from route param)', example: '123e4567-e89b-12d3-a456-426614174000' })
   @IsUUID()
-  @IsNotEmpty()
-  projectId!: string;
+  @IsOptional()
+  projectId?: string;
 
   @ApiPropertyOptional({
     description: 'Milestone ID',
@@ -64,15 +61,6 @@ export class CreateProjectTaskDto {
   description?: string;
 
   @ApiPropertyOptional({
-    enum: Object.values(TaskType),
-    enumName: 'TaskType',
-    example: TaskType.INSTALLATION,
-  })
-  @IsEnum(TaskType)
-  @IsOptional()
-  type?: TaskType;
-
-  @ApiPropertyOptional({
     description: 'Assigned user ID',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
@@ -80,35 +68,30 @@ export class CreateProjectTaskDto {
   @IsOptional()
   assignedToUserId?: string;
 
-  @ApiPropertyOptional({ description: 'Assigned department', example: 'Installation' })
-  @IsString()
-  @IsOptional()
-  assignedToDepartment?: string;
-
-  @ApiProperty({ description: 'Sequence order', example: 1, minimum: 1 })
+  @ApiPropertyOptional({ description: 'Kanban order within status column', example: 1000, minimum: 0 })
   @IsInt()
-  @Min(1)
-  @IsNotEmpty()
+  @Min(0)
+  @IsOptional()
   @Type(() => Number)
-  sequenceOrder!: number;
+  kanbanOrder?: number;
 
-  @ApiPropertyOptional({ description: 'Planned start date', example: '2024-01-01' })
+  @ApiPropertyOptional({ description: 'Start date', example: '2024-01-01' })
   @IsDate()
   @IsOptional()
   @Type(() => Date)
-  plannedStartDate?: Date;
+  startDate?: Date;
 
-  @ApiPropertyOptional({ description: 'Planned end date', example: '2024-01-10' })
+  @ApiPropertyOptional({ description: 'End date', example: '2024-01-10' })
   @IsDate()
   @IsOptional()
   @Type(() => Date)
-  plannedEndDate?: Date;
+  endDate?: Date;
 
   @ApiPropertyOptional({
     enum: Object.values(TaskStatus),
     enumName: 'TaskStatus',
     example: TaskStatus.TODO,
-    default: TaskStatus.PENDING,
+    default: TaskStatus.BACKLOG,
   })
   @IsEnum(TaskStatus)
   @IsOptional()
@@ -129,11 +112,6 @@ export class CreateProjectTaskDto {
   @IsUUID('4', { each: true })
   @IsOptional()
   dependsOnTaskIds?: string[];
-
-  @ApiPropertyOptional({ description: 'Can run in parallel', example: false })
-  @IsBoolean()
-  @IsOptional()
-  canRunParallel?: boolean;
 
   @ApiPropertyOptional({
     description: 'Completion percentage',
@@ -158,18 +136,6 @@ export class CreateProjectTaskDto {
   @IsOptional()
   attachments?: FileAttachment[];
 
-  @ApiPropertyOptional({ description: 'Task notes' })
-  @IsString()
-  @IsOptional()
-  notes?: string;
-
-  @ApiPropertyOptional({ description: 'Story points', example: 5, minimum: 0 })
-  @IsInt()
-  @Min(0)
-  @IsOptional()
-  @Type(() => Number)
-  storyPoints?: number;
-
   @ApiPropertyOptional({
     description: 'Task labels',
     type: [String],
@@ -179,13 +145,6 @@ export class CreateProjectTaskDto {
   @IsString({ each: true })
   @IsOptional()
   labels?: string[];
-
-  @ApiPropertyOptional({ description: 'Estimated hours', example: 8.5, minimum: 0 })
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  @IsOptional()
-  @Type(() => Number)
-  estimatedHours?: number;
 
   @ApiPropertyOptional({ description: 'Watcher user IDs', type: [String] })
   @IsArray()

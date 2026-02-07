@@ -7,6 +7,8 @@ import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, One
 
 import { ProjectMaterialEntity } from './project-material.entity';
 import { ProjectMilestoneEntity } from './project-milestone.entity';
+import { ProjectTaskEntity } from './project-task.entity';
+import { ProjectTeamMemberEntity } from './project-team-member.entity';
 import { SiteSurveyEntity } from './site-survey.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { CustomerPropertyEntity } from '../../customers/entities/customer-property.entity';
@@ -50,11 +52,17 @@ export class ProjectEntity extends BaseEntity {
   @OneToMany(() => ProjectMilestoneEntity, (milestone) => milestone.project)
   milestones!: ProjectMilestoneEntity[];
 
+  @OneToMany(() => ProjectTaskEntity, (task) => task.project)
+  tasks!: ProjectTaskEntity[];
+
   @OneToMany(() => SiteSurveyEntity, (survey) => survey.project)
   surveys!: SiteSurveyEntity[];
 
   @OneToMany(() => ProjectMaterialEntity, (material) => material.project)
   materials!: ProjectMaterialEntity[];
+
+  @OneToMany(() => ProjectTeamMemberEntity, (teamMember) => teamMember.project)
+  teamMembers!: ProjectTeamMemberEntity[];
 
   // ==================== Project Info ====================
   @Column({ type: 'varchar', length: 50, unique: true, name: 'project_number' })
@@ -106,9 +114,6 @@ export class ProjectEntity extends BaseEntity {
   actualCost?: number;
 
   // ==================== Additional Data ====================
-  @Column({ type: 'text', nullable: true })
-  notes?: string;
-
   @Column({ type: 'jsonb', nullable: true })
   metadata?: ProjectMetadata;
 

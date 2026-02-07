@@ -101,15 +101,16 @@ export enum MaterialStatus {
 
 /**
  * Task Status
- * Represents the current state of a project task
+ * Represents the current state of a project task (Kanban columns)
  */
 export enum TaskStatus {
-  PENDING = 'pending',
+  BACKLOG = 'backlog',
   TODO = 'todo',
   IN_PROGRESS = 'in_progress',
   IN_REVIEW = 'in_review',
+  TESTING = 'testing',
   BLOCKED = 'blocked',
-  COMPLETED = 'completed',
+  DONE = 'done',
   CANCELLED = 'cancelled',
 }
 
@@ -124,17 +125,4 @@ export enum TaskPriority {
   URGENT = 'urgent',
 }
 
-/**
- * Task Type
- * Categorizes tasks by their nature
- */
-export enum TaskType {
-  DESIGN = 'design',
-  PROCUREMENT = 'procurement',
-  INSTALLATION = 'installation',
-  TESTING = 'testing',
-  DOCUMENTATION = 'documentation',
-  APPROVAL = 'approval',
-  INSPECTION = 'inspection',
-  OTHER = 'other',
-}
+// TaskType enum has been removed - tasks are now categorized via labels instead

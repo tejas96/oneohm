@@ -131,13 +131,4 @@ export class UpdateMaterialDto {
   @IsDateString()
   @IsOptional()
   allocationDate?: string;
-
-  // ==================== Additional Data ====================
-  @ApiPropertyOptional({
-    example: 'Material received in good condition',
-    description: 'Additional notes',
-  })
-  @IsString()
-  @IsOptional()
-  notes?: string;
 }

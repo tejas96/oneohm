@@ -1,8 +1,8 @@
 import {
   TaskPriority,
   TaskStatus,
-  TaskType,
   type FileAttachment,
+  type TaskActivityEntry,
   type TaskChecklist,
 } from '@oneohm-epc/shared-types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
@@ -15,7 +15,7 @@ import { UserEntity } from '../../users/entities/user.entity';
 
 /**
  * ProjectTaskEntity
- * Represents individual tasks within project milestones (Jira-style)
+ * Represents individual tasks within project milestones (Kanban-style)
  */
 @Entity('project_tasks')
 @Index(['projectId', 'deletedAt'])
@@ -24,11 +24,10 @@ import { UserEntity } from '../../users/entities/user.entity';
 @Index(['status', 'deletedAt'])
 @Index(['priority', 'deletedAt'])
 @Index(['taskTemplateId', 'deletedAt'])
-@Index(['plannedStartDate', 'plannedEndDate', 'deletedAt'])
 export class ProjectTaskEntity extends BaseEntity {
   // ==================== Relations ====================
 
-  @ManyToOne(() => ProjectEntity, (project) => project.milestones, {
+  @ManyToOne(() => ProjectEntity, (project) => project.tasks, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'project_id' })
@@ -74,39 +73,25 @@ export class ProjectTaskEntity extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   description?: string;
 
-  // ==================== Type & Assignment ====================
-
-  @Column({ type: 'enum', enum: TaskType, nullable: true })
-  type?: TaskType;
-
-  @Column({ name: 'assigned_to_department', type: 'varchar', length: 100, nullable: true })
-  assignedToDepartment?: string;
-
   // ==================== Ordering ====================
 
-  @Column({ name: 'sequence_order', type: 'integer' })
-  sequenceOrder!: number;
+  @Column({ name: 'kanban_order', type: 'integer', default: 1000 })
+  kanbanOrder!: number;
 
   // ==================== Dates ====================
 
-  @Column({ name: 'planned_start_date', type: 'date', nullable: true })
-  plannedStartDate?: Date;
+  @Column({ name: 'start_date', type: 'date', nullable: true })
+  startDate?: Date;
 
-  @Column({ name: 'planned_end_date', type: 'date', nullable: true })
-  plannedEndDate?: Date;
-
-  @Column({ name: 'actual_start_date', type: 'date', nullable: true })
-  actualStartDate?: Date;
-
-  @Column({ name: 'actual_end_date', type: 'date', nullable: true })
-  actualEndDate?: Date;
+  @Column({ name: 'end_date', type: 'date', nullable: true })
+  endDate?: Date;
 
   // ==================== Status & Priority ====================
 
   @Column({
     type: 'enum',
     enum: TaskStatus,
-    default: TaskStatus.PENDING,
+    default: TaskStatus.BACKLOG,
   })
   status!: TaskStatus;
 
@@ -117,13 +102,10 @@ export class ProjectTaskEntity extends BaseEntity {
   })
   priority!: TaskPriority;
 
-  // ==================== Dependencies & Parallelism ====================
+  // ==================== Dependencies ====================
 
   @Column({ name: 'depends_on_task_ids', type: 'uuid', array: true, nullable: true })
   dependsOnTaskIds?: string[];
-
-  @Column({ name: 'can_run_parallel', type: 'boolean', default: false })
-  canRunParallel!: boolean;
 
   // ==================== Progress ====================
 
@@ -138,30 +120,26 @@ export class ProjectTaskEntity extends BaseEntity {
   @Column({ type: 'jsonb', nullable: true })
   attachments?: FileAttachment[];
 
-  // ==================== Notes ====================
-
-  @Column({ type: 'text', nullable: true })
-  notes?: string;
-
   // ==================== Jira-style Fields ====================
-
-  @Column({ name: 'story_points', type: 'integer', nullable: true })
-  storyPoints?: number;
 
   @Column({ type: 'text', array: true, nullable: true })
   labels?: string[];
-
-  @Column({ name: 'estimated_hours', type: 'decimal', precision: 10, scale: 2, nullable: true })
-  estimatedHours?: number;
-
-  @Column({ name: 'logged_hours', type: 'decimal', precision: 10, scale: 2, default: 0 })
-  loggedHours!: number;
 
   @Column({ name: 'watcher_user_ids', type: 'uuid', array: true, nullable: true })
   watcherUserIds?: string[];
 
   @Column({ name: 'blocked_reason', type: 'text', nullable: true })
   blockedReason?: string;
+
+  // ==================== Activity Log ====================
+
+  @Column({ name: 'activity_log', type: 'jsonb', default: [] })
+  activityLog!: TaskActivityEntry[];
+
+  // ==================== Optimistic Locking ====================
+
+  @Column({ type: 'integer', default: 1 })
+  version!: number;
 
   // ==================== Soft Delete ====================
 
