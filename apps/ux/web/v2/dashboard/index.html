@@ -801,31 +801,107 @@
                 </button>
             </div>
             <div class="panel-content custom-scrollbar">
+                <!-- Overview Section -->
                 <div class="panel-section">
                     <div class="section-header">Overview</div>
-                    <a href="projects.html" class="panel-item">All Projects <span class="badge">42</span></a>
-                    <a href="#" class="panel-item">Active <span class="badge">24</span></a>
-                    <a href="#" class="panel-item">Planning</a>
-                    <a href="#" class="panel-item">On Hold</a>
-                    <a href="#" class="panel-item">Completed</a>
+                    <a href="projects.html" class="panel-item">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
+                        </svg>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="../projects/list.html" class="panel-item">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                        </svg>
+                        <span>All Projects</span>
+                        <span class="badge">42</span>
+                    </a>
+                    <a href="../projects/list.html?status=active" class="panel-item sub-item">
+                        <span class="status-dot" style="background: #22c55e;"></span>
+                        <span>Active</span>
+                        <span class="badge">24</span>
+                    </a>
+                    <a href="../projects/list.html?status=planning" class="panel-item sub-item">
+                        <span class="status-dot" style="background: #3b82f6;"></span>
+                        <span>Planning</span>
+                        <span class="badge">8</span>
+                    </a>
+                    <a href="../projects/list.html?status=on_hold" class="panel-item sub-item">
+                        <span class="status-dot" style="background: #f59e0b;"></span>
+                        <span>On Hold</span>
+                        <span class="badge warning">3</span>
+                    </a>
+                    <a href="../projects/list.html?status=completed" class="panel-item sub-item">
+                        <span class="status-dot" style="background: #6b7280;"></span>
+                        <span>Completed</span>
+                        <span class="badge">7</span>
+                    </a>
                 </div>
+                
+                <!-- My Work Section -->
                 <div class="panel-section">
                     <div class="section-header">My Work</div>
-                    <a href="#" class="panel-item">My Tasks <span class="badge">12</span></a>
-                    <a href="#" class="panel-item">Team Tasks</a>
-                    <a href="#" class="panel-item">Milestones Due <span class="badge warning">4</span></a>
+                    <a href="../projects/my-tasks.html" class="panel-item">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                        </svg>
+                        <span>My Tasks</span>
+                        <span class="badge">12</span>
+                    </a>
+                    <a href="../projects/list.html?milestones=due" class="panel-item">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>Milestones Due</span>
+                        <span class="badge warning">4</span>
+                    </a>
                 </div>
+                
+                <!-- Scheduling Section -->
                 <div class="panel-section">
                     <div class="section-header">Scheduling</div>
-                    <a href="#" class="panel-item">Calendar</a>
-                    <a href="#" class="panel-item">Gantt Chart</a>
-                    <a href="#" class="panel-item">Resource View</a>
+                    <a href="../projects/kanban.html" class="panel-item">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+                        </svg>
+                        <span>Kanban Board</span>
+                    </a>
+                    <a href="../projects/timeline.html" class="panel-item">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                        <span>Timeline / Gantt</span>
+                    </a>
                 </div>
+                
+                <!-- Site Work Section -->
                 <div class="panel-section">
                     <div class="section-header">Site Work</div>
-                    <a href="#" class="panel-item">Surveys</a>
-                    <a href="#" class="panel-item">Inspections</a>
-                    <a href="#" class="panel-item">Quality Checks</a>
+                    <a href="../projects/list.html?tab=surveys" class="panel-item">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                        </svg>
+                        <span>Surveys</span>
+                    </a>
+                </div>
+                
+                <!-- Settings Section -->
+                <div class="panel-section">
+                    <div class="section-header">Settings</div>
+                    <a href="../projects/task-templates.html" class="panel-item">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
+                        </svg>
+                        <span>Task Templates</span>
+                    </a>
+                    <a href="../projects/settings.html" class="panel-item">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <span>Project Settings</span>
+                    </a>
                 </div>
             </div>
         </div>
@@ -1586,10 +1662,19 @@
         
         // ==================== INITIALIZATION ====================
         document.addEventListener('DOMContentLoaded', function() {
-            // Restore rail state
-            const savedRail = localStorage.getItem('activeRail');
-            if (savedRail) {
-                switchRail(savedRail);
+            // Check URL parameters first (for navigation from other pages)
+            const urlParams = new URLSearchParams(window.location.search);
+            const railParam = urlParams.get('rail');
+            
+            if (railParam) {
+                // URL parameter takes priority - switch to specified rail
+                switchRail(railParam);
+            } else {
+                // Fall back to localStorage
+                const savedRail = localStorage.getItem('activeRail');
+                if (savedRail) {
+                    switchRail(savedRail);
+                }
             }
             
             // Restore panel state
