@@ -1,20 +1,67 @@
 'use client';
 
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
+import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-const Avatar = React.forwardRef<
-  React.ElementRef<typeof AvatarPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Root
-    ref={ref}
-    className={cn('relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full', className)}
-    {...props}
-  />
-));
+/**
+ * Avatar Component - OneOhm V2 Design System
+ *
+ * Sizes (per UX avatars.html):
+ * - xs: 24px
+ * - sm: 32px
+ * - default/md: 40px
+ * - lg: 48px
+ * - xl: 64px
+ * - 2xl: 96px
+ */
+const avatarSizeVariants = cva('relative flex shrink-0 overflow-hidden rounded-full', {
+  variants: {
+    size: {
+      xs: 'size-6',
+      sm: 'size-8',
+      default: 'size-10',
+      lg: 'size-12',
+      xl: 'size-16',
+      '2xl': 'size-24',
+    },
+  },
+  defaultVariants: {
+    size: 'default',
+  },
+});
+
+const avatarFallbackTextVariants = cva('font-semibold', {
+  variants: {
+    size: {
+      xs: 'text-[10px]',
+      sm: 'text-xs',
+      default: 'text-sm',
+      lg: 'text-sm',
+      xl: 'text-lg',
+      '2xl': 'text-2xl',
+    },
+  },
+  defaultVariants: {
+    size: 'default',
+  },
+});
+
+export interface AvatarProps
+  extends React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>,
+    VariantProps<typeof avatarSizeVariants> {}
+
+const Avatar = React.forwardRef<React.ElementRef<typeof AvatarPrimitive.Root>, AvatarProps>(
+  ({ className, size, ...props }, ref) => (
+    <AvatarPrimitive.Root
+      ref={ref}
+      className={cn(avatarSizeVariants({ size }), className)}
+      {...props}
+    />
+  ),
+);
 Avatar.displayName = AvatarPrimitive.Root.displayName;
 
 const AvatarImage = React.forwardRef<
@@ -23,20 +70,25 @@ const AvatarImage = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AvatarPrimitive.Image
     ref={ref}
-    className={cn('aspect-square h-full w-full', className)}
+    className={cn('aspect-square h-full w-full object-cover', className)}
     {...props}
   />
 ));
 AvatarImage.displayName = AvatarPrimitive.Image.displayName;
 
+export interface AvatarFallbackProps
+  extends React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>,
+    VariantProps<typeof avatarFallbackTextVariants> {}
+
 const AvatarFallback = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Fallback>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
->(({ className, ...props }, ref) => (
+  AvatarFallbackProps
+>(({ className, size, ...props }, ref) => (
   <AvatarPrimitive.Fallback
     ref={ref}
     className={cn(
       'flex h-full w-full items-center justify-center rounded-full bg-muted',
+      avatarFallbackTextVariants({ size }),
       className,
     )}
     {...props}
@@ -44,4 +96,125 @@ const AvatarFallback = React.forwardRef<
 ));
 AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
 
-export { Avatar, AvatarImage, AvatarFallback };
+/**
+ * AvatarStatus - Status indicator dot for avatars
+ *
+ * Usage:
+ * <div className="relative">
+ *   <Avatar>...</Avatar>
+ *   <AvatarStatus status="online" />
+ * </div>
+ */
+// Uses theme tokens for status colors
+const statusColors = {
+  online: 'bg-success',
+  offline: 'bg-gray-400',
+  away: 'bg-warning',
+  busy: 'bg-error',
+} as const;
+
+export interface AvatarStatusProps extends React.HTMLAttributes<HTMLSpanElement> {
+  status: keyof typeof statusColors;
+  /** Size matches the avatar size */
+  size?: 'xs' | 'sm' | 'default' | 'lg' | 'xl' | '2xl';
+}
+
+const AvatarStatus = React.forwardRef<HTMLSpanElement, AvatarStatusProps>(
+  ({ className, status, size = 'default', ...props }, ref) => {
+    const sizeClasses = {
+      xs: 'size-1.5 border',
+      sm: 'size-2 border-[1.5px]',
+      default: 'size-3 border-2',
+      lg: 'size-3.5 border-2',
+      xl: 'size-4 border-2',
+      '2xl': 'size-5 border-[3px]',
+    };
+
+    return (
+      <span
+        ref={ref}
+        className={cn(
+          'absolute bottom-0 right-0 rounded-full border-white',
+          statusColors[status],
+          sizeClasses[size],
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
+);
+AvatarStatus.displayName = 'AvatarStatus';
+
+/**
+ * AvatarGroup - Stacked avatars for groups
+ *
+ * Usage:
+ * <AvatarGroup max={4}>
+ *   <Avatar>...</Avatar>
+ *   <Avatar>...</Avatar>
+ *   <Avatar>...</Avatar>
+ *   <Avatar>...</Avatar>
+ *   <Avatar>...</Avatar>
+ * </AvatarGroup>
+ */
+export interface AvatarGroupProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Maximum number of avatars to show before "+X" */
+  max?: number;
+  /** Size of avatars in the group */
+  size?: 'xs' | 'sm' | 'default' | 'lg' | 'xl';
+  children: React.ReactNode;
+}
+
+const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(
+  ({ className, max = 4, size = 'default', children, ...props }, ref) => {
+    const childArray = React.Children.toArray(children);
+    const visibleChildren = childArray.slice(0, max);
+    const remainingCount = childArray.length - max;
+
+    const overlapClasses = {
+      xs: '-space-x-1.5',
+      sm: '-space-x-2',
+      default: '-space-x-3',
+      lg: '-space-x-3.5',
+      xl: '-space-x-4',
+    };
+
+    const counterSizeClasses = {
+      xs: 'size-6 text-[10px]',
+      sm: 'size-8 text-xs',
+      default: 'size-10 text-xs',
+      lg: 'size-12 text-sm',
+      xl: 'size-16 text-sm',
+    };
+
+    return (
+      <div ref={ref} className={cn('flex items-center', overlapClasses[size], className)} {...props}>
+        {visibleChildren.map((child, index) => {
+          if (React.isValidElement<{ className?: string; size?: string }>(child)) {
+            return React.cloneElement(child, {
+              key: child.key ?? `avatar-${index}`,
+              className: cn(child.props.className, 'border-2 border-white'),
+              size,
+            });
+          }
+          return child;
+        })}
+        {remainingCount > 0 && (
+          <div
+            className={cn(
+              // Uses theme tokens for consistent styling
+              'flex items-center justify-center rounded-full border-2 border-background bg-muted text-foreground-secondary font-semibold',
+              counterSizeClasses[size],
+            )}
+          >
+            +{remainingCount}
+          </div>
+        )}
+      </div>
+    );
+  },
+);
+AvatarGroup.displayName = 'AvatarGroup';
+
+export { Avatar, AvatarFallback, AvatarGroup, AvatarImage, AvatarStatus };

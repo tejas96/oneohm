@@ -1,9 +1,30 @@
 // Barrel export for all shadcn/ui components
-export { Avatar, AvatarImage, AvatarFallback } from './avatar';
-export { Badge, badgeVariants } from './badge';
+
+// Avatar
+export {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+  AvatarStatus,
+  AvatarGroup,
+} from './avatar';
+export type { AvatarProps, AvatarFallbackProps, AvatarStatusProps, AvatarGroupProps } from './avatar';
+
+// Badge
+export { Badge, badgeVariants, DotBadge, CountBadge } from './badge';
+export type { BadgeProps, DotBadgeProps, CountBadgeProps } from './badge';
+
+// Button
 export { Button, buttonVariants } from './button';
+export type { ButtonProps } from './button';
+
+// Card
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './card';
+
+// Checkbox
 export { Checkbox } from './checkbox';
+
+// Command
 export {
   Command,
   CommandDialog,
@@ -15,6 +36,8 @@ export {
   CommandShortcut,
   CommandSeparator,
 } from './command';
+
+// Dialog
 export {
   Dialog,
   DialogPortal,
@@ -27,6 +50,8 @@ export {
   DialogTitle,
   DialogDescription,
 } from './dialog';
+
+// Dropdown Menu
 export {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -44,6 +69,8 @@ export {
   DropdownMenuSubTrigger,
   DropdownMenuRadioGroup,
 } from './dropdown-menu';
+
+// Form
 export {
   useFormField,
   Form,
@@ -54,9 +81,18 @@ export {
   FormMessage,
   FormField,
 } from './form';
-export { Input } from './input';
+
+// Input
+export { Input, inputVariants, InputWrapper, InputIcon } from './input';
+export type { InputProps, InputWrapperProps, InputIconProps } from './input';
+
+// Label
 export { Label } from './label';
+
+// Popover
 export { Popover, PopoverTrigger, PopoverContent } from './popover';
+
+// Select
 export {
   Select,
   SelectGroup,
@@ -69,7 +105,11 @@ export {
   SelectScrollUpButton,
   SelectScrollDownButton,
 } from './select';
+
+// Separator
 export { Separator } from './separator';
+
+// Sheet
 export {
   Sheet,
   SheetPortal,
@@ -82,8 +122,14 @@ export {
   SheetTitle,
   SheetDescription,
 } from './sheet';
+
+// Skeleton
 export { Skeleton } from './skeleton';
+
+// Sonner (Toasts)
 export { Toaster } from './sonner';
+
+// Table
 export {
   Table,
   TableHeader,
@@ -94,4 +140,13 @@ export {
   TableCell,
   TableCaption,
 } from './table';
+
+// Tabs
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
+
+// Textarea
+export { Textarea, textareaVariants } from './textarea';
+export type { TextareaProps } from './textarea';
+
+// Tooltip
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './tooltip';
