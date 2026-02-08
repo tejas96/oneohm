@@ -1,12 +1,13 @@
 'use client';
 
 import React, { type ReactNode } from 'react';
+
 import {
   GlobalHeader,
-  Rail,
-  Panel,
-  MainContent,
   LayoutProvider,
+  MainContent,
+  Panel,
+  Rail,
   useLayout,
 } from '@/components/layout';
 

@@ -4,15 +4,10 @@ import { Menu } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { cn } from '@/lib/utils';
+
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { navigationConfig, getPanelConfigByPath, isNavItemActive } from '@/lib/config';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
 
 /**
  * MobileNav - Mobile navigation drawer

@@ -3,8 +3,9 @@
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
+
 import { getPanelConfigByPath } from '@/lib/config';
+import { cn } from '@/lib/utils';
 
 interface PanelProps {
   isOpen: boolean;

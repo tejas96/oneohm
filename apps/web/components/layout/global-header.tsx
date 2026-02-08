@@ -2,9 +2,11 @@
 
 import { Bell, Search } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { cn } from '@/lib/utils';
+
 import { MobileNav } from './mobile-nav';
 import { UserMenu } from './user-menu';
+
+import { cn } from '@/lib/utils';
 
 interface GlobalHeaderProps {
   className?: string;

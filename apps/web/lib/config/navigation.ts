@@ -18,6 +18,7 @@ import {
   Wallet,
   Wrench,
 } from 'lucide-react';
+
 import type { NavigationConfig, PanelConfig } from '@/lib/types';
 
 /**

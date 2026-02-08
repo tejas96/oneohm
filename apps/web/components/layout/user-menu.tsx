@@ -1,8 +1,9 @@
 'use client';
 
-import { LogOut, Settings, User, Moon, Sun, ChevronDown } from 'lucide-react';
+import { ChevronDown, LogOut, Moon, Settings, Sun, User } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,9 +62,9 @@ export function UserMenu({ className }: UserMenuProps) {
     document.documentElement.classList.toggle('dark', newTheme);
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = (): void => {
     // TODO: Implement actual sign out logic
-    console.log('Sign out clicked');
+    // Will call auth signOut() when auth context is available
   };
 
   // Placeholder during SSR
