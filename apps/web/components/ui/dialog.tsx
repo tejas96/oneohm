@@ -1,6 +1,7 @@
 'use client';
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { cva, type VariantProps } from 'class-variance-authority';
 import {
   X,
   HelpCircle,
@@ -9,10 +10,10 @@ import {
   XCircle,
 } from 'lucide-react';
 import * as React from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
+
+import { Button } from './button';
 
 import { cn } from '@/lib/utils';
-import { Button } from './button';
 
 /**
  * Dialog Component - OneOhm Design System
