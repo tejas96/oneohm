@@ -5,3 +5,10 @@
 
 export * from './config.interface';
 export { config, WebConfigService } from './config';
+
+// Navigation configuration
+export {
+  navigationConfig,
+  getPanelConfigByPath,
+  isNavItemActive,
+} from './navigation';

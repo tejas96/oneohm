@@ -1,130 +1,70 @@
 @import 'tailwindcss';
+@config '../tailwind.config.ts';
 
 /**
  * OneOhm EPC - Global Styles
- * CSS Variables for shadcn/ui compatibility
- * Colors matched with mobile app (oneohm-epc-mobile/src/core/theme/tokens.ts)
+ * V2 Design System
+ * 
+ * THEME SOURCE: tailwind.config.ts (SINGLE SOURCE OF TRUTH)
+ * 
+ * This file contains:
+ *   - Layout CSS variables (synced with tailwind.config.ts spacing)
+ *   - Complex component styles using @apply with standard Tailwind classes
+ *   - Base HTML styles
+ * 
+ * NOTE: Tailwind v4 doesn't auto-generate utilities for all custom theme values.
+ * We use standard Tailwind classes (duration-150, bg-gray-100, etc.) which 
+ * ARE generated and can be customized in tailwind.config.ts.
  */
 
+/* ============================================================================
+   LAYOUT CSS VARIABLES
+   These MUST stay in sync with tailwind.config.ts spacing section
+   ============================================================================ */
+
 :root {
-  /* Background & Foreground */
-  --background: #ffffff;
-  --foreground: #111827;
-
-  /* Card */
-  --card: #ffffff;
-  --card-foreground: #111827;
-
-  /* Popover */
-  --popover: #ffffff;
-  --popover-foreground: #111827;
-
-  /* Primary - OneOhm Green (#76c044) */
-  --primary: #76c044;
-  --primary-foreground: #ffffff;
-
-  /* Secondary - OneOhm Blue (#0d74b8) */
-  --secondary: #0d74b8;
-  --secondary-foreground: #ffffff;
-
-  /* Muted */
-  --muted: #f3f4f6;
-  --muted-foreground: #6b7280;
-
-  /* Accent */
-  --accent: #f3f4f6;
-  --accent-foreground: #111827;
-
-  /* Destructive */
-  --destructive: #dc2626;
-  --destructive-foreground: #ffffff;
-
-  /* Border & Input */
-  --border: #e5e7eb;
-  --input: #e5e7eb;
-
-  /* Ring - matches primary */
-  --ring: #76c044;
-
-  /* Radius */
+  --header-height: 48px;
+  --rail-width: 48px;
+  --panel-width: 200px;
+  --content-offset: 248px;
+  --rail-icon-height: 36px;
+  --panel-item-height: 36px; /* synced with tailwind spacing.panel-item */
+  
+  /* Shadcn radius variable */
   --radius: 0.5rem;
-
-  /* Chart colors */
-  --chart-1: #76c044;
-  --chart-2: #0d74b8;
-  --chart-3: #eab308;
-  --chart-4: #9333ea;
-  --chart-5: #f97316;
-
-  /* Sidebar (for shadcn sidebar component) */
-  --sidebar-background: #ffffff;
-  --sidebar-foreground: #111827;
-  --sidebar-primary: #76c044;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f3f4f6;
-  --sidebar-accent-foreground: #111827;
-  --sidebar-border: #e5e7eb;
-  --sidebar-ring: #76c044;
 }
 
-/* Dark mode (for future use) */
-.dark {
-  --background: #111827;
-  --foreground: #f9fafb;
+/* ============================================================================
+   BASE STYLES
+   ============================================================================ */
 
-  --card: #111827;
-  --card-foreground: #f9fafb;
-
-  --popover: #111827;
-  --popover-foreground: #f9fafb;
-
-  --primary: #76c044;
-  --primary-foreground: #ffffff;
-
-  --secondary: #1089e0;
-  --secondary-foreground: #ffffff;
-
-  --muted: #374151;
-  --muted-foreground: #9ca3af;
-
-  --accent: #374151;
-  --accent-foreground: #f9fafb;
-
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-
-  --border: #374151;
-  --input: #374151;
-
-  --ring: #76c044;
-
-  --sidebar-background: #111827;
-  --sidebar-foreground: #f9fafb;
-  --sidebar-primary: #76c044;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #374151;
-  --sidebar-accent-foreground: #f9fafb;
-  --sidebar-border: #374151;
-  --sidebar-ring: #76c044;
-}
-
-/* Base styles */
-* {
-  border-color: var(--border);
+html {
+  font-size: 16px;
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-feature-settings:
-    'rlig' 1,
-    'calt' 1;
+  @apply text-sm leading-normal antialiased;
 }
 
-/* Custom scrollbar */
+/* ============================================================================
+   FOCUS RING
+   ============================================================================ */
+
+*:focus-visible {
+  @apply outline-2 outline-offset-2 outline-primary;
+}
+
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ============================================================================
+   CUSTOM SCROLLBAR
+   ============================================================================ */
+
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: var(--muted-foreground) transparent;
+  scrollbar-color: #a1a1aa transparent; /* gray-400 from tailwind.config.ts */
 }
 
 .scrollbar-thin::-webkit-scrollbar {
@@ -137,10 +77,83 @@ body {
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: rgba(107, 114, 128, 0.3);
-  border-radius: 3px;
+  @apply bg-gray-300 rounded-sm;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(107, 114, 128, 0.5);
+  @apply bg-gray-400;
 }
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================================================
+   LAYOUT COMPONENT STYLES
+   Using @apply with standard Tailwind classes
+   ============================================================================ */
+
+/* Rail Icon - 48x36px */
+.rail-icon {
+  width: var(--rail-width);
+  height: var(--rail-icon-height);
+  @apply flex items-center justify-center relative cursor-pointer;
+  @apply text-gray-500 transition-all duration-150;
+}
+
+.rail-icon:hover {
+  @apply bg-gray-100 text-gray-700;
+}
+
+.rail-icon.active {
+  @apply text-primary bg-primary/10 border-l-[3px] border-primary;
+}
+
+/* Badge Notification */
+.badge-notification {
+  @apply absolute flex items-center justify-center;
+  @apply text-[10px] font-semibold text-white bg-error;
+  top: 6px;
+  right: 10px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+}
+
+/* Panel Section Header */
+.panel-section-header {
+  @apply text-2xs font-semibold uppercase tracking-wide text-gray-400;
+  padding: 12px 8px 6px 8px;
+}
+
+/* Panel Item */
+.panel-item {
+  height: var(--panel-item-height);
+  @apply px-3 flex items-center text-sm text-gray-700;
+  @apply cursor-pointer rounded-lg transition-all duration-100;
+  text-decoration: none;
+}
+
+.panel-item:hover {
+  @apply bg-gray-50;
+}
+
+.panel-item.active {
+  @apply font-medium bg-primary/10 text-primary-dark;
+}
+
+/* ============================================================================
+   ANIMATION DELAY UTILITIES
+   ============================================================================ */
+
+.animation-delay-100 { animation-delay: 0.1s; }
+.animation-delay-200 { animation-delay: 0.2s; }
+.animation-delay-300 { animation-delay: 0.3s; }
+.animation-delay-400 { animation-delay: 0.4s; }
+.animation-delay-500 { animation-delay: 0.5s; }

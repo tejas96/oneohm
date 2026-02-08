@@ -1,2 +1,0 @@
-// Export header components
-export {};

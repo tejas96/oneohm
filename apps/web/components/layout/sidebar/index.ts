@@ -1,2 +1,0 @@
-// Export sidebar components
-export {};
