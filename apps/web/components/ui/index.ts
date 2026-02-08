@@ -19,7 +19,17 @@ export { Button, buttonVariants } from './button';
 export type { ButtonProps } from './button';
 
 // Card
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './card';
+export {
+  Card,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  StatsCard,
+  cardVariants,
+} from './card';
+export type { CardProps, StatsCardProps, CardPropsType } from './card';
 
 // Checkbox
 export { Checkbox } from './checkbox';
@@ -47,9 +57,13 @@ export {
   DialogContent,
   DialogHeader,
   DialogFooter,
+  DialogBody,
   DialogTitle,
   DialogDescription,
+  ConfirmDialog,
+  dialogContentVariants,
 } from './dialog';
+export type { DialogContentProps, ConfirmDialogProps } from './dialog';
 
 // Dropdown Menu
 export {
@@ -139,14 +153,36 @@ export {
   TableRow,
   TableCell,
   TableCaption,
+  tableVariants,
 } from './table';
+export type { TableProps, TableHeadProps } from './table';
 
 // Tabs
-export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
+export {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  VerticalTabsList,
+  VerticalTabsTrigger,
+  VerticalTabsContent,
+  tabsListVariants,
+  tabsTriggerVariants,
+} from './tabs';
+export type { TabsListProps, TabsTriggerProps } from './tabs';
 
 // Textarea
 export { Textarea, textareaVariants } from './textarea';
 export type { TextareaProps } from './textarea';
 
 // Tooltip
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './tooltip';
+export {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+  RichTooltipContent,
+  HelpTooltip,
+  tooltipContentVariants,
+} from './tooltip';
+export type { TooltipContentProps, HelpTooltipProps } from './tooltip';
