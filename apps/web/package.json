@@ -7,8 +7,5 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start"
-  },
-  "dependencies": {
-    "@radix-ui/react-tooltip": "^1.2.8"
   }
 }

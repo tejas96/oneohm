@@ -197,3 +197,40 @@ export {
   tooltipContentVariants,
 } from './tooltip';
 export type { TooltipContentProps, HelpTooltipProps } from './tooltip';
+
+// Accordion
+export {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from './accordion';
+export type { AccordionItemProps, AccordionTriggerProps } from './accordion';
+
+// Breadcrumb
+export {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+  BreadcrumbEllipsis,
+  BreadcrumbHome,
+} from './breadcrumb';
+export type { BreadcrumbListProps, BreadcrumbLinkProps, BreadcrumbSeparatorProps } from './breadcrumb';
+
+// Progress
+export {
+  Progress,
+  progressVariants,
+  indicatorVariants,
+  ProgressWithLabel,
+  CircularProgress,
+  SegmentedProgress,
+} from './progress';
+export type { ProgressProps, ProgressWithLabelProps, CircularProgressProps, SegmentedProgressProps } from './progress';
+
+// Spinner
+export { Spinner, spinnerVariants, LoadingDots, loadingDotsVariants } from './spinner';
+export type { SpinnerProps, LoadingDotsProps } from './spinner';
