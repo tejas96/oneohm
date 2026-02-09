@@ -115,16 +115,20 @@ const config: Config = {
   				'4': '#9333ea',
   				'5': '#f97316'
   			},
-  			sidebar: {
-  				DEFAULT: '#ffffff',
-  				foreground: '#18181b',
-  				primary: '#76c044',
-  				'primary-foreground': '#ffffff',
-  				accent: '#fafafa',
-  				'accent-foreground': '#18181b',
-  				border: '#e4e4e7',
-  				ring: '#76c044'
-  			}
+			sidebar: {
+				DEFAULT: '#ffffff',
+				foreground: '#18181b',
+				primary: '#76c044',
+				'primary-foreground': '#ffffff',
+				accent: '#fafafa',
+				'accent-foreground': '#18181b',
+				border: '#e4e4e7',
+				ring: '#76c044'
+			},
+			highlight: {
+				DEFAULT: '#fef08a',
+				foreground: '#713f12'
+			}
   		},
   		fontFamily: {
   			sans: [

@@ -152,7 +152,7 @@ export { Switch } from './switch';
 export type { SwitchProps } from './switch';
 
 // Sonner (Toasts)
-export { Toaster } from './sonner';
+export { Toaster, showToast } from './sonner';
 
 // Table
 export {
