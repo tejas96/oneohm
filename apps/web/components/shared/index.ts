@@ -37,3 +37,25 @@ export type {
 // Wizards
 export { Stepper } from './wizards';
 export type { Step, StepStatus, StepperProps } from './wizards';
+
+// Timeline
+export { Timeline } from './timeline';
+export type { TimelineItem, TimelineProps } from './timeline';
+
+// Display
+export { FieldDisplay } from './display';
+export type {
+  FieldDisplayProps,
+  FieldDisplaySize,
+  ReferralData,
+  GPSData,
+  ShadingData,
+  ShadingLevel,
+  ShadingDetail,
+  DocumentStatusData,
+  DocumentItem,
+  DocumentStatus,
+  ConnectionData,
+  ConnectionType,
+  LoanData,
+} from './display';

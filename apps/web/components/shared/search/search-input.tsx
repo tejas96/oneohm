@@ -294,7 +294,7 @@ export function SearchInput({
   }, [isOpen]);
 
   const sizeClasses = SIZE_CLASSES[size];
-  const hasResults = results && results.some((g) => g.results.length > 0);
+  const hasResults = results?.some((g) => g.results.length > 0);
   const showDropdown = isOpen && (hasResults || isLoading);
 
   return (
