@@ -16,6 +16,64 @@ THINK before coding or reviewing.
 • Follow strict separation of concerns (UI / features / hooks / stores / server state).
 • Use shared backend types from @shared/types — NEVER recreate or diverge types.
 
+──────────────── COMPONENT LIBRARY (MANDATORY) ────────────────
+
+BEFORE implementing ANY UI, check these component libraries. NEVER recreate existing components.
+
+📦 PRIMITIVES — `@/components/ui/` (Shadcn-based)
+┌─────────────────┬─────────────────────────────────────────────────────────┐
+│ Category        │ Components                                              │
+├─────────────────┼─────────────────────────────────────────────────────────┤
+│ Buttons         │ Button, buttonVariants                                  │
+│ Forms           │ Input, Textarea, Checkbox, RadioGroup, Switch, Select,  │
+│                 │ Label, Form*, InputWrapper, InputIcon                   │
+│ Data Display    │ Badge, DotBadge, CountBadge, Avatar, AvatarGroup,       │
+│                 │ Card, StatsCard, Table*, Tabs*, Accordion*              │
+│ Feedback        │ Spinner, LoadingDots, Progress*, Skeleton, Toaster      │
+│ Overlays        │ Dialog, ConfirmDialog, Sheet, Tooltip, HelpTooltip,     │
+│                 │ DropdownMenu, Popover, Command                          │
+│ Navigation      │ Breadcrumb*, Separator                                  │
+└─────────────────┴─────────────────────────────────────────────────────────┘
+
+📦 COMPOSITES — `@/components/shared/`
+┌─────────────────┬─────────────────────────────────────────────────────────┐
+│ Category        │ Components                                              │
+├─────────────────┼─────────────────────────────────────────────────────────┤
+│ Alerts          │ Alert (success/error/warning/info variants)             │
+│ Data Table      │ Pagination, TablePagination, BulkActions*               │
+│ Empty States    │ EmptyState, NoData, NoSearchResults, NoCustomers,       │
+│                 │ ErrorState, TableEmpty, NoQuotes                        │
+│ Forms           │ RadioCard, RadioCardGroup                               │
+│ Search          │ SearchInput, SearchTrigger                              │
+│ Wizards         │ Stepper (horizontal/vertical/simple/icons/compact/dot)  │
+│ Timeline        │ Timeline (full/compact variants)                        │
+│ Display         │ FieldDisplay (referral/gps/shading/document-status/     │
+│                 │ connection/loan variants)                               │
+│ Status*         │ StatusDropdown, StatusBadge, StatusProgress             │
+└─────────────────┴─────────────────────────────────────────────────────────┘
+
+📦 LAYOUT — `@/components/layout/`
+┌─────────────────┬─────────────────────────────────────────────────────────┐
+│ Component       │ Purpose                                                 │
+├─────────────────┼─────────────────────────────────────────────────────────┤
+│ GlobalHeader    │ Fixed top header with nav, search, user menu            │
+│ Rail            │ Fixed left icon navigation rail                         │
+│ Panel           │ Collapsible side panel with navigation                  │
+│ MainContent     │ Main content area wrapper                               │
+│ MobileNav       │ Responsive mobile navigation drawer                     │
+│ UserMenu        │ User profile dropdown                                   │
+│ LayoutProvider  │ Layout state context (panel collapse, mobile nav)       │
+└─────────────────┴─────────────────────────────────────────────────────────┘
+
+* = has multiple sub-components or variants
+
+USAGE RULES:
+• Import from barrel exports: `import { Button, Badge } from '@/components/ui'`
+• Import shared: `import { Alert, Stepper } from '@/components/shared'`
+• Check component props before implementing custom solutions
+• Extend with className prop, don't recreate variants
+• If a needed variant doesn't exist, extend the existing component
+
 ──────────────── STATE DISCIPLINE ────────────────
 
 • TanStack Query → ALL server data
@@ -82,3 +140,40 @@ Avoid:
 ❌ Hidden side effects
 ❌ Styling drift
 ❌ Short-term hacks
+
+──────────────── FEATURE IMPLEMENTATION CHECKLIST ────────────────
+
+Before writing ANY new component:
+
+1. CHECK EXISTING COMPONENTS
+   □ Is there a UI primitive in `@/components/ui/` that does this?
+   □ Is there a shared composite in `@/components/shared/` that does this?
+   □ Can I compose existing components to achieve this?
+
+2. IF CREATING NEW COMPONENT
+   □ Does it belong in `ui/` (primitive) or `shared/` (composite)?
+   □ Am I using theme tokens, not hardcoded values?
+   □ Am I reusing existing primitives (Button, Badge, Dialog, etc.)?
+   □ Is business logic kept OUT of the component?
+
+3. COMMON PATTERNS (use these, don't reinvent)
+   • Loading states → `Spinner`, `LoadingDots`, `Skeleton`
+   • Empty states → `EmptyState`, `NoData`, `NoSearchResults`
+   • Confirmations → `ConfirmDialog`
+   • Status display → `Badge` with variants, `StatusDropdown`
+   • Tables → `Table*` + `TablePagination` + `BulkActions`
+   • Forms → `Form*` + `Input/Select/Checkbox/RadioCard`
+   • Multi-step → `Stepper`
+   • Activity logs → `Timeline`
+   • Search → `SearchInput`, `SearchTrigger`
+   • Tooltips → `Tooltip`, `HelpTooltip`, `RichTooltipContent`
+   • Toasts → `showToast.success/error/warning/info`
+
+4. ANTI-PATTERNS TO AVOID
+   ❌ Creating custom buttons/badges/inputs when UI primitives exist
+   ❌ Inline styles or hardcoded colors (`#fff`, `rgb()`, etc.)
+   ❌ Magic numbers for spacing (`padding: 12px` → use `p-3`)
+   ❌ Duplicating loading/empty/error state UI
+   ❌ Building custom modals instead of using `Dialog`/`ConfirmDialog`
+   ❌ Custom dropdowns instead of `Select` or `DropdownMenu`
+   ❌ Recreating table components instead of using `Table*`
