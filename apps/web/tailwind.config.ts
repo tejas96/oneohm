@@ -208,6 +208,16 @@ const config: Config = {
         "input-lg": "36px",
         "input-px": "12px",         /* padding-x */
         
+        /* Checkbox/Radio dimensions */
+        "checkbox-sm": "16px",      /* w-4 */
+        "checkbox-md": "20px",      /* w-5 - default */
+        "checkbox-lg": "24px",      /* w-6 */
+        
+        /* Switch dimensions - per UX theme.html */
+        "switch-track-w": "44px",   /* w-11 */
+        "switch-track-h": "24px",   /* h-6 */
+        "switch-thumb": "20px",     /* w-5 h-5 */
+        
         /* Table dimensions - per UX theme.html */
         "table-row": "44px",        /* comfortable density */
         "table-header": "40px",
