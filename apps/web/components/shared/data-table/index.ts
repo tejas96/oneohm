@@ -1,2 +1,3 @@
 // Export data-table components
-export {};
+export { Pagination, TablePagination } from './pagination';
+export type { PaginationProps, TablePaginationProps } from './pagination';

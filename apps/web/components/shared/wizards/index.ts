@@ -1,2 +1,3 @@
 // Export wizard components
-export {};
+export { Stepper } from './stepper';
+export type { Step, StepStatus, StepperProps } from './stepper';
