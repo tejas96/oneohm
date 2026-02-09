@@ -32,7 +32,8 @@ export {
 export type { CardProps, StatsCardProps, CardPropsType } from './card';
 
 // Checkbox
-export { Checkbox } from './checkbox';
+export { Checkbox, checkboxVariants } from './checkbox';
+export type { CheckboxProps } from './checkbox';
 
 // Command
 export {
@@ -101,7 +102,8 @@ export { Input, inputVariants, InputWrapper, InputIcon } from './input';
 export type { InputProps, InputWrapperProps, InputIconProps } from './input';
 
 // Label
-export { Label } from './label';
+export { Label, labelVariants } from './label';
+export type { LabelProps } from './label';
 
 // Popover
 export { Popover, PopoverTrigger, PopoverContent } from './popover';
@@ -119,6 +121,11 @@ export {
   SelectScrollUpButton,
   SelectScrollDownButton,
 } from './select';
+export type { SelectTriggerProps } from './select';
+
+// Radio Group
+export { RadioGroup, RadioGroupItem, radioItemVariants } from './radio-group';
+export type { RadioGroupItemProps } from './radio-group';
 
 // Separator
 export { Separator } from './separator';
@@ -139,6 +146,10 @@ export {
 
 // Skeleton
 export { Skeleton } from './skeleton';
+
+// Switch
+export { Switch } from './switch';
+export type { SwitchProps } from './switch';
 
 // Sonner (Toasts)
 export { Toaster } from './sonner';
