@@ -70,18 +70,18 @@ export interface SearchInputProps {
 const SIZE_CLASSES = {
   sm: {
     input: 'pl-8 pr-8 py-1.5 text-xs',
-    icon: 'w-4 h-4 left-2.5',
-    clear: 'w-3 h-3',
+    icon: 'size-icon-sm left-2.5',
+    clear: 'size-icon-2xs',
   },
   default: {
     input: 'pl-10 pr-10 py-2 text-sm',
-    icon: 'w-5 h-5 left-3',
-    clear: 'w-4 h-4',
+    icon: 'size-icon-md left-3',
+    clear: 'size-icon-sm',
   },
   lg: {
     input: 'pl-12 pr-12 py-3.5 text-base',
-    icon: 'w-6 h-6 left-4',
-    clear: 'w-5 h-5',
+    icon: 'size-icon-lg left-4',
+    clear: 'size-icon-md',
   },
 } as const;
 
@@ -155,13 +155,13 @@ function ResultItem({ result, query, isSelected, onClick }: ResultItemProps) {
       )}
     >
       {result.avatar ? (
-        <Avatar className="w-8 h-8">
+        <Avatar className="size-container-sm">
           <AvatarFallback className={cn('text-xs font-semibold', colorClass)}>
             {result.avatar.initials}
           </AvatarFallback>
         </Avatar>
       ) : result.icon ? (
-        <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
+        <div className="size-container-sm bg-muted rounded-lg flex items-center justify-center">
           {result.icon}
         </div>
       ) : null}
@@ -335,7 +335,7 @@ export function SearchInput({
               autoFocus={autoFocus}
               className={cn(
                 'w-full bg-background border border-border-light rounded-lg',
-                'focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/15',
+                'focus:outline-none focus:border-primary focus:ring-focus focus:ring-primary/15',
                 'placeholder:text-foreground-tertiary',
                 'transition-all duration-fast',
                 sizeClasses.input,
@@ -387,7 +387,7 @@ export function SearchInput({
           <div className="max-h-80 overflow-y-auto">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-5 h-5 text-foreground-tertiary animate-spin" />
+                <Loader2 className="size-icon-md text-foreground-tertiary animate-spin" />
               </div>
             ) : (
               results?.map((group, groupIndex) => {
@@ -494,7 +494,7 @@ export function SearchTrigger({
         className
       )}
     >
-      <Search className="w-4 h-4" aria-hidden="true" />
+      <Search className="size-icon-sm" aria-hidden="true" />
       <span className="flex-1 text-left">{placeholder}</span>
       <div className="flex items-center gap-1">
         {shortcut.split('').map((char, i) => (

@@ -138,13 +138,25 @@ const config: Config = {
   				'sans-serif'
   			]
   		},
-  		fontSize: {
-  			'2xs': [
-  				'0.6875rem',
-  				{
-  					lineHeight: '1rem'
-  				}
-  			],
+		fontSize: {
+			'nano': [
+				'0.5rem',
+				{
+					lineHeight: '0.625rem'
+				}
+			],
+			'micro': [
+				'0.5625rem',
+				{
+					lineHeight: '0.75rem'
+				}
+			],
+			'2xs': [
+				'0.6875rem',
+				{
+					lineHeight: '1rem'
+				}
+			],
   			'xs': [
   				'0.75rem',
   				{
@@ -222,47 +234,117 @@ const config: Config = {
   			relaxed: '1.625'
   		},
   		spacing: {
-  			'header': '48px',
-  			'rail': '48px',
-  			'rail-icon': '36px',
-  			'panel': '200px',
-  			'panel-item': '36px',
-  			'panel-header': '48px',
-  			'content-offset': '248px',
-  			'btn-sm': '28px',
-  			'btn-md': '32px',
-  			'btn-lg': '36px',
-  			'btn-px-sm': '10px',
-  			'btn-px-md': '12px',
-  			'btn-px-lg': '16px',
-  			'input-sm': '28px',
-  			'input-md': '32px',
-  			'input-lg': '36px',
-  			'input-px': '12px',
-  			'checkbox-sm': '16px',
-  			'checkbox-md': '20px',
-  			'checkbox-lg': '24px',
-  			'switch-track-w': '44px',
-  			'switch-track-h': '24px',
-  			'switch-thumb': '20px',
-  			'table-row': '44px',
-  			'table-header': '40px',
-  			'table-cell-x': '12px',
-  			'table-cell-y': '8px',
-  			'sidebar-item': '32px',
-  			'sidebar-px': '12px',
+			// ========== LAYOUT ==========
+			'header': '48px',
+			'rail': '48px',
+			'rail-icon': '36px',
+			'panel': '200px',
+			'panel-item': '30px',
+			'panel-header': '48px',
+			'content-offset': '248px',
+			'sidebar-item': '32px',
+			'sidebar-px': '12px',
+
+			// ========== ICONS ==========
+			// Usage: size-icon-sm, w-icon, h-icon-lg, etc.
+			'icon-2xs': '12px',   // Extra tiny icons (w-3)
+			'icon-xs': '14px',    // Tiny icons, micro badges
+			'icon-sm': '16px',    // Small icons (w-4)
+			'icon': '18px',       // Default nav icons
+			'icon-md': '20px',    // Medium icons (w-5)
+			'icon-lg': '24px',    // Large icons (w-6)
+			'icon-xl': '32px',    // Extra large icons (w-8)
+			'icon-2xl': '40px',   // 2XL icons (w-10)
+
+			// ========== CONTAINERS ==========
+			// Icon containers, avatar backgrounds, etc.
+			'container-xs': '24px',   // 24px (size-6)
+			'container-sm': '32px',   // 32px (size-8)
+			'container-md': '40px',   // 40px (size-10)
+			'container-lg': '48px',   // 48px (size-12)
+			'container-xl': '64px',   // 64px (size-16)
+			'container-2xl': '80px',  // 80px (size-20)
+			'container-3xl': '96px',  // 96px (size-24)
+			'container-4xl': '128px', // 128px (size-32)
+
+			// ========== BUTTONS ==========
+			'btn-sm': '28px',
+			'btn-md': '32px',
+			'btn-lg': '36px',
+			'btn-px-sm': '10px',
+			'btn-px-md': '12px',
+			'btn-px-lg': '16px',
+
+			// ========== INPUTS ==========
+			'input-sm': '28px',
+			'input-md': '32px',
+			'input-lg': '36px',
+			'input-px': '12px',
+
+			// ========== FORM CONTROLS ==========
+			'checkbox-sm': '16px',
+			'checkbox-md': '20px',
+			'checkbox-lg': '24px',
+			'radio-indicator-sm': '8px',
+			'radio-indicator-md': '10px',
+			'radio-indicator-lg': '12px',
+			'switch-track-w': '44px',
+			'switch-track-h': '24px',
+			'switch-thumb': '20px',
+
+			// ========== TABLE ==========
+			'table-row': '44px',
+			'table-header': '40px',
+			'table-cell-x': '12px',
+			'table-cell-y': '8px',
+
+			// ========== PAGE & CARDS ==========
 			'page': '20px',
 			'page-lg': '24px',
 			'card': '16px',
-			'card-lg': '20px'
+			'card-lg': '20px',
+
+			// ========== COMPONENT SPECIFIC ==========
+			'sheet-mobile': '280px',       // Mobile nav sheet width
+			'dropdown-min': '128px',       // Min dropdown width (8rem)
+			'popover': '288px',            // Popover width (18rem / w-72)
+			'tooltip': '256px',            // Tooltip width (16rem / w-64)
+			'sidebar-tabs': '192px',       // Sidebar tabs width (12rem / w-48)
+			'textarea-min-h': '100px',     // Textarea min height
+			'dropdown-max-h': '300px',     // Dropdown max height
+			'search-max-h': '320px',       // Search results max height (max-h-80)
+			'email-truncate': '150px',     // Email truncation width
+			'select-compact': '70px',      // Compact select width
+			'pagination-btn': '40px',      // Pagination button size
+
+			// ========== PROGRESS & STEPPER ==========
+			'progress-xs': '2px',
+			'progress-sm': '4px',
+			'progress-md': '8px',
+			'progress-lg': '12px',
+			'progress-xl': '16px',
+			'stepper-line': '16px',        // Stepper connector height (h-16 = 64px for vertical)
+
+			// ========== SEPARATOR ==========
+			'separator': '1px',            // Hairline separator
 		},
   		borderWidth: {
   			DEFAULT: '1px',
   			'0': '0px',
+  			'1.5': '1.5px',   // Input borders
   			'2': '2px',
-  			'3': '3px',
+  			'3': '3px',       // Avatar status indicator
   			'4': '4px'
   		},
+		ringWidth: {
+			DEFAULT: '2px',
+			'0': '0px',
+			'1': '1px',
+			'2': '2px',
+			'focus': '3px',    // Standard focus ring
+			'4': '4px',
+			'8': '8px',
+		},
   		borderRadius: {
   			none: '0',
   			sm: '2px',

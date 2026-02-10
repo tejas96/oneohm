@@ -103,7 +103,7 @@ const DialogContent = React.forwardRef<
       {children}
       {!hideCloseButton && (
         <DialogPrimitive.Close className="absolute right-4 top-4 p-2 rounded-lg text-foreground-tertiary hover:text-foreground-secondary hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none cursor-pointer">
-          <X className="h-5 w-5" />
+          <X className="size-icon-md" />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
       )}
@@ -231,11 +231,11 @@ const ConfirmDialog = ({
         <div className="p-6">
           <div
             className={cn(
-              'w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4',
+              'size-container-xl rounded-full flex items-center justify-center mx-auto mb-4',
               ICON_COLORS[iconVariant],
             )}
           >
-            {icon || <IconComponent className="w-8 h-8" />}
+            {icon || <IconComponent className="size-icon-xl" />}
           </div>
           <DialogTitle className="mb-2">{title}</DialogTitle>
           <DialogDescription className="mb-6">{description}</DialogDescription>

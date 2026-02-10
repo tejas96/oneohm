@@ -4,6 +4,8 @@ import { ChevronDown, LogOut, Moon, Settings, Sun, User } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,21 +72,14 @@ export function UserMenu({ className }: UserMenuProps) {
   // Placeholder during SSR
   if (!mounted) {
     return (
-      <button
-        className={cn(
-          'flex items-center justify-center w-8 h-8 rounded-full',
-          'bg-primary/20 text-primary text-sm font-semibold',
-          className
-        )}
-        aria-label="User menu"
-      >
-        {getInitials(mockUser.firstName, mockUser.lastName)}
-      </button>
+      <Avatar size="sm" className={className}>
+        <AvatarFallback>{getInitials(mockUser.firstName, mockUser.lastName)}</AvatarFallback>
+      </Avatar>
     );
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button
           className={cn(
@@ -96,17 +91,15 @@ export function UserMenu({ className }: UserMenuProps) {
           aria-label="User menu"
         >
           {/* Avatar */}
-          {mockUser.avatarUrl ? (
-            <img
-              src={mockUser.avatarUrl}
-              alt={`${mockUser.firstName} ${mockUser.lastName}`}
-              className="w-8 h-8 rounded-full object-cover"
-            />
-          ) : (
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20 text-primary text-sm font-semibold">
-              {getInitials(mockUser.firstName, mockUser.lastName)}
-            </div>
-          )}
+          <Avatar size="sm">
+            {mockUser.avatarUrl && (
+              <AvatarImage
+                src={mockUser.avatarUrl}
+                alt={`${mockUser.firstName} ${mockUser.lastName}`}
+              />
+            )}
+            <AvatarFallback>{getInitials(mockUser.firstName, mockUser.lastName)}</AvatarFallback>
+          </Avatar>
           {/* Chevron - Desktop only */}
           <ChevronDown className="w-3.5 h-3.5 text-foreground-tertiary hidden lg:block" />
         </button>
@@ -117,28 +110,24 @@ export function UserMenu({ className }: UserMenuProps) {
         <DropdownMenuLabel className="font-normal">
           <div className="flex items-center gap-3 py-1">
             {/* Avatar */}
-            {mockUser.avatarUrl ? (
-              <img
-                src={mockUser.avatarUrl}
-                alt={`${mockUser.firstName} ${mockUser.lastName}`}
-                className="w-10 h-10 rounded-full object-cover"
-              />
-            ) : (
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/20 text-primary font-semibold">
-                {getInitials(mockUser.firstName, mockUser.lastName)}
-              </div>
-            )}
+            <Avatar size="default">
+              {mockUser.avatarUrl && (
+                <AvatarImage
+                  src={mockUser.avatarUrl}
+                  alt={`${mockUser.firstName} ${mockUser.lastName}`}
+                />
+              )}
+              <AvatarFallback>{getInitials(mockUser.firstName, mockUser.lastName)}</AvatarFallback>
+            </Avatar>
             {/* Name & Email */}
             <div className="flex flex-col space-y-0.5">
               <p className="text-sm font-medium text-foreground">
                 {mockUser.firstName} {mockUser.lastName}
               </p>
-              <p className="text-xs text-muted-foreground truncate max-w-[150px]">
+              <p className="text-xs text-muted-foreground truncate max-w-email-truncate">
                 {mockUser.email}
               </p>
-              <span className="inline-flex items-center px-1.5 py-0.5 text-2xs font-medium bg-primary/10 text-primary rounded w-fit">
-                {mockUser.role}
-              </span>
+              <Badge variant="default" size="xs">{mockUser.role}</Badge>
             </div>
           </div>
         </DropdownMenuLabel>

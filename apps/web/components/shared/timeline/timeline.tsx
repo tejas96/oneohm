@@ -117,7 +117,7 @@ function TimelineItemFull({ item, isLast }: TimelineItemFullProps) {
       {/* Icon */}
       <div
         className={cn(
-          'absolute left-1.5 w-5 h-5 rounded-full border-2 border-white shadow flex items-center justify-center',
+          'absolute left-1.5 size-icon-md rounded-full border-2 border-white shadow flex items-center justify-center',
           item.iconBgClass || 'bg-gray-100'
         )}
       >
@@ -204,11 +204,11 @@ function TimelineItemCompact({ item }: TimelineItemCompactProps) {
     <div className="flex items-start gap-3">
       <div
         className={cn(
-          'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
+          'size-container-sm rounded-full flex items-center justify-center flex-shrink-0',
           item.iconBgClass || 'bg-gray-100'
         )}
       >
-        <span className={cn('w-4 h-4', item.iconTextClass || 'text-gray-600')}>
+        <span className={cn('size-icon-sm', item.iconTextClass || 'text-gray-600')}>
           {item.icon}
         </span>
       </div>
@@ -336,7 +336,7 @@ export function Timeline({
             <Select value={currentFilter} onValueChange={onFilterChange}>
               <SelectTrigger className="w-auto h-7 text-xs px-2 py-1 border-border-light">
                 <SelectValue placeholder="Filter" />
-                <ChevronDown className="w-3 h-3 ml-1 opacity-50" />
+                <ChevronDown className="size-icon-2xs ml-1 opacity-50" />
               </SelectTrigger>
               <SelectContent>
                 {filterOptions.map((option) => (
@@ -372,7 +372,7 @@ export function Timeline({
       {/* Loading State */}
       {isLoading && (
         <div className="flex items-center justify-center py-4">
-          <Loader2 className="w-5 h-5 animate-spin text-foreground-tertiary" />
+          <Loader2 className="size-icon-md animate-spin text-foreground-tertiary" />
         </div>
       )}
 

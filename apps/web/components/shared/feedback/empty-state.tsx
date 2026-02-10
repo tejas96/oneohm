@@ -39,9 +39,9 @@ const iconContainerVariants = cva(
   {
     variants: {
       variant: {
-        default: 'w-20 h-20 mb-6',
-        compact: 'w-12 h-12 mb-3',
-        table: 'w-12 h-12 mb-4',
+        default: 'size-container-2xl mb-6',
+        compact: 'size-container-lg mb-3',
+        table: 'size-container-lg mb-4',
       },
       iconColor: {
         muted: 'bg-muted',
@@ -101,7 +101,7 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
     },
     ref
   ) => {
-    const iconSize = variant === 'compact' || variant === 'table' ? 'w-6 h-6' : 'w-10 h-10';
+    const iconSize = variant === 'compact' || variant === 'table' ? 'size-icon-lg' : 'size-icon-2xl';
 
     return (
       <div
@@ -240,7 +240,7 @@ export const ErrorState = React.forwardRef<HTMLDivElement, ErrorStateProps>(
           ? {
               label: 'Retry',
               onClick: onRetry,
-              icon: <RefreshCw className="w-4 h-4" />,
+              icon: <RefreshCw className="size-icon-sm" />,
             }
           : undefined
       }

@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
  */
 const inputVariants = cva(
   // Uses theme tokens for consistent styling
-  'flex w-full rounded-md border-[1.5px] bg-background px-input-px text-sm text-foreground transition-all duration-fast outline-none file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-foreground-tertiary disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-70',
+  'flex w-full rounded-md border-1.5 bg-background px-input-px text-sm text-foreground transition-all duration-fast outline-none file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-foreground-tertiary disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-70',
   {
     variants: {
       size: {
@@ -28,9 +28,9 @@ const inputVariants = cva(
       },
       variant: {
         default:
-          'border-border-medium hover:border-border focus:border-primary focus:ring-[3px] focus:ring-primary/15',
+          'border-border-medium hover:border-border focus:border-primary focus:ring-focus focus:ring-primary/15',
         error:
-          'border-error hover:border-error focus:border-error focus:ring-[3px] focus:ring-error/15',
+          'border-error hover:border-error focus:border-error focus:ring-focus focus:ring-error/15',
       },
     },
     defaultVariants: {

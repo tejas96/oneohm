@@ -17,11 +17,11 @@ import { cn } from '@/lib/utils';
 const spinnerVariants = cva('rounded-full border-3 animate-spin', {
   variants: {
     size: {
-      xs: 'w-4 h-4',
-      sm: 'w-5 h-5',
-      md: 'w-6 h-6',
-      lg: 'w-8 h-8',
-      xl: 'w-12 h-12',
+      xs: 'size-icon-sm',
+      sm: 'size-icon-md',
+      md: 'size-icon-lg',
+      lg: 'size-icon-xl',
+      xl: 'size-container-lg',
     },
     variant: {
       primary: 'border-gray-200 border-t-primary',

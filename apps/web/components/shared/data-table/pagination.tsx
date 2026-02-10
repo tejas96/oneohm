@@ -109,7 +109,7 @@ const PageButton = ({ page, isActive, onClick, variant }: PageButtonProps) => {
 
   const variantClasses = {
     numbered: cn(
-      'w-10 h-10 rounded-lg',
+      'size-pagination-btn rounded-lg',
       isActive
         ? 'bg-primary text-white'
         : 'text-foreground-secondary hover:bg-muted'
@@ -157,7 +157,7 @@ const NavButton = ({
 
   const variantClasses = {
     simple: 'px-4 py-2 text-sm font-medium rounded-lg',
-    numbered: 'w-10 h-10 justify-center rounded-lg',
+    numbered: 'size-pagination-btn justify-center rounded-lg',
     bordered: 'px-3 py-2',
     compact: 'p-2 rounded-lg',
   };
@@ -175,9 +175,9 @@ const NavButton = ({
       aria-disabled={disabled}
       aria-label={label}
     >
-      {direction === 'prev' && <Icon className="w-4 h-4" aria-hidden="true" />}
+      {direction === 'prev' && <Icon className="size-icon-sm" aria-hidden="true" />}
       {showLabel && <span>{label}</span>}
-      {direction === 'next' && <Icon className="w-4 h-4" aria-hidden="true" />}
+      {direction === 'next' && <Icon className="size-icon-sm" aria-hidden="true" />}
     </button>
   );
 };
@@ -293,7 +293,7 @@ export function Pagination({
                 key={`ellipsis-${index}`}
                 className="px-4 py-2 border-r border-border-light text-foreground-tertiary"
               >
-                <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
+                <MoreHorizontal className="size-icon-sm" aria-hidden="true" />
               </span>
             ) : (
               <PageButton
@@ -336,7 +336,7 @@ export function Pagination({
             value={pageSize.toString()}
             onValueChange={(value) => onPageSizeChange(Number(value))}
           >
-            <SelectTrigger className="h-9 w-[70px]">
+            <SelectTrigger className="h-9 w-select-compact">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -363,9 +363,9 @@ export function Pagination({
           page === 'ellipsis' ? (
             <span
               key={`ellipsis-${index}`}
-              className="w-10 h-10 flex items-center justify-center text-foreground-tertiary"
+              className="size-pagination-btn flex items-center justify-center text-foreground-tertiary"
             >
-              <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
+              <MoreHorizontal className="size-icon-sm" aria-hidden="true" />
             </span>
           ) : (
             <PageButton

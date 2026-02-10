@@ -30,9 +30,9 @@ const checkboxVariants = cva(
 );
 
 const CHECK_ICON_SIZES = {
-  sm: 'h-3 w-3',
-  default: 'h-4 w-4',
-  lg: 'h-5 w-5',
+  sm: 'size-checkbox-sm',
+  default: 'size-checkbox-md',
+  lg: 'size-checkbox-lg',
 } as const;
 
 export interface CheckboxProps

@@ -118,7 +118,7 @@ const BreadcrumbSeparator = ({
     {children ?? (type === 'slash' ? (
       <span className="mx-1">/</span>
     ) : (
-      <ChevronRight className="w-4 h-4" />
+      <ChevronRight className="size-icon-sm" />
     ))}
   </li>
 );
@@ -132,14 +132,14 @@ const BreadcrumbEllipsis = ({
     role="presentation"
     aria-hidden="true"
     className={cn(
-      'flex h-8 w-8 items-center justify-center rounded cursor-pointer',
+      'flex size-container-sm items-center justify-center rounded cursor-pointer',
       'text-foreground-tertiary hover:bg-muted hover:text-foreground-secondary',
       'duration-fast transition-colors',
       className
     )}
     {...props}
   >
-    <MoreHorizontal className="h-4 w-4" />
+    <MoreHorizontal className="size-icon-sm" />
     <span className="sr-only">More</span>
   </span>
 );
@@ -164,7 +164,7 @@ const BreadcrumbHome = React.forwardRef<
       aria-label="Home"
       {...props}
     >
-      <Home className="w-5 h-5" />
+      <Home className="size-icon-md" />
     </Comp>
   );
 });

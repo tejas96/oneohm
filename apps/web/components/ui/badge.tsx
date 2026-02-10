@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
  * - Pill shape (rounded-full) by default
  */
 const badgeVariants = cva(
-  'inline-flex items-center gap-1.5 rounded-full border font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+  'inline-flex items-center gap-1.5 w-fit rounded-full border font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
   {
     variants: {
       variant: {
@@ -64,12 +64,14 @@ const badgeVariants = cva(
         count: 'border-transparent bg-primary text-white',
       },
       size: {
+        // Extra small - role tags, compact labels
+        xs: 'px-1.5 py-0.5 text-micro',
         // Small - compact badges
-        sm: 'px-2 py-0.5 text-[10px]',
+        sm: 'px-2 py-0.5 text-section',
         // Default
-        default: 'px-2.5 py-1 text-xs',
+        default: 'px-2.5 py-0.5 text-xs',
         // Large
-        lg: 'px-3 py-1.5 text-xs',
+        lg: 'px-3 py-1 text-xs',
       },
     },
     defaultVariants: {
@@ -162,7 +164,7 @@ function DotBadge({
 
   return (
     <span className={cn('inline-flex items-center gap-2 text-sm text-foreground', className)} {...props}>
-      <span className={cn('size-2 rounded-full', dotColors[color])} />
+      <span className={cn('size-radio-indicator-sm rounded-full', dotColors[color])} />
       {children}
     </span>
   );
@@ -171,6 +173,12 @@ function DotBadge({
 /**
  * CountBadge - Numeric badge for notifications
  * Shows count with optional max value (e.g., "99+")
+ *
+ * Sizes:
+ * - 2xs: 14px badge, 8px text - rail icons, very compact
+ * - xs: 16px badge, 9px text - nav badges, compact
+ * - sm: 18px badge, 9px text - sidebar badges
+ * - default: 20px badge, 12px text - standard notifications
  */
 export interface CountBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   /** The count to display */
@@ -178,7 +186,9 @@ export interface CountBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   /** Maximum value before showing "+" (default: 99) */
   max?: number;
   /** Badge color variant */
-  variant?: 'primary' | 'error' | 'gray';
+  variant?: 'primary' | 'secondary' | 'error' | 'gray';
+  /** Badge size */
+  size?: '2xs' | 'xs' | 'sm' | 'default';
   /** Show badge even when count is 0 (default: false) */
   showZero?: boolean;
 }
@@ -188,6 +198,7 @@ function CountBadge({
   count,
   max = 99,
   variant = 'primary',
+  size = 'default',
   showZero = false,
   ...props
 }: CountBadgeProps): React.ReactElement | null {
@@ -199,14 +210,23 @@ function CountBadge({
   // Uses theme tokens for colors
   const variantClasses = {
     primary: 'bg-primary text-white',
-    error: 'bg-error text-error-foreground',
-    gray: 'bg-muted text-foreground-secondary',
+    secondary: 'bg-secondary text-white',
+    error: 'bg-error text-white',
+    gray: 'bg-gray-500 text-white',
+  };
+
+  const sizeClasses = {
+    '2xs': 'min-w-icon-xs h-icon-xs px-0.5 text-nano font-bold',   // 14px badge, 8px text
+    xs: 'min-w-icon-sm h-icon-sm px-1 text-micro font-bold',       // 16px badge, 9px text
+    sm: 'min-w-icon h-icon px-1 text-micro font-semibold',         // 18px badge, 9px text
+    default: 'min-w-icon-md h-icon-md px-1.5 text-xs font-medium', // 20px badge, 12px text
   };
 
   return (
     <span
       className={cn(
-        'inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs font-medium',
+        'inline-flex items-center justify-center rounded-full',
+        sizeClasses[size],
         variantClasses[variant],
         className,
       )}

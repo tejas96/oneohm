@@ -113,7 +113,7 @@ export const navigationConfig: NavigationConfig = {
     },
     {
       id: 'admin',
-      icon: Settings,
+      icon: Users,
       label: 'Admin',
       href: '/admin',
       panelKey: 'admin',

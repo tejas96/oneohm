@@ -125,7 +125,7 @@ const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
             {children}
             <svg
               className={cn(
-                'w-4 h-4',
+                'size-icon-sm',
                 sorted ? 'text-primary' : 'text-foreground-tertiary',
               )}
               fill="none"

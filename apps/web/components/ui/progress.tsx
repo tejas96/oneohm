@@ -154,9 +154,9 @@ const CircularProgress = React.forwardRef<HTMLDivElement, CircularProgressProps>
         <svg
           className={cn(
             'transform -rotate-90',
-            size === 'sm' && 'w-16 h-16',
-            size === 'md' && 'w-24 h-24',
-            size === 'lg' && 'w-32 h-32'
+            size === 'sm' && 'size-container-xl',
+            size === 'md' && 'size-container-3xl',
+            size === 'lg' && 'size-container-4xl'
           )}
           viewBox={`0 0 ${config.size} ${config.size}`}
         >

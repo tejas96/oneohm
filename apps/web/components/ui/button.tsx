@@ -43,7 +43,7 @@ const buttonVariants = cva(
 
         // Destructive Outline - Red border and text (uses theme tokens)
         'destructive-outline':
-          'border-[1.5px] border-error/30 bg-transparent text-error hover:bg-error/10 hover:border-error/50',
+          'border-1.5 border-error/30 bg-transparent text-error hover:bg-error/10 hover:border-error/50',
 
         // Success - Green (uses theme tokens)
         success:
@@ -55,7 +55,7 @@ const buttonVariants = cva(
 
         // Outline - Gray border (uses theme tokens)
         outline:
-          'border-[1.5px] border-border-medium bg-transparent text-foreground-secondary hover:bg-muted hover:border-border active:bg-muted/80',
+          'border-1.5 border-border-medium bg-transparent text-foreground-secondary hover:bg-muted hover:border-border active:bg-muted/80',
 
         // Ghost - No border, transparent (uses theme tokens)
         ghost: 'bg-transparent text-foreground-secondary hover:bg-muted active:bg-muted/80',
