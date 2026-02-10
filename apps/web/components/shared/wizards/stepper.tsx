@@ -79,15 +79,15 @@ interface StepCircleProps {
 }
 
 const CIRCLE_SIZES = {
-  sm: 'w-8 h-8',
-  md: 'w-10 h-10',
-  lg: 'w-12 h-12',
+  sm: 'size-container-sm',
+  md: 'size-container-md',
+  lg: 'size-container-lg',
 } as const;
 
 const ICON_SIZES = {
-  sm: 'w-4 h-4',
-  md: 'w-5 h-5',
-  lg: 'w-6 h-6',
+  sm: 'size-icon-sm',
+  md: 'size-icon-md',
+  lg: 'size-icon-lg',
 } as const;
 
 const TEXT_SIZES = {

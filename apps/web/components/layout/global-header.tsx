@@ -1,11 +1,13 @@
 'use client';
 
-import { Bell, Search } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { Bell } from 'lucide-react';
+import { useState } from 'react';
 
 import { MobileNav } from './mobile-nav';
 import { UserMenu } from './user-menu';
 
+import { SearchTrigger } from '@/components/shared/search';
+import { DotBadge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface GlobalHeaderProps {
@@ -21,21 +23,7 @@ interface GlobalHeaderProps {
 export function GlobalHeader({ className, onCommandOpen }: GlobalHeaderProps) {
   const [notificationCount] = useState(3);
 
-  // Keyboard shortcut for command palette
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        onCommandOpen?.();
-      }
-    },
-    [onCommandOpen]
-  );
-
-  useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
+  // Note: Keyboard shortcut (⌘K) is handled by SearchTrigger component
 
   return (
     <header
@@ -59,29 +47,19 @@ export function GlobalHeader({ className, onCommandOpen }: GlobalHeaderProps) {
 
       {/* Center: Search Bar */}
       <div className="flex-1 ml-3 lg:ml-6 mr-2 lg:mr-4">
-        <button
-          onClick={onCommandOpen}
-          className={cn(
-            'w-full max-w-md flex items-center space-x-2 lg:space-x-3',
-            'px-3 py-1.5 bg-background-secondary hover:bg-background-tertiary',
-            'rounded-lg border border-border-light',
-            'transition-colors text-left'
-          )}
-        >
-          <Search className="w-4 h-4 text-foreground-tertiary" />
-          <span className="text-foreground-tertiary flex-1 text-sm hidden sm:inline">Search...</span>
-          <kbd className="hidden md:inline-flex items-center px-2 py-0.5 text-xs font-medium text-foreground-tertiary bg-background border border-border-light rounded">
-            ⌘K
-          </kbd>
-        </button>
+        <SearchTrigger
+          onClick={() => onCommandOpen?.()}
+          className="w-full max-w-md"
+          placeholder="Search..."
+          shortcut="⌘K"
+        />
       </div>
 
       {/* Right: Actions */}
       <div className="flex items-center space-x-1 lg:space-x-2">
         {/* Live Activity Indicator - Desktop only */}
-        <div className="hidden xl:flex items-center space-x-2 text-sm text-muted-foreground mr-2">
-          <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-          <span>3 online</span>
+        <div className="hidden xl:flex items-center mr-2">
+          <DotBadge color="green">3 online</DotBadge>
         </div>
 
         {/* Notifications */}
@@ -89,9 +67,9 @@ export function GlobalHeader({ className, onCommandOpen }: GlobalHeaderProps) {
           className="relative p-2 hover:bg-background-secondary rounded-lg transition-colors"
           aria-label="Notifications"
         >
-          <Bell className="w-5 h-5 text-muted-foreground" />
+          <Bell className="size-icon-md text-muted-foreground" />
           {notificationCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full" />
+            <span className="absolute top-1.5 right-1.5 size-2 bg-error rounded-full" />
           )}
         </button>
 

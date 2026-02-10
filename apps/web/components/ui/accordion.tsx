@@ -67,7 +67,7 @@ const AccordionTrigger = React.forwardRef<
       {...props}
     >
       {icon && (
-        <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-primary/10">
+        <div className="size-container-md rounded-lg flex items-center justify-center flex-shrink-0 bg-primary/10">
           {icon}
         </div>
       )}
@@ -79,7 +79,7 @@ const AccordionTrigger = React.forwardRef<
           </p>
         )}
       </div>
-      <ChevronDown className="h-5 w-5 shrink-0 text-foreground-tertiary transition-transform duration-fast" />
+      <ChevronDown className="size-icon-md shrink-0 text-foreground-tertiary transition-transform duration-fast" />
     </AccordionPrimitive.Trigger>
   </AccordionPrimitive.Header>
 ));

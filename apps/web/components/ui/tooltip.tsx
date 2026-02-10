@@ -11,7 +11,9 @@ import { cn } from '@/lib/utils';
  * Tooltip Component - OneOhm Design System
  *
  * Features:
- * - Dark theme (default) with gray-900 background
+ * - Primary theme (default) with brand green background
+ * - Secondary theme with brand blue background
+ * - Dark theme with gray-900 background
  * - Light theme option
  * - Arrow indicator
  * - z-tooltip from theme
@@ -42,11 +44,13 @@ const tooltipContentVariants = cva(
     variants: {
       variant: {
         dark: 'bg-gray-900 text-white',
+        primary: 'bg-primary-dark text-white',
+        secondary: 'bg-secondary text-white',
         light: 'bg-background text-foreground shadow-sm border border-border-light',
       },
     },
     defaultVariants: {
-      variant: 'dark',
+      variant: 'primary',
     },
   },
 );
@@ -54,12 +58,16 @@ const tooltipContentVariants = cva(
 /** Arrow colors per variant - module scope for performance */
 const ARROW_COLORS = {
   dark: 'text-gray-900',
+  primary: 'text-primary-dark',
+  secondary: 'text-secondary',
   light: 'text-background drop-shadow-sm',
 } as const;
 
 /** Rich tooltip text colors per variant */
 const RICH_TEXT_COLORS = {
   dark: 'text-gray-300',
+  primary: 'text-white/80',
+  secondary: 'text-white/80',
   light: 'text-foreground-secondary',
 } as const;
 
@@ -73,7 +81,7 @@ export interface TooltipContentProps
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
   TooltipContentProps
->(({ className, variant = 'dark', showArrow = false, sideOffset = 4, children, ...props }, ref) => (
+>(({ className, variant = 'primary', showArrow = false, sideOffset = 4, children, ...props }, ref) => (
   <TooltipPrimitive.Portal>
     <TooltipPrimitive.Content
       ref={ref}
@@ -84,7 +92,7 @@ const TooltipContent = React.forwardRef<
       {children}
       {showArrow && (
         <TooltipPrimitive.Arrow
-          className={cn('fill-current', ARROW_COLORS[variant ?? 'dark'])}
+          className={cn('fill-current', ARROW_COLORS[variant ?? 'primary'])}
           width={8}
           height={4}
         />
@@ -105,15 +113,15 @@ export interface RichTooltipContentProps extends TooltipContentProps {
 const RichTooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
   RichTooltipContentProps
->(({ className, variant = 'dark', title, children, ...props }, ref) => (
+>(({ className, variant = 'primary', title, children, ...props }, ref) => (
   <TooltipContent
     ref={ref}
     variant={variant}
-    className={cn('p-3 w-64', className)}
+    className={cn('p-3 w-tooltip', className)}
     {...props}
   >
     {title && <p className="font-medium mb-1">{title}</p>}
-    <div className={cn('leading-relaxed', RICH_TEXT_COLORS[variant ?? 'dark'])}>{children}</div>
+    <div className={cn('leading-relaxed', RICH_TEXT_COLORS[variant ?? 'primary'])}>{children}</div>
   </TooltipContent>
 ));
 RichTooltipContent.displayName = 'RichTooltipContent';
@@ -137,7 +145,7 @@ const HelpTooltip = React.forwardRef<HTMLButtonElement, HelpTooltipProps>(
           className="text-foreground-tertiary hover:text-foreground-secondary cursor-help"
           aria-label="Help"
         >
-          <HelpCircle className="w-4 h-4" />
+          <HelpCircle className="size-icon-sm" />
         </button>
       </TooltipTrigger>
       <TooltipContent side={side} showArrow className="max-w-xs">

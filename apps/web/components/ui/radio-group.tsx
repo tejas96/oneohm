@@ -38,9 +38,9 @@ const radioItemVariants = cva(
 );
 
 const INDICATOR_SIZES = {
-  sm: 'h-2 w-2',
-  default: 'h-2.5 w-2.5',
-  lg: 'h-3 w-3',
+  sm: 'size-radio-indicator-sm',
+  default: 'size-radio-indicator-md',
+  lg: 'size-radio-indicator-lg',
 } as const;
 
 export interface RadioGroupItemProps

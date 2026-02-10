@@ -4,6 +4,7 @@ import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { CountBadge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { navigationConfig, isNavItemActive } from '@/lib/config';
 import { cn } from '@/lib/utils';
@@ -53,13 +54,14 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
                     )}
                     aria-disabled={item.disabled}
                   >
-                    {Icon && <Icon className="w-5 h-5" strokeWidth={2} />}
-                    {item.badge !== undefined && (
-                      <span className="badge-notification">
-                        {typeof item.badge === 'number' && item.badge > 99
-                          ? '99+'
-                          : item.badge}
-                      </span>
+                    {Icon && <Icon className="size-icon" strokeWidth={2} />}
+                    {typeof item.badge === 'number' && (
+                      <CountBadge
+                        count={item.badge}
+                        variant="primary"
+                        size="2xs"
+                        className="absolute top-0.5 right-0.5"
+                      />
                     )}
                   </Link>
                 </TooltipTrigger>
@@ -82,9 +84,9 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
                 aria-label={isPanelOpen ? 'Collapse panel' : 'Expand panel'}
               >
                 {isPanelOpen ? (
-                  <ChevronsLeft className="w-5 h-5" strokeWidth={2} />
+                  <ChevronsLeft className="size-icon" strokeWidth={2} />
                 ) : (
-                  <ChevronsRight className="w-5 h-5" strokeWidth={2} />
+                  <ChevronsRight className="size-icon" strokeWidth={2} />
                 )}
               </button>
             </TooltipTrigger>
@@ -110,7 +112,7 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
                     )}
                     aria-disabled={item.disabled}
                   >
-                    {Icon && <Icon className="w-5 h-5" strokeWidth={2} />}
+                    {Icon && <Icon className="size-icon" strokeWidth={2} />}
                   </Link>
                 </TooltipTrigger>
                 <TooltipContent side="right" sideOffset={12}>

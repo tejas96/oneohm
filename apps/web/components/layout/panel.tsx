@@ -4,6 +4,7 @@ import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { Badge } from '@/components/ui/badge';
 import { getPanelConfigByPath } from '@/lib/config';
 import { cn } from '@/lib/utils';
 
@@ -45,11 +46,11 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
         </span>
         <button
           onClick={onClose}
-          className="w-7 h-7 flex items-center justify-center text-foreground-tertiary rounded-md cursor-pointer hover:bg-muted hover:text-foreground-secondary transition-all"
+          className="size-7 flex items-center justify-center text-foreground-tertiary rounded-md cursor-pointer hover:bg-muted hover:text-foreground-secondary transition-all"
           title="Close panel (⌘\)"
           aria-label="Close panel"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="size-icon-sm" />
         </button>
       </div>
 
@@ -80,12 +81,12 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
                   target={item.external ? '_blank' : undefined}
                   rel={item.external ? 'noopener noreferrer' : undefined}
                 >
-                  {Icon && <Icon className="w-4 h-4 mr-2.5 shrink-0" />}
+                  {Icon && <Icon className="size-icon-sm mr-2.5 shrink-0" />}
                   <span className="flex-1 truncate">{item.label}</span>
                   {item.badge !== undefined && (
-                    <span className="ml-2 px-1.5 py-0.5 text-2xs font-medium bg-muted text-muted-foreground rounded">
+                    <Badge variant="secondary" size="sm" className="ml-2">
                       {item.badge}
-                    </span>
+                    </Badge>
                   )}
                 </Link>
               );

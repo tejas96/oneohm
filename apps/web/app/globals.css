@@ -28,7 +28,7 @@
   --panel-width: 200px;
   --content-offset: 248px;
   --rail-icon-height: 36px;
-  --panel-item-height: 36px; /* synced with tailwind spacing.panel-item */
+  --panel-item-height: 30px; /* synced with tailwind spacing.panel-item - per UX spec */
   
   /* Shadcn radius variable */
   --radius: 0.5rem;
@@ -114,28 +114,16 @@ body {
   @apply text-primary bg-primary/10 border-l-[3px] border-primary;
 }
 
-/* Badge Notification */
-.badge-notification {
-  @apply absolute flex items-center justify-center;
-  @apply text-[10px] font-semibold text-white bg-error;
-  top: 6px;
-  right: 10px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 9px;
-}
-
 /* Panel Section Header */
 .panel-section-header {
-  @apply text-2xs font-semibold uppercase tracking-wide text-gray-400;
+  @apply text-section font-semibold uppercase tracking-wider text-gray-400;
   padding: 12px 8px 6px 8px;
 }
 
 /* Panel Item */
 .panel-item {
   height: var(--panel-item-height);
-  @apply px-3 flex items-center text-sm text-gray-700;
+  @apply px-3 flex items-center text-sm font-medium text-gray-500;
   @apply cursor-pointer rounded-lg transition-all duration-100;
   text-decoration: none;
 }

@@ -36,7 +36,7 @@ const avatarSizeVariants = cva('relative flex shrink-0 overflow-hidden rounded-f
 const avatarFallbackTextVariants = cva('font-semibold', {
   variants: {
     size: {
-      xs: 'text-[10px]',
+      xs: 'text-section',
       sm: 'text-xs',
       default: 'text-sm',
       lg: 'text-sm',
@@ -87,7 +87,8 @@ const AvatarFallback = React.forwardRef<
   <AvatarPrimitive.Fallback
     ref={ref}
     className={cn(
-      'flex h-full w-full items-center justify-center rounded-full bg-muted',
+      'flex h-full w-full items-center justify-center rounded-full',
+      'bg-primary/20 text-primary',
       avatarFallbackTextVariants({ size }),
       className,
     )}
@@ -123,11 +124,11 @@ const AvatarStatus = React.forwardRef<HTMLSpanElement, AvatarStatusProps>(
   ({ className, status, size = 'default', ...props }, ref) => {
     const sizeClasses = {
       xs: 'size-1.5 border',
-      sm: 'size-2 border-[1.5px]',
+      sm: 'size-2 border-1.5',
       default: 'size-3 border-2',
       lg: 'size-3.5 border-2',
       xl: 'size-4 border-2',
-      '2xl': 'size-5 border-[3px]',
+      '2xl': 'size-5 border-3',
     };
 
     return (
@@ -181,7 +182,7 @@ const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(
     };
 
     const counterSizeClasses = {
-      xs: 'size-6 text-[10px]',
+      xs: 'size-6 text-section',
       sm: 'size-8 text-xs',
       default: 'size-10 text-xs',
       lg: 'size-12 text-sm',
