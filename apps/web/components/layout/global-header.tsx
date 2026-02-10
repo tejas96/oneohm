@@ -6,8 +6,8 @@ import { useState } from 'react';
 import { MobileNav } from './mobile-nav';
 import { UserMenu } from './user-menu';
 
-import { DotBadge } from '@/components/ui/badge';
 import { SearchTrigger } from '@/components/shared/search';
+import { DotBadge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface GlobalHeaderProps {
