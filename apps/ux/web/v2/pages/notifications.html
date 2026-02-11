@@ -34,341 +34,231 @@
     </script>
     <style>
         body { font-family: 'Inter', system-ui, sans-serif; }
-        
-        .sidebar { transition: width 200ms ease; }
-        .sidebar.collapsed { width: 64px; }
-        .sidebar.collapsed .sidebar-text { display: none; }
-        .sidebar.collapsed .sidebar-header-text { display: none; }
-        
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .global-header { height: 48px; background: #ffffff; border-bottom: 1px solid #f4f4f5; position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; align-items: center; padding: 0 12px; }
+        .rail { width: 48px; background: #ffffff; border-right: 1px solid #f4f4f5; position: fixed; top: 48px; left: 0; height: calc(100vh - 48px); display: flex; flex-direction: column; z-index: 40; }
+        .rail-top { flex: 1; display: flex; flex-direction: column; padding-top: 6px; }
+        .rail-bottom { display: flex; flex-direction: column; padding-bottom: 6px; border-top: 1px solid #f4f4f5; }
+        .rail-icon { width: 48px; height: 36px; display: flex; align-items: center; justify-content: center; color: #71717a; cursor: pointer; position: relative; transition: all 150ms ease; }
+        .rail-icon:hover { background: #f4f4f5; color: #3f3f46; }
+        .rail-icon.active { background: rgba(118, 192, 68, 0.08); color: #76c044; border-left: 3px solid #76c044; }
+        .rail-icon .badge { position: absolute; top: 4px; right: 8px; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; font-weight: 600; background: #ef4444; color: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .rail-icon .tooltip { position: absolute; left: 56px; background: #1f2937; color: white; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; white-space: nowrap; opacity: 0; visibility: hidden; transition: all 150ms ease; z-index: 100; }
+        .rail-icon:hover .tooltip { opacity: 1; visibility: visible; }
+        .rail-user { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .rail-user:hover { background: #f9fafb; }
+        .main-content { margin-left: 48px; margin-top: 48px; min-height: calc(100vh - 48px); background: #fafafa; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeInUp 0.4s ease forwards; }
         .animation-delay-100 { animation-delay: 0.1s; }
         .animation-delay-200 { animation-delay: 0.2s; }
-        
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 3px; }
     </style>
 </head>
-<body class="bg-gray-100">
-    <div class="flex min-h-screen">
-        <!-- Sidebar -->
-        <aside id="sidebar" class="sidebar w-72 bg-white border-r border-gray-100 flex flex-col fixed h-full z-30">
-            <div class="h-16 flex items-center justify-between px-4 border-b border-gray-100">
-                <div class="flex items-center space-x-3">
-                    <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-10 w-auto">
-                    <span class="sidebar-header-text font-bold text-gray-800">OneOhm</span>
+<body class="bg-gray-50 text-[13px]">
+    <!-- Global Header -->
+    <header class="global-header">
+        <a href="../dashboard/index.html" class="flex items-center">
+            <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto">
+        </a>
+        <div class="flex-1 ml-6 mr-4">
+            <button class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-100 transition-colors text-left">
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <span class="text-gray-400 flex-1 text-[13px]">Search notifications...</span>
+                <kbd class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-100 rounded">⌘K</kbd>
+            </button>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button class="relative p-2 bg-primary/10 rounded-lg">
+                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+            </button>
+            <button class="p-2 hover:bg-gray-50 rounded-lg"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></button>
+            <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg"><div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">RK</div></button>
+        </div>
+    </header>
+    
+    <!-- Rail -->
+    <aside class="rail">
+        <div class="rail-top">
+            <a href="../dashboard/index.html" class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg><span class="tooltip">Dashboard</span></a>
+            <a href="../dashboard/sales.html" class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg><span class="tooltip">Sales & CRM</span></a>
+            <a href="../quotes/list.html" class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><span class="tooltip">Quotations</span></a>
+            <a href="../dashboard/projects.html" class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg><span class="tooltip">Projects</span></a>
+            <a href="../dashboard/inventory.html" class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg><span class="tooltip">Inventory</span></a>
+            <a href="../dashboard/finance.html" class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg><span class="tooltip">Finance</span></a>
+        </div>
+        <div class="rail-bottom">
+            <a href="notifications.html" class="rail-icon active"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg><span class="badge">3</span><span class="tooltip">Notifications</span></a>
+            <a href="#" class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span class="tooltip">Help</span></a>
+            <a href="profile.html" class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg><span class="tooltip">Settings</span></a>
+        </div>
+        <div class="rail-user"><div class="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">RK</div></div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content p-5">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-5 animate-fade-in opacity-0">
+            <div>
+                <h1 class="text-xl font-semibold text-gray-800">Notifications</h1>
+                <p class="text-gray-500 text-[13px] mt-1">Stay updated with all your alerts and activities</p>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button class="px-3 py-1.5 text-[13px] font-medium text-gray-500 hover:bg-white rounded-lg transition-colors border border-gray-100">Mark all as read</button>
+                <button class="px-3 py-1.5 text-[13px] font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors">Settings</button>
+            </div>
+        </div>
+        
+        <!-- Filter Tabs -->
+        <div class="flex items-center space-x-2 mb-5 animate-fade-in opacity-0 animation-delay-100">
+            <button class="px-3 py-1.5 text-[13px] font-medium text-white bg-primary rounded-lg">All</button>
+            <button class="px-3 py-1.5 text-[13px] font-medium text-gray-500 bg-white border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                Unread
+                <span class="ml-1 px-1.5 py-0.5 text-[10px] bg-error text-white rounded">3</span>
+            </button>
+            <button class="px-3 py-1.5 text-[13px] font-medium text-gray-500 bg-white border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">Approvals</button>
+            <button class="px-3 py-1.5 text-[13px] font-medium text-gray-500 bg-white border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">Mentions</button>
+            <button class="px-3 py-1.5 text-[13px] font-medium text-gray-500 bg-white border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">System</button>
+        </div>
+        
+        <!-- Notifications List -->
+        <div class="space-y-4 animate-fade-in opacity-0 animation-delay-200">
+            <!-- Today Section -->
+            <div class="mb-5">
+                <h3 class="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-3">Today</h3>
+                <div class="space-y-3">
+                    <!-- Unread Notification -->
+                    <div class="bg-primary/5 border-l-4 border-primary rounded-lg p-4 hover:bg-primary/10 transition-colors cursor-pointer">
+                        <div class="flex items-start space-x-4">
+                            <div class="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center text-primary flex-shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <p class="font-medium text-gray-800 text-[13px]">Quote Approved</p>
+                                        <p class="text-[13px] text-gray-500 mt-1">Quote <span class="text-primary font-medium">Q-2542</span> for Sharma Residence has been approved by the customer.</p>
+                                    </div>
+                                    <span class="text-[11px] text-gray-400 flex-shrink-0 ml-4">10 min ago</span>
+                                </div>
+                                <div class="flex items-center space-x-2 mt-3">
+                                    <button class="px-2.5 py-1 text-xs font-medium text-white bg-primary rounded hover:bg-primary-dark transition-colors">View Quote</button>
+                                    <button class="px-2.5 py-1 text-xs font-medium text-gray-500 bg-gray-100 rounded hover:bg-gray-200 transition-colors">Create Project</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Unread Notification - Approval Required -->
+                    <div class="bg-warning/5 border-l-4 border-warning rounded-lg p-4 hover:bg-warning/10 transition-colors cursor-pointer">
+                        <div class="flex items-start space-x-4">
+                            <div class="w-9 h-9 rounded-lg bg-warning/20 flex items-center justify-center text-warning flex-shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <p class="font-medium text-gray-800 text-[13px]">Approval Required</p>
+                                        <p class="text-[13px] text-gray-500 mt-1">Purchase Order <span class="text-warning font-medium">PO-2025-0456</span> requires your approval. Amount: ₹2.8L</p>
+                                    </div>
+                                    <span class="text-[11px] text-gray-400 flex-shrink-0 ml-4">25 min ago</span>
+                                </div>
+                                <div class="flex items-center space-x-2 mt-3">
+                                    <button class="px-2.5 py-1 text-xs font-medium text-white bg-primary rounded hover:bg-primary-dark transition-colors">Approve</button>
+                                    <button class="px-2.5 py-1 text-xs font-medium text-error bg-error/10 rounded hover:bg-error/20 transition-colors">Reject</button>
+                                    <button class="px-2.5 py-1 text-xs font-medium text-gray-500 bg-gray-100 rounded hover:bg-gray-200 transition-colors">View Details</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Unread Notification - Overdue -->
+                    <div class="bg-error/5 border-l-4 border-error rounded-lg p-4 hover:bg-error/10 transition-colors cursor-pointer">
+                        <div class="flex items-start space-x-4">
+                            <div class="w-9 h-9 rounded-lg bg-error/20 flex items-center justify-center text-error flex-shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <p class="font-medium text-gray-800 text-[13px]">Overdue Follow-up</p>
+                                        <p class="text-[13px] text-gray-500 mt-1">You have 3 overdue follow-ups for leads. The oldest is <span class="text-error font-medium">Kumar Industries</span> (5 days overdue).</p>
+                                    </div>
+                                    <span class="text-[11px] text-gray-400 flex-shrink-0 ml-4">1 hour ago</span>
+                                </div>
+                                <div class="flex items-center space-x-2 mt-3">
+                                    <button class="px-2.5 py-1 text-xs font-medium text-white bg-error rounded hover:bg-red-700 transition-colors">View Follow-ups</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Read Notification -->
+                    <div class="bg-white border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
+                        <div class="flex items-start space-x-4">
+                            <div class="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center text-secondary flex-shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <p class="font-medium text-gray-800 text-[13px]">New Lead Assigned</p>
+                                        <p class="text-[13px] text-gray-500 mt-1"><span class="text-secondary font-medium">Priya Sharma</span> assigned a new lead "Tata Steel Complex" to you.</p>
+                                    </div>
+                                    <span class="text-[11px] text-gray-400 flex-shrink-0 ml-4">2 hours ago</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <button onclick="toggleSidebar()" class="p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                    <svg id="toggleIcon" class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
-                    </svg>
+            </div>
+            
+            <!-- Yesterday Section -->
+            <div class="mb-5">
+                <h3 class="text-[11px] font-medium text-gray-400 uppercase tracking-wide mb-3">Yesterday</h3>
+                <div class="space-y-3">
+                    <div class="bg-white border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
+                        <div class="flex items-start space-x-4">
+                            <div class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <p class="font-medium text-gray-800 text-[13px]">Payment Received</p>
+                                        <p class="text-[13px] text-gray-500 mt-1">Payment of <span class="text-primary font-medium">₹2,50,000</span> received from Sharma Residence (2nd Installment).</p>
+                                    </div>
+                                    <span class="text-[11px] text-gray-400 flex-shrink-0 ml-4">Yesterday, 3:45 PM</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
+                        <div class="flex items-start space-x-4">
+                            <div class="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 flex-shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <p class="font-medium text-gray-800 text-[13px]">Project Milestone Completed</p>
+                                        <p class="text-[13px] text-gray-500 mt-1">Project <span class="text-purple-600 font-medium">Green Valley School</span> completed the "Installation" milestone.</p>
+                                    </div>
+                                    <span class="text-[11px] text-gray-400 flex-shrink-0 ml-4">Yesterday, 11:20 AM</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Load More -->
+            <div class="text-center py-4">
+                <button class="px-4 py-2 text-[13px] font-medium text-gray-500 bg-white border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                    Load More Notifications
                 </button>
             </div>
-            
-            <nav class="flex-1 overflow-y-auto custom-scrollbar py-4 px-3">
-                <!-- OVERVIEW -->
-                <div class="mb-6">
-                    <p class="sidebar-text text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Overview</p>
-                    <a href="../dashboard/index.html" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors">
-                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                        </svg>
-                        <span class="sidebar-text">Dashboard</span>
-                    </a>
-                    <a href="notifications.html" class="flex items-center justify-between px-3 py-2 rounded-lg bg-primary/10 text-primary border-l-4 border-primary -ml-px mt-1">
-                        <div class="flex items-center space-x-3">
-                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                            </svg>
-                            <span class="sidebar-text font-medium">Notifications</span>
-                        </div>
-                        <span class="bg-error text-white text-xs font-medium px-2 py-0.5 rounded-full">3</span>
-                    </a>
-                </div>
-            </nav>
-            
-            <div class="border-t border-gray-100 p-4">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">RK</div>
-                    <div class="sidebar-text flex-1 min-w-0">
-                        <p class="font-medium text-gray-800 truncate">Rajesh Kumar</p>
-                        <p class="text-xs text-gray-500">Admin</p>
-                    </div>
-                </div>
-            </div>
-        </aside>
-        
-        <!-- Main Content -->
-        <div id="mainContent" class="flex-1 ml-72 transition-all duration-200">
-            <!-- Header -->
-            <header class="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-6 sticky top-0 z-20">
-                <div class="flex-1 max-w-xl">
-                    <div class="relative">
-                        <input type="text" placeholder="Search notifications..." class="w-full px-4 py-2 pl-10 bg-gray-50 border border-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors">
-                        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                        </svg>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-4 ml-6">
-                    <button class="relative p-2 bg-primary/10 rounded-lg">
-                        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                        </svg>
-                    </button>
-                    <button class="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                        <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">RK</div>
-                    </button>
-                </div>
-            </header>
-            
-            <!-- Page Content -->
-            <main class="p-6">
-                <!-- Header -->
-                <div class="flex items-center justify-between mb-8 animate-fade-in opacity-0">
-                    <div>
-                        <h1 class="text-xl font-semibold text-gray-800">Notifications</h1>
-                        <p class="text-gray-500 mt-1">Stay updated with all your alerts and activities</p>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <button class="px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 rounded-lg transition-colors">
-                            Mark all as read
-                        </button>
-                        <button class="px-4 py-2 text-sm font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors">
-                            Settings
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Filter Tabs -->
-                <div class="flex items-center space-x-2 mb-6 animate-fade-in opacity-0 animation-delay-100">
-                    <button class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg">All</button>
-                    <button class="px-4 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
-                        Unread
-                        <span class="ml-1 px-1.5 py-0.5 text-xs bg-error text-white rounded-full">3</span>
-                    </button>
-                    <button class="px-4 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">Approvals</button>
-                    <button class="px-4 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">Mentions</button>
-                    <button class="px-4 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">System</button>
-                </div>
-                
-                <!-- Notifications List -->
-                <div class="space-y-4 animate-fade-in opacity-0 animation-delay-200">
-                    <!-- Today Section -->
-                    <div class="mb-6">
-                        <h3 class="text-sm font-semibold text-gray-500 mb-3">Today</h3>
-                        <div class="space-y-3">
-                            <!-- Unread Notification -->
-                            <div class="bg-primary/5 border-l-4 border-primary rounded-lg p-4 hover:bg-primary/10 transition-colors cursor-pointer">
-                                <div class="flex items-start space-x-4">
-                                    <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary flex-shrink-0">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-start justify-between">
-                                            <div>
-                                                <p class="font-medium text-gray-800">Quote Approved</p>
-                                                <p class="text-sm text-gray-500 mt-1">Quote <span class="text-primary font-medium">Q-2542</span> for Sharma Residence has been approved by the customer.</p>
-                                            </div>
-                                            <span class="text-xs text-gray-400 flex-shrink-0 ml-4">10 min ago</span>
-                                        </div>
-                                        <div class="flex items-center space-x-3 mt-3">
-                                            <button class="px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">View Quote</button>
-                                            <button class="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">Create Project</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Unread Notification - Approval Required -->
-                            <div class="bg-warning/5 border-l-4 border-warning rounded-lg p-4 hover:bg-warning/10 transition-colors cursor-pointer">
-                                <div class="flex items-start space-x-4">
-                                    <div class="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center text-warning flex-shrink-0">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-start justify-between">
-                                            <div>
-                                                <p class="font-medium text-gray-800">Approval Required</p>
-                                                <p class="text-sm text-gray-500 mt-1">Purchase Order <span class="text-warning font-medium">PO-2025-0456</span> requires your approval. Amount: ₹2.8L</p>
-                                            </div>
-                                            <span class="text-xs text-gray-400 flex-shrink-0 ml-4">25 min ago</span>
-                                        </div>
-                                        <div class="flex items-center space-x-3 mt-3">
-                                            <button class="px-3 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors">Approve</button>
-                                            <button class="px-3 py-1.5 text-xs font-medium text-error bg-error/10 rounded-lg hover:bg-error/20 transition-colors">Reject</button>
-                                            <button class="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">View Details</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Unread Notification - Overdue -->
-                            <div class="bg-error/5 border-l-4 border-error rounded-lg p-4 hover:bg-error/10 transition-colors cursor-pointer">
-                                <div class="flex items-start space-x-4">
-                                    <div class="w-10 h-10 rounded-full bg-error/20 flex items-center justify-center text-error flex-shrink-0">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-start justify-between">
-                                            <div>
-                                                <p class="font-medium text-gray-800">Overdue Follow-up</p>
-                                                <p class="text-sm text-gray-500 mt-1">You have 3 overdue follow-ups for leads. The oldest is <span class="text-error font-medium">Kumar Industries</span> (5 days overdue).</p>
-                                            </div>
-                                            <span class="text-xs text-gray-400 flex-shrink-0 ml-4">1 hour ago</span>
-                                        </div>
-                                        <div class="flex items-center space-x-3 mt-3">
-                                            <button class="px-3 py-1.5 text-xs font-medium text-white bg-error rounded-lg hover:bg-red-700 transition-colors">View Follow-ups</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Read Notification -->
-                            <div class="bg-white border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                                <div class="flex items-start space-x-4">
-                                    <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary flex-shrink-0">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-start justify-between">
-                                            <div>
-                                                <p class="font-medium text-gray-800">New Lead Assigned</p>
-                                                <p class="text-sm text-gray-500 mt-1"><span class="text-secondary font-medium">Priya Sharma</span> assigned a new lead "Tata Steel Complex" to you.</p>
-                                            </div>
-                                            <span class="text-xs text-gray-400 flex-shrink-0 ml-4">2 hours ago</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Yesterday Section -->
-                    <div class="mb-6">
-                        <h3 class="text-sm font-semibold text-gray-500 mb-3">Yesterday</h3>
-                        <div class="space-y-3">
-                            <div class="bg-white border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                                <div class="flex items-start space-x-4">
-                                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-start justify-between">
-                                            <div>
-                                                <p class="font-medium text-gray-800">Payment Received</p>
-                                                <p class="text-sm text-gray-500 mt-1">Payment of <span class="text-primary font-medium">₹2,50,000</span> received from Sharma Residence (2nd Installment).</p>
-                                            </div>
-                                            <span class="text-xs text-gray-400 flex-shrink-0 ml-4">Yesterday, 3:45 PM</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="bg-white border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                                <div class="flex items-start space-x-4">
-                                    <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 flex-shrink-0">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-start justify-between">
-                                            <div>
-                                                <p class="font-medium text-gray-800">Project Milestone Completed</p>
-                                                <p class="text-sm text-gray-500 mt-1">Project <span class="text-purple-600 font-medium">Green Valley School</span> completed the "Installation" milestone.</p>
-                                            </div>
-                                            <span class="text-xs text-gray-400 flex-shrink-0 ml-4">Yesterday, 11:20 AM</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="bg-white border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                                <div class="flex items-start space-x-4">
-                                    <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 flex-shrink-0">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8m-5 5h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293h3.172a1 1 0 00.707-.293l2.414-2.414a1 1 0 01.707-.293H20"/>
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-start justify-between">
-                                            <div>
-                                                <p class="font-medium text-gray-800">Stock Delivered</p>
-                                                <p class="text-sm text-gray-500 mt-1">50 Solar Panels (540W Mono) from <span class="text-green-600 font-medium">Waaree Energies</span> delivered to warehouse.</p>
-                                            </div>
-                                            <span class="text-xs text-gray-400 flex-shrink-0 ml-4">Yesterday, 9:00 AM</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Earlier Section -->
-                    <div class="mb-6">
-                        <h3 class="text-sm font-semibold text-gray-500 mb-3">Earlier</h3>
-                        <div class="space-y-3">
-                            <div class="bg-white border border-gray-100 rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                                <div class="flex items-start space-x-4">
-                                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 flex-shrink-0">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-start justify-between">
-                                            <div>
-                                                <p class="font-medium text-gray-800">System Update</p>
-                                                <p class="text-sm text-gray-500 mt-1">New features added: Command Palette (Cmd+K) for quick navigation. Try it now!</p>
-                                            </div>
-                                            <span class="text-xs text-gray-400 flex-shrink-0 ml-4">Jan 26, 2026</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Load More -->
-                    <div class="text-center py-4">
-                        <button class="px-6 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
-                            Load More Notifications
-                        </button>
-                    </div>
-                </div>
-            </main>
         </div>
-    </div>
-    
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.getElementById('mainContent');
-            sidebar.classList.toggle('collapsed');
-            mainContent.style.marginLeft = sidebar.classList.contains('collapsed') ? '64px' : '288px';
-            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-        }
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            if (sidebarCollapsed) toggleSidebar();
-        });
-    </script>
+    </main>
 </body>
 </html>
