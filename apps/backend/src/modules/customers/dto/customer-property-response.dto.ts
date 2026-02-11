@@ -6,7 +6,9 @@ import {
   PropertyType,
   QuoteStatus,
 } from '@oneohm-epc/shared-types';
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
+
+import { PropertyDocumentDto } from './property-document.dto';
 
 /**
  * DTO for customer property response
@@ -123,6 +125,15 @@ export class CustomerPropertyResponseDto {
   @ApiProperty({ description: 'Customer wants loan financing for this property' })
   @Expose()
   wantsLoan!: boolean;
+
+  // ==================== Documents ====================
+  @ApiPropertyOptional({
+    description: 'Property-level documents (identity docs, KYC, etc.)',
+    type: [PropertyDocumentDto],
+  })
+  @Expose()
+  @Type(() => PropertyDocumentDto)
+  documents!: PropertyDocumentDto[];
 
   // ==================== Status ====================
   @ApiProperty({ enum: PropertyStatus })

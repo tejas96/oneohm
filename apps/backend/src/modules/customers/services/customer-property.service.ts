@@ -5,10 +5,18 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { LeadTemperature, PropertyStatus, QuoteStatus } from '@oneohm-epc/shared-types';
+import {
+  LeadTemperature,
+  LoanStatus,
+  type PropertyDocument,
+  PropertyStatus,
+  QuoteStatus,
+} from '@oneohm-epc/shared-types';
 
+import { LoanApplicationRepository } from '../../loan-finance/repositories/loan-application.repository';
 import { QuoteRepository } from '../../quotes/repositories/quote.repository';
 import { CreateCustomerPropertyDto } from '../dto/create-customer-property.dto';
+import type { PropertyDocumentDto } from '../dto/property-document.dto';
 import { UpdateCustomerPropertyDto } from '../dto/update-customer-property.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
@@ -35,7 +43,25 @@ export class CustomerPropertyService {
     private readonly propertyRepository: CustomerPropertyRepository,
     private readonly customerRepository: CustomerProfileRepository,
     private readonly quoteRepository: QuoteRepository,
+    private readonly loanApplicationRepository: LoanApplicationRepository,
   ) {}
+
+  /**
+   * Normalize documents from DTO to entity format
+   * Applies default values for optional fields
+   */
+  private normalizeDocuments(documents?: PropertyDocumentDto[]): PropertyDocument[] | undefined {
+    if (!documents) return undefined;
+    return documents.map((doc) => ({
+      url: doc.url,
+      tag: doc.tag,
+      fileName: doc.fileName,
+      isLoanDoc: doc.isLoanDoc ?? false,
+      isVerified: doc.isVerified ?? false,
+      verifiedAt: doc.verifiedAt,
+      verifiedBy: doc.verifiedBy,
+    }));
+  }
 
   /**
    * Create a new customer property
@@ -75,8 +101,12 @@ export class CustomerPropertyService {
       createDto.leadTemperature || LeadTemperature.WARM,
     );
 
+    // Normalize documents to ensure required fields have defaults
+    const { documents, ...restCreateDto } = createDto;
+
     const property = await this.propertyRepository.create({
-      ...createDto,
+      ...restCreateDto,
+      documents: this.normalizeDocuments(documents),
       organizationId,
       isPrimary,
       nextFollowUpDate: createDto.nextFollowUpDate
@@ -204,6 +234,19 @@ export class CustomerPropertyService {
     // Verify property exists and belongs to organization
     const property = await this.findById(id, organizationId);
 
+    // Validate loan status if trying to disable loan
+    if (property.wantsLoan === true && updateDto.wantsLoan === false) {
+      const loanApp = await this.loanApplicationRepository.findByProperty(id);
+      if (loanApp) {
+        const finalizedStatuses = [LoanStatus.APPROVED, LoanStatus.REJECTED];
+        if (finalizedStatuses.includes(loanApp.status)) {
+          throw new BadRequestException(
+            `Cannot disable loan financing. This loan has been ${loanApp.status} by the bank and cannot be modified.`,
+          );
+        }
+      }
+    }
+
     // Check for consumer number conflicts (if being updated)
     if (updateDto.consumerNumber && updateDto.consumerNumber !== property.consumerNumber) {
       const existingByConsumerNumber = await this.propertyRepository.findByConsumerNumber(
@@ -222,9 +265,9 @@ export class CustomerPropertyService {
       await this.propertyRepository.setPrimary(id, property.customerId, updatedBy);
     }
 
-    // Prepare update data (exclude isPrimary since handled above)
+    // Prepare update data (exclude isPrimary since handled above, normalize documents)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { isPrimary: unusedIsPrimary, ...restDto } = updateDto;
+    const { isPrimary: unusedIsPrimary, documents, ...restDto } = updateDto;
 
     // If temperature changes, recalculate next follow-up date (unless explicitly provided)
     let nextFollowUpDate = updateDto.nextFollowUpDate
@@ -239,6 +282,7 @@ export class CustomerPropertyService {
 
     const updated = await this.propertyRepository.update(id, {
       ...restDto,
+      documents: this.normalizeDocuments(documents),
       nextFollowUpDate,
       updatedBy,
     });

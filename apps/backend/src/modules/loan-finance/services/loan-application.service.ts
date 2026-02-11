@@ -131,14 +131,15 @@ export class LoanApplicationService {
   /**
    * Validate status transitions for loan tracking.
    * Simplified flow: initiated -> applied -> approved/rejected/cancelled
+   * Special case: cancelled -> initiated (reactivation when user toggles loan back ON)
    */
   private validateStatusTransition(currentStatus: LoanStatus, newStatus: LoanStatus): void {
     const validTransitions: Record<LoanStatus, LoanStatus[]> = {
       [LoanStatus.INITIATED]: [LoanStatus.APPLIED, LoanStatus.CANCELLED],
       [LoanStatus.APPLIED]: [LoanStatus.APPROVED, LoanStatus.REJECTED, LoanStatus.CANCELLED],
-      [LoanStatus.APPROVED]: [], // Final state
-      [LoanStatus.REJECTED]: [], // Final state
-      [LoanStatus.CANCELLED]: [], // Final state
+      [LoanStatus.APPROVED]: [], // Final state - cannot be modified
+      [LoanStatus.REJECTED]: [], // Final state - cannot be modified
+      [LoanStatus.CANCELLED]: [LoanStatus.INITIATED], // Allow reactivation
     };
 
     const allowedStatuses = validTransitions[currentStatus] || [];

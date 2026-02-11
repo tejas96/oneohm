@@ -5,7 +5,9 @@ import {
   PropertyStatus,
   PropertyType,
 } from '@oneohm-epc/shared-types';
+import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsDateString,
   IsEnum,
@@ -16,7 +18,10 @@ import {
   IsUUID,
   MaxLength,
   Min,
+  ValidateNested,
 } from 'class-validator';
+
+import { PropertyDocumentDto } from './property-document.dto';
 
 /**
  * DTO for creating a new customer property (installation site)
@@ -215,6 +220,20 @@ export class CreateCustomerPropertyDto {
   @IsBoolean()
   @IsOptional()
   wantsLoan?: boolean;
+
+  // ==================== Documents ====================
+  @ApiPropertyOptional({
+    type: [PropertyDocumentDto],
+    description: 'Property-level documents (identity docs, KYC, etc.)',
+    example: [
+      { url: 'https://storage.example.com/aadhaar.jpg', tag: 'aadhaar_card', fileName: 'aadhaar.jpg' },
+    ],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PropertyDocumentDto)
+  documents?: PropertyDocumentDto[];
 
   // ==================== Status ====================
   @ApiPropertyOptional({
