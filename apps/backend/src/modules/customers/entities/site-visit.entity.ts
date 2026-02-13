@@ -4,10 +4,11 @@ import {
   type GpsCoordinates,
   type ShadingAnalysis,
 } from '@oneohm-epc/shared-types';
-import { Column, DeleteDateColumn, Entity, Index, JoinColumn, OneToOne } from 'typeorm';
+import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 
 import { CustomerPropertyEntity } from './customer-property.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 
 /**
  * Site Visit Entity
@@ -60,7 +61,21 @@ export class SiteVisitEntity extends BaseEntity {
   @Column({ name: 'visit_notes', type: 'text', nullable: true })
   visitNotes?: string;
 
-  // ==================== SOFT DELETE ====================
+  // ==================== AUDIT FIELDS ====================
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt?: Date;
+
+  @Column({ name: 'created_by', type: 'uuid', nullable: true })
+  createdBy?: string;
+
+  @ManyToOne(() => UserEntity, { createForeignKeyConstraints: false })
+  @JoinColumn({ name: 'created_by' })
+  creator?: UserEntity;
+
+  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
+  updatedBy?: string;
+
+  @ManyToOne(() => UserEntity, { createForeignKeyConstraints: false })
+  @JoinColumn({ name: 'updated_by' })
+  updater?: UserEntity;
 }

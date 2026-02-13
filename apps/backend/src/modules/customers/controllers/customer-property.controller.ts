@@ -150,24 +150,37 @@ export class CustomerPropertyController {
   @Get('temperature/:temperature')
   @ApiOperation({
     summary: 'Get properties by lead temperature',
-    description: 'Retrieve all properties with a specific lead temperature (hot/warm/cold).',
+    description: 'Retrieve properties with a specific lead temperature (hot/warm/cold) with pagination.',
   })
   @ApiParam({
     name: 'temperature',
     enum: LeadTemperature,
     description: 'Lead temperature filter',
   })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 20)',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'List of properties',
-    type: [CustomerPropertyResponseDto],
+    description: 'Paginated list of properties',
   })
   async findByTemperature(
     @Param('temperature') temperature: LeadTemperature,
     @OrganizationContext() organizationId: string,
-  ): Promise<CustomerPropertyResponseDto[]> {
-    const properties = await this.propertyService.findByTemperature(organizationId, temperature);
-    return toDtoArray(CustomerPropertyResponseDto, properties);
+    @Query('page', new ParseIntPipe({ optional: true })) page = 1,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
+  ): Promise<PaginatedResponse<CustomerPropertyResponseDto>> {
+    const result = await this.propertyService.findByTemperature(organizationId, temperature, page, limit);
+    return toPaginatedResponse(CustomerPropertyResponseDto, result.data, result.total, page, limit);
   }
 
   /**
@@ -484,8 +497,14 @@ export class CustomerPropertyController {
     @Param('id', ParseUUIDPipe) propertyId: string,
     @Body() createDto: CreateSiteVisitDto,
     @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<SiteVisitResponseDto> {
-    const siteVisit = await this.siteVisitService.create(propertyId, organizationId, createDto);
+    const siteVisit = await this.siteVisitService.create(
+      propertyId,
+      organizationId,
+      createDto,
+      currentUser.id,
+    );
     return toDto(SiteVisitResponseDto, siteVisit);
   }
 
@@ -531,8 +550,14 @@ export class CustomerPropertyController {
     @Param('id', ParseUUIDPipe) propertyId: string,
     @Body() updateDto: UpdateSiteVisitDto,
     @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<SiteVisitResponseDto> {
-    const siteVisit = await this.siteVisitService.update(propertyId, organizationId, updateDto);
+    const siteVisit = await this.siteVisitService.update(
+      propertyId,
+      organizationId,
+      updateDto,
+      currentUser.id,
+    );
     return toDto(SiteVisitResponseDto, siteVisit);
   }
 
@@ -555,8 +580,13 @@ export class CustomerPropertyController {
   async completeSiteVisit(
     @Param('id', ParseUUIDPipe) propertyId: string,
     @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<SiteVisitResponseDto> {
-    const siteVisit = await this.siteVisitService.complete(propertyId, organizationId);
+    const siteVisit = await this.siteVisitService.complete(
+      propertyId,
+      organizationId,
+      currentUser.id,
+    );
     return toDto(SiteVisitResponseDto, siteVisit);
   }
 
@@ -575,7 +605,8 @@ export class CustomerPropertyController {
   async deleteSiteVisit(
     @Param('id', ParseUUIDPipe) propertyId: string,
     @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
-    await this.siteVisitService.delete(propertyId, organizationId);
+    await this.siteVisitService.delete(propertyId, organizationId, currentUser.id);
   }
 }

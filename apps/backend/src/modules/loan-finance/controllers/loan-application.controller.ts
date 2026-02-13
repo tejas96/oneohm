@@ -6,11 +6,15 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
   ParseUUIDPipe,
+  ParseIntPipe,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import type { PaginatedResponse } from '@oneohm-epc/shared-types';
 
+import { toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import {
@@ -60,14 +64,29 @@ export class LoanApplicationController {
   // ============================================
 
   @Get()
-  @ApiOperation({ summary: 'Get all loan applications' })
+  @ApiOperation({ summary: 'Get all loan applications (paginated)' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 20)',
+  })
   @ApiResponse({
     status: 200,
-    description: 'List of all loan applications',
-    type: [LoanApplicationResponseDto],
+    description: 'Paginated list of loan applications',
   })
-  async findAll(): Promise<LoanApplicationResponseDto[]> {
-    return this.loanApplicationService.findAll();
+  async findAll(
+    @Query('page', new ParseIntPipe({ optional: true })) page = 1,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
+  ): Promise<PaginatedResponse<LoanApplicationResponseDto>> {
+    const result = await this.loanApplicationService.findAll(page, limit);
+    return toPaginatedResponse(LoanApplicationResponseDto, result.data, result.total, page, limit);
   }
 
   @Get('property/:propertyId')

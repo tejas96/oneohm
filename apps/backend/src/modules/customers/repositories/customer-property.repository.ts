@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LeadTemperature, PropertyStatus } from '@oneohm-epc/shared-types';
+import { LeadTemperature, type PropertyFollowup, PropertyStatus } from '@oneohm-epc/shared-types';
 import { IsNull, Repository } from 'typeorm';
 
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
@@ -63,10 +63,14 @@ export class CustomerPropertyRepository {
   async findByTemperature(
     organizationId: string,
     temperature: LeadTemperature,
-  ): Promise<CustomerPropertyEntity[]> {
-    return this.repository.find({
+    page = 1,
+    limit = 20,
+  ): Promise<[CustomerPropertyEntity[], number]> {
+    return this.repository.findAndCount({
       where: { organizationId, leadTemperature: temperature, deletedAt: IsNull() },
       relations: ['customer'],
+      skip: (page - 1) * limit,
+      take: limit,
       order: { createdAt: 'DESC' },
     });
   }
@@ -168,5 +172,22 @@ export class CustomerPropertyRepository {
       temperature: r.temperature,
       count: parseInt(r.count, 10),
     }));
+  }
+
+  /**
+   * Append a followup to a property using atomic JSONB operation
+   * This ensures thread-safe appending without race conditions
+   */
+  async appendFollowup(
+    propertyId: string,
+    followup: PropertyFollowup,
+    updatedBy: string,
+  ): Promise<void> {
+    await this.repository.query(
+      `UPDATE customer_properties 
+       SET followups = followups || $1::jsonb, updated_at = NOW(), updated_by = $2
+       WHERE id = $3`,
+      [JSON.stringify([followup]), updatedBy, propertyId],
+    );
   }
 }

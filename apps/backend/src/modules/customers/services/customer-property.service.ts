@@ -198,13 +198,21 @@ export class CustomerPropertyService {
   }
 
   /**
-   * Find properties by lead temperature
+   * Find properties by lead temperature (with pagination)
    */
   async findByTemperature(
     organizationId: string,
     temperature: LeadTemperature,
-  ): Promise<CustomerPropertyEntity[]> {
-    return this.propertyRepository.findByTemperature(organizationId, temperature);
+    page = 1,
+    limit = 20,
+  ): Promise<{ data: CustomerPropertyEntity[]; total: number }> {
+    const [data, total] = await this.propertyRepository.findByTemperature(
+      organizationId,
+      temperature,
+      page,
+      limit,
+    );
+    return { data, total };
   }
 
   /**
@@ -417,13 +425,8 @@ export class CustomerPropertyService {
       lastUpdatedAt: now,
     };
 
-    // Atomic JSONB append
-    await this.propertyRepository.repository.query(
-      `UPDATE customer_properties 
-       SET followups = followups || $1::jsonb, updated_at = NOW(), updated_by = $2
-       WHERE id = $3`,
-      [JSON.stringify([followup]), updatedBy, propertyId],
-    );
+    // Atomic JSONB append via repository method
+    await this.propertyRepository.appendFollowup(propertyId, followup, updatedBy);
 
     this.logger.log(`Followup added to property ${propertyId}: ${followup.id}`);
     return followup;

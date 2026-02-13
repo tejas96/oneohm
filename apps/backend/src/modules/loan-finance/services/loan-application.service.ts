@@ -43,11 +43,15 @@ export class LoanApplicationService {
     });
   }
 
-  async findAll(): Promise<LoanApplicationResponseDto[]> {
-    const applications = await this.loanApplicationRepository.findAll();
-    return plainToInstance(LoanApplicationResponseDto, applications, {
+  async findAll(
+    page = 1,
+    limit = 20,
+  ): Promise<{ data: LoanApplicationResponseDto[]; total: number }> {
+    const [applications, total] = await this.loanApplicationRepository.findAll(page, limit);
+    const data = plainToInstance(LoanApplicationResponseDto, applications, {
       excludeExtraneousValues: true,
     });
+    return { data, total };
   }
 
   async findById(id: string): Promise<LoanApplicationResponseDto> {

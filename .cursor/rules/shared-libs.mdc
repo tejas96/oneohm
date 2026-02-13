@@ -2,103 +2,13 @@
 globs: libs/**/*.ts
 ---
 
-# Shared Libraries — Standards
+# ⚠️ DEPRECATED — See core.mdc
 
-> **Single source of truth. Changes here affect ALL apps.**
+Types location rules are now in [core.mdc](mdc:core.mdc) under "Types Location" section.
 
----
-
-## 📦 Library Structure
-
-| Library | Purpose | Used By |
-|---------|---------|---------|
-| `@oneohm-epc/shared-types` | Enums, interfaces, types | Backend + Frontend |
-| `@oneohm-epc/shared-utils` | Backend decorators, helpers | Backend only |
-| `@oneohm-epc/shared-ui` | Shared UI components | Frontend only |
-| `@oneohm-epc/shared-theme` | Theme configuration | Frontend only |
-
----
-
-## 🎯 Types Decision Tree
-
-**Before creating ANY type, enum, or interface — ASK:**
-
-```
-Is this type needed by BOTH backend AND frontend?
-│
-├── YES → Put in `@oneohm-epc/shared-types`
-│         Examples: CustomerStatus, ProjectPhase, PaginatedResponse
-│
-└── NO → Keep in the respective app
-          │
-          ├── Backend only → `apps/backend/src/modules/[feature]/types/`
-          │   Examples: Internal service types, DB-specific types
-          │
-          └── Frontend only → `apps/web/lib/types/` or feature folder
-              Examples: UI state types, form types, component props
-```
-
----
-
-## 📋 shared-types Guidelines
-
-**PUT in shared-types:**
-- ✅ Enums used in API responses (CustomerStatus, ProjectPhase, etc.)
-- ✅ Interfaces for API request/response shapes
-- ✅ Common types (PaginatedResponse, ApiError, etc.)
-- ✅ Any type that appears in both apps
-
-**KEEP in app:**
-- ❌ Internal service types (backend only)
-- ❌ UI component props (frontend only)
-- ❌ Form validation schemas (frontend only)
-- ❌ TypeORM-specific types (backend only)
-- ❌ React Query key types (frontend only)
-
----
-
-## 📝 Example: Where Types Go
-
-```typescript
-// ✅ shared-types — Used by both apps
-export enum CustomerStatus {
-  LEAD = 'lead',
-  ACTIVE = 'active',
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: { page: number; limit: number; total: number; totalPages: number };
-}
-
-// ❌ Backend only — Keep in apps/backend
-interface CustomerRepositoryOptions {
-  includeDeleted?: boolean;
-  relations?: string[];
-}
-
-// ❌ Frontend only — Keep in apps/web
-interface CustomerTableProps {
-  customers: Customer[];
-  onRowClick: (id: string) => void;
-}
-```
-
----
-
-## ⚠️ Rules for Shared Libs
-
-1. **Backward compatibility** — Never break existing APIs
-2. **Minimal dependencies** — Keep libs lean
-3. **Document changes** — Update README when adding features
-4. **Test thoroughly** — Changes affect all apps
-
----
-
-## 🚫 NEVER DO
-
-❌ Put frontend-only types in shared-types  
-❌ Put backend-only types in shared-types  
-❌ Duplicate types across apps (consolidate to shared)  
-❌ Import backend code in frontend or vice versa  
-❌ Breaking changes without migration plan
+**Quick Reference:**
+| Scope | Path |
+|-------|------|
+| Shared (both apps) | `@oneohm-epc/shared-types` |
+| Backend only | `modules/[feature]/types/` |
+| Frontend only | `lib/types/` |

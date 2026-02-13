@@ -167,8 +167,14 @@ export class SiteVisitRepository {
   /**
    * Soft delete a site visit
    */
-  async softDelete(id: string): Promise<boolean> {
-    const result = await this.repository.update({ id }, { deletedAt: new Date() });
+  async softDelete(id: string, deletedBy?: string): Promise<boolean> {
+    const result = await this.repository.update(
+      { id },
+      {
+        deletedAt: new Date(),
+        updatedBy: deletedBy,
+      },
+    );
     return (result.affected ?? 0) > 0;
   }
 

@@ -76,18 +76,6 @@ export class CustomerProfileRepository {
   }
 
   /**
-   * @deprecated Use findByOrganization with pagination instead
-   * Find all customers for an organization without pagination
-   */
-  async findAll(organizationId: string): Promise<CustomerProfileEntity[]> {
-    return this.repository.find({
-      where: { organizationId, deletedAt: IsNull() },
-      relations: ['user', 'organization', 'properties'],
-      order: { createdAt: 'DESC' },
-    });
-  }
-
-  /**
    * Find customers created by a specific user
    * Used for field workers to see only their own customers
    */

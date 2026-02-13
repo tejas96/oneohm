@@ -2,7 +2,7 @@
 globs: apps/web/**/*.{ts,tsx}
 ---
 
-# Next.js 15 Frontend — Production Standards
+# Next.js Frontend — Iron Rules
 
 > **No business logic in components. Think in patterns. Maximize reusability.**
 
@@ -14,12 +14,6 @@ globs: apps/web/**/*.{ts,tsx}
 - **Composition** → Build complex UI from simple components
 - **Custom Hooks** → ALL reusable logic (not in components)
 - **Container/Presenter** → Separate data fetching from rendering
-
-**Think beyond defaults:**
-- Related components sharing state? → **Compound Components**
-- Flexible customization needed? → **Render Props / Children**
-- Complex state machine? → **useReducer + Context**
-- Need memoization? → **useMemo / useCallback** (when actually needed)
 
 **Reusability:**
 - Component used in 2+ features? → Move to `shared/`
@@ -33,138 +27,123 @@ globs: apps/web/**/*.{ts,tsx}
 
 ```
 apps/web/
-├── app/                    # Next.js App Router pages
-│   ├── (auth)/            # Auth routes (login, forgot-password)
-│   └── (dashboard)/       # Protected routes
+├── app/              → Pages (App Router)
 ├── components/
-│   ├── ui/                # Shadcn primitives (button, input, dialog)
-│   ├── shared/            # Reusable composites (stepper, search-input)
-│   ├── features/          # Feature-specific components
-│   └── layout/            # Layout components (rail, panel, header)
+│   ├── ui/           → Shadcn primitives
+│   ├── shared/       → Reusable composites
+│   ├── features/     → Feature-specific
+│   └── layout/       → Rail, panel, header
 ├── lib/
-│   ├── api/               # API client (apiClient)
-│   ├── hooks/             # Custom hooks
-│   ├── stores/            # Zustand stores
-│   └── utils/             # Utility functions
-└── providers/             # React Query, theme providers
+│   ├── api/          → apiClient
+│   ├── hooks/        → Custom hooks
+│   ├── stores/       → Zustand (minimal)
+│   └── utils/        → Helpers
 ```
 
 ---
 
 ## 🧱 Component Protocol
 
-**ALWAYS check before creating:**
-
-1. `@/components/ui` → Does a primitive exist?
-2. `@/components/shared` → Does a composite exist?
-3. Compose existing → Can I combine existing components?
-4. Extend → Can I add a variant to an existing component?
-5. Create → ONLY if truly reusable across features
+**Before creating, check:**
+1. `@/components/ui` — Primitive exists?
+2. `@/components/shared` — Composite exists?
+3. Can I compose existing?
+4. Can I add variant to existing?
+5. Create ONLY if truly new
 
 ---
 
-## 🎯 Separation of Concerns
+## 🎯 Separation
 
-| Layer | Responsibility | Example |
-|-------|----------------|---------|
-| Components | UI rendering only | `<CustomerCard customer={data} />` |
-| Hooks | Logic encapsulation | `useCustomers(orgId)` |
-| React Query | Server state | `useQuery(['customers', orgId])` |
-| Zustand | Minimal global UI state | `useSidebarStore()` |
-| Types | From `@oneohm-epc/shared-types` | `CustomerStatus` |
+| Layer | Responsibility |
+|-------|----------------|
+| Component | UI only. Props in, JSX out. |
+| Hook | Logic encapsulation |
+| TanStack Query | Server state |
+| Zustand | Global UI state (minimal) |
 
 **NO BUSINESS LOGIC IN COMPONENTS**
 
 ---
 
-## 📊 State Management
+## 📊 State Rules
 
-| State Type | Tool | Example |
-|------------|------|---------|
-| Server data | TanStack Query | `useQuery`, `useMutation` |
-| Global UI | Zustand (minimal) | Sidebar state, theme |
-| Local UI | useState | Form inputs, modals |
-| URL state | useSearchParams | Filters, pagination |
+| State | Tool |
+|-------|------|
+| Server data | `useQuery`, `useMutation` |
+| Global UI | Zustand |
+| Local UI | `useState` |
+| URL | `useSearchParams` |
 
-**NEVER duplicate server state in Zustand**
+**Never duplicate server state in Zustand**
 
 ---
 
-## 🔌 API Calls
-
-**Use apiClient from `lib/api/client.ts`:**
+## 🔌 API Pattern
 
 ```typescript
-import { apiClient } from '@/lib/api/client';
-
-// In a hook or React Query
-export function useCustomers(organizationId: string, page = 1) {
+export function useCustomers(orgId: string, page = 1) {
   return useQuery({
-    queryKey: ['customers', organizationId, page],
-    queryFn: async () => {
-      const { data } = await apiClient.get<PaginatedResponse<Customer>>('/customers', {
-        params: { organizationId, page, limit: 20 },
-      });
-      return data;
-    },
+    queryKey: ['customers', orgId, page],
+    queryFn: () => apiClient.get('/customers', {
+      params: { organizationId: orgId, page, limit: 20 }
+    }).then(r => r.data),
   });
 }
 ```
 
 ---
 
-## 🎨 Styling (OneOhm V2)
+## 🎨 OneOhm V2 Style
 
-**Design tokens — NO hardcoded values:**
-
-| Property | Standard |
-|----------|----------|
-| Base font | `text-[13px]` |
-| Font weights | 400 body → 500 labels → 600 titles |
-| Borders | `border-gray-100` (NOT gray-200) |
-| Radius | `rounded-lg` (NOT xl/2xl) |
-| Padding | `p-4` (NOT p-5/6) |
+| Token | Value |
+|-------|-------|
+| Font size | `text-[13px]` |
+| Weight | 400 body, 500 label, 600 title |
+| Border | `border-gray-100` |
+| Radius | `rounded-lg` |
+| Padding | `p-4` |
 | Shadow | `shadow-sm` or none |
 
-**NEVER use `font-bold` — use `font-semibold` max**
+```
+❌ font-bold     → font-semibold
+❌ gray-200      → gray-100
+❌ rounded-xl    → rounded-lg
+❌ p-6           → p-4
+```
 
 ---
 
-## 🧩 UI Patterns
+## 🧩 UI Components
 
-| Use Case | Component/Pattern |
-|----------|-------------------|
-| Forms | react-hook-form + Zod + `<Form>` |
-| Tables | AG Grid or `<Table>` |
-| Loading | `<Skeleton>` or `<Spinner>` |
-| Empty | `<EmptyState>` from shared |
-| Errors | ErrorBoundary + `toast()` |
-| Modals | `<Dialog>` or `<Sheet>` |
-| Search | `<SearchInput>` from shared |
-| Wizard | `<Stepper>` from shared |
-| Status | `<Badge>` with variants |
+| Need | Use |
+|------|-----|
+| Form | react-hook-form + Zod |
+| Table | AG Grid or `<Table>` |
+| Loading | `<Skeleton>` |
+| Empty | `<EmptyState>` |
+| Modal | `<Dialog>` or `<Sheet>` |
+| Status | `<Badge>` |
 
 ---
 
 ## ⚠️ UX Safety
 
-**STOP and challenge if design is:**
-- Ambiguous or inconsistent
-- Not scalable
-- Missing loading/error/empty states
+Every view MUST have:
+- Loading state
+- Error state  
+- Empty state
 
-Think like an owner, not a ticket executor.
+**No silent failures. Ever.**
 
 ---
 
-## 🚫 NEVER DO
+## ⚡ Quick Reference
 
-❌ Business logic in components  
-❌ Duplicate existing UI components  
-❌ Inline styles or hardcoded colors  
-❌ Prop drilling beyond 2 levels  
-❌ Raw fetch — use `apiClient`  
-❌ Missing loading/error states  
-❌ `font-bold` — use font-semibold  
-❌ `any` types — import from shared-types  
-❌ Hardcoded org IDs or API URLs
+| Action | How |
+|--------|-----|
+| API call | `apiClient.get/post/patch/delete` |
+| Auth token | Automatic via interceptor |
+| Org ID | `useOrganization()` |
+| Toast | `toast.success()` / `toast.error()` |
+| Navigate | `useRouter().push()` |
