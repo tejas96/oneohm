@@ -70,3 +70,34 @@ export enum LeadSource {
   COLD_CALL = 'cold_call',
   OTHER = 'other',
 }
+
+/**
+ * Followup Type Enum
+ * Types of scheduled follow-up activities
+ */
+export enum FollowupType {
+  VISIT = 'visit',
+  MEETING = 'meeting',
+  TASK = 'task',
+  REMINDER = 'reminder',
+  DOCUMENT_COLLECTION = 'document_collection',
+}
+
+/**
+ * Followup Status Enum
+ * Simple 3-state lifecycle
+ */
+export enum FollowupStatus {
+  PENDING = 'pending',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+}
+
+/**
+ * Followup Priority Enum
+ */
+export enum FollowupPriority {
+  LOW = 'low',
+  NORMAL = 'normal',
+  HIGH = 'high',
+}

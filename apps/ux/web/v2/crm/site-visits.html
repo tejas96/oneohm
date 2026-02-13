@@ -34,7 +34,7 @@
     </script>
     <style>
         body { font-family: 'Inter', system-ui, sans-serif; }
-        .page-container { margin-left: 248px; margin-top: 48px; min-height: calc(100vh - 48px); background: #f4f4f5; }
+        .page-container { margin-left: 248px; margin-top: 48px; min-height: calc(100vh - 48px); background: #fafafa; }
         
         /* Tabs */
         .visit-tab { padding: 10px 16px; font-size: 13px; font-weight: 500; color: #71717a; border-bottom: 2px solid transparent; transition: all 150ms; display: flex; align-items: center; gap: 6px; }
@@ -56,9 +56,9 @@
         }
     </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50 text-[13px]">
     <!-- Header -->
-    <header class="fixed top-0 left-0 right-0 h-12 bg-white border-b border-gray-100 z-50 flex items-center px-4">
+    <header class="fixed top-0 left-0 right-0 h-12 bg-white border-b border-gray-100 z-50 flex items-center px-3">
         <a href="../dashboard/index.html" class="flex items-center">
             <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto">
         </a>
@@ -72,7 +72,7 @@
         </div>
         <div class="flex items-center gap-2">
             <button class="p-2 hover:bg-gray-50 rounded-lg"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></button>
-            <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">RK</div>
+            <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">RK</div>
         </div>
     </header>
     
@@ -223,9 +223,9 @@
                                 <span class="px-1.5 py-0.5 text-[11px] font-medium status-scheduled rounded">Scheduled</span>
                             </div>
                             <div class="flex items-center gap-2 mt-4 pt-3 border-t border-gray-100">
-                                <button class="px-3 py-1.5 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-dark">Start Visit</button>
-                                <button class="px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50 rounded-lg">Reschedule</button>
-                                <button class="px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg ml-auto">Cancel</button>
+                                <button onclick="alert('Start Visit - Coming Soon')" class="px-3 py-1.5 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary-dark">Start Visit</button>
+                                <button onclick="alert('Reschedule - Coming Soon')" class="px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50 rounded-lg">Reschedule</button>
+                                <button onclick="alert('Cancel Visit - Coming Soon')" class="px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg ml-auto">Cancel</button>
                             </div>
                         </div>
                         

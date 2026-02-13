@@ -10,6 +10,7 @@ export * from './create-customer-property.dto';
 export * from './update-customer-property.dto';
 export * from './customer-property-response.dto';
 export * from './property-document.dto';
+export * from './property-followup.dto';
 
 // Site Visit DTOs
 export * from './create-site-visit.dto';
