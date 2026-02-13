@@ -206,6 +206,37 @@ export class CustomerController {
   }
 
   /**
+   * Get customer statistics by status
+   * NOTE: This MUST be defined BEFORE :id routes to avoid route conflicts
+   */
+  // @RequirePermission('customers:read') // TODO: Re-enable
+  @Get('statistics/status')
+  @ApiOperation({
+    summary: 'Get customer status statistics',
+    description:
+      'Returns count of customers grouped by status for the specified organization. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Status statistics',
+    schema: {
+      type: 'object',
+      properties: {
+        lead: { type: 'number', example: 5 },
+        prospect: { type: 'number', example: 10 },
+        active: { type: 'number', example: 25 },
+        inactive: { type: 'number', example: 3 },
+      },
+    },
+  })
+  async getStatusStatistics(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+  ): Promise<Record<string, number>> {
+    return this.customerService.getStatusStatistics(organizationId);
+  }
+
+  /**
    * Get customer by ID
    */
   // @RequirePermission('customers:read') // TODO: Re-enable
@@ -293,38 +324,8 @@ export class CustomerController {
   async delete(
     @Param('id', ParseUUIDPipe) id: string,
     @OrganizationContext() organizationId: string,
-    @CurrentUser() _currentUser: CurrentUserType,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
-    await this.customerService.delete(id, organizationId);
-  }
-
-  /**
-   * Get customer statistics by status
-   */
-  // @RequirePermission('customers:read') // TODO: Re-enable
-  @Get('statistics/status')
-  @ApiOperation({
-    summary: 'Get customer status statistics',
-    description:
-      'Returns count of customers grouped by status for the specified organization. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Status statistics',
-    schema: {
-      type: 'object',
-      properties: {
-        lead: { type: 'number', example: 5 },
-        prospect: { type: 'number', example: 10 },
-        active: { type: 'number', example: 25 },
-        inactive: { type: 'number', example: 3 },
-      },
-    },
-  })
-  async getStatusStatistics(
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() _currentUser: CurrentUserType,
-  ): Promise<Record<string, number>> {
-    return this.customerService.getStatusStatistics(organizationId);
+    await this.customerService.delete(id, organizationId, currentUser.id);
   }
 }

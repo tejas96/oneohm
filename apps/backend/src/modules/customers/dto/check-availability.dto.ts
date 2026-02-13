@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Exclude, Expose } from 'class-transformer';
 import { IsEmail, IsOptional, IsString, IsUUID } from 'class-validator';
 
 /**
@@ -44,25 +45,30 @@ export class CheckAvailabilityQueryDto {
 /**
  * Response DTO for availability check
  */
+@Exclude()
 export class AvailabilityResponseDto {
+  @Expose()
   @ApiProperty({
     description: 'Whether the phone number is already registered',
     example: true,
   })
-  phoneExists: boolean;
+  phoneExists!: boolean;
 
+  @Expose()
   @ApiProperty({
     description: 'Whether the email is already registered',
     example: false,
   })
-  emailExists: boolean;
+  emailExists!: boolean;
 
+  @Expose()
   @ApiPropertyOptional({
     description: 'Error message for phone if it exists',
     example: 'This phone number is already registered',
   })
   phoneError?: string;
 
+  @Expose()
   @ApiPropertyOptional({
     description: 'Error message for email if it exists',
     example: 'This email is already registered',
