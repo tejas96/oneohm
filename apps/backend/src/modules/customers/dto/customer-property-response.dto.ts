@@ -9,6 +9,7 @@ import {
 import { Exclude, Expose, Type } from 'class-transformer';
 
 import { PropertyDocumentDto } from './property-document.dto';
+import { PropertyFollowupDto } from './property-followup.dto';
 
 /**
  * DTO for customer property response
@@ -105,17 +106,14 @@ export class CustomerPropertyResponseDto {
   @Expose()
   leadTemperature!: LeadTemperature;
 
-  @ApiPropertyOptional()
+  // ==================== Followups ====================
+  @ApiPropertyOptional({
+    description: 'Scheduled follow-up activities for this property',
+    type: [PropertyFollowupDto],
+  })
   @Expose()
-  nextFollowUpDate?: Date;
-
-  @ApiPropertyOptional()
-  @Expose()
-  lastContactDate?: Date;
-
-  @ApiPropertyOptional()
-  @Expose()
-  followUpNotes?: string;
+  @Type(() => PropertyFollowupDto)
+  followups!: PropertyFollowupDto[];
 
   // ==================== Flags ====================
   @ApiProperty()

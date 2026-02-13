@@ -9,7 +9,6 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
-  IsDateString,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -22,6 +21,7 @@ import {
 } from 'class-validator';
 
 import { PropertyDocumentDto } from './property-document.dto';
+import { PropertyFollowupDto } from './property-followup.dto';
 
 /**
  * DTO for creating a new customer property (installation site)
@@ -189,20 +189,16 @@ export class CreateCustomerPropertyDto {
   @IsOptional()
   leadTemperature?: LeadTemperature;
 
+  // ==================== Followups ====================
   @ApiPropertyOptional({
-    example: '2025-01-20',
-    description: 'Next follow-up date',
+    type: [PropertyFollowupDto],
+    description: 'Scheduled follow-up activities for this property',
   })
-  @IsDateString()
   @IsOptional()
-  nextFollowUpDate?: string;
-
-  @ApiPropertyOptional({
-    description: 'Notes for next follow-up',
-  })
-  @IsString()
-  @IsOptional()
-  followUpNotes?: string;
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PropertyFollowupDto)
+  followups?: PropertyFollowupDto[];
 
   // ==================== Flags ====================
   @ApiPropertyOptional({

@@ -9,7 +9,6 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
-  IsDateString,
   IsEnum,
   IsNumber,
   IsOptional,
@@ -178,21 +177,6 @@ export class UpdateCustomerPropertyDto {
   @IsEnum(LeadTemperature)
   @IsOptional()
   leadTemperature?: LeadTemperature;
-
-  @ApiPropertyOptional({
-    example: '2025-01-20',
-    description: 'Next follow-up date',
-  })
-  @IsDateString()
-  @IsOptional()
-  nextFollowUpDate?: string;
-
-  @ApiPropertyOptional({
-    description: 'Notes for next follow-up',
-  })
-  @IsString()
-  @IsOptional()
-  followUpNotes?: string;
 
   // ==================== Flags ====================
   @ApiPropertyOptional({
