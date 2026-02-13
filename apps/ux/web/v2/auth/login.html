@@ -40,10 +40,6 @@
     <style>
         body { font-family: 'Inter', system-ui, sans-serif; }
         
-        .gradient-bg {
-            background: linear-gradient(135deg, #76c044 0%, #5ea031 40%, #0d74b8 100%);
-        }
-        
         .tab-active {
             background-color: #76c044;
             color: white;
@@ -63,144 +59,472 @@
             outline: 2px solid #76c044;
             outline-offset: 2px;
         }
+        
+        /* Loading spinner */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Shake animation for errors */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+            20%, 40%, 60%, 80% { transform: translateX(4px); }
+        }
+        
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        /* Error state for inputs */
+        .input-error {
+            border-color: #dc2626 !important;
+        }
+
+        /* ========== MODERN LEFT PANEL STYLES ========== */
+        
+        /* Dark gradient background */
+        .hero-bg {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Animated mesh gradient overlay */
+        .mesh-gradient {
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse 80% 50% at 20% 40%, rgba(118, 192, 68, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse 60% 80% at 80% 20%, rgba(13, 116, 184, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse 50% 60% at 60% 80%, rgba(118, 192, 68, 0.08) 0%, transparent 50%);
+            animation: meshMove 15s ease-in-out infinite alternate;
+        }
+        
+        @keyframes meshMove {
+            0% { transform: scale(1) translateY(0); }
+            100% { transform: scale(1.1) translateY(-20px); }
+        }
+        
+        /* Floating orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            animation: float 8s ease-in-out infinite;
+        }
+        
+        .orb-1 {
+            width: 300px;
+            height: 300px;
+            background: rgba(118, 192, 68, 0.2);
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .orb-2 {
+            width: 200px;
+            height: 200px;
+            background: rgba(13, 116, 184, 0.15);
+            top: 60%;
+            right: 10%;
+            animation-delay: -3s;
+        }
+        
+        .orb-3 {
+            width: 150px;
+            height: 150px;
+            background: rgba(118, 192, 68, 0.12);
+            bottom: 20%;
+            left: 30%;
+            animation-delay: -5s;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-30px) scale(1.05); }
+        }
+        
+        /* Grid pattern overlay */
+        .grid-pattern {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse 80% 80% at center, black 40%, transparent 100%);
+        }
+        
+        /* Animated particles */
+        .particles {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(118, 192, 68, 0.6);
+            border-radius: 50%;
+            animation: rise 10s linear infinite;
+        }
+        
+        @keyframes rise {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-10vh) scale(1);
+                opacity: 0;
+            }
+        }
+        
+        /* Glassmorphic cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+        }
+        
+        .glass-card-bright {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+        }
+        
+        /* Stat card hover effect */
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Gradient text */
+        .gradient-text {
+            background: linear-gradient(135deg, #76c044 0%, #8fd35f 50%, #76c044 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Glowing accent */
+        .glow {
+            box-shadow: 0 0 40px rgba(118, 192, 68, 0.3);
+        }
+        
+        /* Animated border */
+        .animated-border {
+            position: relative;
+        }
+        
+        .animated-border::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 16px;
+            background: linear-gradient(90deg, #76c044, #0d74b8, #76c044);
+            background-size: 200% 100%;
+            animation: borderGlow 3s linear infinite;
+            z-index: -1;
+            opacity: 0.5;
+        }
+        
+        @keyframes borderGlow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+        
+        /* Pulse animation for live indicator */
+        .pulse-dot {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        
+        /* Counter animation */
+        .counter {
+            font-variant-numeric: tabular-nums;
+        }
+        
+        /* ========== DIAGONAL SPLIT LAYOUT ========== */
+        
+        /* Diagonal hero panel - steeper angle */
+        .hero-diagonal {
+            clip-path: polygon(0 0, 100% 0, 75% 100%, 0 100%);
+            width: 62%;
+            padding-right: 120px;
+        }
+        
+        /* Right panel adjustment for diagonal */
+        .login-panel {
+            margin-left: -12%;
+            position: relative;
+            z-index: 10;
+        }
+        
+        /* Diagonal edge glow effect */
+        .diagonal-glow {
+            position: absolute;
+            right: 18%;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(to bottom, 
+                transparent 0%, 
+                rgba(118, 192, 68, 0.5) 20%, 
+                rgba(118, 192, 68, 0.7) 50%, 
+                rgba(13, 116, 184, 0.5) 80%, 
+                transparent 100%
+            );
+            transform: skewX(-12deg);
+            filter: blur(3px);
+        }
+        
+        /* Second glow line for depth */
+        .diagonal-glow-2 {
+            position: absolute;
+            right: 19%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.15) 30%, 
+                rgba(255, 255, 255, 0.25) 50%, 
+                rgba(255, 255, 255, 0.15) 70%, 
+                transparent 100%
+            );
+            transform: skewX(-12deg);
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-[13px]">
     <div class="min-h-screen flex">
-        <!-- Left Panel - Branding -->
-        <div class="hidden lg:flex lg:w-1/2 gradient-bg items-center justify-center p-12 relative overflow-hidden">
-            <!-- Background Pattern -->
-            <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-10 left-10 w-72 h-72 bg-white rounded-full blur-3xl"></div>
-                <div class="absolute bottom-20 right-10 w-96 h-96 bg-white rounded-full blur-3xl"></div>
-                <div class="absolute top-1/2 left-1/3 w-64 h-64 bg-white rounded-full blur-3xl"></div>
+        <!-- Left Panel - Modern Hero (Diagonal) -->
+        <div class="hidden lg:flex hero-bg hero-diagonal items-center justify-start p-10 pl-16 relative">
+            <!-- Animated Background Elements -->
+            <div class="mesh-gradient"></div>
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+            <div class="grid-pattern"></div>
+            
+            <!-- Floating Particles -->
+            <div class="particles">
+                <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
+                <div class="particle" style="left: 20%; animation-delay: 2s;"></div>
+                <div class="particle" style="left: 35%; animation-delay: 4s;"></div>
+                <div class="particle" style="left: 50%; animation-delay: 1s;"></div>
+                <div class="particle" style="left: 65%; animation-delay: 3s;"></div>
+                <div class="particle" style="left: 75%; animation-delay: 5s;"></div>
             </div>
             
-            <div class="relative z-10 max-w-md">
-                <!-- Logo -->
-                <div class="mb-10 text-center">
-                    <div class="mb-6 flex justify-center">
-                        <img src="../assets/oneohmlogo.png" alt="OneOhm - Solar EPC Platform" class="h-20 w-auto object-contain">
+            <!-- Diagonal edge glow -->
+            <div class="diagonal-glow"></div>
+            <div class="diagonal-glow-2"></div>
+            
+            <!-- Content -->
+            <div class="relative z-10 max-w-md w-full">
+                <!-- Logo & Tagline -->
+                <div class="mb-10">
+                    <div class="mb-6">
+                        <img src="../assets/oneohmlogo.png" alt="OneOhm - Solar EPC Platform" class="h-14 w-auto object-contain brightness-0 invert opacity-95">
                     </div>
-                    <p class="text-xl text-white/90 font-medium leading-relaxed">
-                        Powering the future of solar energy management
+                    <h2 class="text-3xl font-semibold text-white leading-tight mb-3">
+                        Manage your solar
+                        <span class="gradient-text">projects end-to-end</span>
+                    </h2>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        From lead capture to project handover — streamline your entire EPC workflow in one platform.
                     </p>
                 </div>
                 
-                <!-- Features -->
-                <div class="space-y-5 mb-10">
-                    <div class="flex items-start space-x-4">
-                        <div class="w-10 h-9 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center flex-shrink-0">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
+                <!-- Workflow Steps Grid -->
+                <div class="grid grid-cols-3 gap-3 mb-8">
+                    <!-- Step 1 -->
+                    <div class="glass-card-bright stat-card p-4 col-span-1">
+                        <div class="flex items-center gap-1.5 mb-2">
+                            <div class="w-5 h-5 rounded-full bg-primary/30 flex items-center justify-center text-[10px] text-primary font-semibold">1</div>
+                            <span class="text-[10px] text-gray-400 uppercase tracking-wider">Capture</span>
                         </div>
-                        <div>
-                            <h3 class="font-semibold text-white text-lg">Complete Project Management</h3>
-                            <p class="text-white/70 text-sm">End-to-end solar project lifecycle tracking</p>
-                        </div>
+                        <p class="text-sm font-medium text-white">Leads & Sites</p>
+                        <p class="text-[10px] text-gray-500 mt-1">Customer onboarding</p>
                     </div>
                     
-                    <div class="flex items-start space-x-4">
-                        <div class="w-10 h-9 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center flex-shrink-0">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                            </svg>
+                    <!-- Step 2 -->
+                    <div class="glass-card-bright stat-card p-4 col-span-1">
+                        <div class="flex items-center gap-1.5 mb-2">
+                            <div class="w-5 h-5 rounded-full bg-blue-400/30 flex items-center justify-center text-[10px] text-blue-400 font-semibold">2</div>
+                            <span class="text-[10px] text-gray-400 uppercase tracking-wider">Quote</span>
                         </div>
-                        <div>
-                            <h3 class="font-semibold text-white text-lg">Real-time Analytics</h3>
-                            <p class="text-white/70 text-sm">AI-powered insights and performance metrics</p>
-                        </div>
+                        <p class="text-sm font-medium text-white">Design & BOM</p>
+                        <p class="text-[10px] text-gray-500 mt-1">System sizing</p>
                     </div>
                     
-                    <div class="flex items-start space-x-4">
-                        <div class="w-10 h-9 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center flex-shrink-0">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                            </svg>
+                    <!-- Step 3 -->
+                    <div class="glass-card-bright stat-card p-4 col-span-1">
+                        <div class="flex items-center gap-1.5 mb-2">
+                            <div class="w-5 h-5 rounded-full bg-amber-400/30 flex items-center justify-center text-[10px] text-amber-400 font-semibold">3</div>
+                            <span class="text-[10px] text-gray-400 uppercase tracking-wider">Execute</span>
                         </div>
-                        <div>
-                            <h3 class="font-semibold text-white text-lg">Smart Automation</h3>
-                            <p class="text-white/70 text-sm">Streamlined workflows and approvals</p>
-                        </div>
+                        <p class="text-sm font-medium text-white">Installation</p>
+                        <p class="text-[10px] text-gray-500 mt-1">Track progress</p>
                     </div>
                 </div>
-
-                <!-- Testimonial -->
-                <div class="p-6 bg-white/10 backdrop-blur-lg rounded-lg border border-white/20">
-                    <div class="flex items-center space-x-1 mb-3">
-                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                        <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                    </div>
-                    <p class="text-white/90 italic text-sm leading-relaxed">"OneOhm has transformed how we manage solar installations. Project efficiency increased by 40% in just 3 months!"</p>
-                    <div class="flex items-center mt-4">
-                        <div class="w-10 h-10 bg-white/30 rounded-full flex items-center justify-center text-white font-bold text-sm">RK</div>
-                        <div class="ml-3">
-                            <p class="text-white font-semibold text-sm">Rajesh Kumar</p>
-                            <p class="text-white/60 text-xs">CEO, SolarTech India</p>
+                
+                <!-- Feature Pills -->
+                <div class="flex flex-wrap gap-2 mb-8">
+                    <span class="px-3 py-1.5 glass-card text-[11px] text-gray-300 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        CRM
+                    </span>
+                    <span class="px-3 py-1.5 glass-card text-[11px] text-gray-300 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Quotations
+                    </span>
+                    <span class="px-3 py-1.5 glass-card text-[11px] text-gray-300 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                        </svg>
+                        Projects
+                    </span>
+                    <span class="px-3 py-1.5 glass-card text-[11px] text-gray-300 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Loans
+                    </span>
+                </div>
+                
+                <!-- Trust Section -->
+                <div class="glass-card p-4 animated-border">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-white text-sm font-medium">Built for Solar EPC</p>
+                                <p class="text-gray-400 text-[11px]">Rooftop & ground-mount projects</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-primary text-lg font-semibold">150+</p>
+                            <p class="text-gray-500 text-[10px]">MW managed</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Right Panel - Login Form -->
-        <div class="flex-1 flex items-center justify-center p-4 lg:p-12">
+        <!-- Right Panel - Login Form (Diagonal) -->
+        <div class="flex-1 lg:login-panel flex items-center justify-center p-4 lg:p-8 lg:pr-12">
             <div class="w-full max-w-md">
                 <!-- Logo for Mobile -->
                 <div class="lg:hidden text-center mb-8">
-                    <img src="../assets/oneohmlogo.png" alt="OneOhm - Solar EPC Platform" class="h-14 w-auto object-contain mx-auto">
+                    <div class="inline-flex items-center gap-2">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                        <div class="text-left">
+                            <h1 class="text-xl font-semibold text-gray-900">OneOhm</h1>
+                            <p class="text-gray-400 text-[10px]">Solar EPC Platform</p>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Login Card -->
-                <div class="bg-white rounded-lg shadow-xl p-8">
-                    <div class="mb-8">
-                        <h2 class="text-xl font-semibold text-gray-900 mb-2">Welcome back</h2>
-                        <p class="text-gray-500 text-sm">Sign in to your account to continue</p>
+                <!-- Login Card (KEPT AS IS) -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+                    <div class="mb-6">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-1">Welcome back</h2>
+                        <p class="text-gray-500 text-[13px]">Sign in to your account to continue</p>
                     </div>
 
                     <!-- Tab Switcher -->
-                    <div class="flex bg-gray-100 rounded-lg p-1 mb-6">
-                        <button id="passwordTab" onclick="switchTab('password')" class="flex-1 py-2 px-4 rounded-lg text-[13px] font-medium transition-all duration-200 tab-active">
+                    <div class="flex bg-gray-100 rounded-lg p-1 mb-5" role="tablist" aria-label="Login method">
+                        <button id="passwordTab" onclick="switchTab('password')" role="tab" aria-selected="true" aria-controls="passwordForm" class="flex-1 py-2 px-4 rounded-lg text-[13px] font-medium transition-all duration-200 tab-active">
                             Password
                         </button>
-                        <button id="otpTab" onclick="switchTab('otp')" class="flex-1 py-2 px-4 rounded-lg text-[13px] font-medium transition-all duration-200 tab-inactive">
+                        <button id="otpTab" onclick="switchTab('otp')" role="tab" aria-selected="false" aria-controls="otpForm" class="flex-1 py-2 px-4 rounded-lg text-[13px] font-medium transition-all duration-200 tab-inactive">
                             OTP
                         </button>
                     </div>
 
                     <!-- Password Login Form -->
-                    <form id="passwordForm" class="space-y-5">
+                    <form id="passwordForm" class="space-y-4" role="tabpanel" onsubmit="handlePasswordLogin(event)">
+                        <!-- Error Alert -->
+                        <div id="passwordError" class="hidden p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-[13px] flex items-center gap-2" role="alert">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span id="passwordErrorText">Invalid email or password</span>
+                        </div>
+
                         <!-- Email Input -->
                         <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-2">Email Address</label>
+                            <label for="emailInput" class="block text-xs font-medium text-gray-500 mb-1.5">Email Address</label>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                                     </svg>
                                 </div>
-                                <input type="email" placeholder="you@company.com" 
-                                    class="w-full pl-12 pr-4 py-2 border-2 border-gray-100 rounded-lg focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-gray-900 placeholder-gray-400">
+                                <input type="email" id="emailInput" name="email" placeholder="you@company.com" required
+                                    autocomplete="email"
+                                    class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all text-[13px] text-gray-900 placeholder-gray-400">
                             </div>
                         </div>
 
                         <!-- Password Input -->
                         <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-2">Password</label>
+                            <label for="passwordInput" class="block text-xs font-medium text-gray-500 mb-1.5">Password</label>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                                     </svg>
                                 </div>
-                                <input type="password" id="passwordInput" placeholder="Enter your password" 
-                                    class="w-full pl-12 pr-12 py-2 border-2 border-gray-100 rounded-lg focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-gray-900 placeholder-gray-400">
-                                <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-0 pr-4 flex items-center">
-                                    <svg id="eyeIcon" class="w-5 h-5 text-gray-400 hover:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <input type="password" id="passwordInput" name="password" placeholder="Enter your password" required
+                                    autocomplete="current-password"
+                                    class="w-full pl-10 pr-10 py-2 border border-gray-200 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all text-[13px] text-gray-900 placeholder-gray-400">
+                                <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-0 pr-3 flex items-center" aria-label="Toggle password visibility">
+                                    <svg id="eyeIcon" class="w-4 h-4 text-gray-400 hover:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                     </svg>
@@ -211,55 +535,49 @@
                         <!-- Remember Me & Forgot Password -->
                         <div class="flex items-center justify-between">
                             <label class="flex items-center cursor-pointer">
-                                <input type="checkbox" class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary focus:ring-offset-0">
-                                <span class="ml-2 text-sm text-gray-500">Remember me</span>
+                                <input type="checkbox" name="remember" class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary focus:ring-offset-0">
+                                <span class="ml-2 text-[13px] text-gray-500">Remember me</span>
                             </label>
                             <a href="forgot-password.html" class="text-[13px] font-medium text-primary hover:text-primary-dark transition-colors">Forgot password?</a>
                         </div>
 
                         <!-- Login Button -->
-                        <a href="../dashboard/index.html" class="block w-full text-center bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white font-semibold py-3.5 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] shadow-lg hover:shadow-xl">
-                            Sign In
-                        </a>
+                        <button type="submit" id="passwordSubmitBtn" class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 shadow-sm hover:shadow disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none">
+                            <span id="passwordBtnText">Sign In</span>
+                            <div id="passwordSpinner" class="spinner hidden"></div>
+                        </button>
                     </form>
 
                     <!-- OTP Login Form -->
-                    <form id="otpForm" class="space-y-5 hidden">
+                    <form id="otpForm" class="space-y-4 hidden" role="tabpanel" onsubmit="handleSendOTP(event)">
+                        <!-- Error Alert -->
+                        <div id="otpError" class="hidden p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-[13px] flex items-center gap-2" role="alert">
+                            <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span id="otpErrorText">Invalid phone number</span>
+                        </div>
+
                         <!-- Phone Input -->
                         <div>
-                            <label class="block text-xs font-medium text-gray-500 mb-2">Phone Number</label>
-                            <div class="flex space-x-3">
-                                <div class="relative">
-                                    <select class="appearance-none bg-gray-50 border-2 border-gray-100 rounded-lg py-2 pl-4 pr-10 text-gray-700 font-medium focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all">
-                                        <option value="+91">🇮🇳 +91</option>
-                                        <option value="+1">🇺🇸 +1</option>
-                                        <option value="+44">🇬🇧 +44</option>
-                                        <option value="+971">🇦🇪 +971</option>
-                                    </select>
-                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                        </svg>
-                                    </div>
+                            <label for="phoneInput" class="block text-xs font-medium text-gray-500 mb-1.5">Phone Number</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-[13px] text-gray-500 font-medium">+91</span>
                                 </div>
-                                <div class="relative flex-1">
-                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                                        </svg>
-                                    </div>
-                                    <input type="tel" placeholder="Enter phone number" 
-                                        class="w-full pl-12 pr-4 py-2 border-2 border-gray-100 rounded-lg focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all text-gray-900 placeholder-gray-400">
-                                </div>
+                                <input type="tel" id="phoneInput" name="phone" placeholder="Enter 10 digit number" required
+                                    inputmode="numeric" pattern="[0-9]{10}" autocomplete="tel" maxlength="10"
+                                    class="w-full pl-12 pr-4 py-2 border border-gray-200 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/10 outline-none transition-all text-[13px] text-gray-900 placeholder-gray-400">
                             </div>
                         </div>
 
                         <!-- Send OTP Button -->
-                        <button type="button" onclick="window.location.href='otp-verify.html'" class="w-full bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white font-semibold py-3.5 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] shadow-lg hover:shadow-xl">
-                            Send OTP
+                        <button type="submit" id="otpSubmitBtn" class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white font-medium py-2.5 px-4 rounded-lg transition-all duration-200 shadow-sm hover:shadow disabled:opacity-60 disabled:cursor-not-allowed">
+                            <span id="otpBtnText">Send OTP</span>
+                            <div id="otpSpinner" class="spinner hidden"></div>
                         </button>
 
-                        <p class="text-center text-sm text-gray-500">
+                        <p class="text-center text-[13px] text-gray-500">
                             We'll send a 6-digit verification code to your phone
                         </p>
                     </form>
@@ -267,12 +585,12 @@
                 </div>
 
                 <!-- Footer -->
-                <div class="mt-8 text-center text-sm text-gray-500">
+                <div class="mt-6 text-center text-[11px] text-gray-400">
                     <p>© 2026 OneOhm Solar. All rights reserved.</p>
-                    <div class="mt-3 space-x-4">
-                        <a href="#" class="hover:text-primary transition-colors">Privacy Policy</a>
+                    <div class="mt-2 space-x-3">
+                        <a href="#" class="hover:text-primary transition-colors">Privacy</a>
                         <span class="text-gray-300">•</span>
-                        <a href="#" class="hover:text-primary transition-colors">Terms of Service</a>
+                        <a href="#" class="hover:text-primary transition-colors">Terms</a>
                         <span class="text-gray-300">•</span>
                         <a href="#" class="hover:text-primary transition-colors">Support</a>
                     </div>
@@ -284,8 +602,16 @@
     <script>
         function togglePassword() {
             const passwordInput = document.getElementById('passwordInput');
+            const eyeIcon = document.getElementById('eyeIcon');
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
+            
+            // Toggle eye icon
+            if (type === 'text') {
+                eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>`;
+            } else {
+                eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`;
+            }
         }
 
         function switchTab(tab) {
@@ -294,17 +620,102 @@
             const passwordForm = document.getElementById('passwordForm');
             const otpForm = document.getElementById('otpForm');
 
+            // Hide errors when switching
+            document.getElementById('passwordError').classList.add('hidden');
+            document.getElementById('otpError').classList.add('hidden');
+
             if (tab === 'password') {
                 passwordTab.className = 'flex-1 py-2 px-4 rounded-lg text-[13px] font-medium transition-all duration-200 tab-active';
+                passwordTab.setAttribute('aria-selected', 'true');
                 otpTab.className = 'flex-1 py-2 px-4 rounded-lg text-[13px] font-medium transition-all duration-200 tab-inactive';
+                otpTab.setAttribute('aria-selected', 'false');
                 passwordForm.classList.remove('hidden');
                 otpForm.classList.add('hidden');
             } else {
                 otpTab.className = 'flex-1 py-2 px-4 rounded-lg text-[13px] font-medium transition-all duration-200 tab-active';
+                otpTab.setAttribute('aria-selected', 'true');
                 passwordTab.className = 'flex-1 py-2 px-4 rounded-lg text-[13px] font-medium transition-all duration-200 tab-inactive';
+                passwordTab.setAttribute('aria-selected', 'false');
                 otpForm.classList.remove('hidden');
                 passwordForm.classList.add('hidden');
             }
+        }
+
+        function showError(formType, message) {
+            const errorDiv = document.getElementById(formType + 'Error');
+            const errorText = document.getElementById(formType + 'ErrorText');
+            const form = document.getElementById(formType + 'Form');
+            
+            errorText.textContent = message;
+            errorDiv.classList.remove('hidden');
+            form.classList.add('shake');
+            
+            setTimeout(() => form.classList.remove('shake'), 500);
+        }
+
+        function hideError(formType) {
+            document.getElementById(formType + 'Error').classList.add('hidden');
+        }
+
+        function setLoading(formType, isLoading) {
+            const btn = document.getElementById(formType + 'SubmitBtn');
+            const text = document.getElementById(formType + 'BtnText');
+            const spinner = document.getElementById(formType + 'Spinner');
+            
+            if (isLoading) {
+                btn.disabled = true;
+                text.textContent = formType === 'password' ? 'Signing in...' : 'Sending...';
+                spinner.classList.remove('hidden');
+            } else {
+                btn.disabled = false;
+                text.textContent = formType === 'password' ? 'Sign In' : 'Send OTP';
+                spinner.classList.add('hidden');
+            }
+        }
+
+        function handlePasswordLogin(event) {
+            event.preventDefault();
+            hideError('password');
+            
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            
+            // Basic validation
+            if (!email || !password) {
+                showError('password', 'Please fill in all fields');
+                return;
+            }
+            
+            // Show loading state
+            setLoading('password', true);
+            
+            // Simulate API call (replace with actual API call)
+            setTimeout(() => {
+                // For demo: simulate success and redirect
+                window.location.href = '../dashboard/index.html';
+            }, 1500);
+        }
+
+        function handleSendOTP(event) {
+            event.preventDefault();
+            hideError('otp');
+            
+            const phone = document.getElementById('phoneInput').value;
+            
+            // Basic validation
+            if (!phone || phone.length < 10) {
+                showError('otp', 'Please enter a valid phone number');
+                return;
+            }
+            
+            // Show loading state
+            setLoading('otp', true);
+            
+            // Simulate API call (replace with actual API call)
+            setTimeout(() => {
+                // Redirect to OTP verification page
+                window.location.href = 'otp-verify.html';
+            }, 1500);
         }
     </script>
 </body>

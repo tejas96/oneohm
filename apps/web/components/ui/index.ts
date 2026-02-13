@@ -234,3 +234,7 @@ export type { ProgressProps, ProgressWithLabelProps, CircularProgressProps, Segm
 // Spinner
 export { Spinner, spinnerVariants, LoadingDots, loadingDotsVariants } from './spinner';
 export type { SpinnerProps, LoadingDotsProps } from './spinner';
+
+// Typography
+export { Typography } from './typography';
+export type { TypographyProps } from './typography';
