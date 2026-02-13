@@ -1,0 +1,100 @@
+---
+description: Guidelines for reviewing pull requests and code changes
+alwaysApply: false
+---
+
+# Pull Request Review Standards
+
+> **Review like a Staff Engineer. Be thorough but constructive.**
+
+---
+
+## 🔍 Review Checklist
+
+### 1. Architecture & Design
+- [ ] Follows existing patterns in the codebase
+- [ ] No unnecessary complexity or over-engineering
+- [ ] Proper separation of concerns (controller → service → repository)
+- [ ] Types in correct location (shared-types vs app-specific)
+
+### 2. Code Quality
+- [ ] No `any` types — proper TypeScript usage
+- [ ] No duplicate code — reuses existing utilities
+- [ ] Meaningful variable/function names
+- [ ] No dead code or commented-out blocks
+- [ ] Proper error handling
+
+### 3. Backend Specific
+- [ ] Repository pattern followed (no TypeORM in services)
+- [ ] Pagination implemented for list endpoints
+- [ ] Soft delete respected (`deletedAt IS NULL`)
+- [ ] Multi-org isolation (`organizationId` filter)
+- [ ] Audit fields set (`createdBy`/`updatedBy`)
+- [ ] DTOs validated with class-validator
+- [ ] Proper logging (Logger, not console.log)
+
+### 4. Frontend Specific
+- [ ] No business logic in components
+- [ ] Uses existing UI components (not recreating)
+- [ ] Loading/error/empty states handled
+- [ ] Follows OneOhm V2 styling standards
+- [ ] No hardcoded values (uses Tailwind tokens)
+- [ ] Proper state management (Query vs Zustand vs useState)
+
+### 5. Database/Migrations
+- [ ] Migration has both `up()` and `down()` methods
+- [ ] DDL only (no DML unless necessary)
+- [ ] Indexes added for frequently queried columns
+- [ ] Triggers for `updated_at` if applicable
+
+### 6. Security
+- [ ] Input validation at entry points
+- [ ] No sensitive data in logs
+- [ ] Authorization checks in place
+- [ ] No hardcoded secrets
+
+---
+
+## 💬 Review Comment Guidelines
+
+**Be specific and actionable:**
+
+```
+❌ Bad: "This is wrong"
+✅ Good: "This query is missing `deletedAt IS NULL` check. 
+         Add: `where: { id, deletedAt: IsNull() }`"
+```
+
+**Categorize comments:**
+
+| Prefix | Meaning |
+|--------|---------|
+| `[BLOCKER]` | Must fix before merge |
+| `[SUGGESTION]` | Nice to have, not required |
+| `[QUESTION]` | Need clarification |
+| `[NIT]` | Minor style issue |
+
+---
+
+## ✅ Approval Criteria
+
+**Approve when:**
+- All blockers resolved
+- Code follows project patterns
+- Tests pass (if applicable)
+- No security concerns
+
+**Request changes when:**
+- Breaking patterns (TypeORM in services, any types)
+- Missing error handling
+- Security vulnerabilities
+- Missing pagination on list endpoints
+
+---
+
+## 🚀 Before Approving, Verify:
+
+1. **Does it work?** — Tested locally or in preview
+2. **Is it maintainable?** — Readable in 12 months
+3. **Is it consistent?** — Matches existing codebase style
+4. **Is it complete?** — Handles edge cases

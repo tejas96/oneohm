@@ -1,0 +1,80 @@
+---
+globs: apps/ux/**/*.html
+---
+
+# UX Prototypes — OneOhm V2 Design System
+
+> **Compact, pixel-accurate, consistent. Never generic.**
+
+---
+
+## 📐 Layout Dimensions
+
+| Element | Size |
+|---------|------|
+| Header | 48px height |
+| Rail | 48px width |
+| Panel | 200px width |
+| Content padding | 16px (p-4) |
+
+---
+
+## 🔤 Typography
+
+| Use | Class | Weight |
+|-----|-------|--------|
+| Body text | `text-[13px]` | 400 (normal) |
+| Labels | `text-[13px] font-medium` | 500 |
+| Titles | `text-[15px] font-semibold` | 600 |
+| Badges | `text-[11px]` | 500 |
+
+**NEVER use `font-bold` (700)**
+
+---
+
+## 🎨 Colors & Borders
+
+| Property | Standard | Avoid |
+|----------|----------|-------|
+| Borders | `border-gray-100` | border-gray-200 |
+| Background | `bg-white` or `bg-gray-50` | — |
+| Shadow | `shadow-sm` or none | shadow-md+ |
+
+---
+
+## 📦 Spacing
+
+| Property | Standard | Avoid |
+|----------|----------|-------|
+| Padding | `p-4` | p-5, p-6 |
+| Gap | `gap-3` or `gap-4` | gap-6+ |
+| Radius | `rounded-lg` | rounded-xl, rounded-2xl |
+
+---
+
+## 📊 Tables
+
+| Property | Standard |
+|----------|----------|
+| Row height | `py-2` (44px comfortable) |
+| Header | `text-[11px] font-medium text-gray-500` |
+| Cell text | `text-[13px]` |
+| Hover | `hover:bg-gray-50` |
+
+---
+
+## 🏷️ Badges
+
+```html
+<span class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-green-50 text-green-700">
+  Active
+</span>
+```
+
+---
+
+## 📋 Reference Files
+
+- `apps/ux/web/v2/STYLE-GUIDE.md`
+- `apps/ux/web/v2/dashboard/index.html` (layout reference)
+- `apps/ux/web/v2/crm/customers.html` (table reference)

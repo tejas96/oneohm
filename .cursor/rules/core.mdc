@@ -1,0 +1,111 @@
+---
+alwaysApply: true
+---
+
+# OneOhm EPC — Core Engineering Standards
+
+> **Design patterns + Reusability = Production-ready code. No exceptions.**
+
+---
+
+## 🔴 MANDATORY: Before ANY Code Change
+
+1. **Search existing code** — Never duplicate. Use grep/search to find existing patterns.
+2. **Read related files** — Understand the context and architecture.
+3. **Follow existing patterns** — Match the style, naming, and structure of surrounding code.
+4. **Check for reusability** — Can this be shared? Should it be in `common/` or `shared/`?
+5. **If uncertain, ask** — Don't guess. Clarify requirements.
+
+---
+
+## 🏛️ Design Patterns & Reusability
+
+> **Before writing code, ask: "What pattern solves this problem best?"**
+
+- **Think in patterns** — Factory, Strategy, Observer, Singleton, etc. Use what fits.
+- **DRY** — If you write it twice, extract it.
+- **Composition > Inheritance** — Build from smaller pieces.
+- **Single Responsibility** — One purpose per unit.
+
+**Reusability Rule:** If logic/component is used in 2+ places → extract to shared.
+
+---
+
+## 🏗️ Project Structure
+
+```
+oneohm-epc/
+├── apps/
+│   ├── backend/     # NestJS API (TypeORM, PostgreSQL)
+│   └── web/         # Next.js 15 frontend
+├── libs/
+│   ├── shared-types/   # Enums, interfaces, types (USE THESE)
+│   ├── shared-utils/   # Backend decorators, helpers
+│   ├── shared-ui/      # Shared UI components
+│   └── shared-theme/   # Theme configuration
+```
+
+---
+
+## 🎯 Strict TypeScript
+
+- **NEVER use `any`** — Use proper types
+- **Use strict null checks** — Handle undefined/null explicitly
+- **Prefer interfaces over type aliases** for objects
+
+---
+
+## 📦 Types Location Decision
+
+**Before creating ANY type, enum, or interface:**
+
+| Question | Location |
+|----------|----------|
+| Needed by BOTH backend AND frontend? | `@oneohm-epc/shared-types` |
+| Backend only? | `apps/backend/src/modules/[feature]/types/` |
+| Frontend only? | `apps/web/lib/types/` or feature folder |
+
+**Examples:**
+- ✅ `shared-types`: CustomerStatus, ProjectPhase, PaginatedResponse
+- ❌ Keep in backend: Repository options, internal service types
+- ❌ Keep in frontend: Component props, form schemas, UI state
+
+---
+
+## 📛 Naming Conventions
+
+| Item | Convention | Example |
+|------|------------|---------|
+| Files | kebab-case | `customer-profile.entity.ts` |
+| Classes | PascalCase | `CustomerProfileEntity` |
+| Functions/Methods | camelCase | `findByOrganization` |
+| Variables | camelCase | `organizationId` |
+| Constants | UPPER_SNAKE | `ACCESS_TOKEN_KEY` |
+| Enums | PascalCase | `CustomerStatus.ACTIVE` |
+| DB columns | snake_case | `created_at`, `organization_id` |
+
+---
+
+## 🚫 Anti-Patterns (REFUSE These)
+
+❌ Duplicating existing components/utilities — **SEARCH FIRST**  
+❌ Copy-pasting code instead of extracting shared logic  
+❌ Creating new components when existing ones can be extended  
+❌ Inline logic that should be in a hook/service/utility  
+❌ Business logic in controllers or UI components  
+❌ Raw SQL or TypeORM queries in services (use repositories)  
+❌ Hardcoded values (use enums, constants, env vars)  
+❌ Fetching all data without pagination  
+❌ Ignoring existing abstractions  
+❌ Over-engineering simple solutions  
+
+---
+
+## ✅ Quality Gate
+
+Every code change MUST:
+- Follow existing patterns in the codebase
+- Handle errors gracefully
+- Include proper typing
+- Be readable in 12 months
+- Pass linting without warnings

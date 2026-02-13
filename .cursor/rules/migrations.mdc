@@ -1,0 +1,105 @@
+---
+globs: apps/backend/src/database/migrations/**/*.ts
+---
+
+# TypeORM Migrations — Standards
+
+> **DDL only. No DML in migrations unless absolutely necessary.**
+
+---
+
+## 📝 Migration Naming
+
+Format: `{timestamp}-{Description}.ts`
+
+```
+1770300000000-AddCustomerStatusColumn.ts
+1770400000000-CreateSiteVisitTable.ts
+```
+
+---
+
+## 🏗️ Migration Template
+
+```typescript
+import { MigrationInterface, QueryRunner } from 'typeorm';
+
+export class AddCustomerStatusColumn1770300000000 implements MigrationInterface {
+  name = 'AddCustomerStatusColumn1770300000000';
+
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    // DDL operations only
+    await queryRunner.query(`
+      ALTER TABLE "customer_profiles"
+      ADD COLUMN "status" varchar(20) DEFAULT 'active'
+    `);
+  }
+
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
+      ALTER TABLE "customer_profiles"
+      DROP COLUMN "status"
+    `);
+  }
+}
+```
+
+---
+
+## 🎯 Patterns
+
+**Adding column:**
+```sql
+ALTER TABLE "table_name" ADD COLUMN "column_name" type DEFAULT value;
+```
+
+**Creating table:**
+```sql
+CREATE TABLE "table_name" (
+  "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  "created_at" timestamptz DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamptz DEFAULT CURRENT_TIMESTAMP,
+  "deleted_at" timestamptz,
+  -- other columns
+);
+```
+
+**Adding index:**
+```sql
+CREATE INDEX "idx_table_column" ON "table_name" ("column_name")
+WHERE deleted_at IS NULL;
+```
+
+**Auto-update trigger for updated_at:**
+```sql
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = CURRENT_TIMESTAMP;
+  RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_table_updated_at
+  BEFORE UPDATE ON "table_name"
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+```
+
+---
+
+## 🚫 NEVER DO
+
+❌ DML (INSERT, UPDATE, DELETE) in migrations  
+❌ Drop columns/tables without down() migration  
+❌ Modify existing migration files  
+❌ Skip creating down() method  
+❌ Hardcode data — use seeds for data
+
+---
+
+## ✅ ALWAYS DO
+
+✓ Test migration up AND down locally  
+✓ Add indexes for frequently queried columns  
+✓ Include partial indexes for soft-deleted tables  
+✓ Create triggers for `updated_at` timestamp fields

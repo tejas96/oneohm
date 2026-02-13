@@ -1,0 +1,199 @@
+---
+globs: apps/backend/**/*.ts
+---
+
+# NestJS Backend — Production Standards
+
+> **Repository pattern is MANDATORY. Think in patterns. Maximize reusability.**
+
+---
+
+## 🏛️ Patterns & Reusability
+
+**Core patterns (always follow):**
+- **Repository** → ALL database operations (no TypeORM in services)
+- **Service Layer** → ALL business logic (inject via DI)
+- **DTO** → ALL API inputs/outputs (validated, documented)
+
+**Think beyond defaults:**
+- Complex creation logic? → **Factory pattern**
+- Multiple implementations? → **Strategy pattern**
+- Cross-cutting concerns? → **Decorator/Interceptor pattern**
+- Event-driven? → **Observer/Event pattern**
+
+**Reusability:**
+- Logic in 2+ places? → Extract to `common/` service or utility
+- Same query pattern? → Extract to repository helper method
+- Same DTO fields? → Use `PartialType()`, `PickType()`, or base DTOs
+
+---
+
+## 📁 Module Structure (FOLLOW EXACTLY)
+
+```
+modules/[feature]/
+├── [feature].module.ts
+├── controllers/
+│   └── [feature].controller.ts
+├── services/
+│   └── [feature].service.ts
+├── repositories/
+│   └── [feature].repository.ts
+├── entities/
+│   └── [feature].entity.ts
+├── dto/
+│   ├── create-[feature].dto.ts
+│   ├── update-[feature].dto.ts
+│   └── [feature]-response.dto.ts
+└── index.ts (barrel exports)
+```
+
+---
+
+## 🗃️ Entities
+
+**ALWAYS extend BaseEntity:**
+
+```typescript
+import { BaseEntity } from '../../../common/entities/base.entity';
+
+@Entity('table_name')
+export class MyEntity extends BaseEntity {
+  // BaseEntity provides: id, createdAt, updatedAt
+  
+  // Use snake_case for column names
+  @Column({ name: 'organization_id', type: 'uuid' })
+  organizationId!: string;
+  
+  // Soft delete support
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt?: Date;
+  
+  // Audit fields
+  @Column({ name: 'created_by', type: 'uuid', nullable: true })
+  createdBy?: string;
+  
+  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
+  updatedBy?: string;
+}
+```
+
+---
+
+## 🎯 Controllers
+
+**Thin layer — delegate to services:**
+
+- Use `@ApiTags`, `@ApiBearerAuth`, `@UseGuards(JwtAuthGuard)`
+- Use `@OrganizationContext()` to get org ID from query/header
+- Use `@CurrentUser()` to get authenticated user
+- Use `toDto()` and `toPaginatedResponse()` from `common/utils` for responses
+- Keep controllers thin — no business logic, just orchestration
+
+---
+
+## ⚙️ Services
+
+**Business logic ONLY. No TypeORM operations.**
+
+```typescript
+@Injectable()
+export class FeatureService {
+  private readonly logger = new Logger(FeatureService.name);
+
+  constructor(
+    private readonly repository: FeatureRepository,
+    // Other dependencies via DI
+  ) {}
+
+  async create(organizationId: string, dto: CreateDto, createdBy?: string): Promise<Entity> {
+    this.logger.log(`Creating feature for org: ${organizationId}`);
+    
+    // Business validation
+    // Call repository methods
+    // Return result
+  }
+}
+```
+
+---
+
+## 🗄️ Repositories
+
+**ALL TypeORM operations go here:**
+
+```typescript
+@Injectable()
+export class FeatureRepository {
+  constructor(
+    @InjectRepository(FeatureEntity)
+    private readonly repository: Repository<FeatureEntity>,
+  ) {}
+
+  async findById(id: string): Promise<FeatureEntity | null> {
+    return this.repository.findOne({
+      where: { id, deletedAt: IsNull() },
+      relations: ['relatedEntity'],
+    });
+  }
+
+  async findByOrganization(
+    organizationId: string,
+    page = 1,
+    limit = 20,
+  ): Promise<[FeatureEntity[], number]> {
+    return this.repository.findAndCount({
+      where: { organizationId, deletedAt: IsNull() },
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
+  }
+}
+```
+
+---
+
+## 📝 DTOs
+
+**class-validator + Swagger decorators:**
+
+```typescript
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, MaxLength } from 'class-validator';
+import { MyEnum } from '@oneohm-epc/shared-types';
+
+export class CreateFeatureDto {
+  @ApiProperty({ example: 'Example', description: 'Field description' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  name!: string;
+
+  @ApiPropertyOptional({ enum: MyEnum, description: 'Status' })
+  @IsEnum(MyEnum)
+  @IsOptional()
+  status?: MyEnum;
+}
+```
+
+---
+
+## 🔐 Security Rules
+
+- **Multi-org isolation** — Always filter by `organizationId`
+- **Soft delete** — Use `deletedAt IS NULL` in queries
+- **Audit trail** — Set `createdBy`/`updatedBy` on mutations
+- **Input validation** — class-validator on ALL DTOs
+- **Authorization** — JwtAuthGuard + PermissionGuard (when ready)
+
+---
+
+## 🚫 NEVER DO
+
+❌ TypeORM queries in services  
+❌ `findAll()` without pagination  
+❌ Hardcoded organization IDs  
+❌ `console.log` — use `Logger`  
+❌ Untyped `any` parameters  
+❌ Missing soft delete checks (`deletedAt IS NULL`)
