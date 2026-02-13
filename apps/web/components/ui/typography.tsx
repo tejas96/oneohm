@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
  *
  * Variants (per STYLE-GUIDE.md):
  * - Semantic: h1, h2, h3, h4, h5, h6, body, label, caption, link
+ * - Form: helper (for helper text / descriptions under inputs)
  *
  * Sizes (per tailwind.config.ts):
  * - xs: 12px
@@ -19,10 +20,16 @@ import { cn } from '@/lib/utils';
  * Colors (per tailwind.config.ts theme tokens):
  * - default, muted, primary, secondary, success, warning, error, info
  *
+ * Error State:
+ * - Use `error` prop (boolean) to toggle error styling
+ * - Automatically applies error color and appropriate ARIA attributes
+ *
  * @example
  * <Typography variant="h1">Page Title</Typography>
  * <Typography variant="body" size="sm">Body text</Typography>
  * <Typography variant="label" color="error">Error label</Typography>
+ * <Typography variant="helper">Enter your email address</Typography>
+ * <Typography variant="helper" error>This field is required</Typography>
  */
 const typographyVariants = cva('', {
   variants: {
@@ -47,6 +54,9 @@ const typographyVariants = cva('', {
 
       // Caption - font-normal, smaller text (per STYLE-GUIDE.md text-[11px])
       caption: 'text-2xs font-normal',
+
+      // Helper - for form field descriptions and hints (12px, tertiary color)
+      helper: 'text-xs font-normal text-foreground-tertiary leading-normal',
 
       // Section header - uppercase, tracking-wide (per STYLE-GUIDE.md)
       section: 'text-section font-semibold uppercase tracking-wide',
@@ -145,6 +155,12 @@ const typographyVariants = cva('', {
     { variant: 'link', size: 'default', class: 'text-sm' },
     { variant: 'link', size: 'base', class: 'text-base' },
     { variant: 'link', size: 'lg', class: 'text-lg' },
+    // Helper variant with size
+    { variant: 'helper', size: 'xs', class: 'text-2xs' },
+    { variant: 'helper', size: 'sm', class: 'text-xs' },
+    { variant: 'helper', size: 'default', class: 'text-xs' },
+    { variant: 'helper', size: 'base', class: 'text-sm' },
+    { variant: 'helper', size: 'lg', class: 'text-base' },
   ],
   defaultVariants: {
     variant: 'body',
@@ -168,6 +184,10 @@ export interface TypographyProps
   lineClamp?: 1 | 2 | 3 | 4 | 5 | 6;
   /** For htmlFor attribute when rendering as label */
   htmlFor?: string;
+  /** Show error state - overrides color to error and adds aria-invalid */
+  error?: boolean;
+  /** ID of the form field this helper text describes (for aria-describedby) */
+  describedBy?: string;
 }
 
 /**
@@ -184,6 +204,7 @@ function getDefaultElement(variant: string | null | undefined): TypographyElemen
     case 'body': return 'p';
     case 'label': return 'label';
     case 'link': return 'a';
+    case 'helper': return 'span';
     default: return 'span';
   }
 }
@@ -201,6 +222,8 @@ const Typography = React.forwardRef<HTMLElement, TypographyProps>(
       align,
       truncate = false,
       lineClamp,
+      error = false,
+      describedBy,
       children,
       ...props
     },
@@ -209,12 +232,29 @@ const Typography = React.forwardRef<HTMLElement, TypographyProps>(
     const Tag = as || getDefaultElement(variant);
     const Comp = asChild ? Slot : Tag;
 
+    // Determine the effective color - error prop overrides color
+    const effectiveColor = error ? 'error' : color;
+
+    // Build accessibility attributes for helper/error text
+    const a11yProps: React.HTMLAttributes<HTMLElement> = {};
+    if (variant === 'helper') {
+      if (error) {
+        a11yProps.role = 'alert';
+        a11yProps['aria-live'] = 'polite';
+      }
+      if (describedBy) {
+        a11yProps.id = describedBy;
+      }
+    }
+
     return (
       <Comp
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ref={ref as any}
         className={cn(
-          typographyVariants({ variant, size, color, weight, align }),
+          typographyVariants({ variant, size, color: effectiveColor, weight, align }),
+          // Override helper's default tertiary color when in error state
+          error && variant === 'helper' && 'text-error',
           truncate && 'truncate',
           lineClamp === 1 && 'line-clamp-1',
           lineClamp === 2 && 'line-clamp-2',
@@ -224,6 +264,7 @@ const Typography = React.forwardRef<HTMLElement, TypographyProps>(
           lineClamp === 6 && 'line-clamp-6',
           className,
         )}
+        {...a11yProps}
         {...props}
       >
         {children}
