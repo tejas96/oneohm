@@ -20,6 +20,7 @@ interface RailProps {
  * Rail - 48px fixed icon navigation strip
  * Features: Icon buttons with tooltips, active state, notification badges
  * Uses filtered navigation based on user permissions and roles
+ * Note: Uses usePathname directly to avoid useSearchParams Suspense requirement
  */
 export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
   const pathname = usePathname();

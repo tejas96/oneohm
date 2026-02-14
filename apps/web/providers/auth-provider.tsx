@@ -114,7 +114,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
       setIsInitialized(true);
     };
 
-    initAuth();
+    void initAuth();
   }, []);
 
   const clearError = useCallback(() => {

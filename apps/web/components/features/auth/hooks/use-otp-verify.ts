@@ -1,8 +1,8 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
+import { ROUTES, useRoutes } from '@/lib/hooks';
 import { useAuth } from '@/providers/auth-provider';
 
 const OTP_LENGTH = 6;
@@ -37,12 +37,11 @@ export interface UseOtpVerifyReturn {
  * - Authentication redirect
  */
 export function useOtpVerify(): UseOtpVerifyReturn {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const { replace, getQueryParam } = useRoutes();
   const { verifyOtp, requestOtp, isLoading, error, clearError, isAuthenticated, isInitialized } =
     useAuth();
 
-  const phone = searchParams.get('phone') || '';
+  const phone = getQueryParam('phone') || '';
 
   const [otp, setOtp] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
@@ -56,15 +55,15 @@ export function useOtpVerify(): UseOtpVerifyReturn {
 
     // Priority 1: If already authenticated, redirect to home
     if (isAuthenticated) {
-      router.replace('/');
+      replace(ROUTES.HOME);
       return;
     }
 
     // Priority 2: If no phone provided, redirect to login
     if (!phone) {
-      router.replace('/login');
+      replace(ROUTES.AUTH.LOGIN);
     }
-  }, [isAuthenticated, isInitialized, phone, router]);
+  }, [isAuthenticated, isInitialized, phone, replace]);
 
   // Start cooldown on mount
   useEffect(() => {

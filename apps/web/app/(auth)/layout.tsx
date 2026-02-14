@@ -9,7 +9,12 @@ import {
   Zap,
 } from 'lucide-react';
 import Image from 'next/image';
-import React, { type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import React, { Suspense, useEffect, type ReactNode } from 'react';
+
+import { Spinner } from '@/components/ui/spinner';
+import { getAccessToken } from '@/lib/api/client';
+import { useAuth } from '@/providers/auth-provider';
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -20,9 +25,50 @@ interface AuthLayoutProps {
  * Stunning diagonal split design with animated background
  * Left panel: Dark gradient with workflow cards
  * Right panel: Auth forms
+ * 
+ * Shows loading while checking auth to prevent flash of auth forms for logged-in users.
+ * Also checks for existing tokens to handle SSR/hydration race conditions.
+ * 
+ * Note: Layout files should NOT use useSearchParams directly - use page-level Suspense instead.
+ * We use window.location for redirect param since this is client-side only.
  */
 // eslint-disable-next-line import/no-default-export -- Next.js requires default export for layouts
 export default function AuthLayout({ children }: AuthLayoutProps): React.JSX.Element {
+  const { isAuthenticated, isInitialized } = useAuth();
+  const router = useRouter();
+  
+  // Check for existing token as a hint that user might be authenticated
+  // This handles SSR/hydration race where isInitialized becomes true before auth completes
+  const hasExistingToken = typeof window !== 'undefined' && Boolean(getAccessToken());
+
+  // Redirect authenticated users away from auth pages
+  // Note: Using window.location.search instead of useSearchParams to avoid Suspense requirement in layouts
+  useEffect(() => {
+    if (isInitialized && isAuthenticated) {
+      const params = new URLSearchParams(window.location.search);
+      const redirectTo = params.get('redirect') || '/';
+      router.replace(redirectTo);
+    }
+  }, [isAuthenticated, isInitialized, router]);
+
+  // Show loading while:
+  // 1. Auth not initialized yet
+  // 2. User is authenticated (redirect pending)
+  // 3. Token exists but auth hasn't confirmed yet (SSR/hydration race fix)
+  if (!isInitialized || isAuthenticated || (hasExistingToken && !isAuthenticated)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background-secondary">
+        <div className="flex flex-col items-center gap-4">
+          <Spinner size="md" variant="primary" />
+          <p className="text-sm text-foreground-secondary">
+            {isAuthenticated ? 'Redirecting...' : 'Loading...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // User is not authenticated - show auth forms
   return (
     <div className="min-h-screen flex bg-background-secondary">
       {/* Left Panel - Hero (Hidden on mobile) */}
@@ -168,8 +214,10 @@ export default function AuthLayout({ children }: AuthLayoutProps): React.JSX.Ele
             </div>
           </div>
 
-          {/* Auth Content */}
-          {children}
+          {/* Auth Content - Wrapped in Suspense for useSearchParams in auth forms */}
+          <Suspense fallback={<Spinner size="md" variant="primary" />}>
+            {children}
+          </Suspense>
 
           {/* Footer */}
           <div className="mt-6 text-center text-[11px] text-foreground-tertiary">

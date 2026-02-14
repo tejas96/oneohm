@@ -1,12 +1,12 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { useForm, type UseFormReturn } from 'react-hook-form';
 
 import { resetPasswordSchema, type ResetPasswordFormData } from '../schemas/auth.schema';
 
+import { ROUTES, useRoutes } from '@/lib/hooks';
 import { useAuth } from '@/providers/auth-provider';
 
 export interface PasswordStrength {
@@ -60,12 +60,11 @@ function getPasswordStrength(pwd: string): PasswordStrength {
  * - Token validation and redirect
  */
 export function useResetPassword(): UseResetPasswordReturn {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const { replace, getQueryParam } = useRoutes();
   const { resetPassword, isLoading, error, clearError, isAuthenticated, isInitialized } =
     useAuth();
 
-  const token = searchParams.get('token') || '';
+  const token = getQueryParam('token') || '';
   const [isSuccess, setIsSuccess] = useState(false);
 
   const form = useForm<ResetPasswordFormData>({
@@ -83,15 +82,15 @@ export function useResetPassword(): UseResetPasswordReturn {
 
     // Priority 1: If already authenticated, redirect to home
     if (isAuthenticated) {
-      router.replace('/');
+      replace(ROUTES.HOME);
       return;
     }
 
     // Priority 2: If no token provided, redirect to forgot-password
     if (!token) {
-      router.replace('/forgot-password');
+      replace(ROUTES.AUTH.FORGOT_PASSWORD);
     }
-  }, [isAuthenticated, isInitialized, token, router]);
+  }, [isAuthenticated, isInitialized, token, replace]);
 
   // Update token in form when it changes
   useEffect(() => {

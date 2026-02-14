@@ -18,6 +18,7 @@ interface PanelProps {
  * Panel - 200px collapsible sidebar
  * Features: Dynamic content based on rail selection, section headers, menu items
  * Uses filtered navigation based on user permissions and roles
+ * Note: Uses usePathname directly to avoid useSearchParams Suspense requirement
  */
 export function Panel({ isOpen, onClose, className }: PanelProps) {
   const pathname = usePathname();

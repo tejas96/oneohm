@@ -1,12 +1,12 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { useForm, type UseFormReturn } from 'react-hook-form';
 
 import { forgotPasswordSchema, type ForgotPasswordFormData } from '../schemas/auth.schema';
 
+import { ROUTES, useRoutes } from '@/lib/hooks';
 import { useAuth } from '@/providers/auth-provider';
 
 export interface UseForgotPasswordReturn {
@@ -33,16 +33,16 @@ export interface UseForgotPasswordReturn {
  * - Resend functionality
  */
 export function useForgotPassword(): UseForgotPasswordReturn {
-  const router = useRouter();
+  const { replace } = useRoutes();
   const { forgotPassword, isLoading, error, clearError, isAuthenticated, isInitialized } =
     useAuth();
 
   // Redirect if already authenticated (client-side fallback)
   useEffect(() => {
     if (isInitialized && isAuthenticated) {
-      router.replace('/');
+      replace(ROUTES.HOME);
     }
-  }, [isAuthenticated, isInitialized, router]);
+  }, [isAuthenticated, isInitialized, replace]);
   const [isSuccess, setIsSuccess] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState('');
 

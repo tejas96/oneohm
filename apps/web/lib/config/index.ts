@@ -12,3 +12,16 @@ export {
   getPanelConfigByPath,
   isNavItemActive,
 } from './navigation';
+
+// Routes configuration
+export {
+  ROUTES,
+  PUBLIC_ROUTES,
+  AUTH_ROUTES,
+  ADMIN_ROUTES,
+  buildRoute,
+  matchRoute,
+  extractParams,
+  type RouteParams,
+  type RoutePath,
+} from './routes';

@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
  * MobileNav - Mobile navigation drawer
  * Shows hamburger menu on mobile, opens sheet with full navigation
  * Uses mounted check to avoid hydration mismatch with Radix UI
+ * Note: Uses usePathname directly to avoid useSearchParams Suspense requirement
  */
 export function MobileNav() {
   const [mounted, setMounted] = useState(false);
