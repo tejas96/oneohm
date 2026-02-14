@@ -1,9 +1,10 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 
 import { Spinner } from '@/components/ui/spinner';
-import { ROUTES, useRoutes } from '@/lib/hooks';
+import { ROUTES } from '@/lib/config/routes';
 import { useAuth } from '@/providers/auth-provider';
 
 interface AuthGuardProps {
@@ -18,6 +19,7 @@ interface AuthGuardProps {
  * Auth Guard Component
  * Protects routes that require authentication.
  * Uses AuthProvider's isInitialized to handle hydration properly.
+ * Note: Uses useRouter directly to avoid useSearchParams Suspense requirement
  */
 export function AuthGuard({
   children,
@@ -25,7 +27,7 @@ export function AuthGuard({
   fallback,
 }: AuthGuardProps): React.JSX.Element | null {
   const { isAuthenticated, isInitialized } = useAuth();
-  const { router } = useRoutes();
+  const router = useRouter();
 
   useEffect(() => {
     // Wait for auth to initialize before checking

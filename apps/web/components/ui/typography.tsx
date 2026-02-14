@@ -205,6 +205,8 @@ function getDefaultElement(variant: string | null | undefined): TypographyElemen
     case 'label': return 'label';
     case 'link': return 'a';
     case 'helper': return 'span';
+    case null:
+    case undefined:
     default: return 'span';
   }
 }

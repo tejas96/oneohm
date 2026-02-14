@@ -2,11 +2,12 @@
 
 import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 import { CountBadge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { isNavItemActive } from '@/lib/config';
-import { useFilteredNavigation, useRoutes } from '@/lib/hooks';
+import { useFilteredNavigation } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 
 interface RailProps {
@@ -19,9 +20,10 @@ interface RailProps {
  * Rail - 48px fixed icon navigation strip
  * Features: Icon buttons with tooltips, active state, notification badges
  * Uses filtered navigation based on user permissions and roles
+ * Note: Uses usePathname directly to avoid useSearchParams Suspense requirement
  */
 export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
-  const { pathname } = useRoutes();
+  const pathname = usePathname();
   const { navigation } = useFilteredNavigation();
 
   return (

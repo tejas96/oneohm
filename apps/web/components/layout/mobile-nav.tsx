@@ -2,23 +2,24 @@
 
 import { Menu } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { Badge, CountBadge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { navigationConfig, getPanelConfigByPath, isNavItemActive } from '@/lib/config';
-import { useRoutes } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 
 /**
  * MobileNav - Mobile navigation drawer
  * Shows hamburger menu on mobile, opens sheet with full navigation
  * Uses mounted check to avoid hydration mismatch with Radix UI
+ * Note: Uses usePathname directly to avoid useSearchParams Suspense requirement
  */
 export function MobileNav() {
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const { pathname } = useRoutes();
+  const pathname = usePathname();
   const { config: panelConfig } = getPanelConfigByPath(pathname);
 
   // Ensure consistent hydration - only render Sheet after mount

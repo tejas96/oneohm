@@ -2,9 +2,10 @@
 
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 import { Badge } from '@/components/ui/badge';
-import { getFilteredPanelByPath, useFilteredNavigation, useRoutes } from '@/lib/hooks';
+import { getFilteredPanelByPath, useFilteredNavigation } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 
 interface PanelProps {
@@ -17,9 +18,10 @@ interface PanelProps {
  * Panel - 200px collapsible sidebar
  * Features: Dynamic content based on rail selection, section headers, menu items
  * Uses filtered navigation based on user permissions and roles
+ * Note: Uses usePathname directly to avoid useSearchParams Suspense requirement
  */
 export function Panel({ isOpen, onClose, className }: PanelProps) {
-  const { pathname } = useRoutes();
+  const pathname = usePathname();
   const { navigation } = useFilteredNavigation();
   const panelData = getFilteredPanelByPath(navigation, pathname);
 

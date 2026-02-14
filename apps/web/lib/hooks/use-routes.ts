@@ -3,10 +3,10 @@
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { buildRoute, type RoutePath, type RouteParams } from '@/lib/config/routes';
+import { buildRoute, type RoutePath, type RouteParams} from '@/lib/config/routes';
 
 // Re-export types for convenience
-export type { RoutePath, RouteParams } from '@/lib/config/routes';
+export type { RoutePath, RouteParams, RouteParamTypes } from '@/lib/config/routes';
 export { ROUTES } from '@/lib/config/routes';
 
 /**
@@ -72,7 +72,7 @@ export function useRoutes() {
     const last = lastNavigationRef.current;
 
     // Prevent duplicate navigation to same path within debounce period
-    if (last && last.path === targetPath && now - last.time < NAVIGATION_DEBOUNCE_MS) {
+    if (last?.path === targetPath && now - last.time < NAVIGATION_DEBOUNCE_MS) {
       return true;
     }
 
@@ -86,7 +86,7 @@ export function useRoutes() {
   const navigate = useCallback(
     <T extends RoutePath>(
       path: T,
-      pathParams?: RouteParams[T] extends undefined ? undefined : Partial<RouteParams[T]>,
+      pathParams?: RouteParams<T> extends undefined ? undefined : Partial<RouteParams<T>>,
       queryParams?: Record<string, string | number | boolean | undefined>,
       options?: Omit<NavigateOptions, 'replace'>
     ) => {
@@ -103,7 +103,7 @@ export function useRoutes() {
   const replace = useCallback(
     <T extends RoutePath>(
       path: T,
-      pathParams?: RouteParams[T] extends undefined ? undefined : Partial<RouteParams[T]>,
+      pathParams?: RouteParams<T> extends undefined ? undefined : Partial<RouteParams<T>>,
       queryParams?: Record<string, string | number | boolean | undefined>,
       options?: Omit<NavigateOptions, 'replace'>
     ) => {
@@ -141,7 +141,7 @@ export function useRoutes() {
   const prefetch = useCallback(
     <T extends RoutePath>(
       path: T,
-      pathParams?: RouteParams[T] extends undefined ? undefined : Partial<RouteParams[T]>
+      pathParams?: RouteParams<T> extends undefined ? undefined : Partial<RouteParams<T>>
     ) => {
       const url = buildRoute(path, pathParams);
       router.prefetch(url);

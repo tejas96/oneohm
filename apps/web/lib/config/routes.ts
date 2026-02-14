@@ -1,10 +1,10 @@
 /**
  * Centralized Route Configuration
- * Single source of truth for all application routes and their parameters
+ * TRUE Single source of truth - paths defined ONCE in ROUTES, types derived automatically
  * 
  * To add a new route:
- * 1. Add the route path and params to ROUTE_PARAMS
- * 2. Add to ROUTES object for easy access
+ * 1. Add path to ROUTES object
+ * 2. If it has params, add to ROUTE_PARAM_TYPES
  * 
  * This file is imported by:
  * - useRoutes hook (for type-safe navigation)
@@ -13,247 +13,190 @@
  */
 
 // ============================================
-// Route Parameter Types
+// Route Constants (SINGLE SOURCE OF TRUTH)
 // ============================================
 
 /**
- * Maps route paths to their expected parameters
- * - undefined = no params required
- * - object = typed params
- */
-export interface RouteParams {
-  // Auth routes
-  '/': undefined;
-  '/login': { redirect?: string };
-  '/otp-verify': { phone?: string };
-  '/forgot-password': undefined;
-  '/reset-password': { token?: string };
-
-  // Dashboard
-  '/dashboard': undefined;
-  '/dashboard/tasks': undefined;
-  '/dashboard/calendar': undefined;
-  '/dashboard/activity': undefined;
-
-  // CRM / Leads
-  '/crm': undefined;
-  '/crm/leads': undefined;
-  '/crm/leads/[id]': { id: string };
-  '/crm/leads/new': undefined;
-  '/crm/follow-ups': undefined;
-
-  // Customers
-  '/customers': undefined;
-  '/customers/[id]': { id: string };
-  '/customers/new': undefined;
-
-  // Quotes
-  '/quotes': { status?: 'draft' | 'sent' | 'accepted' | 'rejected' };
-  '/quotes/[id]': { id: string };
-  '/quotes/new': undefined;
-
-  // Projects
-  '/projects': { status?: 'active' | 'completed' | 'on-hold' };
-  '/projects/[id]': { id: string };
-  '/projects/new': undefined;
-  '/projects/board': undefined;
-
-  // Pipeline
-  '/pipeline': undefined;
-
-  // Site Visits
-  '/site-visits': undefined;
-  '/site-visits/[id]': { id: string };
-
-  // Inventory
-  '/inventory': { filter?: 'low-stock' };
-  '/inventory/purchase-orders': undefined;
-
-  // Vendors
-  '/vendors': undefined;
-  '/vendors/[id]': { id: string };
-
-  // Finance
-  '/finance': undefined;
-  '/finance/invoices': undefined;
-  '/finance/payments': undefined;
-  '/finance/reports': undefined;
-
-  // Service & AMC
-  '/service': { status?: 'open' | 'closed' };
-  '/service/amc': undefined;
-  '/service/[id]': { id: string };
-
-  // Analytics
-  '/analytics': undefined;
-  '/analytics/sales': undefined;
-  '/analytics/projects': undefined;
-
-  // Admin / Settings
-  '/admin': undefined;
-  '/settings': undefined;
-  '/users': undefined;
-  '/users/[id]': { id: string };
-  '/workflows': undefined;
-  '/integrations': undefined;
-  '/audit': undefined;
-
-  // Organization
-  '/employees': undefined;
-  '/employees/[id]': { id: string };
-  '/organizations': undefined;
-  '/resellers': undefined;
-  '/documents': undefined;
-
-  // Help
-  '/help': undefined;
-  '/help/docs': undefined;
-  '/help/support': undefined;
-
-  // More (overflow menu)
-  '/more': undefined;
-}
-
-export type RoutePath = keyof RouteParams;
-
-// ============================================
-// Route Constants (for easy imports)
-// ============================================
-
-/**
- * Route path constants - use these instead of string literals
+ * All route paths defined ONCE here
  * @example
  * import { ROUTES } from '@/lib/config/routes';
  * navigate(ROUTES.CUSTOMERS.LIST);
  */
 export const ROUTES = {
   // Root
-  HOME: '/' as const,
+  HOME: '/',
 
   // Auth
   AUTH: {
-    LOGIN: '/login' as const,
-    OTP_VERIFY: '/otp-verify' as const,
-    FORGOT_PASSWORD: '/forgot-password' as const,
-    RESET_PASSWORD: '/reset-password' as const,
+    LOGIN: '/login',
+    OTP_VERIFY: '/otp-verify',
+    FORGOT_PASSWORD: '/forgot-password',
+    RESET_PASSWORD: '/reset-password',
   },
 
   // Dashboard
   DASHBOARD: {
-    HOME: '/dashboard' as const,
-    TASKS: '/dashboard/tasks' as const,
-    CALENDAR: '/dashboard/calendar' as const,
-    ACTIVITY: '/dashboard/activity' as const,
+    HOME: '/dashboard',
+    TASKS: '/dashboard/tasks',
+    CALENDAR: '/dashboard/calendar',
+    ACTIVITY: '/dashboard/activity',
   },
 
   // CRM
   CRM: {
-    HOME: '/crm' as const,
-    LEADS: '/crm/leads' as const,
-    LEAD_DETAIL: '/crm/leads/[id]' as const,
-    LEAD_NEW: '/crm/leads/new' as const,
-    FOLLOW_UPS: '/crm/follow-ups' as const,
+    HOME: '/crm',
+    LEADS: '/crm/leads',
+    LEAD_DETAIL: '/crm/leads/[id]',
+    LEAD_NEW: '/crm/leads/new',
+    FOLLOW_UPS: '/crm/follow-ups',
   },
 
   // Customers
   CUSTOMERS: {
-    LIST: '/customers' as const,
-    DETAIL: '/customers/[id]' as const,
-    NEW: '/customers/new' as const,
+    LIST: '/customers',
+    DETAIL: '/customers/[id]',
+    NEW: '/customers/new',
   },
 
   // Quotes
   QUOTES: {
-    LIST: '/quotes' as const,
-    DETAIL: '/quotes/[id]' as const,
-    NEW: '/quotes/new' as const,
+    LIST: '/quotes',
+    DETAIL: '/quotes/[id]',
+    NEW: '/quotes/new',
   },
 
   // Projects
   PROJECTS: {
-    LIST: '/projects' as const,
-    DETAIL: '/projects/[id]' as const,
-    NEW: '/projects/new' as const,
-    BOARD: '/projects/board' as const,
+    LIST: '/projects',
+    DETAIL: '/projects/[id]',
+    NEW: '/projects/new',
+    BOARD: '/projects/board',
   },
 
   // Pipeline
   PIPELINE: {
-    HOME: '/pipeline' as const,
+    HOME: '/pipeline',
   },
 
   // Site Visits
   SITE_VISITS: {
-    LIST: '/site-visits' as const,
-    DETAIL: '/site-visits/[id]' as const,
+    LIST: '/site-visits',
+    DETAIL: '/site-visits/[id]',
   },
 
   // Inventory
   INVENTORY: {
-    LIST: '/inventory' as const,
-    PURCHASE_ORDERS: '/inventory/purchase-orders' as const,
+    LIST: '/inventory',
+    PURCHASE_ORDERS: '/inventory/purchase-orders',
   },
 
   // Vendors
   VENDORS: {
-    LIST: '/vendors' as const,
-    DETAIL: '/vendors/[id]' as const,
+    LIST: '/vendors',
+    DETAIL: '/vendors/[id]',
   },
 
   // Finance
   FINANCE: {
-    HOME: '/finance' as const,
-    INVOICES: '/finance/invoices' as const,
-    PAYMENTS: '/finance/payments' as const,
-    REPORTS: '/finance/reports' as const,
+    HOME: '/finance',
+    INVOICES: '/finance/invoices',
+    PAYMENTS: '/finance/payments',
+    REPORTS: '/finance/reports',
   },
 
   // Service
   SERVICE: {
-    HOME: '/service' as const,
-    AMC: '/service/amc' as const,
-    DETAIL: '/service/[id]' as const,
+    HOME: '/service',
+    AMC: '/service/amc',
+    DETAIL: '/service/[id]',
   },
 
   // Analytics
   ANALYTICS: {
-    HOME: '/analytics' as const,
-    SALES: '/analytics/sales' as const,
-    PROJECTS: '/analytics/projects' as const,
+    HOME: '/analytics',
+    SALES: '/analytics/sales',
+    PROJECTS: '/analytics/projects',
   },
 
   // Admin
   ADMIN: {
-    HOME: '/admin' as const,
-    SETTINGS: '/settings' as const,
-    USERS: '/users' as const,
-    USER_DETAIL: '/users/[id]' as const,
-    WORKFLOWS: '/workflows' as const,
-    INTEGRATIONS: '/integrations' as const,
-    AUDIT: '/audit' as const,
+    HOME: '/admin',
+    SETTINGS: '/settings',
+    USERS: '/users',
+    USER_DETAIL: '/users/[id]',
+    WORKFLOWS: '/workflows',
+    INTEGRATIONS: '/integrations',
+    AUDIT: '/audit',
   },
 
   // Organization
   ORG: {
-    EMPLOYEES: '/employees' as const,
-    EMPLOYEE_DETAIL: '/employees/[id]' as const,
-    ORGANIZATIONS: '/organizations' as const,
-    RESELLERS: '/resellers' as const,
-    DOCUMENTS: '/documents' as const,
+    EMPLOYEES: '/employees',
+    EMPLOYEE_DETAIL: '/employees/[id]',
+    ORGANIZATIONS: '/organizations',
+    RESELLERS: '/resellers',
+    DOCUMENTS: '/documents',
   },
 
   // Help
   HELP: {
-    HOME: '/help' as const,
-    DOCS: '/help/docs' as const,
-    SUPPORT: '/help/support' as const,
+    HOME: '/help',
+    DOCS: '/help/docs',
+    SUPPORT: '/help/support',
   },
 
   // More (overflow menu)
   MORE: {
-    HOME: '/more' as const,
+    HOME: '/more',
   },
 } as const;
+
+// ============================================
+// Type Derivation (Auto-generated from ROUTES)
+// ============================================
+
+/** Extract all route paths from ROUTES object */
+type ExtractPaths<T> = T extends string
+  ? T
+  : T extends object
+    ? { [K in keyof T]: ExtractPaths<T[K]> }[keyof T]
+    : never;
+
+/** All valid route paths (derived from ROUTES) */
+export type RoutePath = ExtractPaths<typeof ROUTES>;
+
+/** 
+ * Route parameter types - only define for routes WITH params
+ * Routes not listed here have no required params
+ */
+export interface RouteParamTypes {
+  // Auth
+  '/login': { redirect?: string };
+  '/otp-verify': { phone?: string };
+  '/reset-password': { token?: string };
+  
+  // Dynamic routes with [id]
+  '/crm/leads/[id]': { id: string };
+  '/customers/[id]': { id: string };
+  '/quotes/[id]': { id: string };
+  '/projects/[id]': { id: string };
+  '/site-visits/[id]': { id: string };
+  '/vendors/[id]': { id: string };
+  '/service/[id]': { id: string };
+  '/users/[id]': { id: string };
+  '/employees/[id]': { id: string };
+  
+  // Routes with query filters
+  '/quotes': { status?: 'draft' | 'sent' | 'accepted' | 'rejected' };
+  '/projects': { status?: 'active' | 'completed' | 'on-hold' };
+  '/inventory': { filter?: 'low-stock' };
+  '/service': { status?: 'open' | 'closed' };
+}
+
+/** Get params for a route path (undefined if no params) */
+export type RouteParams<T extends RoutePath> = T extends keyof RouteParamTypes
+  ? RouteParamTypes[T]
+  : undefined;
 
 // ============================================
 // Route Groups (for middleware/guards)
@@ -266,21 +209,21 @@ export const PUBLIC_ROUTES: string[] = [
 ];
 
 /** Routes that are only for unauthenticated users (redirect if logged in) */
-export const AUTH_ROUTES: RoutePath[] = [
-  '/login',
-  '/otp-verify',
-  '/forgot-password',
-  '/reset-password',
-];
+export const AUTH_ROUTES = [
+  ROUTES.AUTH.LOGIN,
+  ROUTES.AUTH.OTP_VERIFY,
+  ROUTES.AUTH.FORGOT_PASSWORD,
+  ROUTES.AUTH.RESET_PASSWORD,
+] as const;
 
 /** Routes that require admin role */
-export const ADMIN_ROUTES: RoutePath[] = [
-  '/users',
-  '/settings',
-  '/workflows',
-  '/integrations',
-  '/audit',
-];
+export const ADMIN_ROUTES = [
+  ROUTES.ADMIN.USERS,
+  ROUTES.ADMIN.SETTINGS,
+  ROUTES.ADMIN.WORKFLOWS,
+  ROUTES.ADMIN.INTEGRATIONS,
+  ROUTES.ADMIN.AUDIT,
+] as const;
 
 // ============================================
 // Helper Functions
@@ -294,7 +237,7 @@ export const ADMIN_ROUTES: RoutePath[] = [
  */
 export function buildRoute<T extends RoutePath>(
   path: T,
-  params?: RouteParams[T] extends undefined ? undefined : Partial<RouteParams[T]>,
+  params?: RouteParams<T> extends undefined ? undefined : Partial<RouteParams<T>>,
   query?: Record<string, string | number | boolean | undefined>
 ): string {
   let url = path as string;
