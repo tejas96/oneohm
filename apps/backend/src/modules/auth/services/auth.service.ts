@@ -1,7 +1,10 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import * as crypto from 'crypto';
+
+import { BadRequestException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UserStatus } from '@oneohm-epc/shared-types';
+import { MoreThan } from 'typeorm';
 
 import { CustomerProfileRepository } from '../../customers/repositories/customer-profile.repository';
 import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
@@ -304,10 +307,10 @@ export class AuthService {
    * Validate user credentials (used by LocalStrategy)
    * Returns user if valid, null if invalid
    */
-  async validateUser(email: string, password: string): Promise<any> {
+  async validateUser(email: string, password: string): Promise<UserEntity | null> {
     const user = await this.userRepository.findByEmailWithRoles(email);
 
-    if (!user || user.status !== UserStatus.ACTIVE) {
+    if (user?.status !== UserStatus.ACTIVE) {
       return null;
     }
 
@@ -430,5 +433,78 @@ export class AuthService {
   logout(userId: string): void {
     // TODO: Invalidate refresh tokens (store them in Redis/DB)
     this.logger.log(`User logged out: ${userId}`);
+  }
+
+  /**
+   * Request password reset
+   * Generates a reset token and logs it (email sending TODO)
+   * Always returns success message for security (don't reveal if email exists)
+   */
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    // Find user by email (don't reveal if not found)
+    const user = await this.userRepository.findByEmail(email);
+
+    if (user) {
+      // Generate secure reset token
+      const token = crypto.randomBytes(32).toString('hex');
+      const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+      // Save token + expiry (15 min) to user
+      user.passwordResetToken = hashedToken;
+      user.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000);
+      await this.userRepository.save(user);
+
+      // TODO: Send email with reset link
+      // When email service is ready:
+      // const resetUrl = `${this.configService.get('FRONTEND_URL')}/reset-password?token=${token}`;
+      // await this.emailService.sendPasswordResetEmail(user.email, resetUrl);
+
+      this.logger.log(`Password reset requested for: ${email}`);
+
+      // Only log sensitive token info in development
+      if (this.configService.get('NODE_ENV') === 'development') {
+        this.logger.debug(`Reset token (DEV ONLY): ${token}`);
+        this.logger.debug(
+          `Reset URL (DEV ONLY): ${this.configService.get('FRONTEND_URL') || 'http://localhost:3000'}/reset-password?token=${token}`,
+        );
+      }
+    } else {
+      this.logger.warn(`Password reset requested for non-existent email: ${email}`);
+    }
+
+    // Always return success (security - don't reveal if email exists)
+    return { message: 'If an account exists, a reset link has been sent' };
+  }
+
+  /**
+   * Reset password using token
+   * Validates token and updates password
+   */
+  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+    // Hash the token to compare with stored hash
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user by token where expires > now
+    const user = await this.userRepository.findOne({
+      where: {
+        passwordResetToken: hashedToken,
+        passwordResetExpires: MoreThan(new Date()),
+      },
+    });
+
+    if (!user) {
+      this.logger.warn(`Invalid or expired password reset token attempted`);
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+
+    // Update password (entity hook will hash it)
+    user.passwordHash = newPassword;
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+    await this.userRepository.save(user);
+
+    this.logger.log(`Password reset successfully for user: ${user.email}`);
+
+    return { message: 'Password reset successfully' };
   }
 }

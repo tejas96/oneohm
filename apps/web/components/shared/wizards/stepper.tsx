@@ -109,7 +109,7 @@ const StepCircle = ({
     {
       'bg-primary text-white': status === 'completed' || status === 'current',
       'ring-4 ring-primary/20': status === 'current',
-      'bg-gray-200 text-foreground-secondary': status === 'pending',
+      'bg-border text-foreground-secondary': status === 'pending',
       'bg-error text-error-foreground ring-4 ring-error/20': status === 'error',
     }
   );
@@ -150,7 +150,7 @@ interface ConnectorProps {
 const Connector = ({ status, orientation }: ConnectorProps) => {
   const classes = cn(
     'transition-colors duration-fast',
-    status === 'completed' ? 'bg-primary' : 'bg-gray-200',
+    status === 'completed' ? 'bg-primary' : 'bg-border',
     orientation === 'horizontal' ? 'flex-1 h-0.5 mx-4' : 'w-0.5 h-16'
   );
 
@@ -361,7 +361,7 @@ function SimpleStepper({
               <div
                 className={cn(
                   'w-12 h-0.5',
-                  index < currentStep ? 'bg-primary' : 'bg-gray-200'
+                  index < currentStep ? 'bg-primary' : 'bg-border'
                 )}
                 aria-hidden="true"
               />
@@ -444,7 +444,7 @@ function IconStepper({
               <div
                 className={cn(
                   'flex-1 h-0.5 mx-2',
-                  index < currentStep ? 'bg-primary' : 'bg-gray-200'
+                  index < currentStep ? 'bg-primary' : 'bg-border'
                 )}
                 aria-hidden="true"
               />
@@ -485,7 +485,7 @@ function CompactStepper({
             key={step.id}
             className={cn(
               'w-8 h-1 rounded-full transition-colors duration-fast',
-              index <= currentStep ? 'bg-primary' : 'bg-gray-200'
+              index <= currentStep ? 'bg-primary' : 'bg-border'
             )}
           />
         ))}
@@ -529,7 +529,7 @@ function DotStepper({
                 ? 'w-3 h-3 bg-primary ring-4 ring-primary/20'
                 : 'w-2 h-2',
               !isCurrent && index < currentStep && 'bg-primary',
-              !isCurrent && index > currentStep && 'bg-gray-300',
+              !isCurrent && index > currentStep && 'bg-border-medium',
               isClickable && 'cursor-pointer hover:scale-110'
             )}
           />

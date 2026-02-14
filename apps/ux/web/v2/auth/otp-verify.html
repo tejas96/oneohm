@@ -318,18 +318,18 @@
         const resendBtn = document.getElementById('resendBtn');
 
         function startTimer() {
-            const countdown = setInterval(() => {
-                timeLeft--;
-                const minutes = Math.floor(timeLeft / 60);
-                const seconds = timeLeft % 60;
-                timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-                
-                if (timeLeft <= 0) {
-                    clearInterval(countdown);
-                    timerSection.classList.add('hidden');
-                    resendBtn.classList.remove('hidden');
-                }
-            }, 1000);
+        const countdown = setInterval(() => {
+            timeLeft--;
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                timerSection.classList.add('hidden');
+                resendBtn.classList.remove('hidden');
+            }
+        }, 1000);
             return countdown;
         }
 

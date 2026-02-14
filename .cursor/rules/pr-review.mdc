@@ -1,7 +1,0 @@
----
-alwaysApply: false
----
-
-# ⚠️ DEPRECATED — See core.mdc
-
-Review checklist is now in [core.mdc](mdc:core.mdc) under "Review Checklist" section.

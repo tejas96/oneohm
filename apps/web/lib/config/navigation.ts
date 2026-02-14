@@ -117,6 +117,7 @@ export const navigationConfig: NavigationConfig = {
       label: 'Admin',
       href: '/admin',
       panelKey: 'admin',
+      roles: ['admin', 'super_admin', 'platform_admin'],
     },
   ],
 
@@ -317,17 +318,49 @@ export const navigationConfig: NavigationConfig = {
       sections: [
         {
           title: 'Settings',
+          roles: ['admin', 'super_admin', 'platform_admin'],
           items: [
-            { id: 'general-settings', icon: Settings, label: 'General Settings', href: '/settings' },
-            { id: 'user-management', icon: Users, label: 'User Management', href: '/users' },
+            {
+              id: 'general-settings',
+              icon: Settings,
+              label: 'General Settings',
+              href: '/settings',
+              permissions: ['settings:read'],
+            },
+            {
+              id: 'user-management',
+              icon: Users,
+              label: 'User Management',
+              href: '/users',
+              permissions: ['users:manage'],
+            },
           ],
         },
         {
           title: 'System',
+          roles: ['admin', 'super_admin', 'platform_admin'],
           items: [
-            { id: 'workflows', icon: LayoutGrid, label: 'Workflows', href: '/workflows' },
-            { id: 'integrations', icon: Settings, label: 'Integrations', href: '/integrations' },
-            { id: 'audit', icon: FileText, label: 'Audit Log', href: '/audit' },
+            {
+              id: 'workflows',
+              icon: LayoutGrid,
+              label: 'Workflows',
+              href: '/workflows',
+              permissions: ['workflows:manage'],
+            },
+            {
+              id: 'integrations',
+              icon: Settings,
+              label: 'Integrations',
+              href: '/integrations',
+              permissions: ['integrations:manage'],
+            },
+            {
+              id: 'audit',
+              icon: FileText,
+              label: 'Audit Log',
+              href: '/audit',
+              permissions: ['audit:view'],
+            },
           ],
         },
       ],

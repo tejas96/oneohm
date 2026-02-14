@@ -22,7 +22,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         classNames: {
           // Default toast styling
           toast:
-            'group toast group-[.toaster]:bg-gray-900 group-[.toaster]:text-white group-[.toaster]:border-none group-[.toaster]:shadow-lg group-[.toaster]:rounded-lg',
+            'group toast group-[.toaster]:bg-foreground group-[.toaster]:text-background group-[.toaster]:border-none group-[.toaster]:shadow-lg group-[.toaster]:rounded-lg',
           description: 'group-[.toast]:text-white/80',
           actionButton:
             'group-[.toast]:bg-white/20 group-[.toast]:text-white group-[.toast]:hover:bg-white/30 group-[.toast]:rounded group-[.toast]:text-sm group-[.toast]:font-medium',

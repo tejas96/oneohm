@@ -1,18 +1,10 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-/**
- * User interface matching backend JWT payload
- */
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  phone?: string;
-  roles: string[];
-  permissions: string[];
-  organizationId?: string;
-}
+import type { User } from '@/lib/types/auth';
+
+// Re-export for backward compatibility
+export type { ProfileSummary, User } from '@/lib/types/auth';
 
 /**
  * Auth state interface
