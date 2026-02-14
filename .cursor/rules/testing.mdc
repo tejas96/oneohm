@@ -1,8 +1,6 @@
 ---
-description: QA testing protocol — test like 10,000 users will use it tomorrow
-globs: "*.ts,*.tsx"
+alwaysApply: false
 ---
-
 # 🔥 QA Protocol — Feature Not Done Until Tested
 
 > **Assume users break things. Prove it works. Break it yourself first.**

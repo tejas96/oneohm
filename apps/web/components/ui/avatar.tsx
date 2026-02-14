@@ -109,7 +109,7 @@ AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
 // Uses theme tokens for status colors
 const statusColors = {
   online: 'bg-success',
-  offline: 'bg-gray-400',
+  offline: 'bg-foreground-tertiary',
   away: 'bg-warning',
   busy: 'bg-error',
 } as const;

@@ -90,7 +90,7 @@ function ReferralDisplay({ data, size, className }: ReferralDisplayProps) {
   if (size === 'compact') {
     return (
       <div className={cn('flex items-center gap-2', className)}>
-        <Tag className="size-icon-sm text-amber-500" />
+        <Tag className="size-icon-sm text-warning" />
         <span className="text-sm text-foreground-secondary">Referral:</span>
         <span className="text-sm font-medium text-foreground font-mono">
           {data.referralCode}
@@ -102,17 +102,17 @@ function ReferralDisplay({ data, size, className }: ReferralDisplayProps) {
   return (
     <div
       className={cn(
-        'p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-100',
+        'p-4 bg-linear-to-r from-warning/10 to-warning/5 rounded-lg border border-warning/20',
         className
       )}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="size-container-md rounded-lg bg-amber-100 flex items-center justify-center">
-            <Tag className="size-icon-md text-amber-600" />
+          <div className="size-container-md rounded-lg bg-warning/20 flex items-center justify-center">
+            <Tag className="size-icon-md text-warning" />
           </div>
           <div>
-            <div className="text-xs text-amber-600 font-medium uppercase tracking-wide">
+            <div className="text-xs text-warning font-medium uppercase tracking-wide">
               Referred By
             </div>
             <div className="text-sm font-semibold text-foreground">
@@ -128,7 +128,7 @@ function ReferralDisplay({ data, size, className }: ReferralDisplayProps) {
         </div>
         <div className="text-right">
           <div className="text-xs text-foreground-tertiary">Referral Code</div>
-          <div className="font-mono text-sm font-medium text-amber-700">
+          <div className="font-mono text-sm font-medium text-warning">
             {data.referralCode}
           </div>
         </div>
@@ -276,7 +276,7 @@ function ShadingDisplay({ data, size, className }: ShadingDisplayProps) {
           className
         )}
       >
-        <div className="size-container-sm rounded-full bg-gray-200 flex items-center justify-center">
+        <div className="size-container-sm rounded-full bg-border flex items-center justify-center">
           <Sun className="size-icon-sm text-foreground-tertiary" />
         </div>
         <div className="flex-1">
@@ -394,7 +394,7 @@ function DocumentStatusDisplay({ data, size, className }: DocumentStatusDisplayP
       case 'pending':
         return 'bg-yellow-100 text-yellow-700';
       case 'missing':
-        return 'bg-gray-100 text-foreground-tertiary';
+        return 'bg-muted text-foreground-tertiary';
     }
   };
 
@@ -505,7 +505,7 @@ function ConnectionDisplay({ data, size, className }: ConnectionDisplayProps) {
               <span
                 className={cn(
                   'w-2 h-2 rounded-full',
-                  data.connectionType === 'three' ? 'bg-blue-500' : 'bg-gray-400'
+                  data.connectionType === 'three' ? 'bg-secondary' : 'bg-border-medium'
                 )}
               />
               {data.connectionType === 'three' ? 'Three Phase' : 'Single Phase'}
@@ -577,7 +577,7 @@ function LoanDisplay({ data, size, className }: LoanDisplayProps) {
   return (
     <div
       className={cn(
-        'p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100',
+        'p-4 bg-linear-to-r from-info/10 to-info/5 rounded-lg border border-info/20',
         className
       )}
     >

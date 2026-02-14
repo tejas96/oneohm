@@ -118,10 +118,10 @@ function TimelineItemFull({ item, isLast }: TimelineItemFullProps) {
       <div
         className={cn(
           'absolute left-1.5 size-icon-md rounded-full border-2 border-white shadow flex items-center justify-center',
-          item.iconBgClass || 'bg-gray-100'
+          item.iconBgClass || 'bg-muted'
         )}
       >
-        <span className={cn('w-2.5 h-2.5', item.iconTextClass || 'text-gray-600')}>
+        <span className={cn('w-2.5 h-2.5', item.iconTextClass || 'text-foreground-muted')}>
           {item.icon}
         </span>
       </div>
@@ -205,10 +205,10 @@ function TimelineItemCompact({ item }: TimelineItemCompactProps) {
       <div
         className={cn(
           'size-container-sm rounded-full flex items-center justify-center flex-shrink-0',
-          item.iconBgClass || 'bg-gray-100'
+          item.iconBgClass || 'bg-muted'
         )}
       >
-        <span className={cn('size-icon-sm', item.iconTextClass || 'text-gray-600')}>
+        <span className={cn('size-icon-sm', item.iconTextClass || 'text-foreground-muted')}>
           {item.icon}
         </span>
       </div>
@@ -238,7 +238,7 @@ function DateMarker({ date }: DateMarkerProps) {
       <div
         className={cn(
           'absolute left-2.5 w-3 h-3 rounded-full border-2 border-white shadow',
-          today ? 'bg-primary' : 'bg-gray-300'
+          today ? 'bg-primary' : 'bg-border-medium'
         )}
       />
       <span
@@ -362,7 +362,7 @@ export function Timeline({
         <div className="relative">
           {/* Timeline Line (full variant only) */}
           {variant === 'full' && (
-            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200" />
+            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
           )}
 
           {variant === 'full' ? renderFullVariant() : renderCompactVariant()}

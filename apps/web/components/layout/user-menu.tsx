@@ -2,11 +2,13 @@
 
 import { ChevronDown, LogOut, Moon, Settings, Sun, User } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import {
+  Avatar,
+  AvatarFallback,
+  Badge,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -14,26 +16,30 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@/components/ui';
 import { cn } from '@/lib/utils';
-
-/**
- * Mock user data - replace with actual auth context when available
- * TODO: Connect to auth context (e.g., next-auth, clerk, or custom)
- */
-const mockUser = {
-  firstName: 'Tejas',
-  lastName: 'Patil',
-  email: 'tejas@oneohm.in',
-  role: 'Admin',
-  avatarUrl: null as string | null,
-};
+import { useAuth } from '@/providers/auth-provider';
 
 /**
  * Get user initials from name
  */
-function getInitials(firstName: string, lastName: string): string {
-  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+function getInitials(firstName: string, lastName?: string): string {
+  if (lastName) {
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  }
+  return firstName.slice(0, 2).toUpperCase();
+}
+
+/**
+ * Get primary role display name
+ */
+function getRoleDisplay(roles: string[]): string {
+  if (roles.includes('super_admin') || roles.includes('platform_admin')) return 'Super Admin';
+  if (roles.includes('admin')) return 'Admin';
+  if (roles.includes('manager')) return 'Manager';
+  if (roles.includes('sales')) return 'Sales';
+  if (roles.includes('field_worker')) return 'Field Worker';
+  return 'User';
 }
 
 interface UserMenuProps {
@@ -45,6 +51,8 @@ interface UserMenuProps {
  * Features: User info, quick links, theme toggle, sign out
  */
 export function UserMenu({ className }: UserMenuProps) {
+  const router = useRouter();
+  const { user, logout } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [isDark, setIsDark] = useState(false);
 
@@ -64,19 +72,22 @@ export function UserMenu({ className }: UserMenuProps) {
     document.documentElement.classList.toggle('dark', newTheme);
   };
 
-  const handleSignOut = (): void => {
-    // TODO: Implement actual sign out logic
-    // Will call auth signOut() when auth context is available
-  };
+  const handleSignOut = useCallback((): void => {
+    logout();
+    // Use replace to prevent back button returning to protected pages
+    router.replace('/login');
+  }, [logout, router]);
 
-  // Placeholder during SSR
-  if (!mounted) {
+  // Placeholder during SSR or no user
+  if (!mounted || !user) {
     return (
       <Avatar size="sm" className={className}>
-        <AvatarFallback>{getInitials(mockUser.firstName, mockUser.lastName)}</AvatarFallback>
+        <AvatarFallback>--</AvatarFallback>
       </Avatar>
     );
   }
+
+  const userRole = getRoleDisplay(user.roles);
 
   return (
     <DropdownMenu modal={false}>
@@ -92,16 +103,10 @@ export function UserMenu({ className }: UserMenuProps) {
         >
           {/* Avatar */}
           <Avatar size="sm">
-            {mockUser.avatarUrl && (
-              <AvatarImage
-                src={mockUser.avatarUrl}
-                alt={`${mockUser.firstName} ${mockUser.lastName}`}
-              />
-            )}
-            <AvatarFallback>{getInitials(mockUser.firstName, mockUser.lastName)}</AvatarFallback>
+            <AvatarFallback>{getInitials(user.firstName, user.lastName)}</AvatarFallback>
           </Avatar>
           {/* Chevron - Desktop only */}
-          <ChevronDown className="w-3.5 h-3.5 text-foreground-tertiary hidden lg:block" />
+          <ChevronDown className="size-icon-xs text-foreground-tertiary hidden lg:block" />
         </button>
       </DropdownMenuTrigger>
 
@@ -111,23 +116,17 @@ export function UserMenu({ className }: UserMenuProps) {
           <div className="flex items-center gap-3 py-1">
             {/* Avatar */}
             <Avatar size="default">
-              {mockUser.avatarUrl && (
-                <AvatarImage
-                  src={mockUser.avatarUrl}
-                  alt={`${mockUser.firstName} ${mockUser.lastName}`}
-                />
-              )}
-              <AvatarFallback>{getInitials(mockUser.firstName, mockUser.lastName)}</AvatarFallback>
+              <AvatarFallback>{getInitials(user.firstName, user.lastName)}</AvatarFallback>
             </Avatar>
             {/* Name & Email */}
             <div className="flex flex-col space-y-0.5">
               <p className="text-sm font-medium text-foreground">
-                {mockUser.firstName} {mockUser.lastName}
+                {user.fullName}
               </p>
               <p className="text-xs text-muted-foreground truncate max-w-email-truncate">
-                {mockUser.email}
+                {user.email}
               </p>
-              <Badge variant="default" size="xs">{mockUser.role}</Badge>
+              <Badge variant="default" size="xs">{userRole}</Badge>
             </div>
           </div>
         </DropdownMenuLabel>

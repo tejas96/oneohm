@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation';
 
 import { CountBadge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { navigationConfig, isNavItemActive } from '@/lib/config';
+import { isNavItemActive } from '@/lib/config';
+import { useFilteredNavigation } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 
 interface RailProps {
@@ -18,10 +19,11 @@ interface RailProps {
 /**
  * Rail - 48px fixed icon navigation strip
  * Features: Icon buttons with tooltips, active state, notification badges
- * Uses centralized navigation config from lib/config/navigation.ts
+ * Uses filtered navigation based on user permissions and roles
  */
 export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
   const pathname = usePathname();
+  const { navigation } = useFilteredNavigation();
 
   return (
     <TooltipProvider delayDuration={100}>
@@ -38,7 +40,7 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
       >
         {/* Top Navigation */}
         <nav className="flex-1 flex flex-col pt-1.5">
-          {navigationConfig.railTop.map((item) => {
+          {navigation.railTop.map((item) => {
             const isActive = isNavItemActive(pathname, item.href);
             const Icon = item.icon;
 
@@ -96,7 +98,7 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
           </Tooltip>
 
           {/* Bottom Nav Items */}
-          {navigationConfig.railBottom.map((item) => {
+          {navigation.railBottom.map((item) => {
             const isActive = isNavItemActive(pathname, item.href);
             const Icon = item.icon;
 

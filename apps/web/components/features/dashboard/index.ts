@@ -1,2 +1,2 @@
-// Export dashboard components
-export {};
+// Dashboard feature exports
+export { DashboardOverview } from './components/dashboard-overview';

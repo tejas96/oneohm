@@ -22,6 +22,11 @@ import {
   VerifyOtpDto,
   OtpRequestResponseDto,
 } from '../dto/login.dto';
+import {
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  PasswordResetResponseDto,
+} from '../dto/password-reset.dto';
 import { RefreshTokenDto, RefreshTokenResponseDto } from '../dto/refresh-token.dto';
 import { JwtAuthGuard, LocalAuthGuard, OtpAuthGuard } from '../guards';
 import { AuthService } from '../services/auth.service';
@@ -187,5 +192,44 @@ export class AuthController {
     // User is already validated by OtpStrategy (guard ensures req.user exists)
     // OtpAuthRequest types req.user as UserEntity
     return this.authService.generateTokensForUser(req.user);
+  }
+
+  /**
+   * Request password reset
+   * Sends reset link to email (email sending is TODO)
+   * Always returns success for security
+   */
+  @Public()
+  @ApiCreate({
+    path: 'forgot-password',
+    summary: 'Request password reset',
+    description:
+      'Request a password reset link. Always returns success for security reasons (does not reveal if email exists).',
+    responseType: PasswordResetResponseDto,
+    statusCode: HttpStatus.OK,
+    successMessage: 'Password reset email sent',
+  })
+  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<PasswordResetResponseDto> {
+    return this.authService.forgotPassword(dto.email);
+  }
+
+  /**
+   * Reset password with token
+   * Validates token and updates password
+   */
+  @Public()
+  @ApiCreate({
+    path: 'reset-password',
+    summary: 'Reset password with token',
+    description: 'Reset password using the token received via email',
+    responseType: PasswordResetResponseDto,
+    statusCode: HttpStatus.OK,
+    successMessage: 'Password reset successfully',
+    additionalErrors: [
+      { status: HttpStatus.BAD_REQUEST, description: 'Invalid or expired reset token' },
+    ],
+  })
+  async resetPassword(@Body() dto: ResetPasswordDto): Promise<PasswordResetResponseDto> {
+    return this.authService.resetPassword(dto.token, dto.newPassword);
   }
 }

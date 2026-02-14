@@ -1,5 +1,8 @@
 // Export shared components
 
+// Guards
+export { AuthGuard, PermissionGuard } from './guards';
+
 // Alerts
 export { Alert, alertVariants } from './alerts';
 export type { AlertProps } from './alerts';
