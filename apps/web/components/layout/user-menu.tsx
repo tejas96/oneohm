@@ -2,7 +2,6 @@
 
 import { ChevronDown, LogOut, Moon, Settings, Sun, User } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import {
@@ -17,6 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui';
+import { ROUTES, useRoutes } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -51,7 +51,7 @@ interface UserMenuProps {
  * Features: User info, quick links, theme toggle, sign out
  */
 export function UserMenu({ className }: UserMenuProps) {
-  const router = useRouter();
+  const { replace } = useRoutes();
   const { user, logout } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [isDark, setIsDark] = useState(false);
@@ -75,8 +75,8 @@ export function UserMenu({ className }: UserMenuProps) {
   const handleSignOut = useCallback((): void => {
     logout();
     // Use replace to prevent back button returning to protected pages
-    router.replace('/login');
-  }, [logout, router]);
+    replace(ROUTES.AUTH.LOGIN);
+  }, [logout, replace]);
 
   // Placeholder during SSR or no user
   if (!mounted || !user) {

@@ -2,12 +2,11 @@
 
 import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 
 import { CountBadge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { isNavItemActive } from '@/lib/config';
-import { useFilteredNavigation } from '@/lib/hooks';
+import { useFilteredNavigation, useRoutes } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 
 interface RailProps {
@@ -22,7 +21,7 @@ interface RailProps {
  * Uses filtered navigation based on user permissions and roles
  */
 export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
-  const pathname = usePathname();
+  const { pathname } = useRoutes();
   const { navigation } = useFilteredNavigation();
 
   return (

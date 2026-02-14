@@ -1,9 +1,9 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 
 import { Spinner } from '@/components/ui/spinner';
+import { ROUTES, useRoutes } from '@/lib/hooks';
 import { useAuth } from '@/providers/auth-provider';
 
 interface AuthGuardProps {
@@ -21,11 +21,11 @@ interface AuthGuardProps {
  */
 export function AuthGuard({
   children,
-  redirectTo = '/login',
+  redirectTo = ROUTES.AUTH.LOGIN,
   fallback,
 }: AuthGuardProps): React.JSX.Element | null {
   const { isAuthenticated, isInitialized } = useAuth();
-  const router = useRouter();
+  const { router } = useRoutes();
 
   useEffect(() => {
     // Wait for auth to initialize before checking

@@ -2,12 +2,12 @@
 
 import { Menu } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { Badge, CountBadge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { navigationConfig, getPanelConfigByPath, isNavItemActive } from '@/lib/config';
+import { useRoutes } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 
 /**
@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 export function MobileNav() {
   const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const pathname = usePathname();
+  const { pathname } = useRoutes();
   const { config: panelConfig } = getPanelConfigByPath(pathname);
 
   // Ensure consistent hydration - only render Sheet after mount

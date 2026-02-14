@@ -2,10 +2,9 @@
 
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 
 import { Badge } from '@/components/ui/badge';
-import { getFilteredPanelByPath, useFilteredNavigation } from '@/lib/hooks';
+import { getFilteredPanelByPath, useFilteredNavigation, useRoutes } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 
 interface PanelProps {
@@ -20,7 +19,7 @@ interface PanelProps {
  * Uses filtered navigation based on user permissions and roles
  */
 export function Panel({ isOpen, onClose, className }: PanelProps) {
-  const pathname = usePathname();
+  const { pathname } = useRoutes();
   const { navigation } = useFilteredNavigation();
   const panelData = getFilteredPanelByPath(navigation, pathname);
 

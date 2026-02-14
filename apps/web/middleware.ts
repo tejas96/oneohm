@@ -1,16 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-/**
- * Route Configuration
- * Defines which routes require authentication and which are public auth routes
- */
-const AUTH_ROUTES = ['/login', '/otp-verify', '/forgot-password', '/reset-password'];
-const PUBLIC_ROUTES = ['/not-found', '/favicon.ico'];
+import { AUTH_ROUTES, PUBLIC_ROUTES } from '@/lib/config/routes';
 
 /**
  * Check if the path matches any of the given routes (prefix match)
  */
-function matchesRoute(pathname: string, routes: string[]): boolean {
+function matchesRoute(pathname: string, routes: readonly string[]): boolean {
   return routes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 }
 

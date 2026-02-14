@@ -1,7 +1,6 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { useForm, type UseFormReturn } from 'react-hook-form';
 
@@ -12,6 +11,7 @@ import {
   type OtpRequestFormData,
 } from '../schemas/auth.schema';
 
+import { ROUTES, useRoutes } from '@/lib/hooks';
 import { useAuth } from '@/providers/auth-provider';
 
 export interface UseLoginFormReturn {
@@ -39,8 +39,7 @@ export interface UseLoginFormReturn {
  * - Authentication redirect
  */
 export function useLoginForm(): UseLoginFormReturn {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const { router, getQueryParam, navigate } = useRoutes();
   const { login, requestOtp, isLoading, error, clearError, isAuthenticated, isInitialized } =
     useAuth();
 
@@ -61,10 +60,10 @@ export function useLoginForm(): UseLoginFormReturn {
   // Redirect if already authenticated
   useEffect(() => {
     if (isInitialized && isAuthenticated) {
-      const redirectTo = searchParams.get('redirect') || '/';
+      const redirectTo = getQueryParam('redirect') || '/';
       router.replace(redirectTo);
     }
-  }, [isAuthenticated, isInitialized, router, searchParams]);
+  }, [isAuthenticated, isInitialized, router, getQueryParam]);
 
   // Clear errors when switching tabs
   useEffect(() => {
@@ -89,12 +88,12 @@ export function useLoginForm(): UseLoginFormReturn {
       const formattedPhone = `+91${data.phone}`;
       try {
         await requestOtp({ phone: formattedPhone });
-        router.push(`/otp-verify?phone=${encodeURIComponent(formattedPhone)}`);
+        navigate(ROUTES.AUTH.OTP_VERIFY, undefined, { phone: formattedPhone });
       } catch {
         // Error handled by context
       }
     },
-    [requestOtp, router],
+    [requestOtp, navigate],
   );
 
   const displayError =

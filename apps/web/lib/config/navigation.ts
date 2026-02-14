@@ -19,6 +19,8 @@ import {
   Wrench,
 } from 'lucide-react';
 
+import { ROUTES } from './routes';
+
 import type { NavigationConfig, PanelConfig } from '@/lib/types';
 
 /**
@@ -38,14 +40,14 @@ export const navigationConfig: NavigationConfig = {
       id: 'home',
       icon: Home,
       label: 'Dashboard',
-      href: '/dashboard',
+      href: ROUTES.DASHBOARD.HOME,
       panelKey: 'dashboard',
     },
     {
       id: 'crm',
       icon: Users,
       label: 'Sales & CRM',
-      href: '/crm',
+      href: ROUTES.CRM.HOME,
       panelKey: 'crm',
       badge: 12,
     },
@@ -53,49 +55,49 @@ export const navigationConfig: NavigationConfig = {
       id: 'quotes',
       icon: FileText,
       label: 'Quotations',
-      href: '/quotes',
+      href: ROUTES.QUOTES.LIST,
       panelKey: 'quotes',
     },
     {
       id: 'projects',
       icon: Folder,
       label: 'Projects',
-      href: '/projects',
+      href: ROUTES.PROJECTS.LIST,
       panelKey: 'projects',
     },
     {
       id: 'inventory',
       icon: Box,
       label: 'Inventory',
-      href: '/inventory',
+      href: ROUTES.INVENTORY.LIST,
       panelKey: 'inventory',
     },
     {
       id: 'finance',
       icon: Wallet,
       label: 'Finance',
-      href: '/finance',
+      href: ROUTES.FINANCE.HOME,
       panelKey: 'finance',
     },
     {
       id: 'service',
       icon: Wrench,
       label: 'Service & AMC',
-      href: '/service',
+      href: ROUTES.SERVICE.HOME,
       panelKey: 'service',
     },
     {
       id: 'analytics',
       icon: BarChart3,
       label: 'Analytics',
-      href: '/analytics',
+      href: ROUTES.ANALYTICS.HOME,
       panelKey: 'analytics',
     },
     {
       id: 'more',
       icon: MoreHorizontal,
       label: 'More',
-      href: '/more',
+      href: ROUTES.MORE.HOME,
       panelKey: 'more',
     },
   ],
@@ -108,14 +110,14 @@ export const navigationConfig: NavigationConfig = {
       id: 'help',
       icon: HelpCircle,
       label: 'Help',
-      href: '/help',
+      href: ROUTES.HELP.HOME,
       panelKey: 'help',
     },
     {
       id: 'admin',
       icon: Users,
       label: 'Admin',
-      href: '/admin',
+      href: ROUTES.ADMIN.HOME,
       panelKey: 'admin',
       roles: ['admin', 'super_admin', 'platform_admin'],
     },
@@ -131,16 +133,16 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Quick Access',
           items: [
-            { id: 'dashboard', icon: Home, label: 'Dashboard', href: '/dashboard' },
-            { id: 'tasks', icon: CheckSquare, label: 'My Tasks', href: '/dashboard/tasks' },
-            { id: 'calendar', icon: Calendar, label: 'Calendar', href: '/dashboard/calendar' },
+            { id: 'dashboard', icon: Home, label: 'Dashboard', href: ROUTES.DASHBOARD.HOME },
+            { id: 'tasks', icon: CheckSquare, label: 'My Tasks', href: ROUTES.DASHBOARD.TASKS },
+            { id: 'calendar', icon: Calendar, label: 'Calendar', href: ROUTES.DASHBOARD.CALENDAR },
           ],
         },
         {
           title: 'Views',
           items: [
-            { id: 'overview', icon: LayoutGrid, label: 'Overview', href: '/dashboard' },
-            { id: 'activity', icon: TrendingUp, label: 'Activity Feed', href: '/dashboard/activity' },
+            { id: 'overview', icon: LayoutGrid, label: 'Overview', href: ROUTES.DASHBOARD.HOME },
+            { id: 'activity', icon: TrendingUp, label: 'Activity Feed', href: ROUTES.DASHBOARD.ACTIVITY },
           ],
         },
       ],
@@ -152,16 +154,16 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Pipeline',
           items: [
-            { id: 'leads', icon: Users, label: 'Leads', href: '/crm/leads', badge: 12 },
-            { id: 'customers', icon: Users, label: 'Customers', href: '/customers' },
-            { id: 'pipeline', icon: TrendingUp, label: 'Pipeline View', href: '/pipeline' },
+            { id: 'leads', icon: Users, label: 'Leads', href: ROUTES.CRM.LEADS, badge: 12 },
+            { id: 'customers', icon: Users, label: 'Customers', href: ROUTES.CUSTOMERS.LIST },
+            { id: 'pipeline', icon: TrendingUp, label: 'Pipeline View', href: ROUTES.PIPELINE.HOME },
           ],
         },
         {
           title: 'Activities',
           items: [
-            { id: 'follow-ups', icon: ListTodo, label: 'Follow-ups', href: '/crm/follow-ups' },
-            { id: 'site-visits', icon: Calendar, label: 'Site Visits', href: '/site-visits' },
+            { id: 'follow-ups', icon: ListTodo, label: 'Follow-ups', href: ROUTES.CRM.FOLLOW_UPS },
+            { id: 'site-visits', icon: Calendar, label: 'Site Visits', href: ROUTES.SITE_VISITS.LIST },
           ],
         },
       ],
@@ -173,15 +175,15 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Quotes',
           items: [
-            { id: 'all-quotes', icon: FileText, label: 'All Quotes', href: '/quotes' },
-            { id: 'drafts', icon: FileText, label: 'Drafts', href: '/quotes?status=draft' },
-            { id: 'sent', icon: FileText, label: 'Sent', href: '/quotes?status=sent' },
+            { id: 'all-quotes', icon: FileText, label: 'All Quotes', href: ROUTES.QUOTES.LIST },
+            { id: 'drafts', icon: FileText, label: 'Drafts', href: `${ROUTES.QUOTES.LIST}?status=draft` },
+            { id: 'sent', icon: FileText, label: 'Sent', href: `${ROUTES.QUOTES.LIST}?status=sent` },
           ],
         },
         {
           title: 'Actions',
           items: [
-            { id: 'new-quote', icon: Plus, label: 'New Quote', href: '/quotes/new' },
+            { id: 'new-quote', icon: Plus, label: 'New Quote', href: ROUTES.QUOTES.NEW },
           ],
         },
       ],
@@ -193,15 +195,15 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Views',
           items: [
-            { id: 'all-projects', icon: List, label: 'All Projects', href: '/projects' },
-            { id: 'active', icon: TrendingUp, label: 'Active', href: '/projects?status=active' },
-            { id: 'board', icon: LayoutGrid, label: 'Board View', href: '/projects/board' },
+            { id: 'all-projects', icon: List, label: 'All Projects', href: ROUTES.PROJECTS.LIST },
+            { id: 'active', icon: TrendingUp, label: 'Active', href: `${ROUTES.PROJECTS.LIST}?status=active` },
+            { id: 'board', icon: LayoutGrid, label: 'Board View', href: ROUTES.PROJECTS.BOARD },
           ],
         },
         {
           title: 'Actions',
           items: [
-            { id: 'new-project', icon: Plus, label: 'New Project', href: '/projects/new' },
+            { id: 'new-project', icon: Plus, label: 'New Project', href: ROUTES.PROJECTS.NEW },
           ],
         },
       ],
@@ -213,15 +215,15 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Stock',
           items: [
-            { id: 'all-inventory', icon: Box, label: 'All Items', href: '/inventory' },
-            { id: 'low-stock', icon: Box, label: 'Low Stock', href: '/inventory?filter=low-stock' },
+            { id: 'all-inventory', icon: Box, label: 'All Items', href: ROUTES.INVENTORY.LIST },
+            { id: 'low-stock', icon: Box, label: 'Low Stock', href: `${ROUTES.INVENTORY.LIST}?filter=low-stock` },
           ],
         },
         {
           title: 'Management',
           items: [
-            { id: 'vendors', icon: Users, label: 'Vendors', href: '/vendors' },
-            { id: 'purchase-orders', icon: FileText, label: 'Purchase Orders', href: '/inventory/purchase-orders' },
+            { id: 'vendors', icon: Users, label: 'Vendors', href: ROUTES.VENDORS.LIST },
+            { id: 'purchase-orders', icon: FileText, label: 'Purchase Orders', href: ROUTES.INVENTORY.PURCHASE_ORDERS },
           ],
         },
       ],
@@ -233,15 +235,15 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Transactions',
           items: [
-            { id: 'all-finance', icon: Wallet, label: 'Overview', href: '/finance' },
-            { id: 'invoices', icon: FileText, label: 'Invoices', href: '/finance/invoices' },
-            { id: 'payments', icon: Wallet, label: 'Payments', href: '/finance/payments' },
+            { id: 'all-finance', icon: Wallet, label: 'Overview', href: ROUTES.FINANCE.HOME },
+            { id: 'invoices', icon: FileText, label: 'Invoices', href: ROUTES.FINANCE.INVOICES },
+            { id: 'payments', icon: Wallet, label: 'Payments', href: ROUTES.FINANCE.PAYMENTS },
           ],
         },
         {
           title: 'Reports',
           items: [
-            { id: 'finance-reports', icon: BarChart3, label: 'Reports', href: '/finance/reports' },
+            { id: 'finance-reports', icon: BarChart3, label: 'Reports', href: ROUTES.FINANCE.REPORTS },
           ],
         },
       ],
@@ -253,14 +255,14 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Tickets',
           items: [
-            { id: 'all-service', icon: Wrench, label: 'All Tickets', href: '/service' },
-            { id: 'open-tickets', icon: Wrench, label: 'Open', href: '/service?status=open' },
+            { id: 'all-service', icon: Wrench, label: 'All Tickets', href: ROUTES.SERVICE.HOME },
+            { id: 'open-tickets', icon: Wrench, label: 'Open', href: `${ROUTES.SERVICE.HOME}?status=open` },
           ],
         },
         {
           title: 'Contracts',
           items: [
-            { id: 'amc', icon: FileText, label: 'AMC Contracts', href: '/service/amc' },
+            { id: 'amc', icon: FileText, label: 'AMC Contracts', href: ROUTES.SERVICE.AMC },
           ],
         },
       ],
@@ -272,9 +274,9 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Reports',
           items: [
-            { id: 'analytics-dashboard', icon: BarChart3, label: 'Dashboard', href: '/analytics' },
-            { id: 'sales-report', icon: TrendingUp, label: 'Sales Report', href: '/analytics/sales' },
-            { id: 'projects-report', icon: FileText, label: 'Project Report', href: '/analytics/projects' },
+            { id: 'analytics-dashboard', icon: BarChart3, label: 'Dashboard', href: ROUTES.ANALYTICS.HOME },
+            { id: 'sales-report', icon: TrendingUp, label: 'Sales Report', href: ROUTES.ANALYTICS.SALES },
+            { id: 'projects-report', icon: FileText, label: 'Project Report', href: ROUTES.ANALYTICS.PROJECTS },
           ],
         },
       ],
@@ -286,15 +288,15 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Organization',
           items: [
-            { id: 'employees', icon: Users, label: 'Employees', href: '/employees' },
-            { id: 'organizations', icon: LayoutGrid, label: 'Organizations', href: '/organizations' },
-            { id: 'resellers', icon: Users, label: 'Resellers', href: '/resellers' },
+            { id: 'employees', icon: Users, label: 'Employees', href: ROUTES.ORG.EMPLOYEES },
+            { id: 'organizations', icon: LayoutGrid, label: 'Organizations', href: ROUTES.ORG.ORGANIZATIONS },
+            { id: 'resellers', icon: Users, label: 'Resellers', href: ROUTES.ORG.RESELLERS },
           ],
         },
         {
           title: 'Documents',
           items: [
-            { id: 'documents', icon: FileText, label: 'Documents', href: '/documents' },
+            { id: 'documents', icon: FileText, label: 'Documents', href: ROUTES.ORG.DOCUMENTS },
           ],
         },
       ],
@@ -306,8 +308,8 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Resources',
           items: [
-            { id: 'documentation', icon: FileText, label: 'Documentation', href: '/help/docs' },
-            { id: 'support', icon: HelpCircle, label: 'Contact Support', href: '/help/support' },
+            { id: 'documentation', icon: FileText, label: 'Documentation', href: ROUTES.HELP.DOCS },
+            { id: 'support', icon: HelpCircle, label: 'Contact Support', href: ROUTES.HELP.SUPPORT },
           ],
         },
       ],
@@ -324,14 +326,14 @@ export const navigationConfig: NavigationConfig = {
               id: 'general-settings',
               icon: Settings,
               label: 'General Settings',
-              href: '/settings',
+              href: ROUTES.ADMIN.SETTINGS,
               permissions: ['settings:read'],
             },
             {
               id: 'user-management',
               icon: Users,
               label: 'User Management',
-              href: '/users',
+              href: ROUTES.ADMIN.USERS,
               permissions: ['users:manage'],
             },
           ],
@@ -344,21 +346,21 @@ export const navigationConfig: NavigationConfig = {
               id: 'workflows',
               icon: LayoutGrid,
               label: 'Workflows',
-              href: '/workflows',
+              href: ROUTES.ADMIN.WORKFLOWS,
               permissions: ['workflows:manage'],
             },
             {
               id: 'integrations',
               icon: Settings,
               label: 'Integrations',
-              href: '/integrations',
+              href: ROUTES.ADMIN.INTEGRATIONS,
               permissions: ['integrations:manage'],
             },
             {
               id: 'audit',
               icon: FileText,
               label: 'Audit Log',
-              href: '/audit',
+              href: ROUTES.ADMIN.AUDIT,
               permissions: ['audit:view'],
             },
           ],
@@ -377,7 +379,7 @@ export function getPanelConfigByPath(pathname: string): { key: string; config: P
   
   // Check for exact match first, then prefix match
   const matchedItem = allRailItems.find(
-    (item) => pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
+    (item) => pathname === item.href || (item.href !== ROUTES.DASHBOARD.HOME && pathname.startsWith(item.href))
   );
 
   const panelConfig = matchedItem
@@ -402,8 +404,8 @@ export function getPanelConfigByPath(pathname: string): { key: string; config: P
  * Check if a nav item is active based on current pathname
  */
 export function isNavItemActive(pathname: string, href: string): boolean {
-  if (href === '/dashboard') {
-    return pathname === '/dashboard' || pathname === '/';
+  if (href === ROUTES.DASHBOARD.HOME) {
+    return pathname === ROUTES.DASHBOARD.HOME || pathname === ROUTES.HOME;
   }
   return pathname.startsWith(href);
 }

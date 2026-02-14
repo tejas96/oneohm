@@ -111,6 +111,8 @@ Layout:
 - console.log - remove before commit
 - Skip edge cases - add to TODO if not handled
 - Repeat same work - search first
+- Hardcode paths - use `ROUTES.*` constants
+- Lose URL state on refresh - persist in query params
 
 ---
 
@@ -126,12 +128,14 @@ Layout:
 - State: TanStack Query (server) | Zustand (global UI) | useState (local)
 - Files: kebab-case.tsx, hooks as use-*.ts, schemas as *.schema.ts
 - Icons: from lucide-react
-- Navigation: use lib/config/navigation.ts
+- Navigation: use lib/config/navigation.ts with ROUTES constants
 - Layout: use components/layout/ (Rail, Panel, Header)
 - API calls: use lib/api/client.ts (has auth interceptors)
 - Error handling: use getErrorMessage from lib/utils
 - Types: export from lib/types/index.ts barrel
 - TODO: track edge cases, pending items - never skip
+- Routes: `useRoutes()` hook + `ROUTES.*` constants
+- URL state: filters, tabs, pagination in query params
 
 ---
 
@@ -168,6 +172,22 @@ Layout:
 - Use `router.push` for logout/auth redirects
 - Hardcode role strings - use `hasRole('admin')`
 - Check auth before `isInitialized` is true
+
+---
+
+## Routes & URLs
+
+### Config
+- Routes: `lib/config/routes.ts` (single source)
+- Navigation: `useRoutes()` hook - type-safe, has `navigate`, `replace`, `setQueryParams`
+- Never hardcode paths - use `ROUTES.CUSTOMERS.LIST`
+
+### Shareable URLs (CRM/ERP Must-Have)
+- Filters in query: `/quotes?status=draft&sort=date`
+- Entities in path: `/customers/[id]` (not `?id=`)
+- Tabs in query: `/customers/[id]?tab=properties`
+- Persist on refresh - read URL state on mount
+- `replace()` for filters, `push()` for navigation
 
 ---
 
