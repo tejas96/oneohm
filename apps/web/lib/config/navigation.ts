@@ -121,6 +121,7 @@ export const navigationConfig: NavigationConfig = {
       label: 'Admin',
       href: ROUTES.ADMIN.HOME,
       panelKey: 'admin',
+      roles: ['admin', 'super_admin', 'platform_admin'],
     },
   ],
 
@@ -408,6 +409,7 @@ export const navigationConfig: NavigationConfig = {
       sections: [
         {
           title: 'Settings',
+          roles: ['admin', 'super_admin', 'platform_admin'],
           items: [
             {
               id: 'general-settings',
@@ -425,6 +427,7 @@ export const navigationConfig: NavigationConfig = {
         },
         {
           title: 'System',
+          roles: ['admin', 'super_admin', 'platform_admin'],
           items: [
             {
               id: 'workflows',

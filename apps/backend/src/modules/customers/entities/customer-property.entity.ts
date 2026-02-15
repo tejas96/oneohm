@@ -2,13 +2,13 @@ import {
   ConnectionType,
   LeadTemperature,
   type PropertyDocument,
-  type PropertyFollowup,
   PropertyStatus,
   PropertyType,
 } from '@oneohm-epc/shared-types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';
 
 import { CustomerProfileEntity } from './customer-profile.entity';
+import type { FollowupEntity } from './followup.entity';
 import type { SiteVisitEntity } from './site-visit.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
@@ -128,13 +128,13 @@ export class CustomerPropertyEntity extends BaseEntity {
   })
   leadTemperature!: LeadTemperature;
 
-  // ==================== FOLLOWUPS ====================
+  // ==================== FOLLOWUPS (One-to-Many Relation) ====================
   /**
-   * Property followups - scheduled activities array
-   * Stored as JSONB: [{ id, type, subject, scheduledAt, ... }]
+   * Property followups - scheduled activities
+   * Stored in dedicated followups table
    */
-  @Column({ type: 'jsonb', default: [] })
-  followups!: PropertyFollowup[];
+  @OneToMany('FollowupEntity', 'property')
+  followups?: FollowupEntity[];
 
   // ==================== FLAGS ====================
   @Column({ name: 'is_primary', type: 'boolean', default: false })

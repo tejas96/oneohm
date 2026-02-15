@@ -10,7 +10,7 @@ import {
   SignDocumentDto,
   UpdateDocumentDto,
   UpdateDocumentStatusDto,
-  VerifyOtpDto,
+  VerifyDocumentOtpDto,
 } from '../dto';
 import { DocumentEntity } from '../entities/document.entity';
 import { DocumentRepository } from '../repositories/document.repository';
@@ -241,7 +241,7 @@ export class DocumentService {
   // ============================================
   // OTP VERIFICATION
   // ============================================
-  async verifyOtp(id: string, dto: VerifyOtpDto, userId: string): Promise<DocumentEntity> {
+  async verifyOtp(id: string, dto: VerifyDocumentOtpDto, userId: string): Promise<DocumentEntity> {
     const document = await this.findById(id);
 
     // Check if already verified

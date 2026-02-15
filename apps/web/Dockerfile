@@ -9,44 +9,25 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.base.json ./nx.json ./
 
-# Copy web app
+# Copy web app package.json (if exists)
 COPY apps/web/package*.json ./apps/web/
 
 # Install dependencies
 RUN npm ci
 
-# Development stage
-FROM base AS development
-WORKDIR /app
-
-# Copy workspace files
-COPY package*.json ./
-COPY tsconfig.base.json ./nx.json ./
-
-# Copy all dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-
-# Copy web application
-COPY apps/web ./apps/web/
-
-# Copy shared libraries (if web uses them)
-COPY libs ./libs/
-
-WORKDIR /app/apps/web
-
-ENV NODE_ENV=development
-
-EXPOSE 3001
-
-# Start Next.js in development mode
-CMD ["npm", "run", "dev"]
-
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
 
+# Build-time arguments for NEXT_PUBLIC_* variables
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_APP_NAME=OneOhm EPC
+
+# Set them as environment variables for the build
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME
+
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 
 # Copy workspace files
 COPY package*.json ./

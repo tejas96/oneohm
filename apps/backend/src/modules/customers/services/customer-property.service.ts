@@ -6,12 +6,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  FollowupPriority,
-  FollowupStatus,
   LeadTemperature,
   LoanStatus,
   type PropertyDocument,
-  type PropertyFollowup,
   PropertyStatus,
   QuoteStatus,
 } from '@oneohm-epc/shared-types';
@@ -20,7 +17,6 @@ import { LoanApplicationRepository } from '../../loan-finance/repositories/loan-
 import { QuoteRepository } from '../../quotes/repositories/quote.repository';
 import { CreateCustomerPropertyDto } from '../dto/create-customer-property.dto';
 import type { PropertyDocumentDto } from '../dto/property-document.dto';
-import type { PropertyFollowupDto } from '../dto/property-followup.dto';
 import { UpdateCustomerPropertyDto } from '../dto/update-customer-property.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
@@ -49,23 +45,6 @@ export class CustomerPropertyService {
     private readonly quoteRepository: QuoteRepository,
     private readonly loanApplicationRepository: LoanApplicationRepository,
   ) {}
-
-  /**
-   * Normalize documents from DTO to entity format
-   * Applies default values for optional fields
-   */
-  private normalizeDocuments(documents?: PropertyDocumentDto[]): PropertyDocument[] | undefined {
-    if (!documents) return undefined;
-    return documents.map((doc) => ({
-      url: doc.url,
-      tag: doc.tag,
-      fileName: doc.fileName,
-      isLoanDoc: doc.isLoanDoc ?? false,
-      isVerified: doc.isVerified ?? false,
-      verifiedAt: doc.verifiedAt,
-      verifiedBy: doc.verifiedBy,
-    }));
-  }
 
   /**
    * Create a new customer property
@@ -101,12 +80,11 @@ export class CustomerPropertyService {
     const isPrimary = createDto.isPrimary ?? existingProperties === 0;
 
     // Normalize documents to ensure required fields have defaults
-    const { documents, followups, ...restCreateDto } = createDto;
+    const { documents, ...restCreateDto } = createDto;
 
     const property = await this.propertyRepository.create({
       ...restCreateDto,
       documents: this.normalizeDocuments(documents),
-      followups: followups ? this.normalizeFollowups(followups) : [],
       organizationId,
       isPrimary,
       status: createDto.status || PropertyStatus.ACTIVE,
@@ -213,21 +191,6 @@ export class CustomerPropertyService {
       limit,
     );
     return { data, total };
-  }
-
-  /**
-   * Find properties with pending follow-ups
-   */
-  async findWithPendingFollowups(
-    organizationId: string,
-    beforeDate?: Date,
-    assignedToUserId?: string,
-  ): Promise<CustomerPropertyEntity[]> {
-    return this.propertyRepository.findWithPendingFollowups(
-      organizationId,
-      beforeDate,
-      assignedToUserId,
-    );
   }
 
   /**
@@ -378,122 +341,20 @@ export class CustomerPropertyService {
 
     return result;
   }
-
-  // ==================== FOLLOWUP METHODS ====================
-
-  /**
-   * Normalize followups from DTO to interface format
+    /**
+   * Normalize documents from DTO to entity format
    * Applies default values for optional fields
    */
-  private normalizeFollowups(followups: PropertyFollowupDto[]): PropertyFollowup[] {
-    const now = new Date().toISOString();
-    return followups.map((f) => ({
-      id: f.id ?? crypto.randomUUID(),
-      type: f.type,
-      subject: f.subject,
-      scheduledAt: f.scheduledAt,
-      assignedToUserId: f.assignedToUserId,
-      status: f.status ?? FollowupStatus.PENDING,
-      priority: f.priority ?? FollowupPriority.NORMAL,
-      notes: f.notes,
-      lastUpdatedAt: now,
-    }));
-  }
-
-  /**
-   * Add a followup to a property
-   * Uses atomic JSONB append operation
-   */
-  async addFollowup(
-    propertyId: string,
-    organizationId: string,
-    dto: PropertyFollowupDto,
-    updatedBy: string,
-  ): Promise<PropertyFollowup> {
-    await this.findById(propertyId, organizationId);
-
-    const now = new Date().toISOString();
-    const followup: PropertyFollowup = {
-      id: crypto.randomUUID(),
-      type: dto.type,
-      subject: dto.subject,
-      scheduledAt: dto.scheduledAt,
-      assignedToUserId: dto.assignedToUserId,
-      status: dto.status ?? FollowupStatus.PENDING,
-      priority: dto.priority ?? FollowupPriority.NORMAL,
-      notes: dto.notes,
-      lastUpdatedAt: now,
-    };
-
-    // Atomic JSONB append via repository method
-    await this.propertyRepository.appendFollowup(propertyId, followup, updatedBy);
-
-    this.logger.log(`Followup added to property ${propertyId}: ${followup.id}`);
-    return followup;
-  }
-
-  /**
-   * Update a followup in the array
-   */
-  async updateFollowup(
-    propertyId: string,
-    organizationId: string,
-    followupId: string,
-    dto: Partial<PropertyFollowupDto>,
-    updatedBy: string,
-  ): Promise<PropertyFollowup> {
-    const property = await this.findById(propertyId, organizationId);
-
-    const index = property.followups.findIndex((f) => f.id === followupId);
-    if (index === -1) {
-      throw new NotFoundException(`Followup with ID '${followupId}' not found`);
-    }
-
-    // Safe to use ! here - we already verified index !== -1 above
-    const existing = property.followups[index]!;
-    const updated: PropertyFollowup = {
-      id: followupId, // Immutable
-      type: dto.type ?? existing.type,
-      subject: dto.subject ?? existing.subject,
-      scheduledAt: dto.scheduledAt ?? existing.scheduledAt,
-      assignedToUserId: dto.assignedToUserId ?? existing.assignedToUserId,
-      status: dto.status ?? existing.status,
-      priority: dto.priority ?? existing.priority,
-      notes: dto.notes !== undefined ? dto.notes : existing.notes,
-      lastUpdatedAt: new Date().toISOString(),
-    };
-
-    property.followups[index] = updated;
-    await this.propertyRepository.update(propertyId, {
-      followups: property.followups,
-      updatedBy,
-    });
-
-    this.logger.log(`Followup updated: ${followupId}`);
-    return updated;
-  }
-
-  /**
-   * Delete a followup from the array
-   */
-  async deleteFollowup(
-    propertyId: string,
-    organizationId: string,
-    followupId: string,
-    updatedBy: string,
-  ): Promise<void> {
-    const property = await this.findById(propertyId, organizationId);
-
-    const filtered = property.followups.filter((f) => f.id !== followupId);
-    if (filtered.length === property.followups.length) {
-      throw new NotFoundException(`Followup with ID '${followupId}' not found`);
-    }
-
-    await this.propertyRepository.update(propertyId, {
-      followups: filtered,
-      updatedBy,
-    });
-
-    this.logger.log(`Followup deleted: ${followupId}`);
-  }
+    private normalizeDocuments(documents?: PropertyDocumentDto[]): PropertyDocument[] | undefined {
+      if (!documents) return undefined;
+      return documents.map((doc) => ({
+        url: doc.url,
+        tag: doc.tag,
+        fileName: doc.fileName,
+        isLoanDoc: doc.isLoanDoc ?? false,
+        isVerified: doc.isVerified ?? false,
+        verifiedAt: doc.verifiedAt,
+        verifiedBy: doc.verifiedBy,
+      }));
+    }  
 }

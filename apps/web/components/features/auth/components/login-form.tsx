@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useLoginForm } from '../hooks/use-login-form';
 
 import { Alert } from '@/components/shared';
-import { ROUTES } from '@/lib/config/routes';
 import {
   Button,
   Card,
@@ -21,6 +20,7 @@ import {
   TabsTrigger,
   Typography,
 } from '@/components/ui';
+import { ROUTES } from '@/lib/config/routes';
 
 /**
  * LoginForm Component

@@ -41,6 +41,13 @@ primary_region = 'bom'  # Mumbai region
   THROTTLE_LIMIT = '100'
   RATE_LIMIT_TTL = '60'
   RATE_LIMIT_MAX = '1000'
+  
+  # CORS - Allow web app to call API
+  CORS_ORIGIN = 'https://oneohm-epc-web.fly.dev,http://localhost:3001'
+  
+  # JWT Expiry (non-sensitive, can be in env)
+  JWT_EXPIRES_IN = '15m'
+  JWT_REFRESH_EXPIRES_IN = '7d'
 
 # HTTP Service Configuration
 [http_service]

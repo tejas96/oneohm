@@ -22,7 +22,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { LeadTemperature, type PaginatedResponse, type PropertyFollowup } from '@oneohm-epc/shared-types';
+import { LeadTemperature, type PaginatedResponse } from '@oneohm-epc/shared-types';
 import { OrganizationContext } from '@oneohm-epc/shared-utils';
 
 import { toDto, toDtoArray, toPaginatedResponse } from '../../../common/utils';
@@ -33,10 +33,8 @@ import {
   CreateCustomerPropertyDto,
   CreateSiteVisitDto,
   CustomerPropertyResponseDto,
-  PropertyFollowupDto,
   SiteVisitResponseDto,
   UpdateCustomerPropertyDto,
-  UpdatePropertyFollowupDto,
   UpdateSiteVisitDto,
 } from '../dto';
 import { CustomerPropertyService } from '../services/customer-property.service';
@@ -181,39 +179,6 @@ export class CustomerPropertyController {
   ): Promise<PaginatedResponse<CustomerPropertyResponseDto>> {
     const result = await this.propertyService.findByTemperature(organizationId, temperature, page, limit);
     return toPaginatedResponse(CustomerPropertyResponseDto, result.data, result.total, page, limit);
-  }
-
-  /**
-   * Get properties with pending follow-ups
-   */
-  @Get('followups/pending')
-  @ApiOperation({
-    summary: 'Get properties with pending followups',
-    description: 'Retrieve all properties with pending follow-ups (due today or overdue).',
-  })
-  @ApiQuery({
-    name: 'assignedToUserId',
-    required: false,
-    type: String,
-    description: 'Filter by assigned user ID',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'List of properties with pending follow-ups',
-    type: [CustomerPropertyResponseDto],
-  })
-  async findWithPendingFollowups(
-    @OrganizationContext() organizationId: string,
-    @Query('assignedToUserId') assignedToUserId?: string,
-  ): Promise<CustomerPropertyResponseDto[]> {
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    const properties = await this.propertyService.findWithPendingFollowups(
-      organizationId,
-      today,
-      assignedToUserId,
-    );
-    return toDtoArray(CustomerPropertyResponseDto, properties);
   }
 
   /**
@@ -384,90 +349,6 @@ export class CustomerPropertyController {
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
     await this.propertyService.delete(id, organizationId, currentUser.id);
-  }
-
-  // ==================== FOLLOWUP ROUTES ====================
-
-  /**
-   * Add a followup to property
-   */
-  @Post(':id/followups')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({
-    summary: 'Add a followup to property',
-    description: 'Schedule a new follow-up activity for a property.',
-  })
-  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
-  @ApiResponse({
-    status: HttpStatus.CREATED,
-    description: 'Followup created successfully',
-  })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Property not found' })
-  async addFollowup(
-    @Param('id', ParseUUIDPipe) propertyId: string,
-    @Body() dto: PropertyFollowupDto,
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<PropertyFollowup> {
-    return this.propertyService.addFollowup(propertyId, organizationId, dto, currentUser.id);
-  }
-
-  /**
-   * Update a followup
-   */
-  @Patch(':id/followups/:followupId')
-  @ApiOperation({
-    summary: 'Update a followup',
-    description: 'Update an existing follow-up activity.',
-  })
-  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
-  @ApiParam({ name: 'followupId', type: String, description: 'Followup ID' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Followup updated successfully',
-  })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Property or followup not found' })
-  async updateFollowup(
-    @Param('id', ParseUUIDPipe) propertyId: string,
-    @Param('followupId', ParseUUIDPipe) followupId: string,
-    @Body() dto: UpdatePropertyFollowupDto,
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<PropertyFollowup> {
-    return this.propertyService.updateFollowup(
-      propertyId,
-      organizationId,
-      followupId,
-      dto,
-      currentUser.id,
-    );
-  }
-
-  /**
-   * Delete a followup
-   */
-  @Delete(':id/followups/:followupId')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({
-    summary: 'Delete a followup',
-    description: 'Remove a follow-up activity from a property.',
-  })
-  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
-  @ApiParam({ name: 'followupId', type: String, description: 'Followup ID' })
-  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Followup deleted successfully' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Property or followup not found' })
-  async deleteFollowup(
-    @Param('id', ParseUUIDPipe) propertyId: string,
-    @Param('followupId', ParseUUIDPipe) followupId: string,
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<void> {
-    await this.propertyService.deleteFollowup(
-      propertyId,
-      organizationId,
-      followupId,
-      currentUser.id,
-    );
   }
 
   // ==================== SITE VISIT NESTED ROUTES ====================
