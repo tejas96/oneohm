@@ -151,7 +151,7 @@ export function CreateCustomerWizard(): React.JSX.Element {
         return !!(values.discomName && values.connectionType && values.sanctionedLoad);
       case 'lead':
         return !!values.leadTemperature;
-      default:
+      case 'review':
         return true;
     }
   };
@@ -200,7 +200,7 @@ export function CreateCustomerWizard(): React.JSX.Element {
       {/* Form Card */}
       <Card>
         <CardContent className="p-6">
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}>
             {/* Step 1: Customer Info */}
             {currentStep === 'customer' && (
               <div className="space-y-4">

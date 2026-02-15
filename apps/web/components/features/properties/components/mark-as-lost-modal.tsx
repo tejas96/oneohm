@@ -82,7 +82,7 @@ export function MarkAsLostModal({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}>
           <DialogBody className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="reason">Reason *</Label>

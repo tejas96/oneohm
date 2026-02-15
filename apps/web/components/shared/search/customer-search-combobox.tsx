@@ -120,13 +120,13 @@ export function CustomerSearchCombobox({
     }
   };
 
-  // Reserved for future use - clear selection functionality
-  const _handleClear = () => {
+  // TODO: Phase 2 - Add clear button functionality
+  const handleClear = (): void => {
     setSearchQuery('');
     setResults([]);
     onSelect(null);
   };
-  void _handleClear;
+  void handleClear;
 
   if (disabled) {
     return (

@@ -115,9 +115,10 @@ const STATUS_VARIANTS: Record<QuoteStatus, 'muted' | 'info' | 'success' | 'warni
 // ============================================================================
 
 export function QuoteDetailPage({ quoteId }: QuoteDetailPageProps): React.JSX.Element {
-  const _router = useRouter(); // Reserved for navigation
-  void _router; // Suppress unused variable warning
+  const router = useRouter();
   const quote = mockQuote; // TODO: Phase 2 - Fetch by ID
+  void quoteId; // TODO: Phase 2 - Use to fetch quote
+  void router; // TODO: Phase 2 - Use for navigation
 
   const [acceptModalOpen, setAcceptModalOpen] = React.useState(false);
   const [rejectModalOpen, setRejectModalOpen] = React.useState(false);

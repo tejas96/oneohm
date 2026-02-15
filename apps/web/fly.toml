@@ -38,7 +38,7 @@ primary_region = 'bom'
     timeout = '10s'
     grace_period = '60s'
     method = 'GET'
-    path = '/login'
+    path = '/api/health'
 
 [deploy]
   strategy = 'rolling'

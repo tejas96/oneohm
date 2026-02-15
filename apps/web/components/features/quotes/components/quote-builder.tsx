@@ -217,7 +217,7 @@ export function QuoteBuilder(): React.JSX.Element {
       <div className="grid grid-cols-3 gap-6">
         {/* Left: Form */}
         <div className="col-span-2 space-y-4">
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-4">
             {/* Step 1: Customer & Property */}
             <CollapsibleStepCard
               stepNumber={1}

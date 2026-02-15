@@ -152,7 +152,7 @@ export function AddPropertyForm({ customerId }: AddPropertyFormProps): React.JSX
       </Card>
 
       {/* Form */}
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
         {/* Property Details */}
         <Card>
           <CardHeader>

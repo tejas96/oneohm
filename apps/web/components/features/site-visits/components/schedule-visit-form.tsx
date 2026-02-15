@@ -153,7 +153,7 @@ export function ScheduleVisitForm(): React.JSX.Element {
           <CardTitle>Schedule Site Visit</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
             {/* Customer & Property Selection */}
             {!preselectedPropertyId && (
               <div className="space-y-4">
@@ -188,7 +188,7 @@ export function ScheduleVisitForm(): React.JSX.Element {
               <Label>Visit Type *</Label>
               <RadioCardGroup
                 value={form.watch('visitType')}
-                onValueChange={(v) => form.setValue('visitType', v as 'initial_assessment' | 'technical_survey' | 'follow_up')}
+                onValueChange={(v: string) => form.setValue('visitType', v as 'initial_assessment' | 'technical_survey' | 'follow_up')}
                 orientation="horizontal"
               >
                 {VISIT_TYPE_OPTIONS.map((type) => (

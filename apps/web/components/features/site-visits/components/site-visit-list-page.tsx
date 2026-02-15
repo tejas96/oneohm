@@ -89,13 +89,13 @@ const STATUS_VARIANTS: Record<SiteVisitStatus, 'warning' | 'info' | 'success'> =
   [SiteVisitStatus.COMPLETED]: 'success',
 };
 
-// Reserved for future use
-const _PRIORITY_VARIANTS: Record<VisitPriority, 'error' | 'warning' | 'muted'> = {
+// TODO: Phase 2 - Use for priority badges
+const PRIORITY_VARIANTS: Record<VisitPriority, 'error' | 'warning' | 'muted'> = {
   [VisitPriority.HIGH]: 'error',
   [VisitPriority.NORMAL]: 'warning',
   [VisitPriority.LOW]: 'muted',
 };
-void _PRIORITY_VARIANTS; // Suppress unused warning
+void PRIORITY_VARIANTS;
 
 const VISIT_TYPE_LABELS: Record<VisitType, string> = {
   [VisitType.INSPECTION]: 'Inspection',

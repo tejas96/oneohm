@@ -92,7 +92,7 @@ export function EditCustomerModal({
           <DialogTitle>Edit Customer</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}>
           <DialogBody className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

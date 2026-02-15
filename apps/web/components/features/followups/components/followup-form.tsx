@@ -165,7 +165,7 @@ export function FollowupForm({ followupId }: FollowupFormProps = {}): React.JSX.
           <CardTitle>{isEditMode ? 'Edit Follow-up' : 'Schedule Follow-up'}</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
             {/* Customer Selection */}
             {!preselectedPropertyId && (
               <div className="space-y-4">
