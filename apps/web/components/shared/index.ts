@@ -1,5 +1,9 @@
 // Export shared components
 
+// Re-export commonly used UI components for convenience
+export { StatsCard } from '../ui';
+export type { StatsCardProps } from '../ui';
+
 // Guards
 export { AuthGuard, PermissionGuard } from './guards';
 
@@ -8,8 +12,8 @@ export { Alert, alertVariants } from './alerts';
 export type { AlertProps } from './alerts';
 
 // Data Table
-export { Pagination, TablePagination } from './data-table';
-export type { PaginationProps, TablePaginationProps } from './data-table';
+export { Pagination, TablePagination, DataTable, createSortableHeader, createSelectionColumn } from './data-table';
+export type { PaginationProps, TablePaginationProps, DataTableProps } from './data-table';
 
 // Feedback (Empty States)
 export {
@@ -25,25 +29,39 @@ export {
 export type { EmptyStateProps, NoSearchResultsProps, ErrorStateProps } from './feedback';
 
 // Forms
-export { RadioCard, RadioCardGroup } from './forms';
-export type { RadioCardProps, RadioCardGroupProps } from './forms';
+export { RadioCard, RadioCardGroup, PropertySelector, EditableField } from './forms';
+export type { RadioCardProps, RadioCardGroupProps, Property, PropertySelectorProps, EditableFieldProps } from './forms';
 
 // Search
-export { SearchInput, SearchTrigger } from './search';
+export { SearchInput, SearchTrigger, CustomerSearchCombobox } from './search';
 export type {
   SearchResult,
   SearchResultGroup,
   SearchInputProps,
   SearchTriggerProps,
+  Customer,
+  CustomerSearchComboboxProps,
 } from './search';
 
+// Filters
+export { FilterTabs } from './filters';
+export type { FilterTab, FilterTabsProps } from './filters';
+
+// Drawers
+export { DrillDownDrawer } from './drawers';
+export type { DrillDownItem, DrillDownDrawerProps } from './drawers';
+
 // Wizards
-export { Stepper } from './wizards';
-export type { Step, StepStatus, StepperProps } from './wizards';
+export { Stepper, CollapsibleStepCard, StepCardGroup } from './wizards';
+export type { Step, StepStatus, StepperProps, StepCardStatus, CollapsibleStepCardProps, StepCardGroupProps } from './wizards';
 
 // Timeline
 export { Timeline } from './timeline';
 export type { TimelineItem, TimelineProps } from './timeline';
+
+// Charts
+export { FunnelChart } from './charts';
+export type { FunnelStage, FunnelChartProps } from './charts';
 
 // Display
 export { FieldDisplay } from './display';

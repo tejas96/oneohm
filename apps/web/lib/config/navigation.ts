@@ -1,15 +1,17 @@
 import {
   BarChart3,
   Box,
+  Building2,
   Calendar,
   CheckSquare,
+  Clock,
   FileText,
   Folder,
   HelpCircle,
   Home,
   LayoutGrid,
   List,
-  ListTodo,
+  MapPin,
   MoreHorizontal,
   Plus,
   Settings,
@@ -19,7 +21,7 @@ import {
   Wrench,
 } from 'lucide-react';
 
-import { ROUTES } from './routes';
+import { ROUTES, getPanelKeyForPath } from './routes';
 
 import type { NavigationConfig, PanelConfig } from '@/lib/types';
 
@@ -47,9 +49,9 @@ export const navigationConfig: NavigationConfig = {
       id: 'crm',
       icon: Users,
       label: 'Sales & CRM',
-      href: ROUTES.CRM.HOME,
+      href: ROUTES.CUSTOMERS.LIST,
       panelKey: 'crm',
-      badge: 12,
+      // badge: dynamically set via useNavigationCounts hook
     },
     {
       id: 'quotes',
@@ -119,7 +121,6 @@ export const navigationConfig: NavigationConfig = {
       label: 'Admin',
       href: ROUTES.ADMIN.HOME,
       panelKey: 'admin',
-      roles: ['admin', 'super_admin', 'platform_admin'],
     },
   ],
 
@@ -152,18 +153,105 @@ export const navigationConfig: NavigationConfig = {
       title: 'Sales & CRM',
       sections: [
         {
-          title: 'Pipeline',
+          title: 'Customers',
           items: [
-            { id: 'leads', icon: Users, label: 'Leads', href: ROUTES.CRM.LEADS, badge: 12 },
-            { id: 'customers', icon: Users, label: 'Customers', href: ROUTES.CUSTOMERS.LIST },
-            { id: 'pipeline', icon: TrendingUp, label: 'Pipeline View', href: ROUTES.PIPELINE.HOME },
+            { 
+              id: 'customers', 
+              icon: Users, 
+              label: 'All Customers', 
+              href: ROUTES.CUSTOMERS.LIST,
+              // badge: dynamically set via useNavigationCounts (crm.totalCustomers)
+            },
+            { 
+              id: 'new-customer', 
+              icon: Plus, 
+              label: 'Add Customer', 
+              href: ROUTES.CUSTOMERS.NEW,
+              exactMatch: true, // Action route - don't match as child of /customers
+            },
           ],
         },
         {
-          title: 'Activities',
+          title: 'Properties',
           items: [
-            { id: 'follow-ups', icon: ListTodo, label: 'Follow-ups', href: ROUTES.CRM.FOLLOW_UPS },
-            { id: 'site-visits', icon: Calendar, label: 'Site Visits', href: ROUTES.SITE_VISITS.LIST },
+            { 
+              id: 'properties', 
+              icon: Building2, 
+              label: 'All Properties', 
+              href: ROUTES.PROPERTIES.LIST,
+              // badge: dynamically set via useNavigationCounts (crm.totalProperties)
+              // Sub-items for lead temperature filtering
+              children: [
+                {
+                  id: 'properties-hot',
+                  label: 'Hot',
+                  href: `${ROUTES.PROPERTIES.LIST}?temp=hot`,
+                  statusDot: 'hot' as const,
+                  // badge: dynamically set via useNavigationCounts (crm.properties.hot)
+                  badgeVariant: 'error' as const,
+                },
+                {
+                  id: 'properties-warm',
+                  label: 'Warm',
+                  href: `${ROUTES.PROPERTIES.LIST}?temp=warm`,
+                  statusDot: 'warm' as const,
+                  // badge: dynamically set via useNavigationCounts (crm.properties.warm)
+                  badgeVariant: 'warning' as const,
+                },
+                {
+                  id: 'properties-cold',
+                  label: 'Cold',
+                  href: `${ROUTES.PROPERTIES.LIST}?temp=cold`,
+                  statusDot: 'cold' as const,
+                  // badge: dynamically set via useNavigationCounts (crm.properties.cold)
+                  badgeVariant: 'default' as const,
+                },
+              ],
+            },
+            { 
+              id: 'site-visits', 
+              icon: MapPin, 
+              label: 'Site Visits', 
+              href: ROUTES.SITE_VISITS.LIST,
+            },
+          ],
+        },
+        {
+          title: 'Pipeline',
+          items: [
+            { 
+              id: 'pipeline', 
+              icon: TrendingUp, 
+              label: 'Sales Funnel', 
+              href: ROUTES.PIPELINE.HOME,
+            },
+          ],
+        },
+        {
+          title: 'Follow-ups',
+          items: [
+            { 
+              id: 'followups-today', 
+              icon: Clock, 
+              label: 'Today', 
+              href: ROUTES.FOLLOWUPS.LIST,
+              // badge: dynamically set via useNavigationCounts (crm.followups.today)
+              badgeVariant: 'warning' as const,
+            },
+            { 
+              id: 'followups-overdue', 
+              icon: Clock, 
+              label: 'Overdue', 
+              href: `${ROUTES.FOLLOWUPS.LIST}?filter=overdue`,
+              // badge: dynamically set via useNavigationCounts (crm.followups.overdue)
+              badgeVariant: 'error' as const,
+            },
+            { 
+              id: 'followups-upcoming', 
+              icon: Calendar, 
+              label: 'Upcoming', 
+              href: `${ROUTES.FOLLOWUPS.LIST}?filter=upcoming`,
+            },
           ],
         },
       ],
@@ -183,7 +271,7 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Actions',
           items: [
-            { id: 'new-quote', icon: Plus, label: 'New Quote', href: ROUTES.QUOTES.NEW },
+            { id: 'new-quote', icon: Plus, label: 'New Quote', href: ROUTES.QUOTES.NEW, exactMatch: true },
           ],
         },
       ],
@@ -203,7 +291,7 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Actions',
           items: [
-            { id: 'new-project', icon: Plus, label: 'New Project', href: ROUTES.PROJECTS.NEW },
+            { id: 'new-project', icon: Plus, label: 'New Project', href: ROUTES.PROJECTS.NEW, exactMatch: true },
           ],
         },
       ],
@@ -320,48 +408,41 @@ export const navigationConfig: NavigationConfig = {
       sections: [
         {
           title: 'Settings',
-          roles: ['admin', 'super_admin', 'platform_admin'],
           items: [
             {
               id: 'general-settings',
               icon: Settings,
               label: 'General Settings',
               href: ROUTES.ADMIN.SETTINGS,
-              permissions: ['settings:read'],
             },
             {
               id: 'user-management',
               icon: Users,
               label: 'User Management',
               href: ROUTES.ADMIN.USERS,
-              permissions: ['users:manage'],
             },
           ],
         },
         {
           title: 'System',
-          roles: ['admin', 'super_admin', 'platform_admin'],
           items: [
             {
               id: 'workflows',
               icon: LayoutGrid,
               label: 'Workflows',
               href: ROUTES.ADMIN.WORKFLOWS,
-              permissions: ['workflows:manage'],
             },
             {
               id: 'integrations',
               icon: Settings,
               label: 'Integrations',
               href: ROUTES.ADMIN.INTEGRATIONS,
-              permissions: ['integrations:manage'],
             },
             {
               id: 'audit',
               icon: FileText,
               label: 'Audit Log',
               href: ROUTES.ADMIN.AUDIT,
-              permissions: ['audit:view'],
             },
           ],
         },
@@ -403,9 +484,23 @@ export function getPanelConfigByPath(pathname: string): { key: string; config: P
 /**
  * Check if a nav item is active based on current pathname
  */
-export function isNavItemActive(pathname: string, href: string): boolean {
+/**
+ * Check if a navigation rail item should be active based on current pathname.
+ * Uses ROUTE_TO_PANEL_MAP to handle cases where multiple routes belong to the same section.
+ * For example: /properties should keep the CRM rail item active, not just /customers.
+ */
+export function isNavItemActive(pathname: string, href: string, panelKey?: string): boolean {
+  // Dashboard special case
   if (href === ROUTES.DASHBOARD.HOME) {
     return pathname === ROUTES.DASHBOARD.HOME || pathname === ROUTES.HOME;
   }
+  
+  // If panelKey is provided, check if current path belongs to the same panel
+  if (panelKey) {
+    const currentPanelKey = getPanelKeyForPath(pathname);
+    return currentPanelKey === panelKey;
+  }
+  
+  // Fallback to prefix matching
   return pathname.startsWith(href);
 }

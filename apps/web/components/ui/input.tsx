@@ -36,8 +36,8 @@ const inputVariants = cva(
 export interface InputProps
   extends Omit<React.ComponentProps<'input'>, 'size' | 'prefix'>,
     VariantProps<typeof inputVariants> {
-  /** Show error styling */
-  error?: boolean;
+  /** Show error styling - accepts boolean or error message string (truthy = error state) */
+  error?: boolean | string;
 
   // Label Integration
   /** Label text */
@@ -123,7 +123,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const hasLeftAddon = leftIcon || prefix;
     const hasRightAddon = rightIcon || suffix || clearable || loading;
     const showClear = clearable && value && !disabled && !loading;
-    const displayMessage = error && errorMessage ? errorMessage : helperText;
+    // Coerce error to boolean for styling, and derive error message
+    const hasError = !!error;
+    const derivedErrorMessage = errorMessage || (typeof error === 'string' ? error : undefined);
+    const displayMessage = hasError && derivedErrorMessage ? derivedErrorMessage : helperText;
 
     const renderLabel = () => {
       if (!label) return null;
@@ -171,7 +174,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           value={value}
           disabled={disabled}
           className={cn(
-            inputVariants({ size, variant: error ? 'error' : variant }),
+            inputVariants({ size, variant: hasError ? 'error' : variant }),
             hasLeftAddon && 'pl-10',
             prefix && 'pl-12',
             hasRightAddon && 'pr-10',
@@ -229,7 +232,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <p
           className={cn(
             'text-xs mt-1.5',
-            error ? 'text-error' : 'text-foreground-tertiary',
+            hasError ? 'text-error' : 'text-foreground-tertiary',
           )}
         >
           {displayMessage}

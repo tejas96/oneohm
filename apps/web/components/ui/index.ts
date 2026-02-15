@@ -124,6 +124,18 @@ export type { LabelProps } from './label';
 // Popover
 export { Popover, PopoverTrigger, PopoverContent } from './popover';
 
+// Calendar
+export { Calendar } from './calendar';
+export type { CalendarProps } from './calendar';
+
+// DatePicker
+export { DatePicker } from './date-picker';
+export type { DatePickerProps } from './date-picker';
+
+// DateRangePicker
+export { DateRangePicker } from './date-range-picker';
+export type { DateRangePickerProps } from './date-range-picker';
+
 // Select
 export {
   Select,

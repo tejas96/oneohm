@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useLoginForm } from '../hooks/use-login-form';
 
 import { Alert } from '@/components/shared';
+import { ROUTES } from '@/lib/config/routes';
 import {
   Button,
   Card,
@@ -103,7 +104,7 @@ export function LoginForm(): React.JSX.Element {
                 label="Remember me"
               />
               <Typography variant="link" size="sm" color="primary" asChild>
-                <Link href="/forgot-password">Forgot password?</Link>
+                <Link href={ROUTES.AUTH.FORGOT_PASSWORD}>Forgot password?</Link>
               </Typography>
             </div>
 
@@ -161,7 +162,7 @@ export function LoginForm(): React.JSX.Element {
         <Typography variant="body" size="sm" color="muted">
           Don&apos;t have an account?{' '}
           <Typography variant="link" color="primary" asChild>
-            <Link href="/register">Contact your administrator</Link>
+            <Link href={ROUTES.AUTH.REGISTER}>Contact your administrator</Link>
           </Typography>
         </Typography>
       </div>

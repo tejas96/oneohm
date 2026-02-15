@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from 'react';
 
-import apiClient, { clearTokens, getAccessToken, setTokens } from '@/lib/api/client';
+import apiClient, { clearTokens, getAccessToken, getRefreshToken, setTokens } from '@/lib/api/client';
 import type {
   AuthUser,
   ForgotPasswordData,
@@ -101,7 +101,29 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
   // Initialize auth on mount - check for existing token and refresh user
   useEffect(() => {
     const initAuth = async () => {
-      const token = getAccessToken();
+      let token = getAccessToken();
+      
+      // If no access token but refresh token exists, attempt to refresh
+      if (!token) {
+        const refreshToken = getRefreshToken();
+        if (refreshToken) {
+          try {
+            // Attempt to refresh tokens
+            const response = await apiClient.post<{ accessToken: string; refreshToken: string }>(
+              '/auth/refresh',
+              { refreshToken }
+            );
+            const { accessToken, refreshToken: newRefreshToken } = response.data;
+            setTokens(accessToken, newRefreshToken);
+            token = accessToken; // Use the new token
+          } catch {
+            // Refresh failed - clear tokens and let user login again
+            clearTokens();
+          }
+        }
+      }
+      
+      // If we have a valid token, fetch user data
       if (token) {
         try {
           const response = await apiClient.get<AuthUser>('/auth/me');
@@ -111,6 +133,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
           clearTokens();
         }
       }
+      
       setIsInitialized(true);
     };
 

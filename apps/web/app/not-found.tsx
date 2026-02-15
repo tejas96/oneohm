@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { Button , Typography } from '@/components/ui';
+import { ROUTES } from '@/lib/config/routes';
 
 // eslint-disable-next-line import/no-default-export -- Next.js requires default export for special files
 export default function NotFound(): React.JSX.Element {
@@ -17,7 +18,7 @@ export default function NotFound(): React.JSX.Element {
           The page you&apos;re looking for doesn&apos;t exist.
         </Typography>
         <Button asChild>
-          <Link href="/">Go Home</Link>
+          <Link href={ROUTES.HOME}>Go Home</Link>
         </Button>
       </div>
     </div>

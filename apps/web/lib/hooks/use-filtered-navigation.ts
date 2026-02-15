@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 
 import { navigationConfig } from '@/lib/config/navigation';
+import { getPanelKeyForPath } from '@/lib/config/routes';
 import {
   type NavItem,
   type NavSection,
@@ -139,26 +140,27 @@ export function useFilteredNavigation(): UseFilteredNavigationReturn {
 /**
  * Get filtered panel config by route path
  * Use within components that already have useFilteredNavigation
+ * 
+ * Uses ROUTE_TO_PANEL_MAP for accurate route-to-panel mapping.
+ * This ensures routes like /properties, /site-visits, /followups
+ * correctly show the CRM panel (not dashboard).
  */
 export function getFilteredPanelByPath(
   navigation: NavigationConfig,
   pathname: string
 ): { key: string; config: PanelConfig } | null {
-  // Find matching rail item from filtered navigation
-  const allRailItems = [...navigation.railTop, ...navigation.railBottom];
-
-  const matchedItem = allRailItems.find(
-    (item) => pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
-  );
-
-  if (matchedItem && navigation.panels[matchedItem.panelKey]) {
+  // Use centralized route-to-panel mapping for accurate panel selection
+  const panelKey = getPanelKeyForPath(pathname);
+  
+  // Return the matched panel if user has access
+  if (navigation.panels[panelKey]) {
     return {
-      key: matchedItem.panelKey,
-      config: navigation.panels[matchedItem.panelKey]!,
+      key: panelKey,
+      config: navigation.panels[panelKey]!,
     };
   }
 
-  // Default to dashboard if available
+  // Fallback to dashboard if the matched panel isn't available (permission restricted)
   if (navigation.panels.dashboard) {
     return {
       key: 'dashboard',

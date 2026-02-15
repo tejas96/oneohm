@@ -7,6 +7,7 @@ import { useResetPassword } from '../hooks/use-reset-password';
 
 import { Alert } from '@/components/shared';
 import { Button, Card, PasswordInput, Spinner, Typography } from '@/components/ui';
+import { ROUTES } from '@/lib/config/routes';
 import { cn } from '@/lib/utils';
 
 /**
@@ -46,7 +47,7 @@ export function ResetPasswordForm(): React.JSX.Element {
         </div>
 
         <Button className="w-full" asChild>
-          <Link href="/login">Continue to Login</Link>
+          <Link href={ROUTES.AUTH.LOGIN}>Continue to Login</Link>
         </Button>
       </Card>
     );
@@ -160,7 +161,7 @@ export function ResetPasswordForm(): React.JSX.Element {
 
       <div className="mt-6 pt-4 border-t border-border-light text-center">
         <Typography variant="link" size="sm" color="muted" asChild>
-          <Link href="/login">← Back to login</Link>
+          <Link href={ROUTES.AUTH.LOGIN}>← Back to login</Link>
         </Typography>
       </div>
     </Card>

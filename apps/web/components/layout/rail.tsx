@@ -42,7 +42,8 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
         {/* Top Navigation */}
         <nav className="flex-1 flex flex-col pt-1.5">
           {navigation.railTop.map((item) => {
-            const isActive = isNavItemActive(pathname, item.href);
+            // Pass panelKey for accurate active state (e.g., /properties shows CRM as active)
+            const isActive = isNavItemActive(pathname, item.href, item.panelKey);
             const Icon = item.icon;
 
             return (
@@ -100,7 +101,8 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
 
           {/* Bottom Nav Items */}
           {navigation.railBottom.map((item) => {
-            const isActive = isNavItemActive(pathname, item.href);
+            // Pass panelKey for accurate active state
+            const isActive = isNavItemActive(pathname, item.href, item.panelKey);
             const Icon = item.icon;
 
             return (

@@ -138,13 +138,13 @@ export function UserMenu({ className }: UserMenuProps) {
         {/* Quick Links */}
         <DropdownMenuGroup>
           <DropdownMenuItem asChild className="cursor-pointer">
-            <Link href="/profile">
+            <Link href={ROUTES.ACCOUNT.PROFILE}>
               <User className="mr-2" />
               <span>View Profile</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="cursor-pointer">
-            <Link href="/settings">
+            <Link href={ROUTES.ACCOUNT.SETTINGS}>
               <Settings className="mr-2" />
               <span>Settings</span>
             </Link>

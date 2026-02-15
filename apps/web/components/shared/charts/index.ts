@@ -1,2 +1,3 @@
 // Export chart components
-export {};
+export { FunnelChart } from './funnel-chart';
+export type { FunnelStage, FunnelChartProps } from './funnel-chart';

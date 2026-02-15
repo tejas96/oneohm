@@ -60,7 +60,7 @@ export function useLoginForm(): UseLoginFormReturn {
   // Redirect if already authenticated
   useEffect(() => {
     if (isInitialized && isAuthenticated) {
-      const redirectTo = getQueryParam('redirect') || '/';
+      const redirectTo = getQueryParam('redirect') || ROUTES.HOME;
       router.replace(redirectTo);
     }
   }, [isAuthenticated, isInitialized, router, getQueryParam]);

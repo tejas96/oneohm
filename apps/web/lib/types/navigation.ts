@@ -1,5 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 
+import { ROUTES } from '@/lib/config/routes';
+
 /**
  * Navigation Types for OneOhm EPC Web
  * Defines structure for Rail and Panel navigation
@@ -14,6 +16,12 @@ import type { LucideIcon } from 'lucide-react';
 /** User roles for access control */
 export type UserRole = 'admin' | 'super_admin' | 'platform_admin' | 'manager' | 'sales' | 'field_worker' | 'viewer';
 
+/** Badge variants for navigation items */
+export type NavBadgeVariant = 'default' | 'primary' | 'warning' | 'error' | 'success' | 'info';
+
+/** Status dot colors for lead temperature indicators */
+export type StatusDotColor = 'hot' | 'warm' | 'cold';
+
 /** Base navigation item */
 export interface NavItem {
   /** Unique identifier for the nav item */
@@ -26,6 +34,10 @@ export interface NavItem {
   icon?: LucideIcon;
   /** Optional badge count/text */
   badge?: number | string;
+  /** Badge variant for color styling */
+  badgeVariant?: NavBadgeVariant;
+  /** Status dot color (for lead temperature indicators) */
+  statusDot?: StatusDotColor;
   /** Whether the item is disabled */
   disabled?: boolean;
   /** External link (opens in new tab) */
@@ -44,6 +56,8 @@ export interface NavItem {
   children?: NavItem[];
   /** Use exact path matching instead of prefix */
   exactMatch?: boolean;
+  /** Whether this is a sub-item (visually indented, smaller) */
+  isSubItem?: boolean;
 }
 
 /** Navigation section with grouped items */
@@ -99,8 +113,8 @@ export const defaultPathMatcher: PathMatcher = (pathname, href, exactMatch = fal
     return cleanPathname === cleanHref;
   }
   
-  if (cleanHref === '/dashboard') {
-    return cleanPathname === '/dashboard' || cleanPathname === '/';
+  if (cleanHref === ROUTES.DASHBOARD.HOME) {
+    return cleanPathname === ROUTES.DASHBOARD.HOME || cleanPathname === ROUTES.HOME;
   }
   
   return cleanPathname.startsWith(cleanHref);

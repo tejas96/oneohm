@@ -7,6 +7,7 @@ import { useForgotPassword } from '../hooks/use-forgot-password';
 
 import { Alert } from '@/components/shared';
 import { Button, Card, Input, Spinner, Typography } from '@/components/ui';
+import { ROUTES } from '@/lib/config/routes';
 
 /**
  * ForgotPasswordForm Component
@@ -76,7 +77,7 @@ export function ForgotPasswordForm(): React.JSX.Element {
 
         <div className="text-center">
           <Typography variant="link" size="sm" color="muted" asChild>
-            <Link href="/login">← Back to login</Link>
+            <Link href={ROUTES.AUTH.LOGIN}>← Back to login</Link>
           </Typography>
         </div>
       </Card>
@@ -131,7 +132,7 @@ export function ForgotPasswordForm(): React.JSX.Element {
 
       <div className="mt-6 pt-4 border-t border-border-light text-center">
         <Typography variant="link" size="sm" color="muted" asChild>
-          <Link href="/login">← Back to login</Link>
+          <Link href={ROUTES.AUTH.LOGIN}>← Back to login</Link>
         </Typography>
       </div>
     </Card>
