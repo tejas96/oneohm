@@ -136,9 +136,9 @@ export class SignDocumentDto {
 }
 
 /**
- * Verify OTP DTO
+ * Verify Document OTP DTO
  */
-export class VerifyOtpDto {
+export class VerifyDocumentOtpDto {
   @ApiProperty({ description: 'OTP code' })
   @IsString()
   @IsNotEmpty()
