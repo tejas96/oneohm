@@ -2,118 +2,170 @@
 globs: apps/backend/**/*.ts
 ---
 
-# NestJS Backend — Iron Rules
+# Backend Protocol
 
-> **Controller → Service → Repository. No exceptions.**
+**Think first, code second. First implementation = production ready.**
 
 ---
 
-## 📁 Module Structure
+## Before Writing Code
+
+- **Scenarios** — List ALL user scenarios before coding
+- **Edge cases** — What can fail? Handle it upfront
+- **Reuse** — Search existing code. Don't duplicate
+- **Security** — Auth? Org isolation? Data validation?
+
+Wrong approach → STOP → Explain → Propose better
+
+---
+
+## Code Quality Standards
+
+**TypeScript:**
+- Strict mode enabled — no implicit `any`, null checks enforced
+- Explicit return types on functions
+- Use `unknown` over `any`, narrow with type guards
+- Prefer `interface` for objects, `type` for unions/intersections
+
+**Lint & Format:**
+- Zero lint errors before commit — `npx nx affected -t lint`
+- Run typecheck — `npx nx affected -t typecheck`
+- Follow existing patterns — consistency > preference
+- No `@ts-ignore` without justification comment
+
+**Clean Code:**
+- Single responsibility — one function, one job
+- Meaningful names — `getUserById` not `getData`
+- Small functions — < 30 lines, extract if larger
+- Early returns — reduce nesting, fail fast
+- No magic numbers — use named constants
+
+---
+
+## Architecture
+
+**Controller → Service → Repository**
+
+| Layer | Responsibility |
+|-------|----------------|
+| Controller | HTTP layer, call service, return DTO |
+| Service | Business logic, validation, orchestration |
+| Repository | Database queries, no business decisions |
+
+---
+
+## Module Structure
 
 ```
 modules/[feature]/
 ├── [feature].module.ts
-├── controllers/     → HTTP handlers only
-├── services/        → Business logic only
-├── repositories/    → TypeORM only
-├── entities/        → Extend BaseEntity
-├── dto/             → Validated I/O
-└── index.ts         → Barrel exports
+├── controllers/
+├── services/
+├── repositories/
+├── entities/
+├── dto/
+├── types/          ← Backend-only types
+└── index.ts        ← Barrel exports
 ```
 
 ---
 
-## 🗃️ Entity Template
+## Types & Shared Code
+
+| Location | Use For |
+|----------|---------|
+| `@oneohm-epc/shared-types` | Request/Response interfaces, enums, domain types |
+| `modules/[feature]/types/` | Internal service types, repository-specific types |
+| `common/utils/` | toDto, toPaginatedResponse |
+| `@oneohm-epc/shared-utils` | Decorators (OrganizationContext, ApiCreate, etc.) |
+
+**Rule:** If frontend needs it → shared-types. Always.
+
+---
+
+## Multi-Tenant Security
+
+**Every query:**
+- Filter by `organizationId` + `deletedAt: IsNull()`
+
+**Every mutation:**
+- Track `createdBy` / `updatedBy`
+- Soft delete only (never hard delete)
+
+---
+
+## Error Handling
+
+| Scenario | Exception |
+|----------|-----------|
+| Not found | `NotFoundException('Resource not found')` |
+| Duplicate | `ConflictException('Already exists')` |
+| Invalid input | `BadRequestException('Validation failed')` |
+| No permission | `ForbiddenException('Access denied')` |
+
+Never throw raw `Error()` or return `{ error: string }`.
+
+---
+
+## Reusable Patterns
 
 ```typescript
-@Entity('table_name')
-export class MyEntity extends BaseEntity {
-  @Column({ name: 'organization_id', type: 'uuid' })
-  organizationId!: string;
-  
-  @DeleteDateColumn({ name: 'deleted_at', nullable: true })
-  deletedAt?: Date;
-  
-  @Column({ name: 'created_by', type: 'uuid', nullable: true })
-  createdBy?: string;
-  
-  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
-  updatedBy?: string;
-}
+// Response transforms
+toDto(DtoClass, entity)
+toDtoArray(DtoClass, entities)
+toPaginatedResponse(Dto, data, total, page, limit)
+
+// Guards & Context
+@UseGuards(JwtAuthGuard)
+@OrganizationContext()
+@CurrentUser()
 ```
 
 ---
 
-## 🎯 Layer Rules
+## DTO Rules
 
-| Layer | Does | Never Does |
-|-------|------|------------|
-| Controller | Parse input, call service, return DTO | Business logic, TypeORM |
-| Service | Business logic, validation, orchestration | TypeORM queries |
-| Repository | TypeORM queries, pagination | Business decisions |
+- **Input:** Validators + `@ApiProperty()`
+- **Response:** `@Exclude()` class + `@Expose()` fields
+- **Transform:** Always use `toDto()` helpers
 
 ---
 
-## 🗄️ Repository Pattern
+## Naming
 
-```typescript
-// ✅ ALWAYS
-async findByOrg(orgId: string, page = 1, limit = 20): Promise<[Entity[], number]> {
-  return this.repository.findAndCount({
-    where: { organizationId: orgId, deletedAt: IsNull() },
-    skip: (page - 1) * limit,
-    take: limit,
-    order: { createdAt: 'DESC' },
-  });
-}
-```
-
-**Checklist:**
-- `deletedAt: IsNull()` — Always filter soft deleted
-- `organizationId` — Always filter by org
-- `findAndCount` — Always paginate lists
-- `createdBy/updatedBy` — Always track mutations
+| Type | Pattern |
+|------|---------|
+| Entity | `CustomerProfileEntity` |
+| Service | `CustomerService` |
+| Controller | `CustomerController` |
+| Repository | `CustomerRepository` |
+| Create DTO | `CreateCustomerDto` |
+| Response DTO | `CustomerResponseDto` |
 
 ---
 
-## 📝 DTO Pattern
+## Never / Always
 
-```typescript
-export class CreateDto {
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(100)
-  name!: string;
-}
-
-@Exclude()
-export class ResponseDto {
-  @Expose() id!: string;
-  @Expose() name!: string;
-}
-```
+| Never | Always |
+|-------|--------|
+| Skip org filter | `@UseGuards(JwtAuthGuard)` on all endpoints |
+| Skip soft delete filter | `@OrganizationContext()` on all endpoints |
+| Use `any` type | `deletedAt: IsNull()` in queries |
+| Use `console.log` | `this.logger.log()` for logging |
+| Return raw entities | `toDto()` for responses |
+| Hardcode values | Config/constants |
+| Trust client input | Validate everything |
+| Duplicate code | Import and extend |
 
 ---
 
-## 🔐 Security Checklist
+## Checklist (Before Ship)
 
-```
-✅ JwtAuthGuard on all endpoints
-✅ @OrganizationContext() for org isolation
-✅ @CurrentUser() for audit trail
-✅ class-validator on all DTOs
-✅ Never log sensitive data
-```
+- [ ] `npx nx affected -t lint` — zero errors
+- [ ] `npx nx affected -t typecheck` — zero errors
+- [ ] All scenarios + edge cases handled
+- [ ] Auth guard + org isolation on all endpoints
+- [ ] Error handling complete
+- [ ] No `any`, no `console.log`, no duplication
 
----
-
-## ⚡ Quick Reference
-
-| Action | How |
-|--------|-----|
-| Get org ID | `@OrganizationContext() orgId: string` |
-| Get user | `@CurrentUser() user: CurrentUserType` |
-| Response | `toDto(ResponseDto, entity)` |
-| Paginated | `toPaginatedResponse(Dto, data, total, page, limit)` |
-| Logging | `this.logger.log()` not `console.log` |
+**Unchecked → Fix first → Then ship**

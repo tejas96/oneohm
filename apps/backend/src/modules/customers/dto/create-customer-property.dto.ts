@@ -21,7 +21,6 @@ import {
 } from 'class-validator';
 
 import { PropertyDocumentDto } from './property-document.dto';
-import { PropertyFollowupDto } from './property-followup.dto';
 
 /**
  * DTO for creating a new customer property (installation site)
@@ -188,17 +187,6 @@ export class CreateCustomerPropertyDto {
   @IsEnum(LeadTemperature)
   @IsOptional()
   leadTemperature?: LeadTemperature;
-
-  // ==================== Followups ====================
-  @ApiPropertyOptional({
-    type: [PropertyFollowupDto],
-    description: 'Scheduled follow-up activities for this property',
-  })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => PropertyFollowupDto)
-  followups?: PropertyFollowupDto[];
 
   // ==================== Flags ====================
   @ApiPropertyOptional({

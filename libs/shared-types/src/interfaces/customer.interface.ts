@@ -44,28 +44,42 @@ export interface PropertyDocument {
 }
 
 // ============================================================================
-// Property Followup Interfaces
+// Followup Interfaces
 // ============================================================================
 
 /**
- * Property Followup - Scheduled activity for a property
- * Stored as JSONB array in customer_properties table
+ * Followup - Scheduled activity for a customer or property
+ * Stored in dedicated `followups` table with proper relational structure
+ *
+ * Supports:
+ * - Customer-level followups (propertyId is undefined/null)
+ * - Property-level followups (propertyId is set)
  *
  * @example
- * const followup: PropertyFollowup = {
+ * const followup: Followup = {
  *   id: "uuid-here",
+ *   organizationId: "org-uuid",
+ *   customerId: "customer-uuid",
+ *   propertyId: "property-uuid", // optional
  *   type: FollowupType.VISIT,
  *   subject: "Site measurement visit",
  *   scheduledAt: "2026-02-15T10:00:00.000Z",
  *   assignedToUserId: "user-uuid",
  *   status: FollowupStatus.PENDING,
  *   priority: FollowupPriority.NORMAL,
- *   lastUpdatedAt: "2026-02-13T09:00:00.000Z"
+ *   createdAt: "2026-02-13T09:00:00.000Z",
+ *   updatedAt: "2026-02-13T09:00:00.000Z"
  * };
  */
-export interface PropertyFollowup {
-  /** UUID for this followup (generated with crypto.randomUUID()) */
+export interface Followup {
+  /** UUID for this followup */
   id: string;
+  /** Organization ID (multi-tenant) */
+  organizationId: string;
+  /** Customer ID (always required) */
+  customerId: string;
+  /** Property ID (optional - null for customer-level followups) */
+  propertyId?: string;
   /** Type of followup activity */
   type: FollowupType;
   /** Brief description of the followup */
@@ -80,6 +94,17 @@ export interface PropertyFollowup {
   priority: FollowupPriority;
   /** Optional notes */
   notes?: string;
-  /** ISO datetime of last create/update (also serves as completion timestamp when status = completed) */
-  lastUpdatedAt: string;
+  /** ISO datetime when created */
+  createdAt: string;
+  /** ISO datetime when last updated */
+  updatedAt: string;
+  /** User ID who created this followup */
+  createdBy?: string;
+  /** User ID who last updated this followup */
+  updatedBy?: string;
 }
+
+/**
+ * @deprecated Use Followup instead. PropertyFollowup is kept for backward compatibility.
+ */
+export type PropertyFollowup = Followup;
