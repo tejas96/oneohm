@@ -14,11 +14,13 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  _hasHydrated: boolean;
 
   // Actions
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
   logout: () => void;
+  setHasHydrated: (state: boolean) => void;
 
   // Permission helpers
   hasPermission: (permission: string) => boolean;
@@ -39,6 +41,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
       isLoading: true,
+      _hasHydrated: false,
 
       // Set user and update authenticated state
       setUser: (user) =>
@@ -50,6 +53,9 @@ export const useAuthStore = create<AuthState>()(
 
       // Set loading state
       setLoading: (loading) => set({ isLoading: loading }),
+
+      // Set hydration state
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
 
       // Logout - clear user state
       logout: () =>
@@ -99,6 +105,9 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     },
   ),
 );
@@ -122,4 +131,11 @@ export function useCurrentUser(): User | null {
  */
 export function useIsAuthenticated(): boolean {
   return useAuthStore((state) => state.isAuthenticated);
+}
+
+/**
+ * Hook to check if auth store has hydrated from localStorage
+ */
+export function useHasHydrated(): boolean {
+  return useAuthStore((state) => state._hasHydrated);
 }

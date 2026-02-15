@@ -128,7 +128,7 @@ export function DateRangePicker({
           id="date"
           variant="outline"
           className={cn(
-            'w-full justify-start text-left font-normal h-input-md',
+            'w-full justify-start text-left font-normal h-input-lg',
             !value && 'text-foreground-tertiary',
             className
           )}

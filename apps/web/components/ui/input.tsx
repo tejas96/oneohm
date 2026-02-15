@@ -27,7 +27,7 @@ const inputVariants = cva(
       },
     },
     defaultVariants: {
-      size: 'default',
+      size: 'lg',
       variant: 'default',
     },
   },

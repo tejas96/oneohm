@@ -98,7 +98,7 @@ export function PipelinePage(): React.JSX.Element {
       <div className="flex items-center justify-between">
         <div>
           <Typography variant="h2">Pipeline</Typography>
-          <Typography variant="body" color="muted" size="sm" className="mt-1">
+          <Typography variant="body" color="muted" className="mt-1">
             Sales funnel overview and insights
           </Typography>
         </div>

@@ -60,6 +60,10 @@ export interface DataTableProps<TData, TValue> {
   enablePagination?: boolean;
   /** Default page size */
   pageSize?: number;
+  /** Pagination variant: 'full' for complete controls (default), 'simple' for "Showing X-Y of Z items" */
+  paginationVariant?: 'full' | 'simple';
+  /** Item label for pagination (e.g., "properties", "customers") - used with 'simple' variant */
+  itemLabel?: string;
   /** Called when row selection changes */
   onRowSelectionChange?: (selectedRows: TData[]) => void;
   /** Additional toolbar actions */
@@ -110,7 +114,7 @@ export function createSelectionColumn<TData>(): ColumnDef<TData> {
         indeterminate={table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected()}
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label="Select all"
-        className="translate-y-[2px]"
+        size="sm"
       />
     ),
     cell: ({ row }) => (
@@ -118,7 +122,7 @@ export function createSelectionColumn<TData>(): ColumnDef<TData> {
         checked={row.getIsSelected()}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
         aria-label="Select row"
-        className="translate-y-[2px]"
+        size="sm"
       />
     ),
     enableSorting: false,
@@ -140,6 +144,8 @@ export function DataTable<TData, TValue>({
   enableColumnVisibility = false,
   enablePagination = true,
   pageSize = 10,
+  paginationVariant = 'full',
+  itemLabel = 'items',
   onRowSelectionChange,
   toolbarActions,
   emptyMessage = 'No results found.',
@@ -209,59 +215,58 @@ export function DataTable<TData, TValue>({
   const totalItems = table.getFilteredRowModel().rows.length;
 
   return (
-    <div className={cn('space-y-4', className)}>
-      {/* Toolbar */}
-      {(enableSearch || enableColumnVisibility || toolbarActions) && (
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 flex-1">
+    <div className={cn(className)}>
+      {/* Table Container */}
+      <div className="rounded-lg border border-border-light overflow-hidden">
+        {/* Toolbar - inside table container */}
+        {(enableSearch || enableColumnVisibility || toolbarActions) && (
+          <div className="px-4 py-3 border-b border-border-light bg-background flex items-center justify-between gap-4">
             {/* Search */}
             {enableSearch && (
-              <div className="relative max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-icon-sm text-foreground-tertiary" />
+              <div className="flex-1 max-w-md">
                 <Input
                   placeholder={searchPlaceholder}
                   value={searchColumn ? (table.getColumn(searchColumn)?.getFilterValue() as string) ?? '' : globalFilter}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-9 h-input-md"
+                  leftIcon={<Search />}
+                  size="default"
                 />
               </div>
             )}
+
+            <div className="flex items-center gap-2 shrink-0">
+              {toolbarActions}
+
+              {/* Column Visibility */}
+              {enableColumnVisibility && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      Columns <ChevronDown className="ml-2 size-icon-sm" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {table
+                      .getAllColumns()
+                      .filter((column) => column.getCanHide())
+                      .map((column) => (
+                        <DropdownMenuCheckboxItem
+                          key={column.id}
+                          className="capitalize"
+                          checked={column.getIsVisible()}
+                          onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                        >
+                          {column.id}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
+        )}
 
-          <div className="flex items-center gap-2">
-            {toolbarActions}
-
-            {/* Column Visibility */}
-            {enableColumnVisibility && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="ml-auto">
-                    Columns <ChevronDown className="ml-2 size-icon-sm" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {table
-                    .getAllColumns()
-                    .filter((column) => column.getCanHide())
-                    .map((column) => (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                      >
-                        {column.id}
-                      </DropdownMenuCheckboxItem>
-                    ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Table */}
-      <div className="rounded-lg border border-border-light overflow-hidden">
+        {/* Table */}
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -319,13 +324,16 @@ export function DataTable<TData, TValue>({
         </Table>
 
         {/* Pagination */}
-        {enablePagination && totalPages > 0 && (
+        {enablePagination && (
           <TablePagination
             currentPage={currentPage}
             totalPages={totalPages}
             pageSize={table.getState().pagination.pageSize}
             totalItems={totalItems}
+            itemLabel={itemLabel}
+            variant={paginationVariant}
             onPageChange={(page) => table.setPageIndex(page - 1)}
+            onPageSizeChange={(size) => table.setPageSize(size)}
           />
         )}
       </div>

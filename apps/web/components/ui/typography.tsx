@@ -38,19 +38,19 @@ const typographyVariants = cva('', {
      * Uses theme tokens from tailwind.config.ts
      */
     variant: {
-      // Headings - font-semibold, tracking-tight (per STYLE-GUIDE.md)
-      h1: 'text-2xl font-semibold tracking-tight leading-snug',
-      h2: 'text-xl font-semibold tracking-tight leading-snug',
-      h3: 'text-lg font-semibold tracking-tight leading-snug',
-      h4: 'text-base font-semibold tracking-tight leading-snug',
-      h5: 'text-sm font-semibold tracking-tight leading-snug',
-      h6: 'text-xs font-semibold tracking-tight leading-snug',
+      // Headings - tracking-tight (per STYLE-GUIDE.md)
+      h1: 'text-4xl font-semibold tracking-tight leading-snug',
+      h2: 'text-2xl font-bold tracking-tight leading-snug',
+      h3: 'text-xl font-semibold tracking-tight leading-snug',
+      h4: 'text-lg font-semibold tracking-tight leading-snug',
+      h5: 'text-base font-semibold tracking-tight leading-snug',
+      h6: 'text-sm font-semibold tracking-tight leading-snug',
 
-      // Body - font-normal (per STYLE-GUIDE.md)
-      body: 'font-normal leading-normal',
+      // Body - font-normal, default size 13px (per STYLE-GUIDE.md)
+      body: 'text-sm font-normal leading-normal',
 
-      // Label - font-medium (per STYLE-GUIDE.md)
-      label: 'font-medium',
+      // Label - font-medium, default size 12px (per STYLE-GUIDE.md)
+      label: 'text-xs font-medium',
 
       // Caption - font-normal, smaller text (per STYLE-GUIDE.md text-[11px])
       caption: 'text-2xs font-normal',
@@ -64,8 +64,8 @@ const typographyVariants = cva('', {
       // Table header - uppercase (per STYLE-GUIDE.md)
       'table-header': 'text-2xs font-medium uppercase tracking-wide',
 
-      // Link - underlined (per STYLE-GUIDE.md)
-      link: 'underline underline-offset-2 cursor-pointer transition-colors hover:opacity-80',
+      // Link - underlined, default size 13px (per STYLE-GUIDE.md)
+      link: 'text-sm underline underline-offset-2 cursor-pointer transition-colors hover:opacity-80',
     },
 
     /**
@@ -164,7 +164,8 @@ const typographyVariants = cva('', {
   ],
   defaultVariants: {
     variant: 'body',
-    size: 'default',
+    // NOTE: size is NOT set here to avoid overriding heading sizes
+    // Headings (h1-h6) have their own font sizes defined in the variant
     color: 'default',
   },
 });

@@ -96,7 +96,7 @@ export function UserMenu({ className }: UserMenuProps) {
       <DropdownMenuTrigger asChild>
         <button
           className={cn(
-            'flex items-center gap-1.5 rounded-full',
+            'flex items-center gap-1.5 rounded-full cursor-pointer',
             'hover:bg-muted transition-colors',
             'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
             className

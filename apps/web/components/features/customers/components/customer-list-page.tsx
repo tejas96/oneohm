@@ -22,7 +22,7 @@ import { DeleteCustomerModal } from './delete-customer-modal';
 import { EditCustomerModal } from './edit-customer-modal';
 import { ImportCustomersModal } from './import-customers-modal';
 
-import { DataTable, FilterTabs, EmptyState } from '@/components/shared';
+import { DataTable, EmptyState } from '@/components/shared';
 import {
   Badge,
   Button,
@@ -32,11 +32,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
 import { cn } from '@/lib/utils';
@@ -198,29 +193,14 @@ function formatPhoneForWhatsApp(phone: string): string {
 
 export function CustomerListPage(): React.JSX.Element {
   const router = useRouter();
-  const [statusFilter, setStatusFilter] = React.useState<'all' | CustomerStatus>('all');
-  const [sourceFilter, setSourceFilter] = React.useState<'all' | LeadSource>('all');
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
   const [selectedRows, setSelectedRows] = React.useState<Customer[]>([]);
   const [editModalOpen, setEditModalOpen] = React.useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
   const [importModalOpen, setImportModalOpen] = React.useState(false);
 
-  // Filter tabs - includes Prospect per UX
-  const filterTabs = [
-    { id: 'all' as const, label: 'All', count: mockCustomers.length },
-    { id: CustomerStatus.LEAD, label: 'Lead', count: mockCustomers.filter(c => c.status === CustomerStatus.LEAD).length },
-    { id: CustomerStatus.PROSPECT, label: 'Prospect', count: mockCustomers.filter(c => c.status === CustomerStatus.PROSPECT).length },
-    { id: CustomerStatus.ACTIVE, label: 'Active', count: mockCustomers.filter(c => c.status === CustomerStatus.ACTIVE).length },
-    { id: CustomerStatus.INACTIVE, label: 'Inactive', count: mockCustomers.filter(c => c.status === CustomerStatus.INACTIVE).length },
-  ];
-
-  // Apply filters
-  const filteredCustomers = mockCustomers.filter(c => {
-    const statusMatch = statusFilter === 'all' || c.status === statusFilter;
-    const sourceMatch = sourceFilter === 'all' || c.leadSource === sourceFilter;
-    return statusMatch && sourceMatch;
-  });
+  // Data - filters can be added later
+  const filteredCustomers = mockCustomers;
 
   // Handle row selection - memoized to prevent infinite loop in DataTable's useEffect
   const handleRowSelectionChange = React.useCallback((rows: Customer[]) => {
@@ -273,6 +253,7 @@ export function CustomerListPage(): React.JSX.Element {
     {
       accessorKey: 'contact',
       header: 'Contact',
+      enableSorting: false,
       cell: ({ row }) => {
         const phone = row.original.phone;
         const whatsappNumber = formatPhoneForWhatsApp(phone);
@@ -308,6 +289,7 @@ export function CustomerListPage(): React.JSX.Element {
     {
       accessorKey: 'city',
       header: 'City',
+      enableSorting: false,
       cell: ({ row }) => (
         <span className="text-foreground-secondary">{row.original.city || '-'}</span>
       ),
@@ -317,6 +299,7 @@ export function CustomerListPage(): React.JSX.Element {
     {
       accessorKey: 'leadSource',
       header: 'Lead Source',
+      enableSorting: false,
       cell: ({ row }) => {
         const source = row.original.leadSource;
         if (!source) return <span className="text-foreground-tertiary">-</span>;
@@ -336,6 +319,7 @@ export function CustomerListPage(): React.JSX.Element {
     {
       accessorKey: 'assignedTo',
       header: 'Assigned To',
+      enableSorting: false,
       cell: ({ row }) => (
         <span className="text-foreground-secondary">{row.original.assignedTo || '-'}</span>
       ),
@@ -345,6 +329,7 @@ export function CustomerListPage(): React.JSX.Element {
     {
       accessorKey: 'status',
       header: 'Status',
+      enableSorting: false,
       cell: ({ row }) => (
         <Badge variant={STATUS_BADGE_VARIANTS[row.original.status]} size="xs">
           {STATUS_LABELS[row.original.status]}
@@ -356,6 +341,7 @@ export function CustomerListPage(): React.JSX.Element {
     {
       accessorKey: 'lastActivity',
       header: 'Last Activity',
+      enableSorting: false,
       cell: ({ row }) => (
         <span className="text-foreground-tertiary text-[11px]">
           {row.original.lastActivity || '-'}
@@ -414,7 +400,7 @@ export function CustomerListPage(): React.JSX.Element {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
         <div>
           <Typography variant="h2">All Customers</Typography>
-          <Typography variant="body" color="muted" size="sm" className="mt-0.5">
+          <Typography variant="body" color="muted" className="mt-1">
             Manage your customers and track their journey
           </Typography>
         </div>
@@ -446,64 +432,35 @@ export function CustomerListPage(): React.JSX.Element {
         </div>
       </div>
 
-      {/* Filters Card */}
-      <div className="bg-white rounded-lg border border-border-light">
-        <div className="p-4 flex flex-col lg:flex-row lg:items-center gap-4">
-          {/* Status Tabs */}
-          <FilterTabs
-            tabs={filterTabs}
-            value={statusFilter}
-            onChange={setStatusFilter}
-            variant="pills"
-          />
-          
-          {/* Lead Source Filter */}
-          <Select
-            value={sourceFilter}
-            onValueChange={(value) => setSourceFilter(value as 'all' | LeadSource)}
-          >
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="All Sources" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Sources</SelectItem>
-              {Object.entries(LEAD_SOURCE_LABELS).map(([value, label]) => (
-                <SelectItem key={value} value={value}>{label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Bulk Actions Bar - shown when items selected */}
-        {selectedRows.length > 0 && (
-          <div className="px-4 py-2 bg-primary/5 border-t border-border-light flex items-center gap-4">
-            <span className="text-sm text-foreground-secondary">
-              <strong className="text-foreground">{selectedRows.length}</strong> selected
-            </span>
-            <Button variant="ghost" size="sm" className="text-foreground-secondary">
-              Change Status
-            </Button>
-            <Button variant="ghost" size="sm" className="text-foreground-secondary">
-              Export Selected
-            </Button>
-            <Button variant="ghost" size="sm" className="text-error">
-              Delete
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-auto text-foreground-secondary"
-              onClick={clearSelection}
-            >
-              Clear selection
-            </Button>
-          </div>
-        )}
-      </div>
-
       {/* Data Table */}
       {filteredCustomers.length > 0 ? (
         <div className="bg-white rounded-lg border border-border-light overflow-hidden">
+          {/* Bulk Actions Bar - shown when items selected */}
+          {selectedRows.length > 0 && (
+            <div className="px-4 py-2 bg-primary/5 border-b border-border-light flex items-center gap-4">
+              <span className="text-sm text-foreground-secondary">
+                <strong className="text-foreground">{selectedRows.length}</strong> selected
+              </span>
+              <Button variant="ghost" size="sm" className="text-foreground-secondary">
+                Change Status
+              </Button>
+              <Button variant="ghost" size="sm" className="text-foreground-secondary">
+                Export Selected
+              </Button>
+              <Button variant="ghost" size="sm" className="text-error">
+                Delete
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="ml-auto text-foreground-secondary"
+                onClick={clearSelection}
+              >
+                Clear selection
+              </Button>
+            </div>
+          )}
+
           <DataTable
             columns={columns}
             data={filteredCustomers}

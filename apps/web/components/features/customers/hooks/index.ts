@@ -1,4 +1,4 @@
 // Customers Feature - Hooks
-// Phase 2: API hooks will be added here
 
-export {};
+export { useCreateCustomer, useCheckAvailability, customerKeys } from './use-create-customer';
+export type { CustomerResponse, AvailabilityResponse, AvailabilityState } from './use-create-customer';

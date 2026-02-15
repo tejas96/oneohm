@@ -1,4 +1,4 @@
-import { CreateCustomerWizard } from '@/components/features/customers';
+import { CreateCustomerForm } from '@/components/features/customers';
 
 /**
  * Create Customer Page
@@ -6,5 +6,5 @@ import { CreateCustomerWizard } from '@/components/features/customers';
  */
 // eslint-disable-next-line import/no-default-export -- Next.js requires default export for pages
 export default function CreateCustomerPage(): React.JSX.Element {
-  return <CreateCustomerWizard />;
+  return <CreateCustomerForm />;
 }

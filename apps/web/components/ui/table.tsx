@@ -86,7 +86,7 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
     <tr
       ref={ref}
       className={cn(
-        'h-table-row transition-colors duration-fast',
+        'min-h-table-row transition-colors duration-fast',
         'hover:bg-background-secondary',
         'data-[state=selected]:bg-primary/5',
         className,
@@ -158,7 +158,7 @@ const TableCell = React.forwardRef<
   <td
     ref={ref}
     className={cn(
-      'px-table-cell-x py-table-cell-y align-middle text-sm',
+      'px-table-cell-x py-table-cell-y align-top text-sm',
       '[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
       className,
     )}

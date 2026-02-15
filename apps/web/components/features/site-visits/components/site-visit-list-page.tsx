@@ -154,6 +154,7 @@ export function SiteVisitListPage(): React.JSX.Element {
     {
       accessorKey: 'address',
       header: 'Location',
+      enableSorting: false,
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
           <MapPin className="size-icon-sm text-foreground-tertiary" />
@@ -166,6 +167,7 @@ export function SiteVisitListPage(): React.JSX.Element {
     {
       accessorKey: 'visitType',
       header: 'Type',
+      enableSorting: false,
       cell: ({ row }) => (
         <span className="text-sm">{VISIT_TYPE_LABELS[row.original.visitType]}</span>
       ),
@@ -173,6 +175,7 @@ export function SiteVisitListPage(): React.JSX.Element {
     {
       accessorKey: 'technicianName',
       header: 'Technician',
+      enableSorting: false,
       cell: ({ row }) => (
         <span className="text-sm">{row.original.technicianName}</span>
       ),
@@ -197,6 +200,7 @@ export function SiteVisitListPage(): React.JSX.Element {
     {
       accessorKey: 'status',
       header: 'Status',
+      enableSorting: false,
       cell: ({ row }) => (
         <Badge variant={STATUS_VARIANTS[row.original.status]}>
           {row.original.status}
@@ -246,7 +250,7 @@ export function SiteVisitListPage(): React.JSX.Element {
       <div className="flex items-center justify-between">
         <div>
           <Typography variant="h2">Site Visits</Typography>
-          <Typography variant="body" color="muted" size="sm" className="mt-1">
+          <Typography variant="body" color="muted" className="mt-1">
             Schedule and track site visits
           </Typography>
         </div>

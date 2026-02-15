@@ -29,8 +29,8 @@ export {
 export type { EmptyStateProps, NoSearchResultsProps, ErrorStateProps } from './feedback';
 
 // Forms
-export { RadioCard, RadioCardGroup, PropertySelector, EditableField } from './forms';
-export type { RadioCardProps, RadioCardGroupProps, Property, PropertySelectorProps, EditableFieldProps } from './forms';
+export { RadioCard, RadioCardGroup, PropertySelector, EditableField, LeadTemperatureSelector } from './forms';
+export type { RadioCardProps, RadioCardGroupProps, Property, PropertySelectorProps, EditableFieldProps, LeadTemperatureSelectorProps } from './forms';
 
 // Search
 export { SearchInput, SearchTrigger, CustomerSearchCombobox } from './search';

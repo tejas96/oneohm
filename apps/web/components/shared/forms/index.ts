@@ -8,3 +8,6 @@ export type { Property, PropertySelectorProps } from './property-selector';
 
 export { EditableField } from './editable-field';
 export type { EditableFieldProps } from './editable-field';
+
+export { LeadTemperatureSelector } from './lead-temperature-selector';
+export type { LeadTemperatureSelectorProps } from './lead-temperature-selector';

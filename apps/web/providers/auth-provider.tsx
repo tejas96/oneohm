@@ -12,6 +12,7 @@ import {
 } from 'react';
 
 import apiClient, { clearTokens, getAccessToken, getRefreshToken, setTokens } from '@/lib/api/client';
+import { useAuthStore } from '@/lib/stores/auth-store';
 import type {
   AuthUser,
   ForgotPasswordData,
@@ -65,6 +66,11 @@ const AuthContext = createContext<AuthContextType | null>(null);
  * Transform AuthUser from API to User format
  */
 function transformAuthUser(authUser: AuthUser): User {
+  // Find primary profile or first profile with organizationId
+  const primaryProfile = authUser.profiles?.find((p) => p.isPrimary);
+  const firstProfileWithOrg = authUser.profiles?.find((p) => p.organizationId);
+  const organizationId = primaryProfile?.organizationId ?? firstProfileWithOrg?.organizationId;
+
   return {
     id: authUser.id,
     email: authUser.email,
@@ -78,7 +84,7 @@ function transformAuthUser(authUser: AuthUser): User {
     emailVerified: authUser.emailVerified,
     phoneVerified: authUser.phoneVerified,
     profileCompleted: authUser.profileCompleted,
-    organizationId: authUser.profiles?.find((p) => p.isPrimary)?.organizationId,
+    organizationId,
   };
 }
 
@@ -89,18 +95,31 @@ interface AuthProviderProps {
 /**
  * Auth Provider
  * Provides authentication state and actions to the entire app via React Context.
+ * Uses Zustand store for persistent user data (survives page refresh).
  * Initializes auth state on mount by checking for existing tokens.
  */
 export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element {
   const queryClient = useQueryClient();
-  const [user, setUser] = useState<User | null>(null);
+  
+  // Zustand store - persisted to localStorage automatically
+  const user = useAuthStore((state) => state.user);
+  const setUser = useAuthStore((state) => state.setUser);
+  const storeLogout = useAuthStore((state) => state.logout);
+  const hasHydrated = useAuthStore((state) => state._hasHydrated);
+  
+  // Local state for loading/error (not persisted)
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize auth on mount - check for existing token and refresh user
+  // Initialize auth on mount - WAIT for Zustand hydration first
   useEffect(() => {
-    const initAuth = async () => {
+    // Don't run until Zustand has rehydrated from localStorage
+    if (!hasHydrated) {
+      return;
+    }
+
+    const initAuth = async (): Promise<void> => {
       let token = getAccessToken();
       
       // If no access token but refresh token exists, attempt to refresh
@@ -117,28 +136,26 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
             setTokens(accessToken, newRefreshToken);
             token = accessToken; // Use the new token
           } catch {
-            // Refresh failed - clear tokens and let user login again
+            // Refresh failed - clear tokens and user data
             clearTokens();
+            storeLogout();
           }
         }
       }
       
-      // If we have a valid token, fetch user data
-      if (token) {
-        try {
-          const response = await apiClient.get<AuthUser>('/auth/me');
-          setUser(transformAuthUser(response.data));
-        } catch {
-          // Token invalid or expired - clear it
-          clearTokens();
-        }
+      // Now that Zustand has hydrated, we can safely check token/user consistency
+      if (!token && user) {
+        // No token but user in store - stale state, clear it
+        storeLogout();
       }
+      // If token exists and user exists (from hydration) - all good, continue
+      // If token exists but no user - unusual, but let middleware handle redirects
       
       setIsInitialized(true);
     };
 
     void initAuth();
-  }, []);
+  }, [hasHydrated, user, storeLogout]);
 
   const clearError = useCallback(() => {
     setError(null);
@@ -152,7 +169,8 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
       const { accessToken, refreshToken, user: authUser } = response.data;
 
       setTokens(accessToken, refreshToken);
-      setUser(transformAuthUser(authUser));
+      const transformedUser = transformAuthUser(authUser);
+      setUser(transformedUser); // Zustand will persist to localStorage
 
       return response.data;
     } catch (err) {
@@ -162,7 +180,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [setUser]);
 
   const requestOtp = useCallback(async (data: OtpRequestData): Promise<OtpRequestResponse> => {
     setIsLoading(true);
@@ -187,7 +205,8 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
       const { accessToken, refreshToken, user: authUser } = response.data;
 
       setTokens(accessToken, refreshToken);
-      setUser(transformAuthUser(authUser));
+      const transformedUser = transformAuthUser(authUser);
+      setUser(transformedUser); // Zustand will persist to localStorage
 
       return response.data;
     } catch (err) {
@@ -197,7 +216,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [setUser]);
 
   const forgotPassword = useCallback(
     async (data: ForgotPasswordData): Promise<PasswordResetResponse> => {
@@ -242,66 +261,23 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
     });
 
     clearTokens();
-    setUser(null);
+    storeLogout(); // Clear Zustand store (and localStorage)
     setError(null);
     queryClient.clear();
-  }, [queryClient]);
+  }, [queryClient, storeLogout]);
 
-  const refreshUser = useCallback(async (): Promise<User | null> => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await apiClient.get<AuthUser>('/auth/me');
-      const refreshedUser = transformAuthUser(response.data);
-      setUser(refreshedUser);
-      return refreshedUser;
-    } catch (err) {
-      const errorMessage = getErrorMessage(err);
-      setError(errorMessage);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const refreshUser = useCallback((): Promise<User | null> => {
+    // Since login response has full user data, refreshUser can just return cached user
+    // For actual refresh from server, user needs to re-login
+    return Promise.resolve(user);
+  }, [user]);
 
-  // Permission helpers
-  const hasPermission = useCallback(
-    (permission: string): boolean => {
-      return user?.permissions?.includes(permission) ?? false;
-    },
-    [user],
-  );
-
-  const hasAnyPermission = useCallback(
-    (permissions: string[]): boolean => {
-      if (!user?.permissions) return false;
-      return permissions.some((p) => user.permissions.includes(p));
-    },
-    [user],
-  );
-
-  const hasAllPermissions = useCallback(
-    (permissions: string[]): boolean => {
-      if (!user?.permissions) return false;
-      return permissions.every((p) => user.permissions.includes(p));
-    },
-    [user],
-  );
-
-  const hasRole = useCallback(
-    (role: string): boolean => {
-      return user?.roles?.includes(role) ?? false;
-    },
-    [user],
-  );
-
-  const hasAnyRole = useCallback(
-    (roles: string[]): boolean => {
-      if (!user?.roles) return false;
-      return roles.some((r) => user.roles.includes(r));
-    },
-    [user],
-  );
+  // Permission helpers - use Zustand store's methods
+  const storeHasPermission = useAuthStore((state) => state.hasPermission);
+  const storeHasAnyPermission = useAuthStore((state) => state.hasAnyPermission);
+  const storeHasAllPermissions = useAuthStore((state) => state.hasAllPermissions);
+  const storeHasRole = useAuthStore((state) => state.hasRole);
+  const storeHasAnyRole = useAuthStore((state) => state.hasAnyRole);
 
   const value = useMemo<AuthContextType>(
     () => ({
@@ -318,11 +294,11 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
       logout,
       clearError,
       refreshUser,
-      hasPermission,
-      hasAnyPermission,
-      hasAllPermissions,
-      hasRole,
-      hasAnyRole,
+      hasPermission: storeHasPermission,
+      hasAnyPermission: storeHasAnyPermission,
+      hasAllPermissions: storeHasAllPermissions,
+      hasRole: storeHasRole,
+      hasAnyRole: storeHasAnyRole,
     }),
     [
       user,
@@ -337,11 +313,11 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
       logout,
       clearError,
       refreshUser,
-      hasPermission,
-      hasAnyPermission,
-      hasAllPermissions,
-      hasRole,
-      hasAnyRole,
+      storeHasPermission,
+      storeHasAnyPermission,
+      storeHasAllPermissions,
+      storeHasRole,
+      storeHasAnyRole,
     ],
   );
 

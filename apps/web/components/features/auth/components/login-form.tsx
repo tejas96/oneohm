@@ -12,7 +12,6 @@ import {
   Checkbox,
   Input,
   PasswordInput,
-  PhoneInput,
   Spinner,
   Tabs,
   TabsContent,
@@ -124,10 +123,14 @@ export function LoginForm(): React.JSX.Element {
         {/* OTP Login Form */}
         <TabsContent value="otp" className="mt-4">
           <form className="space-y-4" onSubmit={onOtpSubmit}>
-            <PhoneInput
+            <Input
+              type="tel"
+              inputMode="numeric"
+              prefix="+91"
               value={otpForm.watch('phone')}
-              onChange={(value) => otpForm.setValue('phone', value)}
+              onChange={(e) => otpForm.setValue('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
               label="Phone Number"
+              placeholder="98765 43210"
               disabled={isLoading}
               error={!!otpForm.formState.errors.phone}
               errorMessage={otpForm.formState.errors.phone?.message}

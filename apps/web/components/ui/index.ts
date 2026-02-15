@@ -105,10 +105,6 @@ export type { InputProps } from './input';
 export { PasswordInput } from './password-input';
 export type { PasswordInputProps } from './password-input';
 
-// PhoneInput
-export { PhoneInput } from './phone-input';
-export type { PhoneInputProps } from './phone-input';
-
 // OtpInput
 export { OtpInput } from './otp-input';
 export type { OtpInputProps } from './otp-input';
