@@ -12,7 +12,6 @@ import {
   Checkbox,
   Input,
   PasswordInput,
-  PhoneInput,
   Spinner,
   Tabs,
   TabsContent,
@@ -20,6 +19,7 @@ import {
   TabsTrigger,
   Typography,
 } from '@/components/ui';
+import { ROUTES } from '@/lib/config/routes';
 
 /**
  * LoginForm Component
@@ -103,7 +103,7 @@ export function LoginForm(): React.JSX.Element {
                 label="Remember me"
               />
               <Typography variant="link" size="sm" color="primary" asChild>
-                <Link href="/forgot-password">Forgot password?</Link>
+                <Link href={ROUTES.AUTH.FORGOT_PASSWORD}>Forgot password?</Link>
               </Typography>
             </div>
 
@@ -123,10 +123,14 @@ export function LoginForm(): React.JSX.Element {
         {/* OTP Login Form */}
         <TabsContent value="otp" className="mt-4">
           <form className="space-y-4" onSubmit={onOtpSubmit}>
-            <PhoneInput
+            <Input
+              type="tel"
+              inputMode="numeric"
+              prefix="+91"
               value={otpForm.watch('phone')}
-              onChange={(value) => otpForm.setValue('phone', value)}
+              onChange={(e) => otpForm.setValue('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
               label="Phone Number"
+              placeholder="98765 43210"
               disabled={isLoading}
               error={!!otpForm.formState.errors.phone}
               errorMessage={otpForm.formState.errors.phone?.message}
@@ -161,7 +165,7 @@ export function LoginForm(): React.JSX.Element {
         <Typography variant="body" size="sm" color="muted">
           Don&apos;t have an account?{' '}
           <Typography variant="link" color="primary" asChild>
-            <Link href="/register">Contact your administrator</Link>
+            <Link href={ROUTES.AUTH.REGISTER}>Contact your administrator</Link>
           </Typography>
         </Typography>
       </div>

@@ -56,7 +56,7 @@ export function DashboardOverview(): React.JSX.Element {
       {/* Page Header */}
       <div>
         <Typography variant="h2">Dashboard</Typography>
-        <Typography variant="body" color="muted" size="sm" className="mt-1">
+        <Typography variant="body" color="muted" className="mt-1">
           Welcome back! Here&apos;s what&apos;s happening today.
         </Typography>
       </div>

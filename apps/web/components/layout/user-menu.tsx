@@ -96,7 +96,7 @@ export function UserMenu({ className }: UserMenuProps) {
       <DropdownMenuTrigger asChild>
         <button
           className={cn(
-            'flex items-center gap-1.5 rounded-full',
+            'flex items-center gap-1.5 rounded-full cursor-pointer',
             'hover:bg-muted transition-colors',
             'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
             className
@@ -138,13 +138,13 @@ export function UserMenu({ className }: UserMenuProps) {
         {/* Quick Links */}
         <DropdownMenuGroup>
           <DropdownMenuItem asChild className="cursor-pointer">
-            <Link href="/profile">
+            <Link href={ROUTES.ACCOUNT.PROFILE}>
               <User className="mr-2" />
               <span>View Profile</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="cursor-pointer">
-            <Link href="/settings">
+            <Link href={ROUTES.ACCOUNT.SETTINGS}>
               <Settings className="mr-2" />
               <span>Settings</span>
             </Link>

@@ -103,11 +103,11 @@ body {
   width: var(--rail-width);
   height: var(--rail-icon-height);
   @apply flex items-center justify-center relative cursor-pointer;
-  @apply text-gray-500 transition-all duration-150;
+  @apply text-foreground-secondary transition-all duration-150;
 }
 
 .rail-icon:hover {
-  @apply bg-gray-100 text-gray-700;
+  @apply bg-muted text-foreground;
 }
 
 .rail-icon.active {
@@ -116,20 +116,20 @@ body {
 
 /* Panel Section Header */
 .panel-section-header {
-  @apply text-section font-semibold uppercase tracking-wider text-gray-400;
+  @apply text-section font-semibold uppercase tracking-wider text-foreground-tertiary;
   padding: 12px 8px 6px 8px;
 }
 
 /* Panel Item */
 .panel-item {
   height: var(--panel-item-height);
-  @apply px-3 flex items-center text-sm font-medium text-gray-500;
+  @apply px-3 flex items-center text-sm font-medium text-foreground-secondary;
   @apply cursor-pointer rounded-lg transition-all duration-100;
   text-decoration: none;
 }
 
 .panel-item:hover {
-  @apply bg-gray-50;
+  @apply bg-muted text-foreground;
 }
 
 .panel-item.active {

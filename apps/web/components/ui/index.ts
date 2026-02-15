@@ -105,10 +105,6 @@ export type { InputProps } from './input';
 export { PasswordInput } from './password-input';
 export type { PasswordInputProps } from './password-input';
 
-// PhoneInput
-export { PhoneInput } from './phone-input';
-export type { PhoneInputProps } from './phone-input';
-
 // OtpInput
 export { OtpInput } from './otp-input';
 export type { OtpInputProps } from './otp-input';
@@ -123,6 +119,18 @@ export type { LabelProps } from './label';
 
 // Popover
 export { Popover, PopoverTrigger, PopoverContent } from './popover';
+
+// Calendar
+export { Calendar } from './calendar';
+export type { CalendarProps } from './calendar';
+
+// DatePicker
+export { DatePicker } from './date-picker';
+export type { DatePickerProps } from './date-picker';
+
+// DateRangePicker
+export { DateRangePicker } from './date-range-picker';
+export type { DateRangePickerProps } from './date-range-picker';
 
 // Select
 export {

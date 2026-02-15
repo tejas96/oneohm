@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { AUTH_ROUTES, PUBLIC_ROUTES } from '@/lib/config/routes';
+import { AUTH_ROUTES, PUBLIC_ROUTES, ROUTES } from '@/lib/config/routes';
 
 /**
  * Check if the path matches any of the given routes (prefix match)
@@ -39,25 +39,29 @@ export function middleware(request: NextRequest): NextResponse | undefined {
     return NextResponse.next();
   }
 
-  // Get access token from cookies
+  // Get tokens from cookies
   const accessToken = request.cookies.get('accessToken')?.value;
-  const hasToken = Boolean(accessToken);
+  const refreshToken = request.cookies.get('refreshToken')?.value;
+  const hasAccessToken = Boolean(accessToken);
+  const hasRefreshToken = Boolean(refreshToken);
 
   // Check if it's an auth route (login, otp-verify, etc.)
   const isAuthRoute = matchesRoute(pathname, AUTH_ROUTES);
 
   // Authenticated user trying to access auth routes -> redirect to home
-  if (hasToken && isAuthRoute) {
+  if (hasAccessToken && isAuthRoute) {
     const redirectUrl = request.nextUrl.searchParams.get('redirect');
-    const destination = redirectUrl || '/';
+    const destination = redirectUrl || ROUTES.HOME;
     return NextResponse.redirect(new URL(destination, request.url));
   }
 
   // Unauthenticated user trying to access protected routes -> redirect to login
-  if (!hasToken && !isAuthRoute) {
-    const loginUrl = new URL('/login', request.url);
+  // BUT: If refresh token exists, let the request through so client can refresh
+  // The client-side interceptor will handle token refresh on 401
+  if (!hasAccessToken && !hasRefreshToken && !isAuthRoute) {
+    const loginUrl = new URL(ROUTES.AUTH.LOGIN, request.url);
     // Preserve the original URL for redirect after login
-    if (pathname !== '/') {
+    if (pathname !== ROUTES.HOME) {
       loginUrl.searchParams.set('redirect', pathname + request.nextUrl.search);
     }
     return NextResponse.redirect(loginUrl);

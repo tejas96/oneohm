@@ -24,6 +24,8 @@ export type {
   PathMatcher,
   UserRole,
   UserAccessContext,
+  NavBadgeVariant,
+  StatusDotColor,
 } from './navigation';
 
 export {
@@ -33,3 +35,18 @@ export {
   filterByAccess,
   hasAccess,
 } from './navigation';
+
+// Navigation counts types
+export type {
+  CrmCounts,
+  QuotesCounts,
+  ProjectsCounts,
+  InventoryCounts,
+  ServiceCounts,
+  FinanceCounts,
+  TaskCounts,
+  NavigationCounts,
+  NavigationCountsState,
+} from './navigation-counts';
+
+export { DEFAULT_NAVIGATION_COUNTS } from './navigation-counts';

@@ -3,9 +3,13 @@
   "version": "0.1.0",
   "description": "OneOhm EPC Web Application",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start"
+  },
+  "dependencies": {
+    "react-day-picker": "^9.13.2"
   }
 }

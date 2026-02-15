@@ -29,6 +29,7 @@ export const ROUTES = {
   // Auth
   AUTH: {
     LOGIN: '/login',
+    REGISTER: '/register',
     OTP_VERIFY: '/otp-verify',
     FORGOT_PASSWORD: '/forgot-password',
     RESET_PASSWORD: '/reset-password',
@@ -56,6 +57,7 @@ export const ROUTES = {
     LIST: '/customers',
     DETAIL: '/customers/[id]',
     NEW: '/customers/new',
+    ADD_PROPERTY: '/customers/[id]/properties/new',
   },
 
   // Quotes
@@ -78,10 +80,24 @@ export const ROUTES = {
     HOME: '/pipeline',
   },
 
+  // Properties
+  PROPERTIES: {
+    LIST: '/properties',
+    DETAIL: '/properties/[id]',
+  },
+
+  // Followups
+  FOLLOWUPS: {
+    LIST: '/followups',
+    NEW: '/followups/new',
+    EDIT: '/followups/[id]/edit',
+  },
+
   // Site Visits
   SITE_VISITS: {
     LIST: '/site-visits',
     DETAIL: '/site-visits/[id]',
+    NEW: '/site-visits/new',
   },
 
   // Inventory
@@ -118,10 +134,16 @@ export const ROUTES = {
     PROJECTS: '/analytics/projects',
   },
 
+  // User Account
+  ACCOUNT: {
+    PROFILE: '/profile',
+    SETTINGS: '/settings',
+  },
+
   // Admin
   ADMIN: {
     HOME: '/admin',
-    SETTINGS: '/settings',
+    SETTINGS: '/admin/settings',
     USERS: '/users',
     USER_DETAIL: '/users/[id]',
     WORKFLOWS: '/workflows',
@@ -178,8 +200,11 @@ export interface RouteParamTypes {
   // Dynamic routes with [id]
   '/crm/leads/[id]': { id: string };
   '/customers/[id]': { id: string };
+  '/customers/[id]/properties/new': { id: string };
   '/quotes/[id]': { id: string };
   '/projects/[id]': { id: string };
+  '/properties/[id]': { id: string };
+  '/followups/[id]/edit': { id: string };
   '/site-visits/[id]': { id: string };
   '/vendors/[id]': { id: string };
   '/service/[id]': { id: string };
@@ -322,4 +347,75 @@ export function extractParams(
   }
 
   return params;
+}
+
+// ============================================
+// Route to Panel Mapping
+// ============================================
+/**
+ * Maps route prefixes to their corresponding panel keys.
+ * Used by the sidebar to determine which panel to show based on current route.
+ * Uses ROUTES constants to avoid hardcoded paths (DRY principle).
+ * Order matters - more specific routes should come first.
+ */
+export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
+  // CRM routes (all should show CRM panel)
+  [ROUTES.CUSTOMERS.LIST]: 'crm',
+  [ROUTES.PROPERTIES.LIST]: 'crm',
+  [ROUTES.SITE_VISITS.LIST]: 'crm',
+  [ROUTES.FOLLOWUPS.LIST]: 'crm',
+  [ROUTES.PIPELINE.HOME]: 'crm',
+  [ROUTES.CRM.HOME]: 'crm',
+  
+  // Quotes routes
+  [ROUTES.QUOTES.LIST]: 'quotes',
+  
+  // Projects routes
+  [ROUTES.PROJECTS.LIST]: 'projects',
+  
+  // Inventory routes
+  [ROUTES.INVENTORY.LIST]: 'inventory',
+  [ROUTES.INVENTORY.PURCHASE_ORDERS]: 'inventory',
+  
+  // Finance routes
+  [ROUTES.FINANCE.HOME]: 'finance',
+  [ROUTES.FINANCE.INVOICES]: 'finance',
+  [ROUTES.FINANCE.PAYMENTS]: 'finance',
+  
+  // Service routes
+  [ROUTES.SERVICE.HOME]: 'service',
+  [ROUTES.SERVICE.AMC]: 'service',
+  
+  // Analytics routes
+  [ROUTES.ANALYTICS.HOME]: 'analytics',
+  
+  // More/Settings routes
+  [ROUTES.ACCOUNT.SETTINGS]: 'more',
+  [ROUTES.MORE.HOME]: 'more',
+  
+  // Help routes
+  [ROUTES.HELP.HOME]: 'help',
+  
+  // Admin routes
+  [ROUTES.ADMIN.HOME]: 'admin',
+  
+  // Dashboard (default)
+  [ROUTES.DASHBOARD.HOME]: 'dashboard',
+};
+
+/**
+ * Get the panel key for a given pathname.
+ * Returns 'dashboard' as fallback if no match found.
+ */
+export function getPanelKeyForPath(pathname: string): string {
+  // Sort keys by length (descending) to match most specific route first
+  const sortedKeys = Object.keys(ROUTE_TO_PANEL_MAP).sort((a, b) => b.length - a.length);
+  
+  for (const prefix of sortedKeys) {
+    if (pathname === prefix || pathname.startsWith(`${prefix}/`) || pathname.startsWith(`${prefix}?`)) {
+      return ROUTE_TO_PANEL_MAP[prefix] ?? 'dashboard';
+    }
+  }
+  
+  return 'dashboard';
 }

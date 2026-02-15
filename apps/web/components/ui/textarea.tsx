@@ -40,16 +40,17 @@ const textareaVariants = cva(
 export interface TextareaProps
   extends Omit<React.ComponentProps<'textarea'>, 'resize'>,
     VariantProps<typeof textareaVariants> {
-  /** Show error styling */
-  error?: boolean;
+  /** Show error styling - accepts boolean or error message string (truthy = error state) */
+  error?: boolean | string;
 }
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, variant, resize, error, ...props }, ref) => {
+    const hasError = !!error;
     return (
       <textarea
         className={cn(
-          textareaVariants({ variant: error ? 'error' : variant, resize }),
+          textareaVariants({ variant: hasError ? 'error' : variant, resize }),
           'min-h-textarea-min-h',
           className,
         )}

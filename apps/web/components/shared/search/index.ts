@@ -6,3 +6,6 @@ export type {
   SearchInputProps,
   SearchTriggerProps,
 } from './search-input';
+
+export { CustomerSearchCombobox } from './customer-search-combobox';
+export type { Customer, CustomerSearchComboboxProps } from './customer-search-combobox';
