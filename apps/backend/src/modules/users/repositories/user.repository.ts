@@ -158,4 +158,22 @@ export class UserRepository {
   async markProfileCompleted(userId: string): Promise<void> {
     await this.repository.update({ id: userId }, { profileCompleted: true });
   }
+
+  /**
+   * Save user entity (create or update)
+   * Used for password reset token storage
+   */
+  async save(user: UserEntity): Promise<UserEntity> {
+    return this.repository.save(user);
+  }
+
+  /**
+   * Find one user by criteria
+   * Used for password reset token lookup
+   */
+  async findOne(options: { where: FindOptionsWhere<UserEntity> }): Promise<UserEntity | null> {
+    return this.repository.findOne({
+      where: { ...options.where, deletedAt: IsNull() },
+    });
+  }
 }

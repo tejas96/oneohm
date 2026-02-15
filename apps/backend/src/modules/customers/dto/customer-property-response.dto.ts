@@ -6,7 +6,10 @@ import {
   PropertyType,
   QuoteStatus,
 } from '@oneohm-epc/shared-types';
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
+
+import { PropertyDocumentDto } from './property-document.dto';
+import { PropertyFollowupDto } from './property-followup.dto';
 
 /**
  * DTO for customer property response
@@ -103,17 +106,14 @@ export class CustomerPropertyResponseDto {
   @Expose()
   leadTemperature!: LeadTemperature;
 
-  @ApiPropertyOptional()
+  // ==================== Followups ====================
+  @ApiPropertyOptional({
+    description: 'Scheduled follow-up activities for this property',
+    type: [PropertyFollowupDto],
+  })
   @Expose()
-  nextFollowUpDate?: Date;
-
-  @ApiPropertyOptional()
-  @Expose()
-  lastContactDate?: Date;
-
-  @ApiPropertyOptional()
-  @Expose()
-  followUpNotes?: string;
+  @Type(() => PropertyFollowupDto)
+  followups!: PropertyFollowupDto[];
 
   // ==================== Flags ====================
   @ApiProperty()
@@ -123,6 +123,15 @@ export class CustomerPropertyResponseDto {
   @ApiProperty({ description: 'Customer wants loan financing for this property' })
   @Expose()
   wantsLoan!: boolean;
+
+  // ==================== Documents ====================
+  @ApiPropertyOptional({
+    description: 'Property-level documents (identity docs, KYC, etc.)',
+    type: [PropertyDocumentDto],
+  })
+  @Expose()
+  @Type(() => PropertyDocumentDto)
+  documents!: PropertyDocumentDto[];
 
   // ==================== Status ====================
   @ApiProperty({ enum: PropertyStatus })

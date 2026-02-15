@@ -156,7 +156,7 @@ function DotBadge({
   // Uses theme tokens for colors
   const dotColors = {
     green: 'bg-success',
-    gray: 'bg-gray-400',
+    gray: 'bg-foreground-tertiary',
     amber: 'bg-warning',
     red: 'bg-error',
     blue: 'bg-info',
@@ -212,12 +212,12 @@ function CountBadge({
     primary: 'bg-primary text-white',
     secondary: 'bg-secondary text-white',
     error: 'bg-error text-white',
-    gray: 'bg-gray-500 text-white',
+    gray: 'bg-foreground-secondary text-white',
   };
 
   const sizeClasses = {
-    '2xs': 'min-w-icon-xs h-icon-xs px-0.5 text-nano font-bold',   // 14px badge, 8px text
-    xs: 'min-w-icon-sm h-icon-sm px-1 text-micro font-bold',       // 16px badge, 9px text
+    '2xs': 'min-w-icon-xs h-icon-xs px-0.5 text-nano font-semibold',   // 14px badge, 8px text
+    xs: 'min-w-icon-sm h-icon-sm px-1 text-micro font-semibold',       // 16px badge, 9px text
     sm: 'min-w-icon h-icon px-1 text-micro font-semibold',         // 18px badge, 9px text
     default: 'min-w-icon-md h-icon-md px-1.5 text-xs font-medium', // 20px badge, 12px text
   };

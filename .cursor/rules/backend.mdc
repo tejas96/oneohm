@@ -1,0 +1,119 @@
+---
+globs: apps/backend/**/*.ts
+---
+
+# NestJS Backend — Iron Rules
+
+> **Controller → Service → Repository. No exceptions.**
+
+---
+
+## 📁 Module Structure
+
+```
+modules/[feature]/
+├── [feature].module.ts
+├── controllers/     → HTTP handlers only
+├── services/        → Business logic only
+├── repositories/    → TypeORM only
+├── entities/        → Extend BaseEntity
+├── dto/             → Validated I/O
+└── index.ts         → Barrel exports
+```
+
+---
+
+## 🗃️ Entity Template
+
+```typescript
+@Entity('table_name')
+export class MyEntity extends BaseEntity {
+  @Column({ name: 'organization_id', type: 'uuid' })
+  organizationId!: string;
+  
+  @DeleteDateColumn({ name: 'deleted_at', nullable: true })
+  deletedAt?: Date;
+  
+  @Column({ name: 'created_by', type: 'uuid', nullable: true })
+  createdBy?: string;
+  
+  @Column({ name: 'updated_by', type: 'uuid', nullable: true })
+  updatedBy?: string;
+}
+```
+
+---
+
+## 🎯 Layer Rules
+
+| Layer | Does | Never Does |
+|-------|------|------------|
+| Controller | Parse input, call service, return DTO | Business logic, TypeORM |
+| Service | Business logic, validation, orchestration | TypeORM queries |
+| Repository | TypeORM queries, pagination | Business decisions |
+
+---
+
+## 🗄️ Repository Pattern
+
+```typescript
+// ✅ ALWAYS
+async findByOrg(orgId: string, page = 1, limit = 20): Promise<[Entity[], number]> {
+  return this.repository.findAndCount({
+    where: { organizationId: orgId, deletedAt: IsNull() },
+    skip: (page - 1) * limit,
+    take: limit,
+    order: { createdAt: 'DESC' },
+  });
+}
+```
+
+**Checklist:**
+- `deletedAt: IsNull()` — Always filter soft deleted
+- `organizationId` — Always filter by org
+- `findAndCount` — Always paginate lists
+- `createdBy/updatedBy` — Always track mutations
+
+---
+
+## 📝 DTO Pattern
+
+```typescript
+export class CreateDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  name!: string;
+}
+
+@Exclude()
+export class ResponseDto {
+  @Expose() id!: string;
+  @Expose() name!: string;
+}
+```
+
+---
+
+## 🔐 Security Checklist
+
+```
+✅ JwtAuthGuard on all endpoints
+✅ @OrganizationContext() for org isolation
+✅ @CurrentUser() for audit trail
+✅ class-validator on all DTOs
+✅ Never log sensitive data
+```
+
+---
+
+## ⚡ Quick Reference
+
+| Action | How |
+|--------|-----|
+| Get org ID | `@OrganizationContext() orgId: string` |
+| Get user | `@CurrentUser() user: CurrentUserType` |
+| Response | `toDto(ResponseDto, entity)` |
+| Paginated | `toPaginatedResponse(Dto, data, total, page, limit)` |
+| Logging | `this.logger.log()` not `console.log` |

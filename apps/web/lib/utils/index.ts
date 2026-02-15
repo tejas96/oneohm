@@ -1,2 +1,2 @@
 // Export utility functions
-export {};
+export { getErrorMessage } from './error';

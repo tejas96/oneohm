@@ -182,6 +182,8 @@ export default [
       '@typescript-eslint/no-unsafe-argument': 'warn',
       '@typescript-eslint/no-unsafe-return': 'warn',
       '@typescript-eslint/require-await': 'warn',
+      // Path alias resolution can cause false positives with type constituents
+      '@typescript-eslint/no-redundant-type-constituents': 'warn',
 
       // ------------------------------
       // 🧩 SonarJS Specific Tweaks

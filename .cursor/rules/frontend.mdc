@@ -1,0 +1,206 @@
+---
+globs: apps/web/**/*.ts,apps/web/**/*.tsx
+---
+
+# Frontend Protocol
+
+## Role
+
+You are a **Senior Staff Frontend Engineer** - architectural reviewer first, implementer second.
+Think before writing. Challenge bad patterns. Own the quality.
+
+---
+
+## Implementation Discipline
+
+BEFORE writing ANY code:
+
+1. **Think** - Is this the right approach? Will it scale?
+2. **Search** - Does it exist in ui/, shared/, features/? USE IT
+3. **Plan edge cases** - List ALL scenarios (loading, error, empty, auth, permissions)
+4. **Generate test scenarios** - What could break? How to verify?
+5. **Challenge UX** - Ambiguous? Inconsistent? STOP and suggest better
+6. **Add to TODO** - If edge cases identified, add them. Never skip.
+
+If approach feels wrong - STOP. Explain why. Propose alternative.
+
+---
+
+## Structure
+
+| Path | Purpose |
+|------|---------|
+| app/ | Route wrappers ONLY (< 20 lines) |
+| components/ui/ | Primitives (Button, Input, Badge...) |
+| components/shared/ | Composites (Alert, Stepper, EmptyState...) |
+| components/features/[name]/ | Domain: components/ + hooks/ + schemas/ |
+| components/layout/ | App shell (Rail, Panel, Header, MobileNav) |
+| lib/api/ | API client, interceptors |
+| lib/config/ | Navigation config, app config |
+| lib/hooks/ | Global hooks |
+| lib/stores/ | Zustand stores (minimal) |
+| lib/types/ | Frontend-only types |
+| lib/utils/ | Helper functions |
+| providers/ | Context providers (Auth, Query, Layout) |
+
+---
+
+## Feature Folder
+
+features/[name]/
+- index.ts - Barrel exports (REQUIRED)
+- components/ - UI only (JSX, no logic)
+- hooks/ - Logic only (useQuery, useMutation, handlers)
+- schemas/ - Zod validation
+
+UI = render only. Logic = hooks only. Never mix.
+
+---
+
+## Styling Tokens
+
+Colors:
+- text-foreground, text-foreground-secondary, text-foreground-tertiary, text-foreground-muted
+- bg-background, bg-background-secondary, bg-muted
+- border-border, border-border-light, border-border-medium
+- text-primary, text-success, text-error, text-warning, text-info
+
+Icons (size-icon-*):
+- size-icon-xs (14px), size-icon-sm (16px), size-icon (18px)
+- size-icon-md (20px), size-icon-lg (24px), size-icon-xl (32px)
+
+Containers (size-container-*):
+- size-container-sm (32px), size-container-md (40px), size-container-lg (48px)
+
+Inputs:
+- h-input-sm (28px), h-input-md (32px), h-input-lg (36px)
+
+Layout:
+- h-header (48px), w-rail (48px), w-panel (200px)
+
+---
+
+## V2 Design Standards
+
+- Font weights: normal (400) body, medium (500) labels, semibold (600) titles
+- AVOID font-bold - use font-semibold max
+- Border radius: rounded-lg preferred (not rounded-xl/2xl/3xl)
+- Borders: border-border-light (not gray-200)
+- Padding: p-4 standard (not p-5/p-6)
+- Shadows: shadow-sm or none (not shadow-md/lg)
+- Spacing: compact, consistent
+
+---
+
+## Never
+
+- Logic in pages - use feature components
+- Recreate primitives - extend existing
+- Hardcoded colors (text-gray-500, bg-green-600) - use tokens
+- any type - type properly
+- Deep imports - use barrel (@/components/ui)
+- Dead code - delete immediately
+- Inline SVGs - use lucide-react
+- Redefine backend types - import from shared-types
+- useQuery in components - move to hooks
+- Zustand for server data - use TanStack Query
+- font-bold - use font-semibold
+- rounded-xl/2xl - use rounded-lg
+- Magic pixels (w-6, h-12) - use tokens (size-icon-lg, h-input-md)
+- Inline styles - use Tailwind classes
+- console.log - remove before commit
+- Skip edge cases - add to TODO if not handled
+- Repeat same work - search first
+- Hardcode paths - use `ROUTES.*` constants
+- Lose URL state on refresh - persist in query params
+
+---
+
+## Always
+
+- Handle: loading, error, empty states
+- Separate: UI (components) vs Logic (hooks)
+- Export: from index.ts barrel
+- Import: from barrel, not deep paths
+- Cleanup: unused imports, dead code
+- Forms: react-hook-form + Zod schema
+- Auth: useAuth from AuthProvider, AuthGuard for routes
+- State: TanStack Query (server) | Zustand (global UI) | useState (local)
+- Files: kebab-case.tsx, hooks as use-*.ts, schemas as *.schema.ts
+- Icons: from lucide-react
+- Navigation: use lib/config/navigation.ts with ROUTES constants
+- Layout: use components/layout/ (Rail, Panel, Header)
+- API calls: use lib/api/client.ts (has auth interceptors)
+- Error handling: use getErrorMessage from lib/utils
+- Types: export from lib/types/index.ts barrel
+- TODO: track edge cases, pending items - never skip
+- Routes: `useRoutes()` hook + `ROUTES.*` constants
+- URL state: filters, tabs, pagination in query params
+
+---
+
+## Auth & Permissions
+
+### Route Protection
+- Server: `middleware.ts` - redirects before page loads
+- Client: `AuthGuard` - wraps protected layouts
+- Granular: `PermissionGuard` - checks role/permission
+
+### Key Hooks & Functions
+- `useAuth()` → user, isAuthenticated, logout, hasPermission(), hasRole()
+- `useFilteredNavigation()` → auto-filtered navigation by user access
+- `hasAccess(item, userAccess)` → check permission programmatically
+
+### Roles (UserRole)
+`super_admin` | `platform_admin` | `admin` | `manager` | `sales` | `field_worker` | `viewer`
+
+### Navigation Permissions
+```typescript
+// lib/config/navigation.ts - add to nav items:
+{ href: '/users', roles: ['admin'], permissions: ['users:manage'] }
+```
+
+### Auth Rules
+- Always check `isInitialized && isAuthenticated` before redirects
+- Use `router.replace()` for auth redirects (not push - prevents back)
+- Wrap admin routes with `PermissionGuard`
+- Add roles/permissions to new nav items in `navigation.ts`
+- Use `useFilteredNavigation()` in Rail/Panel - never raw config
+
+### Never
+- Skip permission checks on sensitive routes
+- Use `router.push` for logout/auth redirects
+- Hardcode role strings - use `hasRole('admin')`
+- Check auth before `isInitialized` is true
+
+---
+
+## Routes & URLs
+
+### Config
+- Routes: `lib/config/routes.ts` (single source)
+- Navigation: `useRoutes()` hook - type-safe, has `navigate`, `replace`, `setQueryParams`
+- Never hardcode paths - use `ROUTES.CUSTOMERS.LIST`
+
+### Shareable URLs (CRM/ERP Must-Have)
+- Filters in query: `/quotes?status=draft&sort=date`
+- Entities in path: `/customers/[id]` (not `?id=`)
+- Tabs in query: `/customers/[id]?tab=properties`
+- Persist on refresh - read URL state on mount
+- `replace()` for filters, `push()` for navigation
+
+---
+
+## Edge Case Checklist (EVERY Feature)
+
+Before marking complete, verify:
+- [ ] Loading state handled
+- [ ] Error state handled (API fail, validation)
+- [ ] Empty state handled
+- [ ] Success feedback shown
+- [ ] Form disabled during submit
+- [ ] Auth/permission checks in place
+- [ ] Mobile responsive
+- [ ] Keyboard accessible
+
+If ANY unchecked - add to TODO. Do not ship incomplete.

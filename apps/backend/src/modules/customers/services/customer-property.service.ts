@@ -5,10 +5,22 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { LeadTemperature, PropertyStatus, QuoteStatus } from '@oneohm-epc/shared-types';
+import {
+  FollowupPriority,
+  FollowupStatus,
+  LeadTemperature,
+  LoanStatus,
+  type PropertyDocument,
+  type PropertyFollowup,
+  PropertyStatus,
+  QuoteStatus,
+} from '@oneohm-epc/shared-types';
 
+import { LoanApplicationRepository } from '../../loan-finance/repositories/loan-application.repository';
 import { QuoteRepository } from '../../quotes/repositories/quote.repository';
 import { CreateCustomerPropertyDto } from '../dto/create-customer-property.dto';
+import type { PropertyDocumentDto } from '../dto/property-document.dto';
+import type { PropertyFollowupDto } from '../dto/property-followup.dto';
 import { UpdateCustomerPropertyDto } from '../dto/update-customer-property.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
@@ -35,7 +47,25 @@ export class CustomerPropertyService {
     private readonly propertyRepository: CustomerPropertyRepository,
     private readonly customerRepository: CustomerProfileRepository,
     private readonly quoteRepository: QuoteRepository,
+    private readonly loanApplicationRepository: LoanApplicationRepository,
   ) {}
+
+  /**
+   * Normalize documents from DTO to entity format
+   * Applies default values for optional fields
+   */
+  private normalizeDocuments(documents?: PropertyDocumentDto[]): PropertyDocument[] | undefined {
+    if (!documents) return undefined;
+    return documents.map((doc) => ({
+      url: doc.url,
+      tag: doc.tag,
+      fileName: doc.fileName,
+      isLoanDoc: doc.isLoanDoc ?? false,
+      isVerified: doc.isVerified ?? false,
+      verifiedAt: doc.verifiedAt,
+      verifiedBy: doc.verifiedBy,
+    }));
+  }
 
   /**
    * Create a new customer property
@@ -70,18 +100,15 @@ export class CustomerPropertyService {
     const existingProperties = await this.propertyRepository.countByCustomer(createDto.customerId);
     const isPrimary = createDto.isPrimary ?? existingProperties === 0;
 
-    // Calculate next follow-up date based on temperature
-    const nextFollowUpDate = this.calculateNextFollowUpDate(
-      createDto.leadTemperature || LeadTemperature.WARM,
-    );
+    // Normalize documents to ensure required fields have defaults
+    const { documents, followups, ...restCreateDto } = createDto;
 
     const property = await this.propertyRepository.create({
-      ...createDto,
+      ...restCreateDto,
+      documents: this.normalizeDocuments(documents),
+      followups: followups ? this.normalizeFollowups(followups) : [],
       organizationId,
       isPrimary,
-      nextFollowUpDate: createDto.nextFollowUpDate
-        ? new Date(createDto.nextFollowUpDate)
-        : nextFollowUpDate,
       status: createDto.status || PropertyStatus.ACTIVE,
       createdBy,
     });
@@ -171,23 +198,36 @@ export class CustomerPropertyService {
   }
 
   /**
-   * Find properties by lead temperature
+   * Find properties by lead temperature (with pagination)
    */
   async findByTemperature(
     organizationId: string,
     temperature: LeadTemperature,
-  ): Promise<CustomerPropertyEntity[]> {
-    return this.propertyRepository.findByTemperature(organizationId, temperature);
+    page = 1,
+    limit = 20,
+  ): Promise<{ data: CustomerPropertyEntity[]; total: number }> {
+    const [data, total] = await this.propertyRepository.findByTemperature(
+      organizationId,
+      temperature,
+      page,
+      limit,
+    );
+    return { data, total };
   }
 
   /**
-   * Find pending follow-ups
+   * Find properties with pending follow-ups
    */
-  async findPendingFollowUps(
+  async findWithPendingFollowups(
     organizationId: string,
     beforeDate?: Date,
+    assignedToUserId?: string,
   ): Promise<CustomerPropertyEntity[]> {
-    return this.propertyRepository.findPendingFollowUps(organizationId, beforeDate);
+    return this.propertyRepository.findWithPendingFollowups(
+      organizationId,
+      beforeDate,
+      assignedToUserId,
+    );
   }
 
   /**
@@ -203,6 +243,19 @@ export class CustomerPropertyService {
 
     // Verify property exists and belongs to organization
     const property = await this.findById(id, organizationId);
+
+    // Validate loan status if trying to disable loan
+    if (property.wantsLoan === true && updateDto.wantsLoan === false) {
+      const loanApp = await this.loanApplicationRepository.findByProperty(id);
+      if (loanApp) {
+        const finalizedStatuses = [LoanStatus.APPROVED, LoanStatus.REJECTED];
+        if (finalizedStatuses.includes(loanApp.status)) {
+          throw new BadRequestException(
+            `Cannot disable loan financing. This loan has been ${loanApp.status} by the bank and cannot be modified.`,
+          );
+        }
+      }
+    }
 
     // Check for consumer number conflicts (if being updated)
     if (updateDto.consumerNumber && updateDto.consumerNumber !== property.consumerNumber) {
@@ -222,24 +275,13 @@ export class CustomerPropertyService {
       await this.propertyRepository.setPrimary(id, property.customerId, updatedBy);
     }
 
-    // Prepare update data (exclude isPrimary since handled above)
+    // Prepare update data (exclude isPrimary since handled above, normalize documents)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { isPrimary: unusedIsPrimary, ...restDto } = updateDto;
-
-    // If temperature changes, recalculate next follow-up date (unless explicitly provided)
-    let nextFollowUpDate = updateDto.nextFollowUpDate
-      ? new Date(updateDto.nextFollowUpDate)
-      : undefined;
-
-    if (updateDto.leadTemperature && updateDto.leadTemperature !== property.leadTemperature) {
-      if (!updateDto.nextFollowUpDate) {
-        nextFollowUpDate = this.calculateNextFollowUpDate(updateDto.leadTemperature);
-      }
-    }
+    const { isPrimary: unusedIsPrimary, documents, ...restDto } = updateDto;
 
     const updated = await this.propertyRepository.update(id, {
       ...restDto,
-      nextFollowUpDate,
+      documents: this.normalizeDocuments(documents),
       updatedBy,
     });
 
@@ -258,20 +300,14 @@ export class CustomerPropertyService {
     id: string,
     organizationId: string,
     temperature: LeadTemperature,
-    followUpNotes?: string,
     updatedBy?: string,
   ): Promise<CustomerPropertyEntity> {
     this.logger.log(`Updating property ${id} temperature to: ${temperature}`);
 
     await this.findById(id, organizationId);
 
-    const nextFollowUpDate = this.calculateNextFollowUpDate(temperature);
-
     const updated = await this.propertyRepository.update(id, {
       leadTemperature: temperature,
-      nextFollowUpDate,
-      lastContactDate: new Date(),
-      followUpNotes,
       updatedBy,
     });
 
@@ -343,18 +379,121 @@ export class CustomerPropertyService {
     return result;
   }
 
+  // ==================== FOLLOWUP METHODS ====================
+
   /**
-   * Calculate next follow-up date based on temperature
+   * Normalize followups from DTO to interface format
+   * Applies default values for optional fields
    */
-  private calculateNextFollowUpDate(temperature: LeadTemperature): Date {
-    const daysToAdd = {
-      [LeadTemperature.HOT]: 3,
-      [LeadTemperature.WARM]: 10,
-      [LeadTemperature.COLD]: 15,
+  private normalizeFollowups(followups: PropertyFollowupDto[]): PropertyFollowup[] {
+    const now = new Date().toISOString();
+    return followups.map((f) => ({
+      id: f.id ?? crypto.randomUUID(),
+      type: f.type,
+      subject: f.subject,
+      scheduledAt: f.scheduledAt,
+      assignedToUserId: f.assignedToUserId,
+      status: f.status ?? FollowupStatus.PENDING,
+      priority: f.priority ?? FollowupPriority.NORMAL,
+      notes: f.notes,
+      lastUpdatedAt: now,
+    }));
+  }
+
+  /**
+   * Add a followup to a property
+   * Uses atomic JSONB append operation
+   */
+  async addFollowup(
+    propertyId: string,
+    organizationId: string,
+    dto: PropertyFollowupDto,
+    updatedBy: string,
+  ): Promise<PropertyFollowup> {
+    await this.findById(propertyId, organizationId);
+
+    const now = new Date().toISOString();
+    const followup: PropertyFollowup = {
+      id: crypto.randomUUID(),
+      type: dto.type,
+      subject: dto.subject,
+      scheduledAt: dto.scheduledAt,
+      assignedToUserId: dto.assignedToUserId,
+      status: dto.status ?? FollowupStatus.PENDING,
+      priority: dto.priority ?? FollowupPriority.NORMAL,
+      notes: dto.notes,
+      lastUpdatedAt: now,
     };
 
-    const date = new Date();
-    date.setDate(date.getDate() + daysToAdd[temperature]);
-    return date;
+    // Atomic JSONB append via repository method
+    await this.propertyRepository.appendFollowup(propertyId, followup, updatedBy);
+
+    this.logger.log(`Followup added to property ${propertyId}: ${followup.id}`);
+    return followup;
+  }
+
+  /**
+   * Update a followup in the array
+   */
+  async updateFollowup(
+    propertyId: string,
+    organizationId: string,
+    followupId: string,
+    dto: Partial<PropertyFollowupDto>,
+    updatedBy: string,
+  ): Promise<PropertyFollowup> {
+    const property = await this.findById(propertyId, organizationId);
+
+    const index = property.followups.findIndex((f) => f.id === followupId);
+    if (index === -1) {
+      throw new NotFoundException(`Followup with ID '${followupId}' not found`);
+    }
+
+    // Safe to use ! here - we already verified index !== -1 above
+    const existing = property.followups[index]!;
+    const updated: PropertyFollowup = {
+      id: followupId, // Immutable
+      type: dto.type ?? existing.type,
+      subject: dto.subject ?? existing.subject,
+      scheduledAt: dto.scheduledAt ?? existing.scheduledAt,
+      assignedToUserId: dto.assignedToUserId ?? existing.assignedToUserId,
+      status: dto.status ?? existing.status,
+      priority: dto.priority ?? existing.priority,
+      notes: dto.notes !== undefined ? dto.notes : existing.notes,
+      lastUpdatedAt: new Date().toISOString(),
+    };
+
+    property.followups[index] = updated;
+    await this.propertyRepository.update(propertyId, {
+      followups: property.followups,
+      updatedBy,
+    });
+
+    this.logger.log(`Followup updated: ${followupId}`);
+    return updated;
+  }
+
+  /**
+   * Delete a followup from the array
+   */
+  async deleteFollowup(
+    propertyId: string,
+    organizationId: string,
+    followupId: string,
+    updatedBy: string,
+  ): Promise<void> {
+    const property = await this.findById(propertyId, organizationId);
+
+    const filtered = property.followups.filter((f) => f.id !== followupId);
+    if (filtered.length === property.followups.length) {
+      throw new NotFoundException(`Followup with ID '${followupId}' not found`);
+    }
+
+    await this.propertyRepository.update(propertyId, {
+      followups: filtered,
+      updatedBy,
+    });
+
+    this.logger.log(`Followup deleted: ${followupId}`);
   }
 }

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import { Badge } from '@/components/ui/badge';
-import { getPanelConfigByPath } from '@/lib/config';
+import { getFilteredPanelByPath, useFilteredNavigation } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 
 interface PanelProps {
@@ -17,11 +17,20 @@ interface PanelProps {
 /**
  * Panel - 200px collapsible sidebar
  * Features: Dynamic content based on rail selection, section headers, menu items
- * Uses centralized navigation config from lib/config/navigation.ts
+ * Uses filtered navigation based on user permissions and roles
+ * Note: Uses usePathname directly to avoid useSearchParams Suspense requirement
  */
 export function Panel({ isOpen, onClose, className }: PanelProps) {
   const pathname = usePathname();
-  const { config } = getPanelConfigByPath(pathname);
+  const { navigation } = useFilteredNavigation();
+  const panelData = getFilteredPanelByPath(navigation, pathname);
+
+  // If no panel config available (user doesn't have access), don't render
+  if (!panelData) {
+    return null;
+  }
+
+  const { config } = panelData;
 
   return (
     <aside

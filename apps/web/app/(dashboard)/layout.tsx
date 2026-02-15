@@ -10,6 +10,7 @@ import {
   Rail,
   useLayout,
 } from '@/components/layout';
+import { AuthGuard } from '@/components/shared/guards';
 
 interface DashboardLayoutContentProps {
   children: ReactNode;
@@ -53,10 +54,12 @@ interface DashboardLayoutProps {
 // eslint-disable-next-line import/no-default-export -- Next.js requires default export for layouts
 export default function DashboardLayout({ children }: DashboardLayoutProps): React.JSX.Element {
   return (
-    <LayoutProvider>
-      <div className="min-h-screen bg-background-secondary">
-        <DashboardLayoutContent>{children}</DashboardLayoutContent>
-      </div>
-    </LayoutProvider>
+    <AuthGuard>
+      <LayoutProvider>
+        <div className="min-h-screen bg-background-secondary">
+          <DashboardLayoutContent>{children}</DashboardLayoutContent>
+        </div>
+      </LayoutProvider>
+    </AuthGuard>
   );
 }

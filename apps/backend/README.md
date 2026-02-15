@@ -148,7 +148,7 @@ apps/backend/
 | Module | Description | Key Entities |
 |--------|-------------|--------------|
 | **payments** | Payment tracking | `Payment`, `PaymentSchedule` |
-| **loan-finance** | Loan applications | `LoanApplication`, `LoanDocument` |
+| **loan-finance** | Loan applications | `LoanApplication` |
 
 ### Compliance & Audit
 

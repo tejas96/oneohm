@@ -5,16 +5,20 @@ import {
   PropertyStatus,
   PropertyType,
 } from '@oneohm-epc/shared-types';
+import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
-  IsDateString,
   IsEnum,
   IsNumber,
   IsOptional,
   IsString,
   MaxLength,
   Min,
+  ValidateNested,
 } from 'class-validator';
+
+import { PropertyDocumentDto } from './property-document.dto';
 
 /**
  * DTO for updating a customer property (installation site)
@@ -174,21 +178,6 @@ export class UpdateCustomerPropertyDto {
   @IsOptional()
   leadTemperature?: LeadTemperature;
 
-  @ApiPropertyOptional({
-    example: '2025-01-20',
-    description: 'Next follow-up date',
-  })
-  @IsDateString()
-  @IsOptional()
-  nextFollowUpDate?: string;
-
-  @ApiPropertyOptional({
-    description: 'Notes for next follow-up',
-  })
-  @IsString()
-  @IsOptional()
-  followUpNotes?: string;
-
   // ==================== Flags ====================
   @ApiPropertyOptional({
     example: true,
@@ -205,6 +194,20 @@ export class UpdateCustomerPropertyDto {
   @IsBoolean()
   @IsOptional()
   wantsLoan?: boolean;
+
+  // ==================== Documents ====================
+  @ApiPropertyOptional({
+    type: [PropertyDocumentDto],
+    description: 'Property-level documents (identity docs, KYC, etc.)',
+    example: [
+      { url: 'https://storage.example.com/aadhaar.jpg', tag: 'aadhaar_card', fileName: 'aadhaar.jpg' },
+    ],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PropertyDocumentDto)
+  documents?: PropertyDocumentDto[];
 
   // ==================== Status ====================
   @ApiPropertyOptional({

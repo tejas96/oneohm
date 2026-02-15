@@ -2,7 +2,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LoanStatus } from '@oneohm-epc/shared-types';
 import { Expose, Type } from 'class-transformer';
 
-import { LoanDocumentResponseDto } from './loan-document-response.dto';
 import { CustomerPropertyResponseDto } from '../../customers/dto/customer-property-response.dto';
 import { CustomerResponseDto } from '../../customers/dto/customer-response.dto';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
@@ -10,6 +9,9 @@ import { UserResponseDto } from '../../users/dto/user-response.dto';
 /**
  * Response DTO for Loan Application
  * Simplified for tracking customer loan interest with external banks
+ *
+ * Note: Documents are now stored in property.documents JSONB.
+ * Filter by isLoanDoc=true to get loan-related documents.
  */
 export class LoanApplicationResponseDto {
   @ApiProperty({ description: 'Loan application ID' })
@@ -84,12 +86,4 @@ export class LoanApplicationResponseDto {
   @Expose()
   @Type(() => UserResponseDto)
   createdByUser?: UserResponseDto;
-
-  @ApiPropertyOptional({
-    description: 'Loan documents (KYC)',
-    type: [LoanDocumentResponseDto],
-  })
-  @Expose()
-  @Type(() => LoanDocumentResponseDto)
-  documents?: LoanDocumentResponseDto[];
 }

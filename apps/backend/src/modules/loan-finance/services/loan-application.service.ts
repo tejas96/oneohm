@@ -43,11 +43,15 @@ export class LoanApplicationService {
     });
   }
 
-  async findAll(): Promise<LoanApplicationResponseDto[]> {
-    const applications = await this.loanApplicationRepository.findAll();
-    return plainToInstance(LoanApplicationResponseDto, applications, {
+  async findAll(
+    page = 1,
+    limit = 20,
+  ): Promise<{ data: LoanApplicationResponseDto[]; total: number }> {
+    const [applications, total] = await this.loanApplicationRepository.findAll(page, limit);
+    const data = plainToInstance(LoanApplicationResponseDto, applications, {
       excludeExtraneousValues: true,
     });
+    return { data, total };
   }
 
   async findById(id: string): Promise<LoanApplicationResponseDto> {
@@ -131,14 +135,15 @@ export class LoanApplicationService {
   /**
    * Validate status transitions for loan tracking.
    * Simplified flow: initiated -> applied -> approved/rejected/cancelled
+   * Special case: cancelled -> initiated (reactivation when user toggles loan back ON)
    */
   private validateStatusTransition(currentStatus: LoanStatus, newStatus: LoanStatus): void {
     const validTransitions: Record<LoanStatus, LoanStatus[]> = {
       [LoanStatus.INITIATED]: [LoanStatus.APPLIED, LoanStatus.CANCELLED],
       [LoanStatus.APPLIED]: [LoanStatus.APPROVED, LoanStatus.REJECTED, LoanStatus.CANCELLED],
-      [LoanStatus.APPROVED]: [], // Final state
-      [LoanStatus.REJECTED]: [], // Final state
-      [LoanStatus.CANCELLED]: [], // Final state
+      [LoanStatus.APPROVED]: [], // Final state - cannot be modified
+      [LoanStatus.REJECTED]: [], // Final state - cannot be modified
+      [LoanStatus.CANCELLED]: [LoanStatus.INITIATED], // Allow reactivation
     };
 
     const allowedStatuses = validTransitions[currentStatus] || [];

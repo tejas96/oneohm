@@ -43,7 +43,7 @@ const tooltipContentVariants = cva(
   {
     variants: {
       variant: {
-        dark: 'bg-gray-900 text-white',
+        dark: 'bg-foreground text-background',
         primary: 'bg-primary-dark text-white',
         secondary: 'bg-secondary text-white',
         light: 'bg-background text-foreground shadow-sm border border-border-light',
@@ -57,7 +57,7 @@ const tooltipContentVariants = cva(
 
 /** Arrow colors per variant - module scope for performance */
 const ARROW_COLORS = {
-  dark: 'text-gray-900',
+  dark: 'text-foreground',
   primary: 'text-primary-dark',
   secondary: 'text-secondary',
   light: 'text-background drop-shadow-sm',
@@ -65,7 +65,7 @@ const ARROW_COLORS = {
 
 /** Rich tooltip text colors per variant */
 const RICH_TEXT_COLORS = {
-  dark: 'text-gray-300',
+  dark: 'text-foreground-tertiary',
   primary: 'text-white/80',
   secondary: 'text-white/80',
   light: 'text-foreground-secondary',

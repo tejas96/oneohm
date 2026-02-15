@@ -3,7 +3,7 @@
 import * as RadioGroupPrimitive from '@radix-ui/react-radio-group';
 import * as React from 'react';
 
-import { RadioGroup } from '@/components/ui/radio-group';
+import { RadioGroup } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 export interface RadioCardProps
@@ -42,7 +42,7 @@ const RadioCard = React.forwardRef<
     {/* Radio indicator - inherits state from parent RadioGroupPrimitive.Item */}
     <div
       className={cn(
-        'mt-0.5 h-checkbox-md w-checkbox-md shrink-0 rounded-full border-2 border-gray-300',
+        'mt-0.5 h-checkbox-md w-checkbox-md shrink-0 rounded-full border-2 border-border-medium',
         'flex items-center justify-center transition-colors duration-fast',
         // Radix propagates data-state to children automatically
       )}

@@ -1,0 +1,14 @@
+---
+globs: libs/**/*.ts
+---
+
+# ⚠️ DEPRECATED — See core.mdc
+
+Types location rules are now in [core.mdc](mdc:core.mdc) under "Types Location" section.
+
+**Quick Reference:**
+| Scope | Path |
+|-------|------|
+| Shared (both apps) | `@oneohm-epc/shared-types` |
+| Backend only | `modules/[feature]/types/` |
+| Frontend only | `lib/types/` |

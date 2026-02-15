@@ -1,6 +1,8 @@
 import {
   ConnectionType,
   LeadTemperature,
+  type PropertyDocument,
+  type PropertyFollowup,
   PropertyStatus,
   PropertyType,
 } from '@oneohm-epc/shared-types';
@@ -23,7 +25,6 @@ import { UserEntity } from '../../users/entities/user.entity';
 @Index(['customerId', 'organizationId'])
 @Index(['organizationId', 'status', 'deletedAt'])
 @Index(['organizationId', 'leadTemperature', 'deletedAt'])
-@Index(['nextFollowUpDate'])
 @Index(['consumerNumber'], { where: 'deleted_at IS NULL' })
 @Index(['pincode'])
 export class CustomerPropertyEntity extends BaseEntity {
@@ -127,14 +128,13 @@ export class CustomerPropertyEntity extends BaseEntity {
   })
   leadTemperature!: LeadTemperature;
 
-  @Column({ name: 'next_follow_up_date', type: 'date', nullable: true })
-  nextFollowUpDate?: Date;
-
-  @Column({ name: 'last_contact_date', type: 'timestamptz', nullable: true })
-  lastContactDate?: Date;
-
-  @Column({ name: 'follow_up_notes', type: 'text', nullable: true })
-  followUpNotes?: string;
+  // ==================== FOLLOWUPS ====================
+  /**
+   * Property followups - scheduled activities array
+   * Stored as JSONB: [{ id, type, subject, scheduledAt, ... }]
+   */
+  @Column({ type: 'jsonb', default: [] })
+  followups!: PropertyFollowup[];
 
   // ==================== FLAGS ====================
   @Column({ name: 'is_primary', type: 'boolean', default: false })
@@ -142,6 +142,15 @@ export class CustomerPropertyEntity extends BaseEntity {
 
   @Column({ name: 'wants_loan', type: 'boolean', default: false })
   wantsLoan!: boolean;
+
+  // ==================== DOCUMENTS ====================
+  /**
+   * Property-level documents (identity docs, KYC, etc.)
+   * Stored as JSONB array: [{ url, tag, fileName }, ...]
+   * Used when customer uploads documents without loan application
+   */
+  @Column({ type: 'jsonb', default: [] })
+  documents!: PropertyDocument[];
 
   // ==================== STATUS ====================
   @Column({ type: 'varchar', length: 20, default: PropertyStatus.ACTIVE })

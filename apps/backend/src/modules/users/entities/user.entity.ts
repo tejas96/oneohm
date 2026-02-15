@@ -53,6 +53,22 @@ export class UserEntity extends BaseEntity {
   })
   lastLoginAt?: Date;
 
+  // ===== PASSWORD RESET =====
+  @Column({
+    name: 'password_reset_token',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  passwordResetToken?: string | null;
+
+  @Column({
+    name: 'password_reset_expires',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  passwordResetExpires?: Date | null;
+
   // ===== PROFILE COMPLETION =====
   @Column({
     name: 'profile_completed',

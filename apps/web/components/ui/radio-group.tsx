@@ -17,7 +17,7 @@ RadioGroup.displayName = RadioGroupPrimitive.Root.displayName;
 
 const radioItemVariants = cva(
   [
-    'aspect-square rounded-full border-2 border-gray-300',
+    'aspect-square rounded-full border-2 border-border-medium',
     'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0',
     'disabled:cursor-not-allowed disabled:opacity-50',
     'data-[state=checked]:border-primary data-[state=checked]:text-primary',

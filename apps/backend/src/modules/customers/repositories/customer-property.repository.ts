@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LeadTemperature, PropertyStatus } from '@oneohm-epc/shared-types';
-import { IsNull, LessThanOrEqual, Repository } from 'typeorm';
+import { LeadTemperature, type PropertyFollowup, PropertyStatus } from '@oneohm-epc/shared-types';
+import { IsNull, Repository } from 'typeorm';
 
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 
@@ -63,33 +63,44 @@ export class CustomerPropertyRepository {
   async findByTemperature(
     organizationId: string,
     temperature: LeadTemperature,
-  ): Promise<CustomerPropertyEntity[]> {
-    return this.repository.find({
+    page = 1,
+    limit = 20,
+  ): Promise<[CustomerPropertyEntity[], number]> {
+    return this.repository.findAndCount({
       where: { organizationId, leadTemperature: temperature, deletedAt: IsNull() },
       relations: ['customer'],
-      order: { nextFollowUpDate: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
     });
   }
 
-  async findPendingFollowUps(
+  /**
+   * Find properties with pending followups
+   * Queries the JSONB followups array for pending items
+   */
+  async findWithPendingFollowups(
     organizationId: string,
     beforeDate?: Date,
+    assignedToUserId?: string,
   ): Promise<CustomerPropertyEntity[]> {
-    const where: Record<string, unknown> = {
-      organizationId,
-      deletedAt: IsNull(),
-      status: PropertyStatus.ACTIVE,
-    };
+    const qb = this.repository
+      .createQueryBuilder('property')
+      .leftJoinAndSelect('property.customer', 'customer')
+      .where('property.organization_id = :orgId', { orgId: organizationId })
+      .andWhere('property.deleted_at IS NULL')
+      .andWhere('property.status = :status', { status: PropertyStatus.ACTIVE })
+      .andWhere(`EXISTS (
+        SELECT 1 FROM jsonb_array_elements(property.followups) AS f
+        WHERE f->>'status' = 'pending'
+        ${beforeDate ? `AND (f->>'scheduledAt')::timestamptz <= :beforeDate` : ''}
+        ${assignedToUserId ? `AND f->>'assignedToUserId' = :userId` : ''}
+      )`);
 
-    if (beforeDate) {
-      where.nextFollowUpDate = LessThanOrEqual(beforeDate);
-    }
+    if (beforeDate) qb.setParameter('beforeDate', beforeDate.toISOString());
+    if (assignedToUserId) qb.setParameter('userId', assignedToUserId);
 
-    return this.repository.find({
-      where,
-      relations: ['customer'],
-      order: { nextFollowUpDate: 'ASC' },
-    });
+    return qb.getMany();
   }
 
   async create(property: Partial<CustomerPropertyEntity>): Promise<CustomerPropertyEntity> {
@@ -161,5 +172,22 @@ export class CustomerPropertyRepository {
       temperature: r.temperature,
       count: parseInt(r.count, 10),
     }));
+  }
+
+  /**
+   * Append a followup to a property using atomic JSONB operation
+   * This ensures thread-safe appending without race conditions
+   */
+  async appendFollowup(
+    propertyId: string,
+    followup: PropertyFollowup,
+    updatedBy: string,
+  ): Promise<void> {
+    await this.repository.query(
+      `UPDATE customer_properties 
+       SET followups = followups || $1::jsonb, updated_at = NOW(), updated_by = $2
+       WHERE id = $3`,
+      [JSON.stringify([followup]), updatedBy, propertyId],
+    );
   }
 }

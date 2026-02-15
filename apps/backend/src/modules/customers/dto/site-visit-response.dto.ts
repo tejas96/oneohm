@@ -122,7 +122,7 @@ export class SiteVisitResponseDto {
   @Type(() => PropertyInfoDto)
   customerProperty?: PropertyInfoDto;
 
-  // ==================== Timestamps ====================
+  // ==================== Audit Fields ====================
   @ApiProperty()
   @Expose()
   createdAt!: Date;
@@ -130,4 +130,12 @@ export class SiteVisitResponseDto {
   @ApiProperty()
   @Expose()
   updatedAt!: Date;
+
+  @ApiPropertyOptional()
+  @Expose()
+  createdBy?: string;
+
+  @ApiPropertyOptional()
+  @Expose()
+  updatedBy?: string;
 }
