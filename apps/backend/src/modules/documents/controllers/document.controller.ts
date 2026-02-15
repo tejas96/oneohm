@@ -36,7 +36,7 @@ import {
   SignDocumentDto,
   UpdateDocumentDto,
   UpdateDocumentStatusDto,
-  VerifyOtpDto,
+  VerifyDocumentOtpDto,
 } from '../dto';
 import { DocumentService } from '../services/document.service';
 
@@ -286,7 +286,7 @@ export class DocumentController {
   @ApiResponse({ status: 404, description: 'Document not found' })
   async verifyOtp(
     @Param('id') id: string,
-    @Body() dto: VerifyOtpDto,
+    @Body() dto: VerifyDocumentOtpDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<DocumentResponseDto> {
     const document = await this.documentService.verifyOtp(id, dto, currentUser.id);

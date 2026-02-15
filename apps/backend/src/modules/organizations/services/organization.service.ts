@@ -192,7 +192,7 @@ export class OrganizationService {
         return (
           org.name.toLowerCase().includes(searchLower) ||
           org.code.toLowerCase().includes(searchLower) ||
-          (org.email && org.email.toLowerCase().includes(searchLower))
+          (org.email?.toLowerCase().includes(searchLower))
         );
       });
     }
