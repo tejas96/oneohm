@@ -57,6 +57,7 @@ export const ROUTES = {
     LIST: '/customers',
     DETAIL: '/customers/[id]',
     NEW: '/customers/new',
+    EDIT: '/customers/[id]/edit',
     ADD_PROPERTY: '/customers/[id]/properties/new',
   },
 
@@ -201,6 +202,7 @@ export interface RouteParamTypes {
   // Dynamic routes with [id]
   '/crm/leads/[id]': { id: string };
   '/customers/[id]': { id: string };
+  '/customers/[id]/edit': { id: string };
   '/customers/[id]/properties/new': { id: string };
   '/quotes/[id]': { id: string };
   '/projects/[id]': { id: string };

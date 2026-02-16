@@ -43,7 +43,7 @@ primary_region = 'bom'  # Mumbai region
   RATE_LIMIT_MAX = '1000'
   
   # CORS - Allow web app to call API
-  CORS_ORIGIN = 'https://oneohm-epc-web.fly.dev,http://localhost:3001'
+  CORS_ORIGIN = 'https://solaroneohm.in,https://www.solaroneohm.in,https://oneohm-epc-web.fly.dev,http://localhost:3001'
   
   # JWT Expiry (non-sensitive, can be in env)
   JWT_EXPIRES_IN = '15m'

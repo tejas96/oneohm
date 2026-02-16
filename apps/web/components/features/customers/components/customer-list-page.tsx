@@ -26,7 +26,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useCallback, useMemo, type JSX } from 'react';
 
 import { DeleteCustomerModal } from './delete-customer-modal';
-import { EditCustomerModal } from './edit-customer-modal';
 import { ImportCustomersModal } from './import-customers-modal';
 import { useCustomers, type Customer } from '../hooks';
 
@@ -49,7 +48,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui';
-import { ROUTES } from '@/lib/config/routes';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDebounce } from '@/lib/hooks';
 import { cn, getErrorMessage } from '@/lib/utils';
 
@@ -206,7 +205,6 @@ export function CustomerListPage(): JSX.Element {
   // Modal state
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedRows, setSelectedRows] = useState<Customer[]>([]);
-  const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
 
@@ -499,10 +497,9 @@ export function CustomerListPage(): JSX.Element {
                 View Details
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => {
-                  setSelectedCustomer(row.original);
-                  setEditModalOpen(true);
-                }}
+                onClick={() =>
+                  router.push(buildRoute(ROUTES.CUSTOMERS.EDIT, { id: row.original.id }))
+                }
               >
                 <Edit className="mr-2 size-icon-sm" />
                 Edit Customer
@@ -798,12 +795,6 @@ export function CustomerListPage(): JSX.Element {
       </div>
 
       {/* Modals */}
-      <EditCustomerModal
-        open={editModalOpen}
-        onOpenChange={setEditModalOpen}
-        customer={selectedCustomer}
-      />
-
       <DeleteCustomerModal
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
