@@ -75,7 +75,7 @@ function getAvatarColorIndex(name: string): number {
 
 export function getAvatarFallbackColorClass(name: string): string {
   const index = getAvatarColorIndex(name) % AVATAR_FALLBACK_COLORS.length;
-  return AVATAR_FALLBACK_COLORS[index];
+  return AVATAR_FALLBACK_COLORS[index] ?? AVATAR_FALLBACK_COLORS[0];
 }
 
 export interface AvatarProps

@@ -1,3 +1,9 @@
+import {
+  CustomerSortField,
+  CustomerStatus,
+  LeadSource,
+  SortOrder,
+} from '@oneohm-epc/shared-types';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
@@ -11,12 +17,6 @@ import {
   MinLength,
   ValidateIf,
 } from 'class-validator';
-import {
-  CustomerSortField,
-  CustomerStatus,
-  LeadSource,
-  SortOrder,
-} from '@oneohm-epc/shared-types';
 
 /**
  * Query DTO for customer list endpoint
