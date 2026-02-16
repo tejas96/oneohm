@@ -60,6 +60,7 @@ export class QuoteRepository {
     filters?: {
       status?: QuoteStatus;
       customerId?: string;
+      propertyId?: string;
       salesPersonId?: string;
       resellerId?: string;
       fromDate?: string;
@@ -82,6 +83,10 @@ export class QuoteRepository {
 
     if (filters?.customerId) {
       query.andWhere('quote.customerId = :customerId', { customerId: filters.customerId });
+    }
+
+    if (filters?.propertyId) {
+      query.andWhere('quote.propertyId = :propertyId', { propertyId: filters.propertyId });
     }
 
     if (filters?.salesPersonId) {

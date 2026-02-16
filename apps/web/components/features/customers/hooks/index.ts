@@ -21,3 +21,11 @@ export type {
   PaginationMeta,
   UpdateCustomerData,
 } from './use-customers';
+
+// Customer properties
+export { useCustomerProperties, useProperty, propertyKeys } from './use-customer-properties';
+export type { CustomerPropertyResponse, PropertyDocument } from './use-customer-properties';
+
+// Customer quotes
+export { useCustomerQuotes, quoteKeys } from './use-customer-quotes';
+export type { CustomerQuote, CustomerQuotesResponse } from './use-customer-quotes';

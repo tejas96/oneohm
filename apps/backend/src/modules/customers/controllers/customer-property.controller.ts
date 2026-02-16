@@ -33,6 +33,7 @@ import {
   CreateCustomerPropertyDto,
   CreateSiteVisitDto,
   CustomerPropertyResponseDto,
+  PropertyQueryDto,
   SiteVisitResponseDto,
   UpdateCustomerPropertyDto,
   UpdateSiteVisitDto,
@@ -86,37 +87,42 @@ export class CustomerPropertyController {
   }
 
   /**
-   * Get all properties
+   * Get all properties with filtering, sorting, and pagination
+   * Unified endpoint supporting search, filters, and sorting via query parameters
    */
   @Get()
   @ApiOperation({
     summary: 'Get all properties',
-    description: 'Retrieve all customer properties for the organization with pagination.',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number (default: 1)',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Items per page (default: 20)',
+    description:
+      'Retrieve properties with comprehensive filtering, sorting, and pagination. ' +
+      'Supports search (property name, address, city, consumer number, customer name), ' +
+      'lead temperature filter, property type filter, status filter, location filters (city, state), ' +
+      'date range, creator filter (createdBy=me), and sorting. ' +
+      'Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'List of properties',
+    description: 'Paginated list of properties',
     type: [CustomerPropertyResponseDto],
   })
   async findAll(
     @OrganizationContext() organizationId: string,
-    @Query('page', new ParseIntPipe({ optional: true })) page = 1,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Query() query: PropertyQueryDto,
   ): Promise<PaginatedResponse<CustomerPropertyResponseDto>> {
-    const result = await this.propertyService.findAll(organizationId, page, limit);
-    return toPaginatedResponse(CustomerPropertyResponseDto, result.data, result.total, page, limit);
+    // Substitute 'me' with actual user ID for createdBy filter
+    if (query.createdBy === 'me') {
+      query.createdBy = currentUser.id;
+    }
+
+    const result = await this.propertyService.findAll(organizationId, query);
+    return toPaginatedResponse(
+      CustomerPropertyResponseDto,
+      result.data,
+      result.total,
+      query.page,
+      query.limit,
+    );
   }
 
   /**

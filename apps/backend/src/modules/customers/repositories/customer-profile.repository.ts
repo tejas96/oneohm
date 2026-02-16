@@ -28,7 +28,7 @@ export class CustomerProfileRepository {
   async findById(id: string): Promise<CustomerProfileEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['user', 'organization'],
+      relations: ['user', 'organization', 'creator'],
     });
   }
 

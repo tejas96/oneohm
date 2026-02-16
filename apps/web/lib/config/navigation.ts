@@ -186,7 +186,7 @@ export const navigationConfig: NavigationConfig = {
                 {
                   id: 'properties-hot',
                   label: 'Hot',
-                  href: `${ROUTES.PROPERTIES.LIST}?temp=hot`,
+                  href: `${ROUTES.PROPERTIES.LIST}?leadTemperature=hot`,
                   statusDot: 'hot' as const,
                   // badge: dynamically set via useNavigationCounts (crm.properties.hot)
                   badgeVariant: 'error' as const,
@@ -194,7 +194,7 @@ export const navigationConfig: NavigationConfig = {
                 {
                   id: 'properties-warm',
                   label: 'Warm',
-                  href: `${ROUTES.PROPERTIES.LIST}?temp=warm`,
+                  href: `${ROUTES.PROPERTIES.LIST}?leadTemperature=warm`,
                   statusDot: 'warm' as const,
                   // badge: dynamically set via useNavigationCounts (crm.properties.warm)
                   badgeVariant: 'warning' as const,
@@ -202,7 +202,7 @@ export const navigationConfig: NavigationConfig = {
                 {
                   id: 'properties-cold',
                   label: 'Cold',
-                  href: `${ROUTES.PROPERTIES.LIST}?temp=cold`,
+                  href: `${ROUTES.PROPERTIES.LIST}?leadTemperature=cold`,
                   statusDot: 'cold' as const,
                   // badge: dynamically set via useNavigationCounts (crm.properties.cold)
                   badgeVariant: 'default' as const,

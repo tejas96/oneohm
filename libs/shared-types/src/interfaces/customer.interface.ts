@@ -5,7 +5,85 @@
  * @module shared-types/interfaces/customer
  */
 
-import { FollowupPriority, FollowupStatus, FollowupType } from '../enums/customer.enum';
+import {
+  FollowupPriority,
+  FollowupStatus,
+  FollowupType,
+  LeadTemperature,
+  PropertyStatus,
+  PropertyType,
+} from '../enums/customer.enum';
+import { QuoteStatus } from '../enums/quote.enum';
+
+// ============================================================================
+// Customer Property Interface
+// ============================================================================
+
+/**
+ * Customer Property - Installation site belonging to a customer
+ * Used across backend, web portal, and mobile app for property data
+ *
+ * @example
+ * const property: CustomerProperty = {
+ *   id: "uuid-here",
+ *   customerId: "customer-uuid",
+ *   organizationId: "org-uuid",
+ *   propertyName: "Main Residence",
+ *   propertyType: PropertyType.RESIDENTIAL,
+ *   address: "123 MG Road",
+ *   city: "Bangalore",
+ *   leadTemperature: LeadTemperature.HOT,
+ *   wantsLoan: true,
+ *   isPrimary: true,
+ *   status: PropertyStatus.ACTIVE,
+ *   createdAt: "2026-01-15T10:00:00.000Z",
+ *   updatedAt: "2026-01-15T10:00:00.000Z"
+ * };
+ */
+export interface CustomerProperty {
+  /** UUID for this property */
+  id: string;
+  /** Customer ID this property belongs to */
+  customerId: string;
+  /** Organization ID (multi-tenant) */
+  organizationId: string;
+  /** Optional display name for the property */
+  propertyName?: string;
+  /** Type of property (residential, commercial, etc.) */
+  propertyType: PropertyType;
+  /** Street address */
+  address?: string;
+  /** City name */
+  city?: string;
+  /** State name */
+  state?: string;
+  /** Postal code */
+  pincode?: string;
+  /** Lead temperature indicating conversion likelihood */
+  leadTemperature: LeadTemperature;
+  /** Average monthly electricity bill in INR */
+  monthlyBill?: number;
+  /** Whether customer wants loan financing for this property */
+  wantsLoan: boolean;
+  /** Whether this is the primary property for the customer */
+  isPrimary: boolean;
+  /** Property status */
+  status: PropertyStatus;
+  /** Latest quote number for this property (enriched from quotes table) */
+  latestQuoteNumber?: string;
+  /** Status of the latest quote */
+  latestQuoteStatus?: QuoteStatus;
+  /** Date of the latest quote (ISO string) */
+  latestQuoteDate?: string;
+  /** ISO datetime when created */
+  createdAt: string;
+  /** ISO datetime when last updated */
+  updatedAt: string;
+  /** User ID who created this property */
+  createdBy?: string;
+  /** User ID who last updated this property */
+  updatedBy?: string;
+}
 
 // ============================================================================
 // Property Document Interfaces

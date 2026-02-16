@@ -11,6 +11,7 @@ export * from './create-customer-property.dto';
 export * from './update-customer-property.dto';
 export * from './customer-property-response.dto';
 export * from './property-document.dto';
+export * from './property-query.dto';
 
 // Followup DTOs
 export * from './create-followup.dto';

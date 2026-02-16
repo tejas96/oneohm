@@ -1,9 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LeadTemperature } from '@oneohm-epc/shared-types';
+import { LeadTemperature, PropertySortField, SortOrder } from '@oneohm-epc/shared-types';
 import { IsNull, Repository } from 'typeorm';
 
+import { PropertyQueryDto } from '../dto/property-query.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
+
+/**
+ * Field mapping for safe sorting (prevents SQL injection via sortBy)
+ * Maps enum values to entity property paths (camelCase) - TypeORM resolves these to DB columns
+ */
+const SORT_FIELD_MAP: Record<PropertySortField, string> = {
+  [PropertySortField.CREATED_AT]: 'property.createdAt',
+  [PropertySortField.UPDATED_AT]: 'property.updatedAt',
+  [PropertySortField.PROPERTY_NAME]: 'property.propertyName',
+  [PropertySortField.CITY]: 'property.city',
+  [PropertySortField.LEAD_TEMPERATURE]: 'property.leadTemperature',
+  [PropertySortField.PROPERTY_TYPE]: 'property.propertyType',
+  [PropertySortField.STATUS]: 'property.status',
+};
 
 @Injectable()
 export class CustomerPropertyRepository {
@@ -25,7 +40,7 @@ export class CustomerPropertyRepository {
   ): Promise<CustomerPropertyEntity | null> {
     return this.repository.findOne({
       where: { id, organizationId, deletedAt: IsNull() },
-      relations: ['customer'],
+      relations: ['customer', 'creator'],
     });
   }
 
@@ -122,6 +137,93 @@ export class CustomerPropertyRepository {
     return this.repository.count({
       where: { organizationId, leadTemperature: temperature, deletedAt: IsNull() },
     });
+  }
+
+  /**
+   * Find properties with comprehensive filtering, sorting, and pagination
+   * This is the primary method for the property list API
+   *
+   * @param organizationId - Organization context
+   * @param query - Query parameters (filters, sorting, pagination)
+   * @returns Tuple of [properties, total count]
+   */
+  async findWithFilters(
+    organizationId: string,
+    query: PropertyQueryDto,
+  ): Promise<[CustomerPropertyEntity[], number]> {
+    const qb = this.repository
+      .createQueryBuilder('property')
+      .leftJoinAndSelect('property.customer', 'customer')
+      .leftJoinAndSelect('property.creator', 'creator')
+      .where('property.organizationId = :organizationId', { organizationId })
+      .andWhere('property.deletedAt IS NULL');
+
+    // ===== Search (case-insensitive, multiple fields including customer name) =====
+    if (query.search && query.search.length >= 2) {
+      const searchTerm = `%${query.search.toLowerCase()}%`;
+      qb.andWhere(
+        `(
+          LOWER(property.property_name) LIKE :searchTerm OR
+          LOWER(property.address) LIKE :searchTerm OR
+          LOWER(property.city) LIKE :searchTerm OR
+          property.consumer_number LIKE :searchTerm OR
+          LOWER(customer.first_name) LIKE :searchTerm OR
+          LOWER(customer.last_name) LIKE :searchTerm OR
+          LOWER(CONCAT(customer.first_name, ' ', customer.last_name)) LIKE :searchTerm
+        )`,
+        { searchTerm },
+      );
+    }
+
+    // ===== Filters =====
+    if (query.leadTemperature) {
+      qb.andWhere('property.leadTemperature = :leadTemperature', {
+        leadTemperature: query.leadTemperature,
+      });
+    }
+
+    if (query.propertyType) {
+      qb.andWhere('property.propertyType = :propertyType', {
+        propertyType: query.propertyType,
+      });
+    }
+
+    if (query.status) {
+      qb.andWhere('property.status = :status', { status: query.status });
+    }
+
+    if (query.city) {
+      qb.andWhere('LOWER(property.city) LIKE LOWER(:city)', { city: `%${query.city}%` });
+    }
+
+    if (query.state) {
+      qb.andWhere('LOWER(property.state) LIKE LOWER(:state)', { state: `%${query.state}%` });
+    }
+
+    if (query.createdBy) {
+      qb.andWhere('property.created_by = :createdBy', { createdBy: query.createdBy });
+    }
+
+    if (query.fromDate) {
+      qb.andWhere('property.created_at >= :fromDate', { fromDate: query.fromDate });
+    }
+
+    if (query.toDate) {
+      qb.andWhere('property.created_at <= :toDate', {
+        toDate: `${query.toDate}T23:59:59.999Z`,
+      });
+    }
+
+    // ===== Sorting (using safe field mapping) =====
+    const sortColumn =
+      SORT_FIELD_MAP[query.sortBy] ?? SORT_FIELD_MAP[PropertySortField.CREATED_AT];
+    const sortDirection = query.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
+    qb.orderBy(sortColumn, sortDirection);
+
+    // ===== Pagination =====
+    qb.skip((query.page - 1) * query.limit).take(query.limit);
+
+    return qb.getManyAndCount();
   }
 
   /**

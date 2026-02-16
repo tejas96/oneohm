@@ -1,4 +1,19 @@
 // Followups Feature - Hooks
-// Phase 2: API hooks will be added here
 
-export {};
+export {
+  useFollowups,
+  useCreateFollowup,
+  useUpdateFollowup,
+  useMarkFollowupComplete,
+  useMarkFollowupCancelled,
+  useDeleteFollowup,
+  followupKeys,
+} from './use-followups';
+
+export type {
+  FollowupResponse,
+  FollowupListResponse,
+  FollowupFilters,
+  CreateFollowupData,
+  UpdateFollowupData,
+} from './use-followups';
