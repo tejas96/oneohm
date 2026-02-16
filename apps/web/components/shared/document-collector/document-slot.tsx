@@ -38,9 +38,9 @@ interface DocumentSlotProps {
   /** Callback when file is selected */
   onFileSelect: (slotId: string, file: File) => void;
   /** Callback to remove document */
-  onRemove: (slotId: string) => void;
+  onRemove: (slotId: string) => void | Promise<void>;
   /** Callback to retry upload */
-  onRetry?: (slotId: string) => void;
+  onRetry?: (slotId: string) => void | Promise<void>;
   /** Whether slot is disabled */
   disabled?: boolean;
   /** Additional class names */

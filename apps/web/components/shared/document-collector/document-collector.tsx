@@ -135,7 +135,7 @@ export function DocumentCollector({
 
   // Handle retry upload
   const handleRetry = React.useCallback(
-    async (slotId: string) => {
+    (slotId: string) => {
       const doc = documents.find((d) => d.slotId === slotId);
       if (!doc) return;
 
