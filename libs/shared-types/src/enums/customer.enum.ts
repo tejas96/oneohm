@@ -101,3 +101,16 @@ export enum FollowupPriority {
   NORMAL = 'normal',
   HIGH = 'high',
 }
+
+/**
+ * Customer Sort Field Enum
+ * Allowed sort fields for customer list API
+ * Values must match entity property names (camelCase)
+ */
+export enum CustomerSortField {
+  CREATED_AT = 'createdAt',
+  UPDATED_AT = 'updatedAt',
+  FIRST_NAME = 'firstName',
+  CITY = 'city',
+  STATUS = 'status',
+}

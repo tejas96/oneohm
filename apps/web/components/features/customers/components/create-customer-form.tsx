@@ -5,7 +5,7 @@ import { LeadSource } from '@oneohm-epc/shared-types';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import * as React from 'react';
+import { type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { useCreateCustomer, useCheckAvailability } from '../hooks/use-create-customer';
@@ -90,7 +90,7 @@ const sanitizeNumeric = (value: string, maxLength: number): string =>
 // Component
 // ============================================================================
 
-export function CreateCustomerForm(): React.JSX.Element {
+export function CreateCustomerForm(): JSX.Element {
   const router = useRouter();
   const createCustomer = useCreateCustomer();
   const availability = useCheckAvailability();

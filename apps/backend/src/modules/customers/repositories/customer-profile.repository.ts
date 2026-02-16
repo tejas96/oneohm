@@ -1,9 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CustomerStatus } from '@oneohm-epc/shared-types';
+import { CustomerSortField, CustomerStatus, SortOrder } from '@oneohm-epc/shared-types';
 import { IsNull, Repository } from 'typeorm';
 
+import { CustomerQueryDto } from '../dto/customer-query.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
+
+/**
+ * Field mapping for safe sorting (prevents SQL injection via sortBy)
+ * Maps enum values to entity property paths (camelCase) - TypeORM resolves these to DB columns
+ */
+const SORT_FIELD_MAP: Record<CustomerSortField, string> = {
+  [CustomerSortField.CREATED_AT]: 'customer.createdAt',
+  [CustomerSortField.UPDATED_AT]: 'customer.updatedAt',
+  [CustomerSortField.FIRST_NAME]: 'customer.firstName',
+  [CustomerSortField.CITY]: 'customer.city',
+  [CustomerSortField.STATUS]: 'customer.status',
+};
 
 @Injectable()
 export class CustomerProfileRepository {
@@ -201,6 +214,86 @@ export class CustomerProfileRepository {
     qb.orderBy('customer.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
+
+    return qb.getManyAndCount();
+  }
+
+  /**
+   * Find customers with comprehensive filtering, sorting, and pagination
+   * This is the primary method for the customer list API
+   *
+   * @param organizationId - Organization context
+   * @param query - Query parameters (filters, sorting, pagination)
+   * @returns Tuple of [customers, total count]
+   */
+  async findWithFilters(
+    organizationId: string,
+    query: CustomerQueryDto,
+  ): Promise<[CustomerProfileEntity[], number]> {
+    const qb = this.repository
+      .createQueryBuilder('customer')
+      .leftJoinAndSelect('customer.user', 'user')
+      .leftJoinAndSelect('customer.organization', 'organization')
+      .leftJoinAndSelect('customer.properties', 'properties', 'properties.deleted_at IS NULL')
+      .leftJoinAndSelect('customer.creator', 'creator')
+      .where('customer.organization_id = :organizationId', { organizationId })
+      .andWhere('customer.deleted_at IS NULL');
+
+    // ===== Search (case-insensitive, multiple fields) =====
+    if (query.search && query.search.length >= 2) {
+      const searchTerm = `%${query.search.toLowerCase()}%`;
+      qb.andWhere(
+        `(
+          LOWER(customer.first_name) LIKE :searchTerm OR
+          LOWER(customer.last_name) LIKE :searchTerm OR
+          LOWER(CONCAT(customer.first_name, ' ', customer.last_name)) LIKE :searchTerm OR
+          customer.phone LIKE :searchTerm OR
+          LOWER(customer.email) LIKE :searchTerm OR
+          LOWER(customer.city) LIKE :searchTerm
+        )`,
+        { searchTerm },
+      );
+    }
+
+    // ===== Filters =====
+    if (query.status) {
+      qb.andWhere('customer.status = :status', { status: query.status });
+    }
+
+    if (query.city) {
+      qb.andWhere('LOWER(customer.city) LIKE LOWER(:city)', { city: `%${query.city}%` });
+    }
+
+    if (query.state) {
+      qb.andWhere('LOWER(customer.state) LIKE LOWER(:state)', { state: `%${query.state}%` });
+    }
+
+    if (query.leadSource) {
+      qb.andWhere('customer.lead_source = :leadSource', { leadSource: query.leadSource });
+    }
+
+    if (query.createdBy) {
+      qb.andWhere('customer.created_by = :createdBy', { createdBy: query.createdBy });
+    }
+
+    if (query.fromDate) {
+      qb.andWhere('customer.created_at >= :fromDate', { fromDate: query.fromDate });
+    }
+
+    if (query.toDate) {
+      // Add time to make toDate inclusive (end of day)
+      qb.andWhere('customer.created_at <= :toDate', {
+        toDate: `${query.toDate}T23:59:59.999Z`,
+      });
+    }
+
+    // ===== Sorting (using safe field mapping) =====
+    const sortColumn = SORT_FIELD_MAP[query.sortBy] ?? SORT_FIELD_MAP[CustomerSortField.CREATED_AT];
+    const sortDirection = query.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
+    qb.orderBy(sortColumn, sortDirection);
+
+    // ===== Pagination =====
+    qb.skip((query.page - 1) * query.limit).take(query.limit);
 
     return qb.getManyAndCount();
   }

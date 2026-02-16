@@ -1,7 +1,7 @@
 'use client';
 
 import { Upload, FileText, X } from 'lucide-react';
-import * as React from 'react';
+import { useState, useRef, type ChangeEvent, type DragEvent, type JSX } from 'react';
 
 import {
   Button,
@@ -32,13 +32,13 @@ interface ImportCustomersModalProps {
 export function ImportCustomersModal({
   open,
   onOpenChange,
-}: ImportCustomersModalProps): React.JSX.Element {
-  const [file, setFile] = React.useState<File | null>(null);
-  const [skipDuplicates, setSkipDuplicates] = React.useState(true);
-  const [isUploading, setIsUploading] = React.useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+}: ImportCustomersModalProps): JSX.Element {
+  const [file, setFile] = useState<File | null>(null);
+  const [skipDuplicates, setSkipDuplicates] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       // Validate file type
@@ -50,7 +50,7 @@ export function ImportCustomersModal({
     }
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: DragEvent) => {
     e.preventDefault();
     const droppedFile = e.dataTransfer.files[0];
     if (droppedFile) {

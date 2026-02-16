@@ -2,9 +2,10 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CustomerStatus } from '@oneohm-epc/shared-types';
-import * as React from 'react';
+import { useEffect, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
+import { type Customer, useUpdateCustomer } from '../hooks';
 import { editCustomerSchema, type EditCustomerFormData } from '../schemas/customer.schema';
 
 import {
@@ -24,20 +25,11 @@ import {
   SelectValue,
   showToast,
 } from '@/components/ui';
-
+import { getErrorMessage } from '@/lib/utils';
 
 // ============================================================================
 // Types
 // ============================================================================
-
-interface Customer {
-  id: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  email?: string;
-  status: CustomerStatus;
-}
 
 interface EditCustomerModalProps {
   open: boolean;
@@ -53,7 +45,9 @@ export function EditCustomerModal({
   open,
   onOpenChange,
   customer,
-}: EditCustomerModalProps): React.JSX.Element {
+}: EditCustomerModalProps): JSX.Element {
+  const updateCustomer = useUpdateCustomer();
+
   const form = useForm<EditCustomerFormData>({
     resolver: zodResolver(editCustomerSchema),
     defaultValues: {
@@ -66,11 +60,11 @@ export function EditCustomerModal({
   });
 
   // Reset form when customer changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (customer) {
       form.reset({
         firstName: customer.firstName,
-        lastName: customer.lastName,
+        lastName: customer.lastName || '',
         phone: customer.phone,
         email: customer.email || '',
         status: customer.status,
@@ -78,12 +72,28 @@ export function EditCustomerModal({
     }
   }, [customer, form]);
 
-  const onSubmit = (data: EditCustomerFormData) => {
-    // TODO: Phase 2 - API call
-    console.log('Edit customer:', data);
-    showToast.success('Customer updated successfully');
-    onOpenChange(false);
+  const onSubmit = async (data: EditCustomerFormData): Promise<void> => {
+    if (!customer) return;
+
+    try {
+      await updateCustomer.mutateAsync({
+        id: customer.id,
+        data: {
+          firstName: data.firstName,
+          lastName: data.lastName || undefined,
+          phone: data.phone,
+          email: data.email || undefined,
+          status: data.status,
+        },
+      });
+      showToast.success('Customer updated successfully');
+      onOpenChange(false);
+    } catch (error: unknown) {
+      showToast.error(getErrorMessage(error));
+    }
   };
+
+  const isSubmitting = updateCustomer.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -160,8 +170,8 @@ export function EditCustomerModal({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? 'Saving...' : 'Save Changes'}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </form>
