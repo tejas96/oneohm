@@ -53,15 +53,15 @@ ENV NODE_ENV=production
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
 
-# Copy necessary files
-COPY --from=builder /app/apps/web/public ./public
-
-# Set correct permissions for prerender cache
-RUN mkdir .next && chown nextjs:nodejs .next
-
 # Automatically leverage output traces to reduce image size
+# Copy the standalone build (preserves monorepo structure)
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./.next/static
+
+# Copy static files to the correct location (relative to server.js in monorepo)
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
+
+# Copy public folder to the correct location
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 
 USER nextjs
 

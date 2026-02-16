@@ -127,7 +127,7 @@ export function getCountByPath(
   path: string
 ): number | undefined {
   const keys = path.split('.');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   let value: any = counts;
 
   for (const key of keys) {

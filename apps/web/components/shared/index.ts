@@ -80,3 +80,18 @@ export type {
   ConnectionType,
   LoanData,
 } from './display';
+
+// Document Collector
+export {
+  DocumentCollector,
+  DocumentSlot,
+  LOAN_DOCUMENT_SLOTS,
+  getDocumentSlots,
+  LoanDocumentType,
+  toPropertyDocuments,
+} from './document-collector';
+export type {
+  DocumentCollectorProps,
+  DocumentSlotConfig,
+  CapturedDocument,
+} from './document-collector';

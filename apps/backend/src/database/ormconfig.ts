@@ -22,7 +22,7 @@ const configService: ConfigService<ConfigInterface> = {
     let value: any = configObj; // Need 'any' for dynamic property access
 
     for (const k of keys) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+       
       value = value?.[k];
     }
 
