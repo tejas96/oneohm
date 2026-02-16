@@ -84,6 +84,7 @@ export const ROUTES = {
   PROPERTIES: {
     LIST: '/properties',
     DETAIL: '/properties/[id]',
+    NEW: '/properties/new',
   },
 
   // Followups

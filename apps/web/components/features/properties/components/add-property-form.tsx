@@ -79,13 +79,15 @@ const mockCustomer = {
 // Component
 // ============================================================================
 
+/**
+ * @deprecated Use CreatePropertyForm instead which has full API integration
+ */
 export function AddPropertyForm({ customerId }: AddPropertyFormProps): React.JSX.Element {
   const router = useRouter();
   const customer = mockCustomer; // TODO: Phase 2 - Fetch by ID
 
   const form = useForm<AddPropertyFormData>({
-     
-    resolver: zodResolver(addPropertySchema) as any,
+    resolver: zodResolver(addPropertySchema),
     defaultValues: {
       propertyName: '',
       propertyType: undefined,
@@ -107,8 +109,8 @@ export function AddPropertyForm({ customerId }: AddPropertyFormProps): React.JSX
   });
 
   const onSubmit = (data: AddPropertyFormData) => {
-    // TODO: Phase 2 - API call
-    console.log('Add property:', { customerId, ...data });
+    // TODO: Phase 2 - API call - use CreatePropertyForm instead
+    void data; // Suppress unused warning
     showToast.success('Property added successfully');
     router.push(ROUTES.CUSTOMERS.DETAIL.replace('[id]', customerId));
   };

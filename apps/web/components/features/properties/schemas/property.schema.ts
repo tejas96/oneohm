@@ -1,25 +1,28 @@
 import {
-  PropertyType,
   ConnectionType,
   LeadTemperature,
+  PropertyType,
 } from '@oneohm-epc/shared-types';
 import { z } from 'zod';
 
-
 // ============================================================================
-// Add Property Schema
+// Create Property Schema (for API submission)
 // ============================================================================
 
-export const addPropertySchema = z.object({
+export const createPropertySchema = z.object({
+  // Customer Reference (required for API)
+  customerId: z.string().uuid('Please select a customer'),
+
   // Property Details
   propertyName: z
     .string()
-    .min(1, 'Property name is required')
-    .max(200, 'Property name too long'),
+    .max(200, 'Property name too long')
+    .optional()
+    .or(z.literal('')),
   propertyType: z.nativeEnum(PropertyType, {
     errorMap: () => ({ message: 'Please select a property type' }),
   }),
-  isPrimary: z.boolean().default(false),
+  isPrimary: z.boolean().optional(),
 
   // Address
   address: z
@@ -57,7 +60,8 @@ export const addPropertySchema = z.object({
   sanctionedLoad: z
     .number({ coerce: true })
     .min(0.1, 'Sanctioned load must be greater than 0')
-    .max(1000, 'Sanctioned load too high'),
+    .max(1000, 'Sanctioned load too high')
+    .optional(),
   meterNumber: z
     .string()
     .max(50, 'Meter number too long')
@@ -72,13 +76,22 @@ export const addPropertySchema = z.object({
   leadTemperature: z.nativeEnum(LeadTemperature, {
     errorMap: () => ({ message: 'Please select lead temperature' }),
   }),
-  wantsLoan: z.boolean().default(false),
+  wantsLoan: z.boolean().optional(),
   notes: z
     .string()
     .max(1000, 'Notes too long')
     .optional()
     .or(z.literal('')),
 });
+
+export type CreatePropertyFormData = z.infer<typeof createPropertySchema>;
+
+// ============================================================================
+// Add Property Schema (legacy - for backward compatibility)
+// ============================================================================
+
+/** @deprecated Use createPropertySchema instead */
+export const addPropertySchema = createPropertySchema.omit({ customerId: true });
 
 export type AddPropertyFormData = z.infer<typeof addPropertySchema>;
 

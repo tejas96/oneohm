@@ -378,7 +378,7 @@ export function PropertyListPage(): React.JSX.Element {
             Track properties and their lead status
           </Typography>
         </div>
-        <Button size="sm" onClick={() => router.push(ROUTES.CUSTOMERS.NEW)}>
+        <Button size="sm" onClick={() => router.push(ROUTES.PROPERTIES.NEW)}>
           <Plus className="mr-2 size-icon-sm" />
           Add Property
         </Button>
