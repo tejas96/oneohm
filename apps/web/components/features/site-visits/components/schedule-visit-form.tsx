@@ -98,7 +98,7 @@ export function ScheduleVisitForm(): React.JSX.Element {
   const [properties, setProperties] = React.useState<Property[]>([]);
 
   const form = useForm<ScheduleSiteVisitFormData>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     resolver: zodResolver(scheduleSiteVisitSchema) as any,
     defaultValues: {
       customerId: '',

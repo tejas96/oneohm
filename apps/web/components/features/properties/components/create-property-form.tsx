@@ -12,8 +12,8 @@ import { useRouter } from 'next/navigation';
 import * as React from 'react';
 import { useForm } from 'react-hook-form';
 
-import { useCreateProperty, useCustomerById } from '../hooks';
 import { type CustomerResponse } from '../../customers';
+import { useCreateProperty, useCustomerById } from '../hooks';
 import { createPropertySchema, type CreatePropertyFormData } from '../schemas/property.schema';
 
 import {
@@ -23,7 +23,6 @@ import {
   toPropertyDocuments,
   type CapturedDocument,
 } from '@/components/shared';
-import { FileCategory, uploadFile } from '@/lib/api/storage';
 import {
   Button,
   Card,
@@ -42,6 +41,7 @@ import {
   Switch,
   Textarea,
 } from '@/components/ui';
+import { FileCategory, uploadFile } from '@/lib/api/storage';
 import {
   CONNECTION_TYPE_OPTIONS,
   DISCOM_OPTIONS,

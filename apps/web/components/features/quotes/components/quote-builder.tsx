@@ -124,7 +124,7 @@ export function QuoteBuilder(): React.JSX.Element {
   });
 
   const form = useForm<CreateQuoteFormData>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     resolver: zodResolver(createQuoteSchema) as any,
     defaultValues: {
       propertyId: preselectedPropertyId || '',
