@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { CustomerStatus } from '@oneohm-epc/shared-types';
+import { IsEmail, IsEnum, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 
 /**
  * DTO for updating customer profile information
@@ -101,4 +102,13 @@ export class UpdateCustomerDto {
   @IsOptional()
   @MaxLength(50)
   referralCode?: string;
+
+  // ==================== Status ====================
+  @ApiPropertyOptional({
+    enum: CustomerStatus,
+    description: 'Customer lifecycle status (lead, prospect, active, inactive)',
+  })
+  @IsEnum(CustomerStatus)
+  @IsOptional()
+  status?: CustomerStatus;
 }

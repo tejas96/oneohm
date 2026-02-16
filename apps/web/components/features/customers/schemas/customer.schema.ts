@@ -49,46 +49,10 @@ export const createCustomerProfileSchema = z.object({
     .max(50, 'Referral code too long')
     .optional()
     .or(z.literal('')),
+  status: z.nativeEnum(CustomerStatus).optional(),
 });
 
 export type CreateCustomerProfileFormData = z.infer<typeof createCustomerProfileSchema>;
-
-// ============================================================================
-// Edit Customer Schema
-// ============================================================================
-
-export const editCustomerSchema = z.object({
-  firstName: z
-    .string()
-    .min(1, 'First name is required')
-    .max(100, 'First name too long'),
-  lastName: z
-    .string()
-    .max(100, 'Last name too long')
-    .optional()
-    .or(z.literal('')),
-  phone: z
-    .string()
-    .min(10, 'Phone number must be at least 10 digits')
-    .regex(/^[+]?[\d\s-]+$/, 'Invalid phone number format'),
-  email: z
-    .string()
-    .email('Invalid email address')
-    .optional()
-    .or(z.literal('')),
-  alternatePhone: z
-    .string()
-    .regex(/^[+]?[\d\s-]*$/, 'Invalid phone number format')
-    .optional()
-    .or(z.literal('')),
-  status: z.nativeEnum(CustomerStatus).optional(),
-  billingAddress: z.string().optional().or(z.literal('')),
-  billingCity: z.string().optional().or(z.literal('')),
-  billingState: z.string().optional().or(z.literal('')),
-  billingPincode: z.string().optional().or(z.literal('')),
-});
-
-export type EditCustomerFormData = z.infer<typeof editCustomerSchema>;
 
 // ============================================================================
 // Import Customers Schema

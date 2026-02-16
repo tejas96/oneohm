@@ -14,7 +14,7 @@ async function bootstrap(): Promise<void> {
 
   // Enable CORS
   app.enableCors({
-    origin: configService.app.corsOrigin.split(','),
+    origin: true,
     credentials: true,
   });
 
