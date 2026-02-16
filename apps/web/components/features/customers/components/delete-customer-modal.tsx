@@ -1,6 +1,8 @@
 'use client';
 
-import * as React from 'react';
+import { type JSX } from 'react';
+
+import { type Customer, useDeleteCustomer } from '../hooks';
 
 import {
   Button,
@@ -13,16 +15,11 @@ import {
   DialogDescription,
   showToast,
 } from '@/components/ui';
+import { getErrorMessage } from '@/lib/utils';
 
 // ============================================================================
 // Types
 // ============================================================================
-
-interface Customer {
-  id: string;
-  firstName: string;
-  lastName: string;
-}
 
 interface DeleteCustomerModalProps {
   open: boolean;
@@ -38,23 +35,22 @@ export function DeleteCustomerModal({
   open,
   onOpenChange,
   customer,
-}: DeleteCustomerModalProps): React.JSX.Element {
-  const [isDeleting, setIsDeleting] = React.useState(false);
+}: DeleteCustomerModalProps): JSX.Element {
+  const deleteCustomer = useDeleteCustomer();
 
-  const handleDelete = async () => {
+  const handleDelete = async (): Promise<void> => {
     if (!customer) return;
-    
-    setIsDeleting(true);
-    // TODO: Phase 2 - API call
-    console.log('Delete customer:', customer.id);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    showToast.success('Customer deleted successfully');
-    setIsDeleting(false);
-    onOpenChange(false);
+
+    try {
+      await deleteCustomer.mutateAsync(customer.id);
+      showToast.success('Customer deleted successfully');
+      onOpenChange(false);
+    } catch (error: unknown) {
+      showToast.error(getErrorMessage(error));
+    }
   };
+
+  const isDeleting = deleteCustomer.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -64,7 +60,7 @@ export function DeleteCustomerModal({
           <DialogDescription>
             Are you sure you want to delete{' '}
             <span className="font-medium text-foreground">
-              {customer?.firstName} {customer?.lastName}
+              {customer?.firstName} {customer?.lastName || ''}
             </span>
             ? This action cannot be undone.
           </DialogDescription>
@@ -78,14 +74,10 @@ export function DeleteCustomerModal({
         </DialogBody>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isDeleting}>
             Cancel
           </Button>
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={isDeleting}
-          >
+          <Button variant="destructive" onClick={() => void handleDelete()} disabled={isDeleting}>
             {isDeleting ? 'Deleting...' : 'Delete Customer'}
           </Button>
         </DialogFooter>

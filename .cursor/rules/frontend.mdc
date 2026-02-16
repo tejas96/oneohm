@@ -136,6 +136,7 @@ Layout:
 - TODO: track edge cases, pending items - never skip
 - Routes: `useRoutes()` hook + `ROUTES.*` constants
 - URL state: filters, tabs, pagination in query params
+- React hooks: import directly (`useState`, `useEffect`) not `React.useState` - use `React.` prefix only for naming conflicts
 
 ---
 

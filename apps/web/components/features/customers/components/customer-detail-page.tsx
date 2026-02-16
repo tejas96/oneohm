@@ -4,7 +4,7 @@ import { CustomerStatus, LeadTemperature } from '@oneohm-epc/shared-types';
 import { Building2, Calendar, Mail, MapPin, Phone, Plus, FileText, Folder, Activity, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import * as React from 'react';
+import { type JSX } from 'react';
 
 import { EditableField, Timeline } from '@/components/shared';
 import {
@@ -123,7 +123,7 @@ const TEMPERATURE_VARIANTS: Record<LeadTemperature, 'hot' | 'warm' | 'cold'> = {
 // Component
 // ============================================================================
 
-export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): React.JSX.Element {
+export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX.Element {
   const router = useRouter();
   const customer = mockCustomer; // TODO: Phase 2 - Fetch by ID
 

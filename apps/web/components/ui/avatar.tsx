@@ -49,6 +49,35 @@ const avatarFallbackTextVariants = cva('font-semibold', {
   },
 });
 
+/** Palette for deterministic avatar fallback colors (same name → same color) */
+const AVATAR_FALLBACK_COLORS = [
+  'bg-primary/20 text-primary',
+  'bg-info/20 text-info',
+  'bg-success/20 text-success',
+  'bg-warning/20 text-warning',
+  'bg-error/20 text-error',
+  'bg-foreground-tertiary/20 text-foreground-secondary',
+] as const;
+
+/**
+ * Hash a string to a stable index for avatar color selection.
+ * Same string always returns the same color.
+ */
+function getAvatarColorIndex(name: string): number {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    const char = name.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash);
+}
+
+export function getAvatarFallbackColorClass(name: string): string {
+  const index = getAvatarColorIndex(name) % AVATAR_FALLBACK_COLORS.length;
+  return AVATAR_FALLBACK_COLORS[index];
+}
+
 export interface AvatarProps
   extends React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>,
     VariantProps<typeof avatarSizeVariants> {}
@@ -78,23 +107,33 @@ AvatarImage.displayName = AvatarPrimitive.Image.displayName;
 
 export interface AvatarFallbackProps
   extends React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>,
-    VariantProps<typeof avatarFallbackTextVariants> {}
+    VariantProps<typeof avatarFallbackTextVariants> {
+  /**
+   * Optional name or id used to assign a deterministic color.
+   * Same value always gets the same color; different values get different colors.
+   * When omitted, uses default primary color.
+   */
+  name?: string;
+}
 
 const AvatarFallback = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Fallback>,
   AvatarFallbackProps
->(({ className, size, ...props }, ref) => (
-  <AvatarPrimitive.Fallback
-    ref={ref}
-    className={cn(
-      'flex h-full w-full items-center justify-center rounded-full',
-      'bg-primary/20 text-primary',
-      avatarFallbackTextVariants({ size }),
-      className,
-    )}
-    {...props}
-  />
-));
+>(({ className, size, name, ...props }, ref) => {
+  const colorClass = name ? getAvatarFallbackColorClass(name) : 'bg-primary/20 text-primary';
+  return (
+    <AvatarPrimitive.Fallback
+      ref={ref}
+      className={cn(
+        'flex h-full w-full items-center justify-center rounded-full',
+        colorClass,
+        avatarFallbackTextVariants({ size }),
+        className,
+      )}
+      {...props}
+    />
+  );
+});
 AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
 
 /**

@@ -13,6 +13,7 @@ import { UserRepository } from '../../users/repositories/user.repository';
 import { ProfileService } from '../../users/services/profile.service';
 import { AvailabilityResponseDto } from '../dto/check-availability.dto';
 import { CreateCustomerDto } from '../dto/create-customer.dto';
+import { CustomerQueryDto } from '../dto/customer-query.dto';
 import { UpdateCustomerDto } from '../dto/update-customer.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
@@ -105,17 +106,42 @@ export class CustomerService {
   }
 
   /**
-   * Find all customers for an organization (with pagination)
+   * Find all customers for an organization with filters, sorting, and pagination
+   * Supports both legacy signature (page, limit) and new query DTO
+   *
+   * @overload Legacy signature for backward compatibility
+   * @overload New signature with CustomerQueryDto for full filtering
    */
   async findAll(
     organizationId: string,
-    page = 1,
+    query: CustomerQueryDto,
+  ): Promise<{ data: CustomerProfileEntity[]; total: number }>;
+  async findAll(
+    organizationId: string,
+    page: number,
+    limit: number,
+  ): Promise<{ data: CustomerProfileEntity[]; total: number }>;
+  async findAll(
+    organizationId: string,
+    pageOrQuery: number | CustomerQueryDto = 1,
     limit = 20,
   ): Promise<{ data: CustomerProfileEntity[]; total: number }> {
-    const [data, total] = await this.customerRepository.findByOrganization(
+    // New query-based approach
+    if (typeof pageOrQuery === 'object') {
+      const [data, total] = await this.customerRepository.findWithFilters(
+        organizationId,
+        pageOrQuery,
+      );
+      return { data, total };
+    }
+
+    // Legacy approach - convert to query DTO
+    const legacyQuery = new CustomerQueryDto();
+    legacyQuery.page = pageOrQuery;
+    legacyQuery.limit = limit;
+    const [data, total] = await this.customerRepository.findWithFilters(
       organizationId,
-      page,
-      limit,
+      legacyQuery,
     );
     return { data, total };
   }

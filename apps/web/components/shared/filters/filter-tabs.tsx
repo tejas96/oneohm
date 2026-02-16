@@ -29,7 +29,7 @@ export interface FilterTabsProps<T extends string = string> {
   /** Visual variant */
   variant?: 'default' | 'pills' | 'underline';
   /** Size */
-  size?: 'sm' | 'default';
+  size?: 'xs' | 'sm' | 'default';
   /** Full width tabs */
   fullWidth?: boolean;
   /** Additional CSS classes */
@@ -55,6 +55,7 @@ export function FilterTabs<T extends string = string>({
   );
 
   const sizeClasses = {
+    xs: 'text-xs px-2 py-1',
     sm: 'text-xs px-2.5 py-1.5',
     default: 'text-sm px-3 py-2',
   };

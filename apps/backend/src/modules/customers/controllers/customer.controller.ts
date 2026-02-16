@@ -4,7 +4,6 @@ import {
   Get,
   HttpStatus,
   Param,
-  ParseIntPipe,
   ParseUUIDPipe,
   Query,
   UseGuards,
@@ -32,6 +31,7 @@ import {
   AvailabilityResponseDto,
   CheckAvailabilityQueryDto,
   CreateCustomerDto,
+  CustomerQueryDto,
   CustomerResponseDto,
   UpdateCustomerDto,
   UpdateCustomerStatusDto,
@@ -83,78 +83,38 @@ export class CustomerController {
   }
 
   /**
-   * Get all customers
-   * Supports filtering by creator (createdBy=me for field workers)
-   * Supports search by name, phone, email, or city
+   * Get all customers with filtering, sorting, and pagination
+   * Unified endpoint supporting search, filters, and sorting via query parameters
    */
   // @RequirePermission('customers:read') // TODO: Re-enable
   @ApiReadAll({
     summary: 'Get all customers',
     description:
-      'Retrieve customers for the specified organization. Use createdBy=me to get only customers created by the current user. Use search query to filter by name, phone, email, or city. Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+      'Retrieve customers with comprehensive filtering, sorting, and pagination. ' +
+      'Supports search (name, phone, email, city), status filter, location filters (city, state), ' +
+      'lead source filter, date range, creator filter (createdBy=me), and sorting. ' +
+      'Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
     responseType: CustomerResponseDto,
-  })
-  @ApiQuery({
-    name: 'createdBy',
-    required: false,
-    type: String,
-    description: 'Filter by creator. Use "me" for current user\'s customers',
-  })
-  @ApiQuery({
-    name: 'search',
-    required: false,
-    type: String,
-    description: 'Search query to filter by name, phone, email, or city (min 2 characters)',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number (default: 1)',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Items per page (default: 20)',
   })
   async findAll(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
-    @Query('createdBy') createdBy?: string,
-    @Query('search') search?: string,
-    @Query('page', new ParseIntPipe({ optional: true })) page = 1,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
+    @Query() query: CustomerQueryDto,
   ): Promise<PaginatedResponse<CustomerResponseDto>> {
-    // Determine the creator filter
-    const creatorId = createdBy === 'me' ? currentUser.id : undefined;
-
-    // If search query provided, use search method
-    if (search && search.trim().length >= 2) {
-      const result = await this.customerService.search(
-        organizationId,
-        search.trim(),
-        creatorId,
-        page,
-        limit,
-      );
-      return toPaginatedResponse(CustomerResponseDto, result.data, result.total, page, limit);
+    // Substitute 'me' with actual user ID for createdBy filter
+    if (query.createdBy === 'me') {
+      query.createdBy = currentUser.id;
     }
 
-    // If createdBy=me, filter by current user (for field workers)
-    if (createdBy === 'me') {
-      const result = await this.customerService.findByCreator(
-        organizationId,
-        currentUser.id,
-        page,
-        limit,
-      );
-      return toPaginatedResponse(CustomerResponseDto, result.data, result.total, page, limit);
-    }
-
-    // Default: return all customers with proper pagination
-    const result = await this.customerService.findAll(organizationId, page, limit);
-    return toPaginatedResponse(CustomerResponseDto, result.data, result.total, page, limit);
+    // Use unified findAll with query DTO
+    const result = await this.customerService.findAll(organizationId, query);
+    return toPaginatedResponse(
+      CustomerResponseDto,
+      result.data,
+      result.total,
+      query.page,
+      query.limit,
+    );
   }
 
   /**
