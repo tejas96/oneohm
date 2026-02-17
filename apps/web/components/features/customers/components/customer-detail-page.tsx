@@ -1,6 +1,6 @@
 'use client';
 
-import { CustomerStatus, QuoteStatus } from '@oneohm-epc/shared-types';
+import { QuoteStatus } from '@oneohm-epc/shared-types';
 import {
   Building2,
   Download,
@@ -113,13 +113,15 @@ const mockDocuments = [
 // ============================================================================
 
 // Get dot variant for timeline based on activity type
-const getActivityDotVariant = (type: 'quote' | 'visit' | 'property' | 'update' | 'created') => {
+const getActivityDotVariant = (type: 'quote' | 'visit' | 'property' | 'update' | 'created'): 'primary' | 'secondary' | 'default' => {
   switch (type) {
     case 'quote':
       return 'primary';
     case 'visit':
       return 'secondary';
-    default:
+    case 'property':
+    case 'update':
+    case 'created':
       return 'default';
   }
 };
@@ -147,7 +149,7 @@ function SimpleTimeline({ items }: SimpleTimelineProps): JSX.Element {
       
       {/* Items */}
       <div className="space-y-4">
-        {items.map((item, index) => (
+        {items.map((item) => (
           <div key={item.id} className="relative">
             {/* Dot */}
             <div
@@ -344,7 +346,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
   if (customerError || !customer) {
     return (
       <EmptyState
-        variant="error"
+        iconColor="error"
         title="Customer not found"
         description="The customer you're looking for doesn't exist or has been deleted."
         action={{
@@ -472,7 +474,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                 value={customer.phone || ''}
                 type="phone"
                 onSave={(v) => handleFieldSave('phone', v)}
-                isSaving={updateCustomerMutation.isPending}
+                isLoading={updateCustomerMutation.isPending}
               />
               {/* Email */}
               <EditableField
@@ -482,7 +484,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                 type="email"
                 placeholder="Add email"
                 onSave={(v) => handleFieldSave('email', v)}
-                isSaving={updateCustomerMutation.isPending}
+                isLoading={updateCustomerMutation.isPending}
               />
               {/* Alternate Phone */}
               <EditableField
@@ -492,7 +494,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                 type="phone"
                 placeholder="Add alternate phone"
                 onSave={(v) => handleFieldSave('alternatePhone', v)}
-                isSaving={updateCustomerMutation.isPending}
+                isLoading={updateCustomerMutation.isPending}
               />
 
               <div className="h-px bg-gray-100" />
@@ -506,7 +508,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                   value={customer.address || ''}
                   placeholder="Add address"
                   onSave={(v) => handleFieldSave('address', v)}
-                  isSaving={updateCustomerMutation.isPending}
+                  isLoading={updateCustomerMutation.isPending}
                 />
                 {(customer.city || customer.state || customer.pincode) && (
                   <p className="mt-1 text-sm text-gray-500">

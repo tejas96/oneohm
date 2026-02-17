@@ -32,7 +32,7 @@ import {
 
 interface Property {
   id: string;
-  propertyName: string;
+  propertyName?: string;
 }
 
 interface MarkAsLostModalProps {
