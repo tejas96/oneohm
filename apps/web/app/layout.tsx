@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   },
   description: 'OneOhm Solar EPC Management Platform',
   keywords: ['solar', 'EPC', 'energy', 'management', 'CRM'],
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 // eslint-disable-next-line import/no-default-export -- Next.js requires default export for layouts
