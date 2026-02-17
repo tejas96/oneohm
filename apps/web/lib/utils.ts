@@ -11,3 +11,4 @@ export function cn(...inputs: ClassValue[]) {
 
 // Re-export utilities
 export { getErrorMessage } from './utils/error';
+export { formatPhoneForWhatsApp, formatPhoneForDisplay, isValidPhone } from './utils/phone';

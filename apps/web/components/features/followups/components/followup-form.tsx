@@ -3,11 +3,25 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { FollowupType, FollowupPriority, PropertyType } from '@oneohm-epc/shared-types';
 import { useRouter, useSearchParams } from 'next/navigation';
-import * as React from 'react';
+import { type JSX, useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
+import { useCreateFollowup } from '../hooks';
 import { followupSchema, type FollowupFormData } from '../schemas/followup.schema';
 
+/** Input type for the form (before Zod defaults are applied) */
+type FollowupFormInput = {
+  propertyId: string;
+  type: FollowupFormData['type'];
+  subject: string;
+  scheduledDate: Date;
+  scheduledTime?: string;
+  priority?: FollowupFormData['priority'];
+  notes?: string;
+  assignedToUserId?: string;
+};
+
+import { useCustomersList, useCustomerProperties } from '@/components/features/properties/hooks';
 import { CustomerSearchCombobox, PropertySelector, RadioCard, RadioCardGroup } from '@/components/shared';
 import {
   Button,
@@ -33,7 +47,7 @@ import {
   BreadcrumbPage,
 } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
-
+import { getErrorMessage } from '@/lib/utils';
 
 // ============================================================================
 // Types
@@ -43,15 +57,7 @@ interface FollowupFormProps {
   followupId?: string;
 }
 
-interface Property {
-  id: string;
-  propertyName: string;
-  address: string;
-  city: string;
-  propertyType: PropertyType;
-}
-
-interface Customer {
+interface CustomerOption {
   id: string;
   firstName: string;
   lastName: string;
@@ -79,36 +85,52 @@ const QUICK_DATES = [
 ];
 
 // ============================================================================
-// Mock Data
-// ============================================================================
-
-const mockProperties: Property[] = [
-  { id: 'p1', propertyName: 'Main Residence', address: '456 Green Valley', city: 'Pune', propertyType: PropertyType.RESIDENTIAL },
-  { id: 'p2', propertyName: 'Office Building', address: '789 Business Park', city: 'Pune', propertyType: PropertyType.COMMERCIAL },
-];
-
-// ============================================================================
 // Component
 // ============================================================================
 
-export function FollowupForm({ followupId }: FollowupFormProps = {}): React.JSX.Element {
+export function FollowupForm({ followupId }: FollowupFormProps = {}): JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedPropertyId = searchParams.get('propertyId');
+  const preselectedCustomerId = searchParams.get('customerId');
   const isEditMode = Boolean(followupId);
 
-  const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
-  const [properties, setProperties] = React.useState<Property[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerOption | null>(null);
 
-  // Mock customers for search - TODO: Phase 2 - Fetch from API
-  const mockCustomers: Customer[] = React.useMemo(() => [
-    { id: '1', firstName: 'Rajesh', lastName: 'Sharma', phone: '+91 98765 43210', email: 'rajesh@example.com' },
-    { id: '2', firstName: 'Priya', lastName: 'Patel', phone: '+91 87654 32109', email: 'priya@example.com' },
-  ], []);
+  // Fetch customers list for the combobox
+  const { data: customersData, isLoading: isLoadingCustomers } = useCustomersList();
 
-  const form = useForm<FollowupFormData>({
-     
-    resolver: zodResolver(followupSchema) as any,
+  const customers: CustomerOption[] = useMemo(() => {
+    if (!customersData?.data) return [];
+    return customersData.data.map((c) => ({
+      id: c.id,
+      firstName: c.firstName,
+      lastName: c.lastName ?? '',
+      phone: c.phone,
+      email: c.email,
+    }));
+  }, [customersData]);
+
+  // Fetch properties for the selected customer
+  const { data: customerProperties } = useCustomerProperties(
+    selectedCustomer?.id || preselectedCustomerId || '',
+  );
+
+  const properties = useMemo(() => {
+    if (!customerProperties) return [];
+    return customerProperties.map((p) => ({
+      id: p.id,
+      propertyName: p.propertyName ?? '',
+      address: p.address ?? '',
+      city: p.city ?? '',
+      propertyType: p.propertyType as PropertyType,
+    }));
+  }, [customerProperties]);
+
+  const createFollowup = useCreateFollowup();
+
+  const form = useForm<FollowupFormInput, unknown, FollowupFormData>({
+    resolver: zodResolver(followupSchema),
     defaultValues: {
       propertyId: preselectedPropertyId || '',
       type: undefined,
@@ -120,30 +142,73 @@ export function FollowupForm({ followupId }: FollowupFormProps = {}): React.JSX.
     },
   });
 
-  // When customer is selected, load their properties
-  const handleCustomerSelect = (customer: Customer | null) => {
-    setSelectedCustomer(customer);
-    if (customer) {
-      // TODO: Phase 2 - Fetch properties for customer
-      setProperties(mockProperties);
-    } else {
-      setProperties([]);
+  // Auto-select customer if preselected
+  useEffect(() => {
+    if (preselectedCustomerId && customers.length > 0 && !selectedCustomer) {
+      const found = customers.find((c) => c.id === preselectedCustomerId);
+      if (found) {
+        setSelectedCustomer(found);
+      }
     }
-    form.setValue('propertyId', '');
-  };
+  }, [preselectedCustomerId, customers, selectedCustomer]);
 
-  const handleQuickDate = (days: number) => {
-    const date = new Date();
-    date.setDate(date.getDate() + days);
-    form.setValue('scheduledDate', date);
-  };
+  const handleCustomerSelect = useCallback(
+    (customer: CustomerOption | null) => {
+      setSelectedCustomer(customer);
+      form.setValue('propertyId', '');
+    },
+    [form],
+  );
 
-  const onSubmit = (data: FollowupFormData) => {
-    // TODO: Phase 2 - API call
-    console.log(isEditMode ? 'Update followup:' : 'Create followup:', data);
-    showToast.success(isEditMode ? 'Follow-up updated successfully' : 'Follow-up scheduled successfully');
-    router.push(ROUTES.FOLLOWUPS.LIST);
-  };
+  const handleQuickDate = useCallback(
+    (days: number) => {
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      form.setValue('scheduledDate', date);
+    },
+    [form],
+  );
+
+  const onSubmit = useCallback(
+    (data: FollowupFormData) => {
+      const customerId = selectedCustomer?.id || preselectedCustomerId;
+      if (!customerId) {
+        showToast.error('Please select a customer');
+        return;
+      }
+
+      const scheduledAt = data.scheduledDate
+        ? new Date(
+            `${data.scheduledDate.toISOString().split('T')[0]}T${data.scheduledTime || '10:00'}:00`,
+          ).toISOString()
+        : new Date().toISOString();
+
+      createFollowup.mutate(
+        {
+          customerId,
+          propertyId: data.propertyId || undefined,
+          type: data.type,
+          subject: data.subject,
+          scheduledAt,
+          assignedToUserId: data.assignedToUserId || '',
+          priority: data.priority,
+          notes: data.notes || undefined,
+        },
+        {
+          onSuccess: () => {
+            showToast.success(
+              isEditMode ? 'Follow-up updated successfully' : 'Follow-up scheduled successfully',
+            );
+            router.push(ROUTES.FOLLOWUPS.LIST);
+          },
+          onError: (err) => {
+            showToast.error(getErrorMessage(err));
+          },
+        },
+      );
+    },
+    [selectedCustomer, preselectedCustomerId, createFollowup, isEditMode, router],
+  );
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -172,10 +237,11 @@ export function FollowupForm({ followupId }: FollowupFormProps = {}): React.JSX.
                 <div className="space-y-2">
                   <Label>Customer *</Label>
                   <CustomerSearchCombobox
-                    customers={mockCustomers}
+                    customers={customers}
                     value={selectedCustomer}
                     onSelect={handleCustomerSelect}
                     placeholder="Search customer..."
+                    isLoading={isLoadingCustomers}
                   />
                 </div>
 
@@ -189,7 +255,9 @@ export function FollowupForm({ followupId }: FollowupFormProps = {}): React.JSX.
                       onSelect={(v) => form.setValue('propertyId', v)}
                     />
                     {form.formState.errors.propertyId && (
-                      <p className="text-xs text-error">{form.formState.errors.propertyId.message}</p>
+                      <p className="text-xs text-error">
+                        {form.formState.errors.propertyId.message}
+                      </p>
                     )}
                   </div>
                 )}
@@ -205,7 +273,7 @@ export function FollowupForm({ followupId }: FollowupFormProps = {}): React.JSX.
                 orientation="horizontal"
                 className="grid grid-cols-3 gap-3"
               >
-                {FOLLOWUP_TYPES.map(type => (
+                {FOLLOWUP_TYPES.map((type) => (
                   <RadioCard
                     key={type.value}
                     value={type.value}
@@ -235,7 +303,7 @@ export function FollowupForm({ followupId }: FollowupFormProps = {}): React.JSX.
               <div className="space-y-2">
                 <Label>Quick Select</Label>
                 <div className="flex gap-2">
-                  {QUICK_DATES.map(opt => (
+                  {QUICK_DATES.map((opt) => (
                     <Button
                       key={opt.label}
                       type="button"
@@ -258,7 +326,9 @@ export function FollowupForm({ followupId }: FollowupFormProps = {}): React.JSX.
                     placeholder="Select date"
                   />
                   {form.formState.errors.scheduledDate && (
-                    <p className="text-xs text-error">{form.formState.errors.scheduledDate.message}</p>
+                    <p className="text-xs text-error">
+                      {form.formState.errors.scheduledDate.message}
+                    </p>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -309,8 +379,11 @@ export function FollowupForm({ followupId }: FollowupFormProps = {}): React.JSX.
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Scheduling...' : 'Schedule Follow-up'}
+              <Button
+                type="submit"
+                disabled={form.formState.isSubmitting || createFollowup.isPending}
+              >
+                {createFollowup.isPending ? 'Scheduling...' : 'Schedule Follow-up'}
               </Button>
             </div>
           </form>

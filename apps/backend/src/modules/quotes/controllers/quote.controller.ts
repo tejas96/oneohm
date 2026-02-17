@@ -125,6 +125,12 @@ export class QuoteController {
     type: String,
     description: 'Search in quote number or customer name',
   })
+  @ApiQuery({
+    name: 'propertyId',
+    required: false,
+    type: String,
+    description: 'Filter by property ID',
+  })
   async findAll(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
@@ -132,6 +138,7 @@ export class QuoteController {
     @Query('limit') limit = 20,
     @Query('status') status?: QuoteStatus,
     @Query('customerId') customerId?: string,
+    @Query('propertyId') propertyId?: string,
     @Query('salesPersonId') salesPersonId?: string,
     @Query('resellerId') resellerId?: string,
     @Query('fromDate') fromDate?: string,
@@ -141,6 +148,7 @@ export class QuoteController {
     const result = await this.quoteService.findAll(organizationId, page, limit, {
       status,
       customerId,
+      propertyId,
       salesPersonId,
       resellerId,
       fromDate,

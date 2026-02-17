@@ -6,6 +6,8 @@ export { CustomerDetailPage } from './components/customer-detail-page';
 export { CustomerForm } from './components/customer-form';
 export { DeleteCustomerModal } from './components/delete-customer-modal';
 export { ImportCustomersModal } from './components/import-customers-modal';
+export { PropertyCard } from './components/property-card';
+export { PropertySelectModal } from './components/property-select-modal';
 
 // Schemas
 export {
@@ -19,5 +21,22 @@ export type {
 } from './schemas/customer.schema';
 
 // Hooks
-export { useCreateCustomer, useCheckAvailability, customerKeys } from './hooks';
-export type { CustomerResponse, AvailabilityResponse, AvailabilityState } from './hooks';
+export {
+  useCreateCustomer,
+  useCheckAvailability,
+  customerKeys,
+  useCustomerProperties,
+  useProperty,
+  propertyKeys,
+  useCustomerQuotes,
+  quoteKeys,
+} from './hooks';
+export type {
+  CustomerResponse,
+  AvailabilityResponse,
+  AvailabilityState,
+  CustomerPropertyResponse,
+  PropertyDocument,
+  CustomerQuote,
+  CustomerQuotesResponse,
+} from './hooks';

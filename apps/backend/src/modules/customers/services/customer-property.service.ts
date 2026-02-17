@@ -17,6 +17,7 @@ import { LoanApplicationRepository } from '../../loan-finance/repositories/loan-
 import { QuoteRepository } from '../../quotes/repositories/quote.repository';
 import { CreateCustomerPropertyDto } from '../dto/create-customer-property.dto';
 import type { PropertyDocumentDto } from '../dto/property-document.dto';
+import { PropertyQueryDto } from '../dto/property-query.dto';
 import { UpdateCustomerPropertyDto } from '../dto/update-customer-property.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
@@ -114,19 +115,46 @@ export class CustomerPropertyService {
   }
 
   /**
-   * Find all properties for an organization
+   * Find all properties for an organization with filters, sorting, and pagination
+   * Enriches results with latest quote info per property
+   *
+   * @param organizationId - Organization context
+   * @param query - Query parameters (filters, sorting, pagination)
+   * @returns Properties enriched with quote info and total count
    */
   async findAll(
     organizationId: string,
-    page = 1,
-    limit = 20,
-  ): Promise<{ data: CustomerPropertyEntity[]; total: number }> {
-    const [data, total] = await this.propertyRepository.findByOrganization(
+    query: PropertyQueryDto,
+  ): Promise<{ data: PropertyWithQuoteInfo[]; total: number }> {
+    const [properties, total] = await this.propertyRepository.findWithFilters(
       organizationId,
-      page,
-      limit,
+      query,
     );
-    return { data, total };
+
+    // Early return if no properties (skip quote lookup)
+    if (properties.length === 0) {
+      return { data: [], total };
+    }
+
+    // Batch-load latest quote per property (single query, avoids N+1)
+    const propertyIds = properties.map((p) => p.id);
+    const quoteMap = await this.quoteRepository.findLatestByPropertyIds(
+      propertyIds,
+      organizationId,
+    );
+
+    // Enrich properties with quote data
+    const enriched: PropertyWithQuoteInfo[] = properties.map((property) => {
+      const quoteInfo = quoteMap.get(property.id);
+      return {
+        ...property,
+        latestQuoteNumber: quoteInfo?.quoteNumber,
+        latestQuoteStatus: quoteInfo?.status,
+        latestQuoteDate: quoteInfo?.quoteDate,
+      };
+    });
+
+    return { data: enriched, total };
   }
 
   /**

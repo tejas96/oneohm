@@ -258,6 +258,7 @@ export class QuoteService {
     filters?: {
       status?: QuoteStatus;
       customerId?: string;
+      propertyId?: string;
       salesPersonId?: string;
       resellerId?: string;
       fromDate?: string;

@@ -6,7 +6,7 @@ import {
   PropertyType,
   QuoteStatus,
 } from '@oneohm-epc/shared-types';
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
 import { PropertyDocumentDto } from './property-document.dto';
 
@@ -149,6 +149,48 @@ export class CustomerPropertyResponseDto {
   @ApiPropertyOptional()
   @Expose()
   updatedBy?: string;
+
+  // ==================== Customer Info (populated from customer relation) ====================
+
+  @ApiPropertyOptional({
+    description: 'Customer full name (firstName + lastName from customer profile)',
+    example: 'Rajesh Sharma',
+  })
+  @Expose()
+  @Transform(({ obj }) => {
+    if (!obj.customer) return undefined;
+    const firstName = obj.customer.firstName || '';
+    const lastName = obj.customer.lastName || '';
+    return `${firstName} ${lastName}`.trim() || undefined;
+  })
+  customerName?: string;
+
+  @ApiPropertyOptional({
+    description: 'Customer phone number (from customer profile)',
+    example: '+919876543210',
+  })
+  @Expose()
+  @Transform(({ obj }) => obj.customer?.phone ?? undefined)
+  customerPhone?: string;
+
+  // ==================== Creator Info (populated from creator relation) ====================
+
+  /**
+   * Name of the user who created this property
+   */
+  @ApiPropertyOptional({
+    description: 'Name of the user who created this property',
+    example: 'Rahul Kumar',
+  })
+  @Expose()
+  @Transform(({ obj }) => {
+    if (!obj.createdBy) return undefined;
+    if (!obj.creator) return undefined;
+    const firstName = obj.creator.firstName || '';
+    const lastName = obj.creator.lastName || '';
+    return `${firstName} ${lastName}`.trim() || undefined;
+  })
+  creatorName?: string;
 
   // ==================== Quote Info (enriched from quotes table) ====================
   @ApiPropertyOptional({

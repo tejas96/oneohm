@@ -114,3 +114,18 @@ export enum CustomerSortField {
   CITY = 'city',
   STATUS = 'status',
 }
+
+/**
+ * Property Sort Field Enum
+ * Allowed sort fields for property list API
+ * Values must match entity property names (camelCase)
+ */
+export enum PropertySortField {
+  CREATED_AT = 'createdAt',
+  UPDATED_AT = 'updatedAt',
+  PROPERTY_NAME = 'propertyName',
+  CITY = 'city',
+  LEAD_TEMPERATURE = 'leadTemperature',
+  PROPERTY_TYPE = 'propertyType',
+  STATUS = 'status',
+}

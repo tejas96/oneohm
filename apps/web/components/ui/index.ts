@@ -262,3 +262,6 @@ export type { SpinnerProps, LoadingDotsProps } from './spinner';
 // Typography
 export { Typography } from './typography';
 export type { TypographyProps } from './typography';
+
+// WhatsApp Icon
+export { WhatsAppIcon } from './whatsapp-icon';

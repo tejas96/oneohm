@@ -1,10 +1,10 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as React from 'react';
+import { useEffect, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { markAsLostSchema, type MarkAsLostFormData, LOST_REASONS } from '../schemas/property.schema';
+import { markAsLostSchema, type MarkAsLostFormData, LOST_REASONS } from '../schemas';
 
 import {
   Button,
@@ -32,7 +32,7 @@ import {
 
 interface Property {
   id: string;
-  propertyName: string;
+  propertyName?: string;
 }
 
 interface MarkAsLostModalProps {
@@ -49,7 +49,7 @@ export function MarkAsLostModal({
   open,
   onOpenChange,
   property,
-}: MarkAsLostModalProps): React.JSX.Element {
+}: MarkAsLostModalProps): JSX.Element {
   const form = useForm<MarkAsLostFormData>({
     resolver: zodResolver(markAsLostSchema),
     defaultValues: {
@@ -59,15 +59,14 @@ export function MarkAsLostModal({
   });
 
   // Reset form when modal opens
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) {
       form.reset({ reason: '', notes: '' });
     }
   }, [open, form]);
 
-  const onSubmit = (data: MarkAsLostFormData) => {
-    // TODO: Phase 2 - API call
-    console.log('Mark as lost:', property?.id, data);
+  const onSubmit = (_data: MarkAsLostFormData): void => {
+    // TODO: Phase 2 - integrate with mark-as-lost API endpoint
     showToast.success('Property marked as lost');
     onOpenChange(false);
   };
