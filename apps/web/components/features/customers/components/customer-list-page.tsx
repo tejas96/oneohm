@@ -332,7 +332,7 @@ export function CustomerListPage(): JSX.Element {
                 <div className="font-medium text-foreground leading-tight">
                   {customer.firstName} {customer.lastName || ''}
                 </div>
-                <div className="text-foreground-tertiary text-[11px] flex items-center gap-1.5 leading-tight mt-0.5">
+                <div className="text-foreground-tertiary text-2xs flex items-center gap-1.5 leading-tight mt-0.5">
                   <span className="truncate">{customer.email || '-'}</span>
                   <span className="inline-flex items-center gap-0.5 shrink-0">
                     <Building2 className="size-3" />
@@ -414,7 +414,7 @@ export function CustomerListPage(): JSX.Element {
           return (
             <span
               className={cn(
-                'px-1.5 py-0.5 text-[11px] font-medium rounded',
+                'px-1.5 py-0.5 text-2xs font-medium rounded',
                 LEAD_SOURCE_COLORS[source] || 'bg-muted text-foreground-secondary'
               )}
             >

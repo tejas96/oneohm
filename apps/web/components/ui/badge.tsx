@@ -19,64 +19,46 @@ import { cn } from '@/lib/utils';
  * - Pill shape (rounded-full) by default
  */
 const badgeVariants = cva(
-  'inline-flex items-center gap-1.5 w-fit rounded-full border font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+  'inline-flex items-center gap-1.5 w-fit border font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
   {
     variants: {
       variant: {
-        // Default - Primary green (uses theme tokens)
         default: 'border-transparent bg-primary/10 text-primary',
-
-        // Secondary - Gray (uses theme tokens)
-        secondary: 'border-transparent bg-muted text-foreground-secondary',
-
-        // Success - Green (uses theme tokens)
+        secondary: 'border-transparent bg-gray-100 text-foreground-secondary',
         success: 'border-transparent bg-success/15 text-success',
-
-        // Warning - Amber (uses theme tokens)
         warning: 'border-transparent bg-warning/15 text-warning',
-
-        // Error/Destructive - Red (uses theme tokens)
         error: 'border-transparent bg-error/15 text-error',
         destructive: 'border-transparent bg-error/15 text-error',
-
-        // Info - Blue (uses theme tokens)
         info: 'border-transparent bg-info/15 text-info',
-
-        // Pending - Purple (uses theme tokens - mapped to info variant for now)
         pending: 'border-transparent bg-purple-100 text-purple-700',
-
-        // Outline - Border only (uses theme tokens)
         outline: 'border-border-medium bg-transparent text-foreground-secondary',
-
-        // Muted - Subtle gray tag style (uses theme tokens)
         muted: 'border-muted bg-muted text-foreground-tertiary',
-
-        // Lead Temperature - Hot (red solid, uses theme tokens)
         hot: 'border-transparent bg-error text-error-foreground',
-
-        // Lead Temperature - Warm (orange solid, uses theme tokens)
         warm: 'border-transparent bg-warning text-warning-foreground',
-
-        // Lead Temperature - Cold (blue solid, uses theme tokens)
         cold: 'border-transparent bg-info text-info-foreground',
-
-        // Count - For notification badges (uses theme tokens)
         count: 'border-transparent bg-primary text-white',
+        teal: 'border-transparent bg-teal-50 text-teal-700',
+        purple: 'border-transparent bg-purple-50 text-purple-700',
+        amber: 'border-transparent bg-amber-50 text-amber-700',
+        'green-subtle': 'border-transparent bg-green-50 text-green-700',
+        'red-subtle': 'border-transparent bg-red-50 text-red-700',
+        'blue-subtle': 'border-transparent bg-blue-50 text-blue-700',
       },
       size: {
-        // Extra small - role tags, compact labels
-        xs: 'px-1.5 py-0.5 text-micro',
-        // Small - compact badges
-        sm: 'px-2 py-0.5 text-section',
-        // Default
+        xs: 'px-1.5 py-0.5 text-section',
+        sm: 'px-2 py-0.5 text-2xs',
         default: 'px-2.5 py-0.5 text-xs',
-        // Large
         lg: 'px-3 py-1 text-xs',
+      },
+      shape: {
+        pill: 'rounded-full',
+        rounded: 'rounded',
       },
     },
     defaultVariants: {
       variant: 'default',
       size: 'default',
+      shape: 'pill',
     },
   },
 );
@@ -98,6 +80,7 @@ function Badge({
   className,
   variant,
   size,
+  shape,
   dot,
   dotAnimated,
   removable,
@@ -109,7 +92,7 @@ function Badge({
   const isAnimated = dotAnimated || variant === 'hot';
 
   return (
-    <div className={cn(badgeVariants({ variant, size }), className)} {...props}>
+    <div className={cn(badgeVariants({ variant, size, shape }), className)} {...props}>
       {showDot && (
         <span
           className={cn(

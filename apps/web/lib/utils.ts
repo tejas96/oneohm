@@ -12,4 +12,5 @@ export function cn(...inputs: ClassValue[]) {
 // Re-export utilities
 export { getErrorMessage } from './utils/error';
 export { getFileExtension, isImageFile, isPdfFile, isPreviewableFile } from './utils/file';
+export { formatCurrency, formatCurrencyCompact, formatDate, formatRelativeDate, getInitials } from './utils/format';
 export { formatPhoneForWhatsApp, formatPhoneForDisplay, isValidPhone } from './utils/phone';

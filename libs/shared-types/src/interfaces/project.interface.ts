@@ -71,6 +71,10 @@ export interface FileAttachment {
  * Additional flexible data for projects
  */
 export interface ProjectMetadata {
+  quoteId?: string;
+  quoteNumber?: string;
+  convertedFromQuote?: boolean;
+  originalQuoteAmount?: number;
   customFields?: Record<string, unknown>;
   tags?: string[];
   externalReferences?: {

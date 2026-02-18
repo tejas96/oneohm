@@ -20,6 +20,10 @@ const STATUS_DOT_COLORS: Record<StatusDotColor, string> = {
   hot: 'bg-error',
   warm: 'bg-warning',
   cold: 'bg-info',
+  active: 'bg-success',
+  planning: 'bg-info',
+  on_hold: 'bg-warning',
+  completed_project: 'bg-foreground-tertiary',
 };
 
 // Badge variant mapping

@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
  * Avatar Component - OneOhm V2 Design System
  *
  * Sizes (per UX avatars.html):
- * - xs: 24px
+ * - xs: 28px
  * - sm: 32px
  * - default/md: 40px
  * - lg: 48px
@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 const avatarSizeVariants = cva('relative flex shrink-0 overflow-hidden rounded-full', {
   variants: {
     size: {
-      xs: 'size-6',
+      xs: 'size-7',
       sm: 'size-8',
       default: 'size-10',
       lg: 'size-12',
@@ -213,7 +213,7 @@ const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(
     const remainingCount = childArray.length - max;
 
     const overlapClasses = {
-      xs: '-space-x-1.5',
+      xs: '-space-x-2',
       sm: '-space-x-2',
       default: '-space-x-3',
       lg: '-space-x-3.5',
@@ -221,7 +221,7 @@ const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(
     };
 
     const counterSizeClasses = {
-      xs: 'size-6 text-section',
+      xs: 'size-7 text-section',
       sm: 'size-8 text-xs',
       default: 'size-10 text-xs',
       lg: 'size-12 text-sm',

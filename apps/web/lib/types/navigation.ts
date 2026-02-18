@@ -19,8 +19,8 @@ export type UserRole = 'admin' | 'super_admin' | 'platform_admin' | 'manager' | 
 /** Badge variants for navigation items */
 export type NavBadgeVariant = 'default' | 'primary' | 'warning' | 'error' | 'success' | 'info';
 
-/** Status dot colors for lead temperature indicators */
-export type StatusDotColor = 'hot' | 'warm' | 'cold';
+/** Status dot colors for lead temperature and project status indicators */
+export type StatusDotColor = 'hot' | 'warm' | 'cold' | 'active' | 'planning' | 'on_hold' | 'completed_project';
 
 /** Base navigation item */
 export interface NavItem {
