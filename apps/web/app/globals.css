@@ -128,6 +128,12 @@ body {
   text-decoration: none;
 }
 
+.panel-item.sub-item {
+  padding-left: 28px;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
 .panel-item:hover {
   @apply bg-muted text-foreground;
 }

@@ -70,10 +70,14 @@ export const ROUTES = {
 
   // Projects
   PROJECTS: {
-    LIST: '/projects',
+    DASHBOARD: '/projects',
+    LIST: '/projects/list',
     DETAIL: '/projects/[id]',
     NEW: '/projects/new',
     BOARD: '/projects/board',
+    MY_TASKS: '/projects/my-tasks',
+    TIMELINE: '/projects/timeline',
+    TASK_TEMPLATES: '/projects/task-templates',
   },
 
   // Pipeline
@@ -218,7 +222,7 @@ export interface RouteParamTypes {
   
   // Routes with query filters
   '/quotes': { status?: 'draft' | 'sent' | 'accepted' | 'rejected' };
-  '/projects': { status?: 'active' | 'completed' | 'on-hold' };
+  '/projects/list': { status?: 'active' | 'planning' | 'on_hold' | 'completed'; filter?: string };
   '/inventory': { filter?: 'low-stock' };
   '/service': { status?: 'open' | 'closed' };
 }
@@ -376,7 +380,7 @@ export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
   [ROUTES.QUOTES.LIST]: 'quotes',
   
   // Projects routes
-  [ROUTES.PROJECTS.LIST]: 'projects',
+  [ROUTES.PROJECTS.DASHBOARD]: 'projects',
   
   // Inventory routes
   [ROUTES.INVENTORY.LIST]: 'inventory',

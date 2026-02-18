@@ -7,6 +7,7 @@ import {
   Clock,
   FileText,
   Folder,
+  GanttChart,
   HelpCircle,
   Home,
   LayoutGrid,
@@ -64,7 +65,7 @@ export const navigationConfig: NavigationConfig = {
       id: 'projects',
       icon: Folder,
       label: 'Projects',
-      href: ROUTES.PROJECTS.LIST,
+      href: ROUTES.PROJECTS.DASHBOARD,
       panelKey: 'projects',
     },
     {
@@ -282,17 +283,75 @@ export const navigationConfig: NavigationConfig = {
       title: 'Projects',
       sections: [
         {
-          title: 'Views',
+          title: 'Overview',
           items: [
-            { id: 'all-projects', icon: List, label: 'All Projects', href: ROUTES.PROJECTS.LIST },
-            { id: 'active', icon: TrendingUp, label: 'Active', href: `${ROUTES.PROJECTS.LIST}?status=active` },
-            { id: 'board', icon: LayoutGrid, label: 'Board View', href: ROUTES.PROJECTS.BOARD },
+            { id: 'projects-dashboard', icon: Home, label: 'Dashboard', href: ROUTES.PROJECTS.DASHBOARD, exactMatch: true },
+            {
+              id: 'all-projects',
+              icon: List,
+              label: 'All Projects',
+              href: ROUTES.PROJECTS.LIST,
+              // badge: dynamically set via useNavigationCounts (projects.totalProjects)
+              children: [
+                {
+                  id: 'projects-active',
+                  label: 'Active',
+                  href: `${ROUTES.PROJECTS.LIST}?status=active`,
+                  // badge: dynamically set via useNavigationCounts (projects.active)
+                },
+                {
+                  id: 'projects-planning',
+                  label: 'Planning',
+                  href: `${ROUTES.PROJECTS.LIST}?status=planning`,
+                },
+                {
+                  id: 'projects-on-hold',
+                  label: 'On Hold',
+                  href: `${ROUTES.PROJECTS.LIST}?status=on_hold`,
+                },
+                {
+                  id: 'projects-completed',
+                  label: 'Completed',
+                  href: `${ROUTES.PROJECTS.LIST}?status=completed`,
+                },
+              ],
+            },
           ],
         },
         {
-          title: 'Actions',
+          title: 'My Work',
           items: [
-            { id: 'new-project', icon: Plus, label: 'New Project', href: ROUTES.PROJECTS.NEW, exactMatch: true },
+            {
+              id: 'projects-my-tasks',
+              icon: CheckSquare,
+              label: 'My Tasks',
+              href: ROUTES.PROJECTS.MY_TASKS,
+              // badge: dynamically set via useNavigationCounts (projects.myTasks)
+            },
+            {
+              id: 'projects-milestones-due',
+              icon: Clock,
+              label: 'Milestones Due',
+              href: `${ROUTES.PROJECTS.LIST}?filter=milestones-due`,
+              badgeVariant: 'warning' as const,
+              // badge: dynamically set via useNavigationCounts (projects.milestonesDue)
+              // TODO: May need its own route (/projects/milestones) when implemented -
+              // shows cross-project milestone deadlines, not a filtered project list
+            },
+          ],
+        },
+        {
+          title: 'Scheduling',
+          items: [
+            { id: 'projects-kanban', icon: LayoutGrid, label: 'Kanban Board', href: ROUTES.PROJECTS.BOARD },
+            { id: 'projects-timeline', icon: GanttChart, label: 'Timeline / Gantt', href: ROUTES.PROJECTS.TIMELINE },
+          ],
+        },
+        {
+          title: 'Settings',
+          roles: ['admin', 'super_admin', 'platform_admin'],
+          items: [
+            { id: 'projects-task-templates', icon: Settings, label: 'Task Templates', href: ROUTES.PROJECTS.TASK_TEMPLATES },
           ],
         },
       ],

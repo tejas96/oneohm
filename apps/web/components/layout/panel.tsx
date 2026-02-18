@@ -103,9 +103,7 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
           'panel-item',
           isActive && 'active',
           item.disabled && 'opacity-50 pointer-events-none',
-          // Sub-items: left padding to align with parent label (icon width + icon margin)
-          // pl-[38px] = px-3 (12px) + icon (16px) + mr-2.5 (10px) = 38px
-          isSubItem && 'pl-[38px] text-xs'
+          isSubItem && 'sub-item'
         )}
         aria-disabled={item.disabled}
         target={item.external ? '_blank' : undefined}
