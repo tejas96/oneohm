@@ -16,8 +16,7 @@ import { Upload } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 
 import { DOCUMENT_TYPE_OPTIONS } from '../constants';
-import type { CustomerPropertyResponse } from '../hooks';
-import { useDocumentUpload } from '../hooks';
+import { type CustomerPropertyResponse , useDocumentUpload } from '../hooks';
 
 import { formatFileSize } from '@/components/shared/document-collector/constants';
 import {

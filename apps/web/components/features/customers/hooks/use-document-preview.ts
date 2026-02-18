@@ -12,9 +12,8 @@
 import { useCallback, useState } from 'react';
 
 import { useDocumentDownloadUrl } from './use-property-documents';
-
-import type { AggregatedDocument } from '../components/document-row';
 import type { PreviewDocument } from '../components/document-preview-modal';
+import type { AggregatedDocument } from '../components/document-row';
 
 import { showToast } from '@/components/ui';
 

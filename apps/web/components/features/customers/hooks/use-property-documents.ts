@@ -9,7 +9,8 @@
  * @module features/customers/hooks/use-property-documents
  */
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, UseMutationResult, useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 
 import { propertyKeys } from './use-customer-properties';
 
@@ -47,7 +48,7 @@ interface RemoveDocumentParams {
  * Hook to add a document to a property
  * Calls POST /customer-properties/:id/documents
  */
-export function useAddPropertyDocument() {
+export function useAddPropertyDocument(): UseMutationResult<void, AxiosError, AddDocumentParams> {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const organizationId = user?.organizationId;
@@ -58,14 +59,12 @@ export function useAddPropertyDocument() {
         ...document,
         uploadedAt: document.uploadedAt || new Date().toISOString(),
       };
-      return apiClient.post(
-        `/customer-properties/${propertyId}/documents`,
-        docWithTimestamp,
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
+      await apiClient.post(`/customer-properties/${propertyId}/documents`, docWithTimestamp, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: propertyKeys.all });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: propertyKeys.all });
     },
   });
 }
@@ -74,7 +73,11 @@ export function useAddPropertyDocument() {
  * Hook to remove a document from a property
  * Calls DELETE /customer-properties/:id/documents/:encodedUrl
  */
-export function useRemovePropertyDocument() {
+export function useRemovePropertyDocument(): UseMutationResult<
+  void,
+  AxiosError,
+  RemoveDocumentParams
+> {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const organizationId = user?.organizationId;
@@ -82,13 +85,12 @@ export function useRemovePropertyDocument() {
   return useMutation({
     mutationFn: async ({ propertyId, documentUrl }: RemoveDocumentParams) => {
       const encodedUrl = btoa(documentUrl);
-      return apiClient.delete(
-        `/customer-properties/${propertyId}/documents/${encodedUrl}`,
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
+      await apiClient.delete(`/customer-properties/${propertyId}/documents/${encodedUrl}`, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: propertyKeys.all });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: propertyKeys.all });
     },
   });
 }
@@ -98,15 +100,13 @@ export function useRemovePropertyDocument() {
  * Pass fileName to get a URL with Content-Disposition: attachment (forces download).
  * Omit fileName to get a URL suitable for inline viewing/preview.
  */
-export function useDocumentDownloadUrl() {
+export function useDocumentDownloadUrl(): UseMutationResult<
+  string,
+  AxiosError,
+  { documentUrl: string; fileName?: string }
+> {
   return useMutation({
-    mutationFn: async ({
-      documentUrl,
-      fileName,
-    }: {
-      documentUrl: string;
-      fileName?: string;
-    }) => {
+    mutationFn: async ({ documentUrl, fileName }: { documentUrl: string; fileName?: string }) => {
       const fileKey = documentUrl.includes('://')
         ? new URL(documentUrl).pathname.slice(1)
         : documentUrl;
