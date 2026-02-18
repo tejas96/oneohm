@@ -3,7 +3,6 @@
 import { QuoteStatus } from '@oneohm-epc/shared-types';
 import {
   Building2,
-  Download,
   Edit,
   FileText,
   Mail,
@@ -13,16 +12,21 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import React, { type JSX, useCallback, useState } from 'react';
+import React, { type JSX, useCallback, useMemo, useState } from 'react';
 
 import {
   useCustomer,
   useCustomerProperties,
   useCustomerQuotes,
+  useDocumentPreview,
+  useRemovePropertyDocument,
   useUpdateCustomer,
 } from '../hooks';
+import { DocumentPreviewModal } from './document-preview-modal';
+import { DocumentRow, type AggregatedDocument } from './document-row';
 import { PropertyCard } from './property-card';
 import { PropertySelectModal } from './property-select-modal';
+import { UploadDocumentModal } from './upload-document-modal';
 
 import { EditableField, EmptyState } from '@/components/shared';
 import {
@@ -33,6 +37,12 @@ import {
   BreadcrumbLink,
   BreadcrumbSeparator,
   BreadcrumbPage,
+  ConfirmDialog,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Skeleton,
   showToast,
   WhatsAppIcon,
@@ -90,23 +100,6 @@ const mockActivityData = [
   },
 ];
 
-// Mock documents (Phase 2 - will be fetched from properties documents field)
-const mockDocuments = [
-  {
-    id: '1',
-    fileName: 'Electricity_Bill_Jan.pdf',
-    size: '245 KB',
-    uploadedAt: 'Jan 18, 2026',
-    type: 'pdf',
-  },
-  {
-    id: '2',
-    fileName: 'Site_Photos.zip',
-    size: '12.4 MB',
-    uploadedAt: 'Jan 20, 2026',
-    type: 'zip',
-  },
-];
 
 // ============================================================================
 // Helper Functions
@@ -264,15 +257,46 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
 
   // State
   const [propertySelectOpen, setPropertySelectOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [docToDelete, setDocToDelete] = useState<AggregatedDocument | null>(null);
 
-  // Get active tab from URL (default to 'quotes')
+  // Get active tab and document filter from URL
   const activeTab = searchParams.get('tab') || 'quotes';
+  const propertyFilter = searchParams.get('docProperty') || 'all';
 
   // Data fetching
   const { data: customer, isLoading: isLoadingCustomer, error: customerError } = useCustomer(customerId);
   const { data: properties, isLoading: isLoadingProperties } = useCustomerProperties(customerId);
   const { data: quotesData, isLoading: isLoadingQuotes } = useCustomerQuotes(customerId);
   const updateCustomerMutation = useUpdateCustomer();
+
+  // Document mutations & preview
+  const removeMutation = useRemovePropertyDocument();
+  const {
+    previewDocument,
+    isPreviewOpen,
+    openPreview,
+    closePreview,
+    downloadToSystem,
+  } = useDocumentPreview();
+
+  // Aggregate documents from all properties
+  const allDocuments = useMemo((): AggregatedDocument[] => {
+    if (!properties) return [];
+    return properties.flatMap((property) =>
+      (property.documents || []).map((doc) => ({
+        ...doc,
+        propertyId: property.id,
+        propertyName: property.propertyName || property.address || 'Unnamed Property',
+      })),
+    );
+  }, [properties]);
+
+  // Filter documents by selected property
+  const filteredDocuments = useMemo(() => {
+    if (propertyFilter === 'all') return allDocuments;
+    return allDocuments.filter((doc) => doc.propertyId === propertyFilter);
+  }, [allDocuments, propertyFilter]);
 
   // Tab change handler with URL persistence
   const handleTabChange = useCallback(
@@ -301,6 +325,43 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
     },
     [customerId, updateCustomerMutation]
   );
+
+  // Document property filter handler
+  const setPropertyFilterParam = useCallback(
+    (value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (value === 'all') {
+        params.delete('docProperty');
+      } else {
+        params.set('docProperty', value);
+      }
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
+  // Document action handlers
+  const handleDeleteDocument = useCallback(
+    (doc: AggregatedDocument) => {
+      setDocToDelete(doc);
+    },
+    [],
+  );
+
+  const confirmDeleteDocument = useCallback(async () => {
+    if (!docToDelete) return;
+    try {
+      await removeMutation.mutateAsync({
+        propertyId: docToDelete.propertyId,
+        documentUrl: docToDelete.url,
+      });
+      showToast.success('Document deleted');
+    } catch {
+      showToast.error('Failed to delete document');
+    } finally {
+      setDocToDelete(null);
+    }
+  }, [docToDelete, removeMutation]);
 
   // Navigation handlers
   const handleEdit = (): void => {
@@ -747,50 +808,64 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
         {/* Documents Tab */}
         {activeTab === 'documents' && (
           <div className="p-4">
-            {/* Upload Area */}
-            <div className="mb-4 rounded-lg border-2 border-dashed border-gray-100 p-8 text-center">
-              <Upload className="mx-auto mb-3 size-12 text-gray-400" />
-              <p className="mb-2 text-gray-500">
-                Drag and drop files here, or click to browse
-              </p>
-              <button className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white">
+            {/* Documents Tab Header */}
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Select value={propertyFilter} onValueChange={setPropertyFilterParam}>
+                  <SelectTrigger className="h-input-sm w-48">
+                    <SelectValue placeholder="All Properties" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Properties</SelectItem>
+                    {properties?.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.propertyName || p.address || 'Unnamed'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => setIsUploadModalOpen(true)}
+                disabled={!properties || properties.length === 0}
+              >
+                <Upload className="mr-1.5 size-icon-xs" />
                 Upload Document
-              </button>
+              </Button>
             </div>
 
-            {/* Document List */}
-            {mockDocuments.length > 0 ? (
+            {/* Documents List */}
+            {filteredDocuments.length === 0 ? (
+              <div className="py-12 text-center">
+                <FileText className="mx-auto mb-3 size-icon-xl text-foreground-muted" />
+                <p className="mb-1 font-medium text-foreground">No documents yet</p>
+                <p className="mb-4 text-sm text-foreground-secondary">
+                  {properties && properties.length > 0
+                    ? 'Upload documents for your properties'
+                    : 'Add a property first to upload documents'}
+                </p>
+                {properties && properties.length > 0 && (
+                  <Button size="sm" onClick={() => setIsUploadModalOpen(true)}>
+                    <Upload className="mr-1.5 size-icon-xs" />
+                    Upload Document
+                  </Button>
+                )}
+              </div>
+            ) : (
               <div className="space-y-2">
-                {mockDocuments.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className="flex items-center justify-between rounded-lg bg-gray-50 p-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={cn(
-                          'flex size-8 items-center justify-center rounded',
-                          doc.type === 'pdf' ? 'text-red-500' : 'text-blue-500'
-                        )}
-                      >
-                        <svg className="size-8" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zm-3 9v6h2v-6h3l-4-4-4 4h3z"/>
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{doc.fileName}</p>
-                        <p className="text-xs text-gray-500">
-                          {doc.size} • Uploaded {doc.uploadedAt}
-                        </p>
-                      </div>
-                    </div>
-                    <button className="text-gray-400 hover:text-gray-500">
-                      <Download className="size-5" />
-                    </button>
-                  </div>
+                {filteredDocuments.map((doc, idx) => (
+                  <DocumentRow
+                    key={`${doc.propertyId}-${doc.url}-${idx}`}
+                    document={doc}
+                    onPreview={openPreview}
+                    onDownload={(doc) => { void downloadToSystem(doc); }}
+                    onDelete={handleDeleteDocument}
+                    isDeleting={removeMutation.isPending}
+                  />
                 ))}
               </div>
-            ) : null}
+            )}
           </div>
         )}
 
@@ -798,11 +873,9 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
         {activeTab === 'projects' && (
           <div className="p-8">
             <div className="text-center">
-              <svg className="mx-auto mb-3 size-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-              </svg>
-              <h3 className="mb-1 font-medium text-gray-900">No projects yet</h3>
-              <p className="text-sm text-gray-500">
+              <Building2 className="mx-auto mb-3 size-icon-xl text-foreground-muted" />
+              <h3 className="mb-1 font-medium text-foreground">No projects yet</h3>
+              <p className="text-sm text-foreground-secondary">
                 Projects will appear here once a quote is accepted
               </p>
             </div>
@@ -834,6 +907,33 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
         onClose={() => setPropertySelectOpen(false)}
         customerId={customerId}
         properties={properties || []}
+      />
+
+      {/* Upload Document Modal */}
+      <UploadDocumentModal
+        open={isUploadModalOpen}
+        onOpenChange={setIsUploadModalOpen}
+        properties={properties || []}
+      />
+
+      {/* Document Preview Modal */}
+      <DocumentPreviewModal
+        document={previewDocument}
+        open={isPreviewOpen}
+        onOpenChange={closePreview}
+        onDownload={(doc) => { void downloadToSystem(doc); }}
+      />
+
+      {/* Delete Document Confirmation */}
+      <ConfirmDialog
+        open={!!docToDelete}
+        onOpenChange={(open) => !open && setDocToDelete(null)}
+        title="Delete Document"
+        description={`Are you sure you want to delete "${docToDelete?.fileName}"? This action cannot be undone.`}
+        iconVariant="error"
+        confirmLabel="Delete"
+        confirmVariant="destructive"
+        onConfirm={confirmDeleteDocument}
       />
     </div>
   );

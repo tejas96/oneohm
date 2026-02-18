@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsBoolean, IsDateString, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsBoolean, IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
 
 /**
  * DTO for property document validation
@@ -74,4 +74,22 @@ export class PropertyDocumentDto {
   @IsUUID()
   @Expose()
   verifiedBy?: string;
+
+  @ApiPropertyOptional({
+    example: 245000,
+    description: 'File size in bytes',
+  })
+  @IsOptional()
+  @IsNumber()
+  @Expose()
+  fileSize?: number;
+
+  @ApiPropertyOptional({
+    example: '2024-01-15T10:30:00.000Z',
+    description: 'ISO timestamp when document was uploaded',
+  })
+  @IsOptional()
+  @IsDateString()
+  @Expose()
+  uploadedAt?: string;
 }

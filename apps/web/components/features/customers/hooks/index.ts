@@ -29,3 +29,16 @@ export type { CustomerPropertyResponse, PropertyDocument } from './use-customer-
 // Customer quotes
 export { useCustomerQuotes, quoteKeys } from './use-customer-quotes';
 export type { CustomerQuote, CustomerQuotesResponse } from './use-customer-quotes';
+
+// Property documents
+export {
+  useAddPropertyDocument,
+  useRemovePropertyDocument,
+  useDocumentDownloadUrl,
+} from './use-property-documents';
+
+// Document upload
+export { useDocumentUpload } from './use-document-upload';
+
+// Document preview
+export { useDocumentPreview } from './use-document-preview';

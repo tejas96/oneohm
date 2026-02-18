@@ -369,20 +369,84 @@ export class CustomerPropertyService {
 
     return result;
   }
-    /**
+  /**
+   * Add a document to property
+   */
+  async addDocument(
+    propertyId: string,
+    organizationId: string,
+    document: PropertyDocumentDto,
+    userId: string,
+  ): Promise<CustomerPropertyEntity> {
+    this.logger.log(`Adding document to property ${propertyId}`);
+
+    const property = await this.findById(propertyId, organizationId);
+    const documents: PropertyDocument[] = [
+      ...(property.documents || []),
+      this.normalizeDocument(document),
+    ];
+
+    const updated = await this.propertyRepository.update(propertyId, {
+      documents,
+      updatedBy: userId,
+    });
+
+    if (!updated) {
+      throw new NotFoundException(`Property with ID '${propertyId}' not found after update`);
+    }
+
+    return updated;
+  }
+
+  /**
+   * Remove a document from property
+   */
+  async removeDocument(
+    propertyId: string,
+    organizationId: string,
+    documentUrl: string,
+    userId: string,
+  ): Promise<CustomerPropertyEntity> {
+    this.logger.log(`Removing document from property ${propertyId}`);
+
+    const property = await this.findById(propertyId, organizationId);
+    const documents = (property.documents || []).filter((d) => d.url !== documentUrl);
+
+    const updated = await this.propertyRepository.update(propertyId, {
+      documents,
+      updatedBy: userId,
+    });
+
+    if (!updated) {
+      throw new NotFoundException(`Property with ID '${propertyId}' not found after update`);
+    }
+
+    return updated;
+  }
+
+  /**
+   * Normalize a single document from DTO to entity format
+   */
+  private normalizeDocument(doc: PropertyDocumentDto): PropertyDocument {
+    return {
+      url: doc.url,
+      tag: doc.tag,
+      fileName: doc.fileName,
+      isLoanDoc: doc.isLoanDoc ?? false,
+      isVerified: doc.isVerified ?? false,
+      verifiedAt: doc.verifiedAt,
+      verifiedBy: doc.verifiedBy,
+      fileSize: doc.fileSize,
+      uploadedAt: doc.uploadedAt ?? new Date().toISOString(),
+    };
+  }
+
+  /**
    * Normalize documents from DTO to entity format
    * Applies default values for optional fields
    */
-    private normalizeDocuments(documents?: PropertyDocumentDto[]): PropertyDocument[] | undefined {
-      if (!documents) return undefined;
-      return documents.map((doc) => ({
-        url: doc.url,
-        tag: doc.tag,
-        fileName: doc.fileName,
-        isLoanDoc: doc.isLoanDoc ?? false,
-        isVerified: doc.isVerified ?? false,
-        verifiedAt: doc.verifiedAt,
-        verifiedBy: doc.verifiedBy,
-      }));
-    }  
+  private normalizeDocuments(documents?: PropertyDocumentDto[]): PropertyDocument[] | undefined {
+    if (!documents) return undefined;
+    return documents.map((doc) => this.normalizeDocument(doc));
+  }
 }

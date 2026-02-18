@@ -29,6 +29,8 @@ export interface PropertyDocument {
   isVerified: boolean;
   verifiedAt?: string;
   verifiedBy?: string;
+  fileSize?: number;
+  uploadedAt?: string;
 }
 
 /**
