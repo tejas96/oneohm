@@ -180,3 +180,32 @@ export async function uploadFile(options: UploadOptions): Promise<UploadResult> 
 export async function deleteFile(fileKey: string): Promise<void> {
   await apiClient.delete('/storage/files', { data: { fileKey } });
 }
+
+// ============================================================================
+// Download Functions
+// ============================================================================
+
+export interface PresignedDownloadUrlResponse {
+  downloadUrl: string;
+  expiresAt: string;
+}
+
+/**
+ * Get a presigned URL for downloading a file
+ * @param fileKey The storage key of the file
+ * @param downloadFilename Optional custom filename for download
+ */
+export async function getDownloadUrl(
+  fileKey: string,
+  downloadFilename?: string,
+): Promise<string> {
+  const params = new URLSearchParams();
+  if (downloadFilename) {
+    params.set('filename', downloadFilename);
+  }
+  const query = params.toString() ? `?${params.toString()}` : '';
+  const { data } = await apiClient.get<PresignedDownloadUrlResponse>(
+    `/storage/download-url/${encodeURIComponent(fileKey)}${query}`,
+  );
+  return data.downloadUrl;
+}

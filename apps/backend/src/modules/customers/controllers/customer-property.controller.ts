@@ -33,6 +33,7 @@ import {
   CreateCustomerPropertyDto,
   CreateSiteVisitDto,
   CustomerPropertyResponseDto,
+  PropertyDocumentDto,
   PropertyQueryDto,
   SiteVisitResponseDto,
   UpdateCustomerPropertyDto,
@@ -355,6 +356,78 @@ export class CustomerPropertyController {
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
     await this.propertyService.delete(id, organizationId, currentUser.id);
+  }
+
+  // ==================== DOCUMENT NESTED ROUTES ====================
+
+  /**
+   * Add document to property
+   */
+  @Post(':id/documents')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Add document to property',
+    description: 'Atomically adds a document to the property documents JSONB array.',
+  })
+  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Document added successfully',
+    type: CustomerPropertyResponseDto,
+  })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Property not found' })
+  async addDocument(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() document: PropertyDocumentDto,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<CustomerPropertyResponseDto> {
+    const property = await this.propertyService.addDocument(
+      id,
+      organizationId,
+      document,
+      currentUser.id,
+    );
+    return toDto(CustomerPropertyResponseDto, property);
+  }
+
+  /**
+   * Remove document from property
+   */
+  @Delete(':id/documents/:encodedUrl')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Remove document from property',
+    description:
+      'Atomically removes a document from the property documents JSONB array. ' +
+      'The encodedUrl parameter must be the base64-encoded document URL.',
+  })
+  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
+  @ApiParam({
+    name: 'encodedUrl',
+    type: String,
+    description: 'Base64-encoded document URL',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Document removed successfully',
+    type: CustomerPropertyResponseDto,
+  })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Property not found' })
+  async removeDocument(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('encodedUrl') encodedUrl: string,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<CustomerPropertyResponseDto> {
+    const url = Buffer.from(encodedUrl, 'base64').toString('utf-8');
+    const property = await this.propertyService.removeDocument(
+      id,
+      organizationId,
+      url,
+      currentUser.id,
+    );
+    return toDto(CustomerPropertyResponseDto, property);
   }
 
   // ==================== SITE VISIT NESTED ROUTES ====================

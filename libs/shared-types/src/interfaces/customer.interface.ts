@@ -119,6 +119,10 @@ export interface PropertyDocument {
   verifiedAt?: string;
   /** User UUID who verified the document */
   verifiedBy?: string;
+  /** File size in bytes */
+  fileSize?: number;
+  /** ISO timestamp when document was uploaded */
+  uploadedAt?: string;
 }
 
 // ============================================================================

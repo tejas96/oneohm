@@ -113,6 +113,8 @@ Layout:
 - Repeat same work - search first
 - Hardcode paths - use `ROUTES.*` constants
 - Lose URL state on refresh - persist in query params
+- Functions/logic in constants files - `constants.ts` is for static data only (maps, arrays, enums, config objects)
+- Helper/utility functions in constants - move to `lib/utils/*.ts` and re-export from `lib/utils.ts` barrel
 
 ---
 
