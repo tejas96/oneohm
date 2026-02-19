@@ -6,8 +6,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
-import { Timeline } from '@/components/shared';
 import { useAcceptQuote, useRejectQuote, useConvertToProject } from '../hooks';
+
+import { Timeline } from '@/components/shared';
 import {
   Badge,
   Button,

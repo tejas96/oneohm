@@ -106,7 +106,7 @@ export class CustomerService {
         customer.customerCode = customerCode;
       }
     } catch (err) {
-      this.logger.warn(`Failed to generate customer code for ${customer.id}: ${err}`);
+      this.logger.warn(`Failed to generate customer code for ${customer.id}: ${String(err)}`);
     }
 
     this.logger.log(`✅ Customer profile created with auto-assigned role: ${customer.id}`);

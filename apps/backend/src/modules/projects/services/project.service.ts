@@ -125,83 +125,6 @@ export class ProjectService {
   }
 
   /**
-   * Auto-apply active task templates to a project
-   * Creates tasks from templates and resolves dependencies
-   */
-  private async applyTaskTemplates(
-    projectId: string,
-    organizationId: string,
-    createdBy: string,
-  ): Promise<void> {
-    // Get all active task templates for the organization
-    const templates = await this.taskTemplateRepository.findAllActive(organizationId);
-
-    if (templates.length === 0) {
-      return;
-    }
-
-    // Get org code for global task code generation
-    const org = await this.organizationRepository.findOneById(organizationId);
-    const orgCode = org?.code || 'UNKNOWN';
-
-    // Map from template code to created task ID (for dependency resolution)
-    const codeToTaskId = new Map<string, string>();
-
-    // First pass: create all tasks with global TSK-{ORG}-{YEAR}-{SEQ} codes
-    for (const template of templates) {
-      let taskCode: string;
-      try {
-        taskCode = await generateEntityCode(
-          this.taskRepository.repository,
-          'code',
-          'TSK',
-          orgCode,
-        );
-      } catch {
-        taskCode = template.code;
-      }
-
-      const task = await this.taskRepository.create({
-        projectId,
-        taskTemplateId: template.id,
-        name: template.name,
-        code: taskCode,
-        description: template.description,
-        kanbanOrder: template.sequenceOrder * 100,
-        status: TaskStatus.BACKLOG,
-        checklist: template.checklistTemplate,
-        labels: template.type ? [template.type] : undefined,
-        createdBy,
-        updatedBy: createdBy,
-      });
-
-      codeToTaskId.set(template.code, task.id);
-    }
-
-    // Second pass: resolve dependencies (template.dependsOnTaskCodes -> task.dependsOnTaskIds)
-    for (const template of templates) {
-      if (template.dependsOnTaskCodes && template.dependsOnTaskCodes.length > 0) {
-        const taskId = codeToTaskId.get(template.code);
-        if (!taskId) continue;
-
-        const dependsOnTaskIds: string[] = [];
-        for (const depCode of template.dependsOnTaskCodes) {
-          const depTaskId = codeToTaskId.get(depCode);
-          if (depTaskId) {
-            dependsOnTaskIds.push(depTaskId);
-          }
-        }
-
-        if (dependsOnTaskIds.length > 0) {
-          await this.taskRepository.update(taskId, projectId, {
-            dependsOnTaskIds,
-          });
-        }
-      }
-    }
-  }
-
-  /**
    * Find all projects with filters, computed fields, and payment summaries
    */
   async findAll(
@@ -220,7 +143,11 @@ export class ProjectService {
       sortOrder?: 'ASC' | 'DESC';
     },
   ): Promise<{
-    projects: (ProjectEntity & { currentPhase: string | null; healthStatus: string | null; paymentSummary: { totalExpected: number; totalPaid: number } })[];
+    projects: (ProjectEntity & {
+      currentPhase: string | null;
+      healthStatus: string | null;
+      paymentSummary: { totalExpected: number; totalPaid: number };
+    })[];
     total: number;
     page: number;
     limit: number;
@@ -244,43 +171,6 @@ export class ProjectService {
     });
 
     return { projects: enriched, total, page, limit };
-  }
-
-  private computeCurrentPhase(project: ProjectEntity): string | null {
-    if (!project.milestones || project.milestones.length === 0) return null;
-
-    const inProgress = project.milestones.find(
-      (m) => m.status === MilestoneStatus.IN_PROGRESS,
-    );
-    if (inProgress) return inProgress.milestoneType;
-
-    const latest = [...project.milestones].sort(
-      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-    );
-    return latest[0]?.milestoneType ?? null;
-  }
-
-  private computeHealthStatus(project: ProjectEntity): 'on_track' | 'at_risk' | 'delayed' | null {
-    const inactiveStatuses = [
-      ProjectStatus.ON_HOLD,
-      ProjectStatus.COMPLETED,
-      ProjectStatus.CANCELLED,
-      ProjectStatus.DRAFT,
-    ];
-    if (inactiveStatuses.includes(project.status)) return null;
-    if (!project.endDate) return 'on_track';
-
-    const now = new Date();
-    const due = new Date(project.endDate);
-
-    if (due < now) return 'delayed';
-
-    const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
-    if (due.getTime() - now.getTime() < fourteenDaysMs && project.progressPercentage < 80) {
-      return 'at_risk';
-    }
-
-    return 'on_track';
   }
 
   /**
@@ -507,8 +397,7 @@ export class ProjectService {
 
     for (let i = 0; i < paymentMilestones.length; i++) {
       const pm = paymentMilestones[i]!;
-      const milestoneType =
-        STAGE_TO_MILESTONE_TYPE[pm.stage] || ('custom' as MilestoneType);
+      const milestoneType = STAGE_TO_MILESTONE_TYPE[pm.stage] || ('custom' as MilestoneType);
 
       const milestone = await this.milestoneRepository.create({
         projectId: project.id,
@@ -530,7 +419,7 @@ export class ProjectService {
         );
         await this.milestoneRepository.repository.update(milestone.id, { milestoneCode });
       } catch (err) {
-        this.logger.warn(`Failed to generate milestone code for ${milestone.id}: ${err}`);
+        this.logger.warn(`Failed to generate milestone code for ${milestone.id}: ${String(err)}`);
       }
 
       milestoneTypeMap.set(milestoneType, milestone.id);
@@ -573,10 +462,7 @@ export class ProjectService {
 
     if (convertDto?.teamMembers) {
       for (const member of convertDto.teamMembers) {
-        const existing = await this.teamRepository.findByUserAndProject(
-          member.userId,
-          project.id,
-        );
+        const existing = await this.teamRepository.findByUserAndProject(member.userId, project.id);
         if (existing) continue;
         await this.teamRepository.create({
           projectId: project.id,
@@ -591,105 +477,6 @@ export class ProjectService {
     await this.autoAssignTasksByRole(project.id, organizationId);
 
     return this.projectRepository.findById(project.id, organizationId);
-  }
-
-  /**
-   * Auto-assign unassigned tasks to project team members based on their system roles.
-   * Uses user_roles table (multi-role) for matching, with project_team_members.roleName as fallback.
-   * When multiple members match, assigns to the one with fewer tasks (workload balancing).
-   */
-  private async autoAssignTasksByRole(
-    projectId: string,
-    organizationId: string,
-  ): Promise<void> {
-    const { data: allTasks } = await this.taskRepository.findAll(projectId, 1, 10000, {});
-    const unassignedTasks = allTasks.filter(
-      (t) => !t.assignedToUserId && t.taskTemplateId,
-    );
-
-    if (unassignedTasks.length === 0) return;
-
-    const teamMembers = await this.teamRepository.findByProject(projectId);
-    if (teamMembers.length === 0) return;
-
-    const templates = await this.taskTemplateRepository.findAllActive(organizationId);
-    const templateMap = new Map(templates.map((t) => [t.id, t]));
-
-    // Build user -> system roles map (from user_roles table)
-    const userRolesMap = new Map<string, string[]>();
-    for (const member of teamMembers) {
-      const userRoles = await this.userRoleRepository.findByUserAndOrganization(
-        member.userId,
-        organizationId,
-      );
-      const roleCodes = userRoles.map((ur) => ur.role.toLowerCase());
-      userRolesMap.set(member.userId, roleCodes);
-    }
-
-    // Track assignment counts for workload balancing
-    const assignmentCounts = new Map<string, number>();
-    for (const task of allTasks) {
-      if (task.assignedToUserId) {
-        assignmentCounts.set(
-          task.assignedToUserId,
-          (assignmentCounts.get(task.assignedToUserId) || 0) + 1,
-        );
-      }
-    }
-
-    for (const task of unassignedTasks) {
-      const template = templateMap.get(task.taskTemplateId!);
-      if (!template?.defaultRoleCode) continue;
-
-      const targetRole = template.defaultRoleCode.toLowerCase();
-      let bestMatch: { userId: string; count: number } | null = null;
-
-      // Priority 1: Match via user_roles (system-level roles)
-      for (const member of teamMembers) {
-        const systemRoles = userRolesMap.get(member.userId) || [];
-        if (systemRoles.includes(targetRole)) {
-          const count = assignmentCounts.get(member.userId) || 0;
-          if (!bestMatch || count < bestMatch.count) {
-            bestMatch = { userId: member.userId, count };
-          }
-        }
-      }
-
-      // Priority 2: Fallback to project_team_members.roleName
-      if (!bestMatch) {
-        for (const member of teamMembers) {
-          if (member.roleName?.toLowerCase() === targetRole) {
-            const count = assignmentCounts.get(member.userId) || 0;
-            if (!bestMatch || count < bestMatch.count) {
-              bestMatch = { userId: member.userId, count };
-            }
-          }
-        }
-      }
-
-      if (bestMatch) {
-        await this.taskRepository.update(task.id, projectId, {
-          assignedToUserId: bestMatch.userId,
-        });
-        assignmentCounts.set(
-          bestMatch.userId,
-          (assignmentCounts.get(bestMatch.userId) || 0) + 1,
-        );
-      }
-    }
-  }
-
-  /**
-   * Generate unique project number using centralized code generator
-   */
-  private async generateProjectNumber(orgCode: string): Promise<string> {
-    return generateEntityCode(
-      this.projectRepository.repository,
-      'projectNumber',
-      'PRJ',
-      orgCode,
-      'project_number',
-    );
   }
 
   /**
@@ -825,6 +612,204 @@ export class ProjectService {
       throw new BadRequestException(
         `Cannot transition from ${currentStatus} to ${newStatus}. Allowed transitions: ${allowed.join(', ')}`,
       );
+    }
+  }
+
+  private computeCurrentPhase(project: ProjectEntity): string | null {
+    if (!project.milestones || project.milestones.length === 0) return null;
+
+    const inProgress = project.milestones.find((m) => m.status === MilestoneStatus.IN_PROGRESS);
+    if (inProgress) return inProgress.milestoneType;
+
+    const latest = [...project.milestones].sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    );
+    return latest[0]?.milestoneType ?? null;
+  }
+
+  private computeHealthStatus(project: ProjectEntity): 'on_track' | 'at_risk' | 'delayed' | null {
+    const inactiveStatuses = [
+      ProjectStatus.ON_HOLD,
+      ProjectStatus.COMPLETED,
+      ProjectStatus.CANCELLED,
+      ProjectStatus.DRAFT,
+    ];
+    if (inactiveStatuses.includes(project.status)) return null;
+    if (!project.endDate) return 'on_track';
+
+    const now = new Date();
+    const due = new Date(project.endDate);
+
+    if (due < now) return 'delayed';
+
+    const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
+    if (due.getTime() - now.getTime() < fourteenDaysMs && project.progressPercentage < 80) {
+      return 'at_risk';
+    }
+
+    return 'on_track';
+  }
+
+  /**
+   * Auto-assign unassigned tasks to project team members based on their system roles.
+   * Uses user_roles table (multi-role) for matching, with project_team_members.roleName as fallback.
+   * When multiple members match, assigns to the one with fewer tasks (workload balancing).
+   */
+  private async autoAssignTasksByRole(projectId: string, organizationId: string): Promise<void> {
+    const { data: allTasks } = await this.taskRepository.findAll(projectId, 1, 10000, {});
+    const unassignedTasks = allTasks.filter((t) => !t.assignedToUserId && t.taskTemplateId);
+
+    if (unassignedTasks.length === 0) return;
+
+    const teamMembers = await this.teamRepository.findByProject(projectId);
+    if (teamMembers.length === 0) return;
+
+    const templates = await this.taskTemplateRepository.findAllActive(organizationId);
+    const templateMap = new Map(templates.map((t) => [t.id, t]));
+
+    // Build user -> system roles map (from user_roles table)
+    const userRolesMap = new Map<string, string[]>();
+    for (const member of teamMembers) {
+      const userRoles = await this.userRoleRepository.findByUserAndOrganization(
+        member.userId,
+        organizationId,
+      );
+      const roleCodes = userRoles.map((ur) => ur.role.toLowerCase());
+      userRolesMap.set(member.userId, roleCodes);
+    }
+
+    // Track assignment counts for workload balancing
+    const assignmentCounts = new Map<string, number>();
+    for (const task of allTasks) {
+      if (task.assignedToUserId) {
+        assignmentCounts.set(
+          task.assignedToUserId,
+          (assignmentCounts.get(task.assignedToUserId) || 0) + 1,
+        );
+      }
+    }
+
+    for (const task of unassignedTasks) {
+      const template = templateMap.get(task.taskTemplateId!);
+      if (!template?.defaultRoleCode) continue;
+
+      const targetRole = template.defaultRoleCode.toLowerCase();
+      let bestMatch: { userId: string; count: number } | null = null;
+
+      // Priority 1: Match via user_roles (system-level roles)
+      for (const member of teamMembers) {
+        const systemRoles = userRolesMap.get(member.userId) || [];
+        if (systemRoles.includes(targetRole)) {
+          const count = assignmentCounts.get(member.userId) || 0;
+          if (!bestMatch || count < bestMatch.count) {
+            bestMatch = { userId: member.userId, count };
+          }
+        }
+      }
+
+      // Priority 2: Fallback to project_team_members.roleName
+      if (!bestMatch) {
+        for (const member of teamMembers) {
+          if (member.roleName?.toLowerCase() === targetRole) {
+            const count = assignmentCounts.get(member.userId) || 0;
+            if (!bestMatch || count < bestMatch.count) {
+              bestMatch = { userId: member.userId, count };
+            }
+          }
+        }
+      }
+
+      if (bestMatch) {
+        await this.taskRepository.update(task.id, projectId, {
+          assignedToUserId: bestMatch.userId,
+        });
+        assignmentCounts.set(bestMatch.userId, (assignmentCounts.get(bestMatch.userId) || 0) + 1);
+      }
+    }
+  }
+
+  /**
+   * Generate unique project number using centralized code generator
+   */
+  private async generateProjectNumber(orgCode: string): Promise<string> {
+    return generateEntityCode(
+      this.projectRepository.repository,
+      'projectNumber',
+      'PRJ',
+      orgCode,
+      'project_number',
+    );
+  }
+
+  /**
+   * Auto-apply active task templates to a project
+   * Creates tasks from templates and resolves dependencies
+   */
+  private async applyTaskTemplates(
+    projectId: string,
+    organizationId: string,
+    createdBy: string,
+  ): Promise<void> {
+    // Get all active task templates for the organization
+    const templates = await this.taskTemplateRepository.findAllActive(organizationId);
+
+    if (templates.length === 0) {
+      return;
+    }
+
+    // Get org code for global task code generation
+    const org = await this.organizationRepository.findOneById(organizationId);
+    const orgCode = org?.code || 'UNKNOWN';
+
+    // Map from template code to created task ID (for dependency resolution)
+    const codeToTaskId = new Map<string, string>();
+
+    // First pass: create all tasks with global TSK-{ORG}-{YEAR}-{SEQ} codes
+    for (const template of templates) {
+      let taskCode: string;
+      try {
+        taskCode = await generateEntityCode(this.taskRepository.repository, 'code', 'TSK', orgCode);
+      } catch {
+        taskCode = template.code;
+      }
+
+      const task = await this.taskRepository.create({
+        projectId,
+        taskTemplateId: template.id,
+        name: template.name,
+        code: taskCode,
+        description: template.description,
+        kanbanOrder: template.sequenceOrder * 100,
+        status: TaskStatus.BACKLOG,
+        checklist: template.checklistTemplate,
+        labels: template.type ? [template.type] : undefined,
+        createdBy,
+        updatedBy: createdBy,
+      });
+
+      codeToTaskId.set(template.code, task.id);
+    }
+
+    // Second pass: resolve dependencies (template.dependsOnTaskCodes -> task.dependsOnTaskIds)
+    for (const template of templates) {
+      if (template.dependsOnTaskCodes && template.dependsOnTaskCodes.length > 0) {
+        const taskId = codeToTaskId.get(template.code);
+        if (!taskId) continue;
+
+        const dependsOnTaskIds: string[] = [];
+        for (const depCode of template.dependsOnTaskCodes) {
+          const depTaskId = codeToTaskId.get(depCode);
+          if (depTaskId) {
+            dependsOnTaskIds.push(depTaskId);
+          }
+        }
+
+        if (dependsOnTaskIds.length > 0) {
+          await this.taskRepository.update(taskId, projectId, {
+            dependsOnTaskIds,
+          });
+        }
+      }
     }
   }
 }

@@ -68,7 +68,7 @@ export class MilestoneService {
         await this.milestoneRepository.repository.update(milestone.id, { milestoneCode });
       }
     } catch (err) {
-      this.logger.warn(`Failed to generate milestone code for ${milestone.id}: ${err}`);
+      this.logger.warn(`Failed to generate milestone code for ${milestone.id}: ${String(err)}`);
     }
 
     // Recalculate project progress

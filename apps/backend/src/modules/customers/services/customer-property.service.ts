@@ -115,7 +115,7 @@ export class CustomerPropertyService {
         property.propertyCode = propertyCode;
       }
     } catch (err) {
-      this.logger.warn(`Failed to generate property code for ${property.id}: ${err}`);
+      this.logger.warn(`Failed to generate property code for ${property.id}: ${String(err)}`);
     }
 
     this.logger.log(`✅ Property created: ${property.id}`);

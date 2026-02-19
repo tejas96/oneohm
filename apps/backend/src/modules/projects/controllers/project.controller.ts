@@ -33,8 +33,8 @@ import {
   UpdateProjectStatusDto,
 } from '../dto';
 import { ProjectListItemDto } from '../dto/projects/project-list-item.dto';
-import { ProjectService } from '../services/project.service';
 import { ProjectTeamService } from '../services/project-team.service';
+import { ProjectService } from '../services/project.service';
 
 /**
  * Project Controller

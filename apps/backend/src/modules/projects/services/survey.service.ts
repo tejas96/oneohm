@@ -64,7 +64,7 @@ export class SurveyService {
         await this.surveyRepository.repository.update(survey.id, { surveyCode });
       }
     } catch (err) {
-      this.logger.warn(`Failed to generate survey code for ${survey.id}: ${err}`);
+      this.logger.warn(`Failed to generate survey code for ${survey.id}: ${String(err)}`);
     }
 
     return this.surveyRepository.findById(survey.id, createDto.projectId);
