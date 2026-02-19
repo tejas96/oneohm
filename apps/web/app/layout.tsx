@@ -32,7 +32,7 @@ export default function RootLayout({
 }>): React.JSX.Element {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="min-h-screen bg-background font-sans antialiased">
+      <body className="min-h-screen bg-background text-foreground font-sans antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -296,23 +296,26 @@ export const navigationConfig: NavigationConfig = {
                 {
                   id: 'projects-active',
                   label: 'Active',
-                  href: `${ROUTES.PROJECTS.LIST}?status=active`,
-                  // badge: dynamically set via useNavigationCounts (projects.active)
+                  href: `${ROUTES.PROJECTS.LIST}?status=in_progress`,
+                  statusDot: 'active' as const,
                 },
                 {
                   id: 'projects-planning',
                   label: 'Planning',
                   href: `${ROUTES.PROJECTS.LIST}?status=planning`,
+                  statusDot: 'planning' as const,
                 },
                 {
                   id: 'projects-on-hold',
                   label: 'On Hold',
                   href: `${ROUTES.PROJECTS.LIST}?status=on_hold`,
+                  statusDot: 'on_hold' as const,
                 },
                 {
                   id: 'projects-completed',
                   label: 'Completed',
                   href: `${ROUTES.PROJECTS.LIST}?status=completed`,
+                  statusDot: 'completed_project' as const,
                 },
               ],
             },

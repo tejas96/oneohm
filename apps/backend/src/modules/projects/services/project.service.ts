@@ -1,5 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { ProjectPriority, ProjectStatus, QuoteStatus, TaskStatus } from '@oneohm-epc/shared-types';
+import {
+  MilestoneStatus,
+  ProjectPriority,
+  ProjectStatus,
+  QuoteStatus,
+  TaskStatus,
+} from '@oneohm-epc/shared-types';
 
 import { CustomerPropertyRepository } from '../../customers/repositories/customer-property.repository';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
@@ -161,7 +167,7 @@ export class ProjectService {
   }
 
   /**
-   * Find all projects with filters
+   * Find all projects with filters, computed fields, and payment summaries
    */
   async findAll(
     organizationId: string,
@@ -175,8 +181,15 @@ export class ProjectService {
       fromDate?: string;
       toDate?: string;
       search?: string;
+      sortBy?: string;
+      sortOrder?: 'ASC' | 'DESC';
     },
-  ): Promise<{ projects: ProjectEntity[]; total: number; page: number; limit: number }> {
+  ): Promise<{
+    projects: (ProjectEntity & { currentPhase: string | null; healthStatus: string | null; paymentSummary: { totalExpected: number; totalPaid: number } })[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const { projects, total } = await this.projectRepository.findAll(
       organizationId,
       page,
@@ -184,12 +197,55 @@ export class ProjectService {
       filters,
     );
 
-    return {
-      projects,
-      total,
-      page,
-      limit,
-    };
+    const projectIds = projects.map((p) => p.id);
+    const paymentMap = await this.projectRepository.getPaymentSummaries(projectIds);
+
+    const enriched = projects.map((project) => {
+      const currentPhase = this.computeCurrentPhase(project);
+      const healthStatus = this.computeHealthStatus(project);
+      const paymentSummary = paymentMap.get(project.id) ?? { totalExpected: 0, totalPaid: 0 };
+
+      return Object.assign(project, { currentPhase, healthStatus, paymentSummary });
+    });
+
+    return { projects: enriched, total, page, limit };
+  }
+
+  private computeCurrentPhase(project: ProjectEntity): string | null {
+    if (!project.milestones || project.milestones.length === 0) return null;
+
+    const inProgress = project.milestones.find(
+      (m) => m.status === MilestoneStatus.IN_PROGRESS,
+    );
+    if (inProgress) return inProgress.milestoneType;
+
+    const latest = [...project.milestones].sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    );
+    return latest[0]?.milestoneType ?? null;
+  }
+
+  private computeHealthStatus(project: ProjectEntity): 'on_track' | 'at_risk' | 'delayed' | null {
+    const inactiveStatuses = [
+      ProjectStatus.ON_HOLD,
+      ProjectStatus.COMPLETED,
+      ProjectStatus.CANCELLED,
+      ProjectStatus.DRAFT,
+    ];
+    if (inactiveStatuses.includes(project.status)) return null;
+    if (!project.endDate) return 'on_track';
+
+    const now = new Date();
+    const due = new Date(project.endDate);
+
+    if (due < now) return 'delayed';
+
+    const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
+    if (due.getTime() - now.getTime() < fourteenDaysMs && project.progressPercentage < 80) {
+      return 'at_risk';
+    }
+
+    return 'on_track';
   }
 
   /**

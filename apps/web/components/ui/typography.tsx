@@ -40,7 +40,7 @@ const typographyVariants = cva('', {
     variant: {
       // Headings - tracking-tight (per STYLE-GUIDE.md)
       h1: 'text-4xl font-semibold tracking-tight leading-snug',
-      h2: 'text-2xl font-bold tracking-tight leading-snug',
+      h2: 'text-2xl font-semibold tracking-tight leading-snug',
       h3: 'text-xl font-semibold tracking-tight leading-snug',
       h4: 'text-lg font-semibold tracking-tight leading-snug',
       h5: 'text-base font-semibold tracking-tight leading-snug',
@@ -91,11 +91,11 @@ const typographyVariants = cva('', {
     color: {
       // Default foreground (theme: foreground.DEFAULT #18181b)
       default: 'text-foreground',
-      // Secondary foreground (theme: foreground.secondary #71717a)
+      // Secondary foreground (theme: foreground.secondary #52525b)
       secondary: 'text-foreground-secondary',
-      // Muted foreground (theme: foreground.muted #52525b)
+      // Muted foreground (theme: foreground.muted #a1a1aa)
       muted: 'text-foreground-muted',
-      // Tertiary foreground (theme: foreground.tertiary #a1a1aa)
+      // Tertiary foreground (theme: foreground.tertiary #71717a)
       tertiary: 'text-foreground-tertiary',
       // Primary brand (theme: primary.DEFAULT #76c044)
       primary: 'text-primary',

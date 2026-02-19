@@ -77,9 +77,9 @@ const config: Config = {
   			},
   			foreground: {
   				DEFAULT: '#18181b',
-  				secondary: '#71717a',
-  				tertiary: '#a1a1aa',
-  				muted: '#52525b'
+  				secondary: '#52525b',
+  				tertiary: '#71717a',
+  				muted: '#a1a1aa'
   			},
   			border: {
   				DEFAULT: '#e4e4e7',
@@ -130,14 +130,15 @@ const config: Config = {
 				foreground: '#713f12'
 			}
   		},
-  		fontFamily: {
-  			sans: [
-  				'Inter',
-  				'system-ui',
-  				'-apple-system',
-  				'sans-serif'
-  			]
-  		},
+		fontFamily: {
+			sans: [
+				'var(--font-inter)',
+				'Inter',
+				'system-ui',
+				'-apple-system',
+				'sans-serif'
+			]
+		},
 		fontSize: {
 			'nano': [
 				'0.5rem',

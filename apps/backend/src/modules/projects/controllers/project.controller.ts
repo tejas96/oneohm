@@ -26,6 +26,7 @@ import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
 import { CreateProjectDto, ProjectResponseDto, UpdateProjectDto } from '../dto';
+import { ProjectListItemDto } from '../dto/projects/project-list-item.dto';
 import { ProjectService } from '../services/project.service';
 
 /**
@@ -122,6 +123,19 @@ export class ProjectController {
     type: String,
     description: 'Search by project number or name',
   })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    enum: ['name', 'createdAt', 'endDate', 'systemSizeKw', 'estimatedCost', 'progressPercentage', 'status'],
+    description: 'Sort field',
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Sort order',
+  })
   async findAll(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
@@ -134,7 +148,9 @@ export class ProjectController {
     @Query('fromDate') fromDate?: string,
     @Query('toDate') toDate?: string,
     @Query('search') search?: string,
-  ): Promise<PaginatedResponse<ProjectResponseDto>> {
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+  ): Promise<PaginatedResponse<ProjectListItemDto>> {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 20;
 
@@ -146,10 +162,12 @@ export class ProjectController {
       fromDate,
       toDate,
       search,
+      sortBy,
+      sortOrder,
     });
 
     return {
-      data: plainToInstance(ProjectResponseDto, result.projects, {
+      data: plainToInstance(ProjectListItemDto, result.projects, {
         excludeExtraneousValues: true,
       }),
       meta: {

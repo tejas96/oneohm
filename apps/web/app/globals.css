@@ -43,7 +43,7 @@ html {
 }
 
 body {
-  @apply text-sm leading-normal antialiased;
+  @apply text-sm leading-normal;
 }
 
 /* ============================================================================

@@ -222,7 +222,17 @@ export interface RouteParamTypes {
   
   // Routes with query filters
   '/quotes': { status?: 'draft' | 'sent' | 'accepted' | 'rejected' };
-  '/projects/list': { status?: 'active' | 'planning' | 'on_hold' | 'completed'; filter?: string };
+  '/projects/list': {
+    status?: 'draft' | 'planning' | 'approved' | 'in_progress' | 'testing' | 'on_hold' | 'completed' | 'cancelled';
+    priority?: 'low' | 'normal' | 'high' | 'urgent';
+    projectType?: 'residential' | 'residential_apartment' | 'commercial' | 'industrial';
+    search?: string;
+    sortBy?: 'name' | 'createdAt' | 'endDate' | 'systemSizeKw' | 'estimatedCost' | 'progressPercentage' | 'status';
+    sortOrder?: 'ASC' | 'DESC';
+    view?: 'card' | 'table';
+    page?: string;
+    filter?: string;
+  };
   '/inventory': { filter?: 'low-stock' };
   '/service': { status?: 'open' | 'closed' };
 }
