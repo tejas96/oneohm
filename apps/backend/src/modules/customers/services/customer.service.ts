@@ -9,6 +9,8 @@ import {
 } from '@nestjs/common';
 import { CustomerStatus, UserProfileType, UserStatus } from '@oneohm-epc/shared-types';
 
+import { generateEntityCode } from '../../../common/utils/code-generator.util';
+import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { UserRepository } from '../../users/repositories/user.repository';
 import { ProfileService } from '../../users/services/profile.service';
 import { AvailabilityResponseDto } from '../dto/check-availability.dto';
@@ -28,6 +30,7 @@ export class CustomerService {
 
   constructor(
     private readonly customerRepository: CustomerProfileRepository,
+    private readonly organizationRepository: OrganizationRepository,
     @Inject(forwardRef(() => ProfileService))
     private readonly profileService: ProfileService,
     @Inject(forwardRef(() => UserRepository))
@@ -87,6 +90,24 @@ export class CustomerService {
       },
       createdBy,
     })) as CustomerProfileEntity;
+
+    // Step 4: Generate human-readable code (e.g. CUST-ONEOHM_EPC-2026-0001)
+    try {
+      const org = await this.organizationRepository.findOneById(organizationId);
+      if (org) {
+        const customerCode = await generateEntityCode(
+          this.customerRepository.repository,
+          'customerCode',
+          'CUST',
+          org.code,
+          'customer_code',
+        );
+        await this.customerRepository.update(customer.id, { customerCode });
+        customer.customerCode = customerCode;
+      }
+    } catch (err) {
+      this.logger.warn(`Failed to generate customer code for ${customer.id}: ${err}`);
+    }
 
     this.logger.log(`✅ Customer profile created with auto-assigned role: ${customer.id}`);
     return customer;

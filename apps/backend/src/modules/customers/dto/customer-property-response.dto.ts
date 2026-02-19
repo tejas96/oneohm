@@ -28,6 +28,10 @@ export class CustomerPropertyResponseDto {
   @Expose()
   organizationId!: string;
 
+  @ApiPropertyOptional()
+  @Expose()
+  propertyCode?: string;
+
   // ==================== Property Details ====================
   @ApiPropertyOptional()
   @Expose()

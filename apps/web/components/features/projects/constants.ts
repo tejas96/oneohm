@@ -41,6 +41,7 @@ export const PROJECT_TYPE_LABELS: Record<string, string> = {
   residential_apartment: 'Residential Apt',
   commercial: 'Commercial',
   industrial: 'Industrial',
+  agricultural: 'Agricultural',
 };
 
 export const PROJECT_TYPE_BADGE_VARIANT: Record<string, string> = {
@@ -48,6 +49,7 @@ export const PROJECT_TYPE_BADGE_VARIANT: Record<string, string> = {
   residential_apartment: 'teal',
   commercial: 'purple',
   industrial: 'amber',
+  agricultural: 'green-subtle',
 };
 
 export const HEALTH_STATUS_LABELS: Record<string, string> = {
@@ -105,4 +107,5 @@ export const TYPE_FILTER_OPTIONS = [
   { value: 'residential_apartment', label: 'Residential Apt' },
   { value: 'commercial', label: 'Commercial' },
   { value: 'industrial', label: 'Industrial' },
+  { value: 'agricultural', label: 'Agricultural' },
 ] as const;

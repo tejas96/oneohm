@@ -25,9 +25,16 @@ import { plainToInstance } from 'class-transformer';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { CreateProjectDto, ProjectResponseDto, UpdateProjectDto } from '../dto';
+import {
+  ConvertFromQuoteDto,
+  CreateProjectDto,
+  ProjectResponseDto,
+  UpdateProjectDto,
+  UpdateProjectStatusDto,
+} from '../dto';
 import { ProjectListItemDto } from '../dto/projects/project-list-item.dto';
 import { ProjectService } from '../services/project.service';
+import { ProjectTeamService } from '../services/project-team.service';
 
 /**
  * Project Controller
@@ -40,7 +47,10 @@ import { ProjectService } from '../services/project.service';
 @Controller('projects')
 @UseGuards(JwtAuthGuard)
 export class ProjectController {
-  constructor(private readonly projectService: ProjectService) {}
+  constructor(
+    private readonly projectService: ProjectService,
+    private readonly teamService: ProjectTeamService,
+  ) {}
 
   /**
    * Create a new project
@@ -151,8 +161,8 @@ export class ProjectController {
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
   ): Promise<PaginatedResponse<ProjectListItemDto>> {
-    const pageNum = page ? parseInt(page, 10) : 1;
-    const limitNum = limit ? parseInt(limit, 10) : 20;
+    const pageNum = Math.max(1, page ? parseInt(page, 10) || 1 : 1);
+    const limitNum = Math.min(100, Math.max(1, limit ? parseInt(limit, 10) || 20 : 20));
 
     const result = await this.projectService.findAll(organizationId, pageNum, limitNum, {
       status,
@@ -177,6 +187,82 @@ export class ProjectController {
         totalPages: Math.ceil(result.total / limitNum),
       },
     };
+  }
+
+  /**
+   * Get team workload across all projects in the organization.
+   * Returns per-user: active project count, total tasks, in-progress tasks, not-completed tasks.
+   * NOTE: Must be defined before :id route.
+   */
+  @Get('team/workload')
+  @ApiOperation({
+    summary: 'Get team workload summary',
+    description:
+      'Returns per-user workload metrics across all projects for team assignment decisions',
+  })
+  async getTeamWorkload(
+    @OrganizationContext() organizationId: string,
+  ): Promise<
+    Array<{
+      userId: string;
+      firstName: string;
+      lastName: string;
+      activeProjectCount: number;
+      totalTaskCount: number;
+      inProgressTaskCount: number;
+      notCompletedTaskCount: number;
+    }>
+  > {
+    return this.teamService.getUserWorkloads(organizationId);
+  }
+
+  /**
+   * Get projects by customer
+   * NOTE: Must be defined before :id route to avoid NestJS treating "customer" as a UUID
+   */
+  @Get('customer/:customerId')
+  @ApiOperation({
+    summary: 'Get projects by customer',
+    description: 'Retrieve all projects for a specific customer',
+  })
+  async findByCustomer(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Param('customerId', ParseUUIDPipe) customerId: string,
+  ): Promise<ProjectResponseDto[]> {
+    const projects = await this.projectService.findByCustomer(customerId, organizationId);
+
+    return plainToInstance(ProjectResponseDto, projects, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  /**
+   * Convert quote to project
+   * NOTE: Must be defined before :id route to avoid NestJS treating "convert-from-quote" as a UUID
+   */
+  @Post('convert-from-quote/:quoteId')
+  @ApiOperation({
+    summary: 'Convert quote to project',
+    description:
+      'Create a new project from an approved/accepted quote. Note: One property can only have one project.',
+  })
+  async convertFromQuote(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Param('quoteId', ParseUUIDPipe) quoteId: string,
+    @Body() convertDto?: ConvertFromQuoteDto,
+  ): Promise<ProjectResponseDto> {
+    const project = await this.projectService.convertFromQuote(
+      quoteId,
+      organizationId,
+      currentUser.id,
+      convertDto,
+    );
+
+    return plainToInstance(ProjectResponseDto, project, {
+      excludeExtraneousValues: true,
+    });
   }
 
   /**
@@ -247,64 +333,13 @@ export class ProjectController {
     summary: 'Update project status',
     description: 'Change project status with validation',
   })
-  @ApiQuery({
-    name: 'status',
-    required: true,
-    enum: Object.values(ProjectStatus),
-    description: 'New status',
-  })
   async updateStatus(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('status') status: ProjectStatus,
+    @Body() statusDto: UpdateProjectStatusDto,
   ): Promise<ProjectResponseDto> {
-    const project = await this.projectService.updateStatus(id, organizationId, status);
-
-    return plainToInstance(ProjectResponseDto, project, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  /**
-   * Get projects by customer
-   */
-  @Get('customer/:customerId')
-  @ApiOperation({
-    summary: 'Get projects by customer',
-    description: 'Retrieve all projects for a specific customer',
-  })
-  async findByCustomer(
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
-    @Param('customerId', ParseUUIDPipe) customerId: string,
-  ): Promise<ProjectResponseDto[]> {
-    const projects = await this.projectService.findByCustomer(customerId, organizationId);
-
-    return plainToInstance(ProjectResponseDto, projects, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  /**
-   * Convert quote to project
-   */
-  @Post('convert-from-quote/:quoteId')
-  @ApiOperation({
-    summary: 'Convert quote to project',
-    description:
-      'Create a new project from an approved/accepted quote. Note: One property can only have one project.',
-  })
-  async convertFromQuote(
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
-    @Param('quoteId', ParseUUIDPipe) quoteId: string,
-  ): Promise<ProjectResponseDto> {
-    const project = await this.projectService.convertFromQuote(
-      quoteId,
-      organizationId,
-      currentUser.id,
-    );
+    const project = await this.projectService.updateStatus(id, organizationId, statusDto.status);
 
     return plainToInstance(ProjectResponseDto, project, {
       excludeExtraneousValues: true,

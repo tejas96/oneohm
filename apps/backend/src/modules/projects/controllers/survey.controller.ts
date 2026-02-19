@@ -25,6 +25,7 @@ import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
 import { CreateSurveyDto, SurveyResponseDto, UpdateSurveyDto } from '../dto';
+import { ProjectTeamGuard } from '../guards';
 import { SurveyService } from '../services/survey.service';
 
 /**
@@ -34,7 +35,7 @@ import { SurveyService } from '../services/survey.service';
 @ApiTags('Projects & Installation')
 @ApiBearerAuth()
 @Controller('projects/:projectId/surveys')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, ProjectTeamGuard)
 export class SurveyController {
   constructor(private readonly surveyService: SurveyService) {}
 
@@ -99,6 +100,29 @@ export class SurveyController {
     return plainToInstance(SurveyResponseDto, surveys, {
       excludeExtraneousValues: true,
     });
+  }
+
+  /**
+   * Get latest survey
+   * NOTE: Must be defined before :id route to avoid NestJS treating "latest" as a UUID
+   */
+  @Get('latest/survey')
+  @ApiOperation({
+    summary: 'Get latest survey',
+    description: 'Retrieve the most recent survey for a project',
+  })
+  async findLatest(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+  ): Promise<SurveyResponseDto | null> {
+    const survey = await this.surveyService.findLatest(projectId, organizationId);
+
+    return survey
+      ? plainToInstance(SurveyResponseDto, survey, {
+          excludeExtraneousValues: true,
+        })
+      : null;
   }
 
   /**
@@ -171,45 +195,23 @@ export class SurveyController {
     summary: 'Update survey status',
     description: 'Change survey status',
   })
-  @ApiQuery({
-    name: 'status',
-    required: true,
-    enum: Object.values(SiteSurveyStatus),
-    description: 'New status',
-  })
   async updateStatus(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('status') status: SiteSurveyStatus,
+    @Body() statusDto: { status: SiteSurveyStatus },
   ): Promise<SurveyResponseDto> {
-    const survey = await this.surveyService.updateStatus(id, projectId, organizationId, status);
+    const survey = await this.surveyService.updateStatus(
+      id,
+      projectId,
+      organizationId,
+      statusDto.status,
+    );
 
     return plainToInstance(SurveyResponseDto, survey, {
       excludeExtraneousValues: true,
     });
   }
 
-  /**
-   * Get latest survey
-   */
-  @Get('latest/survey')
-  @ApiOperation({
-    summary: 'Get latest survey',
-    description: 'Retrieve the most recent survey for a project',
-  })
-  async findLatest(
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
-    @Param('projectId', ParseUUIDPipe) projectId: string,
-  ): Promise<SurveyResponseDto | null> {
-    const survey = await this.surveyService.findLatest(projectId, organizationId);
-
-    return survey
-      ? plainToInstance(SurveyResponseDto, survey, {
-          excludeExtraneousValues: true,
-        })
-      : null;
-  }
 }

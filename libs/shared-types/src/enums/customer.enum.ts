@@ -30,6 +30,7 @@ export enum PropertyStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
   PENDING_VERIFICATION = 'pending_verification',
+  CONVERTED = 'converted',
 }
 
 /**

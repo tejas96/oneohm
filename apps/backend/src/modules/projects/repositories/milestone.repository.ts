@@ -13,7 +13,7 @@ import { ProjectMilestoneEntity } from '../entities/project-milestone.entity';
 export class MilestoneRepository {
   constructor(
     @InjectRepository(ProjectMilestoneEntity)
-    private readonly repository: Repository<ProjectMilestoneEntity>,
+    public readonly repository: Repository<ProjectMilestoneEntity>,
   ) {}
 
   /**

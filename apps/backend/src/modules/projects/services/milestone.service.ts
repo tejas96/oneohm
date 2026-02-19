@@ -1,6 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { MilestoneStatus, MilestoneType } from '@oneohm-epc/shared-types';
 
+import { generateEntityCode } from '../../../common/utils/code-generator.util';
+import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { CreateMilestoneDto, UpdateMilestoneDto } from '../dto';
 import { ProjectMilestoneEntity } from '../entities/project-milestone.entity';
 import { MilestoneRepository, ProjectRepository } from '../repositories';
@@ -12,9 +14,12 @@ import { ProjectService } from './project.service';
  */
 @Injectable()
 export class MilestoneService {
+  private readonly logger = new Logger(MilestoneService.name);
+
   constructor(
     private readonly milestoneRepository: MilestoneRepository,
     private readonly projectRepository: ProjectRepository,
+    private readonly organizationRepository: OrganizationRepository,
     private readonly projectService: ProjectService,
   ) {}
 
@@ -48,6 +53,23 @@ export class MilestoneService {
       dependencies: createDto.dependencies,
       deliverables: createDto.deliverables,
     });
+
+    // Generate human-readable code (e.g. MS-ONEOHM_EPC-2026-0001)
+    try {
+      const org = await this.organizationRepository.findOneById(organizationId);
+      if (org) {
+        const milestoneCode = await generateEntityCode(
+          this.milestoneRepository.repository,
+          'milestoneCode',
+          'MS',
+          org.code,
+          'milestone_code',
+        );
+        await this.milestoneRepository.repository.update(milestone.id, { milestoneCode });
+      }
+    } catch (err) {
+      this.logger.warn(`Failed to generate milestone code for ${milestone.id}: ${err}`);
+    }
 
     // Recalculate project progress
     await this.projectService.calculateProgress(createDto.projectId, organizationId);
