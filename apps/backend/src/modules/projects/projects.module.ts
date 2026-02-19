@@ -42,6 +42,7 @@ import {
 import { CustomersModule } from '../customers/customers.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { QuotesModule } from '../quotes/quotes.module';
+import { UsersModule } from '../users/users.module';
 
 /**
  * Projects Module
@@ -61,6 +62,7 @@ import { QuotesModule } from '../quotes/quotes.module';
     OrganizationsModule,
     QuotesModule,
     CustomersModule,
+    UsersModule,
   ],
   controllers: [
     ProjectController,

@@ -1,15 +1,19 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { TaskStatus } from '@oneohm-epc/shared-types';
 
+import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { type AddTeamMemberDto, type UpdateTeamMemberDto } from '../dto/project-team';
 import { type ProjectTeamMemberEntity } from '../entities';
 import { ProjectTaskRepository } from '../repositories/project-task.repository';
 import { ProjectTeamRepository } from '../repositories/project-team.repository';
+import { TaskTemplateRepository } from '../repositories/task-template.repository';
 
 /**
  * Internal input type that extends DTO with projectId from URL
  */
 interface AddTeamMemberInput extends AddTeamMemberDto {
   projectId: string;
+  organizationId: string;
 }
 
 /**
@@ -21,19 +25,19 @@ export class ProjectTeamService {
   constructor(
     private readonly teamRepository: ProjectTeamRepository,
     private readonly taskRepository: ProjectTaskRepository,
+    private readonly userRoleRepository: UserRoleRepository,
+    private readonly taskTemplateRepository: TaskTemplateRepository,
   ) {}
 
   /**
    * Add a new team member to a project
    */
   async addMember(dto: AddTeamMemberInput): Promise<ProjectTeamMemberEntity> {
-    // Check if user is already a team member
     const existing = await this.teamRepository.findByUserAndProject(dto.userId, dto.projectId);
     if (existing) {
       throw new BadRequestException('User is already a team member of this project');
     }
 
-    // If setting as project manager, remove existing project manager
     if (dto.isProjectManager) {
       const currentPM = await this.teamRepository.findProjectManager(dto.projectId);
       if (currentPM) {
@@ -50,8 +54,12 @@ export class ProjectTeamService {
       isProjectManager: dto.isProjectManager ?? false,
     });
 
-    // Auto-assign unassigned tasks with matching role
-    await this.autoAssignTasksByRole(dto.projectId, member.userId, dto.roleName);
+    await this.autoAssignTasksByRole(
+      dto.projectId,
+      member.userId,
+      dto.roleName,
+      dto.organizationId,
+    );
 
     return member;
   }
@@ -143,27 +151,111 @@ export class ProjectTeamService {
   }
 
   /**
-   * Auto-assign unassigned tasks to a new team member based on role
-   * This is called when a new member is added to the project
+   * Get workload summary for users across projects within an organization.
+   * Returns per-user: activeProjectCount, totalTaskCount, inProgressTaskCount, notCompletedTaskCount.
+   */
+  async getUserWorkloads(organizationId: string): Promise<
+    Array<{
+      userId: string;
+      firstName: string;
+      lastName: string;
+      activeProjectCount: number;
+      totalTaskCount: number;
+      inProgressTaskCount: number;
+      notCompletedTaskCount: number;
+    }>
+  > {
+    const results = await this.teamRepository.repository
+      .createQueryBuilder('tm')
+      .select('tm.userId', 'userId')
+      .addSelect('u.first_name', 'firstName')
+      .addSelect('u.last_name', 'lastName')
+      .addSelect('COUNT(DISTINCT tm.projectId)', 'activeProjectCount')
+      .addSelect(
+        `COALESCE(SUM(CASE WHEN t.id IS NOT NULL THEN 1 ELSE 0 END), 0)`,
+        'totalTaskCount',
+      )
+      .addSelect(
+        `COALESCE(SUM(CASE WHEN t.status = '${TaskStatus.IN_PROGRESS}' THEN 1 ELSE 0 END), 0)`,
+        'inProgressTaskCount',
+      )
+      .addSelect(
+        `COALESCE(SUM(CASE WHEN t.status NOT IN ('${TaskStatus.DONE}', '${TaskStatus.CANCELLED}') AND t.id IS NOT NULL THEN 1 ELSE 0 END), 0)`,
+        'notCompletedTaskCount',
+      )
+      .innerJoin('users', 'u', 'u.id = tm.userId')
+      .innerJoin('projects', 'p', 'p.id = tm.projectId AND p.deleted_at IS NULL')
+      .innerJoin(
+        'customer_properties',
+        'cp',
+        'cp.id = p.property_id AND cp.organization_id = :orgId',
+        { orgId: organizationId },
+      )
+      .leftJoin(
+        'project_tasks',
+        't',
+        't.assigned_to_user_id = tm.userId AND t.project_id = tm.projectId AND t.deleted_at IS NULL',
+      )
+      .where('tm.deletedAt IS NULL')
+      .groupBy('tm.userId')
+      .addGroupBy('u.first_name')
+      .addGroupBy('u.last_name')
+      .orderBy('"activeProjectCount"', 'DESC')
+      .getRawMany();
+
+    return results.map((r) => ({
+      userId: r.userId,
+      firstName: r.firstName,
+      lastName: r.lastName,
+      activeProjectCount: parseInt(r.activeProjectCount, 10),
+      totalTaskCount: parseInt(r.totalTaskCount, 10),
+      inProgressTaskCount: parseInt(r.inProgressTaskCount, 10),
+      notCompletedTaskCount: parseInt(r.notCompletedTaskCount, 10),
+    }));
+  }
+
+  /**
+   * Auto-assign unassigned tasks to a new team member based on role.
+   * Checks user's system roles (user_roles table) first, then falls back to project roleName.
+   * When multiple members match, assigns to the one with fewer tasks.
    */
   private async autoAssignTasksByRole(
     projectId: string,
-    _userId: string,
-    _roleName: string,
+    userId: string,
+    roleName: string,
+    organizationId: string,
   ): Promise<void> {
-    // Get all unassigned tasks for the project
-    const { data: tasks } = await this.taskRepository.findAll(projectId, 1, 1000, {});
+    const { data: tasks } = await this.taskRepository.findAll(projectId, 1, 10000, {});
+    const unassignedTasks = tasks.filter(
+      (t) => !t.assignedToUserId && t.taskTemplateId,
+    );
 
-    // Filter to unassigned tasks
-    const unassignedTasks = tasks.filter((task) => !task.assignedToUserId);
+    if (unassignedTasks.length === 0) return;
 
-    // For now, we could implement role-based auto-assign if task templates have defaultRoleCode
-    // This is a placeholder for future enhancement
-    // The logic would be: if task.template?.defaultRoleCode === roleName, assign to user
+    // Load all active templates for matching
+    const allTemplates = await this.taskTemplateRepository.findAllActive(organizationId);
+    const templateMap = new Map(allTemplates.map((t) => [t.id, t]));
 
-    // Log for debugging (remove in production)
-    if (unassignedTasks.length > 0) {
-      // Future: implement role-based auto-assignment
+    // Get the new member's system-level roles
+    const userRoles = await this.userRoleRepository.findByUserAndOrganization(
+      userId,
+      organizationId,
+    );
+    const systemRoleCodes = userRoles.map((ur) => ur.role.toLowerCase());
+    const projectRoleLower = roleName.toLowerCase();
+
+    for (const task of unassignedTasks) {
+      const template = templateMap.get(task.taskTemplateId!);
+      if (!template?.defaultRoleCode) continue;
+
+      const targetRole = template.defaultRoleCode.toLowerCase();
+
+      // Match via system roles OR project roleName
+      if (systemRoleCodes.includes(targetRole) || projectRoleLower === targetRole) {
+        await this.taskRepository.update(task.id, projectId, {
+          assignedToUserId: userId,
+        });
+      }
     }
   }
 }

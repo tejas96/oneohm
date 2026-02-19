@@ -1,6 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { SiteSurveyStatus } from '@oneohm-epc/shared-types';
 
+import { generateEntityCode } from '../../../common/utils/code-generator.util';
+import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { CreateSurveyDto, UpdateSurveyDto } from '../dto';
 import { SiteSurveyEntity } from '../entities/site-survey.entity';
 import { ProjectRepository, SurveyRepository } from '../repositories';
@@ -11,9 +13,12 @@ import { ProjectRepository, SurveyRepository } from '../repositories';
  */
 @Injectable()
 export class SurveyService {
+  private readonly logger = new Logger(SurveyService.name);
+
   constructor(
     private readonly surveyRepository: SurveyRepository,
     private readonly projectRepository: ProjectRepository,
+    private readonly organizationRepository: OrganizationRepository,
   ) {}
 
   /**
@@ -44,6 +49,23 @@ export class SurveyService {
       documents: createDto.documents,
       notes: createDto.notes,
     });
+
+    // Generate human-readable code (e.g. SSV-ONEOHM_EPC-2026-0001)
+    try {
+      const org = await this.organizationRepository.findOneById(organizationId);
+      if (org) {
+        const surveyCode = await generateEntityCode(
+          this.surveyRepository.repository,
+          'surveyCode',
+          'SSV',
+          org.code,
+          'survey_code',
+        );
+        await this.surveyRepository.repository.update(survey.id, { surveyCode });
+      }
+    } catch (err) {
+      this.logger.warn(`Failed to generate survey code for ${survey.id}: ${String(err)}`);
+    }
 
     return this.surveyRepository.findById(survey.id, createDto.projectId);
   }

@@ -33,6 +33,10 @@ export class SiteSurveyEntity extends BaseEntity {
   @JoinColumn({ name: 'surveyor_id' })
   surveyor?: UserEntity;
 
+  // ==================== Human-readable Code ====================
+  @Column({ name: 'survey_code', type: 'varchar', length: 50, nullable: true, unique: true })
+  surveyCode?: string;
+
   // ==================== Survey Info ====================
   @Column({ type: 'timestamp', name: 'survey_date' })
   surveyDate!: Date;

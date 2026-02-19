@@ -1,7 +1,7 @@
 'use client';
 
 import type { ProjectPriority, ProjectStatus } from '@oneohm-epc/shared-types';
-import { LayoutGrid, List, Plus, Search } from 'lucide-react';
+import { Inbox, LayoutGrid, List, Plus, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
@@ -17,7 +17,7 @@ import { projectColumns } from './project-table-columns';
 
 import { DataTable } from '@/components/shared/data-table/data-table';
 import { TablePagination } from '@/components/shared/data-table/pagination';
-import { ErrorState, NoData, NoSearchResults } from '@/components/shared/feedback/empty-state';
+import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -75,7 +75,9 @@ export function ProjectListPage() {
   const [currentPage, setCurrentPage] = useState(
     parseInt(url.get('page') || '1', 10),
   );
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [pageSize, setPageSize] = useState(
+    parseInt(url.get('pageSize') || String(DEFAULT_PAGE_SIZE), 10),
+  );
 
   const debouncedSearch = useDebounce(searchInput, 300);
 
@@ -137,7 +139,7 @@ export function ProjectListPage() {
     (size: number) => {
       setPageSize(size);
       setCurrentPage(1);
-      url.set({ page: '' });
+      url.set({ pageSize: size !== DEFAULT_PAGE_SIZE ? String(size) : '', page: '' });
     },
     [url],
   );
@@ -162,74 +164,104 @@ export function ProjectListPage() {
         </Button>
       </div>
 
-      {/* Filter Bar */}
-      <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {/* Status */}
-            <Select
-              value={statusFilter || 'all'}
-              onValueChange={(v) => handleFilterChange('status', v === 'all' ? '' : v)}
-            >
-              <SelectTrigger className="w-36 h-8 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_FILTER_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Priority */}
-            <Select
-              value={priorityFilter || 'all'}
-              onValueChange={(v) => handleFilterChange('priority', v === 'all' ? '' : v)}
-            >
-              <SelectTrigger className="w-32 h-8 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PRIORITY_FILTER_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Type */}
-            <Select
-              value={typeFilter || 'all'}
-              onValueChange={(v) => handleFilterChange('projectType', v === 'all' ? '' : v)}
-            >
-              <SelectTrigger className="w-32 h-8 text-sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TYPE_FILTER_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Search */}
-            <div className="relative">
-              <Search className="size-4 text-foreground-tertiary absolute left-3 top-1/2 -translate-y-1/2" />
-              <Input
-                placeholder="Search projects..."
-                value={searchInput}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-9 h-8 w-56 text-sm"
-              />
-            </div>
+      {/* Search & Filters Row */}
+      <div className="flex items-center gap-3">
+          {/* Search Bar */}
+          <div className="relative w-72">
+            <Input
+              placeholder="Search projects..."
+              value={searchInput}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              leftIcon={<Search className="size-icon-sm" />}
+              className="h-8 text-sm"
+            />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={() => handleSearchChange('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded"
+              >
+                <X className="size-3.5 text-foreground-tertiary" />
+              </button>
+            )}
           </div>
 
-          {/* View Toggle */}
-          <div className="flex items-center bg-muted rounded-lg p-0.5">
+          {/* Divider */}
+          <div className="h-5 w-px bg-border-light" />
+
+          {/* Status */}
+          <Select
+            value={statusFilter || 'all'}
+            onValueChange={(v) => handleFilterChange('status', v === 'all' ? '' : v)}
+          >
+            <SelectTrigger className="w-36 h-8 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_FILTER_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Priority */}
+          <Select
+            value={priorityFilter || 'all'}
+            onValueChange={(v) => handleFilterChange('priority', v === 'all' ? '' : v)}
+          >
+            <SelectTrigger className="w-32 h-8 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PRIORITY_FILTER_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Type */}
+          <Select
+            value={typeFilter || 'all'}
+            onValueChange={(v) => handleFilterChange('projectType', v === 'all' ? '' : v)}
+          >
+            <SelectTrigger className="w-32 h-8 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TYPE_FILTER_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Clear Filters */}
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setStatusFilter('');
+                setPriorityFilter('');
+                setTypeFilter('');
+                setSearchInput('');
+                setCurrentPage(1);
+                url.set({ status: '', priority: '', projectType: '', search: '', page: '' });
+              }}
+              className="text-foreground-secondary h-8"
+            >
+              <X className="mr-1 size-3" />
+              Clear
+            </Button>
+          )}
+
+          {/* Spacer + View Toggle */}
+          <div className="ml-auto flex items-center bg-muted rounded-lg p-0.5">
             <button
               type="button"
               onClick={() => handleViewChange('card')}
@@ -267,28 +299,44 @@ export function ProjectListPage() {
         <>
           {/* Empty States */}
           {!isLoading && projects.length === 0 && (
-            hasActiveFilters ? (
-              <NoSearchResults
-                searchTerm={debouncedSearch || undefined}
-                onClear={() => {
-                  setStatusFilter('');
-                  setPriorityFilter('');
-                  setTypeFilter('');
-                  setSearchInput('');
-                  setCurrentPage(1);
-                  url.set({ status: '', priority: '', projectType: '', search: '', page: '' });
-                }}
-              />
-            ) : (
-              <NoData
-                title="No projects yet"
-                description="Create your first project to start tracking solar installations."
-                action={{
-                  label: 'New Project',
-                  onClick: () => { router.push(ROUTES.PROJECTS.NEW); },
-                }}
-              />
-            )
+            <div className="bg-background rounded-lg border border-border-light overflow-hidden">
+              <div className="p-8">
+                {hasActiveFilters ? (
+                  <EmptyState
+                    title="No projects found"
+                    description={
+                      debouncedSearch
+                        ? `No results match your search and filters. Try adjusting your criteria.`
+                        : 'No projects match the selected filters. Try different filter options.'
+                    }
+                    icon={<Search className="w-full h-full" />}
+                    iconColor="muted"
+                    action={{
+                      label: 'Clear Filters',
+                      onClick: () => {
+                        setStatusFilter('');
+                        setPriorityFilter('');
+                        setTypeFilter('');
+                        setSearchInput('');
+                        setCurrentPage(1);
+                        url.set({ status: '', priority: '', projectType: '', search: '', page: '' });
+                      },
+                    }}
+                  />
+                ) : (
+                  <EmptyState
+                    title="No projects yet"
+                    description="Get started by creating your first project to track solar installations."
+                    icon={<Inbox className="w-full h-full" />}
+                    iconColor="primary"
+                    action={{
+                      label: 'New Project',
+                      onClick: () => { router.push(ROUTES.PROJECTS.NEW); },
+                    }}
+                  />
+                )}
+              </div>
+            </div>
           )}
 
           {/* Card View */}

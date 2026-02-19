@@ -22,6 +22,10 @@ export class SurveyResponseDto {
   @Expose()
   projectId!: string;
 
+  @ApiPropertyOptional({ example: 'SSV-ONEOHM_EPC-2026-0001' })
+  @Expose()
+  surveyCode?: string;
+
   @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()
   surveyorId?: string;

@@ -12,8 +12,9 @@ import {
   PROJECT_TYPE_LABELS,
 } from '../constants';
 import type { ProjectListItem } from '../hooks';
+import { TeamAvatarGroup } from './team-avatar-group';
 
-import { Avatar, AvatarFallback, AvatarGroup } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,7 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ROUTES } from '@/lib/config/routes';
-import { formatCurrency, formatCurrencyCompact, formatDate, formatRelativeDate, getInitials } from '@/lib/utils';
+import { formatCurrency, formatCurrencyCompact, formatDate, formatRelativeDate, formatSystemSize, getInitials } from '@/lib/utils';
 
 
 export const projectColumns: ColumnDef<ProjectListItem>[] = [
@@ -77,7 +78,7 @@ export const projectColumns: ColumnDef<ProjectListItem>[] = [
       const project = row.original;
       return (
         <div>
-          <div className="text-sm text-foreground font-medium">{project.systemSizeKw} kW</div>
+          <div className="text-sm text-foreground font-medium">{formatSystemSize(project.systemSizeKw)} kW</div>
           <div className="text-section text-foreground-tertiary">
             {PROJECT_TYPE_LABELS[project.projectType] ?? project.projectType}
           </div>
@@ -122,24 +123,9 @@ export const projectColumns: ColumnDef<ProjectListItem>[] = [
   {
     id: 'team',
     header: 'Team',
-    cell: ({ row }) => {
-      const members = row.original.teamMembers;
-      if (!members.length) return <span className="text-foreground-tertiary text-sm">-</span>;
-      return (
-        <AvatarGroup max={3} size="xs">
-          {members.map((m) => {
-            const fullName = `${m.firstName}${m.lastName ? ` ${m.lastName}` : ''}`;
-            return (
-              <Avatar key={m.id} size="xs">
-                <AvatarFallback size="xs" name={fullName}>
-                  {getInitials(fullName)}
-                </AvatarFallback>
-              </Avatar>
-            );
-          })}
-        </AvatarGroup>
-      );
-    },
+    cell: ({ row }) => (
+      <TeamAvatarGroup members={row.original.teamMembers} max={3} size="xs" />
+    ),
   },
   {
     accessorKey: 'endDate',

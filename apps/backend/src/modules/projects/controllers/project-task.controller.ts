@@ -28,7 +28,7 @@ import {
   TaskPriority,
   TaskStatus,
 } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
+import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate, OrganizationContext } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import { CurrentUser } from '../../auth/decorators';
@@ -40,6 +40,7 @@ import {
   ProjectTaskResponseDto,
   UpdateProjectTaskDto,
 } from '../dto';
+import { ProjectTeamGuard } from '../guards';
 import { ProjectTaskService } from '../services';
 
 /**
@@ -57,7 +58,7 @@ const TASK_CONSTANTS = {
 @ApiTags('Project Tasks')
 @ApiBearerAuth()
 @Controller('projects/:projectId/tasks')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, ProjectTeamGuard)
 export class ProjectTaskController {
   constructor(private readonly taskService: ProjectTaskService) {}
 
@@ -206,9 +207,10 @@ export class ProjectTaskController {
   @Get('generate-code')
   @ApiOperation({ summary: 'Generate next task code' })
   async generateCode(
+    @OrganizationContext() organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<{ code: string }> {
-    const code = await this.taskService.generateTaskCode(projectId);
+    const code = await this.taskService.generateTaskCode(projectId, organizationId);
     return { code };
   }
 

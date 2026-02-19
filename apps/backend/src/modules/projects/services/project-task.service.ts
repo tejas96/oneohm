@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
   type PaginatedResponse,
   type StatisticsResponse,
@@ -9,9 +9,12 @@ import {
   TaskStatus,
 } from '@oneohm-epc/shared-types';
 
+import { generateEntityCode } from '../../../common/utils/code-generator.util';
+import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { type CreateProjectTaskDto, type UpdateProjectTaskDto } from '../dto';
 import { type ProjectTaskEntity } from '../entities';
 import { ProjectTaskRepository } from '../repositories';
+import { ProjectTeamRepository } from '../repositories/project-team.repository';
 
 /**
  * Service Constants
@@ -27,7 +30,13 @@ const SERVICE_CONSTANTS = {
  */
 @Injectable()
 export class ProjectTaskService {
-  constructor(private readonly taskRepository: ProjectTaskRepository) {}
+  private readonly logger = new Logger(ProjectTaskService.name);
+
+  constructor(
+    private readonly taskRepository: ProjectTaskRepository,
+    private readonly teamRepository: ProjectTeamRepository,
+    private readonly organizationRepository: OrganizationRepository,
+  ) {}
 
   /**
    * Create a new project task
@@ -270,7 +279,7 @@ export class ProjectTaskService {
   }
 
   /**
-   * Assign task to user
+   * Assign task to user (validates user is a project team member)
    */
   async assignTask(
     id: string,
@@ -278,6 +287,12 @@ export class ProjectTaskService {
     assignedToUserId: string,
     currentUserId: string,
   ): Promise<ProjectTaskEntity> {
+    const isMember = await this.teamRepository.isTeamMember(assignedToUserId, projectId);
+    if (!isMember) {
+      throw new BadRequestException(
+        'Cannot assign task: user is not a team member of this project',
+      );
+    }
     return this.update(id, projectId, { assignedToUserId }, currentUserId);
   }
 
@@ -353,10 +368,25 @@ export class ProjectTaskService {
   }
 
   /**
-   * Generate next task code
+   * Generate next task code using global format TSK-{ORG}-{YEAR}-{SEQ}
    */
-  async generateTaskCode(projectId: string): Promise<string> {
-    return this.taskRepository.getNextTaskCode(projectId);
+  async generateTaskCode(_projectId: string, organizationId?: string): Promise<string> {
+    if (organizationId) {
+      try {
+        const org = await this.organizationRepository.findOneById(organizationId);
+        if (org) {
+          return generateEntityCode(
+            this.taskRepository.repository,
+            'code',
+            'TSK',
+            org.code,
+          );
+        }
+      } catch (err) {
+        this.logger.warn(`Failed to generate global task code, falling back: ${String(err)}`);
+      }
+    }
+    return this.taskRepository.getNextTaskCode(_projectId);
   }
 
   /**

@@ -13,7 +13,7 @@ import { SiteSurveyEntity } from '../entities/site-survey.entity';
 export class SurveyRepository {
   constructor(
     @InjectRepository(SiteSurveyEntity)
-    private readonly repository: Repository<SiteSurveyEntity>,
+    public readonly repository: Repository<SiteSurveyEntity>,
   ) {}
 
   /**

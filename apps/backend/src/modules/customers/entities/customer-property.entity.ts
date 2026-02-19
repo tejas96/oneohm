@@ -59,6 +59,10 @@ export class CustomerPropertyEntity extends BaseEntity {
   @OneToOne('ProjectEntity', 'property')
   project?: ProjectEntity;
 
+  // ==================== Human-readable Code ====================
+  @Column({ name: 'property_code', type: 'varchar', length: 50, nullable: true, unique: true })
+  propertyCode?: string;
+
   // ==================== PROPERTY DETAILS ====================
   @Column({ name: 'property_name', type: 'varchar', length: 255, nullable: true })
   propertyName?: string;

@@ -82,3 +82,10 @@ export function formatRelativeDate(date: string | Date): string {
   if (diffDays <= 7) return `Due in ${diffDays} day${diffDays === 1 ? '' : 's'}`;
   return formatDate(d, 'medium');
 }
+
+/** Format system size: strips trailing zeros (e.g. "7.00" → "7", "7.50" → "7.5") */
+export function formatSystemSize(kw: number | string): string {
+  const n = typeof kw === 'string' ? parseFloat(kw) : kw;
+  if (Number.isNaN(n)) return '0';
+  return n % 1 === 0 ? String(Math.round(n)) : String(parseFloat(n.toFixed(2)));
+}

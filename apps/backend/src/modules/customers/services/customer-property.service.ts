@@ -13,7 +13,9 @@ import {
   QuoteStatus,
 } from '@oneohm-epc/shared-types';
 
+import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { LoanApplicationRepository } from '../../loan-finance/repositories/loan-application.repository';
+import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { QuoteRepository } from '../../quotes/repositories/quote.repository';
 import { CreateCustomerPropertyDto } from '../dto/create-customer-property.dto';
 import type { PropertyDocumentDto } from '../dto/property-document.dto';
@@ -43,6 +45,7 @@ export class CustomerPropertyService {
   constructor(
     private readonly propertyRepository: CustomerPropertyRepository,
     private readonly customerRepository: CustomerProfileRepository,
+    private readonly organizationRepository: OrganizationRepository,
     private readonly quoteRepository: QuoteRepository,
     private readonly loanApplicationRepository: LoanApplicationRepository,
   ) {}
@@ -95,6 +98,24 @@ export class CustomerPropertyService {
     // If this property is primary, unset other properties
     if (isPrimary && existingProperties > 0) {
       await this.propertyRepository.setPrimary(property.id, createDto.customerId);
+    }
+
+    // Generate human-readable code (e.g. PROP-ONEOHM_EPC-2026-0001)
+    try {
+      const org = await this.organizationRepository.findOneById(organizationId);
+      if (org) {
+        const propertyCode = await generateEntityCode(
+          this.propertyRepository.repository,
+          'propertyCode',
+          'PROP',
+          org.code,
+          'property_code',
+        );
+        await this.propertyRepository.repository.update(property.id, { propertyCode });
+        property.propertyCode = propertyCode;
+      }
+    } catch (err) {
+      this.logger.warn(`Failed to generate property code for ${property.id}: ${String(err)}`);
     }
 
     this.logger.log(`✅ Property created: ${property.id}`);

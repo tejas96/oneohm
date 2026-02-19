@@ -18,7 +18,7 @@ import { ProjectEntity } from '../entities/project.entity';
 export class ProjectRepository {
   constructor(
     @InjectRepository(ProjectEntity)
-    private readonly repository: Repository<ProjectEntity>,
+    public readonly repository: Repository<ProjectEntity>,
   ) {}
 
   /**

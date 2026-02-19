@@ -22,6 +22,10 @@ export class CustomerResponseDto {
   @Expose()
   userId?: string;
 
+  @ApiPropertyOptional()
+  @Expose()
+  customerCode?: string;
+
   // ==================== Personal Info ====================
   @ApiProperty()
   @Expose()

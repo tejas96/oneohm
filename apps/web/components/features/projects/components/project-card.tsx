@@ -14,21 +14,15 @@ import {
   PROJECT_TYPE_LABELS,
 } from '../constants';
 import type { ProjectListItem } from '../hooks';
+import { TeamAvatarGroup } from './team-avatar-group';
 
-import { Avatar, AvatarFallback, AvatarGroup } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ROUTES } from '@/lib/config/routes';
-import { formatCurrency, formatDate, formatRelativeDate, getInitials } from '@/lib/utils';
+import { formatCurrency, formatDate, formatRelativeDate, formatSystemSize } from '@/lib/utils';
 
 
 interface ProjectCardProps {
   project: ProjectListItem;
-}
-
-function formatSystemSize(kw: number | string): string {
-  const n = typeof kw === 'string' ? parseFloat(kw) : kw;
-  if (isNaN(n)) return '0';
-  return n % 1 === 0 ? String(Math.round(n)) : String(parseFloat(n.toFixed(2)));
 }
 
 function getProgressBarColor(project: ProjectListItem): string {
@@ -160,34 +154,19 @@ export function ProjectCard({ project }: ProjectCardProps) {
       <div className="mb-3">
         <div className="flex items-center justify-between text-2xs mb-1">
           <span className="text-foreground-tertiary">Progress</span>
-          <span className="font-medium text-foreground-secondary">{project.progressPercentage}%</span>
+          <span className="font-medium text-foreground-secondary">{Math.min(100, Math.max(0, project.progressPercentage))}%</span>
         </div>
         <div className="h-1.5 w-full rounded-full bg-border overflow-hidden">
           <div
             className={`h-full rounded-full transition-all duration-300 ${progressBarColor}`}
-            style={{ width: `${project.progressPercentage}%` }}
+            style={{ width: `${Math.min(100, Math.max(0, project.progressPercentage))}%` }}
           />
         </div>
       </div>
 
       {/* Row 7: Team & Due date */}
       <div className="flex items-center justify-between pt-3 border-t border-border-light">
-        {project.teamMembers.length > 0 ? (
-          <AvatarGroup max={3} size="xs">
-            {project.teamMembers.map((member) => {
-              const fullName = `${member.firstName}${member.lastName ? ` ${member.lastName}` : ''}`;
-              return (
-                <Avatar key={member.id} size="xs">
-                  <AvatarFallback size="xs" name={fullName}>
-                    {getInitials(fullName)}
-                  </AvatarFallback>
-                </Avatar>
-              );
-            })}
-          </AvatarGroup>
-        ) : (
-          <span className="text-2xs text-foreground-tertiary">No team</span>
-        )}
+        <TeamAvatarGroup members={project.teamMembers} max={3} size="xs" />
         <div className="text-right">
           <div className="text-2xs text-foreground-tertiary">{dueDateDisplay.label}</div>
           <div className={`text-sm font-medium ${dueDateDisplay.className}`}>{dueDateDisplay.value}</div>

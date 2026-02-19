@@ -41,6 +41,10 @@ export class CustomerProfileEntity extends BaseEntity {
   @OneToMany(() => FollowupEntity, (followup) => followup.customer)
   followups?: FollowupEntity[];
 
+  // ==================== Human-readable Code ====================
+  @Column({ name: 'customer_code', type: 'varchar', length: 50, nullable: true, unique: true })
+  customerCode?: string;
+
   // ==================== Personal Info ====================
   @Column({ name: 'first_name', type: 'varchar', length: 100 })
   firstName!: string;

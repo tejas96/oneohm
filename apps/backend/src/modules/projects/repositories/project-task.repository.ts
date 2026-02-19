@@ -22,7 +22,7 @@ const REPOSITORY_CONSTANTS = {
 export class ProjectTaskRepository {
   constructor(
     @InjectRepository(ProjectTaskEntity)
-    private readonly repository: Repository<ProjectTaskEntity>,
+    public readonly repository: Repository<ProjectTaskEntity>,
     private readonly dataSource: DataSource,
   ) {}
 

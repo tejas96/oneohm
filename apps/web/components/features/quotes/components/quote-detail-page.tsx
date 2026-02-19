@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
+import { useAcceptQuote, useRejectQuote, useConvertToProject } from '../hooks';
+
 import { Timeline } from '@/components/shared';
 import {
   Badge,
@@ -117,32 +119,71 @@ const STATUS_VARIANTS: Record<QuoteStatus, 'muted' | 'info' | 'success' | 'warni
 export function QuoteDetailPage({ quoteId }: QuoteDetailPageProps): React.JSX.Element {
   const router = useRouter();
   const quote = mockQuote; // TODO: Phase 2 - Fetch by ID
-  void quoteId; // TODO: Phase 2 - Use to fetch quote
-  void router; // TODO: Phase 2 - Use for navigation
 
   const [acceptModalOpen, setAcceptModalOpen] = React.useState(false);
   const [rejectModalOpen, setRejectModalOpen] = React.useState(false);
   const [convertModalOpen, setConvertModalOpen] = React.useState(false);
   const [rejectionReason, setRejectionReason] = React.useState('');
 
+  const acceptMutation = useAcceptQuote();
+  const rejectMutation = useRejectQuote();
+  const convertMutation = useConvertToProject();
+
   const handleAccept = () => {
-    console.log('Accept quote:', quoteId);
-    showToast.success('Quote accepted');
-    setAcceptModalOpen(false);
+    acceptMutation.mutate(
+      { quoteId },
+      {
+        onSuccess: () => {
+          showToast.success('Quote accepted successfully');
+          setAcceptModalOpen(false);
+        },
+        onError: (error) => {
+          showToast.error(
+            (error.response?.data as { message?: string })?.message || 'Failed to accept quote',
+          );
+        },
+      },
+    );
   };
 
   const handleReject = () => {
-    console.log('Reject quote:', quoteId, rejectionReason);
-    showToast.success('Quote marked as rejected');
-    setRejectModalOpen(false);
-    setRejectionReason('');
+    if (!rejectionReason.trim()) {
+      showToast.error('Please provide a reason for rejection');
+      return;
+    }
+    rejectMutation.mutate(
+      { quoteId, rejectionReason },
+      {
+        onSuccess: () => {
+          showToast.success('Quote rejected');
+          setRejectModalOpen(false);
+          setRejectionReason('');
+        },
+        onError: (error) => {
+          showToast.error(
+            (error.response?.data as { message?: string })?.message || 'Failed to reject quote',
+          );
+        },
+      },
+    );
   };
 
   const handleConvertToProject = () => {
-    console.log('Convert to project:', quoteId);
-    showToast.success('Converting to project...');
-    setConvertModalOpen(false);
-    // router.push('/projects/new?quoteId=' + quoteId);
+    convertMutation.mutate(
+      { quoteId },
+      {
+        onSuccess: () => {
+          showToast.success('Project created successfully!');
+          setConvertModalOpen(false);
+          router.push('/projects');
+        },
+        onError: (error) => {
+          showToast.error(
+            (error.response?.data as { message?: string })?.message || 'Failed to convert to project',
+          );
+        },
+      },
+    );
   };
 
   const isExpired = new Date(quote.validUntil) < new Date();
@@ -439,8 +480,10 @@ export function QuoteDetailPage({ quoteId }: QuoteDetailPageProps): React.JSX.El
             </p>
           </DialogBody>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAcceptModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleAccept}>Confirm Acceptance</Button>
+            <Button variant="outline" onClick={() => setAcceptModalOpen(false)} disabled={acceptMutation.isPending}>Cancel</Button>
+            <Button onClick={handleAccept} disabled={acceptMutation.isPending}>
+              {acceptMutation.isPending ? 'Accepting...' : 'Confirm Acceptance'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -462,8 +505,10 @@ export function QuoteDetailPage({ quoteId }: QuoteDetailPageProps): React.JSX.El
             />
           </DialogBody>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectModalOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleReject}>Reject Quote</Button>
+            <Button variant="outline" onClick={() => setRejectModalOpen(false)} disabled={rejectMutation.isPending}>Cancel</Button>
+            <Button variant="destructive" onClick={handleReject} disabled={rejectMutation.isPending}>
+              {rejectMutation.isPending ? 'Rejecting...' : 'Reject Quote'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -486,13 +531,15 @@ export function QuoteDetailPage({ quoteId }: QuoteDetailPageProps): React.JSX.El
               <ul className="text-sm text-foreground-secondary space-y-1 ml-6 list-disc">
                 <li>Create a new project with quote details</li>
                 <li>Link the quote to the project</li>
-                <li>Mark the property as "In Progress"</li>
+                <li>Mark the property as &quot;Converted&quot;</li>
               </ul>
             </div>
           </DialogBody>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setConvertModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleConvertToProject}>Create Project</Button>
+            <Button variant="outline" onClick={() => setConvertModalOpen(false)} disabled={convertMutation.isPending}>Cancel</Button>
+            <Button onClick={handleConvertToProject} disabled={convertMutation.isPending}>
+              {convertMutation.isPending ? 'Creating Project...' : 'Create Project'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
