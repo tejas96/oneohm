@@ -100,11 +100,11 @@ export default function AuthLayout({ children }: AuthLayoutProps): React.JSX.Ele
           <div className="mb-10">
             <div className="mb-6">
               <Image
-                src="/oneohmlogo.png"
+                src="/white-oneohm-logo.png"
                 alt="OneOhm - Solar EPC Platform"
                 width={180}
                 height={56}
-                className="h-14 w-auto object-contain brightness-0 invert opacity-95"
+                className="h-14 w-auto object-contain"
                 priority
               />
             </div>

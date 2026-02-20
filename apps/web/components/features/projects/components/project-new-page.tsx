@@ -1,17 +1,24 @@
 'use client';
 
-/**
- * ProjectNewPage
- * Create new project form.
- * TODO: Implement project creation form with react-hook-form + Zod schema.
- */
+import { Suspense } from 'react';
+
+import { ProjectCreatePage } from './project-create-wizard';
+
+import { Spinner } from '@/components/ui';
+
 export function ProjectNewPage(): React.JSX.Element {
   return (
-    <div className="p-4">
-      <h1 className="text-lg font-semibold text-foreground">New Project</h1>
-      <p className="text-sm text-foreground-secondary mt-1">
-        Create a new project
-      </p>
+    <div className="mx-auto max-w-5xl p-4">
+      <Suspense
+        fallback={
+          <div className="flex items-center gap-2">
+            <Spinner size="sm" />
+            <span className="text-sm text-foreground-secondary">Loading...</span>
+          </div>
+        }
+      >
+        <ProjectCreatePage />
+      </Suspense>
     </div>
   );
 }

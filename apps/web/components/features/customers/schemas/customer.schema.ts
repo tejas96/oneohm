@@ -43,13 +43,13 @@ export const createCustomerProfileSchema = z.object({
     .string()
     .length(6, 'Pincode must be 6 digits')
     .regex(/^\d{6}$/, 'Pincode must contain only digits'),
-  leadSource: z.nativeEnum(LeadSource).optional(),
+  leadSource: z.nativeEnum(LeadSource).nullish(),
   referralCode: z
     .string()
     .max(50, 'Referral code too long')
     .optional()
     .or(z.literal('')),
-  status: z.nativeEnum(CustomerStatus).optional(),
+  status: z.nativeEnum(CustomerStatus).nullish(),
 });
 
 export type CreateCustomerProfileFormData = z.infer<typeof createCustomerProfileSchema>;

@@ -1,12 +1,12 @@
 'use client';
 
 import { QuoteStatus } from '@oneohm-epc/shared-types';
-import { CheckCircle, Copy, Download, FileText, History, Mail, Phone, Send, XCircle, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Copy, Download, FileText, History, Mail, Phone, Send, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
-import { useAcceptQuote, useRejectQuote, useConvertToProject } from '../hooks';
+import { useAcceptQuote, useRejectQuote } from '../hooks';
 
 import { Timeline } from '@/components/shared';
 import {
@@ -122,12 +122,10 @@ export function QuoteDetailPage({ quoteId }: QuoteDetailPageProps): React.JSX.El
 
   const [acceptModalOpen, setAcceptModalOpen] = React.useState(false);
   const [rejectModalOpen, setRejectModalOpen] = React.useState(false);
-  const [convertModalOpen, setConvertModalOpen] = React.useState(false);
   const [rejectionReason, setRejectionReason] = React.useState('');
 
   const acceptMutation = useAcceptQuote();
   const rejectMutation = useRejectQuote();
-  const convertMutation = useConvertToProject();
 
   const handleAccept = () => {
     acceptMutation.mutate(
@@ -169,21 +167,7 @@ export function QuoteDetailPage({ quoteId }: QuoteDetailPageProps): React.JSX.El
   };
 
   const handleConvertToProject = () => {
-    convertMutation.mutate(
-      { quoteId },
-      {
-        onSuccess: () => {
-          showToast.success('Project created successfully!');
-          setConvertModalOpen(false);
-          router.push('/projects');
-        },
-        onError: (error) => {
-          showToast.error(
-            (error.response?.data as { message?: string })?.message || 'Failed to convert to project',
-          );
-        },
-      },
-    );
+    router.push(`/projects/new?quoteId=${quoteId}`);
   };
 
   const isExpired = new Date(quote.validUntil) < new Date();
@@ -237,7 +221,7 @@ export function QuoteDetailPage({ quoteId }: QuoteDetailPageProps): React.JSX.El
             </>
           )}
           {quote.status === QuoteStatus.ACCEPTED && (
-            <Button size="sm" onClick={() => setConvertModalOpen(true)}>
+            <Button size="sm" onClick={handleConvertToProject}>
               Convert to Project
             </Button>
           )}
@@ -513,36 +497,6 @@ export function QuoteDetailPage({ quoteId }: QuoteDetailPageProps): React.JSX.El
         </DialogContent>
       </Dialog>
 
-      {/* Convert to Project Modal */}
-      <Dialog open={convertModalOpen} onOpenChange={setConvertModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Convert to Project</DialogTitle>
-            <DialogDescription>
-              Create a new project from this accepted quote.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogBody>
-            <div className="p-4 bg-muted rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="size-icon-sm text-warning" />
-                <span className="text-sm font-medium">This action will:</span>
-              </div>
-              <ul className="text-sm text-foreground-secondary space-y-1 ml-6 list-disc">
-                <li>Create a new project with quote details</li>
-                <li>Link the quote to the project</li>
-                <li>Mark the property as &quot;Converted&quot;</li>
-              </ul>
-            </div>
-          </DialogBody>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConvertModalOpen(false)} disabled={convertMutation.isPending}>Cancel</Button>
-            <Button onClick={handleConvertToProject} disabled={convertMutation.isPending}>
-              {convertMutation.isPending ? 'Creating Project...' : 'Create Project'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

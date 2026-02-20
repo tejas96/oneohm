@@ -204,7 +204,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
         city: customer.city ?? '',
         state: customer.state ?? '',
         pincode: customer.pincode ?? '',
-        leadSource: customer.leadSource as LeadSource | undefined,
+        leadSource: customer.leadSource ? (customer.leadSource as LeadSource) : undefined,
         referralCode: customer.referralCode ?? '',
         status: customer.status,
       }
@@ -259,7 +259,8 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
           ...data,
           phone: `+91${data.phone}`,
           alternatePhone: data.alternatePhone ? `+91${data.alternatePhone}` : undefined,
-          ...(data.status != null && { status: data.status }),
+          leadSource: data.leadSource ?? undefined,
+          status: data.status ?? undefined,
         };
         await updateCustomer.mutateAsync({ id: customerId, data: updatePayload });
         showToast.success('Customer updated successfully');

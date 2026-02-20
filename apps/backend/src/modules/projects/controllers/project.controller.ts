@@ -28,6 +28,7 @@ import type { CurrentUserType } from '../../auth/types';
 import {
   ConvertFromQuoteDto,
   CreateProjectDto,
+  InitiateProjectDto,
   ProjectResponseDto,
   UpdateProjectDto,
   UpdateProjectStatusDto,
@@ -233,6 +234,32 @@ export class ProjectController {
     const projects = await this.projectService.findByCustomer(customerId, organizationId);
 
     return plainToInstance(ProjectResponseDto, projects, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  /**
+   * Initiate a new project from a property (no quote required)
+   * NOTE: Must be defined before :id route
+   */
+  @Post('initiate')
+  @ApiOperation({
+    summary: 'Initiate a new project from a property',
+    description:
+      'Creates a new project from a property without requiring a quote. Uses default milestones.',
+  })
+  async initiateProject(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Body() initiateDto: InitiateProjectDto,
+  ): Promise<ProjectResponseDto> {
+    const project = await this.projectService.initiateProject(
+      organizationId,
+      currentUser.id,
+      initiateDto,
+    );
+
+    return plainToInstance(ProjectResponseDto, project, {
       excludeExtraneousValues: true,
     });
   }
