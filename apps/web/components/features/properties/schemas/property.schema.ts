@@ -44,7 +44,7 @@ export const createPropertySchema = z.object({
     .max(6, 'Pincode must be 6 digits')
     .regex(/^\d{6}$/, 'Pincode must be 6 digits'),
 
-  // Electricity Details
+  // Electricity Details (all optional)
   consumerNumber: z
     .string()
     .max(50, 'Consumer number too long')
@@ -52,11 +52,10 @@ export const createPropertySchema = z.object({
     .or(z.literal('')),
   discomName: z
     .string()
-    .min(1, 'DISCOM name is required')
-    .max(100, 'DISCOM name too long'),
-  connectionType: z.nativeEnum(ConnectionType, {
-    errorMap: () => ({ message: 'Please select a connection type' }),
-  }),
+    .max(100, 'DISCOM name too long')
+    .optional()
+    .or(z.literal('')),
+  connectionType: z.nativeEnum(ConnectionType).optional(),
   sanctionedLoad: z
     .number({ coerce: true })
     .min(0.1, 'Sanctioned load must be greater than 0')

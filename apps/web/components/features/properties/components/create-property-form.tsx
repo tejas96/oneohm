@@ -101,6 +101,12 @@ export function CreatePropertyForm({
     ? customer
     : customers.find((c) => c.id === selectedCustomerId);
 
+  // Resolve customer for address prefill (available at mount via parent's loading guard)
+  const resolvedCustomer = selectedCustomer ?? customer;
+  const customerStateMatch = resolvedCustomer?.state
+    ? INDIAN_STATES.find((s) => s.toLowerCase() === resolvedCustomer.state?.toLowerCase())
+    : undefined;
+
   // Document collection state
   const [documents, setDocuments] = React.useState<CapturedDocument[]>([]);
   const [isUploadingDocs, setIsUploadingDocs] = React.useState(false);
@@ -112,10 +118,10 @@ export function CreatePropertyForm({
       propertyName: '',
       propertyType: undefined,
       isPrimary: false,
-      address: '',
-      city: '',
-      state: '',
-      pincode: '',
+      address: resolvedCustomer?.address || '',
+      city: resolvedCustomer?.city || '',
+      state: customerStateMatch || '',
+      pincode: resolvedCustomer?.pincode || '',
       consumerNumber: '',
       discomName: '',
       connectionType: undefined,
@@ -439,7 +445,7 @@ export function CreatePropertyForm({
               <div className="space-y-2">
                 <Label htmlFor="state">State</Label>
                 <Select
-                  value={form.watch('state') ?? ''}
+                  value={form.watch('state') || undefined}
                   onValueChange={(v) => form.setValue('state', v)}
                 >
                   <SelectTrigger id="state">
@@ -467,7 +473,7 @@ export function CreatePropertyForm({
           </CardContent>
         </Card>
 
-        {/* Electricity Details */}
+        {/* Electricity Details (all optional) */}
         <Card>
           <CardHeader>
             <CardTitle className="text-sm">Electricity Details</CardTitle>
@@ -475,9 +481,9 @@ export function CreatePropertyForm({
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="discomName">DISCOM Name *</Label>
+                <Label htmlFor="discomName">DISCOM Name</Label>
                 <Select
-                  value={form.watch('discomName') ?? ''}
+                  value={form.watch('discomName') || undefined}
                   onValueChange={(v) => form.setValue('discomName', v)}
                 >
                   <SelectTrigger id="discomName">
@@ -491,9 +497,6 @@ export function CreatePropertyForm({
                     ))}
                   </SelectContent>
                 </Select>
-                {form.formState.errors.discomName && (
-                  <p className="text-xs text-error">{form.formState.errors.discomName.message}</p>
-                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="consumerNumber">Consumer Number</Label>
@@ -502,7 +505,7 @@ export function CreatePropertyForm({
             </div>
 
             <div className="space-y-2">
-              <Label>Connection Type *</Label>
+              <Label>Connection Type</Label>
               <RadioCardGroup
                 value={form.watch('connectionType')}
                 onValueChange={(v) => form.setValue('connectionType', v as ConnectionType)}
@@ -512,18 +515,15 @@ export function CreatePropertyForm({
                   <RadioCard key={type.value} value={type.value} title={type.label} />
                 ))}
               </RadioCardGroup>
-              {form.formState.errors.connectionType && (
-                <p className="text-xs text-error">{form.formState.errors.connectionType.message}</p>
-              )}
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="sanctionedLoad">Sanctioned Load (kW) *</Label>
+                <Label htmlFor="sanctionedLoad">Sanctioned Load (kW)</Label>
                 <Input
                   id="sanctionedLoad"
                   type="number"
-                  step="0.1"
+                  step="1"
                   {...form.register('sanctionedLoad', { valueAsNumber: true })}
                   error={form.formState.errors.sanctionedLoad?.message}
                 />

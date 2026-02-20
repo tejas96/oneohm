@@ -84,13 +84,15 @@ export function PropertySelectModal({
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Select Property for Quote</DialogTitle>
-          <DialogDescription>
-            Choose the property you want to create a quote for.
-          </DialogDescription>
+          <div className="space-y-1">
+            <DialogTitle>Select Property for Quote</DialogTitle>
+            <DialogDescription>
+              Choose the property you want to create a quote for.
+            </DialogDescription>
+          </div>
         </DialogHeader>
 
-        <div className="max-h-80 space-y-2 overflow-y-auto py-4">
+        <div className="max-h-80 space-y-2 overflow-y-auto px-4 py-4">
           {properties.length === 0 ? (
             <div className="py-8 text-center text-foreground-secondary">
               <Building2 className="mx-auto mb-3 size-12 text-foreground-tertiary" />
