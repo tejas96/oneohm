@@ -33,6 +33,11 @@ export class ConvertFromQuoteDto {
   @IsString()
   name?: string;
 
+  @ApiPropertyOptional({ description: 'Project description' })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
   @ApiPropertyOptional({ description: 'Project Manager user ID' })
   @IsOptional()
   @IsUUID()

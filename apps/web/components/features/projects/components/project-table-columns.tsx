@@ -98,6 +98,7 @@ export const projectColumns: ColumnDef<ProjectListItem>[] = [
   {
     accessorKey: 'currentPhase',
     header: 'Phase',
+    enableSorting: false,
     cell: ({ row }) => {
       const phase = row.original.currentPhase;
       if (!phase) return <span className="text-foreground-tertiary text-sm">-</span>;
@@ -111,6 +112,7 @@ export const projectColumns: ColumnDef<ProjectListItem>[] = [
   {
     accessorKey: 'status',
     header: 'Status',
+    enableSorting: false,
     cell: ({ row }) => {
       const status = row.original.status;
       return (

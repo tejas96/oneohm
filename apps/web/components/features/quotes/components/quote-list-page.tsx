@@ -341,6 +341,7 @@ export function QuoteListPage(): JSX.Element {
       {
         accessorKey: 'propertyName',
         header: 'Property',
+        enableSorting: false,
         cell: ({ row }) => (
           <span className="text-sm text-foreground-secondary">
             {row.original.propertyName || '-'}
@@ -376,7 +377,7 @@ export function QuoteListPage(): JSX.Element {
       },
       {
         accessorKey: 'status',
-        header: () => <SortableHeader field={QuoteSortField.STATUS} label="Status" />,
+        header: 'Status',
         enableSorting: false,
         cell: ({ row }) => (
           <Badge
