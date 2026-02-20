@@ -10,6 +10,7 @@ import {
   QuoteStatus,
   TaskStatus,
 } from '@oneohm-epc/shared-types';
+import { DataSource } from 'typeorm';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { CustomerPropertyRepository } from '../../customers/repositories/customer-property.repository';
@@ -17,6 +18,7 @@ import { OrganizationRepository } from '../../organizations/repositories/organiz
 import { QuoteService } from '../../quotes/services/quote.service';
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { ConvertFromQuoteDto, CreateProjectDto, UpdateProjectDto } from '../dto';
+import type { InitiateProjectDto } from '../dto/projects/initiate-project.dto';
 import { ProjectEntity } from '../entities/project.entity';
 import {
   MilestoneRepository,
@@ -33,6 +35,15 @@ const STAGE_TO_MILESTONE_TYPE: Partial<Record<PaymentMilestoneStage, MilestoneTy
   [PaymentMilestoneStage.COMMISSIONING]: 'commissioning' as MilestoneType,
   [PaymentMilestoneStage.NET_METERING]: 'handover' as MilestoneType,
 };
+
+const DEFAULT_PROJECT_MILESTONES: Array<{ name: string; type: MilestoneType; order: number }> = [
+  { name: 'Site Survey & Design', type: 'site_survey' as MilestoneType, order: 1 },
+  { name: 'Permits & Approvals', type: 'permits' as MilestoneType, order: 2 },
+  { name: 'Material Procurement', type: 'material_procurement' as MilestoneType, order: 3 },
+  { name: 'Installation', type: 'installation' as MilestoneType, order: 4 },
+  { name: 'Commissioning & Testing', type: 'commissioning' as MilestoneType, order: 5 },
+  { name: 'Handover', type: 'handover' as MilestoneType, order: 6 },
+];
 
 /**
  * Project Service
@@ -57,6 +68,7 @@ export class ProjectService {
     private readonly taskRepository: ProjectTaskRepository,
     private readonly teamRepository: ProjectTeamRepository,
     private readonly userRoleRepository: UserRoleRepository,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -292,18 +304,18 @@ export class ProjectService {
   }
 
   /**
-   * Convert a quote to a project (full orchestrated flow)
+   * Convert a quote to a project (full orchestrated flow, transactional)
    *
    * Steps:
    * 1. Validate quote (must be ACCEPTED with propertyId)
    * 2. Check OneToOne constraint (property -> project)
    * 3. Create project record
-   * 4. Set property status to CONVERTED (GAP-2)
-   * 5. Create milestones from quote payment terms (GAP-3)
-   * 6. Apply task templates (BUG-1)
-   * 7. Link tasks to milestones via template.defaultMilestoneType (GAP-6)
-   * 8. Add PM + team members if provided (GAP-7)
-   * 9. Auto-assign tasks by role (GAP-4 / BUG-5)
+   * 4. Set property status to CONVERTED
+   * 5. Create milestones from quote payment terms
+   * 6. Apply task templates (filtering excluded)
+   * 7. Link tasks to milestones via template.defaultMilestoneType
+   * 8. Add PM + team members if provided
+   * 9. Auto-assign tasks by role
    */
   async convertFromQuote(
     quoteId: string,
@@ -323,7 +335,6 @@ export class ProjectService {
       );
     }
 
-    // Verify property exists and is not already converted
     const property = await this.customerPropertyRepository.findByIdAndOrganization(
       quote.propertyId,
       organizationId,
@@ -356,127 +367,243 @@ export class ProjectService {
 
     const projectNumber = await this.generateProjectNumber(org.code);
     const projectType = quote.projectType;
-
     const customerName =
       property?.consumerName ||
       `${quote.customer.firstName} ${quote.customer.lastName || ''}`.trim() ||
       'Customer';
+    const autoName = `${customerName} - ${quote.systemSizeKw}kW Solar Installation`.trim();
 
-    // Step 1: Create project
-    const project = await this.projectRepository.create({
-      propertyId: quote.propertyId,
-      createdBy,
-      projectNumber,
-      name: `${customerName} - ${quote.systemSizeKw}kW Solar Installation`.trim(),
-      description: `Solar installation project converted from quote ${quote.quoteNumber}`,
-      systemSizeKw: quote.systemSizeKw,
-      projectType,
-      status: ProjectStatus.DRAFT,
-      priority: convertDto?.priority || ProjectPriority.NORMAL,
-      progressPercentage: 0,
-      estimatedCost: quote.finalPrice,
-      startDate: convertDto?.startDate ? new Date(convertDto.startDate) : undefined,
-      endDate: convertDto?.endDate ? new Date(convertDto.endDate) : undefined,
-      metadata: {
-        convertedFromQuote: true,
-        quoteNumber: quote.quoteNumber,
-        quoteId,
-        originalQuoteAmount: quote.finalPrice,
-      },
-    });
-
-    // Step 2: Set property status to CONVERTED (GAP-2)
-    await this.customerPropertyRepository.update(quote.propertyId, {
-      status: PropertyStatus.CONVERTED,
-    });
-
-    // Step 3: Create milestones from quote payment terms (GAP-3)
     const currentVersion = quote.versions?.find((v) => v.isCurrent) || quote.versions?.[0];
     const paymentMilestones: PaymentMilestone[] = currentVersion?.paymentMilestones || [];
-    const milestoneTypeMap = new Map<string, string>();
 
-    for (let i = 0; i < paymentMilestones.length; i++) {
-      const pm = paymentMilestones[i]!;
-      const milestoneType = STAGE_TO_MILESTONE_TYPE[pm.stage] || ('custom' as MilestoneType);
+    const milestones = paymentMilestones.map((pm, i) => ({
+      name: pm.name,
+      type: STAGE_TO_MILESTONE_TYPE[pm.stage] || ('custom' as MilestoneType),
+      order: pm.order || i + 1,
+    }));
 
-      const milestone = await this.milestoneRepository.create({
-        projectId: project.id,
-        name: pm.name,
-        milestoneType,
-        status: MilestoneStatus.PENDING,
-        sequenceOrder: pm.order || i + 1,
+    return this.orchestrateProjectCreation({
+      projectData: {
+        propertyId: quote.propertyId,
+        projectNumber,
+        name: convertDto?.name || autoName,
+        description: `Solar installation project converted from quote ${quote.quoteNumber}`,
+        systemSizeKw: quote.systemSizeKw,
+        projectType,
+        status: ProjectStatus.DRAFT,
+        priority: convertDto?.priority || ProjectPriority.NORMAL,
+        progressPercentage: 0,
+        estimatedCost: quote.finalPrice,
+        startDate: convertDto?.startDate ? new Date(convertDto.startDate) : undefined,
+        endDate: convertDto?.endDate ? new Date(convertDto.endDate) : undefined,
+        metadata: {
+          convertedFromQuote: true,
+          quoteNumber: quote.quoteNumber,
+          quoteId,
+          originalQuoteAmount: quote.finalPrice,
+        },
+      },
+      propertyId: quote.propertyId,
+      organizationId,
+      orgCode: org.code,
+      createdBy,
+      milestones,
+      teamConfig: convertDto
+        ? { pmId: convertDto.projectManagerId, members: convertDto.teamMembers }
+        : undefined,
+      excludedTemplateIds: convertDto?.excludedTaskTemplateIds,
+    });
+  }
+
+  /**
+   * Initiate a new project from a property (no quote required, transactional).
+   * Uses DEFAULT_PROJECT_MILESTONES instead of quote payment terms.
+   */
+  async initiateProject(
+    organizationId: string,
+    createdBy: string,
+    dto: InitiateProjectDto,
+  ): Promise<ProjectEntity> {
+    const property = await this.customerPropertyRepository.findByIdAndOrganization(
+      dto.propertyId,
+      organizationId,
+    );
+    if (!property) {
+      throw new NotFoundException(`Property with ID ${dto.propertyId} not found in this organization`);
+    }
+    if (property.status === PropertyStatus.CONVERTED) {
+      throw new BadRequestException(
+        'This property has already been converted to a project. Cannot create another.',
+      );
+    }
+
+    const existingProject = await this.projectRepository.findOneByPropertyId(
+      dto.propertyId,
+      organizationId,
+    );
+    if (existingProject) {
+      throw new BadRequestException(
+        `Property already has a project (${existingProject.projectNumber}). One property can only have one project.`,
+      );
+    }
+
+    const org = await this.organizationRepository.findOneById(organizationId);
+    if (!org) {
+      throw new NotFoundException(`Organization with ID ${organizationId} not found`);
+    }
+
+    const projectNumber = await this.generateProjectNumber(org.code);
+
+    return this.orchestrateProjectCreation({
+      projectData: {
+        propertyId: dto.propertyId,
+        projectNumber,
+        name: dto.name,
+        description: dto.description,
+        systemSizeKw: dto.systemSizeKw,
+        projectType: dto.projectType,
+        status: ProjectStatus.DRAFT,
+        priority: dto.priority || ProjectPriority.NORMAL,
+        progressPercentage: 0,
+        estimatedCost: dto.estimatedCost,
+        startDate: dto.startDate ? new Date(dto.startDate) : undefined,
+        endDate: dto.endDate ? new Date(dto.endDate) : undefined,
+      },
+      propertyId: dto.propertyId,
+      organizationId,
+      orgCode: org.code,
+      createdBy,
+      milestones: DEFAULT_PROJECT_MILESTONES,
+      teamConfig: { pmId: dto.projectManagerId, members: dto.teamMembers },
+      excludedTemplateIds: dto.excludedTaskTemplateIds,
+    });
+  }
+
+  /**
+   * Shared orchestration for project creation (both quote and property flows).
+   * Wrapped in a database transaction for atomicity.
+   */
+  private async orchestrateProjectCreation(params: {
+    projectData: Partial<ProjectEntity>;
+    propertyId: string;
+    organizationId: string;
+    orgCode: string;
+    createdBy: string;
+    milestones: Array<{ name: string; type: MilestoneType; order: number }>;
+    teamConfig?: {
+      pmId?: string;
+      members?: Array<{ userId: string; roleName: string; isProjectManager?: boolean }>;
+    };
+    excludedTemplateIds?: string[];
+  }): Promise<ProjectEntity> {
+    const {
+      projectData,
+      propertyId,
+      organizationId,
+      orgCode,
+      createdBy,
+      milestones,
+      teamConfig,
+      excludedTemplateIds,
+    } = params;
+
+    return this.dataSource.transaction(async () => {
+      // 1. Create project
+      const project = await this.projectRepository.create({
+        ...projectData,
         createdBy,
       });
 
-      // Generate milestone code
-      try {
-        const milestoneCode = await generateEntityCode(
-          this.milestoneRepository.repository,
-          'milestoneCode',
-          'MS',
-          org.code,
-          'milestone_code',
+      // 2. Lock + update property to CONVERTED
+      await this.customerPropertyRepository.update(propertyId, {
+        status: PropertyStatus.CONVERTED,
+      });
+
+      // 3. Create milestones
+      const milestoneTypeMap = new Map<string, string>();
+      for (const ms of milestones) {
+        const milestone = await this.milestoneRepository.create({
+          projectId: project.id,
+          name: ms.name,
+          milestoneType: ms.type,
+          status: MilestoneStatus.PENDING,
+          sequenceOrder: ms.order,
+          createdBy,
+        });
+
+        try {
+          const milestoneCode = await generateEntityCode(
+            this.milestoneRepository.repository,
+            'milestoneCode',
+            'MS',
+            orgCode,
+            'milestone_code',
+          );
+          await this.milestoneRepository.repository.update(milestone.id, { milestoneCode });
+        } catch (err) {
+          this.logger.warn(
+            `Failed to generate milestone code for ${milestone.id}: ${String(err)}`,
+          );
+        }
+
+        milestoneTypeMap.set(ms.type, milestone.id);
+      }
+
+      // 4. Apply task templates (filtering excluded)
+      await this.applyTaskTemplates(project.id, organizationId, createdBy, excludedTemplateIds);
+
+      // 5. Link tasks to milestones via template.defaultMilestoneType
+      const { data: tasks } = await this.taskRepository.findAll(project.id, 1, 10000, {});
+      const templates = await this.taskTemplateRepository.findAllActive(organizationId);
+      const templateMap = new Map(templates.map((t) => [t.id, t]));
+
+      for (const task of tasks) {
+        if (!task.taskTemplateId || task.milestoneId) continue;
+        const template = templateMap.get(task.taskTemplateId);
+        if (!template?.defaultMilestoneType) continue;
+        const milestoneId = milestoneTypeMap.get(template.defaultMilestoneType);
+        if (milestoneId) {
+          await this.taskRepository.update(task.id, project.id, { milestoneId });
+        }
+      }
+
+      // 6. Add PM + team members
+      if (teamConfig?.pmId) {
+        const existing = await this.teamRepository.findByUserAndProject(
+          teamConfig.pmId,
+          project.id,
         );
-        await this.milestoneRepository.repository.update(milestone.id, { milestoneCode });
-      } catch (err) {
-        this.logger.warn(`Failed to generate milestone code for ${milestone.id}: ${String(err)}`);
+        if (!existing) {
+          await this.teamRepository.create({
+            projectId: project.id,
+            userId: teamConfig.pmId,
+            roleName: 'Project Manager',
+            isProjectManager: true,
+          });
+        }
       }
 
-      milestoneTypeMap.set(milestoneType, milestone.id);
-    }
-
-    // Step 4: Apply task templates (BUG-1 fix)
-    await this.applyTaskTemplates(project.id, organizationId, createdBy);
-
-    // Step 5: Link tasks to milestones via template.defaultMilestoneType (GAP-6)
-    const { data: tasks } = await this.taskRepository.findAll(project.id, 1, 10000, {});
-    const templates = await this.taskTemplateRepository.findAllActive(organizationId);
-    const templateMap = new Map(templates.map((t) => [t.id, t]));
-
-    for (const task of tasks) {
-      if (!task.taskTemplateId || task.milestoneId) continue;
-      const template = templateMap.get(task.taskTemplateId);
-      if (!template?.defaultMilestoneType) continue;
-
-      const milestoneId = milestoneTypeMap.get(template.defaultMilestoneType);
-      if (milestoneId) {
-        await this.taskRepository.update(task.id, project.id, { milestoneId });
+      if (teamConfig?.members) {
+        for (const member of teamConfig.members) {
+          const existing = await this.teamRepository.findByUserAndProject(
+            member.userId,
+            project.id,
+          );
+          if (existing) continue;
+          await this.teamRepository.create({
+            projectId: project.id,
+            userId: member.userId,
+            roleName: member.roleName,
+            isProjectManager: member.isProjectManager ?? false,
+          });
+        }
       }
-    }
 
-    // Step 6: Add PM + team members if provided (GAP-7)
-    if (convertDto?.projectManagerId) {
-      const existing = await this.teamRepository.findByUserAndProject(
-        convertDto.projectManagerId,
-        project.id,
-      );
-      if (!existing) {
-        await this.teamRepository.create({
-          projectId: project.id,
-          userId: convertDto.projectManagerId,
-          roleName: 'Project Manager',
-          isProjectManager: true,
-        });
-      }
-    }
+      // 7. Auto-assign tasks by role
+      await this.autoAssignTasksByRole(project.id, organizationId);
 
-    if (convertDto?.teamMembers) {
-      for (const member of convertDto.teamMembers) {
-        const existing = await this.teamRepository.findByUserAndProject(member.userId, project.id);
-        if (existing) continue;
-        await this.teamRepository.create({
-          projectId: project.id,
-          userId: member.userId,
-          roleName: member.roleName,
-          isProjectManager: member.isProjectManager ?? false,
-        });
-      }
-    }
-
-    // Step 7: Auto-assign tasks by role (BUG-5 / GAP-4)
-    await this.autoAssignTasksByRole(project.id, organizationId);
-
-    return this.projectRepository.findById(project.id, organizationId);
+      return this.projectRepository.findById(project.id, organizationId);
+    });
   }
 
   /**
@@ -742,29 +869,74 @@ export class ProjectService {
   }
 
   /**
-   * Auto-apply active task templates to a project
-   * Creates tasks from templates and resolves dependencies
+   * Auto-apply active task templates to a project.
+   * Filters out excluded templates, detects dependency cycles, and resolves dependencies.
    */
   private async applyTaskTemplates(
     projectId: string,
     organizationId: string,
     createdBy: string,
+    excludedTemplateIds?: string[],
   ): Promise<void> {
-    // Get all active task templates for the organization
-    const templates = await this.taskTemplateRepository.findAllActive(organizationId);
+    let templates = await this.taskTemplateRepository.findAllActive(organizationId);
 
     if (templates.length === 0) {
       return;
     }
 
-    // Get org code for global task code generation
+    if (excludedTemplateIds && excludedTemplateIds.length > 0) {
+      const excludeSet = new Set(excludedTemplateIds);
+      templates = templates.filter((t) => !excludeSet.has(t.id));
+    }
+
+    if (templates.length === 0) {
+      return;
+    }
+
+    // Cycle detection via topological sort
+    const codeSet = new Set(templates.map((t) => t.code));
+    const adjList = new Map<string, string[]>();
+    const inDegree = new Map<string, number>();
+    for (const t of templates) {
+      adjList.set(t.code, []);
+      inDegree.set(t.code, 0);
+    }
+    for (const t of templates) {
+      if (t.dependsOnTaskCodes) {
+        for (const dep of t.dependsOnTaskCodes) {
+          if (!codeSet.has(dep)) {
+            this.logger.warn(`Template "${t.code}" depends on missing code "${dep}" — skipping dep`);
+            continue;
+          }
+          adjList.get(dep)!.push(t.code);
+          inDegree.set(t.code, (inDegree.get(t.code) || 0) + 1);
+        }
+      }
+    }
+    const queue: string[] = [];
+    for (const [code, deg] of inDegree) {
+      if (deg === 0) queue.push(code);
+    }
+    let visited = 0;
+    while (queue.length > 0) {
+      const node = queue.shift()!;
+      visited++;
+      for (const neighbor of adjList.get(node) || []) {
+        const newDeg = (inDegree.get(neighbor) || 1) - 1;
+        inDegree.set(neighbor, newDeg);
+        if (newDeg === 0) queue.push(neighbor);
+      }
+    }
+    if (visited < templates.length) {
+      this.logger.warn(
+        `Dependency cycle detected among task templates — proceeding without dependency links for cycled nodes`,
+      );
+    }
+
     const org = await this.organizationRepository.findOneById(organizationId);
     const orgCode = org?.code || 'UNKNOWN';
-
-    // Map from template code to created task ID (for dependency resolution)
     const codeToTaskId = new Map<string, string>();
 
-    // First pass: create all tasks with global TSK-{ORG}-{YEAR}-{SEQ} codes
     for (const template of templates) {
       let taskCode: string;
       try {
@@ -790,7 +962,6 @@ export class ProjectService {
       codeToTaskId.set(template.code, task.id);
     }
 
-    // Second pass: resolve dependencies (template.dependsOnTaskCodes -> task.dependsOnTaskIds)
     for (const template of templates) {
       if (template.dependsOnTaskCodes && template.dependsOnTaskCodes.length > 0) {
         const taskId = codeToTaskId.get(template.code);
@@ -801,6 +972,10 @@ export class ProjectService {
           const depTaskId = codeToTaskId.get(depCode);
           if (depTaskId) {
             dependsOnTaskIds.push(depTaskId);
+          } else {
+            this.logger.warn(
+              `Task dependency resolution: code "${depCode}" not found for template "${template.code}"`,
+            );
           }
         }
 

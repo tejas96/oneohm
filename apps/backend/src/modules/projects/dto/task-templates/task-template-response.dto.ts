@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { type TaskChecklist } from '@oneohm-epc/shared-types';
+import { type MilestoneType, type TaskChecklist } from '@oneohm-epc/shared-types';
 import { Expose } from 'class-transformer';
 
 export class TaskTemplateResponseDto {
@@ -34,6 +34,10 @@ export class TaskTemplateResponseDto {
   @ApiPropertyOptional({ example: 'TECHNICIAN' })
   @Expose()
   defaultRoleCode?: string;
+
+  @ApiPropertyOptional({ example: 'installation', description: 'Default milestone type for task-milestone linking' })
+  @Expose()
+  defaultMilestoneType?: MilestoneType | null;
 
   @ApiProperty({ example: 1 })
   @Expose()

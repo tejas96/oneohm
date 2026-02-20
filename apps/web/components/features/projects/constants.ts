@@ -1,5 +1,22 @@
 import { MilestoneType, ProjectPriority, ProjectStatus } from '@oneohm-epc/shared-types';
 
+export const DEFAULT_MILESTONES = [
+  { name: 'Site Survey & Design', type: MilestoneType.SITE_SURVEY },
+  { name: 'Permits & Approvals', type: MilestoneType.PERMITS },
+  { name: 'Material Procurement', type: MilestoneType.MATERIAL_PROCUREMENT },
+  { name: 'Installation', type: MilestoneType.INSTALLATION },
+  { name: 'Commissioning & Testing', type: MilestoneType.COMMISSIONING },
+  { name: 'Handover', type: MilestoneType.HANDOVER },
+] as const;
+
+export const PROJECT_TYPE_OPTIONS = [
+  { value: 'residential', label: 'Residential' },
+  { value: 'residential_apartment', label: 'Residential Apt' },
+  { value: 'commercial', label: 'Commercial' },
+  { value: 'industrial', label: 'Industrial' },
+  { value: 'agricultural', label: 'Agricultural' },
+] as const;
+
 export const PROJECT_STATUS_LABELS: Record<string, string> = {
   [ProjectStatus.DRAFT]: 'Draft',
   [ProjectStatus.PLANNING]: 'Planning',
@@ -74,6 +91,7 @@ export const PHASE_LABELS: Record<string, string> = {
   [MilestoneType.SITE_SURVEY]: 'Site Survey',
   [MilestoneType.DESIGN]: 'Design',
   [MilestoneType.APPROVAL]: 'Approval',
+  [MilestoneType.PERMITS]: 'Permits',
   [MilestoneType.MATERIAL_PROCUREMENT]: 'Procurement',
   [MilestoneType.INSTALLATION]: 'Installation',
   [MilestoneType.TESTING]: 'Testing',

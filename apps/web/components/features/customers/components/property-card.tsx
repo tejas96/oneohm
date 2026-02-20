@@ -1,6 +1,6 @@
 'use client';
 
-import { LeadTemperature, PropertyType, QuoteStatus } from '@oneohm-epc/shared-types';
+import { LeadTemperature, PropertyStatus, PropertyType, QuoteStatus } from '@oneohm-epc/shared-types';
 import { Eye, FileText, Folder, MoreVertical, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -162,11 +162,15 @@ export function PropertyCard({
               <FileText className="mr-2 size-4" />
               Create Quote
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleConvertToProject} className="text-primary font-medium">
-              <Folder className="mr-2 size-4" />
-              Convert to Project
-            </DropdownMenuItem>
+            {property.status !== PropertyStatus.CONVERTED && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleConvertToProject} className="text-primary font-medium">
+                  <Folder className="mr-2 size-4" />
+                  Convert to Project
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

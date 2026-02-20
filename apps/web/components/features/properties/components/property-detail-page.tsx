@@ -1,6 +1,6 @@
 'use client';
 
-import { LeadTemperature, PropertyType, QuoteStatus } from '@oneohm-epc/shared-types';
+import { LeadTemperature, PropertyStatus, PropertyType, QuoteStatus } from '@oneohm-epc/shared-types';
 import {
   AlertCircle,
   Calendar,
@@ -270,15 +270,20 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled
-            title="TODO: Phase 2"
-          >
-            <FolderOpen className="mr-2 size-icon-sm" />
-            Convert to Project
-          </Button>
+          {property.status !== PropertyStatus.CONVERTED && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                router.push(
+                  `/projects/new?propertyId=${propertyId}&customerId=${property.customerId}`,
+                )
+              }
+            >
+              <FolderOpen className="mr-2 size-icon-sm" />
+              Convert to Project
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"

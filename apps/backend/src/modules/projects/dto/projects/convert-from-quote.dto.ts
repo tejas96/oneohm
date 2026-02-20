@@ -28,6 +28,11 @@ export class ConvertTeamMemberDto {
 }
 
 export class ConvertFromQuoteDto {
+  @ApiPropertyOptional({ description: 'Override auto-generated project name' })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
   @ApiPropertyOptional({ description: 'Project Manager user ID' })
   @IsOptional()
   @IsUUID()
@@ -54,4 +59,10 @@ export class ConvertFromQuoteDto {
   @IsOptional()
   @IsEnum(ProjectPriority)
   priority?: ProjectPriority;
+
+  @ApiPropertyOptional({ description: 'Task template IDs to exclude from auto-creation' })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  excludedTaskTemplateIds?: string[];
 }
