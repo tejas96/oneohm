@@ -21,6 +21,32 @@ import { QuoteLineItemDto } from '../line-items/quote-line-item.dto';
 import { PaymentMilestoneDto } from '../versions/payment-milestone.dto';
 
 /**
+ * Pre-calculated pricing from the calculator service.
+ * When provided, the quote service uses these values directly
+ * instead of recalculating from line items.
+ *
+ * `finalPrice` here is the price BEFORE discount (totalPrice with profitability margin).
+ * The quote service subtracts `discountAmount` to get the stored finalPrice.
+ */
+export class PricingOverrideDto {
+  @IsNumber()
+  @Min(0)
+  basePrice!: number;
+
+  @IsNumber()
+  @Min(0)
+  gstAmount!: number;
+
+  @IsNumber()
+  @Min(0)
+  totalPrice!: number;
+
+  @IsNumber()
+  @Min(0)
+  finalPrice!: number;
+}
+
+/**
  * DTO for creating a new quote
  */
 export class CreateQuoteDto {
@@ -124,6 +150,14 @@ export class CreateQuoteDto {
   @IsOptional()
   discountAmount?: number;
 
+  @ApiPropertyOptional({
+    description: 'Pre-calculated pricing from calculator (bypasses internal pricing recalculation)',
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PricingOverrideDto)
+  pricingOverride?: PricingOverrideDto;
+
   // ==================== Subsidy ====================
   @ApiPropertyOptional({
     example: true,
@@ -132,6 +166,14 @@ export class CreateQuoteDto {
   @IsBoolean()
   @IsOptional()
   isSubsidyApplicable?: boolean;
+
+  @ApiPropertyOptional({
+    example: 78000,
+    description: 'Pre-calculated subsidy amount from calculator (overrides internal subsidy calculation)',
+  })
+  @IsNumber()
+  @IsOptional()
+  subsidyAmount?: number;
 
   // ==================== Loan Financing ====================
   @ApiPropertyOptional({

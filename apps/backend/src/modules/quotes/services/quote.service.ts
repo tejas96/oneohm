@@ -57,13 +57,30 @@ export class QuoteService {
     // Generate quote number
     const quoteNumber = await this.quoteRepository.generateQuoteNumber(org.code);
 
-    // Calculate pricing
-    const pricing = this.calculatePricing(createDto.lineItems, createDto.discountAmount || 0);
+    // Use pre-calculated pricing from calculator if available, otherwise recalculate from line items
+    const discount = createDto.discountAmount || 0;
+    const pricing: {
+      basePrice: number;
+      gst12On70Percent?: number;
+      gst18On30Percent?: number;
+      gstAmount: number;
+      totalPrice: number;
+      finalPrice: number;
+    } = createDto.pricingOverride
+      ? {
+          basePrice: createDto.pricingOverride.basePrice,
+          gstAmount: createDto.pricingOverride.gstAmount,
+          totalPrice: createDto.pricingOverride.totalPrice,
+          finalPrice: createDto.pricingOverride.finalPrice - discount,
+        }
+      : this.calculatePricing(createDto.lineItems, discount);
 
-    // Calculate subsidy if applicable
-    const subsidy = createDto.isSubsidyApplicable
-      ? this.calculateSubsidy(createDto.systemSizeKw, createDto.projectType)
-      : 0;
+    // Use pre-calculated subsidy if provided (from calculator), otherwise calculate locally
+    const subsidy = createDto.subsidyAmount != null
+      ? createDto.subsidyAmount
+      : createDto.isSubsidyApplicable
+        ? this.calculateSubsidy(createDto.systemSizeKw, createDto.projectType)
+        : 0;
 
     // Calculate effective price
     const effectivePrice = pricing.finalPrice - subsidy;

@@ -206,16 +206,18 @@ export function QuoteBuilder(): JSX.Element {
   const [hasQuantityChanges, setHasQuantityChanges] = useState(false);
 
   // ── Business rules hook ──
+  const onCalculationCleared = useCallback(() => {
+    setCalculation(null);
+    setSavedQuoteNumber(null);
+    setManualDcrPanelCount(undefined);
+    setManualNonDcrPanelCount(undefined);
+    setManualInverterCount(undefined);
+    setHasQuantityChanges(false);
+  }, []);
+
   const formLogic = useQuoteFormLogic({
     form: form as never,
-    onCalculationCleared: () => {
-      setCalculation(null);
-      setSavedQuoteNumber(null);
-      setManualDcrPanelCount(undefined);
-      setManualNonDcrPanelCount(undefined);
-      setManualInverterCount(undefined);
-      setHasQuantityChanges(false);
-    },
+    onCalculationCleared,
   });
 
   // Auto-map project type when pre-selected property loads
@@ -228,7 +230,7 @@ export function QuoteBuilder(): JSX.Element {
         formLogic.handlePropertySelect(prop.propertyType);
       }
     }
-  }, [preselectedPropertyId, propertiesRaw, formLogic]);
+  }, [preselectedPropertyId, propertiesRaw, formLogic.handlePropertySelect]);
 
   // ── Save / Download state ──
   const saveMutation = useSaveQuote();
