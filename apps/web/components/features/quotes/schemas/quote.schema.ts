@@ -1,101 +1,67 @@
 import {
-  SystemType,
+  ProjectType,
   PhaseType,
   DcrPreference,
   StructureType,
+  PanelTechnology,
 } from '@oneohm-epc/shared-types';
 import { z } from 'zod';
 
-
 // ============================================================================
-// Quote Builder Schema
+// Quote Builder Schema (mirrors CalculateQuoteDto + CreateQuoteFromCalculationDto)
 // ============================================================================
 
-// Step 1: Customer & Property Selection
-export const quoteCustomerPropertySchema = z.object({
-  customerId: z.string().optional(), // Optional because customer context may come from property
-  propertyId: z.string().min(1, 'Please select a property'),
-});
+export const quoteBuilderSchema = z.object({
+  // Section 1: Customer & Property
+  customerId: z.string().uuid('Please select a customer'),
+  propertyId: z.string().uuid().optional(),
 
-// Step 2: System Configuration
-export const quoteSystemConfigSchema = z.object({
+  // Section 2: System Configuration
+  projectType: z.nativeEnum(ProjectType, {
+    errorMap: () => ({ message: 'Please select project type' }),
+  }),
   systemSizeKw: z
     .number({ coerce: true })
     .min(1, 'System size must be at least 1 kW')
-    .max(500, 'System size cannot exceed 500 kW'),
-  systemType: z.nativeEnum(SystemType, {
-    errorMap: () => ({ message: 'Please select system type' }),
-  }),
+    .max(1000, 'System size cannot exceed 1000 kW'),
   phaseType: z.nativeEnum(PhaseType, {
     errorMap: () => ({ message: 'Please select phase type' }),
   }),
-  isSubsidyApplicable: z.boolean().default(true),
+  subsidyApplicable: z.boolean().default(true),
   dcrPreference: z.nativeEnum(DcrPreference).default(DcrPreference.DCR_ONLY),
-});
 
-// Step 3: Equipment Selection
-export const quoteEquipmentSchema = z.object({
-  panelId: z.string().optional().or(z.literal('')),
-  inverterId: z.string().optional().or(z.literal('')),
-  preferredPanelBrand: z
-    .string()
-    .max(100, 'Brand name too long')
-    .optional()
-    .or(z.literal('')),
-  preferredPanelTechnology: z
-    .string()
-    .max(100, 'Technology name too long')
-    .optional()
-    .or(z.literal('')),
-  preferredInverterBrand: z
-    .string()
-    .max(100, 'Brand name too long')
-    .optional()
-    .or(z.literal('')),
-  structureType: z.nativeEnum(StructureType).optional(),
-});
+  // Section 3: Equipment Selection
+  preferredPanelBrand: z.string().optional(),
+  preferredPanelTechnology: z.nativeEnum(PanelTechnology).optional(),
+  preferredPanelWattage: z.number().min(100).max(1000).optional(),
+  preferredInverterBrand: z.string().optional(),
+  structureType: z.nativeEnum(StructureType, {
+    errorMap: () => ({ message: 'Please select structure type' }),
+  }),
 
-// Step 4: Site & Pricing
-export const quoteSitePricingSchema = z.object({
+  // Section 4: Installation Details
   floorNumber: z
     .number({ coerce: true })
     .min(0, 'Floor number cannot be negative')
-    .max(100, 'Floor number too high')
+    .max(50, 'Floor number must be 50 or below')
     .default(0),
   distanceKm: z
     .number({ coerce: true })
     .min(0, 'Distance cannot be negative')
-    .max(1000, 'Distance too far')
+    .max(500, 'Distance cannot exceed 500 km')
     .default(0),
+
+  // Section 5: Notes & Discount (save-only, not sent to calculate API)
   discountAmount: z
     .number({ coerce: true })
     .min(0, 'Discount cannot be negative')
     .default(0),
-  internalNotes: z
-    .string()
-    .max(1000, 'Notes too long')
-    .optional()
-    .or(z.literal('')),
-  customerNotes: z
-    .string()
-    .max(1000, 'Notes too long')
-    .optional()
-    .or(z.literal('')),
+  internalNotes: z.string().max(1000, 'Notes too long').optional(),
+  customerNotes: z.string().max(1000, 'Notes too long').optional(),
 });
 
-// Combined Quote Builder Schema
-export const quoteBuilderSchema = quoteCustomerPropertySchema
-  .merge(quoteSystemConfigSchema)
-  .merge(quoteEquipmentSchema)
-  .merge(quoteSitePricingSchema);
-
-// Alias for backward compatibility
 export const createQuoteSchema = quoteBuilderSchema;
 
-export type QuoteCustomerPropertyFormData = z.infer<typeof quoteCustomerPropertySchema>;
-export type QuoteSystemConfigFormData = z.infer<typeof quoteSystemConfigSchema>;
-export type QuoteEquipmentFormData = z.infer<typeof quoteEquipmentSchema>;
-export type QuoteSitePricingFormData = z.infer<typeof quoteSitePricingSchema>;
 export type QuoteBuilderFormData = z.infer<typeof quoteBuilderSchema>;
 export type CreateQuoteFormData = QuoteBuilderFormData;
 
@@ -128,12 +94,6 @@ export const rejectQuoteSchema = z.object({
 });
 
 export type RejectQuoteFormData = z.infer<typeof rejectQuoteSchema>;
-
-// ============================================================================
-// Quick System Size Options
-// ============================================================================
-
-export const QUICK_SIZE_OPTIONS = [3, 5, 7, 10, 15, 20] as const;
 
 // ============================================================================
 // Rejection Reasons

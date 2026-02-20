@@ -4,7 +4,26 @@ import { QuoteStatus } from '@oneohm-epc/shared-types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
+import { quoteKeys } from './use-quotes';
+
 import { apiClient } from '@/lib/api/client';
+
+// Re-export everything from use-quotes
+export * from './use-quotes';
+
+// Quote builder hooks
+export { useQuoteConfig } from './use-quote-config';
+export type { PanelBrandOption, InverterBrandOption, PanelTechnologyVariant } from './use-quote-config';
+
+export { useCalculateQuote } from './use-calculate-quote';
+export { useSaveQuote } from './use-save-quote';
+export { useQuoteFormLogic } from './use-quote-form-logic';
+export type { UseQuoteFormLogicOptions, UseQuoteFormLogicReturn } from './use-quote-form-logic';
+export { useQuotePdf } from './use-quote-pdf';
+
+// ============================================================================
+// Types
+// ============================================================================
 
 interface UpdateQuoteStatusPayload {
   status: QuoteStatus;
@@ -19,6 +38,10 @@ interface ConvertToProjectPayload {
   endDate?: string;
   priority?: string;
 }
+
+// ============================================================================
+// API Functions
+// ============================================================================
 
 async function updateQuoteStatus(
   quoteId: string,
@@ -39,6 +62,10 @@ async function convertQuoteToProject(
   return data;
 }
 
+// ============================================================================
+// Mutation Hooks
+// ============================================================================
+
 export function useAcceptQuote() {
   const queryClient = useQueryClient();
 
@@ -49,7 +76,7 @@ export function useAcceptQuote() {
         customerSignature,
       }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all });
     },
   });
 }
@@ -64,7 +91,7 @@ export function useRejectQuote() {
         rejectionReason,
       }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all });
     },
   });
 }
@@ -76,7 +103,7 @@ export function useConvertToProject() {
     mutationFn: ({ quoteId, payload }) =>
       convertQuoteToProject(quoteId, payload),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['quotes'] });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all });
       void queryClient.invalidateQueries({ queryKey: ['projects'] });
     },
   });

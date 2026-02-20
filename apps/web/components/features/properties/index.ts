@@ -23,7 +23,6 @@ export {
   useDeleteProperty,
   useProperty,
   usePropertyQuotes,
-  propertyQuoteKeys,
 } from './hooks';
 
 export type {

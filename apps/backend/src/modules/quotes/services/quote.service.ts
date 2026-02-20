@@ -12,7 +12,7 @@ import {
 } from '@oneohm-epc/shared-types';
 
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
-import { CreateQuoteDto, UpdateQuoteDto, UpdateQuoteStatusDto } from '../dto';
+import { CreateQuoteDto, QuoteQueryDto, UpdateQuoteDto, UpdateQuoteStatusDto } from '../dto';
 import { QuoteEntity } from '../entities/quote.entity';
 import { QuoteLineItemRepository, QuoteRepository, QuoteVersionRepository } from '../repositories';
 
@@ -249,8 +249,13 @@ export class QuoteService {
   }
 
   /**
-   * Find all quotes with filters
+   * Find all quotes with filters, sorting, and pagination
+   * Supports both legacy signature (page, limit, filters) and new query DTO
    */
+  async findAll(
+    organizationId: string,
+    query: QuoteQueryDto,
+  ): Promise<{ data: QuoteEntity[]; total: number }>;
   async findAll(
     organizationId: string,
     page: number,
@@ -265,8 +270,48 @@ export class QuoteService {
       toDate?: string;
       search?: string;
     },
-  ): Promise<{ quotes: QuoteEntity[]; total: number }> {
-    return this.quoteRepository.findAll(organizationId, page, limit, filters);
+  ): Promise<{ data: QuoteEntity[]; total: number }>;
+  async findAll(
+    organizationId: string,
+    pageOrQuery: number | QuoteQueryDto = 1,
+    limit = 20,
+    filters?: {
+      status?: QuoteStatus;
+      customerId?: string;
+      propertyId?: string;
+      salesPersonId?: string;
+      resellerId?: string;
+      fromDate?: string;
+      toDate?: string;
+      search?: string;
+    },
+  ): Promise<{ data: QuoteEntity[]; total: number }> {
+    if (typeof pageOrQuery === 'object') {
+      const [data, total] = await this.quoteRepository.findWithFilters(
+        organizationId,
+        pageOrQuery,
+      );
+      return { data, total };
+    }
+
+    // Legacy path — convert to QuoteQueryDto and delegate
+    const legacyQuery = new QuoteQueryDto();
+    legacyQuery.page = pageOrQuery;
+    legacyQuery.limit = limit;
+    if (filters?.status) legacyQuery.status = filters.status;
+    if (filters?.customerId) legacyQuery.customerId = filters.customerId;
+    if (filters?.propertyId) legacyQuery.propertyId = filters.propertyId;
+    if (filters?.salesPersonId) legacyQuery.salesPersonId = filters.salesPersonId;
+    if (filters?.resellerId) legacyQuery.resellerId = filters.resellerId;
+    if (filters?.fromDate) legacyQuery.fromDate = filters.fromDate;
+    if (filters?.toDate) legacyQuery.toDate = filters.toDate;
+    if (filters?.search) legacyQuery.search = filters.search;
+
+    const [data, total] = await this.quoteRepository.findWithFilters(
+      organizationId,
+      legacyQuery,
+    );
+    return { data, total };
   }
 
   /**
