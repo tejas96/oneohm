@@ -36,5 +36,5 @@ export { useProperty, useCustomerProperties } from '@/components/features/custom
 export type { CustomerPropertyResponse } from '@/components/features/customers/hooks';
 
 // Property quotes hook
-export { usePropertyQuotes, propertyQuoteKeys } from './use-property-quotes';
+export { usePropertyQuotes } from './use-property-quotes';
 export type { CustomerQuote, CustomerQuotesResponse } from './use-property-quotes';

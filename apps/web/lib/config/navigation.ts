@@ -3,8 +3,10 @@ import {
   Box,
   Building2,
   Calendar,
+  CheckCircle,
   CheckSquare,
   Clock,
+  Edit,
   FileText,
   Folder,
   GanttChart,
@@ -15,6 +17,7 @@ import {
   MapPin,
   MoreHorizontal,
   Plus,
+  Send,
   Settings,
   TrendingUp,
   Users,
@@ -265,15 +268,23 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Quotes',
           items: [
-            { id: 'all-quotes', icon: FileText, label: 'All Quotes', href: ROUTES.QUOTES.LIST },
-            { id: 'drafts', icon: FileText, label: 'Drafts', href: `${ROUTES.QUOTES.LIST}?status=draft` },
-            { id: 'sent', icon: FileText, label: 'Sent', href: `${ROUTES.QUOTES.LIST}?status=sent` },
+            {
+              id: 'all-quotes',
+              icon: FileText,
+              label: 'All Quotes',
+              href: ROUTES.QUOTES.LIST,
+              children: [
+                { id: 'drafts', icon: Edit, label: 'Drafts', href: `${ROUTES.QUOTES.LIST}?status=draft` },
+                { id: 'sent', icon: Send, label: 'Sent', href: `${ROUTES.QUOTES.LIST}?status=sent` },
+                { id: 'accepted', icon: CheckCircle, label: 'Accepted', href: `${ROUTES.QUOTES.LIST}?status=accepted` },
+              ],
+            },
           ],
         },
         {
-          title: 'Actions',
+          title: 'Tools',
           items: [
-            { id: 'new-quote', icon: Plus, label: 'New Quote', href: ROUTES.QUOTES.NEW, exactMatch: true },
+            { id: 'quote-builder', icon: Plus, label: 'Quote Builder', href: ROUTES.QUOTES.NEW, exactMatch: true },
           ],
         },
       ],

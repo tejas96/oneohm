@@ -1,10 +1,26 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QuoteStatus } from '@oneohm-epc/shared-types';
+import { QuoteSortField, QuoteStatus, SortOrder } from '@oneohm-epc/shared-types';
 import { Repository } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
+import { QuoteQueryDto } from '../dto/quotes/quote-query.dto';
 import { QuoteEntity } from '../entities/quote.entity';
+
+/**
+ * Field mapping for safe sorting (prevents SQL injection via sortBy)
+ * Maps enum values to entity property paths — TypeORM resolves these to DB columns
+ */
+const SORT_FIELD_MAP: Record<QuoteSortField, string> = {
+  [QuoteSortField.CREATED_AT]: 'quote.createdAt',
+  [QuoteSortField.UPDATED_AT]: 'quote.updatedAt',
+  [QuoteSortField.QUOTE_DATE]: 'quote.quoteDate',
+  [QuoteSortField.VALID_UNTIL]: 'quote.validUntil',
+  [QuoteSortField.SYSTEM_SIZE]: 'quote.systemSizeKw',
+  [QuoteSortField.EFFECTIVE_PRICE]: 'quote.effectivePrice',
+  [QuoteSortField.STATUS]: 'quote.status',
+  [QuoteSortField.CUSTOMER_NAME]: 'customer.firstName',
+};
 
 /**
  * Latest quote info for property enrichment
@@ -73,6 +89,7 @@ export class QuoteRepository {
       .leftJoinAndSelect('quote.customer', 'customer')
       .leftJoinAndSelect('quote.salesPerson', 'salesPerson')
       .leftJoinAndSelect('quote.reseller', 'reseller')
+      .leftJoinAndSelect('quote.property', 'property')
       .where('quote.organizationId = :organizationId', { organizationId })
       .andWhere('quote.deletedAt IS NULL');
 
@@ -125,6 +142,93 @@ export class QuoteRepository {
     const [quotes, total] = await query.getManyAndCount();
 
     return { quotes, total };
+  }
+
+  /**
+   * Find quotes with comprehensive filtering, sorting, and pagination
+   * Primary method for the quote list API
+   *
+   * @param organizationId - Organization context
+   * @param query - Query parameters (filters, sorting, pagination)
+   * @returns Tuple of [quotes, total count]
+   */
+  async findWithFilters(
+    organizationId: string,
+    query: QuoteQueryDto,
+  ): Promise<[QuoteEntity[], number]> {
+    const qb = this.repository
+      .createQueryBuilder('quote')
+      .leftJoinAndSelect('quote.customer', 'customer')
+      .leftJoinAndSelect('quote.salesPerson', 'salesPerson')
+      .leftJoinAndSelect('quote.reseller', 'reseller')
+      .leftJoinAndSelect('quote.property', 'property')
+      .where('quote.organizationId = :organizationId', { organizationId })
+      .andWhere('quote.deletedAt IS NULL');
+
+    // ===== Search (case-insensitive, multiple fields) =====
+    if (query.search && query.search.length >= 2) {
+      const searchTerm = `%${query.search}%`;
+      qb.andWhere(
+        `(
+          quote.quoteNumber ILIKE :searchTerm OR
+          customer.firstName ILIKE :searchTerm OR
+          customer.lastName ILIKE :searchTerm OR
+          CONCAT(customer.firstName, ' ', customer.lastName) ILIKE :searchTerm OR
+          customer.phone ILIKE :searchTerm OR
+          property.propertyName ILIKE :searchTerm
+        )`,
+        { searchTerm },
+      );
+    }
+
+    // ===== Filters =====
+    if (query.status) {
+      qb.andWhere('quote.status = :status', { status: query.status });
+    }
+
+    if (query.customerId) {
+      qb.andWhere('quote.customerId = :customerId', { customerId: query.customerId });
+    }
+
+    if (query.propertyId) {
+      qb.andWhere('quote.propertyId = :propertyId', { propertyId: query.propertyId });
+    }
+
+    if (query.salesPersonId) {
+      qb.andWhere('quote.salesPersonId = :salesPersonId', {
+        salesPersonId: query.salesPersonId,
+      });
+    }
+
+    if (query.resellerId) {
+      qb.andWhere('quote.resellerId = :resellerId', {
+        resellerId: query.resellerId,
+      });
+    }
+
+    if (query.fromDate) {
+      qb.andWhere('quote.quoteDate >= :fromDate', { fromDate: query.fromDate });
+    }
+
+    if (query.toDate) {
+      qb.andWhere('quote.quoteDate <= :toDate', {
+        toDate: `${query.toDate}T23:59:59.999Z`,
+      });
+    }
+
+    // ===== Sorting (using safe field mapping) =====
+    const sortColumn = SORT_FIELD_MAP[query.sortBy] ?? SORT_FIELD_MAP[QuoteSortField.CREATED_AT];
+    const sortDirection = query.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
+    qb.orderBy(sortColumn, sortDirection, 'NULLS LAST');
+
+    if (query.sortBy === QuoteSortField.CUSTOMER_NAME) {
+      qb.addOrderBy('customer.lastName', sortDirection, 'NULLS LAST');
+    }
+
+    // ===== Pagination =====
+    qb.skip((query.page - 1) * query.limit).take(query.limit);
+
+    return qb.getManyAndCount();
   }
 
   /**

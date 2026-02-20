@@ -5,17 +5,9 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
 import type { CustomerQuote, CustomerQuotesResponse } from '@/components/features/customers/hooks';
+import { quoteKeys } from '@/components/features/quotes';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
-
-// ============================================================================
-// Query Keys
-// ============================================================================
-
-export const propertyQuoteKeys = {
-  all: ['quotes'] as const,
-  byProperty: (propertyId: string) => [...propertyQuoteKeys.all, 'property', propertyId] as const,
-};
 
 // ============================================================================
 // Hooks
@@ -42,7 +34,7 @@ export function usePropertyQuotes(
   const limit = options?.limit ?? 50;
 
   return useQuery({
-    queryKey: [...propertyQuoteKeys.byProperty(propertyId), { page, limit, status: options?.status }],
+    queryKey: [...quoteKeys.byProperty(propertyId), { page, limit, status: options?.status }],
     queryFn: async (): Promise<CustomerQuotesResponse> => {
       const params = new URLSearchParams();
       params.append('propertyId', propertyId);

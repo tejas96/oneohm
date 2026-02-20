@@ -86,3 +86,19 @@ export enum DcrPreference {
   NON_DCR_ONLY = 'non_dcr_only',
   AUTO_SPLIT = 'auto_split', // System decides based on subsidy eligibility
 }
+
+/**
+ * Quote Sort Field Enum
+ * Allowed sort fields for quote list API
+ * Values must match entity property names (camelCase)
+ */
+export enum QuoteSortField {
+  CREATED_AT = 'createdAt',
+  UPDATED_AT = 'updatedAt',
+  QUOTE_DATE = 'quoteDate',
+  VALID_UNTIL = 'validUntil',
+  SYSTEM_SIZE = 'systemSizeKw',
+  EFFECTIVE_PRICE = 'effectivePrice',
+  STATUS = 'status',
+  CUSTOMER_NAME = 'customerName',
+}

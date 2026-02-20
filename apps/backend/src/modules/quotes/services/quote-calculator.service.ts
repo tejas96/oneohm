@@ -158,6 +158,7 @@ export class QuoteCalculatorService {
     const actualTotalWattage = panels.reduce((sum, p) => sum + p.totalWattage, 0);
     const actualSystemSizeKw = actualTotalWattage / 1000;
 
+
     // 5. Calculate inverter configuration
     // Supports: auto-calculation, inverterOverrides (specific products), or manual count (quantity constraint)
     let inverters: CalculatedInverterConfig;
@@ -682,7 +683,8 @@ export class QuoteCalculatorService {
     { panel: CalculatedPanelConfig; actualSizeKw: number } | { error: string; suggestion: number }
   > {
     // Calculate required wattage per panel to meet capacity with target count
-    const requiredWattagePerPanel = (requiredSizeKw * 1000) / targetCount;
+    // Math.ceil ensures we find panels that can actually meet the capacity requirement
+    const requiredWattagePerPanel = Math.ceil((requiredSizeKw * 1000) / targetCount);
 
     // Find all panels with wattage >= required
     const suitablePanels = await this.productRepo.findAllSolarPanels(

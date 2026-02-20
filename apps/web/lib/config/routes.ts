@@ -66,6 +66,7 @@ export const ROUTES = {
     LIST: '/quotes',
     DETAIL: '/quotes/[id]',
     NEW: '/quotes/new',
+    EDIT: '/quotes/[id]/edit',
   },
 
   // Projects
@@ -210,6 +211,7 @@ export interface RouteParamTypes {
   '/customers/[id]/edit': { id: string };
   '/customers/[id]/properties/new': { id: string };
   '/quotes/[id]': { id: string };
+  '/quotes/[id]/edit': { id: string };
   '/projects/[id]': { id: string };
   '/properties/[id]': { id: string };
   '/properties/[id]/edit': { id: string };
@@ -221,7 +223,7 @@ export interface RouteParamTypes {
   '/employees/[id]': { id: string };
   
   // Routes with query filters
-  '/quotes': { status?: 'draft' | 'sent' | 'accepted' | 'rejected' };
+  '/quotes': { status?: 'draft' | 'sent' | 'viewed' | 'accepted' | 'rejected' | 'expired' };
   '/projects/list': {
     status?: 'draft' | 'planning' | 'approved' | 'in_progress' | 'testing' | 'on_hold' | 'completed' | 'cancelled';
     priority?: 'low' | 'normal' | 'high' | 'urgent';

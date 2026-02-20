@@ -1,356 +1,717 @@
 'use client';
 
-import { QuoteStatus } from '@oneohm-epc/shared-types';
-import { ColumnDef } from '@tanstack/react-table';
-import { FileText, Plus, MoreHorizontal, Eye, Send, Copy, Download, Trash2 } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import * as React from 'react';
-
-import { DataTable, FilterTabs, StatsCard, EmptyState } from '@/components/shared';
+import { QuoteSortField, QuoteStatus, SortOrder } from '@oneohm-epc/shared-types';
+import type { ColumnDef } from '@tanstack/react-table';
 import {
+  AlertCircle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Copy,
+  Download,
+  Edit,
+  Eye,
+  FileText,
+  Loader2,
+  MoreHorizontal,
+  Plus,
+  Search,
+  Send,
+  Trash2,
+  Upload,
+  X,
+} from 'lucide-react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect, useRef, useMemo, useCallback, type JSX } from 'react';
+
+import {
+  QUOTE_STATUS_LABELS,
+  QUOTE_STATUS_BADGE_VARIANTS,
+  QUOTE_FILTER_TABS,
+  DEFAULT_PAGE_SIZE,
+  SEARCH_DEBOUNCE_MS,
+} from '../constants';
+import {
+  useQuotes,
+  useQuoteStatusCounts,
+  useSendQuote,
+  useDeleteQuote,
+  type QuoteListItem,
+} from '../hooks';
+
+import {
+  DataTable,
+  EmptyState,
+  FilterTabs,
+  StatsCard,
+  TablePagination,
+  type FilterTab,
+} from '@/components/shared';
+import {
+  Avatar,
+  AvatarFallback,
   Badge,
   Button,
-  Typography,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  Input,
+  Typography,
   showToast,
 } from '@/components/ui';
-import { ROUTES } from '@/lib/config/routes';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { useDebounce } from '@/lib/hooks';
+import { getErrorMessage, getInitials, formatCurrency, formatDate } from '@/lib/utils';
 
 // ============================================================================
-// Types
+// Helper Functions
 // ============================================================================
 
-interface Quote {
-  id: string;
-  quoteNumber: string;
-  propertyId: string;
-  propertyName: string;
-  customerName: string;
-  customerId: string;
-  systemSize: string;
-  totalPrice: number;
-  effectivePrice: number;
-  status: QuoteStatus;
-  createdAt: string;
-  validUntil: string;
-  version: number;
+function getValidSortField(value: string | null): QuoteSortField {
+  const validFields = Object.values(QuoteSortField);
+  return validFields.includes(value as QuoteSortField)
+    ? (value as QuoteSortField)
+    : QuoteSortField.CREATED_AT;
 }
 
-// ============================================================================
-// Mock Data
-// ============================================================================
-
-const mockQuotes: Quote[] = [
-  {
-    id: 'q1',
-    quoteNumber: 'QT-2024-001',
-    propertyId: 'p1',
-    propertyName: 'Main Residence',
-    customerName: 'Rajesh Sharma',
-    customerId: '1',
-    systemSize: '5 kW',
-    totalPrice: 350000,
-    effectivePrice: 297500,
-    status: QuoteStatus.SENT,
-    createdAt: '2024-02-10T10:00:00Z',
-    validUntil: '2024-02-25T23:59:59Z',
-    version: 2,
-  },
-  {
-    id: 'q2',
-    quoteNumber: 'QT-2024-002',
-    propertyId: 'p2',
-    propertyName: 'Office Building',
-    customerName: 'Rajesh Sharma',
-    customerId: '1',
-    systemSize: '10 kW',
-    totalPrice: 650000,
-    effectivePrice: 585000,
-    status: QuoteStatus.DRAFT,
-    createdAt: '2024-02-12T14:00:00Z',
-    validUntil: '2024-02-27T23:59:59Z',
-    version: 1,
-  },
-  {
-    id: 'q3',
-    quoteNumber: 'QT-2024-003',
-    propertyId: 'p3',
-    propertyName: 'Farm House',
-    customerName: 'Priya Kulkarni',
-    customerId: '2',
-    systemSize: '3 kW',
-    totalPrice: 210000,
-    effectivePrice: 178500,
-    status: QuoteStatus.ACCEPTED,
-    createdAt: '2024-02-05T09:00:00Z',
-    validUntil: '2024-02-20T23:59:59Z',
-    version: 1,
-  },
-  {
-    id: 'q4',
-    quoteNumber: 'QT-2024-004',
-    propertyId: 'p4',
-    propertyName: 'Industrial Unit',
-    customerName: 'XYZ Manufacturing',
-    customerId: '3',
-    systemSize: '25 kW',
-    totalPrice: 1500000,
-    effectivePrice: 1350000,
-    status: QuoteStatus.REJECTED,
-    createdAt: '2024-02-01T11:00:00Z',
-    validUntil: '2024-02-16T23:59:59Z',
-    version: 3,
-  },
-];
-
-// ============================================================================
-// Badge Mappings
-// ============================================================================
-
-const STATUS_VARIANTS: Record<QuoteStatus, 'muted' | 'info' | 'success' | 'warning' | 'error' | 'pending'> = {
-  [QuoteStatus.DRAFT]: 'muted',
-  [QuoteStatus.SENT]: 'info',
-  [QuoteStatus.VIEWED]: 'pending',
-  [QuoteStatus.ACCEPTED]: 'success',
-  [QuoteStatus.REJECTED]: 'error',
-  [QuoteStatus.EXPIRED]: 'warning',
-};
+function getValidSortOrder(value: string | null): SortOrder {
+  return value === SortOrder.ASC ? SortOrder.ASC : SortOrder.DESC;
+}
 
 // ============================================================================
 // Component
 // ============================================================================
 
-export function QuoteListPage(): React.JSX.Element {
+export function QuoteListPage(): JSX.Element {
   const router = useRouter();
-  const [statusFilter, setStatusFilter] = React.useState<'all' | QuoteStatus>('all');
+  const searchParams = useSearchParams();
 
-  // Calculate counts
-  const counts = {
-    all: mockQuotes.length,
-    draft: mockQuotes.filter(q => q.status === QuoteStatus.DRAFT).length,
-    sent: mockQuotes.filter(q => q.status === QuoteStatus.SENT).length,
-    accepted: mockQuotes.filter(q => q.status === QuoteStatus.ACCEPTED).length,
-    rejected: mockQuotes.filter(q => q.status === QuoteStatus.REJECTED).length,
+  // ---------------------------------------------------------------------------
+  // URL State
+  // ---------------------------------------------------------------------------
+
+  const initialPage = Number(searchParams.get('page')) || 1;
+  const initialSearch = searchParams.get('search') || '';
+  const initialStatus = searchParams.get('status') || 'all';
+  const initialSortBy = getValidSortField(searchParams.get('sortBy'));
+  const initialSortOrder = getValidSortOrder(searchParams.get('sortOrder'));
+
+  const [page, setPage] = useState(initialPage);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [searchInput, setSearchInput] = useState(initialSearch);
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [sortBy, setSortBy] = useState<QuoteSortField>(initialSortBy);
+  const [sortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder);
+
+  const debouncedSearch = useDebounce(searchInput, SEARCH_DEBOUNCE_MS);
+  const debouncedStatusFilter = useDebounce(statusFilter, 300);
+
+  // Sync state from URL when external navigation occurs (e.g. sidebar link clicks).
+  // window.history.replaceState (used internally) does NOT update searchParams,
+  // so this only fires on actual Next.js navigations, avoiding infinite loops.
+  const searchParamsString = searchParams.toString();
+  useEffect(() => {
+    setPage(Number(searchParams.get('page')) || 1);
+    setSearchInput(searchParams.get('search') || '');
+    setStatusFilter(searchParams.get('status') || 'all');
+    setSortBy(getValidSortField(searchParams.get('sortBy')));
+    setSortOrder(getValidSortOrder(searchParams.get('sortOrder')));
+  }, [searchParamsString]);
+
+  // Reset page on filter/search change (skip on initial mount)
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    setPage(1);
+  }, [debouncedSearch, debouncedStatusFilter]);
+
+  // Sync state to URL
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (page > 1) params.set('page', String(page));
+    if (debouncedSearch) params.set('search', debouncedSearch);
+    if (statusFilter !== 'all') params.set('status', statusFilter);
+    if (sortBy !== QuoteSortField.CREATED_AT) params.set('sortBy', sortBy);
+    if (sortOrder !== SortOrder.DESC) params.set('sortOrder', sortOrder);
+
+    const query = params.toString();
+    const newUrl = query ? `?${query}` : window.location.pathname;
+    window.history.replaceState({}, '', newUrl);
+  }, [page, debouncedSearch, statusFilter, sortBy, sortOrder]);
+
+  // ---------------------------------------------------------------------------
+  // Data Fetching
+  // ---------------------------------------------------------------------------
+
+  const {
+    data: quoteData,
+    isLoading,
+    isFetching,
+    isError,
+    error,
+    refetch,
+  } = useQuotes({
+    page,
+    limit: pageSize,
+    search: debouncedSearch.length >= 2 ? debouncedSearch : undefined,
+    status: debouncedStatusFilter !== 'all' ? (debouncedStatusFilter as QuoteStatus) : undefined,
+    sortBy,
+    sortOrder,
+  });
+
+  const { data: statusCounts } = useQuoteStatusCounts();
+
+  const sendQuoteMutation = useSendQuote();
+  const deleteQuoteMutation = useDeleteQuote();
+
+  // Derived values
+  const quotes = quoteData?.data ?? [];
+  const totalItems = quoteData?.meta.total ?? 0;
+  const totalPages = quoteData?.meta.totalPages ?? 1;
+
+  const hasActiveFilters =
+    debouncedStatusFilter !== 'all' ||
+    debouncedSearch.length >= 2 ||
+    sortBy !== QuoteSortField.CREATED_AT ||
+    sortOrder !== SortOrder.DESC;
+
+  // ---------------------------------------------------------------------------
+  // Filter tabs with counts
+  // ---------------------------------------------------------------------------
+
+  const filterTabsWithCounts: FilterTab<string>[] = useMemo(() => {
+    if (!statusCounts) return QUOTE_FILTER_TABS;
+    return [
+      { id: 'all', label: 'All', count: statusCounts.total },
+      { id: QuoteStatus.DRAFT, label: 'Draft', count: statusCounts.draft },
+      { id: QuoteStatus.SENT, label: 'Sent', count: statusCounts.sent },
+      { id: QuoteStatus.VIEWED, label: 'Viewed', count: statusCounts.viewed },
+      { id: QuoteStatus.ACCEPTED, label: 'Accepted', count: statusCounts.accepted },
+      { id: QuoteStatus.REJECTED, label: 'Rejected', count: statusCounts.rejected },
+    ];
+  }, [statusCounts]);
+
+  // ---------------------------------------------------------------------------
+  // Stats
+  // ---------------------------------------------------------------------------
+
+  const pendingCount =
+    (statusCounts?.draft ?? 0) + (statusCounts?.sent ?? 0) + (statusCounts?.viewed ?? 0);
+  const conversionRate =
+    statusCounts && statusCounts.total > 0
+      ? Math.round((statusCounts.accepted / statusCounts.total) * 100)
+      : 0;
+
+  // ---------------------------------------------------------------------------
+  // Handlers
+  // ---------------------------------------------------------------------------
+
+  const handlePageSizeChange = (newSize: number): void => {
+    setPageSize(newSize);
+    setPage(1);
   };
 
-  // Calculate stats
-  const totalValue = mockQuotes.reduce((sum, q) => sum + q.effectivePrice, 0);
-  const acceptedValue = mockQuotes.filter(q => q.status === QuoteStatus.ACCEPTED).reduce((sum, q) => sum + q.effectivePrice, 0);
-
-  // Filter tabs
-  const filterTabs = [
-    { id: 'all' as const, label: 'All', count: counts.all },
-    { id: QuoteStatus.DRAFT, label: 'Draft', count: counts.draft },
-    { id: QuoteStatus.SENT, label: 'Sent', count: counts.sent },
-    { id: QuoteStatus.ACCEPTED, label: 'Accepted', count: counts.accepted },
-    { id: QuoteStatus.REJECTED, label: 'Rejected', count: counts.rejected },
-  ];
-
-  // Filtered data
-  const filteredQuotes = statusFilter === 'all'
-    ? mockQuotes
-    : mockQuotes.filter(q => q.status === statusFilter);
-
-  const handleDuplicate = (quote: Quote) => {
-    console.log('Duplicate quote:', quote.id);
-    showToast.success('Quote duplicated');
+  const clearSearch = (): void => {
+    setSearchInput('');
+    setPage(1);
   };
 
-  const handleDelete = (quote: Quote) => {
-    console.log('Delete quote:', quote.id);
-    showToast.success('Quote deleted');
+  const clearAllFilters = (): void => {
+    setStatusFilter('all');
+    setSearchInput('');
+    setSortBy(QuoteSortField.CREATED_AT);
+    setSortOrder(SortOrder.DESC);
+    setPage(1);
   };
 
-  // Table columns
-  const columns: ColumnDef<Quote>[] = [
-    {
-      accessorKey: 'quoteNumber',
-      header: 'Quote',
-      cell: ({ row }) => (
-        <div>
-          <Link
-            href={ROUTES.QUOTES.DETAIL.replace('[id]', row.original.id)}
-            className="font-medium text-foreground hover:text-primary"
-          >
-            {row.original.quoteNumber}
-          </Link>
-          {row.original.version > 1 && (
-            <p className="text-xs text-foreground-secondary">v{row.original.version}</p>
+  const handleSendQuote = useCallback(
+    (quoteId: string) => {
+      sendQuoteMutation.mutate(quoteId, {
+        onSuccess: () => showToast.success('Quote sent successfully'),
+        onError: (err) => showToast.error(getErrorMessage(err)),
+      });
+    },
+    [sendQuoteMutation],
+  );
+
+  const handleDeleteQuote = useCallback(
+    (quoteId: string) => {
+      deleteQuoteMutation.mutate(quoteId, {
+        onSuccess: () => showToast.success('Quote deleted'),
+        onError: (err) => showToast.error(getErrorMessage(err)),
+      });
+    },
+    [deleteQuoteMutation],
+  );
+
+  // ---------------------------------------------------------------------------
+  // Sorting
+  // ---------------------------------------------------------------------------
+
+  const handleSort = useCallback(
+    (field: QuoteSortField) => {
+      if (sortBy === field) {
+        setSortOrder((current) => (current === SortOrder.ASC ? SortOrder.DESC : SortOrder.ASC));
+      } else {
+        setSortBy(field);
+        setSortOrder(SortOrder.ASC);
+      }
+      setPage(1);
+    },
+    [sortBy],
+  );
+
+  const SortableHeader = useCallback(
+    ({ field, label }: { field: QuoteSortField; label: string }) => {
+      const isActive = sortBy === field;
+      return (
+        <button
+          type="button"
+          onClick={() => handleSort(field)}
+          className="flex items-center gap-1 font-semibold text-2xs uppercase tracking-wider hover:text-foreground transition-colors"
+        >
+          {label}
+          {isActive ? (
+            sortOrder === SortOrder.ASC ? (
+              <ArrowUp className="size-3" />
+            ) : (
+              <ArrowDown className="size-3" />
+            )
+          ) : (
+            <ArrowUpDown className="size-3 text-foreground-tertiary" />
           )}
-        </div>
-      ),
+        </button>
+      );
     },
-    {
-      accessorKey: 'customerName',
-      header: 'Customer',
-      cell: ({ row }) => (
-        <div>
-          <Link
-            href={ROUTES.CUSTOMERS.DETAIL.replace('[id]', row.original.customerId)}
-            className="text-sm text-foreground-secondary hover:text-primary"
-          >
-            {row.original.customerName}
-          </Link>
-          <p className="text-xs text-foreground-tertiary">{row.original.propertyName}</p>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'systemSize',
-      header: 'System',
-      cell: ({ row }) => (
-        <span className="text-sm">{row.original.systemSize}</span>
-      ),
-    },
-    {
-      accessorKey: 'effectivePrice',
-      header: 'Amount',
-      cell: ({ row }) => (
-        <div>
-          <p className="text-sm font-medium">₹{row.original.effectivePrice.toLocaleString()}</p>
-          {row.original.effectivePrice < row.original.totalPrice && (
-            <p className="text-xs text-foreground-tertiary line-through">
-              ₹{row.original.totalPrice.toLocaleString()}
-            </p>
-          )}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'validUntil',
-      header: 'Valid Until',
-      cell: ({ row }) => {
-        const isExpired = new Date(row.original.validUntil) < new Date();
-        return (
-          <span className={`text-sm ${isExpired ? 'text-error' : 'text-foreground-secondary'}`}>
-            {new Date(row.original.validUntil).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-          </span>
-        );
-      },
-    },
-    {
-      accessorKey: 'status',
-      header: 'Status',
-      cell: ({ row }) => (
-        <Badge variant={STATUS_VARIANTS[row.original.status]}>
-          {row.original.status}
-        </Badge>
-      ),
-    },
-    {
-      id: 'actions',
-      header: '',
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="size-8 p-0">
-              <MoreHorizontal className="size-icon-sm" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => router.push(ROUTES.QUOTES.DETAIL.replace('[id]', row.original.id))}>
-              <Eye className="mr-2 size-icon-sm" />
-              View Details
-            </DropdownMenuItem>
-            {row.original.status === QuoteStatus.DRAFT && (
-              <DropdownMenuItem>
-                <Send className="mr-2 size-icon-sm" />
-                Send to Customer
-              </DropdownMenuItem>
+    [sortBy, sortOrder, handleSort],
+  );
+
+  // ---------------------------------------------------------------------------
+  // Table Columns
+  // ---------------------------------------------------------------------------
+
+  const columns: ColumnDef<QuoteListItem>[] = useMemo(
+    () => [
+      {
+        accessorKey: 'quoteNumber',
+        header: 'Quote #',
+        cell: ({ row }) => (
+          <div>
+            <Link
+              href={buildRoute(ROUTES.QUOTES.DETAIL, { id: row.original.id })}
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              {row.original.quoteNumber}
+            </Link>
+            {row.original.currentVersion > 1 && (
+              <p className="text-2xs text-foreground-tertiary">v{row.original.currentVersion}</p>
             )}
-            <DropdownMenuItem onClick={() => handleDuplicate(row.original)}>
-              <Copy className="mr-2 size-icon-sm" />
-              Duplicate
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Download className="mr-2 size-icon-sm" />
-              Download PDF
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => handleDelete(row.original)} className="text-error">
-              <Trash2 className="mr-2 size-icon-sm" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
-  ];
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'customerName',
+        header: () => <SortableHeader field={QuoteSortField.CUSTOMER_NAME} label="Customer" />,
+        enableSorting: false,
+        cell: ({ row }) => {
+          const name = row.original.customerName || 'Unknown';
+          return (
+            <div className="flex items-center gap-2.5">
+              <Avatar size="sm">
+                <AvatarFallback size="sm" name={name}>
+                  {getInitials(name)}
+                </AvatarFallback>
+              </Avatar>
+              <Link
+                href={buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: row.original.customerId })}
+                className="font-medium text-foreground text-sm hover:text-primary transition-colors leading-tight"
+              >
+                {name}
+              </Link>
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: 'propertyName',
+        header: 'Property',
+        cell: ({ row }) => (
+          <span className="text-sm text-foreground-secondary">
+            {row.original.propertyName || '-'}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'systemSizeKw',
+        header: () => <SortableHeader field={QuoteSortField.SYSTEM_SIZE} label="System" />,
+        enableSorting: false,
+        cell: ({ row }) => <span className="text-sm">{row.original.systemSizeKw} kW</span>,
+      },
+      {
+        accessorKey: 'effectivePrice',
+        header: () => <SortableHeader field={QuoteSortField.EFFECTIVE_PRICE} label="Value" />,
+        enableSorting: false,
+        cell: ({ row }) => {
+          const effective = row.original.effectivePrice;
+          const finalPrice = row.original.finalPrice;
+          return (
+            <div>
+              <p className="text-sm font-medium">
+                {effective != null ? formatCurrency(effective) : '-'}
+              </p>
+              {effective != null && finalPrice != null && effective < finalPrice && (
+                <p className="text-2xs text-foreground-tertiary line-through">
+                  {formatCurrency(finalPrice)}
+                </p>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: 'status',
+        header: () => <SortableHeader field={QuoteSortField.STATUS} label="Status" />,
+        enableSorting: false,
+        cell: ({ row }) => (
+          <Badge
+            variant={
+              QUOTE_STATUS_BADGE_VARIANTS[row.original.status] as
+                | 'muted'
+                | 'info'
+                | 'success'
+                | 'warning'
+                | 'error'
+                | 'pending'
+            }
+            shape="pill"
+          >
+            {QUOTE_STATUS_LABELS[row.original.status]}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: 'createdAt',
+        header: () => <SortableHeader field={QuoteSortField.CREATED_AT} label="Created" />,
+        enableSorting: false,
+        cell: ({ row }) => {
+          const date = row.original.createdAt;
+          if (!date) return <span className="text-foreground-tertiary">-</span>;
+          return (
+            <span className="text-sm text-foreground-secondary">{formatDate(date, 'medium')}</span>
+          );
+        },
+      },
+      {
+        accessorKey: 'validUntil',
+        header: () => <SortableHeader field={QuoteSortField.VALID_UNTIL} label="Valid Until" />,
+        enableSorting: false,
+        cell: ({ row }) => {
+          const validUntil = row.original.validUntil;
+          if (!validUntil) return <span className="text-foreground-tertiary">-</span>;
+          const isExpired = new Date(validUntil) < new Date();
+          return isExpired ? (
+            <div className="flex items-center gap-1.5">
+              <AlertCircle className="size-3.5 text-error" />
+              <span className="text-sm font-medium text-error">
+                {formatDate(validUntil, 'medium')}
+              </span>
+            </div>
+          ) : (
+            <span className="text-sm text-foreground-secondary">
+              {formatDate(validUntil, 'medium')}
+            </span>
+          );
+        },
+      },
+      {
+        id: 'actions',
+        header: '',
+        cell: ({ row }) => {
+          const quote = row.original;
+          const isDraft = quote.status === QuoteStatus.DRAFT;
+          const isAccepted = quote.status === QuoteStatus.ACCEPTED;
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="size-8 p-0">
+                  <MoreHorizontal className="size-icon-sm" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => router.push(buildRoute(ROUTES.QUOTES.DETAIL, { id: quote.id }))}
+                >
+                  <Eye className="mr-2 size-icon-sm" />
+                  View Details
+                </DropdownMenuItem>
+                {isDraft && (
+                  <DropdownMenuItem
+                    onClick={() => router.push(buildRoute(ROUTES.QUOTES.EDIT, { id: quote.id }))}
+                  >
+                    <Edit className="mr-2 size-icon-sm" />
+                    Edit Quote
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => showToast.info('Coming Soon')}>
+                  <Copy className="mr-2 size-icon-sm" />
+                  Duplicate
+                </DropdownMenuItem>
+                {isDraft && (
+                  <DropdownMenuItem onClick={() => handleSendQuote(quote.id)}>
+                    <Send className="mr-2 size-icon-sm" />
+                    Send Quote
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => showToast.info('Coming Soon')}>
+                  <Download className="mr-2 size-icon-sm" />
+                  Download PDF
+                </DropdownMenuItem>
+                {!isAccepted && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => handleDeleteQuote(quote.id)}
+                      className="text-error"
+                    >
+                      <Trash2 className="mr-2 size-icon-sm" />
+                      Delete
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        },
+      },
+    ],
+    [router, handleSendQuote, handleDeleteQuote, SortableHeader],
+  );
+
+  // ---------------------------------------------------------------------------
+  // Loading State
+  // ---------------------------------------------------------------------------
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div>
+            <Typography variant="h2">Quotations</Typography>
+            <Typography variant="body" color="muted" className="mt-1">
+              Create and manage customer quotations
+            </Typography>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" disabled>
+              <Upload className="mr-2 size-icon-sm" />
+              Export
+            </Button>
+            <Button size="sm" disabled>
+              <Plus className="mr-2 size-icon-sm" />
+              Create Quote
+            </Button>
+          </div>
+        </div>
+        <div className="bg-background rounded-lg border border-border-light p-12 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="size-8 animate-spin text-primary" />
+            <p className="text-sm text-foreground-secondary">Loading quotes...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Error State
+  // ---------------------------------------------------------------------------
+
+  if (isError) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div>
+            <Typography variant="h2">Quotations</Typography>
+            <Typography variant="body" color="muted" className="mt-1">
+              Create and manage customer quotations
+            </Typography>
+          </div>
+        </div>
+        <div className="bg-background rounded-lg border border-error/30 p-6">
+          <div className="flex items-center gap-3 text-error">
+            <AlertCircle className="size-5 shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium">Failed to load quotes</p>
+              <p className="text-sm text-foreground-secondary mt-1">{getErrorMessage(error)}</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => void refetch()}>
+              Retry
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Main Render
+  // ---------------------------------------------------------------------------
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
         <div>
-          <Typography variant="h2">Quotes</Typography>
+          <Typography variant="h2">Quotations</Typography>
           <Typography variant="body" color="muted" className="mt-1">
-            Manage and track quotations
+            Create and manage customer quotations
           </Typography>
         </div>
-        <Button size="sm" onClick={() => router.push(ROUTES.QUOTES.NEW)}>
-          <Plus className="mr-2 size-icon-sm" />
-          Create Quote
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => showToast.info('Export coming soon')}>
+            <Upload className="mr-2 size-icon-sm" />
+            Export
+          </Button>
+          <Button size="sm" onClick={() => router.push(ROUTES.QUOTES.NEW)}>
+            <Plus className="mr-2 size-icon-sm" />
+            Create Quote
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
           title="Total Quotes"
-          value={counts.all}
+          value={statusCounts?.total ?? 0}
           icon={<FileText className="size-icon text-primary" />}
         />
         <StatsCard
-          title="Pipeline Value"
-          value={`₹${(totalValue / 100000).toFixed(1)}L`}
+          title="Pending"
+          value={pendingCount}
           icon={<FileText className="size-icon text-info" />}
         />
         <StatsCard
-          title="Accepted Value"
-          value={`₹${(acceptedValue / 100000).toFixed(1)}L`}
+          title="Accepted"
+          value={statusCounts?.accepted ?? 0}
           icon={<FileText className="size-icon text-success" />}
         />
         <StatsCard
           title="Conversion Rate"
-          value={`${((counts.accepted / counts.all) * 100).toFixed(0)}%`}
+          value={`${conversionRate}%`}
           icon={<FileText className="size-icon text-warning" />}
         />
       </div>
 
-      {/* Filter Tabs */}
-      <FilterTabs
-        tabs={filterTabs}
-        value={statusFilter}
-        onChange={setStatusFilter}
-        variant="pills"
-      />
+      {/* Search & Filter Bar */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative w-72">
+          <Input
+            type="text"
+            placeholder="Search by quote #, customer..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            leftIcon={<Search className="size-icon-sm" />}
+            className="h-8 text-sm"
+          />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded"
+            >
+              <X className="size-3.5 text-foreground-tertiary" />
+            </button>
+          )}
+          {isFetching && debouncedSearch && (
+            <Loader2 className="absolute right-8 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-foreground-tertiary" />
+          )}
+        </div>
+
+        <div className="h-5 w-px bg-border-light" />
+
+        <FilterTabs
+          tabs={filterTabsWithCounts}
+          value={statusFilter}
+          onChange={setStatusFilter}
+          size="xs"
+        />
+
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearAllFilters}
+            className="text-foreground-secondary h-8"
+          >
+            <X className="mr-1 size-3" />
+            Clear
+          </Button>
+        )}
+      </div>
 
       {/* Data Table */}
-      {filteredQuotes.length > 0 ? (
-        <DataTable
-          columns={columns}
-          data={filteredQuotes}
-          enableSearch
-          searchPlaceholder="Search quotes..."
-          enablePagination
-          pageSize={10}
-        />
-      ) : (
-        <EmptyState
-          icon={<FileText className="size-icon-lg" />}
-          title="No quotes found"
-          description="Quotes will appear here once created"
-          action={{
-            label: 'Create Quote',
-            onClick: () => router.push(ROUTES.QUOTES.NEW),
-          }}
-        />
-      )}
+      <div className="bg-background rounded-lg border border-border-light overflow-hidden">
+        {isFetching || quotes.length > 0 ? (
+          <>
+            <DataTable
+              columns={columns}
+              data={quotes}
+              enableSearch={false}
+              enablePagination={false}
+              enableRowSelection
+              isLoading={isFetching}
+            />
+
+            {quotes.length > 0 && (
+              <TablePagination
+                currentPage={page}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                totalItems={totalItems}
+                itemLabel="quotes"
+                variant="full"
+                onPageChange={setPage}
+                onPageSizeChange={handlePageSizeChange}
+              />
+            )}
+          </>
+        ) : (
+          <div className="p-8">
+            {hasActiveFilters ? (
+              <EmptyState
+                title="No quotes found"
+                description={
+                  debouncedSearch
+                    ? 'No results match your search and filters. Try adjusting your criteria.'
+                    : 'No quotes match the selected filters. Try different filter options.'
+                }
+                action={{
+                  label: 'Clear Filters',
+                  onClick: clearAllFilters,
+                }}
+              />
+            ) : (
+              <EmptyState
+                icon={<FileText className="size-icon-lg" />}
+                title="No quotes yet"
+                description="Get started by creating your first quote"
+                action={{
+                  label: 'Create Quote',
+                  onClick: () => router.push(ROUTES.QUOTES.NEW),
+                }}
+              />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

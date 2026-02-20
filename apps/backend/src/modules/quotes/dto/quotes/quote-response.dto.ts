@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectType, QuoteStatus, SystemType } from '@oneohm-epc/shared-types';
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 
 /**
  * Quote Response DTO
@@ -19,9 +19,36 @@ export class QuoteResponseDto {
   @Expose()
   customerId!: string;
 
+  @ApiPropertyOptional({ example: 'Rajesh Sharma' })
+  @Expose()
+  @Transform(({ obj }) =>
+    obj.customer
+      ? `${obj.customer.firstName} ${obj.customer.lastName || ''}`.trim()
+      : undefined,
+  )
+  customerName?: string;
+
+  @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @Expose()
+  propertyId?: string;
+
+  @ApiPropertyOptional({ example: 'Main Residence' })
+  @Expose()
+  @Transform(({ obj }) => obj.property?.propertyName ?? undefined)
+  propertyName?: string;
+
   @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()
   salesPersonId?: string;
+
+  @ApiPropertyOptional({ example: 'Amit Kumar' })
+  @Expose()
+  @Transform(({ obj }) =>
+    obj.salesPerson
+      ? `${obj.salesPerson.firstName} ${obj.salesPerson.lastName || ''}`.trim()
+      : undefined,
+  )
+  salesPersonName?: string;
 
   @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()
