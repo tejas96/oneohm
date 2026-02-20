@@ -493,19 +493,16 @@ export function QuoteBuilder(): JSX.Element {
                   </div>
                 ) : (
                   <div ref={dropdownRef} className="relative">
-                    <div className="relative">
-                      <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-foreground-tertiary" />
-                      <Input
-                        placeholder="Search by name, phone, or email..."
-                        value={customerSearch}
-                        onChange={(e) => {
-                          setCustomerSearch(e.target.value);
-                          setIsDropdownOpen(true);
-                        }}
-                        onFocus={() => setIsDropdownOpen(true)}
-                        className="pl-9"
-                      />
-                    </div>
+                    <Input
+                      placeholder="Search by name, phone, or email..."
+                      leftIcon={<Search className="size-4" />}
+                      value={customerSearch}
+                      onChange={(e) => {
+                        setCustomerSearch(e.target.value);
+                        setIsDropdownOpen(true);
+                      }}
+                      onFocus={() => setIsDropdownOpen(true)}
+                    />
                     {isDropdownOpen && customerSearch.length >= 2 && (
                       <div className="absolute z-10 mt-1 w-full rounded-lg border border-border-light bg-background shadow-lg">
                         <div className="max-h-48 overflow-auto p-1">

@@ -387,7 +387,7 @@ export class ProjectService {
         propertyId: quote.propertyId,
         projectNumber,
         name: convertDto?.name || autoName,
-        description: `Solar installation project converted from quote ${quote.quoteNumber}`,
+        description: convertDto?.description || `Solar installation project converted from quote ${quote.quoteNumber}`,
         systemSizeKw: quote.systemSizeKw,
         projectType,
         status: ProjectStatus.DRAFT,

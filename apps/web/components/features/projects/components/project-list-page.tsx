@@ -70,7 +70,7 @@ export function ProjectListPage() {
   const [typeFilter, setTypeFilter] = useState(url.get('projectType'));
   const [searchInput, setSearchInput] = useState(url.get('search'));
   const [currentView, setCurrentView] = useState<'card' | 'table'>(
-    (url.get('view') as 'card' | 'table') || 'card',
+    (url.get('view') as 'card' | 'table') || 'table',
   );
   const [currentPage, setCurrentPage] = useState(
     parseInt(url.get('page') || '1', 10),
@@ -264,18 +264,6 @@ export function ProjectListPage() {
           <div className="ml-auto flex items-center bg-muted rounded-lg p-0.5">
             <button
               type="button"
-              onClick={() => handleViewChange('card')}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors ${
-                currentView === 'card'
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-foreground-secondary hover:text-foreground'
-              }`}
-            >
-              <LayoutGrid className="size-4" />
-              Cards
-            </button>
-            <button
-              type="button"
               onClick={() => handleViewChange('table')}
               className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors ${
                 currentView === 'table'
@@ -285,6 +273,18 @@ export function ProjectListPage() {
             >
               <List className="size-4" />
               Table
+            </button>
+            <button
+              type="button"
+              onClick={() => handleViewChange('card')}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors ${
+                currentView === 'card'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-foreground-secondary hover:text-foreground'
+              }`}
+            >
+              <LayoutGrid className="size-4" />
+              Cards
             </button>
           </div>
       </div>

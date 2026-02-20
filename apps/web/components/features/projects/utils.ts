@@ -1,15 +1,15 @@
 import type { EmployeeListItem } from './hooks';
 
 export function getEmployeeDisplayName(emp: EmployeeListItem): string {
-  const first = emp.firstName || '';
-  const last = emp.lastName || '';
+  const first = emp.user?.firstName || '';
+  const last = emp.user?.lastName || '';
   const full = `${first} ${last}`.trim();
-  return full || emp.email || 'Unknown';
+  return full || emp.user?.email || emp.email || 'Unknown';
 }
 
 export function getEmployeeInitials(emp: EmployeeListItem): string {
-  const first = emp.firstName?.charAt(0) || '';
-  const last = emp.lastName?.charAt(0) || '';
+  const first = emp.user?.firstName?.charAt(0) || '';
+  const last = emp.user?.lastName?.charAt(0) || '';
   const initials = `${first}${last}`.toUpperCase();
   return initials || '?';
 }

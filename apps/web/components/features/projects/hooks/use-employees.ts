@@ -6,12 +6,19 @@ import type { AxiosError } from 'axios';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
 
+export interface EmployeeUser {
+  id: string;
+  firstName: string;
+  lastName?: string;
+  phone: string;
+  email?: string;
+}
+
 export interface EmployeeListItem {
   id: string;
   userId: string;
   organizationId: string;
-  firstName?: string | null;
-  lastName?: string | null;
+  user?: EmployeeUser | null;
   email?: string | null;
   phone?: string | null;
   department?: string | null;

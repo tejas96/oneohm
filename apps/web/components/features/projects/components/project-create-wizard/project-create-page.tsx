@@ -9,19 +9,27 @@ import {
 import {
   AlertCircle,
   AlertTriangle,
+  Building2,
+  Calendar,
   CheckCircle2,
   CheckSquare,
   ChevronRight,
   ClipboardList,
   Crown,
   FileText,
+  Flag,
+  IndianRupee,
   Info,
+  Lock,
   Milestone,
+  Pencil,
   Plus,
   Search,
   Trash2,
+  User,
   Users,
   X,
+  Zap,
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
@@ -31,11 +39,11 @@ import {
   useCustomerProperties,
   useCustomer,
   useCustomers,
+  useCustomerQuotes,
   type CustomerPropertyResponse,
   type CustomerQuote,
   type Customer,
 } from '../../../customers/hooks';
-import { usePropertyQuotes } from '../../../properties/hooks';
 import {
   DEFAULT_MILESTONES,
   PHASE_LABELS,
@@ -83,6 +91,10 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   Textarea,
   showToast,
 } from '@/components/ui';
@@ -153,6 +165,7 @@ export function ProjectCreatePage(): React.JSX.Element {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedProperty, setSelectedProperty] = useState<CustomerPropertyResponse | null>(null);
   const [selectedQuote, setSelectedQuote] = useState<CustomerQuote | null>(null);
+  const [summaryTab, setSummaryTab] = useState<string>('customer');
   const [customerSearch, setCustomerSearch] = useState('');
   const debouncedCustomerSearch = useDebounce(customerSearch, 600);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
@@ -173,20 +186,36 @@ export function ProjectCreatePage(): React.JSX.Element {
     selectedCustomerId || '',
   );
 
-  const { data: quotesData, isLoading: quotesLoading } = usePropertyQuotes(
-    selectedPropertyId || '',
+  const { data: quotesData, isLoading: quotesLoading } = useCustomerQuotes(
+    selectedCustomerId || '',
   );
   const allQuotes: CustomerQuote[] = quotesData?.data ?? [];
 
   const usableQuotes = useMemo(() => {
-    const statusOrder = [QuoteStatus.ACCEPTED, QuoteStatus.SENT, QuoteStatus.VIEWED];
+    const statusOrder = [
+      QuoteStatus.ACCEPTED,
+      QuoteStatus.SENT,
+      QuoteStatus.VIEWED,
+      QuoteStatus.DRAFT,
+    ];
     const allowed = new Set<string>(statusOrder);
     return allQuotes
-      .filter((q: CustomerQuote) => allowed.has(q.status as string))
-      .sort((a: CustomerQuote, b: CustomerQuote) =>
-        statusOrder.indexOf(a.status as QuoteStatus) - statusOrder.indexOf(b.status as QuoteStatus),
-      );
-  }, [allQuotes]);
+      .filter((q: CustomerQuote) => {
+        if (!allowed.has(q.status as string)) return false;
+        if (!selectedPropertyId) return true;
+        return !q.propertyId || q.propertyId === selectedPropertyId;
+      })
+      .sort((a: CustomerQuote, b: CustomerQuote) => {
+        const propMatch = (id: string | undefined) =>
+          id === selectedPropertyId ? 0 : 1;
+        const propDiff = propMatch(a.propertyId) - propMatch(b.propertyId);
+        if (propDiff !== 0) return propDiff;
+        return (
+          statusOrder.indexOf(a.status as QuoteStatus) -
+          statusOrder.indexOf(b.status as QuoteStatus)
+        );
+      });
+  }, [allQuotes, selectedPropertyId]);
 
   const { data: employeesData, isLoading: employeesLoading } = useEmployees({ limit: 100 });
   const employees = employeesData?.items ?? [];
@@ -303,6 +332,15 @@ export function ProjectCreatePage(): React.JSX.Element {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
+
+  useEffect(() => {
+    if (summaryTab === 'quote' && !selectedQuote) {
+      setSummaryTab(selectedCustomer ? 'customer' : 'property');
+    }
+    if (summaryTab === 'customer' && !selectedCustomer) {
+      setSummaryTab('property');
+    }
+  }, [selectedQuote, selectedCustomer, summaryTab]);
 
   // ---- Handlers ----
 
@@ -435,7 +473,10 @@ export function ProjectCreatePage(): React.JSX.Element {
     }
 
     const values = form.getValues();
-    const isQuote = values.quoteId ? values.quoteId !== '' : false;
+    const canConvert =
+      !!values.quoteId &&
+      values.quoteId !== '' &&
+      selectedQuote?.status === QuoteStatus.ACCEPTED;
     const members = values.teamMembers.filter((m) => m.userId);
     const excluded = values.excludedTaskTemplateIds.length > 0
       ? values.excludedTaskTemplateIds
@@ -444,7 +485,7 @@ export function ProjectCreatePage(): React.JSX.Element {
     try {
       let projectId: string;
 
-      if (isQuote) {
+      if (canConvert) {
         const result = await convertMutation.mutateAsync({
           quoteId: values.quoteId as string,
           payload: {
@@ -501,9 +542,10 @@ export function ProjectCreatePage(): React.JSX.Element {
     if (!teamSearch.trim()) return employees;
     const q = teamSearch.toLowerCase();
     return employees.filter((e) => {
-      const name = `${e.firstName || ''} ${e.lastName || ''}`.toLowerCase();
+      const name = `${e.user?.firstName || ''} ${e.user?.lastName || ''}`.toLowerCase();
       return (
         name.includes(q) ||
+        e.user?.email?.toLowerCase().includes(q) ||
         e.email?.toLowerCase().includes(q) ||
         e.designation?.toLowerCase().includes(q) ||
         e.department?.toLowerCase().includes(q)
@@ -536,7 +578,7 @@ export function ProjectCreatePage(): React.JSX.Element {
   // ===========================================================================
 
   return (
-    <div className="space-y-5 pb-24">
+    <div className="space-y-5">
       {/* Breadcrumb */}
       <Breadcrumb>
         <BreadcrumbList>
@@ -596,10 +638,9 @@ export function ProjectCreatePage(): React.JSX.Element {
               </div>
             ) : (
               <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-foreground-tertiary" />
                 <Input
                   placeholder="Search by name, phone, or email..."
-                  className="pl-9"
+                  leftIcon={<Search className="size-4" />}
                   value={customerSearch}
                   onChange={(e) => {
                     setCustomerSearch(e.target.value);
@@ -730,7 +771,7 @@ export function ProjectCreatePage(): React.JSX.Element {
                 <div className="flex items-center gap-2 rounded-lg bg-info/10 px-3 py-2">
                   <Info className="size-3.5 text-info" />
                   <p className="text-xs text-info">
-                    No quotes found for this property. Project details will need to be filled manually.
+                    No quotes found for this customer. Project details will need to be filled manually.
                   </p>
                 </div>
               ) : (
@@ -757,7 +798,7 @@ export function ProjectCreatePage(): React.JSX.Element {
       </Card>
 
       {/* ================================================================== */}
-      {/* Section 2: Context Card */}
+      {/* Section 2: Context Card (Tab-based Summary) */}
       {/* ================================================================== */}
       {selectedProperty && !propertyConverted && (
         <Card>
@@ -766,119 +807,135 @@ export function ProjectCreatePage(): React.JSX.Element {
             <h2 className="text-sm font-semibold">Summary</h2>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
-              {/* Customer details */}
-              {selectedCustomer && (
-                <div className="space-y-1.5">
-                  <h3 className="mb-2 border-b border-border-light pb-1.5 text-xs font-semibold uppercase tracking-wider text-foreground-tertiary">
+            <Tabs value={summaryTab} onValueChange={setSummaryTab}>
+              <TabsList variant="underline" className="w-full justify-start">
+                {selectedCustomer && (
+                  <TabsTrigger variant="underline" value="customer" className="gap-1.5 text-xs">
+                    <User className="size-3.5" />
                     Customer
-                  </h3>
+                  </TabsTrigger>
+                )}
+                <TabsTrigger variant="underline" value="property" className="gap-1.5 text-xs">
+                  <Building2 className="size-3.5" />
+                  Property
+                </TabsTrigger>
+                {selectedQuote && (
+                  <TabsTrigger variant="underline" value="quote" className="gap-1.5 text-xs">
+                    <FileText className="size-3.5" />
+                    Quote
+                  </TabsTrigger>
+                )}
+              </TabsList>
+
+              {/* Customer Tab */}
+              {selectedCustomer && (
+                <TabsContent value="customer">
+                  <div className="space-y-2">
+                    <FieldRow
+                      label="Name"
+                      value={`${selectedCustomer.firstName || ''} ${selectedCustomer.lastName || ''}`.trim()}
+                    />
+                    <FieldRow label="Phone" value={selectedCustomer.phone} />
+                    {selectedCustomer.email && (
+                      <FieldRow label="Email" value={selectedCustomer.email} />
+                    )}
+                    {selectedCustomer.city && (
+                      <FieldRow label="City" value={selectedCustomer.city} />
+                    )}
+                  </div>
+                </TabsContent>
+              )}
+
+              {/* Property Tab */}
+              <TabsContent value="property">
+                <div className="space-y-2">
                   <FieldRow
                     label="Name"
-                    value={`${selectedCustomer.firstName || ''} ${selectedCustomer.lastName || ''}`.trim()}
-                  />
-                  <FieldRow label="Phone" value={selectedCustomer.phone} />
-                  {selectedCustomer.email && (
-                    <FieldRow label="Email" value={selectedCustomer.email} />
-                  )}
-                  {selectedCustomer.city && (
-                    <FieldRow label="City" value={selectedCustomer.city} />
-                  )}
-                </div>
-              )}
-
-              {/* Property details */}
-              <div className="space-y-1.5">
-                <h3 className="mb-2 border-b border-border-light pb-1.5 text-xs font-semibold uppercase tracking-wider text-foreground-tertiary">
-                  Property
-                </h3>
-                <FieldRow
-                  label="Name"
-                  value={
-                    selectedProperty.propertyName ||
-                    selectedProperty.consumerName ||
-                    '—'
-                  }
-                />
-                {selectedProperty.address && (
-                  <FieldRow label="Address" value={selectedProperty.address} />
-                )}
-                {selectedProperty.connectionType && (
-                  <FieldRow
-                    label="Connection"
-                    value={selectedProperty.connectionType}
-                  />
-                )}
-                {selectedProperty.sanctionedLoad != null && (
-                  <FieldRow
-                    label="Sanc. Load"
-                    value={`${selectedProperty.sanctionedLoad} kW`}
-                  />
-                )}
-                {selectedProperty.monthlyBill != null && (
-                  <FieldRow
-                    label="Monthly Bill"
-                    value={formatCurrency(selectedProperty.monthlyBill)}
-                  />
-                )}
-                {selectedProperty.roofAreaSqft != null && (
-                  <FieldRow
-                    label="Roof Area"
-                    value={`${selectedProperty.roofAreaSqft} sq ft`}
-                  />
-                )}
-              </div>
-
-              {/* Quote details */}
-              {selectedQuote && (
-                <div className="space-y-1.5">
-                  <h3 className="mb-2 border-b border-border-light pb-1.5 text-xs font-semibold uppercase tracking-wider text-foreground-tertiary">
-                    Quote
-                  </h3>
-                  <FieldRow label="Number" value={selectedQuote.quoteNumber} />
-                  <FieldRow
-                    label="System Size"
-                    value={`${formatSystemSize(selectedQuote.systemSizeKw)} kW`}
-                  />
-                  <FieldRow
-                    label="Type"
                     value={
-                      PROJECT_TYPE_LABELS[selectedQuote.projectType] ||
-                      selectedQuote.projectType
+                      selectedProperty.propertyName ||
+                      selectedProperty.consumerName ||
+                      '—'
                     }
                   />
-                  {selectedQuote.finalPrice != null && (
+                  {selectedProperty.address && (
+                    <FieldRow label="Address" value={selectedProperty.address} />
+                  )}
+                  {selectedProperty.connectionType && (
                     <FieldRow
-                      label="Final Price"
-                      value={formatCurrency(selectedQuote.finalPrice)}
+                      label="Connection"
+                      value={selectedProperty.connectionType}
                     />
                   )}
-                  {selectedQuote.effectivePrice != null && (
+                  {selectedProperty.sanctionedLoad != null && (
                     <FieldRow
-                      label="Eff. Price"
-                      value={formatCurrency(selectedQuote.effectivePrice)}
+                      label="Sanc. Load"
+                      value={`${selectedProperty.sanctionedLoad} kW`}
                     />
                   )}
-                  {selectedQuote.subsidyAmount != null &&
-                    selectedQuote.subsidyAmount > 0 && (
-                      <FieldRow
-                        label="Subsidy"
-                        value={formatCurrency(selectedQuote.subsidyAmount)}
-                      />
-                    )}
-                  <FieldRow
-                    label="Quote Date"
-                    value={formatDate(selectedQuote.quoteDate)}
-                  />
-                  {selectedQuote.validUntil && (
+                  {selectedProperty.monthlyBill != null && (
                     <FieldRow
-                      label="Valid Until"
-                      value={formatDate(selectedQuote.validUntil)}
+                      label="Monthly Bill"
+                      value={formatCurrency(selectedProperty.monthlyBill)}
+                    />
+                  )}
+                  {selectedProperty.roofAreaSqft != null && (
+                    <FieldRow
+                      label="Roof Area"
+                      value={`${selectedProperty.roofAreaSqft} sq ft`}
                     />
                   )}
                 </div>
+              </TabsContent>
+
+              {/* Quote Tab */}
+              {selectedQuote && (
+                <TabsContent value="quote">
+                  <div className="space-y-2">
+                    <FieldRow label="Number" value={selectedQuote.quoteNumber} />
+                    <FieldRow
+                      label="System Size"
+                      value={`${formatSystemSize(selectedQuote.systemSizeKw)} kW`}
+                    />
+                    <FieldRow
+                      label="Type"
+                      value={
+                        PROJECT_TYPE_LABELS[selectedQuote.projectType] ||
+                        selectedQuote.projectType
+                      }
+                    />
+                    {selectedQuote.finalPrice != null && (
+                      <FieldRow
+                        label="Final Price"
+                        value={formatCurrency(selectedQuote.finalPrice)}
+                      />
+                    )}
+                    {selectedQuote.effectivePrice != null && (
+                      <FieldRow
+                        label="Eff. Price"
+                        value={formatCurrency(selectedQuote.effectivePrice)}
+                      />
+                    )}
+                    {selectedQuote.subsidyAmount != null &&
+                      selectedQuote.subsidyAmount > 0 && (
+                        <FieldRow
+                          label="Subsidy"
+                          value={formatCurrency(selectedQuote.subsidyAmount)}
+                        />
+                      )}
+                    <FieldRow
+                      label="Quote Date"
+                      value={formatDate(selectedQuote.quoteDate)}
+                    />
+                    {selectedQuote.validUntil && (
+                      <FieldRow
+                        label="Valid Until"
+                        value={formatDate(selectedQuote.validUntil)}
+                      />
+                    )}
+                  </div>
+                </TabsContent>
               )}
-            </div>
+            </Tabs>
           </CardContent>
         </Card>
       )}
@@ -889,13 +946,18 @@ export function ProjectCreatePage(): React.JSX.Element {
       {selectedPropertyId && !propertyConverted && (
         <Card>
           <CardHeader className="justify-start gap-2">
-            <ClipboardList className="size-4 text-foreground-secondary" />
+            <Pencil className="size-4 text-foreground-secondary" />
             <h2 className="text-sm font-semibold">Project Details</h2>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Project Name */}
+          <CardContent className="space-y-5">
+            {/* ---- Project Name ---- */}
             <div className="space-y-2">
-              <Label required>Project Name</Label>
+              <div className="flex items-center gap-2">
+                <Label required>Project Name</Label>
+                {!isNameManuallyEdited && autoName && (
+                  <Badge variant="secondary" size="xs">Auto-generated</Badge>
+                )}
+              </div>
               <Input
                 placeholder="e.g., Rajesh Kumar - Residence - 5kW"
                 {...register('name', {
@@ -909,138 +971,161 @@ export function ProjectCreatePage(): React.JSX.Element {
               )}
             </div>
 
-            {/* Locked fields from quote (only lock when quote has valid data) */}
-            {isQuoteFlow && quoteHasValidSize && selectedQuote ? (
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-2 rounded-lg border border-border-light bg-background-secondary px-3 py-2">
-                    <span className="text-xs text-foreground-secondary">
-                      System Size
-                    </span>
-                    <Badge variant="secondary">
-                      {formatSystemSize(selectedQuote.systemSizeKw)} kW
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-2 rounded-lg border border-border-light bg-background-secondary px-3 py-2">
-                    <span className="text-xs text-foreground-secondary">
-                      Type
-                    </span>
-                    <Badge variant="secondary">
-                      {PROJECT_TYPE_LABELS[selectedQuote.projectType] ||
-                        selectedQuote.projectType}
-                    </Badge>
-                  </div>
-                  {selectedQuote.finalPrice != null && (
-                    <div className="flex items-center gap-2 rounded-lg border border-border-light bg-background-secondary px-3 py-2">
-                      <span className="text-xs text-foreground-secondary">
-                        Estimated Cost
-                      </span>
-                      <Badge variant="secondary">
-                        {formatCurrency(selectedQuote.finalPrice)}
-                      </Badge>
-                    </div>
-                  )}
-                </div>
-                <p className="text-2xs text-foreground-tertiary">
-                  These fields are locked from the selected quote.
-                </p>
+            {/* ---- System Specs sub-group ---- */}
+            <fieldset className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Zap className="size-3.5 text-foreground-tertiary" />
+                <span className="text-xs font-medium uppercase tracking-wider text-foreground-tertiary">
+                  System Specifications
+                </span>
+                {isQuoteFlow && quoteHasValidSize && (
+                  <Badge variant="outline" size="xs" className="gap-1">
+                    <Lock className="size-2.5" />
+                    From Quote
+                  </Badge>
+                )}
               </div>
-            ) : (
+
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
-                  <Label required>Project Type</Label>
-                  <Select
-                    value={watch('projectType') || ''}
-                    onValueChange={(val) => setValue('projectType', val)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PROJECT_TYPE_OPTIONS.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label required={!isQuoteFlow}>Project Type</Label>
+                  {isQuoteFlow && quoteHasValidSize && selectedQuote ? (
+                    <Input
+                      readOnly
+                      value={
+                        PROJECT_TYPE_LABELS[selectedQuote.projectType] ||
+                        selectedQuote.projectType
+                      }
+                      className="bg-background-secondary text-foreground-secondary cursor-not-allowed"
+                    />
+                  ) : (
+                    <Select
+                      value={watch('projectType') || ''}
+                      onValueChange={(val) => setValue('projectType', val)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PROJECT_TYPE_OPTIONS.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                   {errors.projectType && (
                     <p className="text-xs text-error">
                       {errors.projectType.message}
                     </p>
                   )}
                 </div>
+
                 <div className="space-y-2">
-                  <Label required>System Size (kW)</Label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    placeholder="e.g., 5"
-                    {...register('systemSizeKw', { valueAsNumber: true })}
-                  />
+                  <Label required={!isQuoteFlow}>System Size (kW)</Label>
+                  {isQuoteFlow && quoteHasValidSize && selectedQuote ? (
+                    <Input
+                      readOnly
+                      value={`${formatSystemSize(selectedQuote.systemSizeKw)} kW`}
+                      className="bg-background-secondary text-foreground-secondary cursor-not-allowed"
+                    />
+                  ) : (
+                    <Input
+                      type="number"
+                      step="0.1"
+                      placeholder="e.g., 5"
+                      {...register('systemSizeKw', { valueAsNumber: true })}
+                    />
+                  )}
                   {errors.systemSizeKw && (
                     <p className="text-xs text-error">
                       {errors.systemSizeKw.message}
                     </p>
                   )}
                 </div>
+
                 <div className="space-y-2">
-                  <Label>Estimated Cost (₹)</Label>
-                  <Input
-                    type="number"
-                    step="1"
-                    placeholder="e.g., 350000"
-                    {...register('estimatedCost', { valueAsNumber: true })}
-                  />
+                  <Label>Estimated Cost</Label>
+                  {isQuoteFlow && quoteHasValidSize && selectedQuote?.finalPrice != null ? (
+                    <div className="flex h-9 items-center rounded-md border border-border-light bg-background-secondary px-3">
+                      <IndianRupee className="mr-1 size-3.5 text-foreground-tertiary" />
+                      <span className="text-sm text-foreground-secondary">
+                        {formatCurrency(selectedQuote.finalPrice).replace('₹', '')}
+                      </span>
+                    </div>
+                  ) : (
+                    <Input
+                      type="number"
+                      step="1"
+                      placeholder="e.g., 350000"
+                      leftIcon={<IndianRupee className="size-3.5" />}
+                      {...register('estimatedCost', { valueAsNumber: true })}
+                    />
+                  )}
                 </div>
               </div>
-            )}
+            </fieldset>
 
-            {/* Priority & Dates */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label>Priority</Label>
-                <Select
-                  value={watch('priority') || ProjectPriority.NORMAL}
-                  onValueChange={(val) =>
-                    setValue('priority', val as ProjectPriority)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(PROJECT_PRIORITY_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* ---- Planning sub-group ---- */}
+            <fieldset className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="size-3.5 text-foreground-tertiary" />
+                <span className="text-xs font-medium uppercase tracking-wider text-foreground-tertiary">
+                  Planning
+                </span>
               </div>
-              <div className="space-y-2">
-                <Label>Start Date</Label>
-                <Input type="date" {...register('startDate')} />
-                {errors.startDate && (
-                  <p className="text-xs text-error">
-                    {errors.startDate.message}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label>End Date</Label>
-                <Input type="date" {...register('endDate')} />
-                {errors.endDate && (
-                  <p className="text-xs text-error">{errors.endDate.message}</p>
-                )}
-              </div>
-            </div>
 
-            {/* Description */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <Flag className="size-3 text-foreground-tertiary" />
+                    <Label>Priority</Label>
+                  </div>
+                  <Select
+                    value={watch('priority') || ProjectPriority.NORMAL}
+                    onValueChange={(val) =>
+                      setValue('priority', val as ProjectPriority)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(PROJECT_PRIORITY_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Start Date</Label>
+                  <Input type="date" {...register('startDate')} />
+                  {errors.startDate && (
+                    <p className="text-xs text-error">
+                      {errors.startDate.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>End Date</Label>
+                  <Input type="date" {...register('endDate')} />
+                  {errors.endDate && (
+                    <p className="text-xs text-error">{errors.endDate.message}</p>
+                  )}
+                </div>
+              </div>
+            </fieldset>
+
+            {/* ---- Description ---- */}
             <div className="space-y-2">
               <Label>Description</Label>
               <Textarea
-                rows={3}
+                rows={2}
                 placeholder="Brief project description (optional)"
                 {...register('description')}
               />
@@ -1083,15 +1168,12 @@ export function ProjectCreatePage(): React.JSX.Element {
             ) : (
               <>
                 {/* Search */}
-                <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-foreground-tertiary" />
-                  <Input
-                    placeholder="Search employees by name, designation, or department..."
-                    className="pl-9"
-                    value={teamSearch}
-                    onChange={(e) => setTeamSearch(e.target.value)}
-                  />
-                </div>
+                <Input
+                  placeholder="Search employees by name, designation, or department..."
+                  leftIcon={<Search className="size-4" />}
+                  value={teamSearch}
+                  onChange={(e) => setTeamSearch(e.target.value)}
+                />
 
                 {/* Employee List */}
                 <div className="max-h-72 overflow-y-auto rounded-lg border border-border-light">
@@ -1516,11 +1598,11 @@ export function ProjectCreatePage(): React.JSX.Element {
       )}
 
       {/* ================================================================== */}
-      {/* Sticky Submit Bar */}
+      {/* Action Buttons */}
       {/* ================================================================== */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-border-light bg-background/95 px-4 py-3 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <Button variant="outline" size="sm" onClick={handleCancel}>
+      {selectedPropertyId && !propertyConverted && (
+        <div className="flex items-center justify-end gap-3 pb-8">
+          <Button variant="ghost" size="sm" onClick={handleCancel}>
             Cancel
           </Button>
           <Button
@@ -1537,7 +1619,7 @@ export function ProjectCreatePage(): React.JSX.Element {
             )}
           </Button>
         </div>
-      </div>
+      )}
     </div>
   );
 }
