@@ -13,6 +13,7 @@ import {
 } from '../schemas/site-visit.schema';
 
 import { CustomerSearchCombobox, PropertySelector, RadioCard, RadioCardGroup } from '@/components/shared';
+import type { Property as PropertySelectorProperty } from '@/components/shared/forms/property-selector';
 import {
   Button,
   Card,
@@ -99,6 +100,7 @@ export function ScheduleVisitForm(): React.JSX.Element {
 
   const form = useForm<ScheduleSiteVisitFormData>({
      
+     
     resolver: zodResolver(scheduleSiteVisitSchema) as any,
     defaultValues: {
       customerId: '',
@@ -126,9 +128,8 @@ export function ScheduleVisitForm(): React.JSX.Element {
     form.setValue('propertyId', '');
   };
 
-  const onSubmit = (data: ScheduleSiteVisitFormData) => {
-    // TODO: Phase 2 - API call
-    console.log('Schedule visit:', data);
+  const onSubmit = (_data: ScheduleSiteVisitFormData) => {
+    // TODO: Phase 2 - API call to schedule site visit
     showToast.success('Site visit scheduled successfully');
     router.push(ROUTES.SITE_VISITS.LIST);
   };
@@ -171,7 +172,7 @@ export function ScheduleVisitForm(): React.JSX.Element {
                   <div className="space-y-2">
                     <Label>Property *</Label>
                     <PropertySelector
-                      properties={properties as any}
+                      properties={properties as PropertySelectorProperty[]}
                       value={form.watch('propertyId')}
                       onSelect={(v: string) => form.setValue('propertyId', v)}
                     />

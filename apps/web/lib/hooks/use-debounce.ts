@@ -20,7 +20,7 @@ import { useState, useEffect } from 'react';
  *   fetchResults(debouncedSearch);
  * }, [debouncedSearch]);
  */
-export function useDebounce<T>(value: T, delay: number = 500): T {
+export function useDebounce<T>(value: T, delay: number = 550): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {

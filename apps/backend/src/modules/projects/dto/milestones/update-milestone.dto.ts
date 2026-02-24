@@ -1,6 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  MilestoneStatus,
   MilestoneType,
   type MilestoneDeliverable,
 } from '@oneohm-epc/shared-types';
@@ -58,16 +57,6 @@ export class UpdateMilestoneDto {
   @IsEnum(MilestoneType)
   @IsOptional()
   milestoneType?: MilestoneType;
-
-  @ApiPropertyOptional({
-    enum: Object.values(MilestoneStatus),
-    enumName: 'MilestoneStatus',
-    example: MilestoneStatus.IN_PROGRESS,
-    description: 'Milestone status',
-  })
-  @IsEnum(MilestoneStatus)
-  @IsOptional()
-  status?: MilestoneStatus;
 
   @ApiPropertyOptional({
     example: 2,

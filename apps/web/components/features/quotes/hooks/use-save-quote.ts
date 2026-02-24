@@ -24,8 +24,8 @@ export function useSaveQuote() {
       return data;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.all });
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.statusCounts() });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.statusCounts(organizationId) });
     },
   });
 }

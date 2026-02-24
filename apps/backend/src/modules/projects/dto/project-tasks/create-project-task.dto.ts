@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   TaskPriority,
   TaskStatus,
@@ -8,10 +8,9 @@ import {
 import { Type } from 'class-transformer';
 import {
   IsArray,
-  IsDate,
+  IsDateString,
   IsEnum,
   IsInt,
-  IsNotEmpty,
   IsObject,
   IsOptional,
   IsString,
@@ -36,24 +35,23 @@ export class CreateProjectTaskDto {
   milestoneId?: string;
 
   @ApiPropertyOptional({
-    description: 'Task Template ID',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    description: 'Workflow Step ID (reference to shared workflow definition)',
   })
   @IsUUID()
   @IsOptional()
-  taskTemplateId?: string;
+  workflowStepId?: string;
 
-  @ApiProperty({ description: 'Task name', example: 'Install solar panels', maxLength: 255 })
+  @ApiPropertyOptional({ description: 'Task name (required for ad-hoc tasks without workflowStepId)', maxLength: 255 })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @MaxLength(255)
-  name!: string;
+  name?: string;
 
-  @ApiProperty({ description: 'Task code', example: 'TASK-001', maxLength: 100 })
+  @ApiPropertyOptional({ description: 'Task code (auto-generated if not provided)', maxLength: 100 })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @MaxLength(100)
-  code!: string;
+  code?: string;
 
   @ApiPropertyOptional({ description: 'Task description' })
   @IsString()
@@ -75,17 +73,15 @@ export class CreateProjectTaskDto {
   @Type(() => Number)
   kanbanOrder?: number;
 
-  @ApiPropertyOptional({ description: 'Start date', example: '2024-01-01' })
-  @IsDate()
+  @ApiPropertyOptional({ description: 'Start date (ISO format)', example: '2024-01-01' })
+  @IsDateString()
   @IsOptional()
-  @Type(() => Date)
-  startDate?: Date;
+  startDate?: string;
 
-  @ApiPropertyOptional({ description: 'End date', example: '2024-01-10' })
-  @IsDate()
+  @ApiPropertyOptional({ description: 'End date (ISO format)', example: '2024-01-10' })
+  @IsDateString()
   @IsOptional()
-  @Type(() => Date)
-  endDate?: Date;
+  endDate?: string;
 
   @ApiPropertyOptional({
     enum: Object.values(TaskStatus),

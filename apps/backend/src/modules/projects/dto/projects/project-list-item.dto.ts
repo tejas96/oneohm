@@ -69,12 +69,23 @@ export class ProjectListItemDto {
   @Expose()
   description?: string;
 
-  @ApiProperty({ example: 10 })
+  @ApiProperty({ description: 'FK to the source quote' })
   @Expose()
+  quoteId!: string;
+
+  @ApiProperty({ example: 'Q-ONEOHM-2025-0001', description: 'Derived from quote relation' })
+  @Expose()
+  @Transform(({ obj }) => obj.quote?.quoteNumber)
+  quoteNumber?: string;
+
+  @ApiProperty({ example: 10, description: 'Derived from quote.systemSizeKw' })
+  @Expose()
+  @Transform(({ obj }) => obj.quote?.systemSizeKw)
   systemSizeKw!: number;
 
-  @ApiProperty({ example: 'residential' })
+  @ApiProperty({ example: 'residential', description: 'Derived from quote.projectType' })
   @Expose()
+  @Transform(({ obj }) => obj.quote?.projectType)
   projectType!: string;
 
   @ApiProperty({ enum: Object.values(ProjectStatus), example: ProjectStatus.IN_PROGRESS })
@@ -97,12 +108,14 @@ export class ProjectListItemDto {
   @Expose()
   endDate?: Date;
 
-  @ApiPropertyOptional({ example: 450000 })
+  @ApiPropertyOptional({ example: 450000, description: 'Derived from quote.finalPrice' })
   @Expose()
+  @Transform(({ obj }) => obj.quote?.finalPrice ?? null)
   estimatedCost?: number;
 
-  @ApiPropertyOptional({ example: 425000 })
+  @ApiPropertyOptional({ example: 425000, description: 'Derived from metadata.actualCost' })
   @Expose()
+  @Transform(({ obj }) => obj.metadata?.actualCost ?? null)
   actualCost?: number;
 
   @ApiPropertyOptional()

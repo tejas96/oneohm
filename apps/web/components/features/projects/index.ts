@@ -8,7 +8,7 @@ export { ProjectNewPage } from './components/project-new-page';
 export { ProjectBoardPage } from './components/project-board-page';
 export { ProjectTimelinePage } from './components/project-timeline-page';
 export { ProjectMyTasksPage } from './components/project-my-tasks-page';
-export { ProjectTaskTemplatesPage } from './components/project-task-templates-page';
+export { ProjectWorkflowStepsPage } from './components/project-workflow-steps-page';
 export { ProjectCard } from './components/project-card';
 
 // Hooks

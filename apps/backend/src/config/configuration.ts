@@ -16,6 +16,7 @@ export default (): Configuration => ({
     baseUrl:
       process.env.BASE_URL ||
       `http://${process.env.BACKEND_HOST || 'localhost'}:${process.env.BACKEND_PORT || 8085}`,
+    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
   },
 
   database: {
@@ -109,5 +110,12 @@ export default (): Configuration => ({
     msg91AuthKey: process.env.MSG91_AUTH_KEY,
     msg91SenderId: process.env.MSG91_SENDER_ID,
     msg91DltTemplateId: process.env.MSG91_DLT_TEMPLATE_ID,
+  },
+
+  seed: {
+    platformAdminEmail: process.env.PLATFORM_ADMIN_EMAIL || 'tejas.patil@beyondnyx.com',
+    platformAdminPhone: process.env.PLATFORM_ADMIN_PHONE || '+918087823247',
+    platformAdminPassword: process.env.PLATFORM_ADMIN_PASSWORD || 'admin@123',
+    organizationId: process.env.SEED_ORG_ID || '7e5ce9c8-9c17-4a86-8fcd-da9ce182467b',
   },
 });

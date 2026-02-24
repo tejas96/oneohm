@@ -95,10 +95,12 @@ export interface UpdateFollowupData {
 // ============================================================================
 
 export const followupKeys = {
-  all: ['followups'] as const,
-  lists: () => [...followupKeys.all, 'list'] as const,
-  list: (filters: Record<string, unknown>) => [...followupKeys.lists(), filters] as const,
-  detail: (id: string) => [...followupKeys.all, 'detail', id] as const,
+  all: (orgId?: string) => ['followups', orgId] as const,
+  lists: (orgId?: string) => [...followupKeys.all(orgId), 'list'] as const,
+  list: (orgId: string | undefined, filters: Record<string, unknown>) =>
+    [...followupKeys.lists(orgId), filters] as const,
+  detail: (orgId: string | undefined, id: string) =>
+    [...followupKeys.all(orgId), 'detail', id] as const,
 };
 
 // ============================================================================
@@ -116,7 +118,7 @@ export function useFollowups(
   const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: followupKeys.list(filters as Record<string, unknown>),
+    queryKey: followupKeys.list(organizationId, filters as Record<string, unknown>),
     queryFn: async (): Promise<FollowupListResponse> => {
       const params = new URLSearchParams();
 
@@ -163,7 +165,7 @@ export function useCreateFollowup(): UseMutationResult<
       return response;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: followupKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: followupKeys.lists(organizationId) });
     },
   });
 }
@@ -197,8 +199,8 @@ export function useUpdateFollowup(): UseMutationResult<
       return response;
     },
     onSuccess: (_, variables) => {
-      void queryClient.invalidateQueries({ queryKey: followupKeys.lists() });
-      void queryClient.invalidateQueries({ queryKey: followupKeys.detail(variables.id) });
+      void queryClient.invalidateQueries({ queryKey: followupKeys.lists(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: followupKeys.detail(organizationId, variables.id) });
     },
   });
 }
@@ -226,10 +228,10 @@ export function useMarkFollowupComplete(): UseMutationResult<
       return response;
     },
     onSuccess: (_, variables) => {
-      void queryClient.invalidateQueries({ queryKey: followupKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: followupKeys.lists(organizationId) });
       if (variables.propertyId) {
         void queryClient.invalidateQueries({
-          queryKey: propertyKeys.detail(variables.propertyId),
+          queryKey: propertyKeys.detail(organizationId, variables.propertyId),
         });
       }
     },
@@ -259,7 +261,7 @@ export function useMarkFollowupCancelled(): UseMutationResult<
       return response;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: followupKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: followupKeys.lists(organizationId) });
     },
   });
 }
@@ -280,7 +282,7 @@ export function useDeleteFollowup(): UseMutationResult<void, AxiosError, string>
       });
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: followupKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: followupKeys.lists(organizationId) });
     },
   });
 }

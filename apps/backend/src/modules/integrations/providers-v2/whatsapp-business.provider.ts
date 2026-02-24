@@ -105,8 +105,11 @@ export class WhatsAppBusinessProvider extends BaseMessagingProvider {
    */
   async sendTemplate(message: ITemplateMessage): Promise<IMessageResponse> {
     try {
-      // Build template components
-      const components: any[] = [];
+      // Build template components (WhatsApp API format)
+      const components: Array<{
+        type: string;
+        parameters?: Array<{ type: string; text: string }>;
+      }> = [];
 
       if (message.templateParameters) {
         const parameters = Object.values(message.templateParameters).map((value) => ({
@@ -159,24 +162,22 @@ export class WhatsAppBusinessProvider extends BaseMessagingProvider {
     try {
       const mediaType = message.type.toLowerCase(); // Convert enum to lowercase string for WhatsApp API
 
-      const payload: any = {
+      const mediaPayload: Record<string, unknown> = {
+        link: message.mediaUrl,
+      };
+      if ((mediaType === 'image' || mediaType === 'video') && message.caption) {
+        mediaPayload.caption = message.caption;
+      }
+      if (mediaType === 'document' && message.filename) {
+        mediaPayload.filename = message.filename;
+      }
+
+      const payload: Record<string, unknown> = {
         messaging_product: 'whatsapp',
         to: this.cleanPhone(message.to),
         type: mediaType,
-        [mediaType]: {
-          link: message.mediaUrl,
-        },
+        [mediaType]: mediaPayload,
       };
-
-      // Add caption for image/video
-      if ((mediaType === 'image' || mediaType === 'video') && message.caption) {
-        payload[mediaType].caption = message.caption;
-      }
-
-      // Add filename for document
-      if (mediaType === 'document' && message.filename) {
-        payload[mediaType].filename = message.filename;
-      }
 
       const response = await this.http.post(`/${this.phoneNumberId}/messages`, payload, {
         headers: {
@@ -218,10 +219,14 @@ export class WhatsAppBusinessProvider extends BaseMessagingProvider {
       }
 
       return { valid: false, error: 'Invalid response' };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as {
+        response?: { data?: { error?: { message?: string } } };
+        message?: string;
+      };
       return {
         valid: false,
-        error: error.response?.data?.error?.message || error.message,
+        error: err.response?.data?.error?.message || err.message,
       };
     }
   }

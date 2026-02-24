@@ -93,11 +93,9 @@ export function useNavigationCounts(): NavigationCountsState {
   const [isLoading] = useState(false);
   const [error] = useState<string | null>(null);
 
-  // TODO: Implement actual refetch logic
+  // TODO: Implement actual refetch logic with API call
   const refetch = useCallback(() => {
-    // TODO: Call query refetch when implemented
-    // eslint-disable-next-line no-console
-    console.log('[useNavigationCounts] refetch called - TODO: implement API call');
+    // no-op until API is implemented
   }, []);
 
   // TODO: Transform API response to NavigationCounts type
@@ -128,11 +126,11 @@ export function getCountByPath(
 ): number | undefined {
   const keys = path.split('.');
    
-  let value: any = counts;
+  let value: unknown = counts;
 
   for (const key of keys) {
     if (value && typeof value === 'object' && key in value) {
-      value = value[key];
+      value = (value as Record<string, unknown>)[key];
     } else {
       return undefined;
     }

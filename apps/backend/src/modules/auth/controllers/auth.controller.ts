@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   HttpStatus,
+  Req,
   Request,
   UnauthorizedException,
   UseGuards,
@@ -10,6 +11,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { SecurityEventType } from '@oneohm-epc/shared-types';
 import { ApiCreate, ApiGet, SecurityRateLimit } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
+import { Request as ExpressRequest } from 'express';
 
 import { SecurityRateLimitGuard } from '../../security-events/guards';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
@@ -48,15 +50,28 @@ export class AuthController {
    * Recommended for admin and employee users
    */
   @Public()
-  @UseGuards(LocalAuthGuard)
+  @UseGuards(SecurityRateLimitGuard, LocalAuthGuard)
+  @SecurityRateLimit({
+    eventType: SecurityEventType.LOGIN_FAILED,
+    trackBy: ['ipAddress'],
+    limits: [
+      { count: 5, windowSeconds: 300, message: 'Too many login attempts. Wait 5 minutes before trying again.' },
+      { count: 20, windowSeconds: 86400, message: 'Daily login attempt limit reached.' },
+    ],
+    blockOnExceed: true,
+    blockDurationSeconds: 300,
+  })
   @ApiCreate({
     path: 'login',
     summary: 'User login with email/password',
-    description: 'Uses LocalStrategy (Passport). Recommended for admin and employee users',
+    description: 'Uses LocalStrategy (Passport). Recommended for admin and employee users. Rate limited: 5 per 5 min.',
     responseType: LoginResponseDto,
     statusCode: HttpStatus.OK,
     successMessage: 'Login successful',
-    additionalErrors: [{ status: HttpStatus.UNAUTHORIZED, description: 'Invalid credentials' }],
+    additionalErrors: [
+      { status: HttpStatus.UNAUTHORIZED, description: 'Invalid credentials' },
+      { status: HttpStatus.TOO_MANY_REQUESTS, description: 'Too many login attempts' },
+    ],
   })
   async login(
     @Body() _loginDto: LoginDto,
@@ -158,7 +173,7 @@ export class AuthController {
    * Rate Limited: 5 attempts per 5 minutes per phone/IP
    */
   @Public()
-  @UseGuards(OtpAuthGuard, SecurityRateLimitGuard)
+  @UseGuards(SecurityRateLimitGuard, OtpAuthGuard)
   @SecurityRateLimit({
     eventType: SecurityEventType.OTP_VERIFY_ATTEMPT,
     trackBy: ['phone', 'ipAddress'],
@@ -200,6 +215,15 @@ export class AuthController {
    * Always returns success for security
    */
   @Public()
+  @UseGuards(SecurityRateLimitGuard)
+  @SecurityRateLimit({
+    eventType: SecurityEventType.PASSWORD_RESET_REQUESTED,
+    trackBy: ['ipAddress'],
+    limits: [
+      { count: 3, windowSeconds: 900, message: 'Too many password reset requests. Try again in 15 minutes.' },
+      { count: 10, windowSeconds: 86400, message: 'Daily password reset limit reached.' },
+    ],
+  })
   @ApiCreate({
     path: 'forgot-password',
     summary: 'Request password reset',
@@ -209,8 +233,11 @@ export class AuthController {
     statusCode: HttpStatus.OK,
     successMessage: 'Password reset email sent',
   })
-  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<PasswordResetResponseDto> {
-    return this.authService.forgotPassword(dto.email);
+  async forgotPassword(
+    @Body() dto: ForgotPasswordDto,
+    @Req() req: ExpressRequest,
+  ): Promise<PasswordResetResponseDto> {
+    return this.authService.forgotPassword(dto.email, req.ip, req.headers['user-agent']);
   }
 
   /**
@@ -218,18 +245,32 @@ export class AuthController {
    * Validates token and updates password
    */
   @Public()
+  @UseGuards(SecurityRateLimitGuard)
+  @SecurityRateLimit({
+    eventType: SecurityEventType.PASSWORD_RESET_REQUESTED,
+    trackBy: ['ipAddress'],
+    limits: [
+      { count: 5, windowSeconds: 900, message: 'Too many reset attempts. Try again in 15 minutes.' },
+    ],
+    blockOnExceed: true,
+    blockDurationSeconds: 900,
+  })
   @ApiCreate({
     path: 'reset-password',
     summary: 'Reset password with token',
-    description: 'Reset password using the token received via email',
+    description: 'Reset password using the token received via email. Rate limited: 5 per 15 min.',
     responseType: PasswordResetResponseDto,
     statusCode: HttpStatus.OK,
     successMessage: 'Password reset successfully',
     additionalErrors: [
       { status: HttpStatus.BAD_REQUEST, description: 'Invalid or expired reset token' },
+      { status: HttpStatus.TOO_MANY_REQUESTS, description: 'Too many reset attempts' },
     ],
   })
-  async resetPassword(@Body() dto: ResetPasswordDto): Promise<PasswordResetResponseDto> {
-    return this.authService.resetPassword(dto.token, dto.newPassword);
+  async resetPassword(
+    @Body() dto: ResetPasswordDto,
+    @Req() req: ExpressRequest,
+  ): Promise<PasswordResetResponseDto> {
+    return this.authService.resetPassword(dto.token, dto.newPassword, req.ip, req.headers['user-agent']);
   }
 }

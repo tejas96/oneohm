@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { SiteSurveyStatus } from '@oneohm-epc/shared-types';
 
-import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { CreateSurveyDto, UpdateSurveyDto } from '../dto';
 import { SiteSurveyEntity } from '../entities/site-survey.entity';
@@ -54,14 +53,8 @@ export class SurveyService {
     try {
       const org = await this.organizationRepository.findOneById(organizationId);
       if (org) {
-        const surveyCode = await generateEntityCode(
-          this.surveyRepository.repository,
-          'surveyCode',
-          'SSV',
-          org.code,
-          'survey_code',
-        );
-        await this.surveyRepository.repository.update(survey.id, { surveyCode });
+        const surveyCode = await this.surveyRepository.generateSurveyCode(org.code);
+        await this.surveyRepository.updateById(survey.id, { surveyCode });
       }
     } catch (err) {
       this.logger.warn(`Failed to generate survey code for ${survey.id}: ${String(err)}`);

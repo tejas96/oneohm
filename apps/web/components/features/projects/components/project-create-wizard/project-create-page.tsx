@@ -5,7 +5,7 @@ import {
   ProjectPriority,
   PropertyStatus,
   QuoteStatus,
-} from '@oneohm-epc/shared-types';
+ MilestoneType } from '@oneohm-epc/shared-types';
 import {
   AlertCircle,
   AlertTriangle,
@@ -13,7 +13,6 @@ import {
   Calendar,
   CheckCircle2,
   CheckSquare,
-  ChevronRight,
   ClipboardList,
   Crown,
   FileText,
@@ -21,7 +20,6 @@ import {
   IndianRupee,
   Info,
   Lock,
-  Milestone,
   Pencil,
   Plus,
   Search,
@@ -32,7 +30,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import {
@@ -49,16 +47,14 @@ import {
   PHASE_LABELS,
   PROJECT_PRIORITY_LABELS,
   PROJECT_TYPE_LABELS,
-  PROJECT_TYPE_OPTIONS,
 } from '../../constants';
 import {
   useConvertFromQuote,
   useEmployees,
-  useInitiateProject,
-  useTaskTemplates,
+  useWorkflowSteps,
   useTeamWorkload,
   type EmployeeListItem,
-  type TaskTemplate,
+  type WorkflowStep,
   type TeamWorkloadItem,
 } from '../../hooks';
 import {
@@ -66,12 +62,17 @@ import {
   type ProjectCreateFormData,
 } from '../../schemas/project-create.schema';
 import {
+  getDisplayRoles,
   getEmployeeDisplayName,
   getEmployeeInitials,
   getWorkloadVariant,
 } from '../../utils';
 
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
   Badge,
   Breadcrumb,
   BreadcrumbItem,
@@ -98,7 +99,7 @@ import {
   Textarea,
   showToast,
 } from '@/components/ui';
-import { ROUTES, buildRoute } from '@/lib/config/routes';
+import { ROUTES } from '@/lib/config/routes';
 import { useDebounce } from '@/lib/hooks';
 import {
   cn,
@@ -128,16 +129,21 @@ export function ProjectCreatePage(): React.JSX.Element {
       propertyId: initialPropertyId || '',
       customerId: initialCustomerId || '',
       name: '',
-      projectType: '',
-      systemSizeKw: undefined as unknown as number,
-      estimatedCost: undefined,
       priority: ProjectPriority.NORMAL,
       startDate: '',
       endDate: '',
       description: '',
       projectManagerId: '',
       teamMembers: [],
-      excludedTaskTemplateIds: [],
+      excludedStepIds: [],
+      taskAssignments: [],
+      taskMilestoneOverrides: [],
+      milestones: DEFAULT_MILESTONES.map((m, i) => ({
+        id: crypto.randomUUID(),
+        name: m.name,
+        type: m.type,
+        order: i + 1,
+      })),
     },
     mode: 'onTouched',
   });
@@ -150,16 +156,18 @@ export function ProjectCreatePage(): React.JSX.Element {
   } = form;
 
   // ---- Mutations ----
-  const initiateMutation = useInitiateProject();
   const convertMutation = useConvertFromQuote();
-  const isPending = initiateMutation.isPending || convertMutation.isPending;
+  const isPending = convertMutation.isPending;
 
   // ---- Watched form values ----
   const selectedCustomerId = watch('customerId');
   const selectedPropertyId = watch('propertyId');
   const selectedQuoteId = watch('quoteId');
   const teamMembers = watch('teamMembers');
-  const excludedIds = watch('excludedTaskTemplateIds');
+  const excludedIds = watch('excludedStepIds');
+  const taskAssignments = watch('taskAssignments');
+  const taskMilestoneOverrides = watch('taskMilestoneOverrides');
+  const milestones = watch('milestones');
 
   // ---- Local state ----
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -167,11 +175,20 @@ export function ProjectCreatePage(): React.JSX.Element {
   const [selectedQuote, setSelectedQuote] = useState<CustomerQuote | null>(null);
   const [summaryTab, setSummaryTab] = useState<string>('customer');
   const [customerSearch, setCustomerSearch] = useState('');
-  const debouncedCustomerSearch = useDebounce(customerSearch, 600);
+  const debouncedCustomerSearch = useDebounce(customerSearch, 550);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [isNameManuallyEdited, setIsNameManuallyEdited] = useState(false);
   const [teamSearch, setTeamSearch] = useState('');
   const [prefilled, setPrefilled] = useState(false);
+  const [editingMilestoneId, setEditingMilestoneId] = useState<string | null>(null);
+  const milestoneNameInputRef = useRef<HTMLInputElement>(null);
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+    };
+  }, []);
 
   // ---- Data hooks ----
   const { data: customersData, isFetching: customersFetching } = useCustomers({
@@ -192,28 +209,16 @@ export function ProjectCreatePage(): React.JSX.Element {
   const allQuotes: CustomerQuote[] = quotesData?.data ?? [];
 
   const usableQuotes = useMemo(() => {
-    const statusOrder = [
-      QuoteStatus.ACCEPTED,
-      QuoteStatus.SENT,
-      QuoteStatus.VIEWED,
-      QuoteStatus.DRAFT,
-    ];
-    const allowed = new Set<string>(statusOrder);
     return allQuotes
       .filter((q: CustomerQuote) => {
-        if (!allowed.has(q.status as string)) return false;
+        if (q.status !== QuoteStatus.ACCEPTED) return false;
         if (!selectedPropertyId) return true;
         return !q.propertyId || q.propertyId === selectedPropertyId;
       })
       .sort((a: CustomerQuote, b: CustomerQuote) => {
         const propMatch = (id: string | undefined) =>
           id === selectedPropertyId ? 0 : 1;
-        const propDiff = propMatch(a.propertyId) - propMatch(b.propertyId);
-        if (propDiff !== 0) return propDiff;
-        return (
-          statusOrder.indexOf(a.status as QuoteStatus) -
-          statusOrder.indexOf(b.status as QuoteStatus)
-        );
+        return propMatch(a.propertyId) - propMatch(b.propertyId);
       });
   }, [allQuotes, selectedPropertyId]);
 
@@ -227,21 +232,26 @@ export function ProjectCreatePage(): React.JSX.Element {
     return map;
   }, [workloadData]);
 
-  const { data: templates, isLoading: templatesLoading } = useTaskTemplates({ isActive: true });
+  const { data: templates, isLoading: stepsLoading } = useWorkflowSteps({ isActive: true });
 
   // ---- Derived state ----
-  const isQuoteFlow = !!selectedQuoteId && selectedQuoteId !== '';
-  const quoteHasValidSize =
-    !!selectedQuote && selectedQuote.systemSizeKw > 0;
   const propertyConverted = selectedProperty?.status === PropertyStatus.CONVERTED;
 
   const memberRoleMap = useMemo(() => {
     const map = new Map<string, string>();
-    teamMembers.forEach((m) => {
-      if (m.roleName) map.set(m.roleName.toLowerCase(), m.userId);
-    });
+    const teamUserIds = new Set(teamMembers.map((m) => m.userId));
+
+    for (const emp of employees) {
+      if (!teamUserIds.has(emp.userId) || !emp.roles) continue;
+      for (const role of emp.roles) {
+        const key = role.toLowerCase();
+        if (!map.has(key)) {
+          map.set(key, emp.userId);
+        }
+      }
+    }
     return map;
-  }, [teamMembers]);
+  }, [teamMembers, employees]);
 
   const includedTemplates = useMemo(
     () => (templates || []).filter((t) => !excludedIds.includes(t.id)),
@@ -251,14 +261,14 @@ export function ProjectCreatePage(): React.JSX.Element {
   const unassignedCount = useMemo(
     () =>
       includedTemplates.filter((t) => {
+        if (taskAssignments.some((a) => a.workflowStepId === t.id)) return false;
         if (!t.defaultRoleCode) return true;
         return !memberRoleMap.has(t.defaultRoleCode.toLowerCase());
       }).length,
-    [includedTemplates, memberRoleMap],
+    [includedTemplates, memberRoleMap, taskAssignments],
   );
 
   // ---- Auto-name generation ----
-  const watchedSizeKw = watch('systemSizeKw');
   const autoName = useMemo(() => {
     const custName = selectedCustomer
       ? `${selectedCustomer.firstName || ''} ${selectedCustomer.lastName || ''}`.trim()
@@ -267,13 +277,13 @@ export function ProjectCreatePage(): React.JSX.Element {
       selectedProperty?.propertyName ||
       selectedProperty?.consumerName ||
       'Property';
-    const sizeValue = selectedQuote?.systemSizeKw || watchedSizeKw;
+    const sizeValue = selectedQuote?.systemSizeKw;
     const size = sizeValue && sizeValue > 0
       ? `${formatSystemSize(sizeValue)}kW`
       : '';
     const parts = [custName, propName, size].filter(Boolean);
     return parts.join(' - ');
-  }, [selectedCustomer, selectedProperty, selectedQuote, watchedSizeKw]);
+  }, [selectedCustomer, selectedProperty, selectedQuote]);
 
   useEffect(() => {
     if (!isNameManuallyEdited && autoName) {
@@ -305,20 +315,17 @@ export function ProjectCreatePage(): React.JSX.Element {
       if (quote) {
         setSelectedQuote(quote);
         setValue('quoteId', quote.id);
-        prefillFromQuote(quote);
         setPrefilled(true);
       }
     }
-    // prefillFromQuote is stable (no deps beyond setValue)
   }, [initialQuoteId, usableQuotes, prefilled, setValue]);
 
-  // Auto-select best usable quote (accepted > sent > viewed)
+  // Auto-select best usable quote (accepted)
   useEffect(() => {
     if (usableQuotes.length > 0 && !selectedQuoteId && !initialQuoteId) {
       const quote = usableQuotes[0]!;
       setSelectedQuote(quote);
       setValue('quoteId', quote.id);
-      prefillFromQuote(quote);
     }
   }, [usableQuotes, selectedQuoteId, initialQuoteId, setValue]);
 
@@ -342,17 +349,17 @@ export function ProjectCreatePage(): React.JSX.Element {
     }
   }, [selectedQuote, selectedCustomer, summaryTab]);
 
-  // ---- Handlers ----
+  // Cleanup stale taskAssignments when a team member is removed
+  useEffect(() => {
+    const validUserIds = new Set(teamMembers.map((m) => m.userId));
+    const current = form.getValues('taskAssignments');
+    const filtered = current.filter((a) => validUserIds.has(a.assignedToUserId));
+    if (filtered.length !== current.length) {
+      setValue('taskAssignments', filtered);
+    }
+  }, [teamMembers, form, setValue]);
 
-  function prefillFromQuote(quote: CustomerQuote): void {
-    if (quote.systemSizeKw > 0) {
-      setValue('systemSizeKw', quote.systemSizeKw);
-    }
-    if (quote.projectType) {
-      setValue('projectType', quote.projectType);
-    }
-    setValue('estimatedCost', quote.finalPrice ?? undefined);
-  }
+  // ---- Handlers ----
 
   function handleCustomerSelect(customer: Customer): void {
     setSelectedCustomer(customer);
@@ -373,6 +380,21 @@ export function ProjectCreatePage(): React.JSX.Element {
     setValue('quoteId', '');
     setSelectedProperty(null);
     setSelectedQuote(null);
+    setValue('teamMembers', []);
+    setValue('projectManagerId', '');
+    setValue('excludedStepIds', []);
+    setValue('taskAssignments', []);
+    setValue('taskMilestoneOverrides', []);
+    setValue(
+      'milestones',
+      DEFAULT_MILESTONES.map((m, i) => ({
+        id: crypto.randomUUID(),
+        name: m.name,
+        type: m.type,
+        order: i + 1,
+      })),
+    );
+    setEditingMilestoneId(null);
     setIsNameManuallyEdited(false);
   }
 
@@ -383,24 +405,27 @@ export function ProjectCreatePage(): React.JSX.Element {
     setSelectedQuote(null);
     setValue('teamMembers', []);
     setValue('projectManagerId', '');
-    setValue('excludedTaskTemplateIds', []);
+    setValue('excludedStepIds', []);
+    setValue('taskAssignments', []);
+    setValue('taskMilestoneOverrides', []);
+    setValue(
+      'milestones',
+      DEFAULT_MILESTONES.map((m, i) => ({
+        id: crypto.randomUUID(),
+        name: m.name,
+        type: m.type,
+        order: i + 1,
+      })),
+    );
+    setEditingMilestoneId(null);
     setIsNameManuallyEdited(false);
   }
 
   function handleQuoteSelect(selectedId: string): void {
-    if (selectedId === '__none__') {
-      setSelectedQuote(null);
-      setValue('quoteId', '');
-      setValue('systemSizeKw', undefined as unknown as number);
-      setValue('projectType', '');
-      setValue('estimatedCost', undefined);
-    } else {
-      const found = usableQuotes.find((aq) => aq.id === selectedId);
-      if (found) {
-        setSelectedQuote(found);
-        setValue('quoteId', found.id);
-        prefillFromQuote(found);
-      }
+    const found = usableQuotes.find((aq) => aq.id === selectedId);
+    if (found) {
+      setSelectedQuote(found);
+      setValue('quoteId', found.id);
     }
     setIsNameManuallyEdited(false);
   }
@@ -462,70 +487,169 @@ export function ProjectCreatePage(): React.JSX.Element {
     } else {
       current.push(templateId);
     }
-    setValue('excludedTaskTemplateIds', current);
+    setValue('excludedStepIds', current);
+  }
+
+  function handleAssignmentChange(templateId: string, userId: string | null): void {
+    const current = [...taskAssignments];
+    const idx = current.findIndex((a) => a.workflowStepId === templateId);
+    if (!userId || userId === 'auto') {
+      if (idx >= 0) current.splice(idx, 1);
+    } else {
+      if (idx >= 0) {
+        current[idx] = { workflowStepId: templateId, assignedToUserId: userId };
+      } else {
+        current.push({ workflowStepId: templateId, assignedToUserId: userId });
+      }
+    }
+    setValue('taskAssignments', current);
+  }
+
+  function handleMilestoneOverride(templateId: string, newOrder: number): void {
+    const template = templates?.find((t) => t.id === templateId);
+    const defaultOrder = template?.defaultMilestoneType
+      ? milestones.find((m) => m.type === template.defaultMilestoneType)?.order ?? 0
+      : 0;
+
+    const current = [...taskMilestoneOverrides];
+    const idx = current.findIndex((o) => o.workflowStepId === templateId);
+
+    if (newOrder === defaultOrder) {
+      if (idx >= 0) current.splice(idx, 1);
+    } else {
+      if (idx >= 0) {
+        current[idx] = { workflowStepId: templateId, milestoneOrder: newOrder };
+      } else {
+        current.push({ workflowStepId: templateId, milestoneOrder: newOrder });
+      }
+    }
+    setValue('taskMilestoneOverrides', current);
+  }
+
+  function handleAddMilestone(): void {
+    const current = [...milestones];
+    const newOrder = current.length > 0 ? Math.max(...current.map((m) => m.order)) + 1 : 1;
+    const newId = crypto.randomUUID();
+    current.push({
+      id: newId,
+      name: `Milestone ${newOrder}`,
+      type: MilestoneType.CUSTOM,
+      order: newOrder,
+    });
+    setValue('milestones', current);
+    setEditingMilestoneId(newId);
+    requestAnimationFrame(() => {
+      milestoneNameInputRef.current?.focus();
+      milestoneNameInputRef.current?.select();
+    });
+  }
+
+  function handleRemoveMilestone(milestoneId: string): void {
+    const milestone = milestones.find((m) => m.id === milestoneId);
+    if (!milestone || milestones.length <= 1) return;
+
+    const removedOrder = milestone.order;
+    const updated = milestones
+      .filter((m) => m.id !== milestoneId)
+      .map((m, i) => ({ ...m, order: i + 1 }));
+    setValue('milestones', updated);
+
+    const currentOverrides = form.getValues('taskMilestoneOverrides');
+    const cleanedOverrides = currentOverrides
+      .filter((o) => o.milestoneOrder !== removedOrder)
+      .map((o) => {
+        if (o.milestoneOrder > removedOrder) {
+          return { ...o, milestoneOrder: o.milestoneOrder - 1 };
+        }
+        return o;
+      });
+    setValue('taskMilestoneOverrides', cleanedOverrides);
+
+    if (editingMilestoneId === milestoneId) {
+      setEditingMilestoneId(null);
+    }
+  }
+
+  function handleRenameMilestone(milestoneId: string, newName: string): void {
+    setValue(
+      'milestones',
+      milestones.map((m) => (m.id === milestoneId ? { ...m, name: newName } : m)),
+    );
   }
 
   async function handleSubmit(): Promise<void> {
     const valid = await form.trigger();
     if (!valid) {
-      showToast.error('Please fix the errors before submitting.');
+      const fieldErrors = form.formState.errors;
+      const FIELD_LABELS: Record<string, string> = {
+        customerId: 'Customer',
+        propertyId: 'Property',
+        quoteId: 'Quote',
+        name: 'Project Name',
+        description: 'Description',
+        priority: 'Priority',
+        startDate: 'Start Date',
+        endDate: 'End Date',
+        projectManagerId: 'Project Manager',
+        teamMembers: 'Team Members',
+        milestones: 'Milestones',
+        excludedStepIds: 'Tasks',
+        taskAssignments: 'Task Assignments',
+        taskMilestoneOverrides: 'Task Milestones',
+      };
+      const errorFields = Object.keys(fieldErrors);
+      const labels = errorFields
+        .map((k) => FIELD_LABELS[k] || k)
+        .join(', ');
+      showToast.error(`Please fix errors in: ${labels}`);
       return;
     }
 
     const values = form.getValues();
-    const canConvert =
-      !!values.quoteId &&
-      values.quoteId !== '' &&
-      selectedQuote?.status === QuoteStatus.ACCEPTED;
     const members = values.teamMembers.filter((m) => m.userId);
-    const excluded = values.excludedTaskTemplateIds.length > 0
-      ? values.excludedTaskTemplateIds
+    const excluded = values.excludedStepIds.length > 0
+      ? values.excludedStepIds
       : undefined;
 
     try {
-      let projectId: string;
+      const milestonesPayload = values.milestones.map((m) => ({
+        name: m.name,
+        type: m.type,
+        order: m.order,
+      }));
+      const assignmentsPayload =
+        values.taskAssignments.length > 0 ? values.taskAssignments : undefined;
+      const milestoneOverridesPayload =
+        values.taskMilestoneOverrides.length > 0 ? values.taskMilestoneOverrides : undefined;
 
-      if (canConvert) {
-        const result = await convertMutation.mutateAsync({
-          quoteId: values.quoteId as string,
-          payload: {
-            name: values.name || undefined,
-            description: values.description || undefined,
-            projectManagerId: values.projectManagerId || undefined,
-            teamMembers: members.length > 0 ? members : undefined,
-            startDate: values.startDate || undefined,
-            endDate: values.endDate || undefined,
-            priority: values.priority || undefined,
-            excludedTaskTemplateIds: excluded,
-          },
-        });
-        projectId = result.id;
-      } else {
-        const result = await initiateMutation.mutateAsync({
-          propertyId: values.propertyId,
-          name: values.name,
-          systemSizeKw: values.systemSizeKw,
-          projectType: values.projectType,
+      const result = await convertMutation.mutateAsync({
+        quoteId: values.quoteId,
+        payload: {
+          name: values.name || undefined,
           description: values.description || undefined,
-          estimatedCost: values.estimatedCost || undefined,
-          priority: values.priority || undefined,
-          startDate: values.startDate || undefined,
-          endDate: values.endDate || undefined,
           projectManagerId: values.projectManagerId || undefined,
           teamMembers: members.length > 0 ? members : undefined,
-          excludedTaskTemplateIds: excluded,
-        });
-        projectId = result.id;
-      }
+          startDate: values.startDate || undefined,
+          endDate: values.endDate || undefined,
+          priority: values.priority || undefined,
+          excludedStepIds: excluded,
+          milestones: milestonesPayload,
+          taskAssignments: assignmentsPayload,
+          taskMilestoneOverrides: milestoneOverridesPayload,
+        },
+      });
 
-      showToast.success('Project created successfully!');
-      router.push(buildRoute(ROUTES.PROJECTS.DETAIL, { id: projectId }));
+      showToast.success(`Project ${result.projectNumber} created successfully!`);
+      router.push(ROUTES.PROJECTS.LIST);
     } catch (error) {
       showToast.error(getErrorMessage(error));
     }
   }
 
   function handleCancel(): void {
+    if (isDirty && !window.confirm('You have unsaved changes. Are you sure you want to leave?')) {
+      return;
+    }
     router.push(ROUTES.PROJECTS.LIST);
   }
 
@@ -553,25 +677,60 @@ export function ProjectCreatePage(): React.JSX.Element {
     });
   }, [employees, teamSearch]);
 
-  // ---- Milestone-to-template mapping ----
-  const milestoneTaskMap = useMemo(() => {
-    const map = new Map<string, TaskTemplate[]>();
-    includedTemplates.forEach((t) => {
-      if (t.defaultMilestoneType) {
-        const key = t.defaultMilestoneType;
-        const arr = map.get(key) || [];
-        arr.push(t);
-        map.set(key, arr);
-      }
-    });
-    return map;
-  }, [includedTemplates]);
+  // ---- Phase 2: Derived state for assignments and milestones ----
 
+  const getEffectiveAssignee = useCallback(
+    (templateId: string): string | null => {
+      const manual = taskAssignments.find((a) => a.workflowStepId === templateId);
+      if (manual) return manual.assignedToUserId;
+      const template = templates?.find((t) => t.id === templateId);
+      if (!template?.defaultRoleCode) return null;
+      return memberRoleMap.get(template.defaultRoleCode.toLowerCase()) ?? null;
+    },
+    [taskAssignments, templates, memberRoleMap],
+  );
+
+  const isManualAssignment = useCallback(
+    (templateId: string): boolean =>
+      taskAssignments.some((a) => a.workflowStepId === templateId),
+    [taskAssignments],
+  );
+
+  const getEffectiveMilestoneOrder = useCallback(
+    (templateId: string): number => {
+      const override = taskMilestoneOverrides.find(
+        (o) => o.workflowStepId === templateId,
+      );
+      if (override) return override.milestoneOrder;
+      const template = templates?.find((t) => t.id === templateId);
+      if (!template?.defaultMilestoneType) return 0;
+      const milestone = milestones.find(
+        (m) => m.type === template.defaultMilestoneType,
+      );
+      return milestone?.order ?? 0;
+    },
+    [taskMilestoneOverrides, templates, milestones],
+  );
+
+  const effectiveMilestoneTaskMap = useMemo(() => {
+    const map = new Map<number, WorkflowStep[]>();
+    for (const t of includedTemplates) {
+      const order = getEffectiveMilestoneOrder(t.id);
+      const existing = map.get(order) || [];
+      existing.push(t);
+      map.set(order, existing);
+    }
+    return map;
+  }, [includedTemplates, getEffectiveMilestoneOrder]);
+
+  const watchedName = watch('name');
   const canSubmit =
     !isPending &&
     !propertyConverted &&
     !!selectedCustomerId &&
-    !!selectedPropertyId;
+    !!selectedPropertyId &&
+    !!selectedQuoteId &&
+    !!watchedName && watchedName.length >= 3;
 
   // ===========================================================================
   // Render
@@ -596,7 +755,7 @@ export function ProjectCreatePage(): React.JSX.Element {
       <div>
         <h1 className="text-lg font-semibold">Create New Project</h1>
         <p className="mt-1 text-sm text-foreground-secondary">
-          Select a customer, property, and optionally a quote to create a new project.
+          Select a customer, property, and an accepted quote to create a new project.
         </p>
       </div>
 
@@ -649,9 +808,9 @@ export function ProjectCreatePage(): React.JSX.Element {
                   onFocus={() => {
                     if (customerSearch.trim().length >= 2) setShowCustomerDropdown(true);
                   }}
-                  onBlur={() =>
-                    setTimeout(() => setShowCustomerDropdown(false), 200)
-                  }
+                  onBlur={() => {
+                    blurTimeoutRef.current = setTimeout(() => setShowCustomerDropdown(false), 200);
+                  }}
                 />
                 {showCustomerDropdown && customerSearch.trim().length >= 2 && (
                   <div className="absolute z-20 mt-1 w-full rounded-lg border border-border-light bg-background shadow-sm">
@@ -756,10 +915,10 @@ export function ProjectCreatePage(): React.JSX.Element {
             </div>
           )}
 
-          {/* Quote Selection */}
+          {/* Quote Selection (mandatory) */}
           {selectedPropertyId && !propertyConverted && (
             <div className="space-y-2">
-              <Label>Quote</Label>
+              <Label required>Quote</Label>
               {quotesLoading ? (
                 <div className="flex items-center gap-2 py-2">
                   <Spinner size="xs" />
@@ -768,10 +927,10 @@ export function ProjectCreatePage(): React.JSX.Element {
                   </span>
                 </div>
               ) : usableQuotes.length === 0 ? (
-                <div className="flex items-center gap-2 rounded-lg bg-info/10 px-3 py-2">
-                  <Info className="size-3.5 text-info" />
-                  <p className="text-xs text-info">
-                    No quotes found for this customer. Project details will need to be filled manually.
+                <div className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2">
+                  <AlertTriangle className="size-3.5 text-warning" />
+                  <p className="text-xs text-warning">
+                    No accepted quotes available for this property. Please create and accept a quote first.
                   </p>
                 </div>
               ) : (
@@ -780,17 +939,19 @@ export function ProjectCreatePage(): React.JSX.Element {
                   onValueChange={handleQuoteSelect}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a quote to pre-fill details" />
+                    <SelectValue placeholder="Select an accepted quote" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">No quote (manual entry)</SelectItem>
                     {usableQuotes.map((q) => (
                       <SelectItem key={q.id} value={q.id}>
-                        {q.quoteNumber} · {formatSystemSize(q.systemSizeKw)} kW · {q.finalPrice != null ? formatCurrency(q.finalPrice) : '—'} · {q.status}
+                        {q.quoteNumber} · {formatSystemSize(q.systemSizeKw)} kW · {q.finalPrice != null ? formatCurrency(q.finalPrice) : '—'}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+              )}
+              {errors.quoteId && (
+                <p className="text-xs text-error">{errors.quoteId.message}</p>
               )}
             </div>
           )}
@@ -971,25 +1132,23 @@ export function ProjectCreatePage(): React.JSX.Element {
               )}
             </div>
 
-            {/* ---- System Specs sub-group ---- */}
-            <fieldset className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Zap className="size-3.5 text-foreground-tertiary" />
-                <span className="text-xs font-medium uppercase tracking-wider text-foreground-tertiary">
-                  System Specifications
-                </span>
-                {isQuoteFlow && quoteHasValidSize && (
+            {/* ---- System Specs sub-group (read-only from quote) ---- */}
+            {selectedQuote && (
+              <fieldset className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Zap className="size-3.5 text-foreground-tertiary" />
+                  <span className="text-xs font-medium uppercase tracking-wider text-foreground-tertiary">
+                    System Specifications
+                  </span>
                   <Badge variant="outline" size="xs" className="gap-1">
                     <Lock className="size-2.5" />
                     From Quote
                   </Badge>
-                )}
-              </div>
+                </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div className="space-y-2">
-                  <Label required={!isQuoteFlow}>Project Type</Label>
-                  {isQuoteFlow && quoteHasValidSize && selectedQuote ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label>Project Type</Label>
                     <Input
                       readOnly
                       value={
@@ -998,74 +1157,31 @@ export function ProjectCreatePage(): React.JSX.Element {
                       }
                       className="bg-background-secondary text-foreground-secondary cursor-not-allowed"
                     />
-                  ) : (
-                    <Select
-                      value={watch('projectType') || ''}
-                      onValueChange={(val) => setValue('projectType', val)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PROJECT_TYPE_OPTIONS.map((o) => (
-                          <SelectItem key={o.value} value={o.value}>
-                            {o.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  {errors.projectType && (
-                    <p className="text-xs text-error">
-                      {errors.projectType.message}
-                    </p>
-                  )}
-                </div>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label required={!isQuoteFlow}>System Size (kW)</Label>
-                  {isQuoteFlow && quoteHasValidSize && selectedQuote ? (
+                  <div className="space-y-2">
+                    <Label>System Size (kW)</Label>
                     <Input
                       readOnly
                       value={`${formatSystemSize(selectedQuote.systemSizeKw)} kW`}
                       className="bg-background-secondary text-foreground-secondary cursor-not-allowed"
                     />
-                  ) : (
-                    <Input
-                      type="number"
-                      step="0.1"
-                      placeholder="e.g., 5"
-                      {...register('systemSizeKw', { valueAsNumber: true })}
-                    />
-                  )}
-                  {errors.systemSizeKw && (
-                    <p className="text-xs text-error">
-                      {errors.systemSizeKw.message}
-                    </p>
-                  )}
-                </div>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label>Estimated Cost</Label>
-                  {isQuoteFlow && quoteHasValidSize && selectedQuote?.finalPrice != null ? (
+                  <div className="space-y-2">
+                    <Label>Estimated Cost</Label>
                     <div className="flex h-9 items-center rounded-md border border-border-light bg-background-secondary px-3">
                       <IndianRupee className="mr-1 size-3.5 text-foreground-tertiary" />
                       <span className="text-sm text-foreground-secondary">
-                        {formatCurrency(selectedQuote.finalPrice).replace('₹', '')}
+                        {selectedQuote.finalPrice != null
+                          ? formatCurrency(selectedQuote.finalPrice).replace('₹', '')
+                          : '—'}
                       </span>
                     </div>
-                  ) : (
-                    <Input
-                      type="number"
-                      step="1"
-                      placeholder="e.g., 350000"
-                      leftIcon={<IndianRupee className="size-3.5" />}
-                      {...register('estimatedCost', { valueAsNumber: true })}
-                    />
-                  )}
+                  </div>
                 </div>
-              </div>
-            </fieldset>
+              </fieldset>
+            )}
 
             {/* ---- Planning sub-group ---- */}
             <fieldset className="space-y-3">
@@ -1212,6 +1328,15 @@ export function ProjectCreatePage(): React.JSX.Element {
                                     .filter(Boolean)
                                     .join(' • ') || '—'}
                                 </p>
+                                {getDisplayRoles(emp.roles).length > 0 && (
+                                  <div className="mt-0.5 flex flex-wrap gap-1">
+                                    {getDisplayRoles(emp.roles).map((role) => (
+                                      <Badge key={role} variant="blue-subtle" size="xs">
+                                        {role}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             </div>
                             <div className="flex shrink-0 items-center gap-2">
@@ -1318,7 +1443,7 @@ export function ProjectCreatePage(): React.JSX.Element {
                               <Input
                                 className="h-7 w-28 text-xs"
                                 placeholder="Role"
-                                value={member.roleName}
+                                value={member.roleName ?? ''}
                                 onChange={(e) =>
                                   handleRoleChange(
                                     member.userId,
@@ -1361,17 +1486,17 @@ export function ProjectCreatePage(): React.JSX.Element {
       )}
 
       {/* ================================================================== */}
-      {/* Section 5: Task Templates Preview */}
+      {/* Section 5: Tasks & Milestones (Unified Accordion) */}
       {/* ================================================================== */}
       {selectedPropertyId && !propertyConverted && (
         <Card>
           <CardHeader className="justify-start gap-2">
             <CheckSquare className="size-4 text-foreground-secondary" />
             <h2 className="text-sm font-semibold">
-              Task Templates
+              Tasks & Milestones
               {templates && templates.length > 0 && (
                 <span className="ml-1.5 text-foreground-secondary font-normal">
-                  ({includedTemplates.length} of {templates.length} included)
+                  ({includedTemplates.length} of {templates.length} tasks · {milestones.length} milestones)
                 </span>
               )}
             </h2>
@@ -1381,218 +1506,232 @@ export function ProjectCreatePage(): React.JSX.Element {
             <div className="flex items-start gap-2 rounded-lg bg-info/10 px-3 py-2">
               <Info className="mt-0.5 size-3.5 shrink-0 text-info" />
               <p className="text-xs text-info">
-                Tasks are auto-created from templates. Edit assignments and add
-                custom tasks on the project page after creation.
+                Tasks are auto-created from templates and auto-assigned by role.
+                Override assignments and milestone mapping below.
               </p>
             </div>
 
             {/* Warnings */}
-            {templates &&
-              templates.length > 0 &&
-              includedTemplates.length === 0 && (
-                <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/5 px-3 py-2">
-                  <AlertTriangle className="size-3.5 text-warning" />
-                  <span className="text-xs text-warning">
-                    No tasks will be created. You can add tasks manually after
-                    project creation.
-                  </span>
-                </div>
-              )}
+            {templates && templates.length > 0 && includedTemplates.length === 0 && (
+              <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/5 px-3 py-2">
+                <AlertTriangle className="size-3.5 text-warning" />
+                <span className="text-xs text-warning">
+                  No tasks will be created. You can add tasks manually after project creation.
+                </span>
+              </div>
+            )}
 
             {unassignedCount > 0 && includedTemplates.length > 0 && (
               <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/5 px-3 py-2">
                 <AlertTriangle className="size-3.5 text-warning" />
                 <span className="text-xs text-warning">
-                  {unassignedCount} task
-                  {unassignedCount > 1 ? 's' : ''} ha
-                  {unassignedCount > 1 ? 've' : 's'} no matching team member.
+                  {unassignedCount} task{unassignedCount > 1 ? 's' : ''} ha{unassignedCount > 1 ? 've' : 's'} no matching team member.
                 </span>
               </div>
             )}
 
-            {templatesLoading ? (
+            {teamMembers.length === 0 && templates && templates.length > 0 && (
+              <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/5 px-3 py-2">
+                <AlertTriangle className="size-3.5 text-warning" />
+                <span className="text-xs text-warning">
+                  Add team members in Section 4 to enable manual assignment.
+                </span>
+              </div>
+            )}
+
+            {stepsLoading ? (
               <div className="flex items-center gap-2 py-4">
                 <Spinner size="sm" />
-                <span className="text-sm text-foreground-secondary">
-                  Loading task templates...
-                </span>
+                <span className="text-sm text-foreground-secondary">Loading workflow steps...</span>
               </div>
             ) : !templates || templates.length === 0 ? (
               <div className="flex items-center gap-2 rounded-lg bg-info/10 px-3 py-2">
                 <Info className="size-3.5 text-info" />
                 <p className="text-xs text-info">
-                  No task templates configured. Tasks can be added manually after
-                  project creation.
+                  No workflow steps configured. Tasks can be added manually after project creation.
                 </p>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-lg border border-border-light">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border-light bg-background-secondary">
-                      <th className="px-3 py-2 text-left text-2xs font-semibold uppercase tracking-wider text-foreground-secondary">
-                        Task
-                      </th>
-                      <th className="px-3 py-2 text-left text-2xs font-semibold uppercase tracking-wider text-foreground-secondary">
-                        Role
-                      </th>
-                      <th className="hidden px-3 py-2 text-left text-2xs font-semibold uppercase tracking-wider text-foreground-secondary sm:table-cell">
-                        Milestone
-                      </th>
-                      <th className="hidden px-3 py-2 text-left text-2xs font-semibold uppercase tracking-wider text-foreground-secondary sm:table-cell">
-                        Duration
-                      </th>
-                      <th className="hidden px-3 py-2 text-left text-2xs font-semibold uppercase tracking-wider text-foreground-secondary md:table-cell">
-                        Auto-Assigned To
-                      </th>
-                      <th className="px-3 py-2 text-center text-2xs font-semibold uppercase tracking-wider text-foreground-secondary">
-                        Include
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border-light">
-                    {templates.map((t) => {
-                      const isExcluded = excludedIds.includes(t.id);
-                      const assignedMemberId = t.defaultRoleCode
-                        ? memberRoleMap.get(t.defaultRoleCode.toLowerCase())
-                        : null;
-                      const assignedEmp = assignedMemberId
-                        ? employees.find(
-                            (e) => e.userId === assignedMemberId,
-                          )
-                        : null;
-
-                      return (
-                        <tr
-                          key={t.id}
-                          className={cn(
-                            'transition-colors duration-fast',
-                            isExcluded
-                              ? 'opacity-50'
-                              : 'hover:bg-background-secondary',
-                          )}
-                        >
-                          <td className="px-3 py-2.5 text-sm">
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-medium">{t.name}</span>
-                              {t.isMandatory && (
-                                <span className="rounded bg-primary/10 px-1 py-0.5 text-2xs font-medium text-primary">
-                                  Required
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-3 py-2.5 text-sm">
-                            <div className="flex items-center gap-1">
-                              <span className="text-foreground-secondary">
-                                {t.defaultRoleCode || '—'}
-                              </span>
-                              {t.defaultRoleCode &&
-                                !assignedEmp &&
-                                !isExcluded && (
-                                  <AlertTriangle className="size-3 text-warning" />
-                                )}
-                            </div>
-                          </td>
-                          <td className="hidden px-3 py-2.5 text-sm text-foreground-secondary sm:table-cell">
-                            {t.defaultMilestoneType
-                              ? PHASE_LABELS[t.defaultMilestoneType] ||
-                                t.defaultMilestoneType
-                              : '—'}
-                          </td>
-                          <td className="hidden px-3 py-2.5 text-sm text-foreground-secondary sm:table-cell">
-                            {t.estimatedDurationHours
-                              ? `${t.estimatedDurationHours}h`
-                              : '—'}
-                          </td>
-                          <td className="hidden px-3 py-2.5 text-sm md:table-cell">
-                            {isExcluded ? (
-                              <span className="text-foreground-tertiary">—</span>
-                            ) : assignedEmp ? (
-                              <span className="font-medium text-foreground">
-                                {getEmployeeDisplayName(assignedEmp)}
-                              </span>
-                            ) : t.defaultRoleCode ? (
-                              <span className="text-warning">Unassigned</span>
-                            ) : (
-                              <span className="text-foreground-tertiary">—</span>
-                            )}
-                          </td>
-                          <td className="px-3 py-2.5 text-center">
-                            <input
-                              type="checkbox"
-                              checked={!isExcluded}
-                              disabled={t.isMandatory}
-                              onChange={() =>
-                                toggleTask(t.id, t.isMandatory)
-                              }
-                              className="size-4 rounded border-border-light accent-primary"
-                            />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ================================================================== */}
-      {/* Section 6: Milestones Preview */}
-      {/* ================================================================== */}
-      {selectedPropertyId && !propertyConverted && (
-        <Card>
-          <CardHeader className="justify-start gap-2">
-            <Milestone className="size-4 text-foreground-secondary" />
-            <h2 className="text-sm font-semibold">
-              Milestones ({DEFAULT_MILESTONES.length})
-            </h2>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-start gap-2 rounded-lg bg-info/10 px-3 py-2">
-              <Info className="mt-0.5 size-3.5 shrink-0 text-info" />
-              <p className="text-xs text-info">
-                Default milestones will be created. You can add custom
-                milestones, reorder, and map tasks on the project page.
-              </p>
-            </div>
-            <div className="space-y-2">
-              {DEFAULT_MILESTONES.map((m, i) => {
-                const tasks = milestoneTaskMap.get(m.type) || [];
-                return (
-                  <div
-                    key={m.type}
-                    className="rounded-lg border border-border-light px-3 py-2.5"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                        {i + 1}
-                      </span>
-                      <span className="text-sm font-medium">{m.name}</span>
-                      <Badge variant="secondary" size="xs">
-                        {PHASE_LABELS[m.type] || m.type}
-                      </Badge>
-                    </div>
-                    {tasks.length > 0 && (
-                      <div className="ml-8 mt-1.5 space-y-0.5">
-                        {tasks.map((t) => (
-                          <div
-                            key={t.id}
-                            className="flex items-center gap-1.5 text-2xs text-foreground-secondary"
-                          >
-                            <ChevronRight className="size-3" />
-                            <span>{t.name}</span>
+              <>
+                <Accordion
+                  type="multiple"
+                  defaultValue={[
+                    'unmapped',
+                    ...milestones.map((m) => m.id),
+                  ]}
+                >
+                  {/* Unmapped Tasks Group */}
+                  {(() => {
+                    const unmappedTasks = effectiveMilestoneTaskMap.get(0) || [];
+                    const allTasks = templates || [];
+                    const unmappedAllTasks = allTasks.filter(
+                      (t) => getEffectiveMilestoneOrder(t.id) === 0,
+                    );
+                    if (unmappedAllTasks.length === 0) return null;
+                    return (
+                      <AccordionItem value="unmapped" variant="separated">
+                        <AccordionTrigger className="px-3 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-foreground-tertiary/10 text-xs font-semibold text-foreground-tertiary">
+                              —
+                            </span>
+                            <span className="text-sm font-medium">Unmapped Tasks</span>
+                            <span className="text-2xs text-foreground-secondary">
+                              {unmappedTasks.length} task{unmappedTasks.length !== 1 ? 's' : ''}
+                            </span>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <TaskRowGroup
+                            tasks={unmappedAllTasks}
+                            excludedIds={excludedIds}
+                            milestones={milestones}
+                            teamMembers={teamMembers}
+                            employees={employees}
+                            getEffectiveAssignee={getEffectiveAssignee}
+                            getEffectiveMilestoneOrder={getEffectiveMilestoneOrder}
+                            isManualAssignment={isManualAssignment}
+                            onToggleTask={toggleTask}
+                            onAssignmentChange={handleAssignmentChange}
+                            onMilestoneOverride={handleMilestoneOverride}
+                            memberRoleMap={memberRoleMap}
+                          />
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })()}
+
+                  {/* Milestone Groups */}
+                  {milestones.map((ms) => {
+                    const milestoneTasks = effectiveMilestoneTaskMap.get(ms.order) || [];
+                    const allTasksForMs = (templates || []).filter(
+                      (t) => getEffectiveMilestoneOrder(t.id) === ms.order,
+                    );
+                    const isEditing = editingMilestoneId === ms.id;
+
+                    return (
+                      <AccordionItem key={ms.id} value={ms.id} variant="separated">
+                        <AccordionTrigger className="px-3 py-2.5">
+                          <div className="flex flex-1 items-center gap-2">
+                            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                              {ms.order}
+                            </span>
+                            {isEditing ? (
+                              <Input
+                                ref={milestoneNameInputRef}
+                                className="h-7 w-48 text-sm"
+                                value={ms.name}
+                                onClick={(e) => e.stopPropagation()}
+                                onChange={(e) => handleRenameMilestone(ms.id, e.target.value)}
+                                onBlur={() => setEditingMilestoneId(null)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') setEditingMilestoneId(null);
+                                }}
+                              />
+                            ) : (
+                              <span className="text-sm font-medium">
+                                {ms.name || 'Untitled Milestone'}
+                              </span>
+                            )}
+                            <Badge variant="secondary" shape="rounded" size="xs">
+                              {PHASE_LABELS[ms.type] || 'Custom'}
+                            </Badge>
+                            <span className="text-2xs text-foreground-secondary">
+                              {milestoneTasks.length} task{milestoneTasks.length !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingMilestoneId(ms.id);
+                                requestAnimationFrame(() => milestoneNameInputRef.current?.focus());
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.stopPropagation();
+                                  setEditingMilestoneId(ms.id);
+                                  requestAnimationFrame(() => milestoneNameInputRef.current?.focus());
+                                }
+                              }}
+                              className="rounded p-1 text-foreground-tertiary transition-colors duration-fast hover:text-foreground"
+                            >
+                              <Pencil className="size-3.5" />
+                            </span>
+                            <span
+                              role="button"
+                              tabIndex={milestones.length <= 1 ? -1 : 0}
+                              aria-disabled={milestones.length <= 1}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (milestones.length > 1) handleRemoveMilestone(ms.id);
+                              }}
+                              onKeyDown={(e) => {
+                                if ((e.key === 'Enter' || e.key === ' ') && milestones.length > 1) {
+                                  e.stopPropagation();
+                                  handleRemoveMilestone(ms.id);
+                                }
+                              }}
+                              className={cn(
+                                'rounded p-1 transition-colors duration-fast',
+                                milestones.length <= 1
+                                  ? 'cursor-not-allowed text-foreground-tertiary/40'
+                                  : 'text-foreground-tertiary hover:text-error',
+                              )}
+                            >
+                              <Trash2 className="size-3.5" />
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          {allTasksForMs.length === 0 ? (
+                            <p className="py-2 text-center text-xs text-foreground-secondary">
+                              No tasks assigned to this milestone.
+                            </p>
+                          ) : (
+                            <TaskRowGroup
+                              tasks={allTasksForMs}
+                              excludedIds={excludedIds}
+                              milestones={milestones}
+                              teamMembers={teamMembers}
+                              employees={employees}
+                              getEffectiveAssignee={getEffectiveAssignee}
+                              getEffectiveMilestoneOrder={getEffectiveMilestoneOrder}
+                              isManualAssignment={isManualAssignment}
+                              onToggleTask={toggleTask}
+                              onAssignmentChange={handleAssignmentChange}
+                              onMilestoneOverride={handleMilestoneOverride}
+                              memberRoleMap={memberRoleMap}
+                            />
+                          )}
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
+                </Accordion>
+
+                {/* Add Milestone Button */}
+                <button
+                  type="button"
+                  onClick={handleAddMilestone}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border-light px-4 py-2.5 text-sm text-foreground-secondary transition-colors duration-fast hover:border-primary hover:bg-primary/5 hover:text-primary"
+                >
+                  <Plus className="size-3.5" />
+                  Add Milestone
+                </button>
+              </>
+            )}
+
+            {/* Milestone validation error */}
+            {errors.milestones && (
+              <p className="text-xs text-error">
+                {typeof errors.milestones.message === 'string'
+                  ? errors.milestones.message
+                  : 'Please check milestone fields.'}
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
@@ -1633,6 +1772,147 @@ function FieldRow({ label, value }: { label: string; value: string }): React.JSX
     <div className="grid grid-cols-[100px_1fr] gap-x-2 text-sm">
       <span className="text-foreground-secondary">{label}</span>
       <span className="font-medium truncate">{value || '—'}</span>
+    </div>
+  );
+}
+
+interface TaskRowGroupProps {
+  tasks: WorkflowStep[];
+  excludedIds: string[];
+  milestones: Array<{ id: string; name: string; type: string; order: number }>;
+  teamMembers: Array<{ userId: string; roleName: string; isProjectManager?: boolean }>;
+  employees: EmployeeListItem[];
+  getEffectiveAssignee: (templateId: string) => string | null;
+  getEffectiveMilestoneOrder: (templateId: string) => number;
+  isManualAssignment: (templateId: string) => boolean;
+  onToggleTask: (templateId: string, isMandatory: boolean) => void;
+  onAssignmentChange: (templateId: string, userId: string | null) => void;
+  onMilestoneOverride: (templateId: string, newOrder: number) => void;
+  memberRoleMap: Map<string, string>;
+}
+
+function TaskRowGroup({
+  tasks,
+  excludedIds,
+  milestones,
+  teamMembers,
+  employees,
+  getEffectiveAssignee,
+  getEffectiveMilestoneOrder,
+  isManualAssignment,
+  onToggleTask,
+  onAssignmentChange,
+  onMilestoneOverride,
+  memberRoleMap,
+}: TaskRowGroupProps): React.JSX.Element {
+  return (
+    <div className="space-y-0.5">
+      {tasks.map((t) => {
+        const isExcluded = excludedIds.includes(t.id);
+        const assigneeId = getEffectiveAssignee(t.id);
+        const assigneeEmp = assigneeId
+          ? employees.find((e) => e.userId === assigneeId)
+          : null;
+        const isManual = isManualAssignment(t.id);
+        const currentMsOrder = getEffectiveMilestoneOrder(t.id);
+        const hasNoRoleMatch =
+          !!t.defaultRoleCode &&
+          !memberRoleMap.has(t.defaultRoleCode.toLowerCase()) &&
+          !isManual &&
+          !isExcluded;
+
+        return (
+          <div
+            key={t.id}
+            className={cn(
+              'flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors duration-fast',
+              isExcluded ? 'opacity-50' : 'hover:bg-background-secondary',
+            )}
+          >
+            {/* Include checkbox */}
+            <input
+              type="checkbox"
+              checked={!isExcluded}
+              disabled={t.isMandatory}
+              onChange={() => onToggleTask(t.id, t.isMandatory)}
+              className="size-4 shrink-0 rounded border-border-light accent-primary"
+            />
+
+            {/* Task name */}
+            <div className="flex min-w-0 flex-1 items-center gap-1.5">
+              <span className="truncate text-sm font-medium">{t.name}</span>
+              {t.isMandatory && (
+                <Badge variant="default" shape="pill" size="xs">Required</Badge>
+              )}
+            </div>
+
+            {/* Role */}
+            <span className="hidden w-20 shrink-0 truncate text-xs text-foreground-secondary sm:block">
+              {t.defaultRoleCode || '—'}
+            </span>
+
+            {/* Duration */}
+            <span className="hidden w-10 shrink-0 text-xs text-foreground-secondary sm:block">
+              {t.estimatedDurationHours ? `${t.estimatedDurationHours}h` : '—'}
+            </span>
+
+            {/* Milestone Select */}
+            <div className="w-36 shrink-0">
+              <Select
+                value={String(currentMsOrder)}
+                onValueChange={(val) => onMilestoneOverride(t.id, Number(val))}
+                disabled={isExcluded}
+              >
+                <SelectTrigger className="h-7 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">No Milestone</SelectItem>
+                  {milestones.map((ms) => (
+                    <SelectItem key={ms.id} value={String(ms.order)}>
+                      {ms.name || 'Untitled'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Assigned To Select */}
+            <div className="flex w-44 shrink-0 items-center gap-1">
+              <Select
+                value={isManual ? (assigneeId ?? 'auto') : 'auto'}
+                onValueChange={(val) => onAssignmentChange(t.id, val)}
+                disabled={isExcluded}
+              >
+                <SelectTrigger className="h-7 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">
+                    Auto{assigneeEmp && !isManual ? ` (${getEmployeeDisplayName(assigneeEmp)})` : ''}
+                  </SelectItem>
+                  {teamMembers.map((m) => {
+                    const emp = employees.find((e) => e.userId === m.userId);
+                    return (
+                      <SelectItem key={m.userId} value={m.userId}>
+                        {emp ? getEmployeeDisplayName(emp) : m.userId}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              {isManual ? (
+                <Badge variant="blue-subtle" size="xs">Manual</Badge>
+              ) : (
+                <Badge variant="green-subtle" size="xs">Auto</Badge>
+              )}
+              {hasNoRoleMatch && (
+                <AlertTriangle className="size-3 shrink-0 text-warning" />
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

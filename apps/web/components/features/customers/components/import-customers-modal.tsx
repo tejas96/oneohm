@@ -66,8 +66,7 @@ export function ImportCustomersModal({
     if (!file) return;
 
     setIsUploading(true);
-    // TODO: Phase 2 - API call
-    console.log('Import file:', file.name, { skipDuplicates });
+    // TODO: Phase 2 - API call to upload and process the file
 
     // Simulate upload
     await new Promise(resolve => setTimeout(resolve, 1500));

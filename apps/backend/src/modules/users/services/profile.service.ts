@@ -15,9 +15,10 @@ interface CreateProfileDto {
   userId: string;
   organizationId: string;
   profileType: UserProfileType;
+   
   profileData: any;
   createdBy?: string;
-  roleCode?: string; // Optional: Override default role (e.g., 'field_worker' instead of 'employee_basic')
+  roleCode?: string;
 }
 
 interface UserProfileSummary {
@@ -104,7 +105,9 @@ export class ProfileService {
    * Create a new profile for a user in an organization
    * Automatically assigns role based on profile type (or custom role if provided)
    */
-  async createProfile(dto: CreateProfileDto): Promise<any> {
+  async createProfile(
+    dto: CreateProfileDto,
+  ): Promise<CustomerProfileEntity | ResellerProfileEntity | EmployeeProfileEntity> {
     const { userId, organizationId, profileType, profileData, createdBy, roleCode } = dto;
 
     // Verify user exists
@@ -121,7 +124,7 @@ export class ProfileService {
       );
     }
 
-    let profile: any;
+    let profile: CustomerProfileEntity | ResellerProfileEntity | EmployeeProfileEntity;
     let defaultRoleCode: string;
 
     switch (profileType) {

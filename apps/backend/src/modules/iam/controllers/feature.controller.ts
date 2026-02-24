@@ -1,8 +1,10 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -11,6 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 
 import { JwtAuthGuard } from '../../auth/guards';
 import { RequirePermission } from '../decorators/require-permission.decorator';
@@ -49,7 +52,7 @@ export class FeatureController {
   @ApiOperation({ summary: 'Create a new feature', description: 'Creates a new feature/module' })
   async create(@Body() createFeatureDto: CreateFeatureDto): Promise<FeatureResponseDto> {
     const feature = await this.featureRepository.create(createFeatureDto);
-    return feature;
+    return plainToInstance(FeatureResponseDto, feature);
   }
 
   /**
@@ -65,17 +68,18 @@ export class FeatureController {
   ): Promise<PaginatedFeaturesDto> {
     const skip = (page - 1) * pageSize;
 
-    let features: any[];
-    let total: number;
+    let result: [unknown[], number];
 
     if (active !== undefined) {
-      [features, total] = await this.featureRepository.findActivePaginated(skip, pageSize);
+      result = await this.featureRepository.findActivePaginated(skip, pageSize);
     } else {
-      [features, total] = await this.featureRepository.findAllPaginated(skip, pageSize);
+      result = await this.featureRepository.findAllPaginated(skip, pageSize);
     }
 
+    const [features, total] = result;
+
     return {
-      data: features,
+      data: features.map((f) => plainToInstance(FeatureResponseDto, f)),
       total,
       page,
       pageSize,
@@ -95,13 +99,12 @@ export class FeatureController {
     const feature = await this.featureRepository.findOne({ where: { id } });
 
     if (!feature) {
-      throw new Error('Feature not found');
+      throw new NotFoundException('Feature not found');
     }
 
-    // Get permissions for this feature
     const permissions = await this.permissionRepository.findByFeatureId(id);
 
-    return {
+    return plainToInstance(FeatureWithPermissionsDto, {
       ...feature,
       permissions: permissions.map((p) => ({
         id: p.id,
@@ -110,7 +113,7 @@ export class FeatureController {
         action: p.action,
         scope: p.scope,
       })),
-    };
+    });
   }
 
   /**
@@ -128,10 +131,10 @@ export class FeatureController {
     const feature = await this.featureRepository.findOne({ where: { id } });
 
     if (!feature) {
-      throw new Error('Feature not found after update');
+      throw new NotFoundException('Feature not found after update');
     }
 
-    return feature;
+    return plainToInstance(FeatureResponseDto, feature);
   }
 
   /**
@@ -147,11 +150,11 @@ export class FeatureController {
     const feature = await this.featureRepository.findOne({ where: { id } });
 
     if (!feature) {
-      throw new Error('Feature not found');
+      throw new NotFoundException('Feature not found');
     }
 
     if (feature.isSystemFeature) {
-      throw new Error('Cannot delete system feature');
+      throw new BadRequestException('Cannot delete system feature');
     }
 
     await this.featureRepository.delete(id);
@@ -168,13 +171,12 @@ export class FeatureController {
     const feature = await this.featureRepository.findByCode(code);
 
     if (!feature) {
-      throw new Error('Feature not found');
+      throw new NotFoundException('Feature not found');
     }
 
-    // Get permissions for this feature
     const permissions = await this.permissionRepository.findByFeatureId(feature.id);
 
-    return {
+    return plainToInstance(FeatureWithPermissionsDto, {
       ...feature,
       permissions: permissions.map((p) => ({
         id: p.id,
@@ -183,6 +185,6 @@ export class FeatureController {
         action: p.action,
         scope: p.scope,
       })),
-    };
+    });
   }
 }

@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LeadTemperature, PropertySortField, SortOrder } from '@oneohm-epc/shared-types';
-import { IsNull, Repository } from 'typeorm';
+import {
+  LeadTemperature,
+  type PropertyStatus,
+  PropertySortField,
+  SortOrder,
+} from '@oneohm-epc/shared-types';
+import { type EntityManager, IsNull, Repository } from 'typeorm';
 
 import { PropertyQueryDto } from '../dto/property-query.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
@@ -26,6 +31,18 @@ export class CustomerPropertyRepository {
     @InjectRepository(CustomerPropertyEntity)
     public readonly repository: Repository<CustomerPropertyEntity>,
   ) {}
+
+  /**
+   * Update property status by ID (transaction-aware, no ownership check — caller must pre-validate)
+   */
+  async updateStatusById(
+    propertyId: string,
+    status: PropertyStatus,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = this.getRepo(manager);
+    await repo.update(propertyId, { status });
+  }
 
   async findById(id: string): Promise<CustomerPropertyEntity | null> {
     return this.repository.findOne({
@@ -215,8 +232,7 @@ export class CustomerPropertyRepository {
     }
 
     // ===== Sorting (using safe field mapping) =====
-    const sortColumn =
-      SORT_FIELD_MAP[query.sortBy] ?? SORT_FIELD_MAP[PropertySortField.CREATED_AT];
+    const sortColumn = SORT_FIELD_MAP[query.sortBy] ?? SORT_FIELD_MAP[PropertySortField.CREATED_AT];
     const sortDirection = query.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
     qb.orderBy(sortColumn, sortDirection);
 
@@ -246,5 +262,9 @@ export class CustomerPropertyRepository {
       temperature: r.temperature,
       count: parseInt(r.count, 10),
     }));
+  }
+
+  private getRepo(manager?: EntityManager): Repository<CustomerPropertyEntity> {
+    return manager ? manager.getRepository(CustomerPropertyEntity) : this.repository;
   }
 }

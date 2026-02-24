@@ -146,7 +146,7 @@ export function DocumentPreviewModal({
             <img
               src={doc.url}
               alt={doc.fileName}
-              className="max-h-[80vh] max-w-full rounded-lg object-contain shadow-lg"
+              className="max-h-[80vh] max-w-full rounded-lg object-contain shadow-sm"
               onError={handleImageError}
             />
           )}
@@ -156,13 +156,13 @@ export function DocumentPreviewModal({
             <iframe
               src={doc.url}
               title={doc.fileName}
-              className="h-[80vh] w-full rounded-lg border-0 bg-white shadow-lg"
+              className="h-[80vh] w-full rounded-lg border-0 bg-white shadow-sm"
             />
           )}
 
           {/* Unsupported / Error Fallback */}
           {(!canPreview || (!isImageFile(doc.fileName) && !isPdfFile(doc.fileName))) && (
-            <div className="flex flex-col items-center gap-4 rounded-lg bg-background p-8 text-center shadow-lg">
+            <div className="flex flex-col items-center gap-4 rounded-lg bg-background p-8 text-center shadow-sm">
               <div className="flex size-container-lg items-center justify-center rounded-lg bg-background-secondary">
                 <FileText className="size-icon-lg text-foreground-muted" />
               </div>

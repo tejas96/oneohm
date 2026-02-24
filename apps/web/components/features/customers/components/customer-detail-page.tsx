@@ -138,7 +138,7 @@ function SimpleTimeline({ items }: SimpleTimelineProps): JSX.Element {
   return (
     <div className="relative pl-6">
       {/* Vertical line */}
-      <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-gray-200" />
+      <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-border" />
       
       {/* Items */}
       <div className="space-y-4">
@@ -152,13 +152,13 @@ function SimpleTimeline({ items }: SimpleTimelineProps): JSX.Element {
                   ? 'border-primary bg-primary'
                   : item.dotVariant === 'secondary'
                     ? 'border-secondary bg-secondary'
-                    : 'border-gray-200 bg-white'
+                    : 'border-border bg-background'
               )}
             />
             {/* Content */}
             <div>
-              <p className="text-sm text-gray-900">{item.title}</p>
-              <p className="mt-1 text-xs text-gray-500">{item.timestamp}</p>
+              <p className="text-sm text-foreground">{item.title}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{item.timestamp}</p>
             </div>
           </div>
         ))}
@@ -196,12 +196,12 @@ const formatActivityTimestamp = (date: Date): string => {
 };
 
 const QUOTE_STATUS_STYLES: Record<QuoteStatus, { bg: string; text: string; label: string }> = {
-  [QuoteStatus.DRAFT]: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Draft' },
-  [QuoteStatus.SENT]: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Sent' },
-  [QuoteStatus.VIEWED]: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Viewed' },
-  [QuoteStatus.ACCEPTED]: { bg: 'bg-green-100', text: 'text-green-700', label: 'Accepted' },
-  [QuoteStatus.REJECTED]: { bg: 'bg-red-100', text: 'text-red-700', label: 'Rejected' },
-  [QuoteStatus.EXPIRED]: { bg: 'bg-gray-200', text: 'text-gray-600', label: 'Expired' },
+  [QuoteStatus.DRAFT]: { bg: 'bg-muted', text: 'text-foreground-secondary', label: 'Draft' },
+  [QuoteStatus.SENT]: { bg: 'bg-warning/10', text: 'text-warning', label: 'Sent' },
+  [QuoteStatus.VIEWED]: { bg: 'bg-primary/10', text: 'text-primary', label: 'Viewed' },
+  [QuoteStatus.ACCEPTED]: { bg: 'bg-success/10', text: 'text-success', label: 'Accepted' },
+  [QuoteStatus.REJECTED]: { bg: 'bg-destructive/10', text: 'text-destructive', label: 'Rejected' },
+  [QuoteStatus.EXPIRED]: { bg: 'bg-muted', text: 'text-muted-foreground', label: 'Expired' },
 };
 
 // ============================================================================
@@ -233,8 +233,8 @@ function HeaderSkeleton(): JSX.Element {
 
 function CardSkeleton(): JSX.Element {
   return (
-    <div className="rounded-lg border border-gray-100 bg-white">
-      <div className="border-b border-gray-100 p-4">
+    <div className="rounded-lg border border-border bg-background">
+      <div className="border-b border-border p-4">
         <Skeleton className="h-5 w-32" />
       </div>
       <div className="space-y-4 p-4">
@@ -447,12 +447,12 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-semibold text-gray-900">{customerFullName}</h1>
-              <span className="rounded bg-green-50 px-1.5 py-0.5 text-[11px] font-medium text-green-700">
+              <h1 className="text-xl font-semibold text-foreground">{customerFullName}</h1>
+              <span className="rounded bg-success/10 px-1.5 py-0.5 text-[11px] font-medium text-success">
                 {customer.status}
               </span>
             </div>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-muted-foreground">
               Customer since {formatDate(customer.createdAt)}
             </p>
           </div>
@@ -464,10 +464,10 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
           {customer.phone && (
             <a
               href={`tel:${customer.phone}`}
-              className="flex size-9 items-center justify-center rounded-lg border border-gray-200 transition-colors hover:border-gray-300 hover:bg-gray-50"
+              className="flex size-9 items-center justify-center rounded-lg border border-border transition-colors hover:border-border-medium hover:bg-muted"
               title="Call Customer"
             >
-              <Phone className="size-4 text-gray-600" />
+              <Phone className="size-4 text-foreground-secondary" />
             </a>
           )}
           {phoneForWhatsApp && (
@@ -475,36 +475,36 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
               href={`https://wa.me/${phoneForWhatsApp}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex size-9 items-center justify-center rounded-lg border border-green-200 transition-colors hover:border-green-300 hover:bg-green-50"
+              className="flex size-9 items-center justify-center rounded-lg border border-success/30 transition-colors hover:border-success/50 hover:bg-success/10"
               title="WhatsApp"
             >
-              <WhatsAppIcon className="size-4 text-green-600" />
+              <WhatsAppIcon className="size-4 text-success" />
             </a>
           )}
           {customer.email && (
             <a
               href={`mailto:${customer.email}`}
-              className="flex size-9 items-center justify-center rounded-lg border border-blue-200 transition-colors hover:border-blue-300 hover:bg-blue-50"
+              className="flex size-9 items-center justify-center rounded-lg border border-primary/30 transition-colors hover:border-primary/50 hover:bg-primary/10"
               title="Send Email"
             >
-              <Mail className="size-4 text-blue-600" />
+              <Mail className="size-4 text-primary" />
             </a>
           )}
 
           {/* Divider */}
-          <div className="mx-1 h-6 w-px bg-gray-200" />
+          <div className="mx-1 h-6 w-px bg-border" />
 
           {/* Action Buttons - Compact styling matching UX */}
           <button
             onClick={handleEdit}
-            className="flex items-center gap-1.5 rounded-md border border-gray-100 px-3 py-1.5 text-[13px] font-medium hover:bg-gray-50"
+            className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-[13px] font-medium hover:bg-muted"
           >
             <Edit className="size-3.5" />
             Edit
           </button>
           <button
             onClick={handleAddProperty}
-            className="flex items-center gap-1.5 rounded-md border border-gray-100 px-3 py-1.5 text-[13px] font-medium hover:bg-gray-50"
+            className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-[13px] font-medium hover:bg-muted"
           >
             <Building2 className="size-3.5" />
             Add Property
@@ -523,9 +523,9 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
       <div className="mb-5 grid grid-cols-1 gap-4 lg:grid-cols-12">
         {/* Left Column: Contact Information */}
         <div className="lg:col-span-3">
-          <div className="rounded-lg border border-gray-100 bg-white">
-            <div className="border-b border-gray-100 p-3">
-              <h3 className="text-sm font-medium text-gray-900">Contact Information</h3>
+          <div className="rounded-lg border border-border bg-background">
+            <div className="border-b border-border p-3">
+              <h3 className="text-sm font-medium text-foreground">Contact Information</h3>
             </div>
             <div className="space-y-3 p-3">
               {/* Phone */}
@@ -558,11 +558,11 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                 isLoading={updateCustomerMutation.isPending}
               />
 
-              <div className="h-px bg-gray-100" />
+              <div className="h-px bg-border" />
 
               {/* Billing Address */}
               <div>
-                <label className="text-xs font-medium uppercase tracking-wider text-gray-500">
+                <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Billing Address
                 </label>
                 <EditableField
@@ -572,21 +572,21 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                   isLoading={updateCustomerMutation.isPending}
                 />
                 {(customer.city || customer.state || customer.pincode) && (
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     {[customer.city, customer.state, customer.pincode].filter(Boolean).join(', ')}
                   </p>
                 )}
               </div>
 
-              <div className="h-px bg-gray-100" />
+              <div className="h-px bg-border" />
 
               {/* Lead Source */}
               <div>
-                <label className="text-xs font-medium uppercase tracking-wider text-gray-500">
+                <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Lead Source
                 </label>
                 <div className="mt-1">
-                  <span className="rounded bg-pink-50 px-1.5 py-0.5 text-[11px] font-medium text-pink-700">
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-foreground-secondary">
                     {customer.leadSource || 'Not specified'}
                   </span>
                 </div>
@@ -594,14 +594,14 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
 
               {/* Created By */}
               <div>
-                <label className="text-xs font-medium uppercase tracking-wider text-gray-500">
+                <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Created By
                 </label>
                 <div className="mt-1 flex items-center gap-2">
                   <div className="flex size-6 items-center justify-center rounded-full bg-secondary/15 text-xs font-semibold text-secondary">
                     {getInitials(customer.creatorName?.split(' ')[0], customer.creatorName?.split(' ')[1])}
                   </div>
-                  <span className="text-sm text-gray-900">{customer.creatorName || 'Self'}</span>
+                  <span className="text-sm text-foreground">{customer.creatorName || 'Self'}</span>
                 </div>
               </div>
             </div>
@@ -610,10 +610,10 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
 
         {/* Center Column: Properties */}
         <div className="lg:col-span-5">
-          <div className="rounded-lg border border-gray-100 bg-white">
-            <div className="flex items-center justify-between border-b border-gray-100 p-4">
-              <h3 className="font-semibold text-gray-900">
-                Properties <span className="font-normal text-gray-400">({properties?.length || 0})</span>
+          <div className="rounded-lg border border-border bg-background">
+            <div className="flex items-center justify-between border-b border-border p-4">
+              <h3 className="font-semibold text-foreground">
+                Properties <span className="font-normal text-muted-foreground">({properties?.length || 0})</span>
               </h3>
               <button
                 onClick={handleAddProperty}
@@ -641,9 +641,9 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                 ))
               ) : (
                 <div className="py-8 text-center">
-                  <Building2 className="mx-auto mb-3 size-12 text-gray-400" />
-                  <p className="mb-1 font-medium text-gray-900">No properties yet</p>
-                  <p className="mb-4 text-sm text-gray-500">
+                  <Building2 className="mx-auto mb-3 size-12 text-muted-foreground" />
+                  <p className="mb-1 font-medium text-foreground">No properties yet</p>
+                  <p className="mb-4 text-sm text-muted-foreground">
                     Add your first property to get started
                   </p>
                   <Button size="sm" onClick={handleAddProperty}>
@@ -658,9 +658,9 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
 
         {/* Right Column: Recent Activity */}
         <div className="lg:col-span-4">
-          <div className="rounded-lg border border-gray-100 bg-white">
-            <div className="border-b border-gray-100 p-4">
-              <h3 className="font-semibold text-gray-900">Recent Activity</h3>
+          <div className="rounded-lg border border-border bg-background">
+            <div className="border-b border-border p-4">
+              <h3 className="font-semibold text-foreground">Recent Activity</h3>
             </div>
             <div className="p-4">
               <SimpleTimeline
@@ -681,9 +681,9 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
       </div>
 
       {/* Tabs Section */}
-      <div className="rounded-lg border border-gray-100 bg-white">
+      <div className="rounded-lg border border-border bg-background">
         {/* Tab Buttons */}
-        <div className="flex overflow-x-auto border-b border-gray-100">
+        <div className="flex overflow-x-auto border-b border-border">
           {(['quotes', 'documents', 'projects', 'activity'] as const).map((tab) => (
             <button
               key={tab}
@@ -692,7 +692,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                 'px-3.5 py-2.5 text-[13px] font-medium border-b-2 transition-all',
                 activeTab === tab
                   ? 'text-primary border-primary'
-                  : 'text-zinc-500 border-transparent hover:text-gray-900'
+                  : 'text-muted-foreground border-transparent hover:text-foreground'
               )}
             >
               {tab === 'quotes' && 'Quotes'}
@@ -715,33 +715,33 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                    <tr className="border-b border-border">
+                      <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
                         Quote #
                       </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                      <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
                         Property
                       </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                      <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
                         System
                       </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                      <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
                         Value
                       </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                      <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
                         Status
                       </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">
+                      <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
                         Date
                       </th>
                       <th className="w-16"></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-border">
                     {quotes.map((quote) => {
                       const statusStyle = QUOTE_STATUS_STYLES[quote.status];
                       return (
-                        <tr key={quote.id} className="hover:bg-gray-50">
+                        <tr key={quote.id} className="hover:bg-muted">
                           <td className="whitespace-nowrap px-3 py-2.5">
                             <Link
                               href={buildRoute(ROUTES.QUOTES.DETAIL, { id: quote.id })}
@@ -756,7 +756,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                           <td className="whitespace-nowrap px-3 py-2.5 text-sm">
                             {quote.systemSizeKw} kW
                           </td>
-                          <td className="whitespace-nowrap px-3 py-2.5 text-sm font-medium text-gray-900">
+                          <td className="whitespace-nowrap px-3 py-2.5 text-sm font-medium text-foreground">
                             {quote.finalPrice
                               ? `₹${quote.finalPrice.toLocaleString('en-IN')}`
                               : '—'}
@@ -772,7 +772,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                               {statusStyle.label}
                             </span>
                           </td>
-                          <td className="whitespace-nowrap px-3 py-2.5 text-sm text-gray-500">
+                          <td className="whitespace-nowrap px-3 py-2.5 text-sm text-muted-foreground">
                             {formatDate(quote.quoteDate)}
                           </td>
                           <td className="whitespace-nowrap px-3 py-2.5 text-right">
@@ -791,9 +791,9 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
               </div>
             ) : (
               <div className="py-12 text-center">
-                <FileText className="mx-auto mb-3 size-12 text-gray-400" />
-                <p className="mb-1 font-medium text-gray-900">No quotes yet</p>
-                <p className="mb-4 text-sm text-gray-500">
+                <FileText className="mx-auto mb-3 size-12 text-muted-foreground" />
+                <p className="mb-1 font-medium text-foreground">No quotes yet</p>
+                <p className="mb-4 text-sm text-muted-foreground">
                   Create a quote to start the sales process
                 </p>
                 <Button size="sm" onClick={handleCreateQuote}>

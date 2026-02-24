@@ -9,7 +9,7 @@ import {
   ProjectTeamController,
   SurveyController,
   TasksController,
-  TaskTemplateController,
+  WorkflowStepController,
 } from './controllers';
 import {
   ProjectEntity,
@@ -18,7 +18,7 @@ import {
   ProjectTaskEntity,
   ProjectTeamMemberEntity,
   SiteSurveyEntity,
-  TaskTemplateEntity,
+  WorkflowStepEntity,
 } from './entities';
 import { ProjectTeamGuard } from './guards';
 import {
@@ -28,7 +28,7 @@ import {
   ProjectTaskRepository,
   ProjectTeamRepository,
   SurveyRepository,
-  TaskTemplateRepository,
+  WorkflowStepRepository,
 } from './repositories';
 import {
   MaterialService,
@@ -37,17 +37,14 @@ import {
   ProjectTaskService,
   ProjectTeamService,
   SurveyService,
-  TaskTemplateService,
+  WorkflowEngineService,
+  WorkflowStepService,
 } from './services';
 import { CustomersModule } from '../customers/customers.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { QuotesModule } from '../quotes/quotes.module';
 import { UsersModule } from '../users/users.module';
 
-/**
- * Projects Module
- * Manages solar installation projects, milestones, surveys, and materials
- */
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -55,7 +52,7 @@ import { UsersModule } from '../users/users.module';
       ProjectMilestoneEntity,
       SiteSurveyEntity,
       ProjectMaterialEntity,
-      TaskTemplateEntity,
+      WorkflowStepEntity,
       ProjectTaskEntity,
       ProjectTeamMemberEntity,
     ]),
@@ -69,7 +66,7 @@ import { UsersModule } from '../users/users.module';
     MilestoneController,
     SurveyController,
     MaterialController,
-    TaskTemplateController,
+    WorkflowStepController,
     ProjectTaskController,
     ProjectTeamController,
     TasksController,
@@ -80,7 +77,7 @@ import { UsersModule } from '../users/users.module';
     MilestoneRepository,
     SurveyRepository,
     MaterialRepository,
-    TaskTemplateRepository,
+    WorkflowStepRepository,
     ProjectTaskRepository,
     ProjectTeamRepository,
     // Services
@@ -88,7 +85,8 @@ import { UsersModule } from '../users/users.module';
     MilestoneService,
     SurveyService,
     MaterialService,
-    TaskTemplateService,
+    WorkflowStepService,
+    WorkflowEngineService,
     ProjectTaskService,
     ProjectTeamService,
     // Guards
@@ -99,14 +97,14 @@ import { UsersModule } from '../users/users.module';
     MilestoneRepository,
     SurveyRepository,
     MaterialRepository,
-    TaskTemplateRepository,
+    WorkflowStepRepository,
     ProjectTaskRepository,
     ProjectTeamRepository,
     ProjectService,
     MilestoneService,
     SurveyService,
     MaterialService,
-    TaskTemplateService,
+    WorkflowStepService,
     ProjectTaskService,
     ProjectTeamService,
     ProjectTeamGuard,

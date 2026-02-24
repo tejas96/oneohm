@@ -13,7 +13,6 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { type PaginatedResponse, ProjectPriority, ProjectStatus } from '@oneohm-epc/shared-types';
 import {
-  ApiCreate,
   ApiDelete,
   ApiReadAll,
   ApiReadOne,
@@ -27,8 +26,6 @@ import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
 import {
   ConvertFromQuoteDto,
-  CreateProjectDto,
-  InitiateProjectDto,
   ProjectResponseDto,
   UpdateProjectDto,
   UpdateProjectStatusDto,
@@ -52,28 +49,6 @@ export class ProjectController {
     private readonly projectService: ProjectService,
     private readonly teamService: ProjectTeamService,
   ) {}
-
-  /**
-   * Create a new project
-   */
-  @Post()
-  @ApiCreate({
-    summary: 'Create a new project',
-    description:
-      'Creates a new solar installation project. Note: One property can only have one project.',
-    responseType: ProjectResponseDto,
-  })
-  async create(
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
-    @Body() createDto: CreateProjectDto,
-  ): Promise<ProjectResponseDto> {
-    const project = await this.projectService.create(organizationId, createDto, currentUser.id);
-
-    return plainToInstance(ProjectResponseDto, project, {
-      excludeExtraneousValues: true,
-    });
-  }
 
   /**
    * Get all projects with filters
@@ -239,33 +214,7 @@ export class ProjectController {
   }
 
   /**
-   * Initiate a new project from a property (no quote required)
-   * NOTE: Must be defined before :id route
-   */
-  @Post('initiate')
-  @ApiOperation({
-    summary: 'Initiate a new project from a property',
-    description:
-      'Creates a new project from a property without requiring a quote. Uses default milestones.',
-  })
-  async initiateProject(
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
-    @Body() initiateDto: InitiateProjectDto,
-  ): Promise<ProjectResponseDto> {
-    const project = await this.projectService.initiateProject(
-      organizationId,
-      currentUser.id,
-      initiateDto,
-    );
-
-    return plainToInstance(ProjectResponseDto, project, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  /**
-   * Convert quote to project
+   * Convert quote to project (only creation path)
    * NOTE: Must be defined before :id route to avoid NestJS treating "convert-from-quote" as a UUID
    */
   @Post('convert-from-quote/:quoteId')

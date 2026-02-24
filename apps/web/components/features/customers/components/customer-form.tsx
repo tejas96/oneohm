@@ -9,7 +9,7 @@ import { type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { useCreateCustomer, useCheckAvailability } from '../hooks/use-create-customer';
-import { useCustomer, useUpdateCustomer, type Customer } from '../hooks/use-customers';
+import { useCustomer, useUpdateCustomer, useUpdateCustomerStatus, type Customer } from '../hooks/use-customers';
 import {
   createCustomerProfileSchema,
   type CreateCustomerProfileFormData,
@@ -154,6 +154,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
   // Hooks for mutations
   const createCustomer = useCreateCustomer();
   const updateCustomer = useUpdateCustomer();
+  const updateCustomerStatus = useUpdateCustomerStatus();
   const availability = useCheckAvailability();
 
   // Compute default values - customer is guaranteed to be available in edit mode
@@ -218,15 +219,17 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
 
     try {
       if (isEditMode && customerId) {
-        // Transform phone numbers for update (useUpdateCustomer doesn't add +91)
+        const { status, ...profileFields } = data;
         const updatePayload = {
-          ...data,
+          ...profileFields,
           phone: `+91${data.phone}`,
           alternatePhone: data.alternatePhone ? `+91${data.alternatePhone}` : undefined,
           leadSource: data.leadSource ?? undefined,
-          status: data.status ?? undefined,
         };
         await updateCustomer.mutateAsync({ id: customerId, data: updatePayload });
+        if (status && status !== customer?.status) {
+          await updateCustomerStatus.mutateAsync({ id: customerId, status });
+        }
         showToast.success('Customer updated successfully');
       } else {
         // useCreateCustomer already adds +91 prefix
@@ -255,7 +258,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
     router.push(ROUTES.CUSTOMERS.LIST);
   };
 
-  const isSubmitting = createCustomer.isPending || updateCustomer.isPending;
+  const isSubmitting = createCustomer.isPending || updateCustomer.isPending || updateCustomerStatus.isPending;
 
   // Combine form validation errors with availability errors
   const phoneError =
@@ -488,9 +491,9 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
                   <Select
                     value={form.watch('leadSource') ?? ''}
                     onValueChange={(v) => form.setValue('leadSource', v as LeadSource)}
-                    disabled={isEditMode}
+                    disabled={isEditMode && !!customer?.leadSource}
                   >
-                    <SelectTrigger id="leadSource" className={isEditMode ? 'bg-muted' : ''}>
+                    <SelectTrigger id="leadSource" className={isEditMode && !!customer?.leadSource ? 'bg-muted' : ''}>
                       <SelectValue placeholder="Select source..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -508,8 +511,8 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
                     id="referralCode"
                     placeholder="Enter referral code"
                     {...form.register('referralCode')}
-                    disabled={isEditMode}
-                    className={isEditMode ? 'bg-muted' : ''}
+                    disabled={isEditMode && !!customer?.referralCode}
+                    className={isEditMode && !!customer?.referralCode ? 'bg-muted' : ''}
                   />
                 </div>
               </div>

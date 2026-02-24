@@ -39,6 +39,8 @@ export interface ProjectListItem {
   projectNumber: string;
   name: string;
   description?: string;
+  quoteId: string;
+  quoteNumber?: string;
   systemSizeKw: number;
   projectType: string;
   status: ProjectStatus;
@@ -80,11 +82,13 @@ export interface ProjectListResponse {
 // ============================================================================
 
 export const projectKeys = {
-  all: ['projects'] as const,
-  lists: () => [...projectKeys.all, 'list'] as const,
-  list: (filters: Record<string, unknown>) => [...projectKeys.lists(), filters] as const,
-  details: () => [...projectKeys.all, 'detail'] as const,
-  detail: (id: string) => [...projectKeys.details(), id] as const,
+  all: (orgId?: string) => ['projects', orgId] as const,
+  lists: (orgId?: string) => [...projectKeys.all(orgId), 'list'] as const,
+  list: (orgId: string | undefined, filters: Record<string, unknown>) =>
+    [...projectKeys.lists(orgId), filters] as const,
+  details: (orgId?: string) => [...projectKeys.all(orgId), 'detail'] as const,
+  detail: (orgId: string | undefined, id: string) =>
+    [...projectKeys.details(orgId), id] as const,
 };
 
 // ============================================================================
@@ -98,7 +102,7 @@ export function useProjects(
   const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: projectKeys.list(filters as Record<string, unknown>),
+    queryKey: projectKeys.list(organizationId, filters as Record<string, unknown>),
     queryFn: async (): Promise<ProjectListResponse> => {
       const params = new URLSearchParams();
 

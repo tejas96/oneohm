@@ -26,6 +26,7 @@ import { UserEntity } from '../../users/entities/user.entity';
 @Index(['paymentId'])
 @Index(['isLatestVersion'])
 @Index(['wcrSessionNumber'])
+@Index(['documentNumber', 'version'], { unique: true })
 export class DocumentEntity extends BaseEntity {
   // ============================================
   // RELATIONS
@@ -87,7 +88,7 @@ export class DocumentEntity extends BaseEntity {
   // ============================================
   // DOCUMENT INFO
   // ============================================
-  @Column({ name: 'document_number', type: 'varchar', length: 50, unique: true })
+  @Column({ name: 'document_number', type: 'varchar', length: 50 })
   documentNumber!: string;
 
   @Column({ name: 'document_name', type: 'varchar', length: 255 })

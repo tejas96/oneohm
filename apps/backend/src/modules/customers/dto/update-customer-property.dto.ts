@@ -2,7 +2,6 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ConnectionType,
   LeadTemperature,
-  PropertyStatus,
   PropertyType,
 } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
@@ -208,16 +207,6 @@ export class UpdateCustomerPropertyDto {
   @ValidateNested({ each: true })
   @Type(() => PropertyDocumentDto)
   documents?: PropertyDocumentDto[];
-
-  // ==================== Status ====================
-  @ApiPropertyOptional({
-    enum: PropertyStatus,
-    example: PropertyStatus.ACTIVE,
-    description: 'Property status',
-  })
-  @IsEnum(PropertyStatus)
-  @IsOptional()
-  status?: PropertyStatus;
 
   // ==================== Notes ====================
   @ApiPropertyOptional({

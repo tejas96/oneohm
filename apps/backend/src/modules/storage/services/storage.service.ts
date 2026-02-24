@@ -105,6 +105,10 @@ export class StorageService {
    * Generate a presigned URL for downloading a file
    */
   async getDownloadUrl(fileKey: string, downloadFilename?: string): Promise<PresignedUrlResult> {
+    if (!this.isValidFileKey(fileKey)) {
+      throw new BadRequestException('Invalid file key format');
+    }
+
     return this.s3Storage.getPresignedDownloadUrl({
       fileKey,
       downloadFilename,
@@ -128,6 +132,10 @@ export class StorageService {
    * Check if a file exists
    */
   async fileExists(fileKey: string): Promise<boolean> {
+    if (!this.isValidFileKey(fileKey)) {
+      throw new BadRequestException('Invalid file key format');
+    }
+
     return this.s3Storage.fileExists(fileKey);
   }
 

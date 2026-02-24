@@ -9,9 +9,12 @@ import {
 } from '@nestjs/common';
 import { OrganizationStatus } from '@oneohm-epc/shared-types';
 import { plainToInstance } from 'class-transformer';
+import { DataSource } from 'typeorm';
 
 import { RoleEntity } from '../../iam/entities/role.entity';
 import { RoleRepository } from '../../iam/repositories/role.repository';
+import { UserRoleEntity } from '../../users/entities/user-role.entity';
+import { UserEntity } from '../../users/entities/user.entity';
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { UserRepository } from '../../users/repositories/user.repository';
 import { InvitationService } from '../../users/services/invitation.service';
@@ -46,6 +49,7 @@ export class OrganizationService {
     private readonly userRoleRepository: UserRoleRepository,
     @Inject(forwardRef(() => InvitationService))
     private readonly invitationService: InvitationService,
+    private readonly dataSource: DataSource,
   ) {}
 
   // ==================== CREATE ====================
@@ -71,72 +75,79 @@ export class OrganizationService {
       throw new ConflictException(`User with email '${dto.superAdminEmail}' already exists`);
     }
 
-    // 1. Create organization
-    const organization = await this.organizationRepository.create({
-      name: dto.name,
-      code: dto.code,
-      email: dto.email,
-      phone: dto.phone,
-      address: dto.address,
-      city: dto.city,
-      state: dto.state,
-      country: dto.country || 'India',
-      pincode: dto.pincode,
-      gstin: dto.gstin,
-      pan: dto.pan,
-      timezone: dto.timezone || 'Asia/Kolkata',
-      currency: dto.currency || 'INR',
-      dateFormat: dto.dateFormat || 'DD-MM-YYYY',
-      defaultProjectTimelineWeeks: dto.defaultProjectTimelineWeeks || 4,
-      defaultQuoteValidityDays: dto.defaultQuoteValidityDays || 30,
-      maxQuoteVersions: dto.maxQuoteVersions || 3,
-      subscriptionPlan: dto.subscriptionPlan,
-      subscriptionExpiresAt: dto.subscriptionExpiresAt,
-      createdBy,
-    });
+    // Transaction: org + roles + user + role assignment (atomic)
+    const { organization, rolesCreated, superAdminUser, superAdminRole } =
+      await this.dataSource.transaction(async (manager) => {
+        const orgRepo = manager.getRepository(OrganizationEntity);
+        const roleRepo = manager.getRepository(RoleEntity);
+        const userRepo = manager.getRepository(UserEntity);
+        const userRoleRepo = manager.getRepository(UserRoleEntity);
 
-    this.logger.log(`Organization created: ${organization.name} (${organization.id})`);
+        const org = await orgRepo.save(
+          orgRepo.create({
+            name: dto.name,
+            code: dto.code,
+            email: dto.email,
+            phone: dto.phone,
+            address: dto.address,
+            city: dto.city,
+            state: dto.state,
+            country: dto.country || 'India',
+            pincode: dto.pincode,
+            gstin: dto.gstin,
+            pan: dto.pan,
+            timezone: dto.timezone || 'Asia/Kolkata',
+            currency: dto.currency || 'INR',
+            dateFormat: dto.dateFormat || 'DD-MM-YYYY',
+            defaultProjectTimelineWeeks: dto.defaultProjectTimelineWeeks || 4,
+            defaultQuoteValidityDays: dto.defaultQuoteValidityDays || 30,
+            maxQuoteVersions: dto.maxQuoteVersions || 3,
+            subscriptionPlan: dto.subscriptionPlan,
+            subscriptionExpiresAt: dto.subscriptionExpiresAt,
+            createdBy,
+          }),
+        );
 
-    // 2. Create default roles for organization
-    const rolesCreated = await this.createDefaultRoles(organization.id);
+        this.logger.log(`Organization created: ${org.name} (${org.id})`);
 
-    // 3. Create super admin user (with optional password)
-    const superAdminUser = await this.userRepository.create({
-      email: dto.superAdminEmail,
-      firstName: dto.superAdminFirstName,
-      lastName: dto.superAdminLastName,
-      phone: dto.superAdminPhone,
-      passwordHash: dto.superAdminPassword, // Optional - if provided, user can login immediately
-      profileCompleted: false,
-    });
+        const roles: RoleEntity[] = [];
+        for (const roleDef of this.getDefaultRoleDefinitions()) {
+          const role = await roleRepo.save(
+            roleRepo.create({ ...roleDef, organizationId: org.id, isSystemRole: true }),
+          );
+          roles.push(role);
+        }
+        this.logger.log(`Created ${roles.length} default roles for org ${org.id}`);
 
-    this.logger.log(
-      `Super admin user created: ${superAdminUser.email} (password: ${dto.superAdminPassword ? 'set' : 'via invitation'})`,
-    );
+        const adminUser = await userRepo.save(
+          userRepo.create({
+            email: dto.superAdminEmail,
+            firstName: dto.superAdminFirstName,
+            lastName: dto.superAdminLastName,
+            phone: dto.superAdminPhone,
+            passwordHash: dto.superAdminPassword,
+            profileCompleted: false,
+          }),
+        );
 
-    // 4. Get super_admin role
-    const superAdminRole = await this.roleRepository.findByCodeAndOrganization(
-      'super_admin',
-      organization.id,
-    );
+        const adminRole = roles.find((r) => r.code === 'super_admin');
+        if (!adminRole) {
+          throw new BadRequestException('Failed to create super_admin role');
+        }
 
-    if (!superAdminRole) {
-      throw new BadRequestException('Failed to create super_admin role');
-    }
+        await userRoleRepo.save(
+          userRoleRepo.create({
+            userId: adminUser.id,
+            roleId: adminRole.id,
+            role: adminRole.code,
+            organizationId: org.id,
+          }),
+        );
 
-    // 5. Assign super_admin role to user
-    await this.userRoleRepository.create({
-      userId: superAdminUser.id,
-      roleId: superAdminRole.id,
-      role: superAdminRole.code,
-      organizationId: organization.id,
-    });
+        return { organization: org, rolesCreated: roles, superAdminUser: adminUser, superAdminRole: adminRole };
+      });
 
-    this.logger.log(
-      `Super admin role assigned to user ${superAdminUser.email} in org ${organization.id}`,
-    );
-
-    // 6. Create invitation
+    // Invitation (outside transaction — safe to fail independently)
     const invitation = await this.invitationService.createInvitation({
       email: dto.superAdminEmail,
       organizationId: organization.id,
@@ -149,9 +160,6 @@ export class OrganizationService {
 
     this.logger.log(`Invitation created for ${dto.superAdminEmail}`);
 
-    // 7. TODO: Send invitation email via MSG91
-    const invitationSent = false;
-
     return {
       organization: plainToInstance(OrganizationResponseDto, organization, {
         excludeExtraneousValues: true,
@@ -160,7 +168,7 @@ export class OrganizationService {
       invitationToken: invitation.token,
       invitationLink,
       rolesCreated: rolesCreated.map((r) => r.code),
-      invitationSent,
+      invitationSent: false,
     };
   }
 
@@ -181,24 +189,11 @@ export class OrganizationService {
       limit,
       offset: skip,
       status,
+      search,
     });
 
-    let filtered = result.items;
-
-    // Apply search filter if provided
-    if (search) {
-      const searchLower = search.toLowerCase();
-      filtered = result.items.filter((org: OrganizationEntity) => {
-        return (
-          org.name.toLowerCase().includes(searchLower) ||
-          org.code.toLowerCase().includes(searchLower) ||
-          (org.email?.toLowerCase().includes(searchLower))
-        );
-      });
-    }
-
     return {
-      data: filtered.map((org: OrganizationEntity) =>
+      data: result.items.map((org: OrganizationEntity) =>
         plainToInstance(OrganizationResponseDto, org, {
           excludeExtraneousValues: true,
         }),
@@ -399,83 +394,17 @@ export class OrganizationService {
 
   // ==================== PRIVATE HELPERS ====================
 
-  /**
-   * Create default roles for organization
-   */
-  private async createDefaultRoles(organizationId: string): Promise<RoleEntity[]> {
-    const defaultRoles = [
-      // Admin roles
-      {
-        code: 'super_admin',
-        name: 'Super Administrator',
-        description: 'Full access to organization',
-        level: 0,
-      },
-      {
-        code: 'admin',
-        name: 'Administrator',
-        description: 'Administrative access',
-        level: 1,
-      },
-      {
-        code: 'manager',
-        name: 'Manager',
-        description: 'Management access with limited admin capabilities',
-        level: 2,
-      },
-      // Employee roles
-      {
-        code: 'employee_basic',
-        name: 'Employee (Basic)',
-        description: 'Basic employee access',
-        level: 5,
-      },
-      {
-        code: 'field_worker',
-        name: 'Field Worker',
-        description: 'Field worker access - can create leads and quotes',
-        level: 5,
-      },
-      {
-        code: 'sales_person',
-        name: 'Sales Person',
-        description: 'Sales access - can manage leads and quotes',
-        level: 5,
-      },
-      {
-        code: 'telecaller',
-        name: 'Telecaller',
-        description: 'Telecaller access - can manage leads',
-        level: 6,
-      },
-      // External roles
-      {
-        code: 'customer',
-        name: 'Customer',
-        description: 'Customer self-service access',
-        level: 10,
-      },
-      {
-        code: 'reseller',
-        name: 'Reseller',
-        description: 'Reseller partner access',
-        level: 10,
-      },
+  private getDefaultRoleDefinitions(): Array<{ code: string; name: string; description: string; level: number }> {
+    return [
+      { code: 'super_admin', name: 'Super Administrator', description: 'Full access to organization', level: 0 },
+      { code: 'admin', name: 'Administrator', description: 'Administrative access', level: 1 },
+      { code: 'manager', name: 'Manager', description: 'Management access with limited admin capabilities', level: 2 },
+      { code: 'employee_basic', name: 'Employee (Basic)', description: 'Basic employee access', level: 5 },
+      { code: 'field_worker', name: 'Field Worker', description: 'Field worker access - can create leads and quotes', level: 5 },
+      { code: 'sales_person', name: 'Sales Person', description: 'Sales access - can manage leads and quotes', level: 5 },
+      { code: 'telecaller', name: 'Telecaller', description: 'Telecaller access - can manage leads', level: 6 },
+      { code: 'customer', name: 'Customer', description: 'Customer self-service access', level: 10 },
+      { code: 'reseller', name: 'Reseller', description: 'Reseller partner access', level: 10 },
     ];
-
-    const createdRoles: RoleEntity[] = [];
-
-    for (const roleData of defaultRoles) {
-      const role = await this.roleRepository.create({
-        ...roleData,
-        organizationId,
-        isSystemRole: true,
-      });
-      createdRoles.push(role);
-    }
-
-    this.logger.log(`Created ${createdRoles.length} default roles for org ${organizationId}`);
-
-    return createdRoles;
   }
 }

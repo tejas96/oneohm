@@ -159,7 +159,7 @@ export function useProperties(
   const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: propertyKeys.list(filters as Record<string, unknown>),
+    queryKey: propertyKeys.list(organizationId, filters as Record<string, unknown>),
     queryFn: async (): Promise<PropertyListResponse> => {
       const params = new URLSearchParams();
 
@@ -206,7 +206,7 @@ export function usePropertyStats(): UseQueryResult<PropertyStatsResponse, AxiosE
   const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: [...propertyKeys.all, 'stats', 'temperature'],
+    queryKey: [...propertyKeys.all(organizationId), 'stats', 'temperature'],
     queryFn: async (): Promise<PropertyStatsResponse> => {
       const { data } = await apiClient.get<PropertyStatsResponse>(
         '/customer-properties/statistics/temperature',
@@ -247,15 +247,12 @@ export function useUpdateProperty(): UseMutationResult<
       return response;
     },
     onSuccess: (_, variables) => {
-      // Invalidate property lists to refetch
-      void queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
-      // Invalidate this specific property detail
+      void queryClient.invalidateQueries({ queryKey: propertyKeys.lists(organizationId) });
       void queryClient.invalidateQueries({
-        queryKey: propertyKeys.detail(variables.id),
+        queryKey: propertyKeys.detail(organizationId, variables.id),
       });
-      // Invalidate temperature stats
       void queryClient.invalidateQueries({
-        queryKey: [...propertyKeys.all, 'stats'],
+        queryKey: [...propertyKeys.all(organizationId), 'stats'],
       });
     },
   });
@@ -276,9 +273,9 @@ export function useDeleteProperty(): UseMutationResult<void, AxiosError, string>
       });
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: propertyKeys.lists(organizationId) });
       void queryClient.invalidateQueries({
-        queryKey: [...propertyKeys.all, 'stats'],
+        queryKey: [...propertyKeys.all(organizationId), 'stats'],
       });
     },
   });

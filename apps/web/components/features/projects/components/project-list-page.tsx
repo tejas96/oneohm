@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ROUTES } from '@/lib/config/routes';
-import { useDebounce } from '@/lib/hooks/use-debounce';
+import { useDebounce } from '@/lib/hooks';
 
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -79,7 +79,7 @@ export function ProjectListPage() {
     parseInt(url.get('pageSize') || String(DEFAULT_PAGE_SIZE), 10),
   );
 
-  const debouncedSearch = useDebounce(searchInput, 300);
+  const debouncedSearch = useDebounce(searchInput, 550);
 
   const filters: ProjectFilters = useMemo(
     () => ({

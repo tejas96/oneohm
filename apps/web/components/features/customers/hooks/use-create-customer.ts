@@ -14,11 +14,13 @@ import { useAuth } from '@/providers/auth-provider';
 // ============================================================================
 
 export const customerKeys = {
-  all: ['customers'] as const,
-  lists: () => [...customerKeys.all, 'list'] as const,
-  list: (filters: Record<string, unknown>) => [...customerKeys.lists(), filters] as const,
-  details: () => [...customerKeys.all, 'detail'] as const,
-  detail: (id: string) => [...customerKeys.details(), id] as const,
+  all: (orgId?: string) => ['customers', orgId] as const,
+  lists: (orgId?: string) => [...customerKeys.all(orgId), 'list'] as const,
+  list: (orgId: string | undefined, filters: Record<string, unknown>) =>
+    [...customerKeys.lists(orgId), filters] as const,
+  details: (orgId?: string) => [...customerKeys.all(orgId), 'detail'] as const,
+  detail: (orgId: string | undefined, id: string) =>
+    [...customerKeys.details(orgId), id] as const,
 };
 
 // ============================================================================
@@ -91,8 +93,7 @@ export function useCreateCustomer(): UseMutationResult<
       return response;
     },
     onSuccess: () => {
-      // Invalidate customer lists to refetch
-      void queryClient.invalidateQueries({ queryKey: customerKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: customerKeys.lists(organizationId) });
     },
   });
 }
@@ -112,7 +113,7 @@ interface CheckAvailabilityParams {
  * Used for real-time duplicate validation on form fields
  *
  * Features:
- * - Debounced API calls (500ms)
+ * - Debounced API calls (550ms)
  * - Separate loading states for phone and email
  * - Returns error messages from backend
  */
@@ -191,7 +192,7 @@ export function useCheckAvailability(): {
             setState((prev) => ({ ...prev, isCheckingPhone: false }));
           }
         })();
-      }, 500);
+      }, 550);
     },
     [checkAvailability]
   );
@@ -227,7 +228,7 @@ export function useCheckAvailability(): {
             setState((prev) => ({ ...prev, isCheckingEmail: false }));
           }
         })();
-      }, 500);
+      }, 550);
     },
     [checkAvailability]
   );

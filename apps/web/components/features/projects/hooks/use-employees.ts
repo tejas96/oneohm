@@ -23,6 +23,7 @@ export interface EmployeeListItem {
   phone?: string | null;
   department?: string | null;
   designation?: string | null;
+  roles?: string[];
   status: string;
 }
 
@@ -34,9 +35,10 @@ interface EmployeeListResponse {
 }
 
 export const employeeKeys = {
-  all: ['employees'] as const,
-  lists: () => [...employeeKeys.all, 'list'] as const,
-  list: (filters: Record<string, unknown>) => [...employeeKeys.lists(), filters] as const,
+  all: (orgId?: string) => ['employees', orgId] as const,
+  lists: (orgId?: string) => [...employeeKeys.all(orgId), 'list'] as const,
+  list: (orgId: string | undefined, filters: Record<string, unknown>) =>
+    [...employeeKeys.lists(orgId), filters] as const,
 };
 
 export function useEmployees(
@@ -46,7 +48,7 @@ export function useEmployees(
   const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: employeeKeys.list({ organizationId, ...options }),
+    queryKey: employeeKeys.list(organizationId, { ...options }),
     queryFn: async (): Promise<EmployeeListResponse> => {
       const params = new URLSearchParams();
       if (options?.page) params.append('page', String(options.page));

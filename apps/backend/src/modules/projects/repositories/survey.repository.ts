@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { SiteSurveyStatus } from '@oneohm-epc/shared-types';
 import { IsNull, Repository } from 'typeorm';
 
+import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { SiteSurveyEntity } from '../entities/site-survey.entity';
 
 /**
@@ -22,6 +23,13 @@ export class SurveyRepository {
   async create(surveyData: Partial<SiteSurveyEntity>): Promise<SiteSurveyEntity> {
     const survey = this.repository.create(surveyData);
     return this.repository.save(survey);
+  }
+
+  /**
+   * Update survey by ID (no project ownership check — caller must pre-validate)
+   */
+  async updateById(id: string, data: Record<string, unknown>): Promise<void> {
+    await this.repository.update(id, data);
   }
 
   /**
@@ -126,5 +134,12 @@ export class SurveyRepository {
       order: { surveyDate: 'DESC' },
       relations: ['surveyor'],
     });
+  }
+
+  /**
+   * Generate a unique survey code (e.g. SSV-ONEOHM-2026-0001)
+   */
+  async generateSurveyCode(orgCode: string): Promise<string> {
+    return generateEntityCode(this.repository, 'surveyCode', 'SSV', orgCode, 'survey_code');
   }
 }

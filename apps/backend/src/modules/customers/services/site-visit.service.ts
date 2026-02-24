@@ -163,7 +163,6 @@ export class SiteVisitService {
 
     // Build update object with only defined values
     const updateData: Partial<SiteVisitEntity> = {};
-    if (updateDto.status !== undefined) updateData.status = updateDto.status;
     if (updateDto.gpsCoordinates !== undefined)
       updateData.gpsCoordinates = updateDto.gpsCoordinates;
     if (updateDto.availableRoofAreaSqft !== undefined)

@@ -60,7 +60,7 @@ export const QUOTE_FILTER_TABS: FilterTab<string>[] = [
 // ============================================================================
 
 export const DEFAULT_PAGE_SIZE = 10;
-export const SEARCH_DEBOUNCE_MS = 500;
+export const SEARCH_DEBOUNCE_MS = 550;
 
 // ============================================================================
 // Project Type Options

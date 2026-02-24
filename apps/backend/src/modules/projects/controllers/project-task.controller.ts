@@ -35,10 +35,13 @@ import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
 import {
+  AssignTaskDto,
   CreateProjectTaskDto,
   MoveTaskDto,
   ProjectTaskResponseDto,
   UpdateProjectTaskDto,
+  UpdateTaskProgressDto,
+  UpdateTaskStatusDto,
 } from '../dto';
 import { ProjectTeamGuard } from '../guards';
 import { ProjectTaskService } from '../services';
@@ -251,25 +254,25 @@ export class ProjectTaskController {
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body('status') status: TaskStatus,
+    @Body() dto: UpdateTaskStatusDto,
   ): Promise<ProjectTaskResponseDto> {
-    const task = await this.taskService.updateStatus(id, projectId, status, currentUser.id);
+    const task = await this.taskService.updateStatus(id, projectId, dto.status, currentUser.id);
     return plainToInstance(ProjectTaskResponseDto, task, {
       excludeExtraneousValues: true,
     });
   }
 
   @Patch(':id/assign')
-  @ApiOperation({ summary: 'Assign task to user' })
+  @ApiOperation({ summary: 'Assign or unassign task' })
   @ApiNotFoundResponse({ description: 'Task not found' })
-  @ApiBadRequestResponse({ description: 'Invalid user ID' })
+  @ApiBadRequestResponse({ description: 'Invalid user ID or user not a team member' })
   async assignTask(
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body('assignedToUserId', ParseUUIDPipe) assignedToUserId: string,
+    @Body() dto: AssignTaskDto,
   ): Promise<ProjectTaskResponseDto> {
-    const task = await this.taskService.assignTask(id, projectId, assignedToUserId, currentUser.id);
+    const task = await this.taskService.assignTask(id, projectId, dto.assignedToUserId, currentUser.id);
     return plainToInstance(ProjectTaskResponseDto, task, {
       excludeExtraneousValues: true,
     });
@@ -283,12 +286,12 @@ export class ProjectTaskController {
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body('completionPercentage') completionPercentage: number,
+    @Body() dto: UpdateTaskProgressDto,
   ): Promise<ProjectTaskResponseDto> {
     const task = await this.taskService.updateProgress(
       id,
       projectId,
-      completionPercentage,
+      dto.completionPercentage,
       currentUser.id,
     );
     return plainToInstance(ProjectTaskResponseDto, task, {

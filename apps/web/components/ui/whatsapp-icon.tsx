@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
  * Custom SVG icon for WhatsApp since it's not available in lucide-react
  *
  * @example
- * <WhatsAppIcon className="size-icon text-green-600" />
+ * <WhatsAppIcon className="size-icon text-success" />
  */
 export function WhatsAppIcon({
   className,

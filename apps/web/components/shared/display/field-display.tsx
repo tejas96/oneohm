@@ -52,27 +52,27 @@ const SHADING_CONFIG: Record<
 > = {
   none: {
     label: 'No Shading',
-    bgClass: 'bg-green-100',
-    textClass: 'text-green-700',
-    dotClass: 'bg-green-500',
+    bgClass: 'bg-success/10',
+    textClass: 'text-success',
+    dotClass: 'bg-success',
   },
   minimal: {
     label: 'Minimal Shading',
-    bgClass: 'bg-lime-100',
-    textClass: 'text-lime-700',
-    dotClass: 'bg-lime-500',
+    bgClass: 'bg-success/10',
+    textClass: 'text-success',
+    dotClass: 'bg-success',
   },
   moderate: {
     label: 'Moderate Shading',
-    bgClass: 'bg-yellow-100',
-    textClass: 'text-yellow-700',
-    dotClass: 'bg-yellow-500',
+    bgClass: 'bg-warning/10',
+    textClass: 'text-warning',
+    dotClass: 'bg-warning',
   },
   significant: {
     label: 'Significant Shading',
-    bgClass: 'bg-red-100',
-    textClass: 'text-red-700',
-    dotClass: 'bg-red-500',
+    bgClass: 'bg-destructive/10',
+    textClass: 'text-destructive',
+    dotClass: 'bg-destructive',
   },
 };
 
@@ -390,9 +390,9 @@ function DocumentStatusDisplay({ data, size, className }: DocumentStatusDisplayP
   const getStatusClasses = (status: 'uploaded' | 'pending' | 'missing') => {
     switch (status) {
       case 'uploaded':
-        return 'bg-green-100 text-green-700';
+        return 'bg-success/10 text-success';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-700';
+        return 'bg-warning/10 text-warning';
       case 'missing':
         return 'bg-muted text-foreground-tertiary';
     }
@@ -567,7 +567,7 @@ function LoanDisplay({ data, size, className }: LoanDisplayProps) {
 
   if (size === 'compact') {
     return (
-      <Badge className={cn('bg-blue-100 text-blue-700', className)}>
+      <Badge className={cn('bg-primary/10 text-primary', className)}>
         <CreditCard className="size-icon-2xs mr-1" />
         Loan Enquiry
       </Badge>
@@ -582,8 +582,8 @@ function LoanDisplay({ data, size, className }: LoanDisplayProps) {
       )}
     >
       <div className="flex items-center gap-4">
-        <div className="size-container-lg rounded-lg bg-blue-100 flex items-center justify-center">
-          <CreditCard className="size-icon-lg text-blue-600" />
+        <div className="size-container-lg rounded-lg bg-primary/10 flex items-center justify-center">
+          <CreditCard className="size-icon-lg text-primary" />
         </div>
         <div className="flex-1">
           <div className="font-semibold text-foreground">Interested in Solar Loan</div>
@@ -591,11 +591,11 @@ function LoanDisplay({ data, size, className }: LoanDisplayProps) {
             Customer wants financing assistance
           </div>
         </div>
-        <Badge className="bg-blue-600 text-white">Loan Enquiry</Badge>
+        <Badge className="bg-primary text-white">Loan Enquiry</Badge>
       </div>
 
       {(data.systemValue || data.estimatedEMI || data.tenure) && (
-        <div className="mt-4 pt-3 border-t border-blue-100 grid grid-cols-3 gap-4 text-center">
+        <div className="mt-4 pt-3 border-t border-primary/20 grid grid-cols-3 gap-4 text-center">
           {data.systemValue !== undefined && (
             <div>
               <div className="text-xs text-foreground-tertiary">System Value</div>

@@ -114,7 +114,7 @@ export function useCustomers(
   const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: customerKeys.list(filters as Record<string, unknown>),
+    queryKey: customerKeys.list(organizationId, filters as Record<string, unknown>),
     queryFn: async (): Promise<CustomerListResponse> => {
       const params = new URLSearchParams();
 
@@ -160,7 +160,7 @@ export function useCustomer(id: string): UseQueryResult<Customer, AxiosError> {
   const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: customerKeys.detail(id),
+    queryKey: customerKeys.detail(organizationId, id),
     queryFn: async (): Promise<Customer> => {
       const { data } = await apiClient.get<Customer>(`/customers/${id}`, {
         headers: { 'X-Organization-Id': organizationId },
@@ -179,7 +179,7 @@ export function useCustomerStats(): UseQueryResult<CustomerStatsResponse, AxiosE
   const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: [...customerKeys.all, 'stats'] as const,
+    queryKey: [...customerKeys.all(organizationId), 'stats'] as const,
     queryFn: async (): Promise<CustomerStatsResponse> => {
       const { data } = await apiClient.get<CustomerStatsResponse>(
         '/customers/statistics/status',
@@ -213,12 +213,9 @@ export function useUpdateCustomer(): UseMutationResult<
       return response;
     },
     onSuccess: (updatedCustomer) => {
-      // Update the specific customer in cache
-      queryClient.setQueryData(customerKeys.detail(updatedCustomer.id), updatedCustomer);
-      // Invalidate lists to refetch
-      void queryClient.invalidateQueries({ queryKey: customerKeys.lists() });
-      // Invalidate stats in case status changed
-      void queryClient.invalidateQueries({ queryKey: [...customerKeys.all, 'stats'] });
+      queryClient.setQueryData(customerKeys.detail(organizationId, updatedCustomer.id), updatedCustomer);
+      void queryClient.invalidateQueries({ queryKey: customerKeys.lists(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: [...customerKeys.all(organizationId), 'stats'] });
     },
   });
 }
@@ -245,12 +242,9 @@ export function useUpdateCustomerStatus(): UseMutationResult<
       return response;
     },
     onSuccess: (updatedCustomer) => {
-      // Update the specific customer in cache
-      queryClient.setQueryData(customerKeys.detail(updatedCustomer.id), updatedCustomer);
-      // Invalidate lists to refetch
-      void queryClient.invalidateQueries({ queryKey: customerKeys.lists() });
-      // Invalidate stats since status changed
-      void queryClient.invalidateQueries({ queryKey: [...customerKeys.all, 'stats'] });
+      queryClient.setQueryData(customerKeys.detail(organizationId, updatedCustomer.id), updatedCustomer);
+      void queryClient.invalidateQueries({ queryKey: customerKeys.lists(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: [...customerKeys.all(organizationId), 'stats'] });
     },
   });
 }
@@ -270,12 +264,9 @@ export function useDeleteCustomer(): UseMutationResult<void, AxiosError, string>
       });
     },
     onSuccess: (_, id) => {
-      // Remove from cache
-      queryClient.removeQueries({ queryKey: customerKeys.detail(id) });
-      // Invalidate lists to refetch
-      void queryClient.invalidateQueries({ queryKey: customerKeys.lists() });
-      // Invalidate stats since count changed
-      void queryClient.invalidateQueries({ queryKey: [...customerKeys.all, 'stats'] });
+      queryClient.removeQueries({ queryKey: customerKeys.detail(organizationId, id) });
+      void queryClient.invalidateQueries({ queryKey: customerKeys.lists(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: [...customerKeys.all(organizationId), 'stats'] });
     },
   });
 }

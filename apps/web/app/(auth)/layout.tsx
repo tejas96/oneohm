@@ -13,7 +13,6 @@ import { useRouter } from 'next/navigation';
 import React, { Suspense, useEffect, type ReactNode } from 'react';
 
 import { Spinner } from '@/components/ui/spinner';
-import { getAccessToken } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
 
 interface AuthLayoutProps {
@@ -37,12 +36,7 @@ export default function AuthLayout({ children }: AuthLayoutProps): React.JSX.Ele
   const { isAuthenticated, isInitialized } = useAuth();
   const router = useRouter();
   
-  // Check for existing token as a hint that user might be authenticated
-  // This handles SSR/hydration race where isInitialized becomes true before auth completes
-  const hasExistingToken = typeof window !== 'undefined' && Boolean(getAccessToken());
-
   // Redirect authenticated users away from auth pages
-  // Note: Using window.location.search instead of useSearchParams to avoid Suspense requirement in layouts
   useEffect(() => {
     if (isInitialized && isAuthenticated) {
       const params = new URLSearchParams(window.location.search);
@@ -51,11 +45,9 @@ export default function AuthLayout({ children }: AuthLayoutProps): React.JSX.Ele
     }
   }, [isAuthenticated, isInitialized, router]);
 
-  // Show loading while:
-  // 1. Auth not initialized yet
-  // 2. User is authenticated (redirect pending)
-  // 3. Token exists but auth hasn't confirmed yet (SSR/hydration race fix)
-  if (!isInitialized || isAuthenticated || (hasExistingToken && !isAuthenticated)) {
+  // Show loading while auth is initializing or user is authenticated (redirect pending).
+  // Only gate on isInitialized — once auth init completes, we know the real auth state.
+  if (!isInitialized || isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background-secondary">
         <div className="flex flex-col items-center gap-4">

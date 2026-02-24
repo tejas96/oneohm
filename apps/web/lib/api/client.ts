@@ -8,7 +8,7 @@ import { ROUTES } from '@/lib/config/routes';
  * Configured with JWT authentication interceptors
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085/api/v1';
 
 // Create axios instance
 export const apiClient = axios.create({

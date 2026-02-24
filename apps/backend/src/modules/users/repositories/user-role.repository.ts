@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 
 import { UserRoleEntity } from '../entities/user-role.entity';
 
@@ -14,6 +14,13 @@ export class UserRoleRepository {
   async findByUserId(userId: string): Promise<UserRoleEntity[]> {
     return this.repository.find({
       where: { userId },
+    });
+  }
+
+  async findByUserIds(userIds: string[]): Promise<UserRoleEntity[]> {
+    if (userIds.length === 0) return [];
+    return this.repository.find({
+      where: { userId: In(userIds) },
     });
   }
 
@@ -84,14 +91,19 @@ export class UserRoleRepository {
   }
 
   /**
-   * Find roles for user in a specific organization
+   * Find roles for user in a specific organization.
+   * Also includes platform-level roles (organization_id IS NULL) since
+   * those apply globally across all organizations.
    */
   async findByUserAndOrganization(
     userId: string,
     organizationId: string,
   ): Promise<UserRoleEntity[]> {
     return this.repository.find({
-      where: { userId, organizationId },
+      where: [
+        { userId, organizationId },
+        { userId, organizationId: IsNull() },
+      ],
     });
   }
 

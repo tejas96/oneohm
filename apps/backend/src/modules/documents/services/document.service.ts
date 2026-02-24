@@ -3,6 +3,7 @@
 // ============================================
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DocumentStatus, DocumentType } from '@oneohm-epc/shared-types';
+import { DataSource } from 'typeorm';
 
 import {
   CreateDocumentDto,
@@ -21,7 +22,10 @@ import { DocumentRepository } from '../repositories/document.repository';
  */
 @Injectable()
 export class DocumentService {
-  constructor(private readonly documentRepository: DocumentRepository) {}
+  constructor(
+    private readonly documentRepository: DocumentRepository,
+    private readonly dataSource: DataSource,
+  ) {}
 
   // ============================================
   // CREATE
@@ -30,26 +34,38 @@ export class DocumentService {
     // Generate document number
     const documentNumber = await this.generateDocumentNumber(dto.organizationId, dto.documentType);
 
-    // Validate parent document if versioning
+    // Validate parent document if versioning — use transaction for atomic version increment
     if (dto.parentDocumentId) {
       const parentDoc = await this.documentRepository.findById(dto.parentDocumentId);
       if (!parentDoc) {
         throw new NotFoundException(`Parent document with ID ${dto.parentDocumentId} not found`);
       }
 
-      // Mark all previous versions as not latest
-      await this.documentRepository.markAllVersionsAsNotLatest(dto.parentDocumentId);
+      return this.dataSource.transaction(async (manager) => {
+        const docRepo = manager.getRepository(DocumentEntity);
 
-      // Get next version number
-      const version = await this.documentRepository.getNextVersionNumber(dto.parentDocumentId);
+        await docRepo.update(
+          { documentNumber: parentDoc.documentNumber },
+          { isLatestVersion: false },
+        );
 
-      return this.documentRepository.create({
-        ...dto,
-        documentNumber,
-        version,
-        isLatestVersion: true,
-        createdBy: userId,
-        updatedBy: userId,
+        const latestVersion = await docRepo
+          .createQueryBuilder('doc')
+          .select('MAX(doc.version)', 'maxVersion')
+          .where('doc.documentNumber = :docNumber', { docNumber: parentDoc.documentNumber })
+          .getRawOne();
+        const nextVersion = ((latestVersion?.maxVersion as number) || 0) + 1;
+
+        return docRepo.save(
+          docRepo.create({
+            ...dto,
+            documentNumber,
+            version: nextVersion,
+            isLatestVersion: true,
+            createdBy: userId,
+            updatedBy: userId,
+          }),
+        );
       });
     }
 
@@ -137,26 +153,40 @@ export class DocumentService {
   async createVersion(dto: CreateDocumentVersionDto, userId: string): Promise<DocumentEntity> {
     const parentDoc = await this.findById(dto.parentDocumentId);
 
-    // Mark all previous versions as not latest
-    await this.documentRepository.markAllVersionsAsNotLatest(dto.parentDocumentId);
+    return this.dataSource.transaction(async (manager) => {
+      const docRepo = manager.getRepository(DocumentEntity);
 
-    // Get next version number
-    const version = await this.documentRepository.getNextVersionNumber(dto.parentDocumentId);
+      // Mark all previous versions as not latest
+      await docRepo.update(
+        { documentNumber: parentDoc.documentNumber },
+        { isLatestVersion: false },
+      );
 
-    // Create new version
-    return this.documentRepository.create({
-      organizationId: parentDoc.organizationId,
-      documentType: parentDoc.documentType,
-      projectId: parentDoc.projectId,
-      customerId: parentDoc.customerId,
-      quoteId: parentDoc.quoteId,
-      paymentId: parentDoc.paymentId,
-      ...dto,
-      documentNumber: parentDoc.documentNumber, // Same doc number for versions
-      version,
-      isLatestVersion: true,
-      createdBy: userId,
-      updatedBy: userId,
+      // Get next version number
+      const latestVersion = await docRepo
+        .createQueryBuilder('doc')
+        .select('MAX(doc.version)', 'maxVersion')
+        .where('doc.documentNumber = :docNumber', { docNumber: parentDoc.documentNumber })
+        .getRawOne();
+      const nextVersion = ((latestVersion?.maxVersion as number) || 0) + 1;
+
+      // Create new version
+      return docRepo.save(
+        docRepo.create({
+          organizationId: parentDoc.organizationId,
+          documentType: parentDoc.documentType,
+          projectId: parentDoc.projectId,
+          customerId: parentDoc.customerId,
+          quoteId: parentDoc.quoteId,
+          paymentId: parentDoc.paymentId,
+          ...dto,
+          documentNumber: parentDoc.documentNumber,
+          version: nextVersion,
+          isLatestVersion: true,
+          createdBy: userId,
+          updatedBy: userId,
+        }),
+      );
     });
   }
 

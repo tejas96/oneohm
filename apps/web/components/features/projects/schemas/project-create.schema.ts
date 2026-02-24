@@ -1,21 +1,22 @@
-import { ProjectPriority } from '@oneohm-epc/shared-types';
+import { MilestoneType, ProjectPriority } from '@oneohm-epc/shared-types';
 import { z } from 'zod';
+
+const isoDateOrEmpty = z
+  .string()
+  .refine((v) => !v || /^\d{4}-\d{2}-\d{2}/.test(v), { message: 'Invalid date format' })
+  .optional()
+  .or(z.literal(''));
 
 export const projectCreateSchema = z
   .object({
     customerId: z.string().uuid({ message: 'Customer is required' }),
     propertyId: z.string().uuid({ message: 'Property is required' }),
-    quoteId: z.string().uuid().optional().or(z.literal('')),
+    quoteId: z.string().uuid({ message: 'Quote is required' }),
     name: z.string().min(3, 'Name must be at least 3 characters').max(255),
     description: z.string().max(2000).optional().or(z.literal('')),
-    projectType: z.string().min(1, 'Project type is required'),
-    systemSizeKw: z
-      .number({ required_error: 'System size is required' })
-      .positive('Must be greater than 0'),
-    estimatedCost: z.number().min(0).optional(),
     priority: z.nativeEnum(ProjectPriority),
-    startDate: z.string().optional().or(z.literal('')),
-    endDate: z.string().optional().or(z.literal('')),
+    startDate: isoDateOrEmpty,
+    endDate: isoDateOrEmpty,
     projectManagerId: z.string().uuid().optional().or(z.literal('')),
     teamMembers: z
       .array(
@@ -25,7 +26,29 @@ export const projectCreateSchema = z
           isProjectManager: z.boolean().optional(),
         }),
       ),
-    excludedTaskTemplateIds: z.array(z.string().uuid()),
+    excludedStepIds: z.array(z.string().uuid()),
+    taskAssignments: z.array(
+      z.object({
+        workflowStepId: z.string().uuid(),
+        assignedToUserId: z.string().uuid(),
+      }),
+    ),
+    taskMilestoneOverrides: z.array(
+      z.object({
+        workflowStepId: z.string().uuid(),
+        milestoneOrder: z.number().int().min(0),
+      }),
+    ),
+    milestones: z
+      .array(
+        z.object({
+          id: z.string(),
+          name: z.string().min(1, 'Milestone name is required').max(255),
+          type: z.nativeEnum(MilestoneType),
+          order: z.number().int().min(1),
+        }),
+      )
+      .min(1, 'At least one milestone is required'),
   })
   .refine(
     (d) =>

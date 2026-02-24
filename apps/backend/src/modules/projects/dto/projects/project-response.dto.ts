@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectPriority, ProjectStatus, type ProjectMetadata } from '@oneohm-epc/shared-types';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 
 import { CustomerPropertyResponseDto } from '../../../customers/dto/customer-property-response.dto';
 import { MaterialResponseDto } from '../materials/material-response.dto';
@@ -9,42 +9,39 @@ import { SurveyResponseDto } from '../surveys/survey-response.dto';
 
 /**
  * Project Response DTO
- * Serialized response for project entities
  *
- * Note: organizationId, customerId, siteAddress, and siteCoordinates are
- * available via the nested property relation:
- * - property.organizationId
- * - property.customerId
- * - property.address
- * - property.locationCoordinates
- *
- * Business Rule: One property can have only one project (OneToOne relationship)
+ * Fields systemSizeKw, projectType, estimatedCost, quoteNumber are derived
+ * from the joined quote relation via @Transform.
+ * actualCost is derived from metadata.actualCost.
  */
 export class ProjectResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()
   id!: string;
 
-  @ApiProperty({
-    example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'Property ID (customer/org/address derived from property)',
-  })
+  @ApiProperty({ description: 'Property ID (customer/org/address derived from property)' })
   @Expose()
   propertyId!: string;
 
-  @ApiProperty({
-    type: () => CustomerPropertyResponseDto,
-    description: 'Property with address, customer, and organization details',
-  })
+  @ApiProperty({ type: () => CustomerPropertyResponseDto })
   @Expose()
   @Type(() => CustomerPropertyResponseDto)
   property!: CustomerPropertyResponseDto;
 
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiProperty({ description: 'FK to the source quote' })
+  @Expose()
+  quoteId!: string;
+
+  @ApiProperty({ example: 'Q-ONEOHM-2025-0001', description: 'Derived from quote relation' })
+  @Expose()
+  @Transform(({ obj }) => obj.quote?.quoteNumber)
+  quoteNumber?: string;
+
+  @ApiProperty()
   @Expose()
   createdBy!: string;
 
-  @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiPropertyOptional()
   @Expose()
   updatedBy?: string;
 
@@ -60,27 +57,21 @@ export class ProjectResponseDto {
   @Expose()
   description?: string;
 
-  @ApiProperty({ example: 5.5 })
+  @ApiProperty({ example: 5.5, description: 'Derived from quote.systemSizeKw' })
   @Expose()
+  @Transform(({ obj }) => obj.quote?.systemSizeKw)
   systemSizeKw!: number;
 
-  @ApiProperty({ example: 'residential' })
+  @ApiProperty({ example: 'residential', description: 'Derived from quote.projectType' })
   @Expose()
+  @Transform(({ obj }) => obj.quote?.projectType)
   projectType!: string;
 
-  @ApiProperty({
-    enum: Object.values(ProjectStatus),
-    enumName: 'ProjectStatus',
-    example: ProjectStatus.IN_PROGRESS,
-  })
+  @ApiProperty({ enum: Object.values(ProjectStatus), example: ProjectStatus.IN_PROGRESS })
   @Expose()
   status!: ProjectStatus;
 
-  @ApiProperty({
-    enum: Object.values(ProjectPriority),
-    enumName: 'ProjectPriority',
-    example: ProjectPriority.NORMAL,
-  })
+  @ApiProperty({ enum: Object.values(ProjectPriority), example: ProjectPriority.NORMAL })
   @Expose()
   priority!: ProjectPriority;
 
@@ -96,17 +87,17 @@ export class ProjectResponseDto {
   @Expose()
   endDate?: Date;
 
-  @ApiPropertyOptional({ example: 350000 })
+  @ApiPropertyOptional({ example: 350000, description: 'Derived from quote.finalPrice' })
   @Expose()
+  @Transform(({ obj }) => obj.quote?.finalPrice ?? null)
   estimatedCost?: number;
 
-  @ApiPropertyOptional({ example: 325000 })
+  @ApiPropertyOptional({ example: 325000, description: 'Derived from metadata.actualCost' })
   @Expose()
+  @Transform(({ obj }) => obj.metadata?.actualCost ?? null)
   actualCost?: number;
 
-  @ApiPropertyOptional({
-    example: { tags: ['priority', 'referral'] },
-  })
+  @ApiPropertyOptional({ example: { tags: ['priority', 'referral'] } })
   @Expose()
   metadata?: ProjectMetadata;
 

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { StockAllocationSourceType, StockAllocationStatus } from '@oneohm-epc/shared-types';
+import { StockAllocationSourceType } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import { IsDateString, IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
@@ -42,18 +42,6 @@ export class UpdateStockAllocationDto {
   @IsEnum(StockAllocationSourceType)
   @IsOptional()
   sourceType?: StockAllocationSourceType;
-
-  // ==================== Status ====================
-
-  @ApiProperty({
-    enum: Object.values(StockAllocationStatus),
-    enumName: 'StockAllocationStatus',
-    example: StockAllocationStatus.DISPATCHED,
-    required: false,
-  })
-  @IsEnum(StockAllocationStatus)
-  @IsOptional()
-  status?: StockAllocationStatus;
 
   // ==================== Dates ====================
 

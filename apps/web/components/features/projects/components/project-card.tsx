@@ -107,10 +107,10 @@ export function ProjectCard({ project }: ProjectCardProps) {
         {project.property.customerName ? (
           <>
             <span className="truncate">{project.property.customerName}</span>
-            {project.metadata?.quoteNumber && (
+            {project.quoteNumber && (
               <>
                 <span className="text-border-medium mx-1.5 shrink-0">&bull;</span>
-                <span className="text-2xs text-foreground-tertiary whitespace-nowrap">from {project.metadata.quoteNumber}</span>
+                <span className="text-2xs text-foreground-tertiary whitespace-nowrap">from {project.quoteNumber}</span>
               </>
             )}
           </>

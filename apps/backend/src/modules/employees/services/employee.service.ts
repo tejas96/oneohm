@@ -9,6 +9,7 @@ import {
 import { UserStatus } from '@oneohm-epc/shared-types';
 import { plainToInstance } from 'class-transformer';
 
+import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { UserRepository } from '../../users/repositories/user.repository';
 import { CreateEmployeeDto, EmployeeResponseDto, UpdateEmployeeDto } from '../dto';
 import { EmployeeProfileEntity } from '../entities/employee-profile.entity';
@@ -26,6 +27,8 @@ export class EmployeeService {
     private readonly employeeRepository: EmployeeProfileRepository,
     @Inject(forwardRef(() => UserRepository))
     private readonly userRepository: UserRepository,
+    @Inject(forwardRef(() => UserRoleRepository))
+    private readonly userRoleRepository: UserRoleRepository,
   ) {}
 
   /**
@@ -160,8 +163,23 @@ export class EmployeeService {
       status,
     );
 
+    const userIds = result.items.map((e) => e.userId);
+    const allRoles = await this.userRoleRepository.findByUserIds(userIds);
+    const rolesMap = new Map<string, string[]>();
+    for (const ur of allRoles) {
+      const list = rolesMap.get(ur.userId) || [];
+      list.push(ur.role);
+      rolesMap.set(ur.userId, list);
+    }
+
+    const items = result.items.map((e) => {
+      const dto = this.toResponseDto(e);
+      dto.roles = rolesMap.get(e.userId) || [];
+      return dto;
+    });
+
     return {
-      items: result.items.map((e) => this.toResponseDto(e)),
+      items,
       total: result.total,
       page: result.page,
       limit: result.limit,

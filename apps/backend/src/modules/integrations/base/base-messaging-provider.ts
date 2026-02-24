@@ -20,7 +20,7 @@ export abstract class BaseMessagingProvider extends BaseIntegrationProvider {
    */
   protected createSuccessResponse(
     messageId: string,
-    metadata?: Record<string, any>,
+    metadata?: Record<string, unknown>,
   ): IMessageResponse {
     return {
       messageId,
@@ -34,7 +34,7 @@ export abstract class BaseMessagingProvider extends BaseIntegrationProvider {
   /**
    * Create a failed response
    */
-  protected createFailedResponse(error: any, operation: string): IMessageResponse {
+  protected createFailedResponse(error: unknown, operation: string): IMessageResponse {
     const errorData = this.handleError(error, operation);
 
     return {

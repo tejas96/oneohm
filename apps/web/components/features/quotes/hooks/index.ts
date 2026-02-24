@@ -6,7 +6,9 @@ import type { AxiosError } from 'axios';
 
 import { quoteKeys } from './use-quotes';
 
+import { projectKeys } from '@/components/features/projects/hooks';
 import { apiClient } from '@/lib/api/client';
+import { useAuth } from '@/providers/auth-provider';
 
 // Re-export everything from use-quotes
 export * from './use-quotes';
@@ -68,6 +70,8 @@ async function convertQuoteToProject(
 
 export function useAcceptQuote() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
 
   return useMutation<unknown, AxiosError, { quoteId: string; customerSignature?: string }>({
     mutationFn: ({ quoteId, customerSignature }) =>
@@ -76,13 +80,15 @@ export function useAcceptQuote() {
         customerSignature,
       }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.all });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all(organizationId) });
     },
   });
 }
 
 export function useRejectQuote() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
 
   return useMutation<unknown, AxiosError, { quoteId: string; rejectionReason: string }>({
     mutationFn: ({ quoteId, rejectionReason }) =>
@@ -91,20 +97,22 @@ export function useRejectQuote() {
         rejectionReason,
       }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.all });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all(organizationId) });
     },
   });
 }
 
 export function useConvertToProject() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
 
   return useMutation<unknown, AxiosError, { quoteId: string; payload?: ConvertToProjectPayload }>({
     mutationFn: ({ quoteId, payload }) =>
       convertQuoteToProject(quoteId, payload),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.all });
-      void queryClient.invalidateQueries({ queryKey: ['projects'] });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: projectKeys.all(organizationId) });
     },
   });
 }

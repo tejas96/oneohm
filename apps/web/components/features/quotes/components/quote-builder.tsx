@@ -110,7 +110,7 @@ export function QuoteBuilder(): JSX.Element {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(customerSearch), 400);
+    const timer = setTimeout(() => setDebouncedSearch(customerSearch), 550);
     return () => clearTimeout(timer);
   }, [customerSearch]);
 
@@ -504,7 +504,7 @@ export function QuoteBuilder(): JSX.Element {
                       onFocus={() => setIsDropdownOpen(true)}
                     />
                     {isDropdownOpen && customerSearch.length >= 2 && (
-                      <div className="absolute z-10 mt-1 w-full rounded-lg border border-border-light bg-background shadow-lg">
+                      <div className="absolute z-10 mt-1 w-full rounded-lg border border-border-light bg-background shadow-sm">
                         <div className="max-h-48 overflow-auto p-1">
                           {isCustomersLoading ? (
                             <div className="px-3 py-4 text-center text-sm text-foreground-tertiary">
@@ -1162,7 +1162,7 @@ export function QuoteBuilder(): JSX.Element {
       <div className="fixed bottom-6 right-6 lg:hidden">
         <Sheet>
           <SheetTrigger asChild>
-            <Button size="lg" className="rounded-lg shadow-lg">
+            <Button size="lg" className="rounded-lg shadow-sm">
               <Eye className="mr-1.5 size-4" />
               Preview
               {calculation && (

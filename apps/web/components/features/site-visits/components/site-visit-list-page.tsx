@@ -23,6 +23,8 @@ import { ROUTES } from '@/lib/config/routes';
 // Types
 // ============================================================================
 
+const DEFAULT_PAGE_SIZE = 10;
+
 interface SiteVisit {
   id: string;
   propertyId: string;
@@ -300,7 +302,7 @@ export function SiteVisitListPage(): React.JSX.Element {
           enableSearch
           searchPlaceholder="Search site visits..."
           enablePagination
-          pageSize={10}
+          pageSize={DEFAULT_PAGE_SIZE}
         />
       ) : (
         <EmptyState

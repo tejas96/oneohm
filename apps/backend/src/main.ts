@@ -40,19 +40,25 @@ async function bootstrap(): Promise<void> {
   // app.use(helmet());
 
   // Swagger API Documentation
+  const swaggerDescription = configService.isDevelopment
+    ? 'OneOhm EPC Management System API Documentation\n\n' +
+      '## Authentication\n' +
+      '1. Use `/auth/login` with email/password OR `/auth/otp/request` + `/auth/otp/verify` for OTP login\n' +
+      '2. Copy the `accessToken` from response\n' +
+      '3. Click "Authorize" button and paste the token\n\n' +
+      '## Test Credentials (dev only)\n' +
+      '- Email: `admin@oneohm.com`\n' +
+      '- Password: `Admin@123`\n' +
+      '- OTP (dev mode): `123456`'
+    : 'OneOhm EPC Management System API Documentation\n\n' +
+      '## Authentication\n' +
+      '1. Use `/auth/login` with email/password OR `/auth/otp/request` + `/auth/otp/verify` for OTP login\n' +
+      '2. Copy the `accessToken` from response\n' +
+      '3. Click "Authorize" button and paste the token';
+
   const swaggerConfig = new DocumentBuilder()
     .setTitle('OneOhm EPC API')
-    .setDescription(
-      'OneOhm EPC Management System API Documentation\n\n' +
-        '## Authentication\n' +
-        '1. Use `/auth/login` with email/password OR `/auth/otp/request` + `/auth/otp/verify` for OTP login\n' +
-        '2. Copy the `accessToken` from response\n' +
-        '3. Click "Authorize" button and paste the token\n\n' +
-        '## Test Credentials\n' +
-        '- Email: `admin@oneohm.com`\n' +
-        '- Password: `Admin@123`\n' +
-        '- OTP (dev mode): `123456`',
-    )
+    .setDescription(swaggerDescription)
     .setVersion('1.0')
     .addBearerAuth(
       {

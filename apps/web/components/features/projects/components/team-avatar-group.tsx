@@ -71,7 +71,7 @@ export function TeamAvatarGroup({ members, max = 3, size = 'xs' }: TeamAvatarGro
           <PopoverContent
             align="start"
             side="bottom"
-            className="w-48! p-1! border-border-light shadow-md"
+            className="w-48! p-1! border-border-light shadow-sm"
           >
             <p className="px-2 py-1.5 text-xs font-semibold text-foreground-secondary">
               Team ({members.length})
@@ -86,7 +86,7 @@ export function TeamAvatarGroup({ members, max = 3, size = 'xs' }: TeamAvatarGro
                 >
                   <div
                     className={cn(
-                      'size-6 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0',
+                      'size-6 rounded-full flex items-center justify-center text-section font-semibold shrink-0',
                       colorClass,
                     )}
                   >

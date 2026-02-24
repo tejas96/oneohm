@@ -25,8 +25,8 @@ export interface TimelineItem {
   timestamp: Date;
   // Caller provides icon - no hardcoded types
   icon: React.ReactNode;
-  iconBgClass?: string; // e.g., 'bg-blue-100'
-  iconTextClass?: string; // e.g., 'text-blue-600'
+  iconBgClass?: string; // e.g., 'bg-primary/10'
+  iconTextClass?: string; // e.g., 'text-primary'
   // Optional rich content
   content?: React.ReactNode;
   badge?: {
@@ -130,7 +130,7 @@ function TimelineItemFull({ item, isLast }: TimelineItemFullProps) {
       <div
         className={cn(
           'bg-background rounded-lg border border-border-light p-4 shadow-sm',
-          'transition-all duration-fast hover:shadow-md hover:translate-x-1',
+          'transition-all duration-fast hover:shadow-sm hover:translate-x-1',
           !isLast && 'mb-6'
         )}
       >

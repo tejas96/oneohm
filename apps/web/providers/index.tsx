@@ -3,8 +3,11 @@
 import { type ReactNode } from 'react';
 import { Toaster } from 'sonner';
 
+
 import { AuthProvider } from './auth-provider';
 import { QueryProvider } from './query-provider';
+
+import { ErrorBoundary } from '@/components/shared/feedback/error-boundary';
 
 interface ProvidersProps {
   children: ReactNode;
@@ -16,21 +19,23 @@ interface ProvidersProps {
  */
 export function Providers({ children }: ProvidersProps) {
   return (
-    <QueryProvider>
-      <AuthProvider>
-        {children}
-        <Toaster
-          position="top-right"
-          richColors
-          closeButton
-          toastOptions={{
-            duration: 4000,
-            style: {
-              fontFamily: 'Inter, system-ui, sans-serif',
-            },
-          }}
-        />
-      </AuthProvider>
-    </QueryProvider>
+    <ErrorBoundary>
+      <QueryProvider>
+        <AuthProvider>
+          {children}
+          <Toaster
+            position="top-right"
+            richColors
+            closeButton
+            toastOptions={{
+              duration: 4000,
+              style: {
+                fontFamily: 'Inter, system-ui, sans-serif',
+              },
+            }}
+          />
+        </AuthProvider>
+      </QueryProvider>
+    </ErrorBoundary>
   );
 }

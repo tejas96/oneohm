@@ -41,8 +41,8 @@ export const projectColumns: ColumnDef<ProjectListItem>[] = [
           >
             {project.projectNumber}
           </Link>
-          {project.metadata?.quoteNumber && (
-            <div className="text-section text-foreground-tertiary">from {project.metadata.quoteNumber}</div>
+          {project.quoteNumber && (
+            <div className="text-section text-foreground-tertiary">from {project.quoteNumber}</div>
           )}
         </div>
       );
@@ -168,16 +168,13 @@ export const projectColumns: ColumnDef<ProjectListItem>[] = [
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="size-8">
+            <Button variant="ghost" size="icon" className="size-8" aria-label="Project actions">
               <MoreVertical className="size-4 text-foreground-tertiary" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
-              <Link href={ROUTES.PROJECTS.DETAIL.replace('[id]', project.id)}>View</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href={ROUTES.PROJECTS.DETAIL.replace('[id]', project.id)}>Edit</Link>
+              <Link href={ROUTES.PROJECTS.DETAIL.replace('[id]', project.id)}>View Details</Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

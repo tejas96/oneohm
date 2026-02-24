@@ -10,9 +10,12 @@ import {
   ProjectType,
   QuoteStatus,
 } from '@oneohm-epc/shared-types';
+import { DataSource } from 'typeorm';
 
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { CreateQuoteDto, QuoteQueryDto, UpdateQuoteDto, UpdateQuoteStatusDto } from '../dto';
+import { QuoteLineItemEntity } from '../entities/quote-line-item.entity';
+import { QuoteVersionEntity } from '../entities/quote-version.entity';
 import { QuoteEntity } from '../entities/quote.entity';
 import { QuoteLineItemRepository, QuoteRepository, QuoteVersionRepository } from '../repositories';
 
@@ -37,6 +40,7 @@ export class QuoteService {
     private readonly quoteVersionRepository: QuoteVersionRepository,
     private readonly lineItemRepository: QuoteLineItemRepository,
     private readonly organizationRepository: OrganizationRepository,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -53,9 +57,6 @@ export class QuoteService {
     if (!org) {
       throw new NotFoundException(`Organization with ID ${organizationId} not found`);
     }
-
-    // Generate quote number
-    const quoteNumber = await this.quoteRepository.generateQuoteNumber(org.code);
 
     // Use pre-calculated pricing from calculator if available, otherwise recalculate from line items
     const discount = createDto.discountAmount || 0;
@@ -85,86 +86,97 @@ export class QuoteService {
     // Calculate effective price
     const effectivePrice = pricing.finalPrice - subsidy;
 
-    // Create quote
-    const quote = await this.quoteRepository.create({
-      organizationId,
-      customerId: createDto.customerId,
-      propertyId: createDto.propertyId,
-      salesPersonId: createDto.salesPersonId,
-      resellerId: createDto.resellerId,
-      quoteNumber,
-      quoteDate: createDto.quoteDate ? new Date(createDto.quoteDate) : new Date(),
-      validUntil: new Date(createDto.validUntil),
-      currentVersion: 1,
-      systemType: createDto.systemType,
-      systemSizeKw: createDto.systemSizeKw,
-      totalWattageWp: createDto.totalWattageWp,
-      projectType: createDto.projectType,
-      basePrice: pricing.basePrice,
-      gstAmount: pricing.gstAmount,
-      totalPrice: pricing.totalPrice,
-      discountAmount: createDto.discountAmount || 0,
-      finalPrice: pricing.finalPrice,
-      isSubsidyApplicable: createDto.isSubsidyApplicable || false,
-      subsidyAmount: subsidy,
-      effectivePrice,
-      status: QuoteStatus.DRAFT,
-      internalNotes: createDto.internalNotes,
-      customerNotes: createDto.customerNotes,
-      createdBy,
-    });
-
-    // Generate payment milestones if not provided
-    // Default milestones: 10%/85%/5% (Advance/Installation/Commissioning)
     const paymentMilestones =
       createDto.paymentMilestones ||
       this.getPaymentMilestones(pricing.finalPrice, createDto.wantsLoan ?? false);
 
-    // Create initial version
-    await this.quoteVersionRepository.create({
-      quoteId: quote.id,
-      versionNumber: 1,
-      systemType: createDto.systemType,
-      systemSizeKw: createDto.systemSizeKw,
-      totalWattageWp: createDto.totalWattageWp,
-      basePrice: pricing.basePrice,
-      gst12On70Percent: pricing.gst12On70Percent,
-      gst18On30Percent: pricing.gst18On30Percent,
-      totalGst: pricing.gstAmount,
-      totalPrice: pricing.totalPrice,
-      discountAmount: createDto.discountAmount || 0,
-      finalPrice: pricing.finalPrice,
-      subsidyAmount: subsidy,
-      effectivePrice,
-      paymentMilestones,
-      projectCompletionWeeks: createDto.projectCompletionWeeks || 4,
-      isCurrent: true,
-      createdBy,
+    const quoteId = await this.dataSource.transaction(async (manager) => {
+      const quoteRepo = manager.getRepository(QuoteEntity);
+      const versionRepo = manager.getRepository(QuoteVersionEntity);
+      const lineItemRepo = manager.getRepository(QuoteLineItemEntity);
+
+      // Generate inside transaction so pessimistic lock is effective
+      const quoteNumber = await this.quoteRepository.generateQuoteNumber(org.code, manager);
+
+      const quote = await quoteRepo.save(
+        quoteRepo.create({
+          organizationId,
+          customerId: createDto.customerId,
+          propertyId: createDto.propertyId,
+          salesPersonId: createDto.salesPersonId,
+          resellerId: createDto.resellerId,
+          quoteNumber,
+          quoteDate: createDto.quoteDate ? new Date(createDto.quoteDate) : new Date(),
+          validUntil: new Date(createDto.validUntil),
+          currentVersion: 1,
+          systemType: createDto.systemType,
+          systemSizeKw: createDto.systemSizeKw,
+          totalWattageWp: createDto.totalWattageWp,
+          projectType: createDto.projectType,
+          basePrice: pricing.basePrice,
+          gstAmount: pricing.gstAmount,
+          totalPrice: pricing.totalPrice,
+          discountAmount: createDto.discountAmount || 0,
+          finalPrice: pricing.finalPrice,
+          isSubsidyApplicable: createDto.isSubsidyApplicable || false,
+          subsidyAmount: subsidy,
+          effectivePrice,
+          status: QuoteStatus.DRAFT,
+          internalNotes: createDto.internalNotes,
+          customerNotes: createDto.customerNotes,
+          createdBy,
+        }),
+      );
+
+      const version = await versionRepo.save(
+        versionRepo.create({
+          quoteId: quote.id,
+          versionNumber: 1,
+          systemType: createDto.systemType,
+          systemSizeKw: createDto.systemSizeKw,
+          totalWattageWp: createDto.totalWattageWp,
+          basePrice: pricing.basePrice,
+          gst12On70Percent: pricing.gst12On70Percent,
+          gst18On30Percent: pricing.gst18On30Percent,
+          totalGst: pricing.gstAmount,
+          totalPrice: pricing.totalPrice,
+          discountAmount: createDto.discountAmount || 0,
+          finalPrice: pricing.finalPrice,
+          subsidyAmount: subsidy,
+          effectivePrice,
+          paymentMilestones,
+          projectCompletionWeeks: createDto.projectCompletionWeeks || 4,
+          isCurrent: true,
+          createdBy,
+        }),
+      );
+
+      const lineItemsData = createDto.lineItems.map((item, index) =>
+        lineItemRepo.create({
+          quoteVersionId: version.id,
+          productId: item.productId,
+          itemCategory: item.itemCategory,
+          itemName: item.itemName,
+          itemDescription: item.itemDescription,
+          specifications: item.specifications,
+          quantity: item.quantity,
+          unitOfMeasure: item.unitOfMeasure,
+          unitPrice: item.unitPrice,
+          lineTotal: Math.round(item.quantity * item.unitPrice * 100) / 100,
+          taxRate: item.taxRate,
+          taxAmount: item.taxRate
+            ? Math.round((item.quantity * item.unitPrice * item.taxRate) / 100 * 100) / 100
+            : 0,
+          displayOrder: item.displayOrder !== undefined ? item.displayOrder : index,
+        }),
+      );
+
+      await lineItemRepo.save(lineItemsData);
+
+      return quote.id;
     });
 
-    // Create line items for the version
-    const version = await this.quoteVersionRepository.getCurrentVersion(quote.id);
-    if (version) {
-      const lineItemsData = createDto.lineItems.map((item, index) => ({
-        quoteVersionId: version.id,
-        productId: item.productId,
-        itemCategory: item.itemCategory,
-        itemName: item.itemName,
-        itemDescription: item.itemDescription,
-        specifications: item.specifications,
-        quantity: item.quantity,
-        unitOfMeasure: item.unitOfMeasure,
-        unitPrice: item.unitPrice,
-        lineTotal: item.quantity * item.unitPrice,
-        taxRate: item.taxRate,
-        taxAmount: item.taxRate ? (item.quantity * item.unitPrice * item.taxRate) / 100 : 0,
-        displayOrder: item.displayOrder !== undefined ? item.displayOrder : index,
-      }));
-
-      await this.lineItemRepository.createMany(lineItemsData);
-    }
-
-    return this.quoteRepository.findById(quote.id, organizationId);
+    return this.quoteRepository.findById(quoteId, organizationId);
   }
 
   /**
@@ -392,102 +404,114 @@ export class QuoteService {
 
     const effectivePrice = pricing.finalPrice - subsidy;
 
-    // Update quote main record
-    await this.quoteRepository.update(id, organizationId, {
-      salesPersonId: updateDto.salesPersonId,
-      resellerId: updateDto.resellerId,
-      validUntil: updateDto.validUntil ? new Date(updateDto.validUntil) : undefined,
-      systemType: updateDto.systemType,
-      systemSizeKw: updateDto.systemSizeKw,
-      totalWattageWp: updateDto.totalWattageWp,
-      projectType: updateDto.projectType,
-      basePrice: pricing.basePrice,
-      gstAmount: pricing.gstAmount,
-      totalPrice: pricing.totalPrice,
-      discountAmount: updateDto.discountAmount,
-      finalPrice: pricing.finalPrice,
-      isSubsidyApplicable,
-      subsidyAmount: subsidy,
-      effectivePrice,
-      internalNotes: updateDto.internalNotes,
-      customerNotes: updateDto.customerNotes,
-      currentVersion: newVersionNumber,
-      updatedBy,
+    await this.dataSource.transaction(async (manager) => {
+      const quoteRepo = manager.getRepository(QuoteEntity);
+      const versionRepo = manager.getRepository(QuoteVersionEntity);
+      const lineItemRepo = manager.getRepository(QuoteLineItemEntity);
+
+      // Update quote main record
+      await quoteRepo.update(
+        { id, organizationId },
+        {
+          salesPersonId: updateDto.salesPersonId,
+          resellerId: updateDto.resellerId,
+          validUntil: updateDto.validUntil ? new Date(updateDto.validUntil) : undefined,
+          systemType: updateDto.systemType,
+          systemSizeKw: updateDto.systemSizeKw,
+          totalWattageWp: updateDto.totalWattageWp,
+          projectType: updateDto.projectType,
+          basePrice: pricing.basePrice,
+          gstAmount: pricing.gstAmount,
+          totalPrice: pricing.totalPrice,
+          discountAmount: updateDto.discountAmount,
+          finalPrice: pricing.finalPrice,
+          isSubsidyApplicable,
+          subsidyAmount: subsidy,
+          effectivePrice,
+          internalNotes: updateDto.internalNotes,
+          customerNotes: updateDto.customerNotes,
+          currentVersion: newVersionNumber,
+          updatedBy,
+        },
+      );
+
+      // Mark old versions as not current
+      await versionRepo.update({ quoteId: quote.id, isCurrent: true }, { isCurrent: false });
+
+      // Create new version
+      const newVersion = await versionRepo.save(
+        versionRepo.create({
+          quoteId: quote.id,
+          versionNumber: newVersionNumber,
+          systemType: updateDto.systemType || quote.systemType,
+          systemSizeKw: updateDto.systemSizeKw || quote.systemSizeKw,
+          totalWattageWp: updateDto.totalWattageWp || quote.totalWattageWp,
+          basePrice: pricing.basePrice,
+          gst12On70Percent: pricing.gst12On70Percent,
+          gst18On30Percent: pricing.gst18On30Percent,
+          totalGst: pricing.gstAmount,
+          totalPrice: pricing.totalPrice,
+          discountAmount:
+            updateDto.discountAmount !== undefined ? updateDto.discountAmount : quote.discountAmount,
+          finalPrice: pricing.finalPrice,
+          subsidyAmount: subsidy,
+          effectivePrice,
+          paymentMilestones:
+            updateDto.paymentMilestones ||
+            currentVersion?.paymentMilestones ||
+            this.generateDefaultPaymentMilestones(pricing.finalPrice),
+          projectCompletionWeeks:
+            updateDto.projectCompletionWeeks || currentVersion?.projectCompletionWeeks || 4,
+          changeSummary: updateDto.changeSummary,
+          isCurrent: true,
+          createdBy: updatedBy,
+        }),
+      );
+
+      // Create line items for new version
+      if (updateDto.lineItems) {
+        const lineItemsData = updateDto.lineItems.map((item, index) =>
+          lineItemRepo.create({
+            quoteVersionId: newVersion.id,
+            productId: item.productId,
+            itemCategory: item.itemCategory,
+            itemName: item.itemName,
+            itemDescription: item.itemDescription,
+            specifications: item.specifications,
+            quantity: item.quantity,
+            unitOfMeasure: item.unitOfMeasure,
+            unitPrice: item.unitPrice,
+            lineTotal: Math.round(item.quantity * item.unitPrice * 100) / 100,
+            taxRate: item.taxRate,
+            taxAmount: item.taxRate
+              ? Math.round((item.quantity * item.unitPrice * item.taxRate) / 100 * 100) / 100
+              : 0,
+            displayOrder: item.displayOrder !== undefined ? item.displayOrder : index,
+          }),
+        );
+        await lineItemRepo.save(lineItemsData);
+      } else if (currentVersion) {
+        const oldLineItems = await lineItemRepo.find({ where: { quoteVersionId: currentVersion.id } });
+        const newLineItemsData = oldLineItems.map((item) =>
+          lineItemRepo.create({
+            quoteVersionId: newVersion.id,
+            productId: item.productId,
+            itemCategory: item.itemCategory,
+            itemName: item.itemName,
+            itemDescription: item.itemDescription,
+            specifications: item.specifications,
+            quantity: item.quantity,
+            unitOfMeasure: item.unitOfMeasure,
+            unitPrice: item.unitPrice,
+            lineTotal: item.lineTotal,
+            taxRate: item.taxRate,
+            taxAmount: item.taxAmount,
+            displayOrder: item.displayOrder,
+          }),
+        );
+        await lineItemRepo.save(newLineItemsData);
+      }
     });
-
-    // Mark old versions as not current
-    if (currentVersion) {
-      await this.quoteVersionRepository.setCurrentVersion(quote.id, newVersionNumber);
-    }
-
-    // Create new version
-    const newVersion = await this.quoteVersionRepository.create({
-      quoteId: quote.id,
-      versionNumber: newVersionNumber,
-      systemType: updateDto.systemType || quote.systemType,
-      systemSizeKw: updateDto.systemSizeKw || quote.systemSizeKw,
-      totalWattageWp: updateDto.totalWattageWp || quote.totalWattageWp,
-      basePrice: pricing.basePrice,
-      gst12On70Percent: pricing.gst12On70Percent,
-      gst18On30Percent: pricing.gst18On30Percent,
-      totalGst: pricing.gstAmount,
-      totalPrice: pricing.totalPrice,
-      discountAmount:
-        updateDto.discountAmount !== undefined ? updateDto.discountAmount : quote.discountAmount,
-      finalPrice: pricing.finalPrice,
-      subsidyAmount: subsidy,
-      effectivePrice,
-      paymentMilestones:
-        updateDto.paymentMilestones ||
-        currentVersion?.paymentMilestones ||
-        this.generateDefaultPaymentMilestones(pricing.finalPrice),
-      projectCompletionWeeks:
-        updateDto.projectCompletionWeeks || currentVersion?.projectCompletionWeeks || 4,
-      changeSummary: updateDto.changeSummary,
-      isCurrent: true,
-      createdBy: updatedBy,
-    });
-
-    // Create line items for new version
-    if (updateDto.lineItems) {
-      const lineItemsData = updateDto.lineItems.map((item, index) => ({
-        quoteVersionId: newVersion.id,
-        productId: item.productId,
-        itemCategory: item.itemCategory,
-        itemName: item.itemName,
-        itemDescription: item.itemDescription,
-        specifications: item.specifications,
-        quantity: item.quantity,
-        unitOfMeasure: item.unitOfMeasure,
-        unitPrice: item.unitPrice,
-        lineTotal: item.quantity * item.unitPrice,
-        taxRate: item.taxRate,
-        taxAmount: item.taxRate ? (item.quantity * item.unitPrice * item.taxRate) / 100 : 0,
-        displayOrder: item.displayOrder !== undefined ? item.displayOrder : index,
-      }));
-
-      await this.lineItemRepository.createMany(lineItemsData);
-    } else if (currentVersion) {
-      // Copy line items from current version
-      const oldLineItems = await this.lineItemRepository.findByVersionId(currentVersion.id);
-      const newLineItemsData = oldLineItems.map((item) => ({
-        quoteVersionId: newVersion.id,
-        productId: item.productId,
-        itemCategory: item.itemCategory,
-        itemName: item.itemName,
-        itemDescription: item.itemDescription,
-        specifications: item.specifications,
-        quantity: item.quantity,
-        unitOfMeasure: item.unitOfMeasure,
-        unitPrice: item.unitPrice,
-        lineTotal: item.lineTotal,
-        taxRate: item.taxRate,
-        taxAmount: item.taxAmount,
-        displayOrder: item.displayOrder,
-      }));
-
-      await this.lineItemRepository.createMany(newLineItemsData);
-    }
 
     return this.quoteRepository.findById(id, organizationId);
   }

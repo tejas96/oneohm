@@ -2,7 +2,6 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   RoofCondition,
   RoofOrientation,
-  SiteSurveyStatus,
   type ElectricalDetails,
   type FileAttachment,
   type ShadingAnalysis,
@@ -42,16 +41,6 @@ export class UpdateSurveyDto {
   @IsDateString()
   @IsOptional()
   surveyDate?: string;
-
-  @ApiPropertyOptional({
-    enum: Object.values(SiteSurveyStatus),
-    enumName: 'SiteSurveyStatus',
-    example: SiteSurveyStatus.COMPLETED,
-    description: 'Survey status',
-  })
-  @IsEnum(SiteSurveyStatus)
-  @IsOptional()
-  status?: SiteSurveyStatus;
 
   // ==================== Roof Details ====================
   @ApiPropertyOptional({
