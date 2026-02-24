@@ -106,14 +106,18 @@ export interface QuoteStatusCounts {
 // ============================================================================
 
 export const quoteKeys = {
-  all: ['quotes'] as const,
-  lists: () => [...quoteKeys.all, 'list'] as const,
-  list: (filters: Record<string, unknown>) => [...quoteKeys.lists(), filters] as const,
-  details: () => [...quoteKeys.all, 'detail'] as const,
-  detail: (id: string) => [...quoteKeys.details(), id] as const,
-  byCustomer: (customerId: string) => [...quoteKeys.all, 'customer', customerId] as const,
-  byProperty: (propertyId: string) => [...quoteKeys.all, 'property', propertyId] as const,
-  statusCounts: () => [...quoteKeys.all, 'statusCounts'] as const,
+  all: (orgId?: string) => ['quotes', orgId] as const,
+  lists: (orgId?: string) => [...quoteKeys.all(orgId), 'list'] as const,
+  list: (orgId: string | undefined, filters: Record<string, unknown>) =>
+    [...quoteKeys.lists(orgId), filters] as const,
+  details: (orgId?: string) => [...quoteKeys.all(orgId), 'detail'] as const,
+  detail: (orgId: string | undefined, id: string) =>
+    [...quoteKeys.details(orgId), id] as const,
+  byCustomer: (orgId: string | undefined, customerId: string) =>
+    [...quoteKeys.all(orgId), 'customer', customerId] as const,
+  byProperty: (orgId: string | undefined, propertyId: string) =>
+    [...quoteKeys.all(orgId), 'property', propertyId] as const,
+  statusCounts: (orgId?: string) => [...quoteKeys.all(orgId), 'statusCounts'] as const,
 };
 
 // ============================================================================
@@ -131,7 +135,7 @@ export function useQuotes(
   const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: quoteKeys.list(filters as Record<string, unknown>),
+    queryKey: quoteKeys.list(organizationId, filters as Record<string, unknown>),
     queryFn: async (): Promise<QuoteListResponse> => {
       const params = new URLSearchParams();
 
@@ -169,7 +173,7 @@ export function useQuote(id: string): UseQueryResult<QuoteListItem, AxiosError> 
   const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: quoteKeys.detail(id),
+    queryKey: quoteKeys.detail(organizationId, id),
     queryFn: async (): Promise<QuoteListItem> => {
       const { data } = await apiClient.get<QuoteListItem>(
         `/quotes/${id}`,
@@ -190,7 +194,7 @@ export function useQuoteStatusCounts(): UseQueryResult<QuoteStatusCounts, AxiosE
   const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: quoteKeys.statusCounts(),
+    queryKey: quoteKeys.statusCounts(organizationId),
     queryFn: async (): Promise<QuoteStatusCounts> => {
       const headers = { 'X-Organization-Id': organizationId };
 
@@ -247,8 +251,8 @@ export function useSendQuote(): UseMutationResult<unknown, AxiosError, string> {
       return data;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.lists() });
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.statusCounts() });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.lists(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.statusCounts(organizationId) });
     },
   });
 }
@@ -268,9 +272,9 @@ export function useDeleteQuote(): UseMutationResult<void, AxiosError, string> {
       });
     },
     onSuccess: (_, quoteId) => {
-      queryClient.removeQueries({ queryKey: quoteKeys.detail(quoteId) });
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.lists() });
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.statusCounts() });
+      queryClient.removeQueries({ queryKey: quoteKeys.detail(organizationId, quoteId) });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.lists(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.statusCounts(organizationId) });
     },
   });
 }

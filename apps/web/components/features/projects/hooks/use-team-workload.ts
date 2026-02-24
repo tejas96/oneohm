@@ -17,7 +17,7 @@ export interface TeamWorkloadItem {
 }
 
 export const workloadKeys = {
-  all: ['team-workload'] as const,
+  all: (orgId?: string) => ['team-workload', orgId] as const,
 };
 
 export function useTeamWorkload(): UseQueryResult<TeamWorkloadItem[], AxiosError> {
@@ -25,7 +25,7 @@ export function useTeamWorkload(): UseQueryResult<TeamWorkloadItem[], AxiosError
   const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: workloadKeys.all,
+    queryKey: workloadKeys.all(organizationId),
     queryFn: async (): Promise<TeamWorkloadItem[]> => {
       const { data } = await apiClient.get<TeamWorkloadItem[]>(
         '/projects/team/workload',

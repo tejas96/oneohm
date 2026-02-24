@@ -253,7 +253,7 @@ const Typography = React.forwardRef<HTMLElement, TypographyProps>(
     return (
       <Comp
          
-        ref={ref as any}
+        ref={ref as never}
         className={cn(
           typographyVariants({ variant, size, color: effectiveColor, weight, align }),
           // Override helper's default tertiary color when in error state

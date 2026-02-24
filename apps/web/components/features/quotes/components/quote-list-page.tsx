@@ -107,7 +107,7 @@ export function QuoteListPage(): JSX.Element {
   const [sortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder);
 
   const debouncedSearch = useDebounce(searchInput, SEARCH_DEBOUNCE_MS);
-  const debouncedStatusFilter = useDebounce(statusFilter, 300);
+  const debouncedStatusFilter = useDebounce(statusFilter, SEARCH_DEBOUNCE_MS);
 
   // Sync state from URL when external navigation occurs (e.g. sidebar link clicks).
   // window.history.replaceState (used internally) does NOT update searchParams,

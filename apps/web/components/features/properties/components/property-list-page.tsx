@@ -57,7 +57,7 @@ import { cn, getErrorMessage } from '@/lib/utils';
 // ============================================================================
 
 const DEFAULT_PAGE_SIZE = 10;
-const SEARCH_DEBOUNCE_MS = 500;
+const SEARCH_DEBOUNCE_MS = 550;
 
 // ============================================================================
 // Badge / Label Mappings
@@ -156,10 +156,10 @@ export function PropertyListPage(): JSX.Element {
 
   // Debounce values
   const debouncedSearch = useDebounce(searchInput, SEARCH_DEBOUNCE_MS);
-  const debouncedTemperatureFilter = useDebounce(temperatureFilter, 300);
-  const debouncedPropertyTypeFilter = useDebounce(propertyTypeFilter, 300);
-  const debouncedSortBy = useDebounce(sortBy, 300);
-  const debouncedSortOrder = useDebounce(sortOrder, 300);
+  const debouncedTemperatureFilter = useDebounce(temperatureFilter, SEARCH_DEBOUNCE_MS);
+  const debouncedPropertyTypeFilter = useDebounce(propertyTypeFilter, SEARCH_DEBOUNCE_MS);
+  const debouncedSortBy = useDebounce(sortBy, SEARCH_DEBOUNCE_MS);
+  const debouncedSortOrder = useDebounce(sortOrder, SEARCH_DEBOUNCE_MS);
 
   // Sync state from URL when external navigation occurs (e.g. sidebar link clicks).
   // window.history.replaceState (used internally) does NOT update searchParams,

@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProjectPriority, ProjectStatus } from '@oneohm-epc/shared-types';
-import { Repository } from 'typeorm';
+import { type EntityManager, Repository } from 'typeorm';
 
+import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { ProjectEntity } from '../entities/project.entity';
 
 /**
@@ -16,6 +17,16 @@ import { ProjectEntity } from '../entities/project.entity';
  */
 @Injectable()
 export class ProjectRepository {
+  private static readonly SORT_WHITELIST: Record<string, string> = {
+    name: 'project.name',
+    createdAt: 'project.createdAt',
+    endDate: 'project.endDate',
+    systemSizeKw: 'quote.systemSizeKw',
+    estimatedCost: 'quote.finalPrice',
+    progressPercentage: 'project.progressPercentage',
+    status: 'project.status',
+  };
+
   constructor(
     @InjectRepository(ProjectEntity)
     public readonly repository: Repository<ProjectEntity>,
@@ -24,9 +35,32 @@ export class ProjectRepository {
   /**
    * Create a new project
    */
-  async create(projectData: Partial<ProjectEntity>): Promise<ProjectEntity> {
-    const project = this.repository.create(projectData);
-    return this.repository.save(project);
+  async create(
+    projectData: Partial<ProjectEntity>,
+    manager?: EntityManager,
+  ): Promise<ProjectEntity> {
+    const repo = this.getRepo(manager);
+    const project = repo.create(projectData);
+    return repo.save(project);
+  }
+
+  /**
+   * Update project by ID (no org ownership check — use inside transactions where ownership is pre-validated)
+   */
+  async updateById(
+    id: string,
+    data: Record<string, unknown>,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = this.getRepo(manager);
+    await repo.update({ id }, data);
+  }
+
+  /**
+   * Find project by ID only (no org check — use when project ownership is already validated via context)
+   */
+  async findOneById(id: string): Promise<ProjectEntity | null> {
+    return this.repository.findOneBy({ id });
   }
 
   /**
@@ -37,6 +71,7 @@ export class ProjectRepository {
     const project = await this.repository
       .createQueryBuilder('project')
       .innerJoinAndSelect('project.property', 'property')
+      .innerJoinAndSelect('project.quote', 'quote')
       .leftJoinAndSelect('property.customer', 'customer')
       .leftJoinAndSelect('property.organization', 'organization')
       .leftJoinAndSelect('project.creator', 'creator')
@@ -54,16 +89,6 @@ export class ProjectRepository {
 
     return project;
   }
-
-  private static readonly SORT_WHITELIST: Record<string, string> = {
-    name: 'project.name',
-    createdAt: 'project.createdAt',
-    endDate: 'project.endDate',
-    systemSizeKw: 'project.systemSizeKw',
-    estimatedCost: 'project.estimatedCost',
-    progressPercentage: 'project.progressPercentage',
-    status: 'project.status',
-  };
 
   /**
    * Find all projects with filters and pagination
@@ -89,6 +114,7 @@ export class ProjectRepository {
     const query = this.repository
       .createQueryBuilder('project')
       .innerJoinAndSelect('project.property', 'property')
+      .innerJoinAndSelect('project.quote', 'quote')
       .leftJoinAndSelect('property.customer', 'customer')
       .leftJoinAndSelect('project.teamMembers', 'teamMember')
       .leftJoinAndSelect('teamMember.user', 'teamUser')
@@ -110,7 +136,7 @@ export class ProjectRepository {
     }
 
     if (filters?.projectType) {
-      query.andWhere('project.projectType = :projectType', { projectType: filters.projectType });
+      query.andWhere('quote.projectType = :projectType', { projectType: filters.projectType });
     }
 
     if (filters?.fromDate) {
@@ -131,7 +157,8 @@ export class ProjectRepository {
     const total = await query.getCount();
 
     // Sort with whitelist validation
-    const sortColumn = ProjectRepository.SORT_WHITELIST[filters?.sortBy ?? ''] ?? 'project.createdAt';
+    const sortColumn =
+      ProjectRepository.SORT_WHITELIST[filters?.sortBy ?? ''] ?? 'project.createdAt';
     const sortOrder = filters?.sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
     const projects = await query
@@ -238,6 +265,14 @@ export class ProjectRepository {
   }
 
   /**
+   * Update progress by project ID only (no org ownership check).
+   * Used internally by ProjectTaskService after task status changes.
+   */
+  async updateProgressById(projectId: string, progressPercentage: number): Promise<void> {
+    await this.repository.update({ id: projectId }, { progressPercentage });
+  }
+
+  /**
    * Find projects by customer
    * Filters via property.customerId
    */
@@ -245,6 +280,7 @@ export class ProjectRepository {
     return this.repository
       .createQueryBuilder('project')
       .innerJoinAndSelect('project.property', 'property')
+      .innerJoinAndSelect('project.quote', 'quote')
       .leftJoinAndSelect('property.customer', 'customer')
       .leftJoinAndSelect('project.milestones', 'milestones')
       .leftJoinAndSelect('project.surveys', 'surveys')
@@ -277,13 +313,11 @@ export class ProjectRepository {
    * Find all projects by property ID (for backward compatibility)
    * Note: With OneToOne constraint, this should return at most 1 project
    */
-  async findAllByPropertyId(
-    propertyId: string,
-    organizationId: string,
-  ): Promise<ProjectEntity[]> {
+  async findAllByPropertyId(propertyId: string, organizationId: string): Promise<ProjectEntity[]> {
     return this.repository
       .createQueryBuilder('project')
       .innerJoinAndSelect('project.property', 'property')
+      .innerJoinAndSelect('project.quote', 'quote')
       .leftJoinAndSelect('property.customer', 'customer')
       .leftJoinAndSelect('project.milestones', 'milestones')
       .where('project.propertyId = :propertyId', { propertyId })
@@ -297,10 +331,7 @@ export class ProjectRepository {
    * Find the last project number for an organization (including soft-deleted)
    * Used for generating unique project numbers
    */
-  async findLastProjectNumber(
-    organizationId: string,
-    prefix: string,
-  ): Promise<string | null> {
+  async findLastProjectNumber(organizationId: string, prefix: string): Promise<string | null> {
     const result = await this.repository
       .createQueryBuilder('project')
       .withDeleted() // Include soft-deleted projects for unique number generation
@@ -313,5 +344,16 @@ export class ProjectRepository {
       .getRawOne();
 
     return result?.projectNumber || null;
+  }
+
+  /**
+   * Generate a unique project number (e.g. PRJ-ONEOHM-2026-0001)
+   */
+  async generateProjectNumber(orgCode: string): Promise<string> {
+    return generateEntityCode(this.repository, 'projectNumber', 'PRJ', orgCode, 'project_number');
+  }
+
+  private getRepo(manager?: EntityManager): Repository<ProjectEntity> {
+    return manager ? manager.getRepository(ProjectEntity) : this.repository;
   }
 }

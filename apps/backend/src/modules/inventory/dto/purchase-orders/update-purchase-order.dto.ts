@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PaymentStatus, PurchaseOrderStatus, PurchaseOrderType } from '@oneohm-epc/shared-types';
+import { PurchaseOrderType } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import { IsDateString, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
@@ -80,28 +80,6 @@ export class UpdatePurchaseOrderDto {
   @IsString()
   @IsOptional()
   paymentTerms?: string;
-
-  @ApiProperty({
-    enum: Object.values(PaymentStatus),
-    enumName: 'PaymentStatus',
-    example: PaymentStatus.PENDING,
-    required: false,
-  })
-  @IsEnum(PaymentStatus)
-  @IsOptional()
-  paymentStatus?: PaymentStatus;
-
-  // ==================== Status ====================
-
-  @ApiProperty({
-    enum: Object.values(PurchaseOrderStatus),
-    enumName: 'PurchaseOrderStatus',
-    example: PurchaseOrderStatus.APPROVED,
-    required: false,
-  })
-  @IsEnum(PurchaseOrderStatus)
-  @IsOptional()
-  status?: PurchaseOrderStatus;
 
   // ==================== Notes ====================
 

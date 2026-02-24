@@ -1,3 +1,5 @@
+import type { ProjectPriority, ProjectStatus } from '../enums/project.enum';
+
 /**
  * GPS Coordinates
  * Represents geographical location of a site
@@ -68,13 +70,12 @@ export interface FileAttachment {
 
 /**
  * Project Metadata
- * Additional flexible data for projects
+ * Additional flexible data for projects.
+ * Quote-related fields (quoteId, quoteNumber, etc.) are now accessed via
+ * the project → quote FK relation, not stored in metadata.
  */
 export interface ProjectMetadata {
-  quoteId?: string;
-  quoteNumber?: string;
-  convertedFromQuote?: boolean;
-  originalQuoteAmount?: number;
+  actualCost?: number;
   customFields?: Record<string, unknown>;
   tags?: string[];
   externalReferences?: {
@@ -175,21 +176,19 @@ export interface TaskActivityEntry {
  */
 export interface Project {
   id: string;
-  propertyId: string; // Required - customer/org/address derived from property (OneToOne)
+  propertyId: string;
+  quoteId: string;
+  quoteNumber?: string;
   createdBy: string;
   updatedBy?: string;
   projectNumber: string;
   name: string;
   description?: string;
-  systemSizeKw: number;
-  projectType: string;
-  status: string;
-  priority: string;
+  status: ProjectStatus;
+  priority: ProjectPriority;
   progressPercentage: number;
   startDate?: string;
   endDate?: string;
-  estimatedCost?: number;
-  actualCost?: number;
   metadata?: ProjectMetadata;
   createdAt: string;
   updatedAt: string;

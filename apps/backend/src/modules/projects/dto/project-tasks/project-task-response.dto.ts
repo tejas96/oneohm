@@ -21,9 +21,9 @@ export class ProjectTaskResponseDto {
   @Expose()
   milestoneId?: string;
 
-  @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiPropertyOptional({ description: 'Workflow step reference ID' })
   @Expose()
-  taskTemplateId?: string;
+  workflowStepId?: string;
 
   @ApiProperty({ example: 'Install solar panels' })
   @Expose()

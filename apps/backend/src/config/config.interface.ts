@@ -10,6 +10,7 @@ export interface AppConfig {
   apiPrefix: string;
   corsOrigin: string;
   baseUrl: string;
+  frontendUrl: string;
 }
 
 export interface DatabaseConfig {
@@ -111,6 +112,13 @@ export interface IntegrationsConfig {
   msg91DltTemplateId?: string;
 }
 
+export interface SeedConfig {
+  platformAdminEmail: string;
+  platformAdminPhone: string;
+  platformAdminPassword: string;
+  organizationId: string;
+}
+
 /**
  * Complete Application Configuration
  */
@@ -127,4 +135,5 @@ export interface Configuration {
   monitoring: MonitoringConfig;
   thirdParty: ThirdPartyConfig;
   integrations: IntegrationsConfig;
+  seed: SeedConfig;
 }

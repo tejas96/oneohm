@@ -74,12 +74,12 @@ export interface StructureTypeOption {
 // ============================================================================
 
 const quoteConfigKeys = {
-  all: ['quote-config'] as const,
-  panelProducts: () => [...quoteConfigKeys.all, 'panel-products'] as const,
-  inverterProducts: () => [...quoteConfigKeys.all, 'inverter-products'] as const,
-  structureProducts: () => [...quoteConfigKeys.all, 'structure-products'] as const,
-  config: () => [...quoteConfigKeys.all, 'config'] as const,
-  subsidyRules: () => [...quoteConfigKeys.all, 'subsidy-rules'] as const,
+  all: (orgId?: string) => ['quote-config', orgId] as const,
+  panelProducts: (orgId?: string) => [...quoteConfigKeys.all(orgId), 'panel-products'] as const,
+  inverterProducts: (orgId?: string) => [...quoteConfigKeys.all(orgId), 'inverter-products'] as const,
+  structureProducts: (orgId?: string) => [...quoteConfigKeys.all(orgId), 'structure-products'] as const,
+  config: (orgId?: string) => [...quoteConfigKeys.all(orgId), 'config'] as const,
+  subsidyRules: (orgId?: string) => [...quoteConfigKeys.all(orgId), 'subsidy-rules'] as const,
 };
 
 // ============================================================================
@@ -212,7 +212,7 @@ export function useQuoteConfig() {
   const results = useQueries({
     queries: [
       {
-        queryKey: quoteConfigKeys.panelProducts(),
+        queryKey: quoteConfigKeys.panelProducts(organizationId),
         queryFn: async () => {
           const { data } = await apiClient.get<ProductsListResponse>('/products', {
             params: { type: 'solar_panel', status: 'active', limit: 500 },
@@ -224,7 +224,7 @@ export function useQuoteConfig() {
         enabled: !!organizationId,
       },
       {
-        queryKey: quoteConfigKeys.inverterProducts(),
+        queryKey: quoteConfigKeys.inverterProducts(organizationId),
         queryFn: async () => {
           const { data } = await apiClient.get<ProductsListResponse>('/products', {
             params: { type: 'inverter', status: 'active', limit: 500 },
@@ -236,7 +236,7 @@ export function useQuoteConfig() {
         enabled: !!organizationId,
       },
       {
-        queryKey: quoteConfigKeys.structureProducts(),
+        queryKey: quoteConfigKeys.structureProducts(organizationId),
         queryFn: async () => {
           const { data } = await apiClient.get<ProductsListResponse>('/products', {
             params: { type: 'mounting_structure', status: 'active', limit: 100 },
@@ -248,7 +248,7 @@ export function useQuoteConfig() {
         enabled: !!organizationId,
       },
       {
-        queryKey: quoteConfigKeys.config(),
+        queryKey: quoteConfigKeys.config(organizationId),
         queryFn: async () => {
           const { data } = await apiClient.get<QuoteConfigResponse>(
             '/quote-calculator/config',
@@ -260,7 +260,7 @@ export function useQuoteConfig() {
         enabled: !!organizationId,
       },
       {
-        queryKey: quoteConfigKeys.subsidyRules(),
+        queryKey: quoteConfigKeys.subsidyRules(organizationId),
         queryFn: async () => {
           const { data } = await apiClient.get<SubsidyConfigResponse[]>(
             '/quote-calculator/subsidy-rules/all',

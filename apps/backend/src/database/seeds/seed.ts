@@ -1,7 +1,10 @@
 import * as bcrypt from 'bcrypt';
 
+import loadConfig from '../../config/configuration';
 import dataSource from '../ormconfig';
 import { seedDefaultProfileRoles } from './default-profile-roles.seed';
+
+const config = loadConfig();
 
 /**
  * Database Seed Script
@@ -57,8 +60,10 @@ async function seed(): Promise<void> {
     // ============================================
     console.error('\n👤 Seeding Super Admin User...');
 
-    // Password: Admin@123
-    const passwordHash = await bcrypt.hash('Admin@123', 10);
+    const seedPassword = config.seed.platformAdminPassword;
+    const seedEmail = config.seed.platformAdminEmail;
+    const seedPhone = config.seed.platformAdminPhone;
+    const passwordHash = await bcrypt.hash(seedPassword, 10);
 
     await dataSource.query(
       `
@@ -74,36 +79,39 @@ async function seed(): Promise<void> {
       VALUES (
         'Super',
         'Admin',
-        'admin@oneohm.com',
-        '+91-9999999999',
         $1,
+        $2,
+        $3,
         'active',
         true
       )
       ON CONFLICT (email) DO NOTHING;
     `,
-      [passwordHash],
+      [seedEmail, seedPhone, passwordHash],
     );
 
     console.error('✓ Super Admin user created');
-    console.error('  Email: admin@oneohm.com');
-    console.error('  Password: Admin@123');
+    console.error(`  Email: ${seedEmail}`);
+    console.error(`  Password: ${seedPassword}`);
 
     // ============================================
     // 3. ASSIGN SUPER_ADMIN ROLE
     // ============================================
     console.error('\n🔐 Assigning Super Admin role...');
 
-    await dataSource.query(`
+    await dataSource.query(
+      `
       INSERT INTO user_roles (user_id, role, created_by)
       SELECT
         u.id,
         'super_admin',
         u.id
       FROM users u
-      WHERE u.email = 'admin@oneohm.com'
+      WHERE u.email = $1
       ON CONFLICT (user_id, role) DO NOTHING;
-    `);
+    `,
+      [seedEmail],
+    );
 
     console.error('✓ Role assigned');
 

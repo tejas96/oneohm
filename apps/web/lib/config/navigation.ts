@@ -365,7 +365,7 @@ export const navigationConfig: NavigationConfig = {
           title: 'Settings',
           roles: ['admin', 'super_admin', 'platform_admin'],
           items: [
-            { id: 'projects-task-templates', icon: Settings, label: 'Task Templates', href: ROUTES.PROJECTS.TASK_TEMPLATES },
+            { id: 'projects-workflow-steps', icon: Settings, label: 'Workflow Steps', href: ROUTES.PROJECTS.WORKFLOW_STEPS },
           ],
         },
       ],

@@ -73,7 +73,10 @@ export class ProjectVendorController {
     description: 'Retrieve a specific project-vendor relationship by its ID',
     responseType: ProjectVendorResponseDto,
   })
-  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<ProjectVendorResponseDto> {
+  async findOne(
+    @OrganizationContext() _organizationId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<ProjectVendorResponseDto> {
     const projectVendor = await this.projectVendorService.findById(id);
 
     return plainToInstance(ProjectVendorResponseDto, projectVendor, {
@@ -90,6 +93,7 @@ export class ProjectVendorController {
     description: 'Retrieve all vendors assigned to a specific project',
   })
   async findByProject(
+    @OrganizationContext() _organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<ProjectVendorResponseDto[]> {
     const projectVendors = await this.projectVendorService.findByProject(projectId);
@@ -129,6 +133,7 @@ export class ProjectVendorController {
     description: 'Filter by status',
   })
   async findByVendor(
+    @OrganizationContext() _organizationId: string,
     @Param('vendorId', ParseUUIDPipe) vendorId: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -169,6 +174,7 @@ export class ProjectVendorController {
     responseType: ProjectVendorResponseDto,
   })
   async update(
+    @OrganizationContext() _organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateProjectVendorDto,
   ): Promise<ProjectVendorResponseDto> {
@@ -187,7 +193,10 @@ export class ProjectVendorController {
     summary: 'Remove vendor from project',
     description: 'Delete a project-vendor relationship (inactive only)',
   })
-  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<{ message: string }> {
+  async remove(
+    @OrganizationContext() _organizationId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<{ message: string }> {
     await this.projectVendorService.removeVendorFromProject(id);
 
     return { message: 'Vendor removed from project successfully' };
@@ -202,6 +211,7 @@ export class ProjectVendorController {
     description: 'Update the status of a project-vendor relationship',
   })
   async changeStatus(
+    @OrganizationContext() _organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body('status') status: ProjectVendorStatus,
   ): Promise<ProjectVendorResponseDto> {
@@ -221,6 +231,7 @@ export class ProjectVendorController {
     description: 'Calculate total contract value for all active vendors in a project',
   })
   async getTotalContractValue(
+    @OrganizationContext() _organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<{ totalValue: number }> {
     const totalValue = await this.projectVendorService.getTotalContractValueByProject(projectId);
@@ -237,6 +248,7 @@ export class ProjectVendorController {
     description: 'Retrieve all active vendors for a project',
   })
   async getActiveVendors(
+    @OrganizationContext() _organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
   ): Promise<ProjectVendorResponseDto[]> {
     const projectVendors = await this.projectVendorService.getActiveVendorsByProject(projectId);

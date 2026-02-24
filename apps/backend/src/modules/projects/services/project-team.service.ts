@@ -6,7 +6,11 @@ import { type AddTeamMemberDto, type UpdateTeamMemberDto } from '../dto/project-
 import { type ProjectTeamMemberEntity } from '../entities';
 import { ProjectTaskRepository } from '../repositories/project-task.repository';
 import { ProjectTeamRepository } from '../repositories/project-team.repository';
-import { TaskTemplateRepository } from '../repositories/task-template.repository';
+import { WorkflowStepRepository } from '../repositories/workflow-step.repository';
+
+const TEAM_CONSTANTS = {
+  ALL_TASKS_LIMIT: 10000,
+} as const;
 
 /**
  * Internal input type that extends DTO with projectId from URL
@@ -26,7 +30,7 @@ export class ProjectTeamService {
     private readonly teamRepository: ProjectTeamRepository,
     private readonly taskRepository: ProjectTaskRepository,
     private readonly userRoleRepository: UserRoleRepository,
-    private readonly taskTemplateRepository: TaskTemplateRepository,
+    private readonly workflowStepRepository: WorkflowStepRepository,
   ) {}
 
   /**
@@ -225,18 +229,16 @@ export class ProjectTeamService {
     roleName: string,
     organizationId: string,
   ): Promise<void> {
-    const { data: tasks } = await this.taskRepository.findAll(projectId, 1, 10000, {});
+    const { data: tasks } = await this.taskRepository.findAll(projectId, 1, TEAM_CONSTANTS.ALL_TASKS_LIMIT, {});
     const unassignedTasks = tasks.filter(
-      (t) => !t.assignedToUserId && t.taskTemplateId,
+      (t) => !t.assignedToUserId && t.workflowStepId,
     );
 
     if (unassignedTasks.length === 0) return;
 
-    // Load all active templates for matching
-    const allTemplates = await this.taskTemplateRepository.findAllActive(organizationId);
-    const templateMap = new Map(allTemplates.map((t) => [t.id, t]));
+    const allSteps = await this.workflowStepRepository.findAllActive(organizationId);
+    const stepMap = new Map(allSteps.map((s) => [s.id, s]));
 
-    // Get the new member's system-level roles
     const userRoles = await this.userRoleRepository.findByUserAndOrganization(
       userId,
       organizationId,
@@ -245,12 +247,11 @@ export class ProjectTeamService {
     const projectRoleLower = roleName.toLowerCase();
 
     for (const task of unassignedTasks) {
-      const template = templateMap.get(task.taskTemplateId!);
-      if (!template?.defaultRoleCode) continue;
+      const step = stepMap.get(task.workflowStepId!);
+      if (!step?.defaultRoleCode) continue;
 
-      const targetRole = template.defaultRoleCode.toLowerCase();
+      const targetRole = step.defaultRoleCode.toLowerCase();
 
-      // Match via system roles OR project roleName
       if (systemRoleCodes.includes(targetRole) || projectRoleLower === targetRole) {
         await this.taskRepository.update(task.id, projectId, {
           assignedToUserId: userId,

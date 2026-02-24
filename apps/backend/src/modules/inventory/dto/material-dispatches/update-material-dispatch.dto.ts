@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MaterialDispatchStatus } from '@oneohm-epc/shared-types';
-import { IsDateString, IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsDateString, IsOptional, IsString, MaxLength } from 'class-validator';
 
 /**
  * DTO for updating a material dispatch
@@ -51,18 +50,6 @@ export class UpdateMaterialDispatchDto {
   @IsOptional()
   @MaxLength(255)
   transportCompany?: string;
-
-  // ==================== Status ====================
-
-  @ApiProperty({
-    enum: Object.values(MaterialDispatchStatus),
-    enumName: 'MaterialDispatchStatus',
-    example: MaterialDispatchStatus.DISPATCHED,
-    required: false,
-  })
-  @IsEnum(MaterialDispatchStatus)
-  @IsOptional()
-  status?: MaterialDispatchStatus;
 
   // ==================== Delivery Confirmation ====================
 

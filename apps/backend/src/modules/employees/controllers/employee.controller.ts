@@ -93,11 +93,12 @@ export class EmployeeController {
   }> {
     if (department) {
       const employees = await this.employeeService.findByDepartment(organizationId, department);
+      const paged = employees.slice((page - 1) * limit, page * limit);
       return {
-        items: employees,
+        items: paged,
         total: employees.length,
-        page: 1,
-        limit: employees.length,
+        page,
+        limit,
       };
     }
 

@@ -6,23 +6,10 @@ import type { AxiosError } from 'axios';
 
 import { projectKeys } from './use-projects';
 
+import { propertyKeys } from '@/components/features/properties/hooks';
+import { quoteKeys } from '@/components/features/quotes';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
-
-export interface InitiateProjectPayload {
-  propertyId: string;
-  name: string;
-  systemSizeKw: number;
-  projectType: string;
-  description?: string;
-  estimatedCost?: number;
-  priority?: ProjectPriority;
-  startDate?: string;
-  endDate?: string;
-  projectManagerId?: string;
-  teamMembers?: Array<{ userId: string; roleName: string; isProjectManager?: boolean }>;
-  excludedTaskTemplateIds?: string[];
-}
 
 export interface ConvertFromQuotePayload {
   name?: string;
@@ -32,7 +19,10 @@ export interface ConvertFromQuotePayload {
   startDate?: string;
   endDate?: string;
   priority?: ProjectPriority;
-  excludedTaskTemplateIds?: string[];
+  excludedStepIds?: string[];
+  taskAssignments?: Array<{ workflowStepId: string; assignedToUserId: string }>;
+  taskMilestoneOverrides?: Array<{ workflowStepId: string; milestoneOrder: number }>;
+  milestones?: Array<{ name: string; type: string; order: number }>;
 }
 
 interface ProjectResponse {
@@ -40,28 +30,6 @@ interface ProjectResponse {
   projectNumber: string;
   name: string;
   [key: string]: unknown;
-}
-
-export function useInitiateProject() {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-  const queryClient = useQueryClient();
-
-  return useMutation<ProjectResponse, AxiosError, InitiateProjectPayload>({
-    mutationFn: async (payload) => {
-      const { data } = await apiClient.post<ProjectResponse>(
-        '/projects/initiate',
-        payload,
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
-      return data;
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: projectKeys.all });
-      void queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      void queryClient.invalidateQueries({ queryKey: ['properties'] });
-    },
-  });
 }
 
 export function useConvertFromQuote() {
@@ -83,9 +51,9 @@ export function useConvertFromQuote() {
       return data;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: projectKeys.all });
-      void queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      void queryClient.invalidateQueries({ queryKey: ['properties'] });
+      void queryClient.invalidateQueries({ queryKey: projectKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: propertyKeys.all(organizationId) });
     },
   });
 }

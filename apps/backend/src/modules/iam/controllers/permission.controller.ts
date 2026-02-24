@@ -1,8 +1,10 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -11,6 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 
 import { JwtAuthGuard } from '../../auth/guards';
 import { RequirePermission } from '../decorators/require-permission.decorator';
@@ -44,7 +47,7 @@ export class PermissionController {
   })
   async create(@Body() createPermissionDto: CreatePermissionDto): Promise<PermissionResponseDto> {
     const permission = await this.permissionRepository.create(createPermissionDto);
-    return permission;
+    return plainToInstance(PermissionResponseDto, permission);
   }
 
   /**
@@ -63,21 +66,18 @@ export class PermissionController {
   ): Promise<PaginatedPermissionsDto> {
     const skip = (page - 1) * pageSize;
 
-    let permissions: any[];
-    let total: number;
+    let result: [unknown[], number];
 
     if (featureId) {
-      [permissions, total] = await this.permissionRepository.findByFeatureIdPaginated(
-        featureId,
-        skip,
-        pageSize,
-      );
+      result = await this.permissionRepository.findByFeatureIdPaginated(featureId, skip, pageSize);
     } else {
-      [permissions, total] = await this.permissionRepository.findAllPaginated(skip, pageSize);
+      result = await this.permissionRepository.findAllPaginated(skip, pageSize);
     }
 
+    const [permissions, total] = result;
+
     return {
-      data: permissions,
+      data: permissions.map((p) => plainToInstance(PermissionResponseDto, p)),
       total,
       page,
       pageSize,
@@ -94,10 +94,10 @@ export class PermissionController {
     const permission = await this.permissionRepository.findOne({ where: { id } });
 
     if (!permission) {
-      throw new Error('Permission not found');
+      throw new NotFoundException('Permission not found');
     }
 
-    return permission;
+    return plainToInstance(PermissionResponseDto, permission);
   }
 
   /**
@@ -115,10 +115,10 @@ export class PermissionController {
     const permission = await this.permissionRepository.findOne({ where: { id } });
 
     if (!permission) {
-      throw new Error('Permission not found after update');
+      throw new NotFoundException('Permission not found after update');
     }
 
-    return permission;
+    return plainToInstance(PermissionResponseDto, permission);
   }
 
   /**
@@ -134,11 +134,11 @@ export class PermissionController {
     const permission = await this.permissionRepository.findOne({ where: { id } });
 
     if (!permission) {
-      throw new Error('Permission not found');
+      throw new NotFoundException('Permission not found');
     }
 
     if (permission.isSystemPermission) {
-      throw new Error('Cannot delete system permission');
+      throw new BadRequestException('Cannot delete system permission');
     }
 
     await this.permissionRepository.delete(id);

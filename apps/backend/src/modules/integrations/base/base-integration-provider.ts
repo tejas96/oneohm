@@ -41,17 +41,27 @@ export abstract class BaseIntegrationProvider implements IBaseIntegration {
    * Common error handler
    * Formats errors consistently across all providers
    */
-  protected handleError(error: any, operation: string): any {
+  protected handleError(
+    error: unknown,
+    operation: string,
+  ): { error: { code: string; message: string; details?: unknown } } {
     this.logger.error(`${operation} failed`, error);
 
-    const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
-    const errorCode = error.response?.status?.toString() || error.code || 'UNKNOWN';
+    const err = error as {
+      response?: { data?: { message?: string }; status?: number };
+      message?: string;
+      code?: string;
+    };
+    const errorMessage =
+      err.response?.data?.message || err.message || 'Unknown error';
+    const errorCode =
+      err.response?.status?.toString() || err.code || 'UNKNOWN';
 
     return {
       error: {
         code: errorCode,
         message: errorMessage,
-        details: error.response?.data,
+        details: err.response?.data,
       },
     };
   }

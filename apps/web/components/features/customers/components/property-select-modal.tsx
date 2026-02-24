@@ -35,9 +35,9 @@ interface PropertySelectModalProps {
 // ============================================================================
 
 const TEMP_COLORS: Record<LeadTemperature, { dot: string; label: string }> = {
-  [LeadTemperature.HOT]: { dot: 'bg-red-500', label: 'Hot' },
-  [LeadTemperature.WARM]: { dot: 'bg-yellow-500', label: 'Warm' },
-  [LeadTemperature.COLD]: { dot: 'bg-blue-400', label: 'Cold' },
+  [LeadTemperature.HOT]: { dot: 'bg-destructive', label: 'Hot' },
+  [LeadTemperature.WARM]: { dot: 'bg-warning', label: 'Warm' },
+  [LeadTemperature.COLD]: { dot: 'bg-info', label: 'Cold' },
 };
 
 const PROPERTY_TYPE_LABELS: Partial<Record<PropertyType, string>> = {

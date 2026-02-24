@@ -260,27 +260,31 @@ export class QuoteRepository {
 
   /**
    * Generate next quote number
+   * Must be called within a transaction for the pessimistic lock to work correctly.
    */
-  async generateQuoteNumber(organizationCode: string): Promise<string> {
+  async generateQuoteNumber(
+    organizationCode: string,
+    manager?: import('typeorm').EntityManager,
+  ): Promise<string> {
     const year = new Date().getFullYear();
     const prefix = `QT-${organizationCode}-${year}`;
 
-    // Find the latest quote number for this org and year
-    const latestQuote = await this.repository
+    const repo = manager ? manager.getRepository(QuoteEntity) : this.repository;
+
+    const latestQuote = await repo
       .createQueryBuilder('quote')
       .where('quote.quoteNumber LIKE :prefix', { prefix: `${prefix}%` })
       .orderBy('quote.quoteNumber', 'DESC')
+      .setLock('pessimistic_write')
       .getOne();
 
     let sequence = 1;
     if (latestQuote?.quoteNumber) {
-      // Extract sequence number from last quote
       const parts = latestQuote.quoteNumber.split('-');
       const lastSequence = parseInt(parts[parts.length - 1] || '0', 10);
       sequence = lastSequence + 1;
     }
 
-    // Format: QT-ORGCODE-YYYY-0001
     return `${prefix}-${sequence.toString().padStart(4, '0')}`;
   }
 

@@ -94,10 +94,12 @@ export interface CustomerPropertyResponse {
 // ============================================================================
 
 export const propertyKeys = {
-  all: ['properties'] as const,
-  lists: () => [...propertyKeys.all, 'list'] as const,
-  byCustomer: (customerId: string) => [...propertyKeys.all, 'customer', customerId] as const,
-  detail: (id: string) => [...propertyKeys.all, 'detail', id] as const,
+  all: (orgId?: string) => ['properties', orgId] as const,
+  lists: (orgId?: string) => [...propertyKeys.all(orgId), 'list'] as const,
+  byCustomer: (orgId: string | undefined, customerId: string) =>
+    [...propertyKeys.all(orgId), 'customer', customerId] as const,
+  detail: (orgId: string | undefined, id: string) =>
+    [...propertyKeys.all(orgId), 'detail', id] as const,
 };
 
 // ============================================================================
@@ -120,7 +122,7 @@ export function useCustomerProperties(
   const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: propertyKeys.byCustomer(customerId),
+    queryKey: propertyKeys.byCustomer(organizationId, customerId),
     queryFn: async (): Promise<CustomerPropertyResponse[]> => {
       const { data } = await apiClient.get<CustomerPropertyResponse[]>(
         `/customer-properties/customer/${customerId}`,
@@ -145,7 +147,7 @@ export function useProperty(
   const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: propertyKeys.detail(propertyId),
+    queryKey: propertyKeys.detail(organizationId, propertyId),
     queryFn: async (): Promise<CustomerPropertyResponse> => {
       const { data } = await apiClient.get<CustomerPropertyResponse>(
         `/customer-properties/${propertyId}`,

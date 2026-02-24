@@ -64,7 +64,7 @@ export function useAddPropertyDocument(): UseMutationResult<void, AxiosError, Ad
       });
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: propertyKeys.all });
+      await queryClient.invalidateQueries({ queryKey: propertyKeys.all(organizationId) });
     },
   });
 }
@@ -90,7 +90,7 @@ export function useRemovePropertyDocument(): UseMutationResult<
       });
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: propertyKeys.all });
+      await queryClient.invalidateQueries({ queryKey: propertyKeys.all(organizationId) });
     },
   });
 }

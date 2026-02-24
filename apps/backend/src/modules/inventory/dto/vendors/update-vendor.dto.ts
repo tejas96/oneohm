@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { VendorStatus, VendorType } from '@oneohm-epc/shared-types';
+import { VendorType } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
   IsEmail,
@@ -149,18 +149,6 @@ export class UpdateVendorDto {
   @IsOptional()
   @Length(11, 11)
   ifscCode?: string;
-
-  // ==================== Status ====================
-
-  @ApiProperty({
-    enum: Object.values(VendorStatus),
-    enumName: 'VendorStatus',
-    example: VendorStatus.ACTIVE,
-    required: false,
-  })
-  @IsEnum(VendorStatus)
-  @IsOptional()
-  status?: VendorStatus;
 
   // ==================== Rating ====================
 

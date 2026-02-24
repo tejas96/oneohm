@@ -1,9 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ProjectVendorStatus } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
   IsDateString,
-  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
@@ -42,18 +40,6 @@ export class UpdateProjectVendorDto {
   @IsDateString()
   @IsOptional()
   contractEndDate?: string;
-
-  // ==================== Status ====================
-
-  @ApiProperty({
-    enum: Object.values(ProjectVendorStatus),
-    enumName: 'ProjectVendorStatus',
-    example: ProjectVendorStatus.ACTIVE,
-    required: false,
-  })
-  @IsEnum(ProjectVendorStatus)
-  @IsOptional()
-  status?: ProjectVendorStatus;
 
   // ==================== Notes ====================
 

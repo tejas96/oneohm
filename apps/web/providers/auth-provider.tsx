@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -112,50 +113,65 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Refs to avoid stale closures and prevent concurrent initAuth calls
+  const userRef = useRef(user);
+  userRef.current = user;
+  const initializingRef = useRef(false);
+
   // Initialize auth on mount - WAIT for Zustand hydration first
   useEffect(() => {
-    // Don't run until Zustand has rehydrated from localStorage
-    if (!hasHydrated) {
+    if (!hasHydrated || initializingRef.current) {
       return;
     }
 
+    let cancelled = false;
+    initializingRef.current = true;
+
     const initAuth = async (): Promise<void> => {
-      let token = getAccessToken();
-      
-      // If no access token but refresh token exists, attempt to refresh
-      if (!token) {
-        const refreshToken = getRefreshToken();
-        if (refreshToken) {
-          try {
-            // Attempt to refresh tokens
-            const response = await apiClient.post<{ accessToken: string; refreshToken: string }>(
-              '/auth/refresh',
-              { refreshToken }
-            );
-            const { accessToken, refreshToken: newRefreshToken } = response.data;
-            setTokens(accessToken, newRefreshToken);
-            token = accessToken; // Use the new token
-          } catch {
-            // Refresh failed - clear tokens and user data
-            clearTokens();
-            storeLogout();
+      try {
+        let token = getAccessToken();
+        
+        if (!token) {
+          const refreshToken = getRefreshToken();
+          if (refreshToken) {
+            try {
+              const response = await apiClient.post<{ accessToken: string; refreshToken: string }>(
+                '/auth/refresh',
+                { refreshToken }
+              );
+              if (cancelled) return;
+              const { accessToken, refreshToken: newRefreshToken } = response.data;
+              setTokens(accessToken, newRefreshToken);
+              token = accessToken;
+            } catch {
+              if (cancelled) return;
+              clearTokens();
+              storeLogout();
+            }
           }
         }
+        
+        if (cancelled) return;
+
+        // Read user from ref to get latest value without depending on it
+        if (!token && userRef.current) {
+          storeLogout();
+        }
+      } finally {
+        if (!cancelled) {
+          initializingRef.current = false;
+          setIsInitialized(true);
+        }
       }
-      
-      // Now that Zustand has hydrated, we can safely check token/user consistency
-      if (!token && user) {
-        // No token but user in store - stale state, clear it
-        storeLogout();
-      }
-      // If token exists and user exists (from hydration) - all good, continue
-      // If token exists but no user - unusual, but let middleware handle redirects
-      
-      setIsInitialized(true);
     };
 
     void initAuth();
-  }, [hasHydrated, user, storeLogout]);
+
+    return () => {
+      cancelled = true;
+      initializingRef.current = false;
+    };
+  }, [hasHydrated, storeLogout]);
 
   const clearError = useCallback(() => {
     setError(null);

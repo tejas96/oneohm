@@ -13,19 +13,23 @@ import { useAuth } from '@/providers/auth-provider';
 // ============================================================================
 
 export const propertyKeys = {
-  all: ['properties'] as const,
-  lists: () => [...propertyKeys.all, 'list'] as const,
-  list: (filters: Record<string, unknown>) => [...propertyKeys.lists(), filters] as const,
-  details: () => [...propertyKeys.all, 'detail'] as const,
-  detail: (id: string) => [...propertyKeys.details(), id] as const,
+  all: (orgId?: string) => ['properties', orgId] as const,
+  lists: (orgId?: string) => [...propertyKeys.all(orgId), 'list'] as const,
+  list: (orgId: string | undefined, filters: Record<string, unknown>) =>
+    [...propertyKeys.lists(orgId), filters] as const,
+  details: (orgId?: string) => [...propertyKeys.all(orgId), 'detail'] as const,
+  detail: (orgId: string | undefined, id: string) =>
+    [...propertyKeys.details(orgId), id] as const,
 };
 
 export const customerKeys = {
-  all: ['customers'] as const,
-  lists: () => [...customerKeys.all, 'list'] as const,
-  list: (filters: Record<string, unknown>) => [...customerKeys.lists(), filters] as const,
-  details: () => [...customerKeys.all, 'detail'] as const,
-  detail: (id: string) => [...customerKeys.details(), id] as const,
+  all: (orgId?: string) => ['customers', orgId] as const,
+  lists: (orgId?: string) => [...customerKeys.all(orgId), 'list'] as const,
+  list: (orgId: string | undefined, filters: Record<string, unknown>) =>
+    [...customerKeys.lists(orgId), filters] as const,
+  details: (orgId?: string) => [...customerKeys.all(orgId), 'detail'] as const,
+  detail: (orgId: string | undefined, id: string) =>
+    [...customerKeys.details(orgId), id] as const,
 };
 
 // ============================================================================
@@ -125,14 +129,11 @@ export function useCreateProperty(): UseMutationResult<
       return response;
     },
     onSuccess: (_, variables) => {
-      // Invalidate property lists to refetch
-      void queryClient.invalidateQueries({ queryKey: propertyKeys.lists() });
-      // Invalidate customer detail to update property count
+      void queryClient.invalidateQueries({ queryKey: propertyKeys.lists(organizationId) });
       void queryClient.invalidateQueries({
-        queryKey: customerKeys.detail(variables.customerId),
+        queryKey: customerKeys.detail(organizationId, variables.customerId),
       });
-      // Invalidate customer lists too (for property count)
-      void queryClient.invalidateQueries({ queryKey: customerKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: customerKeys.lists(organizationId) });
     },
   });
 }
@@ -149,7 +150,7 @@ export function useCustomersList() {
   const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: customerKeys.lists(),
+    queryKey: customerKeys.lists(organizationId),
     queryFn: async (): Promise<PaginatedResponse<CustomerResponse>> => {
       const { data } = await apiClient.get<PaginatedResponse<CustomerResponse>>('/customers', {
         headers: { 'X-Organization-Id': organizationId },
@@ -173,7 +174,7 @@ export function useCustomerById(customerId: string | undefined) {
   const organizationId = user?.organizationId;
 
   return useQuery({
-    queryKey: customerKeys.detail(customerId ?? ''),
+    queryKey: customerKeys.detail(organizationId, customerId ?? ''),
     queryFn: async (): Promise<CustomerResponse> => {
       const { data } = await apiClient.get<CustomerResponse>(`/customers/${customerId}`, {
         headers: { 'X-Organization-Id': organizationId },

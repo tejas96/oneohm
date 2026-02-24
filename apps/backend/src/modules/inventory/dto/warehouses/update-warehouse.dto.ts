@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  WarehouseStatus,
   WarehouseType,
   type WarehouseCoordinates,
 } from '@oneohm-epc/shared-types';
@@ -111,15 +110,4 @@ export class UpdateWarehouseDto {
   @MaxLength(255)
   email?: string;
 
-  // ==================== Status ====================
-
-  @ApiProperty({
-    enum: Object.values(WarehouseStatus),
-    enumName: 'WarehouseStatus',
-    example: WarehouseStatus.ACTIVE,
-    required: false,
-  })
-  @IsEnum(WarehouseStatus)
-  @IsOptional()
-  status?: WarehouseStatus;
 }

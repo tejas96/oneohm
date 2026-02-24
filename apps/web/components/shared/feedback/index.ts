@@ -14,3 +14,5 @@ export type {
   NoSearchResultsProps,
   ErrorStateProps,
 } from './empty-state';
+
+export { ErrorBoundary } from './error-boundary';

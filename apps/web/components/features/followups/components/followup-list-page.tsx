@@ -24,6 +24,8 @@ import { ROUTES } from '@/lib/config/routes';
 // Types
 // ============================================================================
 
+const DEFAULT_PAGE_SIZE = 10;
+
 interface Followup {
   id: string;
   propertyId: string;
@@ -168,9 +170,8 @@ export function FollowupListPage(): React.JSX.Element {
     }
   });
 
-  const handleMarkComplete = (followup: Followup) => {
-    // TODO: Phase 2 - API call
-    console.log('Mark complete:', followup.id);
+  const handleMarkComplete = (_followup: Followup) => {
+    // TODO: Phase 2 - API call to mark followup as completed
     showToast.success('Follow-up marked as completed');
   };
 
@@ -286,7 +287,7 @@ export function FollowupListPage(): React.JSX.Element {
           enableSearch
           searchPlaceholder="Search follow-ups..."
           enablePagination
-          pageSize={10}
+          pageSize={DEFAULT_PAGE_SIZE}
           getRowClassName={(row) => {
             const date = new Date(row.scheduledAt);
             if (isOverdue(date, row.status)) {

@@ -379,7 +379,7 @@ export function SearchInput({
         <PopoverContent
           id="search-results"
           role="listbox"
-          className="w-[var(--radix-popover-trigger-width)] p-0 border-border-light shadow-lg z-dropdown"
+          className="w-[var(--radix-popover-trigger-width)] p-0 border-border-light shadow-sm z-dropdown"
           align="start"
           sideOffset={4}
           onOpenAutoFocus={(e) => e.preventDefault()}

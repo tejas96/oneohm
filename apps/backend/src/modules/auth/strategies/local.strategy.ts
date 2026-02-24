@@ -1,40 +1,39 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
+import { Request } from 'express';
 import { Strategy } from 'passport-local';
 
+import { SecurityEventService } from '../../security-events/services/security-event.service';
 import { UserEntity } from '../../users/entities/user.entity';
 import { AuthService } from '../services/auth.service';
 
-/**
- * Local Strategy (Email/Password Authentication)
- * Uses Passport's passport-local strategy
- *
- * Validates user credentials (email + password)
- */
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
-  constructor(private readonly authService: AuthService) {
+  constructor(
+    private readonly authService: AuthService,
+    private readonly securityEventService: SecurityEventService,
+  ) {
     super({
-      usernameField: 'email', // Use 'email' instead of default 'username'
+      usernameField: 'email',
       passwordField: 'password',
+      passReqToCallback: true,
     });
   }
 
-  /**
-   * Validate user credentials
-   * Called automatically by Passport
-   *
-   * @param email - User email
-   * @param password - User password
-   * @returns User object if valid, throws UnauthorizedException if invalid
-   */
-  async validate(email: string, password: string): Promise<UserEntity> {
+  async validate(req: Request, email: string, password: string): Promise<UserEntity> {
     const user = await this.authService.validateUser(email, password);
 
     if (!user) {
+      await this.securityEventService.logLoginAttempt({
+        identifier: email,
+        success: false,
+        method: 'password',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      });
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    return user; // Attached to request.user
+    return user;
   }
 }

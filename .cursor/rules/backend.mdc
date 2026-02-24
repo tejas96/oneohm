@@ -28,10 +28,11 @@ Wrong approach → STOP → Explain → Propose better
 - Prefer `interface` for objects, `type` for unions/intersections
 
 **Lint & Format:**
-- Zero lint errors before commit — `npx nx affected -t lint`
-- Run typecheck — `npx nx affected -t typecheck`
+- Zero lint errors before commit — `npx nx lint backend --skip-nx-cache`
+- Run typecheck — `npx tsc --noEmit -p apps/backend/tsconfig.json`
 - Follow existing patterns — consistency > preference
 - No `@ts-ignore` without justification comment
+- Follow all ESLint rules strictly — no `any`, no unused vars (prefix with `_` if intentional), no floating promises (`void` or `await`), use enum values not string literals for comparisons
 
 **Clean Code:**
 - Single responsibility — one function, one job
@@ -39,6 +40,7 @@ Wrong approach → STOP → Explain → Propose better
 - Small functions — < 30 lines, extract if larger
 - Early returns — reduce nesting, fail fast
 - No magic numbers — use named constants
+- Private methods at the END of the class — public API first, internals last
 
 ---
 
@@ -74,12 +76,13 @@ modules/[feature]/
 
 | Location | Use For |
 |----------|---------|
-| `@oneohm-epc/shared-types` | Request/Response interfaces, enums, domain types |
+| `@oneohm-epc/shared-types` | Interfaces, enums, state transitions — anything frontend also needs |
 | `modules/[feature]/types/` | Internal service types, repository-specific types |
 | `common/utils/` | toDto, toPaginatedResponse |
-| `@oneohm-epc/shared-utils` | Decorators (OrganizationContext, ApiCreate, etc.) |
+| `@oneohm-epc/shared-utils` | Decorators, guards, helpers (pagination, rate limiting, etc.) |
 
 **Rule:** If frontend needs it → shared-types. Always.
+**Rule:** State machine transitions → shared-types. Single source of truth for both ends.
 
 ---
 
@@ -119,6 +122,19 @@ toPaginatedResponse(Dto, data, total, page, limit)
 @UseGuards(JwtAuthGuard)
 @OrganizationContext()
 @CurrentUser()
+
+// Pagination (ALWAYS use — never manual parseInt)
+const { page, limit } = parsePaginationParams(rawPage, rawLimit);
+
+// Rate limiting on sensitive endpoints
+@UseGuards(SecurityRateLimitGuard)
+@SecurityRateLimit({ eventType, trackBy: ['ipAddress'], limits: [...] })
+
+// Transactions — ALWAYS use manager inside callback
+await this.dataSource.transaction(async (manager) => {
+  const repo = manager.getRepository(Entity);
+  await repo.save(entity);
+});
 ```
 
 ---
@@ -128,6 +144,9 @@ toPaginatedResponse(Dto, data, total, page, limit)
 - **Input:** Validators + `@ApiProperty()`
 - **Response:** `@Exclude()` class + `@Expose()` fields
 - **Transform:** Always use `toDto()` helpers
+- **Dates:** Use `@IsDateString()` for JSON body dates (not `@IsDate()` — JSON sends strings)
+- **UUIDs:** Use `ParseUUIDPipe` on query/param UUID fields
+- **Status fields:** NEVER include in update DTOs — use dedicated FSM-aware endpoint (`PATCH :id/status`)
 
 ---
 
@@ -156,16 +175,33 @@ toPaginatedResponse(Dto, data, total, page, limit)
 | Hardcode values | Config/constants |
 | Trust client input | Validate everything |
 | Duplicate code | Import and extend |
+| Trust client `organizationId` | Override from `@OrganizationContext()`: `dto.organizationId = orgId` |
+| Manual `parseInt` for pagination | Use `parsePaginationParams()` from shared-utils |
+| Raw SQL status literals | Use parameterized queries with enum values (`TaskStatus.DONE`) |
+| Dev-only bypasses without gate | Guard with `process.env.NODE_ENV === 'development'` |
+| Hardcode seed credentials | Use env vars + throw in production if unset |
+| Status change via generic update | Dedicated `PATCH :id/status` endpoint with FSM validation |
+| Use `this.repository` inside `transaction()` | Use `manager.getRepository(Entity)` for atomicity |
+
+---
+
+## Data Integrity
+
+- **Transactions:** Multi-entity writes MUST use `dataSource.transaction()` with `manager.getRepository()`
+- **Date columns:** Compare `DATE` type with `YYYY-MM-DD` string using local date math — never `toISOString()` (timezone shift)
+- **Summary vs list:** Aggregate counts (totals, overdue) must be independent queries — never compute from filtered list results
+- **Error handling:** Catch specific exceptions and rethrow unexpected ones — don't swallow all errors with generic `BadRequestException`
 
 ---
 
 ## Checklist (Before Ship)
 
-- [ ] `npx nx affected -t lint` — zero errors
-- [ ] `npx nx affected -t typecheck` — zero errors
+- [ ] `npx nx affected -t lint` + `typecheck` — zero errors
 - [ ] All scenarios + edge cases handled
 - [ ] Auth guard + org isolation on all endpoints
-- [ ] Error handling complete
+- [ ] Multi-entity writes use transactions
+- [ ] Error handling — specific exceptions, not generic catch-all
 - [ ] No `any`, no `console.log`, no duplication
+- [ ] All Never/Always rules above followed
 
 **Unchecked → Fix first → Then ship**

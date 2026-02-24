@@ -4,25 +4,15 @@ import { Column, DeleteDateColumn, Entity, Index, OneToMany } from 'typeorm';
 import { ProjectTaskEntity } from './project-task.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 
-/**
- * TaskTemplateEntity
- * Represents reusable task templates for standardizing workflows
- */
-@Entity('task_templates')
+@Entity('workflow_steps')
 @Index(['organizationId', 'deletedAt'])
 @Index(['isActive', 'deletedAt'])
-export class TaskTemplateEntity extends BaseEntity {
-  // ==================== Relations ====================
-
-  @OneToMany(() => ProjectTaskEntity, (task) => task.template)
+export class WorkflowStepEntity extends BaseEntity {
+  @OneToMany(() => ProjectTaskEntity, (task) => task.workflowStep)
   tasks!: ProjectTaskEntity[];
-
-  // ==================== Foreign Keys ====================
 
   @Column({ name: 'organization_id', type: 'uuid' })
   organizationId!: string;
-
-  // ==================== Template Info ====================
 
   @Column({ type: 'varchar', length: 255 })
   name!: string;
@@ -32,8 +22,6 @@ export class TaskTemplateEntity extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   description?: string;
-
-  // ==================== Task Configuration ====================
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   type?: string;
@@ -50,8 +38,6 @@ export class TaskTemplateEntity extends BaseEntity {
   @Column({ name: 'sequence_order', type: 'integer' })
   sequenceOrder!: number;
 
-  // ==================== Behavior ====================
-
   @Column({ name: 'is_mandatory', type: 'boolean', default: true })
   isMandatory!: boolean;
 
@@ -61,27 +47,20 @@ export class TaskTemplateEntity extends BaseEntity {
   @Column({ name: 'depends_on_task_codes', type: 'text', array: true, nullable: true })
   dependsOnTaskCodes?: string[];
 
-  // ==================== Estimation ====================
-
   @Column({ name: 'estimated_duration_hours', type: 'integer', nullable: true })
   estimatedDurationHours?: number;
-
-  // ==================== Checklist Template ====================
 
   @Column({ name: 'checklist_template', type: 'jsonb', nullable: true })
   checklistTemplate?: TaskChecklist;
 
-  // ==================== Status ====================
+  @Column({ name: 'allowed_transitions', type: 'jsonb', nullable: true })
+  allowedTransitions?: Record<string, string[]>;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 
-  // ==================== Soft Delete ====================
-
   @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp with time zone' })
   deletedAt?: Date;
-
-  // ==================== Audit Fields ====================
 
   @Column({ name: 'created_by', type: 'uuid', nullable: true })
   createdBy?: string;

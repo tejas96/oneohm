@@ -10,8 +10,8 @@ export * from './surveys';
 // Material DTOs
 export * from './materials';
 
-// Task Template DTOs
-export * from './task-templates';
+// Workflow Step DTOs
+export * from './workflow-steps';
 
 // Project Task DTOs
 export * from './project-tasks';

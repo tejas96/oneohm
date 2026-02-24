@@ -6,9 +6,13 @@ import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
+  MaxLength,
+  Min,
   ValidateNested,
 } from 'class-validator';
 
@@ -25,6 +29,45 @@ export class ConvertTeamMemberDto {
   @IsOptional()
   @IsBoolean()
   isProjectManager?: boolean;
+}
+
+export class TaskAssignmentOverrideDto {
+  @ApiProperty({ description: 'Workflow step ID to override assignment for' })
+  @IsUUID()
+  workflowStepId!: string;
+
+  @ApiProperty({ description: 'User ID to assign the task to' })
+  @IsUUID()
+  assignedToUserId!: string;
+}
+
+export class TaskMilestoneOverrideDto {
+  @ApiProperty({ description: 'Workflow step ID to override milestone for' })
+  @IsUUID()
+  workflowStepId!: string;
+
+  @ApiProperty({ description: 'Target milestone order (sequenceOrder) -- 0 means unmap from all milestones' })
+  @IsNumber()
+  @Min(0)
+  milestoneOrder!: number;
+}
+
+export class MilestoneInputDto {
+  @ApiProperty({ description: 'Milestone name' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
+  name!: string;
+
+  @ApiProperty({ description: 'Milestone type (MilestoneType enum value)' })
+  @IsString()
+  @IsNotEmpty()
+  type!: string;
+
+  @ApiProperty({ description: 'Sequence order (1-based)' })
+  @IsNumber()
+  @Min(1)
+  order!: number;
 }
 
 export class ConvertFromQuoteDto {
@@ -65,9 +108,30 @@ export class ConvertFromQuoteDto {
   @IsEnum(ProjectPriority)
   priority?: ProjectPriority;
 
-  @ApiPropertyOptional({ description: 'Task template IDs to exclude from auto-creation' })
+  @ApiPropertyOptional({ description: 'Workflow step IDs to exclude from auto-creation' })
   @IsOptional()
   @IsArray()
   @IsUUID('4', { each: true })
-  excludedTaskTemplateIds?: string[];
+  excludedStepIds?: string[];
+
+  @ApiPropertyOptional({ description: 'Manual task assignment overrides', type: [TaskAssignmentOverrideDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TaskAssignmentOverrideDto)
+  taskAssignments?: TaskAssignmentOverrideDto[];
+
+  @ApiPropertyOptional({ description: 'Task milestone mapping overrides', type: [TaskMilestoneOverrideDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TaskMilestoneOverrideDto)
+  taskMilestoneOverrides?: TaskMilestoneOverrideDto[];
+
+  @ApiPropertyOptional({ description: 'Custom milestones (overrides defaults)', type: [MilestoneInputDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => MilestoneInputDto)
+  milestones?: MilestoneInputDto[];
 }
