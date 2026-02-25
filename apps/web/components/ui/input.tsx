@@ -176,7 +176,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           className={cn(
             inputVariants({ size, variant: hasError ? 'error' : variant }),
             hasLeftAddon && 'pl-10',
-            prefix && 'pl-12',
+            prefix && 'pl-8',
             hasRightAddon && 'pr-10',
             suffix && 'pr-12',
             className,
@@ -253,7 +253,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     // Top label (default)
     if (labelPosition === 'top') {
       return (
-        <div className={cn('flex flex-col gap-1.5', containerClassName)}>
+        <div className={cn('flex flex-col gap-2', containerClassName)}>
           {renderLabel()}
           {renderInput()}
           {renderHelperText()}

@@ -50,7 +50,6 @@ export interface CustomerPropertyResponse {
   state?: string;
   country?: string;
   pincode?: string;
-  locationCoordinates?: string;
   // Electricity/Consumer Details
   consumerNumber?: string;
   consumerName?: string;

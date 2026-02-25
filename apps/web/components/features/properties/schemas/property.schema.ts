@@ -16,9 +16,8 @@ export const createPropertySchema = z.object({
   // Property Details
   propertyName: z
     .string()
-    .max(200, 'Property name too long')
-    .optional()
-    .or(z.literal('')),
+    .min(1, 'Property name is required')
+    .max(200, 'Property name too long'),
   propertyType: z.nativeEnum(PropertyType, {
     errorMap: () => ({ message: 'Please select a property type' }),
   }),

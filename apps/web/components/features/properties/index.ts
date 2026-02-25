@@ -1,5 +1,8 @@
 // Properties Feature - Barrel Exports
 
+// Constants
+export { PROPERTY_ALERTS, REQUIRED_FIELD_KEYS, REQUIRED_FIELDS_TOTAL } from './constants';
+
 // Components
 export { PropertyListPage } from './components/property-list-page';
 export { PropertyDetailPage } from './components/property-detail-page';

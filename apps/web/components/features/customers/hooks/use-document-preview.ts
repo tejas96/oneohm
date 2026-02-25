@@ -67,14 +67,18 @@ export function useDocumentPreview(): UseDocumentPreviewReturn {
           fileName: doc.fileName,
         });
 
-        // Create a temporary anchor to trigger browser download
+        // Fetch as blob to bypass cross-origin download attribute limitation
+        const response = await fetch(presignedUrl);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+
         const link = document.createElement('a');
-        link.href = presignedUrl;
+        link.href = blobUrl;
         link.download = doc.fileName;
-        link.rel = 'noopener noreferrer';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
       } catch {
         showToast.error('Failed to download document');
       }

@@ -140,6 +140,29 @@ export class StorageService {
   }
 
   /**
+   * Extract S3 file key from a public URL.
+   * Returns null (with a warning log) if the URL is unparseable or the key is invalid.
+   */
+  extractFileKeyFromUrl(publicUrl: string): string | null {
+    try {
+      const url = new URL(publicUrl);
+      const key = url.pathname.slice(1);
+      if (!key) {
+        this.logger.warn(`Empty file key extracted from URL: ${publicUrl}`);
+        return null;
+      }
+      if (!this.isValidFileKey(key)) {
+        this.logger.warn(`Invalid file key extracted from URL: ${publicUrl} -> ${key}`);
+        return null;
+      }
+      return key;
+    } catch {
+      this.logger.warn(`Failed to parse URL for file key extraction: ${publicUrl}`);
+      return null;
+    }
+  }
+
+  /**
    * Generate a unique file key based on category and entity
    */
   private generateFileKey(dto: RequestUploadUrlDto): string {

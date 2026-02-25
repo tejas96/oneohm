@@ -83,6 +83,7 @@ export function toPropertyDocument(
     url: doc.uploadedUrl ?? '',
     tag: doc.slotId,
     fileName: doc.fileName,
+    fileSize: doc.fileSize,
     isLoanDoc,
     isVerified: false,
   };
@@ -110,7 +111,7 @@ export function toPropertyDocuments(
     url: doc.uploadedUrl!,
     tag: doc.slotId,
     fileName: doc.fileName,
-    // Mark as loan doc only if wantsLoan is true AND it's a loan doc type
+    fileSize: doc.fileSize,
     isLoanDoc: wantsLoan && loanDocTypes.includes(doc.slotId as LoanDocumentType),
     isVerified: false,
   }));
