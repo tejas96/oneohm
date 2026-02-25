@@ -3,32 +3,41 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   ConnectionType,
-  LeadTemperature,
   PropertyType,
 } from '@oneohm-epc/shared-types';
-import { ArrowLeft } from 'lucide-react';
+import {
+  ArrowLeft,
+  Banknote,
+  FileText,
+  Home,
+  MapPin,
+  Thermometer,
+  Zap,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import * as React from 'react';
+import { useEffect, useRef, useState, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { type CustomerResponse } from '../../customers';
+import { PROPERTY_ALERTS, REQUIRED_FIELDS_TOTAL } from '../constants';
 import { useCreateProperty, useCustomerById } from '../hooks';
 import { createPropertySchema, type CreatePropertyFormData } from '../schemas/property.schema';
 
 import {
+  Alert,
   DocumentCollector,
+  LeadTemperatureSelector,
   RadioCard,
   RadioCardGroup,
   toPropertyDocuments,
   type CapturedDocument,
 } from '@/components/shared';
 import {
+  Badge,
   Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   Checkbox,
   Input,
   Label,
@@ -46,7 +55,6 @@ import {
   CONNECTION_TYPE_OPTIONS,
   DISCOM_OPTIONS,
   INDIAN_STATES,
-  LEAD_TEMPERATURE_OPTIONS,
   PROPERTY_TYPE_OPTIONS,
 } from '@/lib/config/constants';
 import { ROUTES } from '@/lib/config/routes';
@@ -57,13 +65,9 @@ import { getErrorMessage } from '@/lib/utils';
 // ============================================================================
 
 interface CreatePropertyFormProps {
-  /** Pre-selected customer ID (context-aware mode) */
   customerId?: string;
-  /** Pre-loaded customer data (avoids extra fetch) */
   customer?: CustomerResponse;
-  /** List of customers for selector (standalone mode) */
   customers?: CustomerResponse[];
-  /** Whether customers are loading */
   isLoadingCustomers?: boolean;
 }
 
@@ -76,47 +80,40 @@ export function CreatePropertyForm({
   customer: preloadedCustomer,
   customers = [],
   isLoadingCustomers = false,
-}: CreatePropertyFormProps): React.JSX.Element {
+}: CreatePropertyFormProps): JSX.Element {
   const router = useRouter();
   const createPropertyMutation = useCreateProperty();
 
-  // For context-aware mode, fetch customer if not preloaded
   const { data: fetchedCustomer } = useCustomerById(
     initialCustomerId && !preloadedCustomer ? initialCustomerId : undefined
   );
 
-  // Use preloaded customer or fetched customer
   const customer = preloadedCustomer ?? fetchedCustomer;
 
-  // Track selected customer in standalone mode
-  const [selectedCustomerId, setSelectedCustomerId] = React.useState<string>(
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>(
     initialCustomerId ?? ''
   );
 
-  // Determine effective customer ID
   const effectiveCustomerId = initialCustomerId ?? selectedCustomerId;
 
-  // Find selected customer from list (for standalone mode display)
   const selectedCustomer = initialCustomerId
     ? customer
     : customers.find((c) => c.id === selectedCustomerId);
 
-  // Resolve customer for address prefill (available at mount via parent's loading guard)
   const resolvedCustomer = selectedCustomer ?? customer;
   const customerStateMatch = resolvedCustomer?.state
     ? INDIAN_STATES.find((s) => s.toLowerCase() === resolvedCustomer.state?.toLowerCase())
     : undefined;
 
-  // Document collection state
-  const [documents, setDocuments] = React.useState<CapturedDocument[]>([]);
-  const [isUploadingDocs, setIsUploadingDocs] = React.useState(false);
+  const [documents, setDocuments] = useState<CapturedDocument[]>([]);
+  const [isUploadingDocs, setIsUploadingDocs] = useState(false);
 
   const form = useForm<CreatePropertyFormData>({
     resolver: zodResolver(createPropertySchema),
     defaultValues: {
       customerId: effectiveCustomerId,
       propertyName: '',
-      propertyType: undefined,
+      propertyType: PropertyType.RESIDENTIAL,
       isPrimary: false,
       address: resolvedCustomer?.address || '',
       city: resolvedCustomer?.city || '',
@@ -134,21 +131,18 @@ export function CreatePropertyForm({
     },
   });
 
-  // Update form customerId when selection changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (effectiveCustomerId) {
       form.setValue('customerId', effectiveCustomerId);
     }
   }, [effectiveCustomerId, form]);
 
-  // Track documents ref for cleanup (avoids stale closure issue)
-  const documentsRef = React.useRef<CapturedDocument[]>([]);
-  React.useEffect(() => {
+  const documentsRef = useRef<CapturedDocument[]>([]);
+  useEffect(() => {
     documentsRef.current = documents;
   }, [documents]);
 
-  // Cleanup blob URLs on unmount to prevent memory leaks
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
       documentsRef.current.forEach((doc) => {
         if (doc.previewUrl) {
@@ -158,107 +152,37 @@ export function CreatePropertyForm({
     };
   }, []);
 
-  const onSubmit = async (data: CreatePropertyFormData): Promise<void> => {
-    try {
-      setIsUploadingDocs(true);
+  const watchedCustomerId = form.watch('customerId');
+  const watchedPropertyName = form.watch('propertyName');
+  const watchedPropertyType = form.watch('propertyType');
+  const watchedAddress = form.watch('address');
+  const watchedCity = form.watch('city');
+  const watchedPincode = form.watch('pincode');
+  const watchedLeadTemp = form.watch('leadTemperature');
+  const filledCount = [
+    watchedCustomerId,
+    watchedPropertyName,
+    watchedPropertyType,
+    watchedAddress,
+    watchedCity,
+    watchedPincode,
+    watchedLeadTemp,
+  ].filter(Boolean).length;
+  const isComplete = filledCount === REQUIRED_FIELDS_TOTAL;
 
-      // Step 1: Upload all pending documents
-      const pendingDocs = documents.filter(
-        (d) => d.status === 'pending' || d.status === 'error'
-      );
-
-      let currentDocs = [...documents];
-
-      for (const doc of pendingDocs) {
-        try {
-          // Update status to uploading
-          currentDocs = currentDocs.map((d) =>
-            d.id === doc.id ? { ...d, status: 'uploading' as const, progress: 0 } : d
-          );
-          setDocuments(currentDocs);
-
-          const result = await uploadFile({
-            file: doc.file,
-            category: FileCategory.DOCUMENT,
-            entityType: 'property-document',
-            subCategory: doc.slotId,
-            onProgress: (progress) => {
-              setDocuments((prev) =>
-                prev.map((d) =>
-                  d.id === doc.id ? { ...d, progress: progress.percent } : d
-                )
-              );
-            },
-          });
-
-          // Update with success
-          currentDocs = currentDocs.map((d) =>
-            d.id === doc.id
-              ? {
-                  ...d,
-                  status: 'success' as const,
-                  progress: 100,
-                  uploadedUrl: result.publicUrl,
-                  fileKey: result.fileKey,
-                }
-              : d
-          );
-          setDocuments(currentDocs);
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Upload failed';
-          currentDocs = currentDocs.map((d) =>
-            d.id === doc.id ? { ...d, status: 'error' as const, error: errorMessage } : d
-          );
-          setDocuments(currentDocs);
-        }
-      }
-
-      setIsUploadingDocs(false);
-
-      // Step 2: Check for failed required documents (Aadhaar when loan wanted)
-      const failedDocs = currentDocs.filter((d) => d.status === 'error');
-      if (failedDocs.length > 0) {
-        const failedRequired = data.wantsLoan && failedDocs.some((d) => d.slotId === 'aadhaar_card');
-        if (failedRequired) {
-          showToast.error('Required document (Aadhaar) failed to upload. Please retry.');
-          return;
-        }
-        // Warn about failed optional documents but continue
-        showToast.warning(`${failedDocs.length} document(s) failed to upload. Property will be created without them.`);
-      }
-
-      // Step 3: Convert successfully uploaded documents to API format
-      const successfulDocs = currentDocs.filter((d) => d.status === 'success' && d.uploadedUrl);
-      const propertyDocuments = toPropertyDocuments(successfulDocs, data.wantsLoan ?? false);
-
-      // Step 4: Create property with documents
-      await createPropertyMutation.mutateAsync({
-        ...data,
-        documents: propertyDocuments,
-      });
-
-      showToast.success('Property created successfully');
-      router.push(ROUTES.CUSTOMERS.DETAIL.replace('[id]', data.customerId));
-    } catch (error) {
-      setIsUploadingDocs(false);
-      showToast.error(getErrorMessage(error));
-    }
-  };
+  const wantsLoan = form.watch('wantsLoan');
+  const isContextAware = !!initialCustomerId;
 
   const isSubmitting =
     form.formState.isSubmitting || createPropertyMutation.isPending || isUploadingDocs;
 
-  // Determine breadcrumb based on mode
-  const isContextAware = !!initialCustomerId;
-
-  // Determine back link based on mode
   const backLink = isContextAware
     ? ROUTES.CUSTOMERS.DETAIL.replace('[id]', initialCustomerId)
     : ROUTES.PROPERTIES.LIST;
   const backLabel = isContextAware ? 'Back to Customer' : 'Back to Properties';
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6 pb-24">
       {/* Page Header */}
       <div>
         <Link
@@ -278,37 +202,39 @@ export function CreatePropertyForm({
         </p>
       </div>
 
-      {/* Customer Selector (standalone mode) or Customer Context Card (context-aware mode) */}
+      {/* Customer Card / Selector */}
       {isContextAware ? (
-        // Context-aware: Show customer card (readonly)
         customer && (
-          <Card variant="minimal">
+          <Card>
             <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="size-container-md rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-sm font-semibold text-primary">
-                    {customer.firstName.charAt(0)}
+              <div className="flex items-center gap-4">
+                <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <span className="text-base font-semibold text-primary">
+                    {customer.firstName.charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <div>
-                  <p className="text-sm font-medium">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">
                     {customer.firstName} {customer.lastName ?? ''}
                   </p>
-                  <p className="text-xs text-foreground-secondary">{customer.phone}</p>
+                  <p className="text-sm text-foreground-secondary">{customer.phone}</p>
                 </div>
+                <Badge variant="success" size="xs" shape="pill" className="ml-auto shrink-0">
+                  Customer
+                </Badge>
               </div>
             </CardContent>
           </Card>
         )
       ) : (
-        // Standalone: Show customer selector
         <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Select Customer</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-5 space-y-4">
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-foreground">Select Customer</h3>
+              <p className="text-xs text-foreground-secondary">Choose which customer this property belongs to</p>
+            </div>
             <div className="space-y-2">
-              <Label htmlFor="customerId">Customer *</Label>
+              <Label htmlFor="customerId" required>Customer</Label>
               <Select
                 value={selectedCustomerId}
                 onValueChange={setSelectedCustomerId}
@@ -334,7 +260,7 @@ export function CreatePropertyForm({
                   ) : (
                     customers.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
-                        {c.firstName} {c.lastName ?? ''} • {c.phone}
+                        {c.firstName} {c.lastName ?? ''} &bull; {c.phone}
                       </SelectItem>
                     ))
                   )}
@@ -345,16 +271,15 @@ export function CreatePropertyForm({
               )}
             </div>
 
-            {/* Show selected customer card */}
             {selectedCustomer && (
               <div className="flex items-center gap-3 p-3 bg-background-secondary rounded-lg">
-                <div className="size-container-md rounded-full bg-primary/10 flex items-center justify-center">
+                <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                   <span className="text-sm font-semibold text-primary">
-                    {selectedCustomer.firstName.charAt(0)}
+                    {selectedCustomer.firstName.charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <div>
-                  <p className="text-sm font-medium">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">
                     {selectedCustomer.firstName} {selectedCustomer.lastName ?? ''}
                   </p>
                   <p className="text-xs text-foreground-secondary">{selectedCustomer.phone}</p>
@@ -366,277 +291,473 @@ export function CreatePropertyForm({
       )}
 
       {/* Form */}
-      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
-        {/* Property Details */}
+      <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-5">
+        {/* Section 1: Property Details */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Property Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="propertyName">Property Name</Label>
-              <Input
-                id="propertyName"
-                placeholder="e.g., Main Residence, Office Building"
-                {...form.register('propertyName')}
-                error={form.formState.errors.propertyName?.message}
-              />
+          <CardContent className="p-0">
+            {/* Section Header */}
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
+              <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Home className="size-icon-sm text-primary" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Property Details</h3>
+                <p className="text-xs text-foreground-secondary">Basic information about the property</p>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Property Type *</Label>
-              <RadioCardGroup
-                value={form.watch('propertyType')}
-                onValueChange={(v) => form.setValue('propertyType', v as PropertyType)}
-                orientation="horizontal"
-              >
-                {PROPERTY_TYPE_OPTIONS.slice(0, 4).map((type) => (
-                  <RadioCard
-                    key={type.value}
-                    value={type.value}
-                    title={type.label}
-                    description={type.description}
-                  />
-                ))}
-              </RadioCardGroup>
-              {form.formState.errors.propertyType && (
-                <p className="text-xs text-error">{form.formState.errors.propertyType.message}</p>
+            {/* Section Body */}
+            <div className="p-5 space-y-5">
+              <Alert variant="info" appearance="minimal" title={PROPERTY_ALERTS.propertyTip.title}>
+                {PROPERTY_ALERTS.propertyTip.message}
+              </Alert>
+
+              <div className="space-y-2">
+                <Label htmlFor="propertyName" className="text-sm" required>Property Name</Label>
+                <Input
+                  id="propertyName"
+                  placeholder="e.g., Main Residence, Office Building"
+                  {...form.register('propertyName')}
+                  error={form.formState.errors.propertyName?.message}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm" required>Property Type</Label>
+                <RadioCardGroup
+                  value={form.watch('propertyType')}
+                  onValueChange={(v) => form.setValue('propertyType', v as PropertyType)}
+                  orientation="horizontal"
+                >
+                  {PROPERTY_TYPE_OPTIONS.map((type) => (
+                    <RadioCard
+                      key={type.value}
+                      value={type.value}
+                      title={type.label}
+                      description={type.description}
+                    />
+                  ))}
+                </RadioCardGroup>
+                {form.formState.errors.propertyType && (
+                  <p className="text-xs text-error">{form.formState.errors.propertyType.message}</p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-background-secondary">
+                <Checkbox
+                  id="isPrimary"
+                  checked={form.watch('isPrimary')}
+                  onCheckedChange={(checked) => form.setValue('isPrimary', checked === true)}
+                />
+                <Label htmlFor="isPrimary" className="cursor-pointer text-sm">
+                  Set as primary property
+                </Label>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Section 2: Address */}
+        <Card>
+          <CardContent className="p-0">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
+              <div className="size-9 rounded-lg bg-info/10 flex items-center justify-center shrink-0">
+                <MapPin className="size-icon-sm text-info" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Property Address</h3>
+                <p className="text-xs text-foreground-secondary">Location details for site visits and installation</p>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-5">
+              {resolvedCustomer?.address && (
+                <Alert variant="info" appearance="minimal">
+                  {PROPERTY_ALERTS.addressPrefill.message}
+                </Alert>
               )}
-            </div>
 
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="isPrimary"
-                checked={form.watch('isPrimary')}
-                onCheckedChange={(checked) => form.setValue('isPrimary', checked === true)}
-              />
-              <Label htmlFor="isPrimary" className="cursor-pointer">
-                Set as primary property
-              </Label>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Address */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Address</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="address">Full Address *</Label>
-              <Textarea
-                id="address"
-                placeholder="Street address, area, landmark"
-                {...form.register('address')}
-                error={form.formState.errors.address?.message}
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="city">City *</Label>
-                <Input
-                  id="city"
-                  {...form.register('city')}
-                  error={form.formState.errors.city?.message}
+                <Label htmlFor="address" className="text-sm" required>Full Address</Label>
+                <Textarea
+                  id="address"
+                  placeholder="Street address, area, landmark"
+                  {...form.register('address')}
+                  error={form.formState.errors.address?.message}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="state">State</Label>
-                <Select
-                  value={form.watch('state') || undefined}
-                  onValueChange={(v) => form.setValue('state', v)}
-                >
-                  <SelectTrigger id="state">
-                    <SelectValue placeholder="Select state" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {INDIAN_STATES.map((state) => (
-                      <SelectItem key={state} value={state}>
-                        {state}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="pincode">Pincode *</Label>
-                <Input
-                  id="pincode"
-                  maxLength={6}
-                  {...form.register('pincode')}
-                  error={form.formState.errors.pincode?.message}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* Electricity Details (all optional) */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Electricity Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="discomName">DISCOM Name</Label>
-                <Select
-                  value={form.watch('discomName') || undefined}
-                  onValueChange={(v) => form.setValue('discomName', v)}
-                >
-                  <SelectTrigger id="discomName">
-                    <SelectValue placeholder="Select DISCOM" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DISCOM_OPTIONS.map((discom) => (
-                      <SelectItem key={discom.value} value={discom.value}>
-                        {discom.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="consumerNumber">Consumer Number</Label>
-                <Input id="consumerNumber" {...form.register('consumerNumber')} />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Connection Type</Label>
-              <RadioCardGroup
-                value={form.watch('connectionType')}
-                onValueChange={(v) => form.setValue('connectionType', v as ConnectionType)}
-                orientation="horizontal"
-              >
-                {CONNECTION_TYPE_OPTIONS.map((type) => (
-                  <RadioCard key={type.value} value={type.value} title={type.label} />
-                ))}
-              </RadioCardGroup>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="sanctionedLoad">Sanctioned Load (kW)</Label>
-                <Input
-                  id="sanctionedLoad"
-                  type="number"
-                  step="1"
-                  {...form.register('sanctionedLoad', { valueAsNumber: true })}
-                  error={form.formState.errors.sanctionedLoad?.message}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="meterNumber">Meter Number</Label>
-                <Input id="meterNumber" {...form.register('meterNumber')} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="monthlyBill">Avg. Monthly Bill (₹)</Label>
-                <Input
-                  id="monthlyBill"
-                  type="number"
-                  {...form.register('monthlyBill', { valueAsNumber: true })}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Lead Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Lead Status</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Lead Temperature *</Label>
-              <RadioCardGroup
-                value={form.watch('leadTemperature')}
-                onValueChange={(v) => form.setValue('leadTemperature', v as LeadTemperature)}
-                orientation="horizontal"
-              >
-                {LEAD_TEMPERATURE_OPTIONS.map((temp) => (
-                  <RadioCard
-                    key={temp.value}
-                    value={temp.value}
-                    title={temp.label}
-                    description={temp.description}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="city" className="text-sm" required>City</Label>
+                  <Input
+                    id="city"
+                    placeholder="Enter city"
+                    {...form.register('city')}
+                    error={form.formState.errors.city?.message}
                   />
-                ))}
-              </RadioCardGroup>
-              {form.formState.errors.leadTemperature && (
-                <p className="text-xs text-error">
-                  {form.formState.errors.leadTemperature.message}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="state" className="text-sm">State</Label>
+                  <Select
+                    value={form.watch('state') || undefined}
+                    onValueChange={(v) => form.setValue('state', v)}
+                  >
+                    <SelectTrigger id="state">
+                      <SelectValue placeholder="Select state" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {INDIAN_STATES.map((state) => (
+                        <SelectItem key={state} value={state}>
+                          {state}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pincode" className="text-sm" required>Pincode</Label>
+                  <Input
+                    id="pincode"
+                    placeholder="123456"
+                    maxLength={6}
+                    {...form.register('pincode')}
+                    error={form.formState.errors.pincode?.message}
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Section 3: Electricity Details */}
+        <Card>
+          <CardContent className="p-0">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
+              <div className="size-9 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
+                <Zap className="size-icon-sm text-warning" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-foreground">Electricity Details</h3>
+                  <Badge variant="muted" size="xs" shape="pill">OPTIONAL</Badge>
+                </div>
+                <p className="text-xs text-foreground-secondary">Power connection and billing information</p>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-5">
+              <Alert variant="info" appearance="minimal" title={PROPERTY_ALERTS.electricityTip.title}>
+                {PROPERTY_ALERTS.electricityTip.message}
+              </Alert>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="discomName" className="text-sm">DISCOM Provider</Label>
+                  <Select
+                    value={form.watch('discomName') || undefined}
+                    onValueChange={(v) => form.setValue('discomName', v)}
+                  >
+                    <SelectTrigger id="discomName">
+                      <SelectValue placeholder="Select DISCOM" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DISCOM_OPTIONS.map((discom) => (
+                        <SelectItem key={discom.value} value={discom.value}>
+                          {discom.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="consumerNumber" className="text-sm">Consumer Number</Label>
+                  <Input
+                    id="consumerNumber"
+                    placeholder="Enter consumer number"
+                    {...form.register('consumerNumber')}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm">Connection Type</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {CONNECTION_TYPE_OPTIONS.map((type) => {
+                    const isSelected = form.watch('connectionType') === type.value;
+                    return (
+                      <button
+                        key={type.value}
+                        type="button"
+                        onClick={() => form.setValue('connectionType', type.value as ConnectionType)}
+                        className={`flex flex-col items-center gap-1 rounded-lg border-2 p-4 text-center transition-all ${
+                          isSelected
+                            ? 'border-primary bg-primary/5 text-primary'
+                            : 'border-border-light bg-background hover:border-primary/30'
+                        }`}
+                      >
+                        <span className="text-sm font-medium">{type.label}</span>
+                        <span className="text-xs text-foreground-secondary">
+                          {type.value === ConnectionType.SINGLE_PHASE ? 'Homes & small shops' : 'Offices & factories'}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sanctionedLoad" className="text-sm">Sanctioned Load (kW)</Label>
+                  <Input
+                    id="sanctionedLoad"
+                    type="number"
+                    step="0.5"
+                    placeholder="e.g., 5"
+                    {...form.register('sanctionedLoad', {
+                      setValueAs: (v: string) => (v === '' ? undefined : Number(v)),
+                    })}
+                    error={form.formState.errors.sanctionedLoad?.message}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="meterNumber" className="text-sm">Meter Number</Label>
+                  <Input
+                    id="meterNumber"
+                    placeholder="Enter meter number"
+                    {...form.register('meterNumber')}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="monthlyBill" className="text-sm">Avg. Monthly Bill</Label>
+                  <Input
+                    id="monthlyBill"
+                    type="number"
+                    prefix="₹"
+                    placeholder="e.g., 2500"
+                    {...form.register('monthlyBill', {
+                      setValueAs: (v: string) => (v === '' ? undefined : Number(v)),
+                    })}
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Section 4: Lead Status & Financing */}
+        <Card>
+          <CardContent className="p-0">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
+              <div className="size-9 rounded-lg bg-error/10 flex items-center justify-center shrink-0">
+                <Thermometer className="size-icon-sm text-error" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Lead Status & Financing</h3>
+                <p className="text-xs text-foreground-secondary">Interest level and loan preferences</p>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-5">
+              <div className="space-y-2">
+                <Label className="text-sm" required>Lead Temperature</Label>
+                <LeadTemperatureSelector
+                  value={form.watch('leadTemperature')}
+                  onChange={(v) => form.setValue('leadTemperature', v)}
+                  error={!!form.formState.errors.leadTemperature}
+                  errorMessage={form.formState.errors.leadTemperature?.message}
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-border-light p-4 bg-background-secondary/50">
+                <div className="flex items-center gap-3">
+                  <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Banknote className="size-icon-sm text-primary" />
+                  </div>
+                  <div>
+                    <Label htmlFor="wantsLoan" className="cursor-pointer text-sm font-medium">
+                      Interested in financing / loan
+                    </Label>
+                    <p className="text-xs text-foreground-secondary">Enable if customer wants EMI options</p>
+                  </div>
+                </div>
+                <Switch
+                  id="wantsLoan"
+                  checked={wantsLoan}
+                  onCheckedChange={(checked) => form.setValue('wantsLoan', checked)}
+                />
+              </div>
+
+              {wantsLoan && (
+                <Alert variant="info" appearance="minimal" title={PROPERTY_ALERTS.loanBenefits.title}>
+                  {PROPERTY_ALERTS.loanBenefits.message}
+                </Alert>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="notes" className="text-sm">Notes</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Any additional notes about this lead..."
+                  rows={3}
+                  {...form.register('notes')}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Section 5: Documents */}
+        <Card>
+          <CardContent className="p-0">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
+              <div className="size-9 rounded-lg bg-foreground/5 flex items-center justify-center shrink-0">
+                <FileText className="size-icon-sm text-foreground-secondary" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Documents</h3>
+                <p className="text-xs text-foreground-secondary">
+                  Upload identity and KYC documents
+                  {wantsLoan && (
+                    <span className="text-primary font-medium"> &mdash; Aadhaar required for loan</span>
+                  )}
                 </p>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {wantsLoan && (
+                <Alert variant="warning" title={PROPERTY_ALERTS.documentWarning.title}>
+                  {PROPERTY_ALERTS.documentWarning.message}
+                </Alert>
               )}
-            </div>
 
-            <div className="flex items-center gap-3 py-2">
-              <Switch
-                id="wantsLoan"
-                checked={form.watch('wantsLoan')}
-                onCheckedChange={(checked) => form.setValue('wantsLoan', checked)}
-              />
-              <Label htmlFor="wantsLoan" className="cursor-pointer">
-                Interested in financing / loan
-              </Label>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                placeholder="Any additional notes..."
-                {...form.register('notes')}
+              <DocumentCollector
+                wantsLoan={wantsLoan ?? false}
+                documents={documents}
+                onDocumentsChange={setDocuments}
+                disabled={isSubmitting}
               />
             </div>
           </CardContent>
         </Card>
 
-        {/* Documents */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Documents</CardTitle>
-            <p className="text-xs text-foreground-secondary mt-1">
-              Upload identity and KYC documents
-              {form.watch('wantsLoan') && (
-                <span className="text-primary"> (Aadhaar required for loan)</span>
-              )}
-            </p>
-          </CardHeader>
-          <CardContent>
-            <DocumentCollector
-              wantsLoan={form.watch('wantsLoan') ?? false}
-              documents={documents}
-              onDocumentsChange={setDocuments}
-              disabled={isSubmitting}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() =>
-              router.push(
-                isContextAware
-                  ? ROUTES.CUSTOMERS.DETAIL.replace('[id]', initialCustomerId)
-                  : ROUTES.PROPERTIES.LIST
-              )
-            }
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting || !effectiveCustomerId}>
-            {isSubmitting ? 'Creating...' : 'Create Property'}
-          </Button>
+        {/* Sticky Footer */}
+        <div className="sticky bottom-0 z-10">
+          <div className="absolute inset-x-0 -top-6 h-6 bg-linear-to-t from-background-tertiary to-transparent pointer-events-none" />
+          <div className="bg-background border-t border-border-light py-4 -mx-4 px-4 lg:-mx-5 lg:px-5">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-xs text-foreground-secondary hidden sm:block">
+                {isComplete ? 'Ready to create property' : `${REQUIRED_FIELDS_TOTAL - filledCount} required field(s) remaining`}
+              </p>
+              <div className="flex items-center gap-3 ml-auto">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    router.push(
+                      isContextAware
+                        ? ROUTES.CUSTOMERS.DETAIL.replace('[id]', initialCustomerId)
+                        : ROUTES.PROPERTIES.LIST
+                    )
+                  }
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting || !effectiveCustomerId}>
+                  {isSubmitting ? 'Creating...' : 'Create Property'}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </form>
     </div>
   );
+
+  // ============================================================================
+  // Private: Form submission handler
+  // ============================================================================
+
+  async function onSubmit(data: CreatePropertyFormData): Promise<void> {
+    try {
+      setIsUploadingDocs(true);
+
+      const pendingDocs = documents.filter(
+        (d) => d.status === 'pending' || d.status === 'error'
+      );
+
+      let currentDocs = [...documents];
+
+      for (const doc of pendingDocs) {
+        try {
+          currentDocs = currentDocs.map((d) =>
+            d.id === doc.id ? { ...d, status: 'uploading' as const, progress: 0 } : d
+          );
+          setDocuments(currentDocs);
+
+          const result = await uploadFile({
+            file: doc.file,
+            category: FileCategory.DOCUMENT,
+            entityType: 'property-document',
+            subCategory: doc.slotId,
+            onProgress: (progress) => {
+              setDocuments((prev) =>
+                prev.map((d) =>
+                  d.id === doc.id ? { ...d, progress: progress.percent } : d
+                )
+              );
+            },
+          });
+
+          currentDocs = currentDocs.map((d) =>
+            d.id === doc.id
+              ? {
+                  ...d,
+                  status: 'success' as const,
+                  progress: 100,
+                  uploadedUrl: result.publicUrl,
+                  fileKey: result.fileKey,
+                }
+              : d
+          );
+          setDocuments(currentDocs);
+        } catch (error) {
+          const msg = error instanceof Error ? error.message : 'Upload failed';
+          currentDocs = currentDocs.map((d) =>
+            d.id === doc.id ? { ...d, status: 'error' as const, error: msg } : d
+          );
+          setDocuments(currentDocs);
+        }
+      }
+
+      setIsUploadingDocs(false);
+
+      const failedDocs = currentDocs.filter((d) => d.status === 'error');
+      if (failedDocs.length > 0) {
+        const failedRequired = data.wantsLoan && failedDocs.some((d) => d.slotId === 'aadhaar_card');
+        if (failedRequired) {
+          showToast.error('Required document (Aadhaar) failed to upload. Please retry.');
+          return;
+        }
+        showToast.warning(`${failedDocs.length} document(s) failed to upload. Property will be created without them.`);
+      }
+
+      const successfulDocs = currentDocs.filter((d) => d.status === 'success' && d.uploadedUrl);
+      const propertyDocuments = toPropertyDocuments(successfulDocs, data.wantsLoan ?? false);
+
+      await createPropertyMutation.mutateAsync({
+        ...data,
+        documents: propertyDocuments,
+      });
+
+      showToast.success('Property created successfully');
+      router.push(ROUTES.CUSTOMERS.DETAIL.replace('[id]', data.customerId));
+    } catch (error) {
+      setIsUploadingDocs(false);
+      showToast.error(getErrorMessage(error));
+    }
+  }
 }

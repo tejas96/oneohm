@@ -158,7 +158,7 @@ export function UploadDocumentModal({
 
         <DialogBody className="space-y-4">
           {/* Property Selector */}
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label className="text-sm font-medium">
               Property <span className="text-error">*</span>
             </Label>
@@ -181,7 +181,7 @@ export function UploadDocumentModal({
           </div>
 
           {/* Document Type Selector */}
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label className="text-sm font-medium">
               Document Type <span className="text-error">*</span>
             </Label>
@@ -204,7 +204,7 @@ export function UploadDocumentModal({
           </div>
 
           {/* File Drop Zone */}
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label className="text-sm font-medium">
               File <span className="text-error">*</span>
             </Label>
@@ -262,7 +262,7 @@ export function UploadDocumentModal({
 
           {/* Upload Progress */}
           {isUploading && (
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <div className="flex items-center justify-between text-xs text-foreground-secondary">
                 <span>Uploading...</span>
                 <span>{uploadProgress}%</span>

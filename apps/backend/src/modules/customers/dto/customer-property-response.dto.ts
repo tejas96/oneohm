@@ -62,10 +62,6 @@ export class CustomerPropertyResponseDto {
   @Expose()
   pincode?: string;
 
-  @ApiPropertyOptional()
-  @Expose()
-  locationCoordinates?: string;
-
   // ==================== Electricity/Consumer Details ====================
   @ApiPropertyOptional()
   @Expose()

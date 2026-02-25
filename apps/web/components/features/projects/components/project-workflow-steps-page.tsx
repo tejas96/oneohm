@@ -370,34 +370,34 @@ function StepFormSheet({
         </SheetHeader>
 
         <div className="space-y-4 mt-4">
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label>Name *</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Panel Installation" />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label>Code *</Label>
             <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. EXEC-001" />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label>Description</Label>
             <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label>Type</Label>
               <Input value={type} onChange={(e) => setType(e.target.value)} placeholder="e.g. execution" />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label>Default Role Code</Label>
               <Input value={defaultRoleCode} onChange={(e) => setDefaultRoleCode(e.target.value)} placeholder="e.g. execution" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label>Sequence Order *</Label>
               <Input
                 type="number"
@@ -406,7 +406,7 @@ function StepFormSheet({
                 min={1}
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label>Est. Duration (hours)</Label>
               <Input
                 type="number"
@@ -420,11 +420,11 @@ function StepFormSheet({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label>Department</Label>
               <Input value={defaultDepartment} onChange={(e) => setDefaultDepartment(e.target.value)} />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label>Milestone Type</Label>
               <Input
                 value={defaultMilestoneType}
@@ -434,7 +434,7 @@ function StepFormSheet({
             </div>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label>Depends On (comma-separated codes)</Label>
             <Input
               value={dependsOnTaskCodes}
@@ -443,7 +443,7 @@ function StepFormSheet({
             />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label>Checklist Template (JSON)</Label>
             <Textarea
               value={checklistTemplate}
@@ -454,7 +454,7 @@ function StepFormSheet({
             />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <Label>Allowed Transitions Override (JSON)</Label>
             <Textarea
               value={allowedTransitionsJson}

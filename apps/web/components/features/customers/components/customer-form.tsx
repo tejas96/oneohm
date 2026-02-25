@@ -302,7 +302,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
 
               {/* Name row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="firstName">
                     First Name <span className="text-error">*</span>
                   </Label>
@@ -314,7 +314,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
                     errorMessage={form.formState.errors.firstName?.message}
                   />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="lastName">
                     Last Name <span className="text-error">*</span>
                   </Label>
@@ -330,7 +330,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
 
               {/* Phone row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="phone">
                     Phone Number <span className="text-error">*</span>
                   </Label>
@@ -353,7 +353,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
                     }
                   />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="alternatePhone">Alternate Phone</Label>
                   <Input
                     id="alternatePhone"
@@ -369,7 +369,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
               </div>
 
               {/* Email */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="email">
                   Email Address <span className="text-error">*</span>
                 </Label>
@@ -398,7 +398,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
               </h3>
 
               {/* Street Address */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="address">
                   Street Address <span className="text-error">*</span>
                 </Label>
@@ -413,7 +413,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
 
               {/* City & State */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="city">
                     City <span className="text-error">*</span>
                   </Label>
@@ -425,7 +425,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
                     errorMessage={form.formState.errors.city?.message}
                   />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="state">
                     State <span className="text-error">*</span>
                   </Label>
@@ -457,7 +457,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
 
               {/* Pincode & Country */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="pincode">
                     Pincode <span className="text-error">*</span>
                   </Label>
@@ -472,7 +472,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
                     errorMessage={form.formState.errors.pincode?.message}
                   />
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="country">Country</Label>
                   <Input id="country" value="India" disabled className="bg-muted" />
                 </div>
@@ -486,7 +486,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="leadSource">Lead Source</Label>
                   <Select
                     value={form.watch('leadSource') ?? ''}
@@ -505,7 +505,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="referralCode">Referral Code</Label>
                   <Input
                     id="referralCode"
@@ -526,7 +526,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <Label htmlFor="status">Customer Status</Label>
                     <Select
                       value={form.watch('status') as string | undefined}

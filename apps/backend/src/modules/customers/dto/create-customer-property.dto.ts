@@ -87,14 +87,6 @@ export class CreateCustomerPropertyDto {
   @MaxLength(10)
   pincode?: string;
 
-  @ApiPropertyOptional({
-    example: 'POINT(12.9352 77.6245)',
-    description: 'GPS coordinates in POINT format',
-  })
-  @IsString()
-  @IsOptional()
-  locationCoordinates?: string;
-
   // ==================== Electricity/Consumer Details ====================
   @ApiPropertyOptional({
     example: 'CN123456789',

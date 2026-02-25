@@ -16,6 +16,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { getDocumentTypeLabel } from '../constants';
 
 import { Badge, Button } from '@/components/ui';
+import { useBodyScrollLock } from '@/lib/hooks';
 import {
   cn,
   getFileExtension,
@@ -53,6 +54,8 @@ export function DocumentPreviewModal({
   onDownload,
 }: DocumentPreviewModalProps): React.JSX.Element | null {
   const [imageError, setImageError] = useState(false);
+
+  useBodyScrollLock(open);
 
   const handleClose = useCallback(() => {
     onOpenChange(false);

@@ -20,6 +20,7 @@ import { SiteVisitService } from './services/site-visit.service';
 import { LoanFinanceModule } from '../loan-finance/loan-finance.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { QuotesModule } from '../quotes/quotes.module';
+import { StorageModule } from '../storage/storage.module';
 import { UsersModule } from '../users/users.module';
 
 /**
@@ -41,6 +42,7 @@ import { UsersModule } from '../users/users.module';
     OrganizationsModule,
     QuotesModule,
     LoanFinanceModule,
+    StorageModule,
   ],
   controllers: [
     CustomerController,

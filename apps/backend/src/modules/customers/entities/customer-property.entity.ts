@@ -91,9 +91,6 @@ export class CustomerPropertyEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 10, nullable: true })
   pincode?: string;
 
-  @Column({ name: 'location_coordinates', type: 'point', nullable: true })
-  locationCoordinates?: string; // Stored as "POINT(lat lng)"
-
   // ==================== ELECTRICITY/CONSUMER DETAILS ====================
   @Column({ name: 'consumer_number', type: 'varchar', length: 50, nullable: true })
   consumerNumber?: string;

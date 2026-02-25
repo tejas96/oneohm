@@ -170,7 +170,6 @@ export interface TaskActivityEntry {
  * - property.organizationId
  * - property.customerId
  * - property.address
- * - property.locationCoordinates
  *
  * Business Rule: One property can have only one project (OneToOne relationship)
  */

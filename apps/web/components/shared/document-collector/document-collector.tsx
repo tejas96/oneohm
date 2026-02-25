@@ -181,15 +181,6 @@ export function DocumentCollector({
   );
 
   // Check if all required documents are present
-  const hasRequiredDocuments = React.useMemo(() => {
-    if (!wantsLoan) return true;
-    const requiredSlots = slots.filter((s) => s.required);
-    return requiredSlots.every((slot) => {
-      const doc = getDocBySlot(slot.id);
-      return doc && (doc.status === 'success' || doc.status === 'pending');
-    });
-  }, [wantsLoan, slots, getDocBySlot]);
-
   return (
     <div className={cn('space-y-4', className)}>
       {/* Predefined slots grid */}
@@ -260,12 +251,6 @@ export function DocumentCollector({
         </Button>
       </div>
 
-      {/* Validation message */}
-      {wantsLoan && !hasRequiredDocuments && (
-        <p className="text-xs text-error text-center">
-          Aadhaar Card is required for loan financing
-        </p>
-      )}
     </div>
   );
 }

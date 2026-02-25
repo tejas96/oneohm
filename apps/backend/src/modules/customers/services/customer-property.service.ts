@@ -17,6 +17,7 @@ import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { LoanApplicationRepository } from '../../loan-finance/repositories/loan-application.repository';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { QuoteRepository } from '../../quotes/repositories/quote.repository';
+import { StorageService } from '../../storage/services/storage.service';
 import { CreateCustomerPropertyDto } from '../dto/create-customer-property.dto';
 import type { PropertyDocumentDto } from '../dto/property-document.dto';
 import { PropertyQueryDto } from '../dto/property-query.dto';
@@ -48,6 +49,7 @@ export class CustomerPropertyService {
     private readonly organizationRepository: OrganizationRepository,
     private readonly quoteRepository: QuoteRepository,
     private readonly loanApplicationRepository: LoanApplicationRepository,
+    private readonly storageService: StorageService,
   ) {}
 
   /**
@@ -440,6 +442,17 @@ export class CustomerPropertyService {
 
     if (!updated) {
       throw new NotFoundException(`Property with ID '${propertyId}' not found after update`);
+    }
+
+    // S3 cleanup (non-blocking — DB update already succeeded)
+    const fileKey = this.storageService.extractFileKeyFromUrl(documentUrl);
+    if (fileKey) {
+      try {
+        await this.storageService.deleteFile(fileKey);
+        this.logger.log(`Deleted file from storage: ${fileKey}`);
+      } catch (error) {
+        this.logger.warn(`Failed to delete file from storage: ${fileKey}`, error);
+      }
     }
 
     return updated;
