@@ -5,7 +5,6 @@ import { Calendar, FolderKanban, User } from 'lucide-react';
 import Link from 'next/link';
 
 import {
-  getDueDateColor,
   TASK_PRIORITY_BADGE_VARIANT,
   TASK_PRIORITY_LABELS,
   TASK_STATUS_BADGE_VARIANT,
@@ -24,7 +23,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { ROUTES } from '@/lib/config/routes';
-import { formatRelativeDate } from '@/lib/utils';
+import { formatRelativeDate, getDueDateColor } from '@/lib/utils';
 
 interface TaskDetailDrawerProps {
   task: MyTask | null;

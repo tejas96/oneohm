@@ -6,7 +6,7 @@ import {
   type TaskActivityEntry,
   type TaskChecklist,
 } from '@oneohm-epc/shared-types';
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 
 export class ProjectTaskResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
@@ -40,6 +40,15 @@ export class ProjectTaskResponseDto {
   @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()
   assignedToUserId?: string;
+
+  @ApiPropertyOptional({ example: 'Amit Sharma', description: 'Full name of the assigned user' })
+  @Expose()
+  @Transform(({ obj }) => {
+    const assignee = obj.assignee;
+    if (!assignee) return undefined;
+    return [assignee.firstName, assignee.lastName].filter(Boolean).join(' ') || undefined;
+  })
+  assigneeName?: string;
 
   @ApiProperty({ example: 1000 })
   @Expose()

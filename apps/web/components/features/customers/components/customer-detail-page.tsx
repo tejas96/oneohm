@@ -47,6 +47,7 @@ import {
   showToast,
   WhatsAppIcon,
 } from '@/components/ui';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { cn, formatPhoneForWhatsApp } from '@/lib/utils';
 
@@ -442,9 +443,11 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-4">
-          <div className="flex size-16 items-center justify-center rounded-full bg-primary/15 text-2xl font-semibold text-primary">
-            {getInitials(customer.firstName, customer.lastName)}
-          </div>
+          <Avatar size="xl">
+            <AvatarFallback size="xl" name={customerFullName}>
+              {getInitials(customer.firstName, customer.lastName)}
+            </AvatarFallback>
+          </Avatar>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-semibold text-foreground">{customerFullName}</h1>
@@ -598,9 +601,11 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                   Created By
                 </label>
                 <div className="mt-1 flex items-center gap-2">
-                  <div className="flex size-6 items-center justify-center rounded-full bg-secondary/15 text-xs font-semibold text-secondary">
-                    {getInitials(customer.creatorName?.split(' ')[0], customer.creatorName?.split(' ')[1])}
-                  </div>
+                  <Avatar size="xs" className="size-6">
+                    <AvatarFallback size="xs" name={customer.creatorName || 'Self'}>
+                      {getInitials(customer.creatorName?.split(' ')[0], customer.creatorName?.split(' ')[1])}
+                    </AvatarFallback>
+                  </Avatar>
                   <span className="text-sm text-foreground">{customer.creatorName || 'Self'}</span>
                 </div>
               </div>

@@ -107,8 +107,8 @@ export class DocumentService {
     return this.documentRepository.findByOrganization(organizationId);
   }
 
-  async findByProject(projectId: string): Promise<DocumentEntity[]> {
-    return this.documentRepository.findByProject(projectId);
+  async findByProject(projectId: string, organizationId: string): Promise<DocumentEntity[]> {
+    return this.documentRepository.findByProject(projectId, organizationId);
   }
 
   async findByCustomer(customerId: string): Promise<DocumentEntity[]> {

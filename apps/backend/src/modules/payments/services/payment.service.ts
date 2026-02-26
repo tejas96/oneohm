@@ -67,8 +67,8 @@ export class PaymentService {
     return this.paymentRepository.findByOrganization(organizationId);
   }
 
-  async findByProject(projectId: string): Promise<PaymentEntity[]> {
-    return this.paymentRepository.findByProject(projectId);
+  async findByProject(projectId: string, organizationId: string): Promise<PaymentEntity[]> {
+    return this.paymentRepository.findByProject(projectId, organizationId);
   }
 
   async findByMilestone(milestoneId: string): Promise<PaymentEntity[]> {
@@ -179,15 +179,15 @@ export class PaymentService {
   // ============================================
   // STATISTICS
   // ============================================
-  async getProjectPaymentSummary(projectId: string): Promise<{
+  async getProjectPaymentSummary(projectId: string, organizationId: string): Promise<{
     totalExpected: number;
     totalPaid: number;
     pendingAmount: number;
     paymentCount: number;
   }> {
     const [totals, payments] = await Promise.all([
-      this.paymentRepository.getTotalAmountByProject(projectId),
-      this.paymentRepository.findByProject(projectId),
+      this.paymentRepository.getTotalAmountByProject(projectId, organizationId),
+      this.paymentRepository.findByProject(projectId, organizationId),
     ]);
 
     return {

@@ -1,8 +1,11 @@
 import {
+  MaterialStatus,
   MilestoneType,
+  PaymentTransactionStatus,
   ProjectPriority,
   ProjectStatus,
   ProjectType,
+  SiteSurveyStatus,
   TASK_PRIORITY_LABELS,
   TASK_STATUS_LABELS,
   TaskPriority,
@@ -170,6 +173,13 @@ export const TASK_PRIORITY_BADGE_VARIANT: Record<string, string> = {
   [TaskPriority.URGENT]: 'error',
 };
 
+export const TASK_PRIORITY_DOT_COLOR: Record<string, string> = {
+  [TaskPriority.LOW]: 'bg-foreground-tertiary',
+  [TaskPriority.MEDIUM]: 'bg-info',
+  [TaskPriority.HIGH]: 'bg-warning',
+  [TaskPriority.URGENT]: 'bg-error',
+};
+
 export const TASK_STATUS_FILTER_OPTIONS = [
   { value: '', label: 'All Status' },
   { value: TaskStatus.BACKLOG, label: 'Backlog' },
@@ -187,17 +197,6 @@ export const TASK_GROUP_BY_OPTIONS = [
   { value: 'status', label: 'Group by: Status' },
 ] as const;
 
-export function getDueDateColor(endDate?: string): string {
-  if (!endDate) return 'text-foreground-tertiary';
-  const d = new Date(endDate);
-  d.setHours(0, 0, 0, 0);
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  if (d < now) return 'text-error';
-  if (d.getTime() === now.getTime()) return 'text-warning';
-  return 'text-foreground-secondary';
-}
-
 export const TASK_GROUP_VARIANT_MAP: Record<string, { dot: string; border: string; badge: string }> = {
   overdue: { dot: 'bg-error', border: 'border-error/30', badge: 'error' },
   due_today: { dot: 'bg-warning', border: 'border-warning/30', badge: 'warning' },
@@ -205,3 +204,155 @@ export const TASK_GROUP_VARIANT_MAP: Record<string, { dot: string; border: strin
   later: { dot: 'bg-success', border: 'border-success/30', badge: 'success' },
   no_date: { dot: 'bg-foreground-tertiary', border: 'border-border-light', badge: 'secondary' },
 };
+
+// ---------------------------------------------------------------------------
+// Payment constants (for Project Detail - Payments tab)
+// ---------------------------------------------------------------------------
+
+export const PAYMENT_STATUS_LABELS: Record<string, string> = {
+  [PaymentTransactionStatus.PENDING]: 'Pending',
+  [PaymentTransactionStatus.RECEIVED]: 'Received',
+  [PaymentTransactionStatus.VERIFIED]: 'Verified',
+  [PaymentTransactionStatus.CLEARED]: 'Cleared',
+  [PaymentTransactionStatus.BOUNCED]: 'Bounced',
+  [PaymentTransactionStatus.REFUNDED]: 'Refunded',
+};
+
+export const PAYMENT_STATUS_BADGE_VARIANT: Record<string, string> = {
+  [PaymentTransactionStatus.PENDING]: 'warning',
+  [PaymentTransactionStatus.RECEIVED]: 'info',
+  [PaymentTransactionStatus.VERIFIED]: 'green-subtle',
+  [PaymentTransactionStatus.CLEARED]: 'success',
+  [PaymentTransactionStatus.BOUNCED]: 'error',
+  [PaymentTransactionStatus.REFUNDED]: 'red-subtle',
+};
+
+// ---------------------------------------------------------------------------
+// Material constants (for Project Detail - BOM tab)
+// ---------------------------------------------------------------------------
+
+export const MATERIAL_STATUS_LABELS: Record<string, string> = {
+  [MaterialStatus.REQUIRED]: 'Required',
+  [MaterialStatus.ORDERED]: 'Ordered',
+  [MaterialStatus.IN_TRANSIT]: 'In Transit',
+  [MaterialStatus.ALLOCATED]: 'Allocated',
+  [MaterialStatus.USED]: 'Used',
+};
+
+export const MATERIAL_STATUS_BADGE_VARIANT: Record<string, string> = {
+  [MaterialStatus.REQUIRED]: 'secondary',
+  [MaterialStatus.ORDERED]: 'info',
+  [MaterialStatus.IN_TRANSIT]: 'amber',
+  [MaterialStatus.ALLOCATED]: 'green-subtle',
+  [MaterialStatus.USED]: 'success',
+};
+
+// ---------------------------------------------------------------------------
+// Document category map
+// ---------------------------------------------------------------------------
+
+export const DOCUMENT_CATEGORY_MAP: Record<string, string> = {
+  contract: 'Contracts & Agreements',
+  agreement: 'Contracts & Agreements',
+  nda: 'Contracts & Agreements',
+  quote: 'Proposals & Quotes',
+  proposal: 'Proposals & Quotes',
+  invoice: 'Financial',
+  payment_receipt: 'Financial',
+  wcr: 'Work Completion',
+  wcr_preliminary: 'Work Completion',
+  wcr_final: 'Work Completion',
+  site_survey: 'Technical',
+  technical_drawing: 'Technical',
+  installation_manual: 'Technical',
+  compliance_certificate: 'Compliance',
+  approval_letter: 'Compliance',
+  inspection_report: 'Compliance',
+  identity_proof: 'Customer Documents',
+  address_proof: 'Customer Documents',
+  electricity_bill: 'Customer Documents',
+  loan_application: 'Loan & Subsidy',
+  loan_sanction: 'Loan & Subsidy',
+  loan_agreement: 'Loan & Subsidy',
+  subsidy_application: 'Loan & Subsidy',
+  subsidy_approval: 'Loan & Subsidy',
+  maintenance_report: 'Service',
+  service_report: 'Service',
+  warranty_certificate: 'Service',
+  other: 'Other',
+};
+
+export const DOCUMENT_CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
+  'Contracts & Agreements': { bg: 'bg-info/10', text: 'text-info' },
+  'Proposals & Quotes': { bg: 'bg-success/10', text: 'text-success' },
+  'Financial': { bg: 'bg-warning/10', text: 'text-warning' },
+  'Work Completion': { bg: 'bg-primary/10', text: 'text-primary' },
+  'Technical': { bg: 'bg-info/10', text: 'text-info' },
+  'Compliance': { bg: 'bg-error/10', text: 'text-error' },
+  'Customer Documents': { bg: 'bg-info/10', text: 'text-info' },
+  'Loan & Subsidy': { bg: 'bg-success/10', text: 'text-success' },
+  'Service': { bg: 'bg-primary/10', text: 'text-primary' },
+  'Other': { bg: 'bg-muted', text: 'text-foreground-secondary' },
+};
+
+// ---------------------------------------------------------------------------
+// Survey constants (for Project Detail - Surveys tab)
+// ---------------------------------------------------------------------------
+
+export const SURVEY_STATUS_LABELS: Record<string, string> = {
+  [SiteSurveyStatus.SCHEDULED]: 'Scheduled',
+  [SiteSurveyStatus.IN_PROGRESS]: 'In Progress',
+  [SiteSurveyStatus.COMPLETED]: 'Completed',
+  [SiteSurveyStatus.CANCELLED]: 'Cancelled',
+};
+
+export const SURVEY_STATUS_BADGE_VARIANT: Record<string, string> = {
+  [SiteSurveyStatus.SCHEDULED]: 'info',
+  [SiteSurveyStatus.IN_PROGRESS]: 'warning',
+  [SiteSurveyStatus.COMPLETED]: 'success',
+  [SiteSurveyStatus.CANCELLED]: 'red-subtle',
+};
+
+// ---------------------------------------------------------------------------
+// Milestone payment status (for Overview - Milestones card)
+// ---------------------------------------------------------------------------
+
+export const MILESTONE_PAYMENT_STATUS_BADGE: Record<string, string> = {
+  received: 'success',
+  due: 'warning',
+  pending: 'secondary',
+};
+
+export const MILESTONE_PAYMENT_STATUS_LABELS: Record<string, string> = {
+  received: 'Received',
+  due: 'Due',
+  pending: 'Pending',
+};
+
+// ---------------------------------------------------------------------------
+// Display limits
+// ---------------------------------------------------------------------------
+
+export const MAX_DISPLAYED_TEAM_MEMBERS = 5;
+export const MAX_DISPLAYED_MILESTONES = 6;
+export const MAX_TASKS_PER_COLUMN = 3;
+export const TASKS_PAGE_SIZE = 20;
+export const MS_PER_DAY = 86_400_000;
+
+// ---------------------------------------------------------------------------
+// Project Detail Tab Configuration
+// ---------------------------------------------------------------------------
+
+export const PROJECT_DETAIL_TABS = [
+  { value: 'overview', label: 'Overview' },
+  { value: 'tasks', label: 'Tasks' },
+  { value: 'documents', label: 'Documents' },
+  { value: 'payments', label: 'Payments' },
+  { value: 'bom', label: 'BOM & Inventory' },
+  { value: 'communication', label: 'Communication' },
+  { value: 'compliance', label: 'Compliance' },
+  { value: 'surveys', label: 'Surveys' },
+  { value: 'activity', label: 'Activity' },
+] as const;
+
+export type ProjectDetailTab = (typeof PROJECT_DETAIL_TABS)[number]['value'];

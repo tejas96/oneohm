@@ -107,3 +107,18 @@ export function formatSystemSize(kw: number | string): string {
   if (Number.isNaN(n)) return '0';
   return n % 1 === 0 ? String(Math.round(n)) : String(parseFloat(n.toFixed(2)));
 }
+
+/**
+ * Return a Tailwind text-color class based on whether a due date is overdue,
+ * due today, or in the future.
+ */
+export function getDueDateColor(endDate?: string): string {
+  if (!endDate) return 'text-foreground-tertiary';
+  const d = new Date(endDate);
+  d.setHours(0, 0, 0, 0);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  if (d < now) return 'text-error';
+  if (d.getTime() === now.getTime()) return 'text-warning';
+  return 'text-foreground-secondary';
+}

@@ -63,9 +63,9 @@ export class DocumentRepository {
     });
   }
 
-  async findByProject(projectId: string): Promise<DocumentEntity[]> {
+  async findByProject(projectId: string, organizationId: string): Promise<DocumentEntity[]> {
     return this.repository.find({
-      where: { projectId, deletedAt: IsNull() },
+      where: { projectId, organizationId, deletedAt: IsNull() },
       relations: ['createdByUser'],
       order: { createdAt: 'DESC' },
     });
