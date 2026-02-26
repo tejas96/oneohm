@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProjectType, SystemType } from '@oneohm-epc/shared-types';
+import {
+  CalculatorInputs,
+  PricingBreakdown,
+  ProjectType,
+  QuoteConfigSnapshot,
+  SystemType,
+} from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
@@ -10,6 +16,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   IsUUID,
@@ -19,32 +26,6 @@ import {
 
 import { QuoteLineItemDto } from '../line-items/quote-line-item.dto';
 import { PaymentMilestoneDto } from '../versions/payment-milestone.dto';
-
-/**
- * Pre-calculated pricing from the calculator service.
- * When provided, the quote service uses these values directly
- * instead of recalculating from line items.
- *
- * `finalPrice` here is the price BEFORE discount (totalPrice with profitability margin).
- * The quote service subtracts `discountAmount` to get the stored finalPrice.
- */
-export class PricingOverrideDto {
-  @IsNumber()
-  @Min(0)
-  basePrice!: number;
-
-  @IsNumber()
-  @Min(0)
-  gstAmount!: number;
-
-  @IsNumber()
-  @Min(0)
-  totalPrice!: number;
-
-  @IsNumber()
-  @Min(0)
-  finalPrice!: number;
-}
 
 /**
  * DTO for creating a new quote
@@ -151,29 +132,45 @@ export class CreateQuoteDto {
   discountAmount?: number;
 
   @ApiPropertyOptional({
-    description: 'Pre-calculated pricing from calculator (bypasses internal pricing recalculation)',
+    description: 'Pre-calculated pricing breakdown (bypasses internal pricing recalculation)',
   })
   @IsOptional()
-  @ValidateNested()
-  @Type(() => PricingOverrideDto)
-  pricingOverride?: PricingOverrideDto;
-
-  // ==================== Subsidy ====================
-  @ApiPropertyOptional({
-    example: true,
-    description: 'Is subsidy applicable (auto-calculated if true)',
-  })
-  @IsBoolean()
-  @IsOptional()
-  isSubsidyApplicable?: boolean;
+  @IsObject()
+  pricingBreakdown?: PricingBreakdown;
 
   @ApiPropertyOptional({
-    example: 78000,
-    description: 'Pre-calculated subsidy amount from calculator (overrides internal subsidy calculation)',
+    example: 327180,
+    description: 'Final price after GST and discount',
   })
   @IsNumber()
+  @Min(0)
   @IsOptional()
-  subsidyAmount?: number;
+  finalPrice?: number;
+
+  @ApiPropertyOptional({
+    example: 249180,
+    description: 'Effective price after subsidy (what customer pays)',
+  })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  effectivePrice?: number;
+
+  // ==================== Calculator Inputs ====================
+  @ApiPropertyOptional({
+    description: 'All calculator input parameters for this quote',
+  })
+  @IsOptional()
+  @IsObject()
+  calculatorInputs?: CalculatorInputs;
+
+  // ==================== Config Snapshot ====================
+  @ApiPropertyOptional({
+    description: 'Frozen product prices and configuration at quote creation time',
+  })
+  @IsOptional()
+  @IsObject()
+  configSnapshot?: QuoteConfigSnapshot;
 
   // ==================== Loan Financing ====================
   @ApiPropertyOptional({

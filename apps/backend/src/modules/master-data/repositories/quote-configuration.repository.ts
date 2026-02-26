@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -56,32 +56,41 @@ export class QuoteConfigurationRepository {
     let config = await this.getActiveConfig(organizationId);
 
     if (!config) {
-      config = await this.create(organizationId, {
-        defaultValidityDays: 30,
-        maxVersions: 3,
-        defaultCompletionWeeks: 4,
-        gstConfig: {
-          rate1: 12,
-          rate1Percentage: 70,
-          rate2: 18,
-          rate2Percentage: 30,
-        },
-        wattageRounding: {
-          roundTo: 10,
-          roundUpThreshold: 5,
-        },
-        paymentMilestones: [
-          { stage: 'advance', name: 'Advance', percentage: 10, order: 1 },
-          {
-            stage: 'installation_complete',
-            name: 'Installation Complete',
-            percentage: 85,
-            order: 2,
+      try {
+        config = await this.create(organizationId, {
+          defaultValidityDays: 30,
+          maxVersions: 3,
+          defaultCompletionWeeks: 4,
+          gstConfig: {
+            rate1: 12,
+            rate1Percentage: 70,
+            rate2: 18,
+            rate2Percentage: 30,
           },
-          { stage: 'commissioning', name: 'Commissioning', percentage: 5, order: 3 },
-        ],
-        showInventoryStock: true,
-      });
+          wattageRounding: {
+            roundTo: 10,
+            roundUpThreshold: 5,
+          },
+          paymentMilestones: [
+            { stage: 'advance', name: 'Advance', percentage: 10, order: 1 },
+            {
+              stage: 'installation_complete',
+              name: 'Installation Complete',
+              percentage: 85,
+              order: 2,
+            },
+            { stage: 'commissioning', name: 'Commissioning', percentage: 5, order: 3 },
+          ],
+          showInventoryStock: true,
+        });
+      } catch (error: any) {
+        if (error?.code === '23503') {
+          throw new BadRequestException(
+            `Invalid organization ID: ${organizationId}. Organization does not exist.`,
+          );
+        }
+        throw error;
+      }
     }
 
     return config;

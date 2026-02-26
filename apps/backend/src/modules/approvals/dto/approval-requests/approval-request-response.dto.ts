@@ -1,7 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ApprovalRequestPriority, ApprovalRequestStatus } from '@oneohm-epc/shared-types';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 
+import { toNum } from '../../../../common/utils';
 import { ApprovalHistoryResponseDto } from '../approval-history/approval-history-response.dto';
 import { ApprovalStageResponseDto } from '../approval-stages/approval-stage-response.dto';
 import { ApprovalTemplateResponseDto } from '../approval-templates/approval-template-response.dto';
@@ -68,6 +69,7 @@ export class ApprovalRequestResponseDto {
 
   @ApiPropertyOptional({ example: 85000.5 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   amount?: number;
 
   // ==================== Current Stage Info ====================

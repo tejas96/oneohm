@@ -4,7 +4,9 @@
 // Shared types
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaymentMethod, PaymentTransactionStatus } from '@oneohm-epc/shared-types';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
+
+import { toNum } from '../../../common/utils';
 
 /**
  * Response DTO for payment entity
@@ -50,12 +52,12 @@ export class PaymentResponseDto {
   // ============================================
   @ApiProperty({ description: 'Expected payment amount', example: 50000.0 })
   @Expose()
-  @Type(() => Number)
+  @Transform(({ value }) => toNum(value))
   expectedAmount!: number;
 
   @ApiProperty({ description: 'Actual paid amount', example: 50000.0 })
   @Expose()
-  @Type(() => Number)
+  @Transform(({ value }) => toNum(value))
   paidAmount!: number;
 
   // ============================================

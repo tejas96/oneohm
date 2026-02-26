@@ -7,7 +7,9 @@ import {
   type FileAttachment,
   type ShadingAnalysis,
 } from '@oneohm-epc/shared-types';
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
+
+import { toNum } from '../../../../common/utils';
 
 /**
  * Site Survey Response DTO
@@ -64,10 +66,12 @@ export class SurveyResponseDto {
 
   @ApiPropertyOptional({ example: 15.5 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   roofTiltAngle?: number;
 
   @ApiPropertyOptional({ example: 85.5 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   availableAreaSqm?: number;
 
   @ApiPropertyOptional({

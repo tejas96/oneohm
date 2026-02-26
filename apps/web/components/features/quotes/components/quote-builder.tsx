@@ -36,6 +36,7 @@ import {
   SYSTEM_SIZE_CONFIG,
 } from '../constants';
 import { useCalculateQuote } from '../hooks/use-calculate-quote';
+import { useInstallationPricing } from '../hooks/use-installation-pricing';
 import { useQuoteConfig } from '../hooks/use-quote-config';
 import { useQuoteFormLogic } from '../hooks/use-quote-form-logic';
 import { useQuotePdf } from '../hooks/use-quote-pdf';
@@ -75,7 +76,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { ROUTES } from '@/lib/config/routes';
 import { cn } from '@/lib/utils';
 import { getErrorMessage } from '@/lib/utils/error';
-import { formatCurrency } from '@/lib/utils/format';
+import { formatCurrency, formatCurrencyDecimal } from '@/lib/utils/format';
 
 // ============================================================================
 // Types
@@ -179,6 +180,11 @@ export function QuoteBuilder(): JSX.Element {
   const discountAmount = form.watch('discountAmount');
   const distanceKm = form.watch('distanceKm');
   const floorNumber = form.watch('floorNumber');
+  const systemSizeKw = form.watch('systemSizeKw');
+  const projectType = form.watch('projectType');
+
+  const { transportRatePerKm, floorIncrementPercent, isFetched: isPricingFetched } =
+    useInstallationPricing(systemSizeKw, projectType);
 
   // Fetch properties for selected customer (use isFetching since query is disabled when customerId is empty)
   const { data: propertiesRaw, isFetching: isPropertiesFetching } =
@@ -1005,7 +1011,9 @@ export function QuoteBuilder(): JSX.Element {
                 >
                   {floorNumber === 0
                     ? 'Ground floor — No extra charges'
-                    : `Floor ${floorNumber} — +${floorNumber * 5}% extra charges`}
+                    : floorIncrementPercent != null
+                      ? `Floor ${floorNumber} — +${floorNumber * floorIncrementPercent}% extra charges`
+                      : `Floor ${floorNumber} — Loading charges...`}
                 </p>
               </div>
 
@@ -1030,8 +1038,15 @@ export function QuoteBuilder(): JSX.Element {
                   <Truck className="size-3" />
                   <span>Transport:</span>
                   <span className="font-semibold text-foreground">
-                    {formatCurrency((distanceKm || 0) * DISTANCE_CONFIG.transportRatePerKm)}
+                    {transportRatePerKm != null
+                      ? formatCurrency((distanceKm || 0) * transportRatePerKm)
+                      : '...'}
                   </span>
+                  {isPricingFetched && transportRatePerKm != null && (
+                    <span className="text-foreground-tertiary">
+                      @ {formatCurrencyDecimal(transportRatePerKm)}/km
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

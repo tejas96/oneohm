@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ProjectVendorStatus } from '@oneohm-epc/shared-types';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
+
+import { toNum } from '../../../../common/utils';
 
 /**
  * Project Vendor Response DTO
@@ -31,6 +33,7 @@ export class ProjectVendorResponseDto {
 
   @ApiProperty({ example: 250000.0, required: false })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   contractValue?: number;
 
   @ApiProperty({ example: '2024-01-15', required: false })

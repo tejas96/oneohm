@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectPriority, ProjectStatus, type ProjectMetadata } from '@oneohm-epc/shared-types';
 import { Expose, Transform, Type } from 'class-transformer';
 
+import { toNum } from '../../../../common/utils';
 import { CustomerPropertyResponseDto } from '../../../customers/dto/customer-property-response.dto';
 import { MaterialResponseDto } from '../materials/material-response.dto';
 import { MilestoneResponseDto } from '../milestones/milestone-response.dto';
@@ -57,14 +58,14 @@ export class ProjectResponseDto {
   @Expose()
   description?: string;
 
-  @ApiProperty({ example: 5.5, description: 'Derived from quote.systemSizeKw' })
+  @ApiProperty({ example: 5.5, description: 'Derived from quote current version' })
   @Expose()
-  @Transform(({ obj }) => obj.quote?.systemSizeKw)
+  @Transform(({ obj }) => toNum(obj.quote?.versions?.find((v: any) => v.isCurrent)?.systemSizeKw))
   systemSizeKw!: number;
 
-  @ApiProperty({ example: 'residential', description: 'Derived from quote.projectType' })
+  @ApiProperty({ example: 'residential', description: 'Derived from quote current version' })
   @Expose()
-  @Transform(({ obj }) => obj.quote?.projectType)
+  @Transform(({ obj }) => obj.quote?.versions?.find((v: any) => v.isCurrent)?.projectType)
   projectType!: string;
 
   @ApiProperty({ enum: Object.values(ProjectStatus), example: ProjectStatus.IN_PROGRESS })
@@ -87,14 +88,14 @@ export class ProjectResponseDto {
   @Expose()
   endDate?: Date;
 
-  @ApiPropertyOptional({ example: 350000, description: 'Derived from quote.finalPrice' })
+  @ApiPropertyOptional({ example: 350000, description: 'Derived from quote current version' })
   @Expose()
-  @Transform(({ obj }) => obj.quote?.finalPrice ?? null)
+  @Transform(({ obj }) => toNum(obj.quote?.versions?.find((v: any) => v.isCurrent)?.finalPrice) ?? null)
   estimatedCost?: number;
 
   @ApiPropertyOptional({ example: 325000, description: 'Derived from metadata.actualCost' })
   @Expose()
-  @Transform(({ obj }) => obj.metadata?.actualCost ?? null)
+  @Transform(({ obj }) => toNum(obj.metadata?.actualCost) ?? null)
   actualCost?: number;
 
   @ApiPropertyOptional({ example: { tags: ['priority', 'referral'] } })
