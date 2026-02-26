@@ -110,8 +110,8 @@ export class ProjectEntity extends BaseEntity {
   @OneToMany(() => ProjectTaskEntity, (task) => task.project)
   tasks!: ProjectTaskEntity[];
 
-  @OneToMany(() => SiteSurveyEntity, (survey) => survey.project)
-  surveys!: SiteSurveyEntity[];
+  @OneToOne(() => SiteSurveyEntity, (survey) => survey.project)
+  survey?: SiteSurveyEntity;
 
   @OneToMany(() => ProjectMaterialEntity, (material) => material.project)
   materials!: ProjectMaterialEntity[];

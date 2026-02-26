@@ -108,10 +108,10 @@ export class ProjectResponseDto {
   @Type(() => MilestoneResponseDto)
   milestones?: MilestoneResponseDto[];
 
-  @ApiPropertyOptional({ type: [SurveyResponseDto] })
+  @ApiPropertyOptional({ type: () => SurveyResponseDto })
   @Expose()
   @Type(() => SurveyResponseDto)
-  surveys?: SurveyResponseDto[];
+  survey?: SurveyResponseDto;
 
   @ApiPropertyOptional({ type: [MaterialResponseDto] })
   @Expose()
