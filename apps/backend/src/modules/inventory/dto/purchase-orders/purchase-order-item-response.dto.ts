@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
+
+import { toNum } from '../../../../common/utils';
 
 /**
  * Purchase Order Item Response DTO
@@ -24,24 +26,29 @@ export class PurchaseOrderItemResponseDto {
 
   @ApiProperty({ example: 100 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   orderedQuantity!: number;
 
   @ApiProperty({ example: 95 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   receivedQuantity!: number;
 
   // ==================== Pricing ====================
 
   @ApiProperty({ example: 1000.0 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   unitPrice!: number;
 
   @ApiProperty({ example: 18.0, required: false })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   taxRate?: number;
 
   @ApiProperty({ example: 100000.0 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   lineTotal!: number;
 
   // ==================== Notes ====================

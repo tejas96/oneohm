@@ -55,6 +55,9 @@ export class CalculatedPanelDto {
   @ApiProperty({ description: 'GST amount in INR', example: 15552 })
   gstAmount!: number;
 
+  @ApiPropertyOptional({ description: 'GST rate applied', example: 12 })
+  gstRate?: number;
+
   @ApiPropertyOptional({ description: 'Product warranty in years', example: 12 })
   productWarrantyYears?: number;
 
@@ -89,6 +92,9 @@ export class InverterItemDto {
 
   @ApiProperty({ description: 'GST amount in INR', example: 8100 })
   gstAmount!: number;
+
+  @ApiPropertyOptional({ description: 'GST rate applied', example: 12 })
+  gstRate?: number;
 
   @ApiPropertyOptional({ description: 'Product warranty in years', example: 8 })
   productWarrantyYears?: number;
@@ -138,6 +144,9 @@ export class CalculatedStructureDto {
 
   @ApiProperty({ description: 'GST amount in INR', example: 1800 })
   gstAmount!: number;
+
+  @ApiPropertyOptional({ description: 'GST rate applied', example: 18 })
+  gstRate?: number;
 }
 
 /**
@@ -176,6 +185,9 @@ export class CalculatedInstallationDto {
 
   @ApiProperty({ description: 'GST on installation in INR', example: 3960 })
   gstAmount!: number;
+
+  @ApiPropertyOptional({ description: 'GST rate applied', example: 18 })
+  gstRate?: number;
 
   @ApiProperty({ description: 'Total with GST in INR', example: 36960 })
   totalWithGst!: number;

@@ -18,6 +18,7 @@ export { useQuoteConfig } from './use-quote-config';
 export type { PanelBrandOption, InverterBrandOption, PanelTechnologyVariant } from './use-quote-config';
 
 export { useCalculateQuote } from './use-calculate-quote';
+export { useInstallationPricing } from './use-installation-pricing';
 export { useSaveQuote } from './use-save-quote';
 export { useQuoteFormLogic } from './use-quote-form-logic';
 export type { UseQuoteFormLogicOptions, UseQuoteFormLogicReturn } from './use-quote-form-logic';

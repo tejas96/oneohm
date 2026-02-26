@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
+
+import { toNum } from '../../../../common/utils';
 
 /**
  * Material Dispatch Item Response DTO
@@ -24,6 +26,7 @@ export class MaterialDispatchItemResponseDto {
 
   @ApiProperty({ example: 50 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   quantity!: number;
 
   // ==================== Batch/Serial ====================

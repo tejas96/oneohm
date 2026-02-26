@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ResellerStatus } from '@oneohm-epc/shared-types';
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Transform } from 'class-transformer';
+
+import { toNum } from '../../../common/utils';
 
 /**
  * DTO for reseller response
@@ -75,14 +77,17 @@ export class ResellerResponseDto {
   // ==================== Commission Structure ====================
   @ApiProperty()
   @Expose()
+  @Transform(({ value }) => toNum(value))
   commissionPercentage!: number;
 
   @ApiProperty()
   @Expose()
+  @Transform(({ value }) => toNum(value))
   commissionMinPercentage!: number;
 
   @ApiProperty()
   @Expose()
+  @Transform(({ value }) => toNum(value))
   commissionMaxPercentage!: number;
 
   // ==================== Bank Details ====================
@@ -113,10 +118,12 @@ export class ResellerResponseDto {
 
   @ApiProperty()
   @Expose()
+  @Transform(({ value }) => toNum(value))
   totalRevenueGenerated!: number;
 
   @ApiProperty()
   @Expose()
+  @Transform(({ value }) => toNum(value))
   totalCommissionEarned!: number;
 
   // ==================== Status ====================

@@ -1,10 +1,21 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProjectType, QuoteStatus, SystemType } from '@oneohm-epc/shared-types';
+import {
+  CalculatorInputs,
+  ProjectType,
+  QuoteStatus,
+  SystemType,
+} from '@oneohm-epc/shared-types';
 import { Expose, Transform } from 'class-transformer';
+
+import { toNum } from '../../../../common/utils';
+
+const cv = (obj: any) => obj.versions?.find((v: any) => v.isCurrent);
 
 /**
  * Quote Response DTO
- * Serialized response for quote entities
+ * Serialized response for quote entities.
+ * Reads system/pricing data from the current version so the frontend
+ * receives the same flat shape it always did.
  */
 export class QuoteResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
@@ -76,14 +87,17 @@ export class QuoteResponseDto {
     example: SystemType.ON_GRID,
   })
   @Expose()
+  @Transform(({ obj }) => cv(obj)?.systemType)
   systemType!: SystemType;
 
   @ApiProperty({ example: 5.5 })
   @Expose()
+  @Transform(({ obj }) => toNum(cv(obj)?.systemSizeKw))
   systemSizeKw!: number;
 
   @ApiProperty({ example: 5500 })
   @Expose()
+  @Transform(({ obj }) => toNum(cv(obj)?.totalWattageWp))
   totalWattageWp!: number;
 
   @ApiProperty({
@@ -92,39 +106,53 @@ export class QuoteResponseDto {
     example: ProjectType.RESIDENTIAL,
   })
   @Expose()
+  @Transform(({ obj }) => cv(obj)?.projectType)
   projectType!: ProjectType;
 
   @ApiPropertyOptional({ example: 500000.0 })
   @Expose()
+  @Transform(({ obj }) => toNum(cv(obj)?.pricingBreakdown?.basePrice))
   basePrice?: number;
 
   @ApiPropertyOptional({ example: 60000.0 })
   @Expose()
+  @Transform(({ obj }) => toNum(cv(obj)?.pricingBreakdown?.totalGst))
   gstAmount?: number;
 
   @ApiPropertyOptional({ example: 560000.0 })
   @Expose()
+  @Transform(({ obj }) => toNum(cv(obj)?.pricingBreakdown?.totalPrice))
   totalPrice?: number;
 
   @ApiPropertyOptional({ example: 10000.0 })
   @Expose()
+  @Transform(({ obj }) => toNum(cv(obj)?.pricingBreakdown?.discountAmount))
   discountAmount?: number;
 
   @ApiPropertyOptional({ example: 550000.0 })
   @Expose()
+  @Transform(({ obj }) => toNum(cv(obj)?.finalPrice))
   finalPrice?: number;
 
   @ApiPropertyOptional({ example: true })
   @Expose()
+  @Transform(({ obj }) => cv(obj)?.pricingBreakdown?.isSubsidyApplicable)
   isSubsidyApplicable?: boolean;
 
   @ApiPropertyOptional({ example: 30000.0 })
   @Expose()
+  @Transform(({ obj }) => toNum(cv(obj)?.pricingBreakdown?.subsidyAmount))
   subsidyAmount?: number;
 
   @ApiPropertyOptional({ example: 520000.0 })
   @Expose()
+  @Transform(({ obj }) => toNum(cv(obj)?.effectivePrice))
   effectivePrice?: number;
+
+  @ApiPropertyOptional({ description: 'Calculator input parameters for this quote' })
+  @Expose()
+  @Transform(({ obj }) => cv(obj)?.calculatorInputs)
+  calculatorInputs?: CalculatorInputs;
 
   @ApiProperty({
     enum: Object.values(QuoteStatus),

@@ -77,6 +77,7 @@ export interface CalculatedPanel {
   pricePerWatt: number;
   lineTotal: number;
   gstAmount: number;
+  gstRate?: number;
   productWarrantyYears?: number;
   performanceWarrantyYears?: number;
 }
@@ -90,6 +91,7 @@ export interface InverterItem {
   unitPrice: number;
   lineTotal: number;
   gstAmount: number;
+  gstRate?: number;
   productWarrantyYears?: number;
 }
 
@@ -108,6 +110,7 @@ export interface CalculatedStructure {
   unitPrice: number;
   lineTotal: number;
   gstAmount: number;
+  gstRate?: number;
 }
 
 export interface CalculatedInstallation {
@@ -122,6 +125,7 @@ export interface CalculatedInstallation {
   transport: number;
   totalBeforeTax: number;
   gstAmount: number;
+  gstRate?: number;
   totalWithGst: number;
   breakdown?: Record<string, number>;
 }
@@ -191,6 +195,10 @@ export interface CalculateQuoteResponse {
 export interface SaveQuoteResponse {
   quoteId: string;
   quoteNumber: string;
+  finalPrice: number;
+  effectivePrice: number;
+  discountAmount: number;
+  subsidyAmount: number;
   calculation: CalculateQuoteResponse;
 }
 

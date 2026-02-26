@@ -16,8 +16,8 @@ const SORT_FIELD_MAP: Record<QuoteSortField, string> = {
   [QuoteSortField.UPDATED_AT]: 'quote.updatedAt',
   [QuoteSortField.QUOTE_DATE]: 'quote.quoteDate',
   [QuoteSortField.VALID_UNTIL]: 'quote.validUntil',
-  [QuoteSortField.SYSTEM_SIZE]: 'quote.systemSizeKw',
-  [QuoteSortField.EFFECTIVE_PRICE]: 'quote.effectivePrice',
+  [QuoteSortField.SYSTEM_SIZE]: 'cv.systemSizeKw',
+  [QuoteSortField.EFFECTIVE_PRICE]: 'cv.effectivePrice',
   [QuoteSortField.STATUS]: 'quote.status',
   [QuoteSortField.CUSTOMER_NAME]: 'customer.firstName',
 };
@@ -86,6 +86,7 @@ export class QuoteRepository {
   ): Promise<{ quotes: QuoteEntity[]; total: number }> {
     const query = this.repository
       .createQueryBuilder('quote')
+      .leftJoinAndSelect('quote.versions', 'cv', 'cv.isCurrent = :isCurrent', { isCurrent: true })
       .leftJoinAndSelect('quote.customer', 'customer')
       .leftJoinAndSelect('quote.salesPerson', 'salesPerson')
       .leftJoinAndSelect('quote.reseller', 'reseller')
@@ -158,6 +159,7 @@ export class QuoteRepository {
   ): Promise<[QuoteEntity[], number]> {
     const qb = this.repository
       .createQueryBuilder('quote')
+      .leftJoinAndSelect('quote.versions', 'cv', 'cv.isCurrent = :isCurrent', { isCurrent: true })
       .leftJoinAndSelect('quote.customer', 'customer')
       .leftJoinAndSelect('quote.salesPerson', 'salesPerson')
       .leftJoinAndSelect('quote.reseller', 'reseller')

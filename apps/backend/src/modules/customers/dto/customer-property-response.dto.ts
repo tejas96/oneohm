@@ -9,6 +9,7 @@ import {
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
 import { PropertyDocumentDto } from './property-document.dto';
+import { toNum } from '../../../common/utils';
 
 /**
  * DTO for customer property response
@@ -85,6 +86,7 @@ export class CustomerPropertyResponseDto {
 
   @ApiPropertyOptional()
   @Expose()
+  @Transform(({ value }) => toNum(value))
   sanctionedLoad?: number;
 
   @ApiPropertyOptional()
@@ -94,10 +96,12 @@ export class CustomerPropertyResponseDto {
   // ==================== Site Details ====================
   @ApiPropertyOptional()
   @Expose()
+  @Transform(({ value }) => toNum(value))
   monthlyBill?: number;
 
   @ApiPropertyOptional()
   @Expose()
+  @Transform(({ value }) => toNum(value))
   roofAreaSqft?: number;
 
   // ==================== Lead Tracking ====================

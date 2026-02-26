@@ -21,8 +21,8 @@ export class ProjectRepository {
     name: 'project.name',
     createdAt: 'project.createdAt',
     endDate: 'project.endDate',
-    systemSizeKw: 'quote.systemSizeKw',
-    estimatedCost: 'quote.finalPrice',
+    systemSizeKw: 'cv.systemSizeKw',
+    estimatedCost: 'cv.finalPrice',
     progressPercentage: 'project.progressPercentage',
     status: 'project.status',
   };
@@ -72,6 +72,7 @@ export class ProjectRepository {
       .createQueryBuilder('project')
       .innerJoinAndSelect('project.property', 'property')
       .innerJoinAndSelect('project.quote', 'quote')
+      .leftJoinAndSelect('quote.versions', 'cv', 'cv.isCurrent = :isCurrent', { isCurrent: true })
       .leftJoinAndSelect('property.customer', 'customer')
       .leftJoinAndSelect('property.organization', 'organization')
       .leftJoinAndSelect('project.creator', 'creator')
@@ -115,6 +116,7 @@ export class ProjectRepository {
       .createQueryBuilder('project')
       .innerJoinAndSelect('project.property', 'property')
       .innerJoinAndSelect('project.quote', 'quote')
+      .leftJoinAndSelect('quote.versions', 'cv', 'cv.isCurrent = :isCurrent', { isCurrent: true })
       .leftJoinAndSelect('property.customer', 'customer')
       .leftJoinAndSelect('project.teamMembers', 'teamMember')
       .leftJoinAndSelect('teamMember.user', 'teamUser')
@@ -136,7 +138,7 @@ export class ProjectRepository {
     }
 
     if (filters?.projectType) {
-      query.andWhere('quote.projectType = :projectType', { projectType: filters.projectType });
+      query.andWhere('cv.projectType = :projectType', { projectType: filters.projectType });
     }
 
     if (filters?.fromDate) {
@@ -281,6 +283,7 @@ export class ProjectRepository {
       .createQueryBuilder('project')
       .innerJoinAndSelect('project.property', 'property')
       .innerJoinAndSelect('project.quote', 'quote')
+      .leftJoinAndSelect('quote.versions', 'cv', 'cv.isCurrent = :isCurrent', { isCurrent: true })
       .leftJoinAndSelect('property.customer', 'customer')
       .leftJoinAndSelect('project.milestones', 'milestones')
       .leftJoinAndSelect('project.surveys', 'surveys')
@@ -318,6 +321,7 @@ export class ProjectRepository {
       .createQueryBuilder('project')
       .innerJoinAndSelect('project.property', 'property')
       .innerJoinAndSelect('project.quote', 'quote')
+      .leftJoinAndSelect('quote.versions', 'cv', 'cv.isCurrent = :isCurrent', { isCurrent: true })
       .leftJoinAndSelect('property.customer', 'customer')
       .leftJoinAndSelect('project.milestones', 'milestones')
       .where('project.propertyId = :propertyId', { propertyId })

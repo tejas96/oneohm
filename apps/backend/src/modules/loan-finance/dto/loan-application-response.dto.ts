@@ -1,7 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LoanStatus } from '@oneohm-epc/shared-types';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 
+import { toNum } from '../../../common/utils';
 import { CustomerPropertyResponseDto } from '../../customers/dto/customer-property-response.dto';
 import { CustomerResponseDto } from '../../customers/dto/customer-response.dto';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
@@ -42,6 +43,7 @@ export class LoanApplicationResponseDto {
 
   @ApiPropertyOptional({ description: 'Requested loan amount' })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   loanAmount?: number;
 
   @ApiProperty({ description: 'Loan status', enum: LoanStatus })

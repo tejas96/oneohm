@@ -7,6 +7,8 @@ import {
 } from '@oneohm-epc/shared-types';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
+import { toNum } from '../../../common/utils';
+
 /**
  * Nested customer info for site visit response
  */
@@ -99,6 +101,7 @@ export class SiteVisitResponseDto {
   // ==================== Site Assessment ====================
   @ApiPropertyOptional()
   @Expose()
+  @Transform(({ value }) => toNum(value))
   availableRoofAreaSqft?: number;
 
   @ApiPropertyOptional()

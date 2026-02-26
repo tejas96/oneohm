@@ -1,4 +1,11 @@
-import { PaymentMilestone, SystemType, QuoteConfigSnapshot } from '@oneohm-epc/shared-types';
+import {
+  CalculatorInputs,
+  PaymentMilestone,
+  PricingBreakdown,
+  ProjectType,
+  QuoteConfigSnapshot,
+  SystemType,
+} from '@oneohm-epc/shared-types';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 import { QuoteLineItemEntity } from './quote-line-item.entity';
@@ -8,7 +15,8 @@ import { UserEntity } from '../../users/entities/user.entity';
 
 /**
  * Quote Version Entity
- * Maintains immutable version history of quotes
+ * Maintains immutable version history of quotes.
+ * Single source of truth for all calculation data.
  */
 @Entity('quote_versions')
 export class QuoteVersionEntity extends BaseEntity {
@@ -42,58 +50,29 @@ export class QuoteVersionEntity extends BaseEntity {
   @Column({ type: 'integer', name: 'total_wattage_wp' })
   totalWattageWp!: number;
 
-  // ==================== Pricing Details ====================
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'base_price' })
-  basePrice!: number;
-
+  // ==================== Project Type (moved from quotes) ====================
   @Column({
-    type: 'decimal',
-    precision: 15,
-    scale: 2,
-    name: 'gst_12_on_70_percent',
-    nullable: true,
+    type: 'varchar',
+    length: 50,
+    name: 'project_type',
+    enum: ProjectType,
   })
-  gst12On70Percent?: number;
+  projectType!: ProjectType;
 
-  @Column({
-    type: 'decimal',
-    precision: 15,
-    scale: 2,
-    name: 'gst_18_on_30_percent',
-    nullable: true,
-  })
-  gst18On30Percent?: number;
-
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'total_gst', nullable: true })
-  totalGst?: number;
-
-  @Column({ type: 'decimal', precision: 15, scale: 2, name: 'total_price' })
-  totalPrice!: number;
-
-  @Column({
-    type: 'decimal',
-    precision: 15,
-    scale: 2,
-    name: 'discount_amount',
-    default: 0,
-  })
-  discountAmount!: number;
-
+  // ==================== Top-level Pricing (sortable/filterable) ====================
   @Column({ type: 'decimal', precision: 15, scale: 2, name: 'final_price' })
   finalPrice!: number;
 
-  // ==================== Subsidy ====================
-  @Column({
-    type: 'decimal',
-    precision: 15,
-    scale: 2,
-    name: 'subsidy_amount',
-    default: 0,
-  })
-  subsidyAmount!: number;
-
   @Column({ type: 'decimal', precision: 15, scale: 2, name: 'effective_price', nullable: true })
   effectivePrice?: number;
+
+  // ==================== Calculator Inputs (JSONB) ====================
+  @Column({ type: 'jsonb', name: 'calculator_inputs', nullable: true })
+  calculatorInputs?: CalculatorInputs;
+
+  // ==================== Pricing Breakdown (JSONB) ====================
+  @Column({ type: 'jsonb', name: 'pricing_breakdown' })
+  pricingBreakdown!: PricingBreakdown;
 
   // ==================== Payment Milestones (JSONB) ====================
   @Column({ type: 'jsonb', name: 'payment_milestones', nullable: true })
@@ -115,10 +94,6 @@ export class QuoteVersionEntity extends BaseEntity {
   isCurrent!: boolean;
 
   // ==================== Configuration Snapshot ====================
-  /**
-   * Captures the pricing configuration at time of quote creation.
-   * This ensures historical quotes can be audited even if prices change.
-   */
   @Column({ type: 'jsonb', name: 'config_snapshot', nullable: true })
   configSnapshot?: QuoteConfigSnapshot;
 

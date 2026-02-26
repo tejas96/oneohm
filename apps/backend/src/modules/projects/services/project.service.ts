@@ -304,13 +304,13 @@ export class ProjectService {
     }
 
     const projectNumber = await this.generateProjectNumber(org.code);
+    const currentVersion = quote.versions?.find((v) => v.isCurrent) || quote.versions?.[0];
+
     const customerName =
       property?.consumerName ||
       `${quote.customer.firstName} ${quote.customer.lastName || ''}`.trim() ||
       'Customer';
-    const autoName = `${customerName} - ${quote.systemSizeKw}kW Solar Installation`.trim();
-
-    const currentVersion = quote.versions?.find((v) => v.isCurrent) || quote.versions?.[0];
+    const autoName = `${customerName} - ${currentVersion?.systemSizeKw ?? ''}kW Solar Installation`.trim();
     const paymentMilestones: PaymentMilestone[] = currentVersion?.paymentMilestones || [];
 
     const milestones = convertDto?.milestones?.length

@@ -16,6 +16,13 @@ const currencyFormatter = new Intl.NumberFormat('en-IN', {
   maximumFractionDigits: 0,
 });
 
+const currencyDecimalFormatter = new Intl.NumberFormat('en-IN', {
+  style: 'currency',
+  currency: 'INR',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
+
 const compactCurrencyFormatter = new Intl.NumberFormat('en-IN', {
   style: 'currency',
   currency: 'INR',
@@ -26,16 +33,27 @@ const compactCurrencyFormatter = new Intl.NumberFormat('en-IN', {
 /**
  * Format a number as Indian Rupees (e.g., "₹4,50,000")
  */
-export function formatCurrency(amount: number): string {
-  return currencyFormatter.format(amount);
+export function formatCurrency(amount: number | null | undefined): string {
+  if (amount == null || Number.isNaN(Number(amount))) return '₹0';
+  return currencyFormatter.format(Number(amount));
+}
+
+/**
+ * Format a number as Indian Rupees preserving up to 2 decimal places.
+ * Use for per-unit prices (e.g., ₹25.75/W) where rounding distorts the value.
+ */
+export function formatCurrencyDecimal(amount: number | null | undefined): string {
+  if (amount == null || Number.isNaN(Number(amount))) return '₹0';
+  return currencyDecimalFormatter.format(Number(amount));
 }
 
 /**
  * Format a number as compact Indian Rupees (e.g., "₹4.5L")
  * Useful for table views where space is limited
  */
-export function formatCurrencyCompact(amount: number): string {
-  return compactCurrencyFormatter.format(amount);
+export function formatCurrencyCompact(amount: number | null | undefined): string {
+  if (amount == null || Number.isNaN(Number(amount))) return '₹0';
+  return compactCurrencyFormatter.format(Number(amount));
 }
 
 /**

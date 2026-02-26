@@ -1,6 +1,7 @@
 import { SubsidyStatus } from '@oneohm-epc/shared-types';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 
+import { toNum, toNumNullable } from '../../../common/utils';
 import { CustomerResponseDto } from '../../customers/dto/customer-response.dto';
 import { OrganizationResponseDto } from '../../organizations/dto/organization-response.dto';
 import { ProjectResponseDto } from '../../projects/dto/projects/project-response.dto';
@@ -45,6 +46,7 @@ export class SubsidyApplicationResponseDto {
   subsidyScheme: string | null;
 
   @Expose()
+  @Transform(({ value }) => toNum(value))
   appliedAmount: number;
 
   @Expose()
@@ -57,6 +59,7 @@ export class SubsidyApplicationResponseDto {
   status: SubsidyStatus;
 
   @Expose()
+  @Transform(({ value }) => toNumNullable(value))
   approvedAmount: number | null;
 
   @Expose()
@@ -68,6 +71,7 @@ export class SubsidyApplicationResponseDto {
   disbursementDate: Date | null;
 
   @Expose()
+  @Transform(({ value }) => toNumNullable(value))
   disbursementAmount: number | null;
 
   @Expose()

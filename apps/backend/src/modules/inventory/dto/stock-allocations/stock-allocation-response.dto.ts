@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { StockAllocationSourceType, StockAllocationStatus } from '@oneohm-epc/shared-types';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
+
+import { toNum } from '../../../../common/utils';
 
 /**
  * Stock Allocation Response DTO
@@ -33,14 +35,17 @@ export class StockAllocationResponseDto {
 
   @ApiProperty({ example: 100 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   allocatedQuantity!: number;
 
   @ApiProperty({ example: 50 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   dispatchedQuantity!: number;
 
   @ApiProperty({ example: 5 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   returnedQuantity!: number;
 
   // ==================== Source Type ====================

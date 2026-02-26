@@ -231,7 +231,6 @@ export const DISTANCE_CONFIG = {
   max: 500,
   default: 50,
   step: 5,
-  transportRatePerKm: 25,
 } as const;
 
 // ============================================================================

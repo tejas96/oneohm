@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SubsidySchemeType, ProjectType, SubsidyTier } from '@oneohm-epc/shared-types';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
+
+import { toNum } from '../../../../common/utils';
 
 /**
  * DTO for subsidy configuration response
@@ -32,10 +34,12 @@ export class SubsidyConfigurationResponseDto {
 
   @ApiProperty({ example: 3 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   maxSubsidyKw!: number;
 
   @ApiPropertyOptional({ example: 78000 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   maxSubsidyAmount?: number;
 
   @ApiProperty({ example: true })

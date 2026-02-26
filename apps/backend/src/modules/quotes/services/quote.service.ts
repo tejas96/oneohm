@@ -5,13 +5,20 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  type GstConfig,
   PaymentMilestone,
   PaymentMilestoneStage,
+  type PaymentMilestoneConfig,
+  type PricingBreakdown,
   ProjectType,
   QuoteStatus,
 } from '@oneohm-epc/shared-types';
 import { DataSource } from 'typeorm';
 
+import {
+  QuoteConfigurationRepository,
+  SubsidyConfigurationRepository,
+} from '../../master-data/repositories';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { CreateQuoteDto, QuoteQueryDto, UpdateQuoteDto, UpdateQuoteStatusDto } from '../dto';
 import { QuoteLineItemEntity } from '../entities/quote-line-item.entity';
@@ -25,21 +32,13 @@ import { QuoteLineItemRepository, QuoteRepository, QuoteVersionRepository } from
  */
 @Injectable()
 export class QuoteService {
-  // Configurable GST rates (can be moved to org settings later)
-  private readonly GST_RATE_1 = 12; // 12%
-  private readonly GST_RATE_1_PERCENTAGE = 70; // on 70% of base
-  private readonly GST_RATE_2 = 18; // 18%
-  private readonly GST_RATE_2_PERCENTAGE = 30; // on 30% of base
-
-  // Subsidy configuration (can be moved to database later)
-  private readonly SUBSIDY_PER_KW_RESIDENTIAL = 30000; // ₹30,000 per kW
-  private readonly MAX_SUBSIDY_RESIDENTIAL = 78000; // Max ₹78,000 for residential
-
   constructor(
     private readonly quoteRepository: QuoteRepository,
     private readonly quoteVersionRepository: QuoteVersionRepository,
     private readonly lineItemRepository: QuoteLineItemRepository,
     private readonly organizationRepository: OrganizationRepository,
+    private readonly quoteConfigRepo: QuoteConfigurationRepository,
+    private readonly subsidyConfigRepo: SubsidyConfigurationRepository,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -51,51 +50,66 @@ export class QuoteService {
     createDto: CreateQuoteDto,
     createdBy: string,
   ): Promise<QuoteEntity> {
-    // Get organization for quote number generation
     const org = await this.organizationRepository.findOneById(organizationId);
 
     if (!org) {
       throw new NotFoundException(`Organization with ID ${organizationId} not found`);
     }
 
-    // Use pre-calculated pricing from calculator if available, otherwise recalculate from line items
+    const customerExists = await this.dataSource
+      .getRepository('customer_profiles')
+      .createQueryBuilder('c')
+      .where('c.id = :id', { id: createDto.customerId })
+      .andWhere('c.deleted_at IS NULL')
+      .getCount();
+
+    if (!customerExists) {
+      throw new NotFoundException(`Customer with ID ${createDto.customerId} not found`);
+    }
+
+    const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
+
     const discount = createDto.discountAmount || 0;
-    const pricing: {
-      basePrice: number;
-      gst12On70Percent?: number;
-      gst18On30Percent?: number;
-      gstAmount: number;
-      totalPrice: number;
-      finalPrice: number;
-    } = createDto.pricingOverride
-      ? {
-          basePrice: createDto.pricingOverride.basePrice,
-          gstAmount: createDto.pricingOverride.gstAmount,
-          totalPrice: createDto.pricingOverride.totalPrice,
-          finalPrice: createDto.pricingOverride.finalPrice - discount,
-        }
-      : this.calculatePricing(createDto.lineItems, discount);
 
-    // Use pre-calculated subsidy if provided (from calculator), otherwise calculate locally
-    const subsidy = createDto.subsidyAmount != null
-      ? createDto.subsidyAmount
-      : createDto.isSubsidyApplicable
-        ? this.calculateSubsidy(createDto.systemSizeKw, createDto.projectType)
-        : 0;
+    // Use pre-calculated pricing if provided, otherwise recalculate from line items
+    let pricingBreakdown: PricingBreakdown;
+    let finalPrice: number;
 
-    // Calculate effective price
-    const effectivePrice = pricing.finalPrice - subsidy;
+    if (createDto.pricingBreakdown) {
+      pricingBreakdown = createDto.pricingBreakdown;
+      finalPrice = createDto.finalPrice ?? pricingBreakdown.totalPrice - discount;
+    } else {
+      const calculated = this.calculatePricing(createDto.lineItems, discount, quoteConfig.gstConfig);
+      pricingBreakdown = calculated.pricingBreakdown;
+      finalPrice = calculated.finalPrice;
+    }
+
+    // Subsidy
+    const isSubsidyApplicable = createDto.calculatorInputs?.subsidyApplicable ?? false;
+    const subsidyAmount =
+      pricingBreakdown.subsidyAmount ??
+      (isSubsidyApplicable
+        ? await this.calculateSubsidy(organizationId, createDto.systemSizeKw, createDto.projectType)
+        : 0);
+
+    // Update breakdown with subsidy info if not already set
+    if (!createDto.pricingBreakdown) {
+      pricingBreakdown.subsidyAmount = subsidyAmount;
+      pricingBreakdown.isSubsidyApplicable = isSubsidyApplicable;
+      pricingBreakdown.discountAmount = discount;
+    }
+
+    const effectivePrice = createDto.effectivePrice ?? finalPrice - subsidyAmount;
 
     const paymentMilestones =
       createDto.paymentMilestones ||
-      this.getPaymentMilestones(pricing.finalPrice, createDto.wantsLoan ?? false);
+      this.generatePaymentMilestones(finalPrice, quoteConfig.paymentMilestones);
 
     const quoteId = await this.dataSource.transaction(async (manager) => {
       const quoteRepo = manager.getRepository(QuoteEntity);
       const versionRepo = manager.getRepository(QuoteVersionEntity);
       const lineItemRepo = manager.getRepository(QuoteLineItemEntity);
 
-      // Generate inside transaction so pessimistic lock is effective
       const quoteNumber = await this.quoteRepository.generateQuoteNumber(org.code, manager);
 
       const quote = await quoteRepo.save(
@@ -109,18 +123,6 @@ export class QuoteService {
           quoteDate: createDto.quoteDate ? new Date(createDto.quoteDate) : new Date(),
           validUntil: new Date(createDto.validUntil),
           currentVersion: 1,
-          systemType: createDto.systemType,
-          systemSizeKw: createDto.systemSizeKw,
-          totalWattageWp: createDto.totalWattageWp,
-          projectType: createDto.projectType,
-          basePrice: pricing.basePrice,
-          gstAmount: pricing.gstAmount,
-          totalPrice: pricing.totalPrice,
-          discountAmount: createDto.discountAmount || 0,
-          finalPrice: pricing.finalPrice,
-          isSubsidyApplicable: createDto.isSubsidyApplicable || false,
-          subsidyAmount: subsidy,
-          effectivePrice,
           status: QuoteStatus.DRAFT,
           internalNotes: createDto.internalNotes,
           customerNotes: createDto.customerNotes,
@@ -135,17 +137,14 @@ export class QuoteService {
           systemType: createDto.systemType,
           systemSizeKw: createDto.systemSizeKw,
           totalWattageWp: createDto.totalWattageWp,
-          basePrice: pricing.basePrice,
-          gst12On70Percent: pricing.gst12On70Percent,
-          gst18On30Percent: pricing.gst18On30Percent,
-          totalGst: pricing.gstAmount,
-          totalPrice: pricing.totalPrice,
-          discountAmount: createDto.discountAmount || 0,
-          finalPrice: pricing.finalPrice,
-          subsidyAmount: subsidy,
+          projectType: createDto.projectType,
+          finalPrice,
           effectivePrice,
+          calculatorInputs: createDto.calculatorInputs,
+          pricingBreakdown,
+          configSnapshot: createDto.configSnapshot,
           paymentMilestones,
-          projectCompletionWeeks: createDto.projectCompletionWeeks || 4,
+          projectCompletionWeeks: createDto.projectCompletionWeeks || quoteConfig.defaultCompletionWeeks,
           isCurrent: true,
           createdBy,
         }),
@@ -165,7 +164,7 @@ export class QuoteService {
           lineTotal: Math.round(item.quantity * item.unitPrice * 100) / 100,
           taxRate: item.taxRate,
           taxAmount: item.taxRate
-            ? Math.round((item.quantity * item.unitPrice * item.taxRate) / 100 * 100) / 100
+            ? Math.round(((item.quantity * item.unitPrice * item.taxRate) / 100) * 100) / 100
             : 0,
           displayOrder: item.displayOrder !== undefined ? item.displayOrder : index,
         }),
@@ -180,106 +179,15 @@ export class QuoteService {
   }
 
   /**
-   * Calculate pricing with GST
+   * Get payment milestones for a given org (fetches config from DB).
    */
-  private calculatePricing(
-    lineItems: Array<{ quantity: number; unitPrice: number }>,
-    discountAmount: number,
-  ): {
-    basePrice: number;
-    gst12On70Percent: number;
-    gst18On30Percent: number;
-    gstAmount: number;
-    totalPrice: number;
-    finalPrice: number;
-  } {
-    // Calculate base price from line items
-    const basePrice = lineItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-
-    // Calculate GST (12% on 70%, 18% on 30%)
-    const amount70Percent = (basePrice * this.GST_RATE_1_PERCENTAGE) / 100;
-    const amount30Percent = (basePrice * this.GST_RATE_2_PERCENTAGE) / 100;
-
-    const gst12On70Percent = (amount70Percent * this.GST_RATE_1) / 100;
-    const gst18On30Percent = (amount30Percent * this.GST_RATE_2) / 100;
-    const gstAmount = gst12On70Percent + gst18On30Percent;
-
-    const totalPrice = basePrice + gstAmount;
-    const finalPrice = totalPrice - discountAmount;
-
-    return {
-      basePrice: Math.round(basePrice * 100) / 100,
-      gst12On70Percent: Math.round(gst12On70Percent * 100) / 100,
-      gst18On30Percent: Math.round(gst18On30Percent * 100) / 100,
-      gstAmount: Math.round(gstAmount * 100) / 100,
-      totalPrice: Math.round(totalPrice * 100) / 100,
-      finalPrice: Math.round(finalPrice * 100) / 100,
-    };
-  }
-
-  /**
-   * Calculate subsidy based on system size
-   */
-  private calculateSubsidy(systemSizeKw: number, projectType: ProjectType): number {
-    // Only residential projects get subsidy
-    if (projectType !== ProjectType.RESIDENTIAL) {
-      return 0;
-    }
-
-    // Calculate subsidy: ₹30,000 per kW up to 3kW, then ₹18,000 per kW
-    let subsidy = 0;
-    if (systemSizeKw <= 3) {
-      subsidy = systemSizeKw * this.SUBSIDY_PER_KW_RESIDENTIAL;
-    } else {
-      subsidy = 3 * this.SUBSIDY_PER_KW_RESIDENTIAL + (systemSizeKw - 3) * 18000;
-    }
-
-    // Apply max limit
-    return Math.min(subsidy, this.MAX_SUBSIDY_RESIDENTIAL);
-  }
-
-  /**
-   * Generate default payment milestones (10%/85%/5% split)
-   */
-  private generateDefaultPaymentMilestones(finalPrice: number): PaymentMilestone[] {
-    return [
-      {
-        stage: PaymentMilestoneStage.ADVANCE,
-        name: 'Advance Payment',
-        percentage: 10,
-        amount: Math.round(finalPrice * 0.1 * 100) / 100,
-        description: 'To be paid upon order confirmation',
-        order: 1,
-      },
-      {
-        stage: PaymentMilestoneStage.INSTALLATION_COMPLETE,
-        name: 'Installation Complete',
-        percentage: 85,
-        amount: Math.round(finalPrice * 0.85 * 100) / 100,
-        description: 'To be paid upon installation completion',
-        order: 2,
-      },
-      {
-        stage: PaymentMilestoneStage.COMMISSIONING,
-        name: 'Commissioning & Net Metering',
-        percentage: 5,
-        amount: Math.round(finalPrice * 0.05 * 100) / 100,
-        description: 'To be paid after commissioning and net metering',
-        order: 3,
-      },
-    ];
-  }
-
-  /**
-   * Get payment milestones (10%/85%/5% split for all projects)
-   */
-  getPaymentMilestones(finalPrice: number, _wantsLoan?: boolean): PaymentMilestone[] {
-    return this.generateDefaultPaymentMilestones(finalPrice);
+  async getPaymentMilestones(organizationId: string, finalPrice: number): Promise<PaymentMilestone[]> {
+    const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
+    return this.generatePaymentMilestones(finalPrice, quoteConfig.paymentMilestones);
   }
 
   /**
    * Find all quotes with filters, sorting, and pagination
-   * Supports both legacy signature (page, limit, filters) and new query DTO
    */
   async findAll(
     organizationId: string,
@@ -316,14 +224,10 @@ export class QuoteService {
     },
   ): Promise<{ data: QuoteEntity[]; total: number }> {
     if (typeof pageOrQuery === 'object') {
-      const [data, total] = await this.quoteRepository.findWithFilters(
-        organizationId,
-        pageOrQuery,
-      );
+      const [data, total] = await this.quoteRepository.findWithFilters(organizationId, pageOrQuery);
       return { data, total };
     }
 
-    // Legacy path — convert to QuoteQueryDto and delegate
     const legacyQuery = new QuoteQueryDto();
     legacyQuery.page = pageOrQuery;
     legacyQuery.limit = limit;
@@ -336,10 +240,7 @@ export class QuoteService {
     if (filters?.toDate) legacyQuery.toDate = filters.toDate;
     if (filters?.search) legacyQuery.search = filters.search;
 
-    const [data, total] = await this.quoteRepository.findWithFilters(
-      organizationId,
-      legacyQuery,
-    );
+    const [data, total] = await this.quoteRepository.findWithFilters(organizationId, legacyQuery);
     return { data, total };
   }
 
@@ -361,73 +262,77 @@ export class QuoteService {
   ): Promise<QuoteEntity> {
     const quote = await this.quoteRepository.findById(id, organizationId);
 
-    // Don't allow updates to accepted/rejected quotes
     if ([QuoteStatus.ACCEPTED, QuoteStatus.REJECTED].includes(quote.status)) {
       throw new BadRequestException('Cannot update accepted or rejected quotes');
     }
 
-    // Create new version
     const newVersionNumber = quote.currentVersion + 1;
 
-    // Get current version for reference
     const currentVersion = await this.quoteVersionRepository.getCurrentVersion(quote.id);
 
     if (!currentVersion) {
       throw new NotFoundException('Current quote version not found');
     }
 
-    // Calculate new pricing if line items changed
-    const pricing = updateDto.lineItems
-      ? this.calculatePricing(
-          updateDto.lineItems,
-          updateDto.discountAmount !== undefined ? updateDto.discountAmount : quote.discountAmount,
-        )
-      : {
-          // Use existing pricing
-          basePrice: currentVersion.basePrice,
-          gst12On70Percent: currentVersion.gst12On70Percent || 0,
-          gst18On30Percent: currentVersion.gst18On30Percent || 0,
-          gstAmount: currentVersion.totalGst || 0,
-          totalPrice: currentVersion.totalPrice,
-          finalPrice: currentVersion.finalPrice,
-        };
+    const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
 
-    // Calculate subsidy
-    const systemSizeKw = updateDto.systemSizeKw || quote.systemSizeKw;
-    const projectType = updateDto.projectType || quote.projectType;
+    // Resolve values: DTO overrides > current version fallbacks
+    const systemType = updateDto.systemType || currentVersion.systemType;
+    const systemSizeKw = updateDto.systemSizeKw || currentVersion.systemSizeKw;
+    const totalWattageWp = updateDto.totalWattageWp || currentVersion.totalWattageWp;
+    const projectType = updateDto.projectType || currentVersion.projectType;
+
+    // Calculate pricing
+    let pricingBreakdown: PricingBreakdown;
+    let finalPrice: number;
+
+    if (updateDto.pricingBreakdown) {
+      pricingBreakdown = updateDto.pricingBreakdown;
+      finalPrice = pricingBreakdown.totalPrice - (pricingBreakdown.discountAmount ?? 0);
+    } else if (updateDto.lineItems) {
+      const discountAmount = currentVersion.pricingBreakdown?.discountAmount ?? 0;
+      const calculated = this.calculatePricing(updateDto.lineItems, discountAmount, quoteConfig.gstConfig);
+      pricingBreakdown = calculated.pricingBreakdown;
+      finalPrice = calculated.finalPrice;
+    } else {
+      pricingBreakdown = currentVersion.pricingBreakdown;
+      finalPrice = currentVersion.finalPrice;
+    }
+
+    // Subsidy: respect DTO-provided value first, then fall back to DB calculation
     const isSubsidyApplicable =
-      updateDto.isSubsidyApplicable !== undefined
-        ? updateDto.isSubsidyApplicable
-        : quote.isSubsidyApplicable;
+      updateDto.calculatorInputs?.subsidyApplicable ??
+      currentVersion.pricingBreakdown?.isSubsidyApplicable ??
+      false;
 
-    const subsidy = isSubsidyApplicable ? this.calculateSubsidy(systemSizeKw, projectType) : 0;
+    const subsidy = isSubsidyApplicable
+      ? (updateDto.pricingBreakdown?.subsidyAmount ??
+        (await this.calculateSubsidy(organizationId, systemSizeKw, projectType)))
+      : 0;
 
-    const effectivePrice = pricing.finalPrice - subsidy;
+    // Update breakdown subsidy fields if recalculated
+    if (!updateDto.pricingBreakdown) {
+      pricingBreakdown = {
+        ...pricingBreakdown,
+        subsidyAmount: subsidy,
+        isSubsidyApplicable,
+      };
+    }
+
+    const effectivePrice = finalPrice - subsidy;
 
     await this.dataSource.transaction(async (manager) => {
       const quoteRepo = manager.getRepository(QuoteEntity);
       const versionRepo = manager.getRepository(QuoteVersionEntity);
       const lineItemRepo = manager.getRepository(QuoteLineItemEntity);
 
-      // Update quote main record
+      // Only update identity/lifecycle fields on the quotes table
       await quoteRepo.update(
         { id, organizationId },
         {
           salesPersonId: updateDto.salesPersonId,
           resellerId: updateDto.resellerId,
           validUntil: updateDto.validUntil ? new Date(updateDto.validUntil) : undefined,
-          systemType: updateDto.systemType,
-          systemSizeKw: updateDto.systemSizeKw,
-          totalWattageWp: updateDto.totalWattageWp,
-          projectType: updateDto.projectType,
-          basePrice: pricing.basePrice,
-          gstAmount: pricing.gstAmount,
-          totalPrice: pricing.totalPrice,
-          discountAmount: updateDto.discountAmount,
-          finalPrice: pricing.finalPrice,
-          isSubsidyApplicable,
-          subsidyAmount: subsidy,
-          effectivePrice,
           internalNotes: updateDto.internalNotes,
           customerNotes: updateDto.customerNotes,
           currentVersion: newVersionNumber,
@@ -438,30 +343,26 @@ export class QuoteService {
       // Mark old versions as not current
       await versionRepo.update({ quoteId: quote.id, isCurrent: true }, { isCurrent: false });
 
-      // Create new version
+      // Create new version with all calculation data
       const newVersion = await versionRepo.save(
         versionRepo.create({
           quoteId: quote.id,
           versionNumber: newVersionNumber,
-          systemType: updateDto.systemType || quote.systemType,
-          systemSizeKw: updateDto.systemSizeKw || quote.systemSizeKw,
-          totalWattageWp: updateDto.totalWattageWp || quote.totalWattageWp,
-          basePrice: pricing.basePrice,
-          gst12On70Percent: pricing.gst12On70Percent,
-          gst18On30Percent: pricing.gst18On30Percent,
-          totalGst: pricing.gstAmount,
-          totalPrice: pricing.totalPrice,
-          discountAmount:
-            updateDto.discountAmount !== undefined ? updateDto.discountAmount : quote.discountAmount,
-          finalPrice: pricing.finalPrice,
-          subsidyAmount: subsidy,
+          systemType,
+          systemSizeKw,
+          totalWattageWp,
+          projectType,
+          finalPrice,
           effectivePrice,
+          calculatorInputs: updateDto.calculatorInputs || currentVersion.calculatorInputs,
+          pricingBreakdown,
+          configSnapshot: currentVersion.configSnapshot,
           paymentMilestones:
             updateDto.paymentMilestones ||
             currentVersion?.paymentMilestones ||
-            this.generateDefaultPaymentMilestones(pricing.finalPrice),
+            this.generatePaymentMilestones(finalPrice, quoteConfig.paymentMilestones),
           projectCompletionWeeks:
-            updateDto.projectCompletionWeeks || currentVersion?.projectCompletionWeeks || 4,
+            updateDto.projectCompletionWeeks || currentVersion?.projectCompletionWeeks || quoteConfig.defaultCompletionWeeks,
           changeSummary: updateDto.changeSummary,
           isCurrent: true,
           createdBy: updatedBy,
@@ -484,14 +385,16 @@ export class QuoteService {
             lineTotal: Math.round(item.quantity * item.unitPrice * 100) / 100,
             taxRate: item.taxRate,
             taxAmount: item.taxRate
-              ? Math.round((item.quantity * item.unitPrice * item.taxRate) / 100 * 100) / 100
+              ? Math.round(((item.quantity * item.unitPrice * item.taxRate) / 100) * 100) / 100
               : 0,
             displayOrder: item.displayOrder !== undefined ? item.displayOrder : index,
           }),
         );
         await lineItemRepo.save(lineItemsData);
       } else if (currentVersion) {
-        const oldLineItems = await lineItemRepo.find({ where: { quoteVersionId: currentVersion.id } });
+        const oldLineItems = await lineItemRepo.find({
+          where: { quoteVersionId: currentVersion.id },
+        });
         const newLineItemsData = oldLineItems.map((item) =>
           lineItemRepo.create({
             quoteVersionId: newVersion.id,
@@ -527,10 +430,8 @@ export class QuoteService {
   ): Promise<QuoteEntity> {
     const quote = await this.quoteRepository.findById(id, organizationId);
 
-    // Validate status transitions
     this.validateStatusTransition(quote.status, statusDto.status);
 
-    // Additional validations
     if (statusDto.status === QuoteStatus.REJECTED && !statusDto.rejectionReason) {
       throw new BadRequestException('Rejection reason is required when rejecting a quote');
     }
@@ -539,7 +440,6 @@ export class QuoteService {
       throw new BadRequestException('Customer signature is required when accepting a quote');
     }
 
-    // Update quote
     const updateData: Partial<QuoteEntity> = {
       status: statusDto.status,
       updatedBy,
@@ -555,6 +455,33 @@ export class QuoteService {
     }
 
     return this.quoteRepository.update(id, organizationId, updateData);
+  }
+
+  /**
+   * Delete quote
+   */
+  async delete(id: string, organizationId: string): Promise<void> {
+    const quote = await this.quoteRepository.findById(id, organizationId);
+
+    if (quote.status === QuoteStatus.ACCEPTED) {
+      throw new ForbiddenException('Cannot delete accepted quotes');
+    }
+
+    return this.quoteRepository.delete(id, organizationId);
+  }
+
+  /**
+   * Mark expired quotes (for cron job)
+   */
+  async markExpiredQuotes(): Promise<number> {
+    const expiredQuotes = await this.quoteRepository.findExpiredQuotes();
+
+    if (expiredQuotes.length > 0) {
+      const quoteIds = expiredQuotes.map((q) => q.id);
+      await this.quoteRepository.bulkUpdateStatus(quoteIds, QuoteStatus.EXPIRED);
+    }
+
+    return expiredQuotes.length;
   }
 
   /**
@@ -581,30 +508,86 @@ export class QuoteService {
   }
 
   /**
-   * Delete quote
+   * Generate payment milestones from org-level config.
    */
-  async delete(id: string, organizationId: string): Promise<void> {
-    const quote = await this.quoteRepository.findById(id, organizationId);
-
-    // Don't allow deletion of accepted quotes
-    if (quote.status === QuoteStatus.ACCEPTED) {
-      throw new ForbiddenException('Cannot delete accepted quotes');
-    }
-
-    return this.quoteRepository.delete(id, organizationId);
+  private generatePaymentMilestones(
+    finalPrice: number,
+    milestoneConfigs: PaymentMilestoneConfig[],
+  ): PaymentMilestone[] {
+    return milestoneConfigs.map((config) => ({
+      stage: config.stage as PaymentMilestoneStage,
+      name: config.name,
+      percentage: config.percentage,
+      amount: Math.round(finalPrice * (config.percentage / 100) * 100) / 100,
+      order: config.order,
+    }));
   }
 
   /**
-   * Mark expired quotes (for cron job)
+   * Calculate subsidy using tiered rates from DB (matches QuoteCalculatorService logic).
    */
-  async markExpiredQuotes(): Promise<number> {
-    const expiredQuotes = await this.quoteRepository.findExpiredQuotes();
+  private async calculateSubsidy(
+    organizationId: string,
+    systemSizeKw: number,
+    projectType: ProjectType,
+  ): Promise<number> {
+    const subsidyConfig = await this.subsidyConfigRepo.findActiveByProjectType(
+      organizationId,
+      projectType,
+    );
 
-    if (expiredQuotes.length > 0) {
-      const quoteIds = expiredQuotes.map((q) => q.id);
-      await this.quoteRepository.bulkUpdateStatus(quoteIds, QuoteStatus.EXPIRED);
+    if (!subsidyConfig) return 0;
+
+    let totalAmount = 0;
+    let remainingKw = Math.min(systemSizeKw, Number(subsidyConfig.maxSubsidyKw));
+    const sortedTiers = [...(subsidyConfig.tiers || [])].sort((a, b) => a.fromKw - b.fromKw);
+
+    for (const tier of sortedTiers) {
+      if (remainingKw <= 0) break;
+      const tierMaxKw = (tier.toKw !== null ? tier.toKw : Infinity) - tier.fromKw;
+      const kwInTier = Math.min(remainingKw, tierMaxKw);
+      if (kwInTier > 0) {
+        totalAmount += kwInTier * tier.ratePerKw;
+        remainingKw -= kwInTier;
+      }
     }
 
-    return expiredQuotes.length;
+    const maxAmount = Number(subsidyConfig.maxSubsidyAmount) || Infinity;
+    return Math.min(totalAmount, maxAmount);
+  }
+
+  /**
+   * Calculate pricing from line items using org-level GST config.
+   */
+  private calculatePricing(
+    lineItems: Array<{ quantity: number; unitPrice: number }>,
+    discountAmount: number,
+    gstConfig: GstConfig,
+  ): { pricingBreakdown: PricingBreakdown; finalPrice: number } {
+    const basePrice = lineItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+
+    const portion1 = (basePrice * gstConfig.rate1Percentage) / 100;
+    const portion2 = (basePrice * gstConfig.rate2Percentage) / 100;
+
+    const gst12On70Percent = (portion1 * gstConfig.rate1) / 100;
+    const gst18On30Percent = (portion2 * gstConfig.rate2) / 100;
+    const totalGst = gst12On70Percent + gst18On30Percent;
+
+    const totalPrice = basePrice + totalGst;
+    const finalPrice = totalPrice - discountAmount;
+
+    return {
+      pricingBreakdown: {
+        basePrice: Math.round(basePrice * 100) / 100,
+        gst12On70Percent: Math.round(gst12On70Percent * 100) / 100,
+        gst18On30Percent: Math.round(gst18On30Percent * 100) / 100,
+        totalGst: Math.round(totalGst * 100) / 100,
+        totalPrice: Math.round(totalPrice * 100) / 100,
+        discountAmount: Math.round(discountAmount * 100) / 100,
+        subsidyAmount: 0,
+        isSubsidyApplicable: false,
+      },
+      finalPrice: Math.round(finalPrice * 100) / 100,
+    };
   }
 }

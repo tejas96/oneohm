@@ -13,7 +13,7 @@ import {
 import type { CalculateQuoteResponse } from '../types';
 
 import { Badge, Button, Card, CardContent, Skeleton, Spinner } from '@/components/ui';
-import { formatCurrency } from '@/lib/utils/format';
+import { formatCurrency, formatCurrencyDecimal } from '@/lib/utils/format';
 
 
 // ============================================================================
@@ -166,7 +166,7 @@ export function QuotePreviewPanel({
                     </span>
                   </div>
                   <p className="text-xs text-foreground-secondary">
-                    {panel.quantity} panels &times; {formatCurrency(panel.pricePerWatt)}/W
+                    {panel.quantity} panels &times; {formatCurrencyDecimal(panel.pricePerWatt)}/W
                   </p>
                 </div>
                 <div className="text-right">
@@ -194,7 +194,7 @@ export function QuotePreviewPanel({
                     </span>
                   </div>
                   <p className="text-xs text-foreground-secondary">
-                    {panel.quantity} panels &times; {formatCurrency(panel.pricePerWatt)}/W
+                    {panel.quantity} panels &times; {formatCurrencyDecimal(panel.pricePerWatt)}/W
                   </p>
                 </div>
                 <div className="text-right">
@@ -515,6 +515,14 @@ export function QuotePreviewPanel({
               <span className="text-foreground-secondary">Total GST</span>
               <span>{formatCurrency(calculation.pricing.totalGst)}</span>
             </div>
+            {calculation.profitabilityPercent > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-foreground-secondary">
+                  Margin ({calculation.profitabilityPercent}%)
+                </span>
+                <span>+{formatCurrency(calculation.profitabilityAmount)}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between border-t border-border-light pt-1.5 text-sm font-medium">
               <span>Gross Total</span>
               <span>{formatCurrency(calculation.pricing.totalPrice)}</span>

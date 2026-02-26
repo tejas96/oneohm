@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { VendorStatus, VendorType } from '@oneohm-epc/shared-types';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
+
+import { toNum } from '../../../../common/utils';
 
 /**
  * Vendor Response DTO
@@ -125,6 +127,7 @@ export class VendorResponseDto {
 
   @ApiProperty({ example: 4.5, required: false })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   rating?: number;
 
   // ==================== Notes ====================
