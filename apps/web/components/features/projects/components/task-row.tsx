@@ -5,7 +5,6 @@ import { Check } from 'lucide-react';
 import Link from 'next/link';
 
 import {
-  getDueDateColor,
   TASK_PRIORITY_BADGE_VARIANT,
   TASK_PRIORITY_LABELS,
 } from '../constants';
@@ -15,7 +14,7 @@ import { TaskStatusDropdown } from './task-status-dropdown';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ROUTES } from '@/lib/config/routes';
-import { formatRelativeDate } from '@/lib/utils';
+import { formatRelativeDate, getDueDateColor } from '@/lib/utils';
 
 interface TaskRowProps {
   task: MyTask;

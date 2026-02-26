@@ -228,13 +228,13 @@ export interface ErrorStateProps
 }
 
 export const ErrorState = React.forwardRef<HTMLDivElement, ErrorStateProps>(
-  ({ title = 'Failed to load data', onRetry, ...props }, ref) => (
+  ({ title = 'Failed to load data', description, onRetry, ...props }, ref) => (
     <EmptyState
       ref={ref}
       icon={<AlertTriangle className="w-full h-full" />}
       iconColor="error"
       title={title}
-      description="Something went wrong while loading the data. Please try again."
+      description={description ?? 'Something went wrong while loading the data. Please try again.'}
       action={
         onRetry
           ? {

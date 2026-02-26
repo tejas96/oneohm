@@ -177,6 +177,14 @@ export class CustomerPropertyResponseDto {
   @Transform(({ obj }) => obj.customer?.phone ?? undefined)
   customerPhone?: string;
 
+  @ApiPropertyOptional({
+    description: 'Customer email address (from customer profile)',
+    example: 'rajesh@example.com',
+  })
+  @Expose()
+  @Transform(({ obj }) => obj.customer?.email ?? undefined)
+  customerEmail?: string;
+
   // ==================== Creator Info (populated from creator relation) ====================
 
   /**

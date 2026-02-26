@@ -56,9 +56,9 @@ export class PaymentRepository {
     });
   }
 
-  async findByProject(projectId: string): Promise<PaymentEntity[]> {
+  async findByProject(projectId: string, organizationId: string): Promise<PaymentEntity[]> {
     return this.repository.find({
-      where: { projectId, deletedAt: IsNull() },
+      where: { projectId, organizationId, deletedAt: IsNull() },
       order: { paymentDate: 'DESC' },
       relations: ['milestone', 'customer', 'reconciledByUser'],
     });
@@ -114,7 +114,7 @@ export class PaymentRepository {
   // ============================================
   // AGGREGATIONS & STATISTICS
   // ============================================
-  async getTotalAmountByProject(projectId: string): Promise<{
+  async getTotalAmountByProject(projectId: string, organizationId: string): Promise<{
     totalExpected: number;
     totalPaid: number;
     pendingAmount: number;
@@ -124,6 +124,7 @@ export class PaymentRepository {
       .select('SUM(payment.expected_amount)', 'totalExpected')
       .addSelect('SUM(payment.paid_amount)', 'totalPaid')
       .where('payment.project_id = :projectId', { projectId })
+      .andWhere('payment.organization_id = :organizationId', { organizationId })
       .andWhere('payment.deleted_at IS NULL')
       .getRawOne<{ totalExpected: string | null; totalPaid: string | null }>();
 
