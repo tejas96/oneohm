@@ -1,4 +1,9 @@
-import type { ProjectPriority, ProjectStatus } from '../enums/project.enum';
+import type {
+  ProjectPriority,
+  ProjectStatus,
+  RoofCondition,
+  RoofOrientation,
+} from '../enums/project.enum';
 
 /**
  * GPS Coordinates
@@ -36,6 +41,26 @@ export interface ShadingAnalysis {
   shadingSource?: string[]; // trees, buildings, etc.
   shadingTimes?: string[]; // Time periods when shading occurs
   mitigationRequired?: boolean;
+  notes?: string;
+}
+
+/**
+ * Survey Data
+ * Consolidated assessment data collected during a site survey.
+ * Stored as JSONB in the site_surveys table.
+ */
+export interface SurveyData {
+  roofType?: string;
+  roofCondition?: RoofCondition;
+  roofOrientation?: RoofOrientation;
+  roofTiltAngle?: number;
+  availableAreaSqm?: number;
+  shadingAnalysis?: ShadingAnalysis;
+  electricalDetails?: ElectricalDetails;
+  structuralAssessment?: string;
+  siteAccess?: string;
+  safetyConcerns?: string;
+  recommendations?: string;
   notes?: string;
 }
 

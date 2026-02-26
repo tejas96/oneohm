@@ -8,7 +8,7 @@ import { SiteSurveyEntity } from '../entities/site-survey.entity';
 
 /**
  * Site Survey Repository
- * Handles database operations for site surveys
+ * Handles database operations for site surveys (one-to-one with project)
  */
 @Injectable()
 export class SurveyRepository {
@@ -26,6 +26,29 @@ export class SurveyRepository {
   }
 
   /**
+   * Find the survey for a project (returns null if none exists)
+   */
+  async findByProject(projectId: string): Promise<SiteSurveyEntity | null> {
+    return this.repository.findOne({
+      where: { projectId, deletedAt: IsNull() },
+      relations: ['surveyor'],
+    });
+  }
+
+  /**
+   * Find the survey for a project or throw NotFoundException
+   */
+  async findByProjectOrFail(projectId: string): Promise<SiteSurveyEntity> {
+    const survey = await this.findByProject(projectId);
+
+    if (!survey) {
+      throw new NotFoundException(`Site survey for project ${projectId} not found`);
+    }
+
+    return survey;
+  }
+
+  /**
    * Update survey by ID (no project ownership check — caller must pre-validate)
    */
   async updateById(id: string, data: Record<string, unknown>): Promise<void> {
@@ -33,107 +56,33 @@ export class SurveyRepository {
   }
 
   /**
-   * Find survey by ID
+   * Update a survey identified by projectId
    */
-  async findById(id: string, projectId: string): Promise<SiteSurveyEntity> {
-    const survey = await this.repository.findOne({
-      where: { id, projectId },
-      relations: ['project', 'surveyor'],
-    });
-
-    if (!survey) {
-      throw new NotFoundException(`Site survey with ID ${id} not found`);
-    }
-
-    return survey;
+  async update(projectId: string, updateData: Record<string, unknown>): Promise<SiteSurveyEntity> {
+    const survey = await this.findByProjectOrFail(projectId);
+    await this.repository.update(survey.id, updateData);
+    return this.findByProjectOrFail(projectId);
   }
 
   /**
-   * Find all surveys for a project
+   * Soft delete a survey by projectId
    */
-  async findByProject(
-    projectId: string,
-    filters?: {
-      status?: SiteSurveyStatus;
-      surveyorId?: string;
-    },
-  ): Promise<SiteSurveyEntity[]> {
-    const query = this.repository
-      .createQueryBuilder('survey')
-      .leftJoinAndSelect('survey.surveyor', 'surveyor')
-      .where('survey.projectId = :projectId', { projectId })
-      .andWhere('survey.deletedAt IS NULL');
-
-    // Apply filters
-    if (filters?.status) {
-      query.andWhere('survey.status = :status', { status: filters.status });
-    }
-
-    if (filters?.surveyorId) {
-      query.andWhere('survey.surveyorId = :surveyorId', { surveyorId: filters.surveyorId });
-    }
-
-    return query.orderBy('survey.surveyDate', 'DESC').getMany();
-  }
-
-  /**
-   * Update a survey
-   */
-  async update(
-    id: string,
-    projectId: string,
-    updateData: Record<string, unknown>,
-  ): Promise<SiteSurveyEntity> {
-    await this.repository.update({ id, projectId }, updateData);
-    return this.findById(id, projectId);
-  }
-
-  /**
-   * Delete a survey
-   */
-  async delete(id: string, projectId: string): Promise<void> {
-    const result = await this.repository.softDelete({ id, projectId });
+  async delete(projectId: string): Promise<void> {
+    const survey = await this.findByProjectOrFail(projectId);
+    const result = await this.repository.softDelete(survey.id);
 
     if (!result.affected || result.affected === 0) {
-      throw new NotFoundException(`Site survey with ID ${id} not found`);
+      throw new NotFoundException(`Site survey for project ${projectId} not found`);
     }
   }
 
   /**
-   * Update survey status
+   * Update survey status by projectId
    */
-  async updateStatus(
-    id: string,
-    projectId: string,
-    status: SiteSurveyStatus,
-  ): Promise<SiteSurveyEntity> {
-    await this.repository.update({ id, projectId }, { status });
-    return this.findById(id, projectId);
-  }
-
-  /**
-   * Find completed surveys for a project
-   */
-  async findCompleted(projectId: string): Promise<SiteSurveyEntity[]> {
-    return this.repository.find({
-      where: {
-        projectId,
-        status: SiteSurveyStatus.COMPLETED,
-        deletedAt: IsNull(),
-      },
-      order: { surveyDate: 'DESC' },
-    });
-  }
-
-  /**
-   * Find latest survey for a project
-   */
-  async findLatest(projectId: string): Promise<SiteSurveyEntity | null> {
-    return this.repository.findOne({
-      where: { projectId, deletedAt: IsNull() },
-      order: { surveyDate: 'DESC' },
-      relations: ['surveyor'],
-    });
+  async updateStatus(projectId: string, status: SiteSurveyStatus): Promise<SiteSurveyEntity> {
+    const survey = await this.findByProjectOrFail(projectId);
+    await this.repository.update(survey.id, { status });
+    return this.findByProjectOrFail(projectId);
   }
 
   /**
