@@ -145,7 +145,7 @@ export function useCreateProperty(): UseMutationResult<
 /**
  * Hook to fetch customers list for selector dropdown
  */
-export function useCustomersList() {
+export function useCustomersList(enabled = true) {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
 
@@ -154,11 +154,11 @@ export function useCustomersList() {
     queryFn: async (): Promise<PaginatedResponse<CustomerResponse>> => {
       const { data } = await apiClient.get<PaginatedResponse<CustomerResponse>>('/customers', {
         headers: { 'X-Organization-Id': organizationId },
-        params: { limit: 100 }, // Get enough for dropdown
+        params: { limit: 100 },
       });
       return data;
     },
-    enabled: !!organizationId,
+    enabled: !!organizationId && enabled,
   });
 }
 
