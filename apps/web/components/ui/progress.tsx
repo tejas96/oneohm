@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
  * - xl: h-4 (16px)
  */
 
-const progressVariants = cva('w-full rounded-full overflow-hidden bg-gray-200', {
+const progressVariants = cva('w-full rounded-full overflow-hidden bg-border', {
   variants: {
     size: {
       xs: 'h-0.5',
@@ -154,9 +154,9 @@ const CircularProgress = React.forwardRef<HTMLDivElement, CircularProgressProps>
         <svg
           className={cn(
             'transform -rotate-90',
-            size === 'sm' && 'w-16 h-16',
-            size === 'md' && 'w-24 h-24',
-            size === 'lg' && 'w-32 h-32'
+            size === 'sm' && 'size-container-xl',
+            size === 'md' && 'size-container-3xl',
+            size === 'lg' && 'size-container-4xl'
           )}
           viewBox={`0 0 ${config.size} ${config.size}`}
         >
@@ -220,7 +220,7 @@ export interface SegmentedProgressProps extends React.HTMLAttributes<HTMLDivElem
 const SEGMENT_STATUS_CLASSES = {
   complete: 'bg-success',
   current: 'bg-warning',
-  pending: 'bg-gray-200',
+  pending: 'bg-border',
 } as const;
 
 const SegmentedProgress = React.forwardRef<HTMLDivElement, SegmentedProgressProps>(

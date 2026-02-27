@@ -1,6 +1,6 @@
 'use client';
 
-import React, { type ReactNode } from 'react';
+import React, { Suspense, type ReactNode } from 'react';
 
 import {
   GlobalHeader,
@@ -10,6 +10,7 @@ import {
   Rail,
   useLayout,
 } from '@/components/layout';
+import { AuthGuard } from '@/components/shared/guards';
 
 interface DashboardLayoutContentProps {
   children: ReactNode;
@@ -30,8 +31,10 @@ function DashboardLayoutContent({ children }: DashboardLayoutContentProps) {
       {/* Rail - 48px icon navigation */}
       <Rail isPanelOpen={isPanelOpen} onTogglePanel={togglePanel} />
 
-      {/* Panel - 200px collapsible sidebar */}
-      <Panel isOpen={isPanelOpen} onClose={togglePanel} />
+      {/* Panel - 200px collapsible sidebar (Suspense required for useSearchParams) */}
+      <Suspense fallback={null}>
+        <Panel isOpen={isPanelOpen} onClose={togglePanel} />
+      </Suspense>
 
       {/* Main Content - Responsive margins */}
       <MainContent isPanelOpen={isPanelOpen}>
@@ -53,10 +56,12 @@ interface DashboardLayoutProps {
 // eslint-disable-next-line import/no-default-export -- Next.js requires default export for layouts
 export default function DashboardLayout({ children }: DashboardLayoutProps): React.JSX.Element {
   return (
-    <LayoutProvider>
-      <div className="min-h-screen bg-background-secondary">
-        <DashboardLayoutContent>{children}</DashboardLayoutContent>
-      </div>
-    </LayoutProvider>
+    <AuthGuard>
+      <LayoutProvider>
+        <div className="min-h-screen bg-background-secondary">
+          <DashboardLayoutContent>{children}</DashboardLayoutContent>
+        </div>
+      </LayoutProvider>
+    </AuthGuard>
   );
 }

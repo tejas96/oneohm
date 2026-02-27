@@ -1,9 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { MaterialStatus } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
   IsDateString,
-  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
@@ -105,17 +103,7 @@ export class UpdateMaterialDto {
   @Type(() => Number)
   totalCost?: number;
 
-  // ==================== Status & Dates ====================
-  @ApiPropertyOptional({
-    enum: Object.values(MaterialStatus),
-    enumName: 'MaterialStatus',
-    example: MaterialStatus.ALLOCATED,
-    description: 'Material procurement status',
-  })
-  @IsEnum(MaterialStatus)
-  @IsOptional()
-  status?: MaterialStatus;
-
+  // ==================== Dates ====================
   @ApiPropertyOptional({
     example: '2025-02-10',
     description: 'Date when material was procured',

@@ -1,12 +1,14 @@
 import {
   ConnectionType,
   LeadTemperature,
+  type PropertyDocument,
   PropertyStatus,
   PropertyType,
 } from '@oneohm-epc/shared-types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';
 
 import { CustomerProfileEntity } from './customer-profile.entity';
+import type { FollowupEntity } from './followup.entity';
 import type { SiteVisitEntity } from './site-visit.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
@@ -23,7 +25,6 @@ import { UserEntity } from '../../users/entities/user.entity';
 @Index(['customerId', 'organizationId'])
 @Index(['organizationId', 'status', 'deletedAt'])
 @Index(['organizationId', 'leadTemperature', 'deletedAt'])
-@Index(['nextFollowUpDate'])
 @Index(['consumerNumber'], { where: 'deleted_at IS NULL' })
 @Index(['pincode'])
 export class CustomerPropertyEntity extends BaseEntity {
@@ -58,6 +59,10 @@ export class CustomerPropertyEntity extends BaseEntity {
   @OneToOne('ProjectEntity', 'property')
   project?: ProjectEntity;
 
+  // ==================== Human-readable Code ====================
+  @Column({ name: 'property_code', type: 'varchar', length: 50, nullable: true, unique: true })
+  propertyCode?: string;
+
   // ==================== PROPERTY DETAILS ====================
   @Column({ name: 'property_name', type: 'varchar', length: 255, nullable: true })
   propertyName?: string;
@@ -86,9 +91,6 @@ export class CustomerPropertyEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 10, nullable: true })
   pincode?: string;
 
-  @Column({ name: 'location_coordinates', type: 'point', nullable: true })
-  locationCoordinates?: string; // Stored as "POINT(lat lng)"
-
   // ==================== ELECTRICITY/CONSUMER DETAILS ====================
   @Column({ name: 'consumer_number', type: 'varchar', length: 50, nullable: true })
   consumerNumber?: string;
@@ -115,9 +117,6 @@ export class CustomerPropertyEntity extends BaseEntity {
   @Column({ name: 'monthly_bill', type: 'decimal', precision: 10, scale: 2, nullable: true })
   monthlyBill?: number;
 
-  @Column({ name: 'roof_area_sqft', type: 'decimal', precision: 10, scale: 2, nullable: true })
-  roofAreaSqft?: number;
-
   // ==================== LEAD TRACKING ====================
   @Column({
     name: 'lead_temperature',
@@ -127,14 +126,13 @@ export class CustomerPropertyEntity extends BaseEntity {
   })
   leadTemperature!: LeadTemperature;
 
-  @Column({ name: 'next_follow_up_date', type: 'date', nullable: true })
-  nextFollowUpDate?: Date;
-
-  @Column({ name: 'last_contact_date', type: 'timestamptz', nullable: true })
-  lastContactDate?: Date;
-
-  @Column({ name: 'follow_up_notes', type: 'text', nullable: true })
-  followUpNotes?: string;
+  // ==================== FOLLOWUPS (One-to-Many Relation) ====================
+  /**
+   * Property followups - scheduled activities
+   * Stored in dedicated followups table
+   */
+  @OneToMany('FollowupEntity', 'property')
+  followups?: FollowupEntity[];
 
   // ==================== FLAGS ====================
   @Column({ name: 'is_primary', type: 'boolean', default: false })
@@ -142,6 +140,15 @@ export class CustomerPropertyEntity extends BaseEntity {
 
   @Column({ name: 'wants_loan', type: 'boolean', default: false })
   wantsLoan!: boolean;
+
+  // ==================== DOCUMENTS ====================
+  /**
+   * Property-level documents (identity docs, KYC, etc.)
+   * Stored as JSONB array: [{ url, tag, fileName }, ...]
+   * Used when customer uploads documents without loan application
+   */
+  @Column({ type: 'jsonb', default: [] })
+  documents!: PropertyDocument[];
 
   // ==================== STATUS ====================
   @Column({ type: 'varchar', length: 20, default: PropertyStatus.ACTIVE })

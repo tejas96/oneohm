@@ -25,6 +25,7 @@ import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
 import { CreateMilestoneDto, MilestoneResponseDto, UpdateMilestoneDto } from '../dto';
+import { ProjectTeamGuard } from '../guards';
 import { MilestoneService } from '../services/milestone.service';
 
 /**
@@ -34,7 +35,7 @@ import { MilestoneService } from '../services/milestone.service';
 @ApiTags('Projects & Installation')
 @ApiBearerAuth()
 @Controller('projects/:projectId/milestones')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, ProjectTeamGuard)
 export class MilestoneController {
   constructor(private readonly milestoneService: MilestoneService) {}
 
@@ -179,18 +180,12 @@ export class MilestoneController {
     summary: 'Update milestone status',
     description: 'Change milestone status with dependency validation',
   })
-  @ApiQuery({
-    name: 'status',
-    required: true,
-    enum: Object.values(MilestoneStatus),
-    description: 'New status',
-  })
   async updateStatus(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('status') status: MilestoneStatus,
+    @Body('status') status: MilestoneStatus,
   ): Promise<MilestoneResponseDto> {
     const milestone = await this.milestoneService.updateStatus(
       id,

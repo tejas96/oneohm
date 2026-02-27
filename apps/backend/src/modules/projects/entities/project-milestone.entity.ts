@@ -30,6 +30,10 @@ export class ProjectMilestoneEntity extends BaseEntity {
   @JoinColumn({ name: 'assigned_to' })
   assignee?: UserEntity;
 
+  // ==================== Human-readable Code ====================
+  @Column({ name: 'milestone_code', type: 'varchar', length: 50, nullable: true, unique: true })
+  milestoneCode?: string;
+
   // ==================== Milestone Info ====================
   @Column({ type: 'varchar', length: 255 })
   name!: string;

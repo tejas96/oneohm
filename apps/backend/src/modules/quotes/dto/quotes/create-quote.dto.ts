@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProjectType, SystemType } from '@oneohm-epc/shared-types';
+import {
+  CalculatorInputs,
+  PricingBreakdown,
+  ProjectType,
+  QuoteConfigSnapshot,
+  SystemType,
+} from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
@@ -10,6 +16,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   IsUUID,
@@ -124,14 +131,46 @@ export class CreateQuoteDto {
   @IsOptional()
   discountAmount?: number;
 
-  // ==================== Subsidy ====================
   @ApiPropertyOptional({
-    example: true,
-    description: 'Is subsidy applicable (auto-calculated if true)',
+    description: 'Pre-calculated pricing breakdown (bypasses internal pricing recalculation)',
   })
-  @IsBoolean()
   @IsOptional()
-  isSubsidyApplicable?: boolean;
+  @IsObject()
+  pricingBreakdown?: PricingBreakdown;
+
+  @ApiPropertyOptional({
+    example: 327180,
+    description: 'Final price after GST and discount',
+  })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  finalPrice?: number;
+
+  @ApiPropertyOptional({
+    example: 249180,
+    description: 'Effective price after subsidy (what customer pays)',
+  })
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  effectivePrice?: number;
+
+  // ==================== Calculator Inputs ====================
+  @ApiPropertyOptional({
+    description: 'All calculator input parameters for this quote',
+  })
+  @IsOptional()
+  @IsObject()
+  calculatorInputs?: CalculatorInputs;
+
+  // ==================== Config Snapshot ====================
+  @ApiPropertyOptional({
+    description: 'Frozen product prices and configuration at quote creation time',
+  })
+  @IsOptional()
+  @IsObject()
+  configSnapshot?: QuoteConfigSnapshot;
 
   // ==================== Loan Financing ====================
   @ApiPropertyOptional({

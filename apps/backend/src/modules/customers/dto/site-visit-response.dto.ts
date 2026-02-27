@@ -7,6 +7,8 @@ import {
 } from '@oneohm-epc/shared-types';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
+import { toNum } from '../../../common/utils';
+
 /**
  * Nested customer info for site visit response
  */
@@ -99,6 +101,7 @@ export class SiteVisitResponseDto {
   // ==================== Site Assessment ====================
   @ApiPropertyOptional()
   @Expose()
+  @Transform(({ value }) => toNum(value))
   availableRoofAreaSqft?: number;
 
   @ApiPropertyOptional()
@@ -122,7 +125,7 @@ export class SiteVisitResponseDto {
   @Type(() => PropertyInfoDto)
   customerProperty?: PropertyInfoDto;
 
-  // ==================== Timestamps ====================
+  // ==================== Audit Fields ====================
   @ApiProperty()
   @Expose()
   createdAt!: Date;
@@ -130,4 +133,12 @@ export class SiteVisitResponseDto {
   @ApiProperty()
   @Expose()
   updatedAt!: Date;
+
+  @ApiPropertyOptional()
+  @Expose()
+  createdBy?: string;
+
+  @ApiPropertyOptional()
+  @Expose()
+  updatedBy?: string;
 }

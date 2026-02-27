@@ -138,7 +138,7 @@ const StatsCard = React.forwardRef<HTMLDivElement, StatsCardProps>(
       <Card ref={ref} variant="default" padding="default" className={className} {...props}>
         <div className="flex items-center justify-between mb-4">
           {icon && (
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+            <div className="size-container-md bg-primary/10 rounded-lg flex items-center justify-center">
               {icon}
             </div>
           )}
@@ -149,7 +149,7 @@ const StatsCard = React.forwardRef<HTMLDivElement, StatsCardProps>(
                 trend.direction === 'up' ? 'text-success' : 'text-error',
               )}
             >
-              <TrendIcon className="w-4 h-4 mr-1" />
+              <TrendIcon className="size-icon-sm mr-1" />
               {trend.value}%
             </span>
           )}

@@ -15,9 +15,10 @@ interface CreateProfileDto {
   userId: string;
   organizationId: string;
   profileType: UserProfileType;
+   
   profileData: any;
   createdBy?: string;
-  roleCode?: string; // Optional: Override default role (e.g., 'field_worker' instead of 'employee_basic')
+  roleCode?: string;
 }
 
 interface UserProfileSummary {
@@ -104,7 +105,9 @@ export class ProfileService {
    * Create a new profile for a user in an organization
    * Automatically assigns role based on profile type (or custom role if provided)
    */
-  async createProfile(dto: CreateProfileDto): Promise<any> {
+  async createProfile(
+    dto: CreateProfileDto,
+  ): Promise<CustomerProfileEntity | ResellerProfileEntity | EmployeeProfileEntity> {
     const { userId, organizationId, profileType, profileData, createdBy, roleCode } = dto;
 
     // Verify user exists
@@ -121,7 +124,7 @@ export class ProfileService {
       );
     }
 
-    let profile: any;
+    let profile: CustomerProfileEntity | ResellerProfileEntity | EmployeeProfileEntity;
     let defaultRoleCode: string;
 
     switch (profileType) {
@@ -304,17 +307,17 @@ export class ProfileService {
     createdBy?: string,
   ): Promise<void> {
     try {
-      // Find the role in this organization
       const role = await this.roleRepository.findByCodeAndOrganization(roleCode, organizationId);
 
       if (!role) {
-        this.logger.warn(
-          `Default role '${roleCode}' not found for org ${organizationId}. User ${userId} will have no permissions until role is assigned manually.`,
+        this.logger.error(
+          `Default role '${roleCode}' not found for org ${organizationId}. ` +
+          `Ensure the SeedIAMCoreData migration has run. ` +
+          `User ${userId} will have no role until assigned manually.`,
         );
         return;
       }
 
-      // Check if user already has this role
       const existingRoles = await this.userRoleRepository.findByUserId(userId);
       const hasRole = existingRoles.some((ur) => ur.roleId === role.id);
 
@@ -323,35 +326,19 @@ export class ProfileService {
         return;
       }
 
-      // Assign the role with organization context
-      await this.userRoleRepository.createUserRoles(
+      await this.userRoleRepository.create({
         userId,
-        [roleCode], // Old enum-based role (for backward compatibility)
-        createdBy || userId,
-        organizationId, // ✅ Now includes organization context
-      );
-
-      // Update the roleId to link to new IAM system
-      const userRoles = await this.userRoleRepository.findByUserAndOrganization(
-        userId,
+        roleId: role.id,
+        role: roleCode,
         organizationId,
+        createdBy: createdBy || userId,
+      });
+
+      this.logger.log(
+        `Assigned default role '${roleCode}' (${role.id}) to user ${userId} in org ${organizationId}`,
       );
-      const newUserRole = userRoles.find((ur) => ur.role === roleCode && !ur.roleId);
-
-      if (newUserRole) {
-        // Update the user_role record to include role_id
-        await this.userRoleRepository.repository.update(
-          { id: newUserRole.id },
-          { roleId: role.id },
-        );
-
-        this.logger.log(
-          `✅ Assigned default role '${roleCode}' (${role.id}) to user ${userId} in org ${organizationId}`,
-        );
-      }
     } catch (error) {
       this.logger.error(`Failed to assign default role '${roleCode}' to user ${userId}:`, error);
-      // Don't throw - profile creation should succeed even if role assignment fails
     }
   }
 }

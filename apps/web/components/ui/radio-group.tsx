@@ -17,7 +17,7 @@ RadioGroup.displayName = RadioGroupPrimitive.Root.displayName;
 
 const radioItemVariants = cva(
   [
-    'aspect-square rounded-full border-2 border-gray-300',
+    'aspect-square rounded-full border-2 border-border-medium',
     'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0',
     'disabled:cursor-not-allowed disabled:opacity-50',
     'data-[state=checked]:border-primary data-[state=checked]:text-primary',
@@ -38,9 +38,9 @@ const radioItemVariants = cva(
 );
 
 const INDICATOR_SIZES = {
-  sm: 'h-2 w-2',
-  default: 'h-2.5 w-2.5',
-  lg: 'h-3 w-3',
+  sm: 'size-radio-indicator-sm',
+  default: 'size-radio-indicator-md',
+  lg: 'size-radio-indicator-lg',
 } as const;
 
 export interface RadioGroupItemProps

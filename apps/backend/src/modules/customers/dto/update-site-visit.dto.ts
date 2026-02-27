@@ -1,28 +1,17 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  SiteVisitStatus,
   type FileAttachment,
   type GpsCoordinates,
   type ShadingAnalysis,
 } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
-import { IsArray, IsEnum, IsNumber, IsObject, IsOptional, IsString, Min } from 'class-validator';
+import { IsArray, IsNumber, IsObject, IsOptional, IsString, Min } from 'class-validator';
 
 /**
  * DTO for updating a site visit
  * All fields are optional
  */
 export class UpdateSiteVisitDto {
-  // ==================== Status ====================
-  @ApiPropertyOptional({
-    enum: SiteVisitStatus,
-    example: SiteVisitStatus.IN_PROGRESS,
-    description: 'Site visit status',
-  })
-  @IsEnum(SiteVisitStatus)
-  @IsOptional()
-  status?: SiteVisitStatus;
-
   // ==================== GPS ====================
   @ApiPropertyOptional({
     example: { latitude: 19.1136, longitude: 72.8697, accuracy: 5 },

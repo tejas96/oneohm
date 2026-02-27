@@ -10,30 +10,34 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { OrganizationContext } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
 import { AddTeamMemberDto, TeamMemberResponseDto, UpdateTeamMemberDto } from '../dto/project-team';
+import { ProjectTeamGuard } from '../guards';
 import { ProjectTeamService } from '../services/project-team.service';
 
 @ApiTags('Project Team')
 @ApiBearerAuth()
 @Controller('projects/:projectId/team')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, ProjectTeamGuard)
 export class ProjectTeamController {
   constructor(private readonly teamService: ProjectTeamService) {}
 
   @Post()
   @ApiOperation({ summary: 'Add a team member to a project' })
   async addMember(
+    @OrganizationContext() organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @CurrentUser() _currentUser: CurrentUserType,
     @Body() dto: AddTeamMemberDto,
   ): Promise<TeamMemberResponseDto> {
     const member = await this.teamService.addMember({
       projectId,
+      organizationId,
       userId: dto.userId,
       roleName: dto.roleName,
       isProjectManager: dto.isProjectManager,
@@ -106,4 +110,5 @@ export class ProjectTeamController {
     await this.teamService.removeMember(id, projectId);
     return { message: 'Team member removed successfully' };
   }
+
 }

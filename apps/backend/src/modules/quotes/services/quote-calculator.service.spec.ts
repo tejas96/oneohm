@@ -101,6 +101,9 @@ describe('QuoteCalculatorService', () => {
     productId: 'panel-dcr-001',
     formula: {
       pricePerWatt: 24,
+      basePrice: 45000,
+      pricePerKw: 9000,
+      multiplier: 1,
       gstRate: 12,
     },
     isActive: true,

@@ -2,6 +2,7 @@ import { CustomerStatus } from '@oneohm-epc/shared-types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 import { CustomerPropertyEntity } from './customer-property.entity';
+import { FollowupEntity } from './followup.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import { UserEntity } from '../../users/entities/user.entity';
@@ -35,6 +36,14 @@ export class CustomerProfileEntity extends BaseEntity {
   // ==================== PROPERTIES (One-to-Many) ====================
   @OneToMany(() => CustomerPropertyEntity, (property) => property.customer)
   properties?: CustomerPropertyEntity[];
+
+  // ==================== FOLLOWUPS (One-to-Many) ====================
+  @OneToMany(() => FollowupEntity, (followup) => followup.customer)
+  followups?: FollowupEntity[];
+
+  // ==================== Human-readable Code ====================
+  @Column({ name: 'customer_code', type: 'varchar', length: 50, nullable: true, unique: true })
+  customerCode?: string;
 
   // ==================== Personal Info ====================
   @Column({ name: 'first_name', type: 'varchar', length: 100 })

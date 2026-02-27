@@ -380,18 +380,23 @@ jobs:
             echo "⏭️ Web is not affected"
           fi
 
-      - name: Deploy Web
+      - name: Setup Fly CLI
         if: steps.check-web.outputs.affected == 'true'
-        run: |
-          echo "🚀 Add your web deployment steps here"
-          echo "Example: Vercel, Netlify, AWS S3, etc."
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy Web to Fly.io
+        if: steps.check-web.outputs.affected == 'true'
+        run: flyctl deploy --config apps/web/fly.toml --remote-only --depot=false
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
       - name: Generate Summary
         if: always()
         run: |
           echo "## 🌐 Web Deployment" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.check-web.outputs.affected }}" == "true" ]; then
-            echo "✅ Web deployed" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Web deployed to Fly.io" >> $GITHUB_STEP_SUMMARY
+            echo "🔗 https://oneohm-epc-web.fly.dev" >> $GITHUB_STEP_SUMMARY
           else
             echo "⏭️ Web not affected, skipped" >> $GITHUB_STEP_SUMMARY
           fi

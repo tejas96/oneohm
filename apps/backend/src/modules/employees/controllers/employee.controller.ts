@@ -20,6 +20,7 @@ import {
   ApiReadOne,
   ApiUpdate,
   ApiAction,
+  OrganizationContext,
 } from '@oneohm-epc/shared-utils';
 
 import { CurrentUser } from '../../auth/decorators';
@@ -65,7 +66,6 @@ export class EmployeeController {
     description: 'Returns paginated list of employees. Requires x-organization-id header.',
     responseType: EmployeeResponseDto,
   })
-  @ApiQuery({ name: 'organizationId', required: true, description: 'Organization ID' })
   @ApiQuery({ name: 'page', required: false, example: 1 })
   @ApiQuery({ name: 'limit', required: false, example: 20 })
   @ApiQuery({
@@ -80,7 +80,7 @@ export class EmployeeController {
     description: 'Filter by department',
   })
   async findAll(
-    @Query('organizationId', ParseUUIDPipe) organizationId: string,
+    @OrganizationContext() organizationId: string,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
     @Query('status') status?: UserStatus,
@@ -93,11 +93,12 @@ export class EmployeeController {
   }> {
     if (department) {
       const employees = await this.employeeService.findByDepartment(organizationId, department);
+      const paged = employees.slice((page - 1) * limit, page * limit);
       return {
-        items: employees,
+        items: paged,
         total: employees.length,
-        page: 1,
-        limit: employees.length,
+        page,
+        limit,
       };
     }
 

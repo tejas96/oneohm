@@ -287,26 +287,6 @@
                     </div>
 
                     <!-- Location Capture -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            GPS Location
-                        </label>
-                        <button 
-                            type="button" 
-                            onclick="captureLocation()"
-                            id="locationButton"
-                            class="w-full flex items-center justify-center space-x-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-2xl hover:border-primary hover:bg-primary/5 transition-all"
-                        >
-                            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            </svg>
-                            <span class="text-sm font-medium text-gray-700" id="locationBtn">Capture GPS Location</span>
-                        </button>
-                        <input type="hidden" id="locationCoordinates" name="locationCoordinates" />
-                        <p class="mt-2 text-xs text-gray-500" id="locationText">Optional but recommended for accurate site identification</p>
-                    </div>
-
                     <!-- Property Type & Name -->
                     <div>
                         <label for="propertyType" class="block text-sm font-medium text-gray-700 mb-2">
@@ -522,37 +502,6 @@
             this.value = this.value.toUpperCase();
         });
 
-        // Capture GPS location
-        function captureLocation() {
-            const btn = document.getElementById('locationBtn');
-            const text = document.getElementById('locationText');
-            const button = document.getElementById('locationButton');
-            
-            btn.textContent = 'Capturing location...';
-            
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude.toFixed(6);
-                        const lng = position.coords.longitude.toFixed(6);
-                        document.getElementById('locationCoordinates').value = `POINT(${lat} ${lng})`;
-                        btn.textContent = '✓ Location Captured';
-                        button.classList.add('border-primary', 'bg-primary/5');
-                        button.classList.remove('border-gray-300');
-                        text.textContent = `Lat: ${lat}, Long: ${lng}`;
-                        text.classList.add('text-primary');
-                    },
-                    (error) => {
-                        btn.textContent = 'Location capture failed';
-                        text.textContent = 'Please enable location access or skip this step';
-                        text.classList.add('text-red-500');
-                    }
-                );
-            } else {
-                alert('Geolocation is not supported by your browser');
-            }
-        }
-
         // Step navigation
         function updateStep() {
             // Hide all steps
@@ -658,7 +607,6 @@
                 state: document.getElementById('state').value.trim() || null,
                 country: document.getElementById('country').value.trim(),
                 pincode: document.getElementById('pincode').value.trim() || null,
-                locationCoordinates: document.getElementById('locationCoordinates').value || null,
                 propertyType: document.getElementById('propertyType').value || null,
                 propertyName: document.getElementById('propertyName').value.trim() || null,
                 consumerNumber: document.getElementById('consumerNumber').value.trim() || null,

@@ -22,6 +22,10 @@ export class CustomerResponseDto {
   @Expose()
   userId?: string;
 
+  @ApiPropertyOptional()
+  @Expose()
+  customerCode?: string;
+
   // ==================== Personal Info ====================
   @ApiProperty()
   @Expose()
@@ -109,4 +113,30 @@ export class CustomerResponseDto {
   @ApiPropertyOptional()
   @Expose()
   updatedBy?: string;
+
+  /**
+   * Name of the user who created this customer
+   * Returns 'Self' if customer self-registered (userId === createdBy)
+   */
+  @ApiPropertyOptional({ description: 'Name of the user who created this customer, or "Self" if self-registered' })
+  @Expose()
+  @Transform(({ obj }) => {
+    // If no createdBy (legacy data or system-created), return undefined
+    if (!obj.createdBy) return undefined;
+
+    // If customer self-registered (userId matches createdBy), return 'Self'
+    // Both must be truthy for a valid comparison
+    if (obj.userId && obj.createdBy && obj.userId === obj.createdBy) {
+      return 'Self';
+    }
+
+    // If creator relation wasn't loaded or doesn't exist, return undefined
+    if (!obj.creator) return undefined;
+
+    // Return creator's full name
+    const firstName = obj.creator.firstName || '';
+    const lastName = obj.creator.lastName || '';
+    return `${firstName} ${lastName}`.trim() || undefined;
+  })
+  creatorName?: string;
 }

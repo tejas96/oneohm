@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { InventoryTransactionType } from '@oneohm-epc/shared-types';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
+
+import { toNum } from '../../../../common/utils';
 
 /**
  * Inventory Transaction Response DTO
@@ -39,6 +41,7 @@ export class InventoryTransactionResponseDto {
 
   @ApiProperty({ example: 100 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   quantity!: number;
 
   // ==================== Reference ====================

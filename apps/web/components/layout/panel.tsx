@@ -2,10 +2,12 @@
 
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 
-import { getPanelConfigByPath } from '@/lib/config';
+import { Badge } from '@/components/ui/badge';
+import { getFilteredPanelByPath, useFilteredNavigation, useRoutes } from '@/lib/hooks';
+import type { NavItem, NavBadgeVariant, StatusDotColor } from '@/lib/types';
 import { cn } from '@/lib/utils';
+
 
 interface PanelProps {
   isOpen: boolean;
@@ -13,14 +15,130 @@ interface PanelProps {
   className?: string;
 }
 
+// Status dot color mapping
+const STATUS_DOT_COLORS: Record<StatusDotColor, string> = {
+  hot: 'bg-error',
+  warm: 'bg-warning',
+  cold: 'bg-info',
+  active: 'bg-success',
+  planning: 'bg-info',
+  on_hold: 'bg-warning',
+  completed_project: 'bg-foreground-tertiary',
+};
+
+// Badge variant mapping
+const BADGE_VARIANT_MAP: Record<NavBadgeVariant, 'default' | 'secondary' | 'success' | 'warning' | 'error' | 'info'> = {
+  default: 'secondary',
+  primary: 'default',
+  warning: 'warning',
+  error: 'error',
+  success: 'success',
+  info: 'info',
+};
+
 /**
  * Panel - 200px collapsible sidebar
  * Features: Dynamic content based on rail selection, section headers, menu items
- * Uses centralized navigation config from lib/config/navigation.ts
+ * Supports sub-items with status dots and badge variants per UX spec
+ * Uses filtered navigation based on user permissions and roles
  */
 export function Panel({ isOpen, onClose, className }: PanelProps) {
-  const pathname = usePathname();
-  const { config } = getPanelConfigByPath(pathname);
+  const { pathname, searchParams } = useRoutes();
+  const { navigation } = useFilteredNavigation();
+  const panelData = getFilteredPanelByPath(navigation, pathname);
+  
+  // Build current full URL for comparison (pathname + search params)
+  const searchString = searchParams.toString();
+  const currentFullUrl = searchString ? `${pathname}?${searchString}` : pathname;
+
+  // If no panel config available (user doesn't have access), don't render
+  if (!panelData) {
+    return null;
+  }
+
+  const { config } = panelData;
+
+  // Render a single nav item (supports both regular items and sub-items)
+  const renderNavItem = (item: NavItem, isSubItem = false) => {
+    // Determine active state using proper matching logic:
+    // 1. Items with query params → exact full URL match only
+    // 2. Items with exactMatch: true → exact pathname match only
+    // 3. Items that are dynamic route TARGETS (like /customers/[id]) → match dynamic segments
+    // 4. List items → exact match OR nested dynamic routes (NOT sibling routes)
+    const hasQueryParams = item.href.includes('?');
+    
+    let isActive = false;
+    
+    if (hasQueryParams) {
+      // Filtered views: exact full URL match only
+      isActive = currentFullUrl === item.href;
+    } else if (item.exactMatch) {
+      // Explicit exact match (for action items like "Add Customer")
+      isActive = pathname === item.href;
+    } else {
+      // List items: active if exact match OR viewing a DETAIL page (dynamic ID)
+      // NOT active for sibling static routes like /customers/new
+      const isExact = pathname === item.href && !searchString;
+      
+      // Check if we're on a nested route that should highlight this item
+      // Only match if the segment after the base is a dynamic ID (not a static route)
+      // Dynamic IDs are typically UUIDs or numeric IDs, not words like "new", "edit"
+      let isNestedDynamic = false;
+      if (pathname.startsWith(`${item.href}/`)) {
+        const remainder = pathname.slice(item.href.length + 1); // Get part after base/
+        const nextSegment = remainder.split('/')[0] ?? '';
+        // Consider it a dynamic route if the segment looks like an ID (UUID or number)
+        // Static routes like "new", "edit", "settings" should NOT match
+        const isLikelyDynamicId = /^[0-9a-f-]{8,}$/i.test(nextSegment) || /^\d+$/.test(nextSegment);
+        isNestedDynamic = isLikelyDynamicId;
+      }
+      
+      isActive = isExact || isNestedDynamic;
+    }
+    
+    const Icon = item.icon;
+    const badgeVariant = item.badgeVariant ? BADGE_VARIANT_MAP[item.badgeVariant] : 'secondary';
+
+    return (
+      <Link
+        key={item.id}
+        href={item.href}
+        className={cn(
+          'panel-item',
+          isActive && 'active',
+          item.disabled && 'opacity-50 pointer-events-none',
+          isSubItem && 'sub-item'
+        )}
+        aria-disabled={item.disabled}
+        target={item.external ? '_blank' : undefined}
+        rel={item.external ? 'noopener noreferrer' : undefined}
+      >
+        {/* Status dot (for lead temperature) - 8px for better visibility */}
+        {item.statusDot && (
+          <span
+            className={cn(
+              'size-2 rounded-full mr-2 shrink-0',
+              STATUS_DOT_COLORS[item.statusDot]
+            )}
+          />
+        )}
+        
+        {/* Icon (for regular items without status dot) */}
+        {!item.statusDot && Icon && (
+          <Icon className="size-icon-sm mr-2.5 shrink-0" />
+        )}
+        
+        <span className="flex-1 truncate">{item.label}</span>
+        
+        {/* Badge with variant */}
+        {item.badge !== undefined && (
+          <Badge variant={badgeVariant} size="xs" className="ml-2">
+            {item.badge}
+          </Badge>
+        )}
+      </Link>
+    );
+  };
 
   return (
     <aside
@@ -45,11 +163,11 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
         </span>
         <button
           onClick={onClose}
-          className="w-7 h-7 flex items-center justify-center text-foreground-tertiary rounded-md cursor-pointer hover:bg-muted hover:text-foreground-secondary transition-all"
+          className="size-7 flex items-center justify-center text-foreground-tertiary rounded-md cursor-pointer hover:bg-muted hover:text-foreground-secondary transition-all"
           title="Close panel (⌘\)"
           aria-label="Close panel"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="size-icon-sm" />
         </button>
       </div>
 
@@ -63,33 +181,13 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
             </div>
 
             {/* Section Items */}
-            {section.items.map((item) => {
-              const isActive = pathname === item.href;
-              const Icon = item.icon;
-
-              return (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  className={cn(
-                    'panel-item',
-                    isActive && 'active',
-                    item.disabled && 'opacity-50 pointer-events-none'
-                  )}
-                  aria-disabled={item.disabled}
-                  target={item.external ? '_blank' : undefined}
-                  rel={item.external ? 'noopener noreferrer' : undefined}
-                >
-                  {Icon && <Icon className="w-4 h-4 mr-2.5 shrink-0" />}
-                  <span className="flex-1 truncate">{item.label}</span>
-                  {item.badge !== undefined && (
-                    <span className="ml-2 px-1.5 py-0.5 text-2xs font-medium bg-muted text-muted-foreground rounded">
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+            {section.items.map((item) => (
+              <div key={item.id}>
+                {renderNavItem(item)}
+                {/* Render sub-items if present */}
+                {item.children?.map((child) => renderNavItem(child, true))}
+              </div>
+            ))}
           </div>
         ))}
       </div>

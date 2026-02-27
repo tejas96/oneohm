@@ -32,9 +32,41 @@
             }
         }
     </script>
+    <!-- AG Grid CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@33.0.4/dist/ag-grid-community.min.js"></script>
     <style>
         body { font-family: 'Inter', system-ui, sans-serif; }
-        .page-container { margin-left: 248px; margin-top: 48px; min-height: calc(100vh - 48px); background: #f4f4f5; }
+        
+        /* AG Grid Customization */
+        .ag-theme-alpine {
+            --ag-header-height: 40px;
+            --ag-row-height: 52px;
+            --ag-font-family: 'Inter', system-ui, sans-serif;
+            --ag-font-size: 13px;
+            --ag-header-background-color: #fafafa;
+            --ag-header-foreground-color: #6b7280;
+            --ag-odd-row-background-color: #ffffff;
+            --ag-row-hover-color: rgba(118, 192, 68, 0.04);
+            --ag-selected-row-background-color: rgba(118, 192, 68, 0.08);
+            --ag-border-color: #f3f4f6;
+            --ag-cell-horizontal-padding: 12px;
+        }
+        .ag-theme-alpine .ag-header-cell-text { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+        .ag-theme-alpine .ag-cell { display: flex; align-items: center; }
+        .ag-theme-alpine .ag-row { border-bottom: 1px solid #f3f4f6; }
+        #quotesGrid { width: 100%; height: calc(100vh - 260px); min-height: 400px; }
+        /* Action Menu Dropdown */
+        .action-menu { position: relative; display: inline-block; }
+        .action-menu-btn { cursor: pointer; border: none; background: none; padding: 6px; border-radius: 6px; }
+        .action-menu-btn:hover { background: #f3f4f6; }
+        .action-dropdown { position: fixed; z-index: 9999; min-width: 160px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); display: none; }
+        .action-dropdown.show { display: block; }
+        .action-dropdown a, .action-dropdown button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 14px; font-size: 13px; color: #374151; text-align: left; border: none; background: none; cursor: pointer; }
+        .action-dropdown a:hover, .action-dropdown button:hover { background: #f3f4f6; }
+        .action-dropdown .text-red-600:hover { background: #fef2f2; }
+        .action-dropdown a:first-child, .action-dropdown button:first-child { border-radius: 8px 8px 0 0; }
+        .action-dropdown a:last-child, .action-dropdown button:last-child { border-radius: 0 0 8px 8px; }
+        .page-container { margin-left: 248px; margin-top: 48px; min-height: calc(100vh - 48px); background: #fafafa; }
         
         /* Status tabs */
         .status-tab { padding: 8px 16px; font-size: 13px; font-weight: 500; color: #71717a; background: transparent; border: none; border-radius: 6px; cursor: pointer; transition: all 150ms; display: flex; align-items: center; gap: 6px; }
@@ -53,13 +85,13 @@
         .table-row:hover { background: #f9fafb; }
         
         /* Checkbox */
-        .checkbox { width: 18px; height: 18px; border: 1px solid #e4e4e7; border-radius: 4px; cursor: pointer; appearance: none; background: white; }
-        .checkbox:checked { background: #76c044; border-color: #76c044; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center; }
+        .checkbox { width: 15px; height: 15px; border: 1px solid #d4d4d8; border-radius: 3px; cursor: pointer; appearance: none; background: white; }
+        .checkbox:checked { background: #76c044; border-color: #76c044; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center; }
         
         /* Dropdown */
-        .dropdown-menu { display: none; position: absolute; right: 0; top: 100%; min-width: 180px; background: white; border: 1px solid #e4e4e7; border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); z-index: 50; padding: 4px; }
+        .dropdown-menu { display: none; position: absolute; right: 0; top: 100%; min-width: 160px; background: white; border: 1px solid #e4e4e7; border-radius: 6px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); z-index: 50; padding: 3px; }
         .dropdown-menu.show { display: block; }
-        .dropdown-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 14px; border-radius: 6px; cursor: pointer; transition: background 150ms; }
+        .dropdown-item { display: flex; align-items: center; gap: 6px; padding: 6px 10px; font-size: 13px; border-radius: 4px; cursor: pointer; transition: background 150ms; color: #52525b; }
         .dropdown-item:hover { background: #f4f4f5; }
         
         /* Pagination */
@@ -72,9 +104,9 @@
         }
     </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50 text-[13px]">
     <!-- Header -->
-    <header class="fixed top-0 left-0 right-0 h-12 bg-white border-b border-gray-100 z-50 flex items-center px-4">
+    <header class="fixed top-0 left-0 right-0 h-12 bg-white border-b border-gray-100 z-50 flex items-center px-3">
         <a href="../dashboard/index.html" class="flex items-center">
             <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto">
         </a>
@@ -88,7 +120,7 @@
         </div>
         <div class="flex items-center gap-2">
             <button class="p-2 hover:bg-gray-50 rounded-lg"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></button>
-            <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">RK</div>
+            <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">RK</div>
         </div>
     </header>
     
@@ -106,7 +138,7 @@
     </aside>
     
     <!-- Quotes Sub-nav Panel -->
-    <aside class="fixed left-12 top-12 w-52 h-[calc(100vh-48px)] bg-white border-r border-gray-100 z-30 overflow-y-auto">
+    <aside class="fixed left-12 top-12 w-[200px] h-[calc(100vh-48px)] bg-white border-r border-gray-100 z-30 overflow-y-auto">
         <div class="p-4 border-b border-gray-100">
             <h2 class="font-semibold text-gray-800">Quotations</h2>
         </div>
@@ -238,147 +270,13 @@
         </div>
         
         <!-- Table -->
+        <!-- AG Grid Table -->
         <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50 border-b border-gray-100">
-                    <tr>
-                        <th class="w-12 px-4 py-2">
-                            <input type="checkbox" class="checkbox">
-                        </th>
-                        <th class="px-3 py-2 text-left font-medium text-gray-500">Quote #</th>
-                        <th class="px-3 py-2 text-left font-medium text-gray-500">Customer</th>
-                        <th class="px-3 py-2 text-left font-medium text-gray-500">Property</th>
-                        <th class="px-3 py-2 text-left font-medium text-gray-500">System</th>
-                        <th class="px-3 py-2 text-left font-medium text-gray-500">Value</th>
-                        <th class="px-3 py-2 text-left font-medium text-gray-500">Status</th>
-                        <th class="px-3 py-2 text-left font-medium text-gray-500">Valid Until</th>
-                        <th class="w-12 px-4 py-2"></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    <tr class="table-row">
-                        <td class="px-4 py-2"><input type="checkbox" class="checkbox"></td>
-                        <td class="px-4 py-2">
-                            <a href="detail.html" class="font-medium text-primary hover:underline">QT-2026-0042</a>
-                        </td>
-                        <td class="px-4 py-2">
-                            <div class="flex items-center gap-2">
-                                <div class="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold text-xs">RS</div>
-                                <span class="text-gray-900">Rajesh Sharma</span>
-                            </div>
-                        </td>
-                        <td class="px-3 py-2 text-gray-500">Koramangala Residence</td>
-                        <td class="px-3 py-2 text-gray-500">5 kW</td>
-                        <td class="px-3 py-2 text-gray-900 font-medium">₹3,25,000</td>
-                        <td class="px-4 py-2"><span class="px-2.5 py-0.5 text-xs font-semibold badge-sent rounded-full">Sent</span></td>
-                        <td class="px-3 py-2 text-gray-500">Feb 12, 2026</td>
-                        <td class="px-4 py-2">
-                            <button class="p-1 hover:bg-gray-50 rounded">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr class="table-row">
-                        <td class="px-4 py-2"><input type="checkbox" class="checkbox"></td>
-                        <td class="px-4 py-2">
-                            <a href="detail.html" class="font-medium text-primary hover:underline">QT-2026-0041</a>
-                        </td>
-                        <td class="px-4 py-2">
-                            <div class="flex items-center gap-2">
-                                <div class="w-7 h-7 rounded-full bg-secondary/15 flex items-center justify-center text-secondary font-semibold text-xs">PK</div>
-                                <span class="text-gray-900">Priya Kulkarni</span>
-                            </div>
-                        </td>
-                        <td class="px-3 py-2 text-gray-500">Jayanagar Villa</td>
-                        <td class="px-3 py-2 text-gray-500">7 kW</td>
-                        <td class="px-3 py-2 text-gray-900 font-medium">₹4,50,000</td>
-                        <td class="px-4 py-2"><span class="px-2.5 py-0.5 text-xs font-semibold badge-accepted rounded-full">Accepted</span></td>
-                        <td class="px-3 py-2 text-gray-500">—</td>
-                        <td class="px-4 py-2">
-                            <button class="p-1 hover:bg-gray-50 rounded">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr class="table-row">
-                        <td class="px-4 py-2"><input type="checkbox" class="checkbox"></td>
-                        <td class="px-4 py-2">
-                            <a href="detail.html" class="font-medium text-primary hover:underline">QT-2026-0040</a>
-                        </td>
-                        <td class="px-4 py-2">
-                            <div class="flex items-center gap-2">
-                                <div class="w-7 h-7 rounded-full bg-warning/15 flex items-center justify-center text-warning font-semibold text-xs">SG</div>
-                                <span class="text-gray-900">Sneha Gupta</span>
-                            </div>
-                        </td>
-                        <td class="px-3 py-2 text-gray-500">Indiranagar Apartment</td>
-                        <td class="px-3 py-2 text-gray-500">3 kW</td>
-                        <td class="px-3 py-2 text-gray-900 font-medium">₹2,10,000</td>
-                        <td class="px-4 py-2"><span class="px-2.5 py-0.5 text-xs font-semibold badge-viewed rounded-full">Viewed</span></td>
-                        <td class="px-3 py-2 text-gray-500">Feb 8, 2026</td>
-                        <td class="px-4 py-2">
-                            <button class="p-1 hover:bg-gray-50 rounded">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr class="table-row">
-                        <td class="px-4 py-2"><input type="checkbox" class="checkbox"></td>
-                        <td class="px-4 py-2">
-                            <a href="detail.html" class="font-medium text-primary hover:underline">QT-2026-0039</a>
-                        </td>
-                        <td class="px-4 py-2">
-                            <div class="flex items-center gap-2">
-                                <div class="w-7 h-7 rounded-full bg-error/15 flex items-center justify-center text-error font-semibold text-xs">AV</div>
-                                <span class="text-gray-900">Amit Verma</span>
-                            </div>
-                        </td>
-                        <td class="px-3 py-2 text-gray-500">HSR Layout Office</td>
-                        <td class="px-3 py-2 text-gray-500">15 kW</td>
-                        <td class="px-3 py-2 text-gray-900 font-medium">₹8,75,000</td>
-                        <td class="px-4 py-2"><span class="px-2.5 py-0.5 text-xs font-semibold badge-draft rounded-full">Draft</span></td>
-                        <td class="px-3 py-2 text-gray-500">—</td>
-                        <td class="px-4 py-2">
-                            <button class="p-1 hover:bg-gray-50 rounded">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr class="table-row">
-                        <td class="px-4 py-2"><input type="checkbox" class="checkbox"></td>
-                        <td class="px-4 py-2">
-                            <a href="detail.html" class="font-medium text-primary hover:underline">QT-2026-0038</a>
-                        </td>
-                        <td class="px-4 py-2">
-                            <div class="flex items-center gap-2">
-                                <div class="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold text-xs">RS</div>
-                                <span class="text-gray-900">Rajesh Sharma</span>
-                            </div>
-                        </td>
-                        <td class="px-3 py-2 text-gray-500">Koramangala Residence</td>
-                        <td class="px-3 py-2 text-gray-500">3 kW</td>
-                        <td class="px-3 py-2 text-gray-900 font-medium">₹2,10,000</td>
-                        <td class="px-4 py-2"><span class="px-2.5 py-0.5 text-xs font-semibold badge-rejected rounded-full">Rejected</span></td>
-                        <td class="px-3 py-2 text-gray-500">—</td>
-                        <td class="px-4 py-2">
-                            <button class="p-1 hover:bg-gray-50 rounded">
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-            
-            <!-- Pagination -->
-            <div class="px-3 py-2 border-t border-gray-100 flex items-center justify-between">
-                <span class="text-sm text-gray-500">Showing 1-5 of 48 quotes</span>
-                <div class="flex gap-1">
-                    <button class="page-btn" disabled>Previous</button>
-                    <button class="page-btn active">1</button>
-                    <button class="page-btn">2</button>
-                    <button class="page-btn">3</button>
-                    <button class="page-btn">Next</button>
-                </div>
+            <div id="quotesGrid" class="ag-theme-alpine"></div>
+            <!-- Pagination Info -->
+            <div id="paginationInfo" class="flex items-center justify-between px-4 py-3 border-t border-gray-100 text-sm text-gray-500">
+                <span id="rowInfo">Showing 1-5 of 5 quotes</span>
+                <span id="selectedInfo" class="hidden text-primary font-medium"></span>
             </div>
         </div>
     </main>
@@ -391,6 +289,189 @@
                 this.classList.add('active');
             });
         });
+        
+        // ==================== AG GRID INITIALIZATION ====================
+        const quoteRowData = [
+            { id: 1, quoteNo: 'QT-2026-0042', customer: 'Rajesh Sharma', initials: 'RS', property: 'Koramangala Residence', system: '10 kW', value: 750000, status: 'Sent', validUntil: 'Feb 20, 2026' },
+            { id: 2, quoteNo: 'QT-2026-0041', customer: 'Priya Kulkarni', initials: 'PK', property: 'Jayanagar Villa', system: '8 kW', value: 620000, status: 'Accepted', validUntil: 'Feb 15, 2026' },
+            { id: 3, quoteNo: 'QT-2026-0040', customer: 'Amit Verma', initials: 'AV', property: 'HSR Layout Office', system: '25 kW', value: 1850000, status: 'Draft', validUntil: '-' },
+            { id: 4, quoteNo: 'QT-2026-0039', customer: 'Sneha Gupta', initials: 'SG', property: 'Whitefield Factory', system: '50 kW', value: 3500000, status: 'Viewed', validUntil: 'Feb 10, 2026' },
+            { id: 5, quoteNo: 'QT-2026-0038', customer: 'Mukesh Kumar', initials: 'MK', property: 'Indiranagar Apartment', system: '5 kW', value: 380000, status: 'Expired', validUntil: 'Jan 28, 2026' },
+        ];
+
+        const quoteStatusColors = {
+            'Draft': 'bg-gray-100 text-gray-600',
+            'Sent': 'bg-amber-50 text-amber-700',
+            'Viewed': 'bg-blue-50 text-blue-700',
+            'Accepted': 'bg-green-50 text-green-700',
+            'Rejected': 'bg-red-50 text-red-700',
+            'Expired': 'bg-gray-100 text-gray-500',
+        };
+
+        const quoteColumnDefs = [
+            { headerName: '', field: 'checkbox', width: 50, headerCheckboxSelection: true, checkboxSelection: true, sortable: false, filter: false },
+            { 
+                headerName: 'Quote #', field: 'quoteNo', width: 130, sortable: true, filter: true,
+                cellRenderer: params => `<a href="detail.html" class="font-medium text-primary hover:underline">${params.value}</a>`,
+            },
+            { 
+                headerName: 'Customer', field: 'customer', flex: 1, sortable: true, filter: true,
+                cellRenderer: params => `
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold text-xs">${params.data.initials}</div>
+                        <span class="text-gray-900">${params.value}</span>
+                    </div>
+                `,
+            },
+            { headerName: 'Property', field: 'property', flex: 1, sortable: true, filter: true },
+            { headerName: 'System', field: 'system', width: 100, sortable: true, filter: true },
+            { 
+                headerName: 'Value', field: 'value', width: 130, sortable: true, filter: true,
+                cellRenderer: params => `<span class="font-medium text-gray-900">₹${params.value.toLocaleString('en-IN')}</span>`,
+            },
+            { 
+                headerName: 'Status', field: 'status', width: 120, sortable: true, filter: true,
+                cellRenderer: params => `<span class="px-1.5 py-0.5 text-[11px] font-medium ${quoteStatusColors[params.value] || 'bg-gray-100 text-gray-600'} rounded">${params.value}</span>`,
+            },
+            { headerName: 'Valid Until', field: 'validUntil', width: 120, sortable: true, filter: false, cellClass: 'text-gray-500' },
+            { 
+                headerName: '', field: 'actions', width: 50, sortable: false, filter: false,
+                cellRenderer: params => `
+                    <button class="action-menu-btn" data-quote-id="${params.data.id}" onclick="showQuoteMenu(event, '${params.data.id}')">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg>
+                    </button>
+                `,
+            },
+        ];
+
+        const quoteGridOptions = {
+            columnDefs: quoteColumnDefs,
+            rowData: quoteRowData,
+            rowSelection: 'multiple',
+            suppressRowClickSelection: true,
+            domLayout: 'autoHeight',
+            defaultColDef: { resizable: true },
+            // Pagination
+            pagination: true,
+            paginationPageSize: 10,
+            paginationPageSizeSelector: [10, 25, 50, 100],
+            onPaginationChanged: updatePaginationInfo,
+            onGridReady: updatePaginationInfo,
+        };
+
+        // Store grid API reference
+        let quoteGridApi = null;
+        
+        // Update pagination info
+        function updatePaginationInfo() {
+            if (!quoteGridApi) return;
+            const totalRows = quoteGridApi.getDisplayedRowCount();
+            const pageSize = quoteGridApi.paginationGetPageSize();
+            const currentPage = quoteGridApi.paginationGetCurrentPage();
+            const start = currentPage * pageSize + 1;
+            const end = Math.min(start + pageSize - 1, totalRows);
+            
+            const rowInfo = document.getElementById('rowInfo');
+            if (rowInfo) {
+                rowInfo.textContent = `Showing ${start}-${end} of ${totalRows} quotes`;
+            }
+        }
+        
+        // Update selected count
+        function updateSelectedCount() {
+            if (!quoteGridApi) return;
+            const selectedRows = quoteGridApi.getSelectedRows();
+            const selectedInfo = document.getElementById('selectedInfo');
+            
+            if (selectedRows.length > 0) {
+                if (selectedInfo) {
+                    selectedInfo.textContent = `${selectedRows.length} selected`;
+                    selectedInfo.classList.remove('hidden');
+                }
+            } else {
+                if (selectedInfo) selectedInfo.classList.add('hidden');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const gridDiv = document.getElementById('quotesGrid');
+            if (gridDiv) {
+                const gridInstance = agGrid.createGrid(gridDiv, {
+                    ...quoteGridOptions,
+                    onSelectionChanged: updateSelectedCount,
+                });
+                quoteGridApi = gridInstance.api;
+            }
+        });
+
+        // Quote action menu
+        let currentQuoteId = null;
+        
+        function showQuoteMenu(event, quoteId) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const menu = document.getElementById('quoteActionMenu');
+            const rect = event.currentTarget.getBoundingClientRect();
+            
+            currentQuoteId = quoteId;
+            menu.style.top = (rect.bottom + 4) + 'px';
+            menu.style.left = (rect.right - 160) + 'px';
+            menu.classList.add('show');
+        }
+        
+        function hideQuoteMenu() {
+            const menu = document.getElementById('quoteActionMenu');
+            menu.classList.remove('show');
+            currentQuoteId = null;
+        }
+        
+        function quoteMenuAction(action) {
+            const quoteId = currentQuoteId;
+            hideQuoteMenu();
+            if (action === 'view') {
+                window.location.href = 'detail.html?id=' + quoteId;
+            } else if (action === 'edit') {
+                window.location.href = 'builder.html?id=' + quoteId;
+            } else if (action === 'duplicate') {
+                alert('Duplicate quote: ' + quoteId + ' - Coming Soon');
+            } else if (action === 'send') {
+                alert('Send quote: ' + quoteId + ' - Coming Soon');
+            } else if (action === 'download') {
+                alert('Download quote PDF: ' + quoteId + ' - Coming Soon');
+            }
+        }
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#quoteActionMenu') && !e.target.closest('.action-menu-btn')) {
+                hideQuoteMenu();
+            }
+        });
     </script>
+    
+    <!-- Global Action Menu (portal) -->
+    <div id="quoteActionMenu" class="action-dropdown">
+        <a href="javascript:void(0)" onclick="quoteMenuAction('view')">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+            View Details
+        </a>
+        <a href="javascript:void(0)" onclick="quoteMenuAction('edit')">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            Edit Quote
+        </a>
+        <button onclick="quoteMenuAction('duplicate')">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            Duplicate
+        </button>
+        <button onclick="quoteMenuAction('send')">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            Send Quote
+        </button>
+        <button onclick="quoteMenuAction('download')">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Download PDF
+        </button>
+    </div>
 </body>
 </html>

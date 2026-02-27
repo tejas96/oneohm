@@ -148,7 +148,7 @@ const VerticalTabsList = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.List
     ref={ref}
-    className={cn('flex flex-col space-y-1 w-48', className)}
+    className={cn('flex flex-col space-y-1 w-sidebar-tabs', className)}
     {...props}
   />
 ));

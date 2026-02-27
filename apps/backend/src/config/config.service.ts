@@ -13,6 +13,7 @@ import {
   MonitoringConfig,
   RedisConfig,
   SecurityConfig,
+  SeedConfig,
   StorageConfig,
   ThirdPartyConfig,
 } from './config.interface';
@@ -118,6 +119,13 @@ export class ConfigService {
   }
 
   /**
+   * Seed Configuration
+   */
+  get seed(): SeedConfig {
+    return this.nestConfigService.get<SeedConfig>('seed')!;
+  }
+
+  /**
    * Get complete configuration
    */
   get all(): Configuration {
@@ -134,6 +142,7 @@ export class ConfigService {
       monitoring: this.monitoring,
       thirdParty: this.thirdParty,
       integrations: this.integrations,
+      seed: this.seed,
     };
   }
 

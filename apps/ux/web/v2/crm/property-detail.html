@@ -32,9 +32,17 @@
             }
         }
     </script>
+    <!-- AG Grid CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@33.0.4/dist/ag-grid-community.min.js"></script>
     <style>
         body { font-family: 'Inter', system-ui, sans-serif; }
-        .page-container { margin-left: 248px; margin-top: 48px; min-height: calc(100vh - 48px); background: #f4f4f5; }
+        .page-container { margin-left: 248px; margin-top: 48px; min-height: calc(100vh - 48px); background: #fafafa; }
+        
+        /* AG Grid for small tables */
+        .ag-theme-alpine { --ag-header-height: 36px; --ag-row-height: 40px; --ag-font-family: 'Inter', sans-serif; --ag-font-size: 13px; --ag-header-background-color: transparent; --ag-border-color: #f3f4f6; }
+        .ag-theme-alpine .ag-header-cell-text { font-size: 12px; font-weight: 500; color: #6b7280; }
+        .ag-theme-alpine .ag-cell { display: flex; align-items: center; }
+        #propertyQuotesGrid { width: 100%; height: auto; min-height: 120px; }
         
         /* Inline editing */
         .editable { display: flex; align-items: center; gap: 8px; padding: 4px 8px; margin: -4px -8px; border-radius: 6px; cursor: pointer; transition: background 150ms; }
@@ -54,7 +62,7 @@
         .temp-btn.active.cold { background: #60a5fa; color: white; }
         
         /* Tabs */
-        .tab-btn { padding: 12px 16px; font-size: 14px; font-weight: 500; color: #71717a; border-bottom: 2px solid transparent; transition: all 150ms; }
+        .tab-btn { padding: 10px 14px; font-size: 13px; font-weight: 500; color: #71717a; border-bottom: 2px solid transparent; transition: all 150ms; }
         .tab-btn:hover { color: #09090b; }
         .tab-btn.active { color: #76c044; border-bottom-color: #76c044; }
         .tab-content { display: none; }
@@ -68,9 +76,9 @@
         }
     </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-50 text-[13px]">
     <!-- Header -->
-    <header class="fixed top-0 left-0 right-0 h-12 bg-white border-b border-gray-100 z-50 flex items-center px-4">
+    <header class="fixed top-0 left-0 right-0 h-12 bg-white border-b border-gray-100 z-50 flex items-center px-3">
         <a href="../dashboard/index.html" class="flex items-center">
             <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto">
         </a>
@@ -84,7 +92,7 @@
         </div>
         <div class="flex items-center gap-2">
             <button class="p-2 hover:bg-gray-50 rounded-lg"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></button>
-            <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">RK</div>
+            <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">RK</div>
         </div>
     </header>
     
@@ -99,7 +107,7 @@
     </aside>
     
     <!-- CRM Sub-nav Panel -->
-    <aside class="fixed left-12 top-12 w-52 h-[calc(100vh-48px)] bg-white border-r border-gray-100 z-30 overflow-y-auto">
+    <aside class="fixed left-12 top-12 w-[200px] h-[calc(100vh-48px)] bg-white border-r border-gray-100 z-30 overflow-y-auto">
         <div class="p-4 border-b border-gray-100">
             <h2 class="font-semibold text-gray-800">Sales & CRM</h2>
         </div>
@@ -122,7 +130,7 @@
     </aside>
     
     <!-- Main Content -->
-    <main class="page-container p-4">
+    <main class="page-container p-5">
         <!-- Breadcrumb -->
         <nav class="flex items-center gap-2 text-sm text-gray-500 mb-4">
             <a href="customers.html" class="hover:text-gray-900">Customers</a>
@@ -137,11 +145,11 @@
             <div>
                 <div class="flex items-center gap-3 mb-2">
                     <h1 class="text-xl font-semibold text-gray-900">Koramangala Residence</h1>
-                    <button class="flex items-center gap-1 px-3 py-1 bg-red-500 text-white text-xs font-semibold rounded-full">
-                        <span class="w-2 h-2 rounded-full bg-white"></span>
+                    <button class="flex items-center gap-1 px-2 py-0.5 bg-red-500 text-white text-[11px] font-medium rounded">
+                        <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
                         Hot
                     </button>
-                    <span class="px-2.5 py-1 text-xs font-medium bg-blue-50 text-blue-700 rounded-full flex items-center gap-1">
+                    <span class="px-1.5 py-0.5 text-[11px] font-medium bg-blue-50 text-blue-700 rounded flex items-center gap-1">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         Wants Loan
                     </span>
@@ -149,13 +157,17 @@
                 <p class="text-gray-500">456, 5th Block, Koramangala, Bangalore - 560034</p>
             </div>
             <div class="flex items-center gap-3">
-                <a href="schedule-visit.html" class="flex items-center gap-2 px-3 py-1.5 border border-gray-300 rounded-lg font-medium text-sm hover:bg-gray-50">
+                <a href="schedule-visit.html" class="flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded-lg font-medium text-sm hover:bg-gray-50">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     Schedule Visit
                 </a>
-                <a href="../quotes/builder.html" class="flex items-center gap-2 px-3 py-1.5 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark">
+                <a href="../quotes/builder.html" class="flex items-center gap-2 px-3 py-1.5 border border-gray-200 rounded-lg font-medium text-sm hover:bg-gray-50">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     Create Quote
+                </a>
+                <a href="../projects/list.html" class="flex items-center gap-2 px-3 py-1.5 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                    Convert to Project
                 </a>
             </div>
         </div>
@@ -243,9 +255,9 @@
                 </div>
             </div>
             
-            <!-- Lead Status Card -->
+            <!-- Lead Status & Followups Card -->
             <div class="bg-white rounded-lg border border-gray-100">
-                <div class="p-4 border-b border-gray-100">
+                <div class="p-4 border-b border-gray-100 flex items-center justify-between">
                     <h3 class="font-semibold text-gray-900">Lead Status</h3>
                 </div>
                 <div class="p-4 space-y-4">
@@ -267,28 +279,78 @@
                             </button>
                         </div>
                     </div>
-                    
-                    <!-- Next Follow-up -->
-                    <div>
-                        <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Next Follow-up</label>
-                        <input type="date" value="2026-01-31" class="w-full mt-1 px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                </div>
+                
+                <!-- Followups Section -->
+                <div class="border-t border-gray-100">
+                    <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+                        <h4 class="font-medium text-gray-900 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Followups
+                            <span class="px-1.5 py-0.5 text-[10px] font-medium bg-primary/10 text-primary rounded" id="followupCount">2</span>
+                        </h4>
+                        <button onclick="openAddFollowupModal()" class="flex items-center gap-1 px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10 rounded transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                            Add
+                        </button>
                     </div>
-                    
-                    <!-- Last Contact -->
-                    <div>
-                        <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Last Contact</label>
-                        <p class="text-gray-900 mt-1">Jan 28, 2026 at 2:30 PM</p>
+                    <div class="p-3 space-y-2 max-h-[300px] overflow-y-auto" id="followupsList">
+                        <!-- Followup Item 1 - Pending -->
+                        <div class="p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="px-1.5 py-0.5 text-[10px] font-medium bg-secondary/10 text-secondary rounded">Visit</span>
+                                        <span class="px-1.5 py-0.5 text-[10px] font-medium bg-red-100 text-red-700 rounded">High</span>
+                                    </div>
+                                    <p class="text-sm font-medium text-gray-900 truncate">Site measurement visit</p>
+                                    <p class="text-xs text-gray-500 mt-1">Feb 15, 2026 at 10:00 AM</p>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button onclick="completeFollowup('1')" class="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Mark Complete">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    </button>
+                                    <button onclick="editFollowup('1')" class="p-1.5 text-gray-400 hover:bg-gray-100 rounded" title="Edit">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Followup Item 2 - Pending -->
+                        <div class="p-3 bg-gray-50 border border-gray-100 rounded-lg">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="px-1.5 py-0.5 text-[10px] font-medium bg-purple-100 text-purple-700 rounded">Meeting</span>
+                                        <span class="px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded">Normal</span>
+                                    </div>
+                                    <p class="text-sm font-medium text-gray-900 truncate">Contract discussion</p>
+                                    <p class="text-xs text-gray-500 mt-1">Feb 18, 2026 at 2:00 PM</p>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button onclick="completeFollowup('2')" class="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Mark Complete">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    </button>
+                                    <button onclick="editFollowup('2')" class="p-1.5 text-gray-400 hover:bg-gray-100 rounded" title="Edit">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Completed Followup -->
+                        <div class="p-3 bg-green-50/50 border border-green-100 rounded-lg opacity-70">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="px-1.5 py-0.5 text-[10px] font-medium bg-green-100 text-green-700 rounded">✓ Completed</span>
+                                        <span class="px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded">Task</span>
+                                    </div>
+                                    <p class="text-sm font-medium text-gray-700 truncate line-through">Send initial quote</p>
+                                    <p class="text-xs text-gray-400 mt-1">Completed Feb 10, 2026</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <!-- Notes -->
-                    <div>
-                        <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Follow-up Notes</label>
-                        <textarea class="w-full mt-1 px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 min-h-[80px]" placeholder="Add notes...">Customer is interested in 5kW system. Wants to discuss financing options. Follow up on quote sent yesterday.</textarea>
-                    </div>
-                    
-                    <button class="w-full px-3 py-1.5 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark">
-                        Save Changes
-                    </button>
                 </div>
             </div>
         </div>
@@ -298,6 +360,7 @@
             <div class="border-b border-gray-100 flex overflow-x-auto">
                 <button class="tab-btn active" onclick="switchTab('visits')">Site Visit</button>
                 <button class="tab-btn" onclick="switchTab('quotes')">Quotes</button>
+                <button class="tab-btn" onclick="switchTab('followups')">Followups</button>
                 <button class="tab-btn" onclick="switchTab('notes')">Notes</button>
             </div>
             
@@ -352,40 +415,110 @@
             
             <!-- Quotes Tab -->
             <div id="tab-quotes" class="tab-content p-4">
-                <table class="w-full text-sm">
-                    <thead class="border-b border-gray-100">
-                        <tr>
-                            <th class="text-left py-2 px-2 font-medium text-gray-500">Quote #</th>
-                            <th class="text-left py-2 px-2 font-medium text-gray-500">System Size</th>
-                            <th class="text-left py-2 px-2 font-medium text-gray-500">Total Value</th>
-                            <th class="text-left py-2 px-2 font-medium text-gray-500">Status</th>
-                            <th class="text-left py-2 px-2 font-medium text-gray-500">Date</th>
-                            <th class="py-3 px-2"></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        <tr class="hover:bg-gray-50">
-                            <td class="py-3 px-2 font-medium text-primary">QT-2026-0042</td>
-                            <td class="py-3 px-2 text-gray-500">5 kW</td>
-                            <td class="py-3 px-2 text-gray-900 font-medium">₹3,25,000</td>
-                            <td class="py-3 px-2"><span class="px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">Sent</span></td>
-                            <td class="py-3 px-2 text-gray-500">Jan 28, 2026</td>
-                            <td class="py-3 px-2">
-                                <a href="../quotes/detail.html" class="text-primary text-sm hover:underline">View</a>
-                            </td>
-                        </tr>
-                        <tr class="hover:bg-gray-50">
-                            <td class="py-3 px-2 font-medium text-primary">QT-2026-0038</td>
-                            <td class="py-3 px-2 text-gray-500">3 kW</td>
-                            <td class="py-3 px-2 text-gray-900 font-medium">₹2,10,000</td>
-                            <td class="py-3 px-2"><span class="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded-full">Rejected</span></td>
-                            <td class="py-3 px-2 text-gray-500">Jan 22, 2026</td>
-                            <td class="py-3 px-2">
-                                <a href="../quotes/detail.html" class="text-primary text-sm hover:underline">View</a>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div id="propertyQuotesGrid" class="ag-theme-alpine"></div>
+            </div>
+            
+            <!-- Followups Tab -->
+            <div id="tab-followups" class="tab-content p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <button onclick="filterFollowups('pending')" class="px-3 py-1.5 text-xs font-medium bg-amber-100 text-amber-700 rounded-lg">Pending (2)</button>
+                        <button onclick="filterFollowups('completed')" class="px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-100 rounded-lg">Completed (3)</button>
+                        <button onclick="filterFollowups('all')" class="px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-100 rounded-lg">All (5)</button>
+                    </div>
+                    <button onclick="openAddFollowupModal()" class="flex items-center gap-2 px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-medium hover:bg-primary-dark">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                        Add Followup
+                    </button>
+                </div>
+                <div class="space-y-3">
+                    <!-- Pending Followup 1 -->
+                    <div class="p-4 bg-amber-50 border border-amber-100 rounded-lg">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="px-2 py-0.5 text-[11px] font-medium bg-secondary text-white rounded">Visit</span>
+                                    <span class="px-2 py-0.5 text-[11px] font-medium bg-red-500 text-white rounded">High Priority</span>
+                                    <span class="px-2 py-0.5 text-[11px] font-medium bg-amber-500 text-white rounded">Pending</span>
+                                </div>
+                                <h4 class="font-medium text-gray-900">Site measurement visit</h4>
+                                <p class="text-sm text-gray-500 mt-1">Customer prefers morning visits. Need to bring measurement tools.</p>
+                                <div class="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        Feb 15, 2026 at 10:00 AM
+                                    </span>
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                        Assigned: Ravi Kumar
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 ml-4">
+                                <button class="p-2 text-green-600 hover:bg-green-50 rounded-lg" title="Mark Complete">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                </button>
+                                <button class="p-2 text-gray-400 hover:bg-gray-100 rounded-lg" title="Edit">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                </button>
+                                <button class="p-2 text-red-400 hover:bg-red-50 rounded-lg" title="Cancel">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Pending Followup 2 -->
+                    <div class="p-4 bg-white border border-gray-100 rounded-lg">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="px-2 py-0.5 text-[11px] font-medium bg-purple-500 text-white rounded">Meeting</span>
+                                    <span class="px-2 py-0.5 text-[11px] font-medium bg-gray-400 text-white rounded">Normal</span>
+                                    <span class="px-2 py-0.5 text-[11px] font-medium bg-amber-500 text-white rounded">Pending</span>
+                                </div>
+                                <h4 class="font-medium text-gray-900">Contract discussion</h4>
+                                <p class="text-sm text-gray-500 mt-1">Discuss financing options and contract terms.</p>
+                                <div class="flex items-center gap-4 mt-3 text-xs text-gray-500">
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                        Feb 18, 2026 at 2:00 PM
+                                    </span>
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                        Assigned: Arun Kumar
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 ml-4">
+                                <button class="p-2 text-green-600 hover:bg-green-50 rounded-lg" title="Mark Complete">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                </button>
+                                <button class="p-2 text-gray-400 hover:bg-gray-100 rounded-lg" title="Edit">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                                </button>
+                                <button class="p-2 text-red-400 hover:bg-red-50 rounded-lg" title="Cancel">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Completed Followup -->
+                    <div class="p-4 bg-green-50/50 border border-green-100 rounded-lg opacity-75">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="px-2 py-0.5 text-[11px] font-medium bg-blue-500 text-white rounded">Task</span>
+                                    <span class="px-2 py-0.5 text-[11px] font-medium bg-green-500 text-white rounded">✓ Completed</span>
+                                </div>
+                                <h4 class="font-medium text-gray-700 line-through">Send initial quote</h4>
+                                <p class="text-sm text-gray-400 mt-1">Quote QT-2026-0042 sent to customer via email.</p>
+                                <div class="flex items-center gap-4 mt-3 text-xs text-gray-400">
+                                    <span>Completed: Feb 10, 2026 at 4:30 PM</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <!-- Notes Tab -->
@@ -421,12 +554,125 @@
                 <div class="mt-6 pt-4 border-t border-gray-100">
                     <textarea class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 min-h-[100px]" placeholder="Add a note..."></textarea>
                     <div class="flex justify-end mt-2">
-                        <button class="px-3 py-1.5 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark">Add Note</button>
+                        <button onclick="alert('Add Note - Coming Soon')" class="px-3 py-1.5 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark">Add Note</button>
                     </div>
                 </div>
             </div>
         </div>
     </main>
+    
+    <!-- Add Followup Modal -->
+    <div id="addFollowupModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeAddFollowupModal()"></div>
+        <div class="fixed inset-0 overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative w-full max-w-lg bg-white rounded-lg shadow-xl">
+                    <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+                        <h3 class="text-base font-semibold text-gray-900">Add Followup</h3>
+                        <button onclick="closeAddFollowupModal()" class="p-1 hover:bg-gray-100 rounded">
+                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div class="p-4 space-y-4">
+                        <!-- Type Selection -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-2">Type</label>
+                            <div class="grid grid-cols-5 gap-2">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="followupType" value="visit" class="peer sr-only" checked>
+                                    <div class="p-2 text-center rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 hover:border-gray-200 transition-all">
+                                        <svg class="w-5 h-5 mx-auto mb-1 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+                                        <span class="text-[10px] font-medium text-gray-600">Visit</span>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="followupType" value="meeting" class="peer sr-only">
+                                    <div class="p-2 text-center rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 hover:border-gray-200 transition-all">
+                                        <svg class="w-5 h-5 mx-auto mb-1 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                        <span class="text-[10px] font-medium text-gray-600">Meeting</span>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="followupType" value="task" class="peer sr-only">
+                                    <div class="p-2 text-center rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 hover:border-gray-200 transition-all">
+                                        <svg class="w-5 h-5 mx-auto mb-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                                        <span class="text-[10px] font-medium text-gray-600">Task</span>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="followupType" value="reminder" class="peer sr-only">
+                                    <div class="p-2 text-center rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 hover:border-gray-200 transition-all">
+                                        <svg class="w-5 h-5 mx-auto mb-1 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                                        <span class="text-[10px] font-medium text-gray-600">Reminder</span>
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="followupType" value="document_collection" class="peer sr-only">
+                                    <div class="p-2 text-center rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 hover:border-gray-200 transition-all">
+                                        <svg class="w-5 h-5 mx-auto mb-1 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        <span class="text-[10px] font-medium text-gray-600">Docs</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Subject -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Subject *</label>
+                            <input type="text" id="followupSubject" placeholder="e.g., Site measurement visit" class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                        </div>
+                        
+                        <!-- Date & Time -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Date *</label>
+                                <input type="date" id="followupDate" class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Time *</label>
+                                <input type="time" id="followupTime" value="10:00" class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+                            </div>
+                        </div>
+                        
+                        <!-- Priority -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-2">Priority</label>
+                            <div class="flex gap-2">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="followupPriority" value="high" class="peer sr-only">
+                                    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-gray-100 peer-checked:border-red-500 peer-checked:bg-red-50 text-xs font-medium text-gray-500 hover:border-gray-200 transition-all">
+                                        <span class="w-2 h-2 rounded-full bg-red-500"></span>High
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="followupPriority" value="normal" class="peer sr-only" checked>
+                                    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-gray-100 peer-checked:border-amber-500 peer-checked:bg-amber-50 text-xs font-medium text-gray-500 hover:border-gray-200 transition-all">
+                                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>Normal
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="followupPriority" value="low" class="peer sr-only">
+                                    <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-gray-100 peer-checked:border-blue-500 peer-checked:bg-blue-50 text-xs font-medium text-gray-500 hover:border-gray-200 transition-all">
+                                        <span class="w-2 h-2 rounded-full bg-blue-400"></span>Low
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Notes -->
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Notes</label>
+                            <textarea id="followupNotes" rows="2" placeholder="Additional details..." class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none"></textarea>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-2 rounded-b-lg">
+                        <button onclick="closeAddFollowupModal()" class="px-3 py-1.5 border border-gray-200 rounded-lg text-[13px] font-medium text-gray-600 hover:bg-gray-100">Cancel</button>
+                        <button onclick="saveFollowup()" class="px-4 py-1.5 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-primary-dark">Add Followup</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <script>
         // Tab switching
@@ -442,6 +688,72 @@
             document.querySelectorAll('.temp-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
         }
+        
+        // Modal functions
+        function openAddFollowupModal() {
+            document.getElementById('addFollowupModal').classList.remove('hidden');
+            // Set default date to tomorrow
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('followupDate').value = tomorrow.toISOString().split('T')[0];
+        }
+        
+        function closeAddFollowupModal() {
+            document.getElementById('addFollowupModal').classList.add('hidden');
+        }
+        
+        function saveFollowup() {
+            const subject = document.getElementById('followupSubject').value.trim();
+            const date = document.getElementById('followupDate').value;
+            const time = document.getElementById('followupTime').value;
+            
+            if (!subject || !date || !time) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            // In production, call API: POST /customer-properties/:id/followups
+            alert('Followup created successfully!');
+            closeAddFollowupModal();
+            location.reload();
+        }
+        
+        function completeFollowup(id) {
+            if (confirm('Mark this followup as completed?')) {
+                // In production, call API: PATCH /customer-properties/:id/followups/:followupId
+                alert('Followup marked as completed!');
+                location.reload();
+            }
+        }
+        
+        function editFollowup(id) {
+            // In production, open edit modal with existing data
+            openAddFollowupModal();
+        }
+        
+        function filterFollowups(filter) {
+            // Placeholder - in production would filter the followups list
+            alert('Filter: ' + filter + ' - Coming Soon');
+        }
+        
+        // AG Grid for Property Quotes
+        const propQuoteData = [
+            { quoteNo: 'QT-2026-0042', system: '5 kW', value: '₹3,25,000', status: 'Sent', date: 'Jan 28, 2026' },
+            { quoteNo: 'QT-2026-0038', system: '3 kW', value: '₹2,10,000', status: 'Rejected', date: 'Jan 22, 2026' },
+        ];
+        const propStatusColors = { 'Sent': 'bg-amber-50 text-amber-700', 'Rejected': 'bg-red-50 text-red-700', 'Accepted': 'bg-green-50 text-green-700', 'Draft': 'bg-gray-100 text-gray-600' };
+        const propQuoteCols = [
+            { headerName: 'Quote #', field: 'quoteNo', flex: 1, sortable: true, filter: true, cellRenderer: p => `<a href="../quotes/detail.html" class="font-medium text-primary hover:underline">${p.value}</a>` },
+            { headerName: 'System', field: 'system', width: 100, sortable: true },
+            { headerName: 'Value', field: 'value', width: 120, sortable: true, cellClass: 'font-medium text-gray-900' },
+            { headerName: 'Status', field: 'status', width: 100, sortable: true, cellRenderer: p => `<span class="px-1.5 py-0.5 text-[11px] font-medium ${propStatusColors[p.value] || 'bg-gray-100 text-gray-600'} rounded">${p.value}</span>` },
+            { headerName: 'Date', field: 'date', width: 110, sortable: true },
+            { headerName: '', width: 60, cellRenderer: () => `<a href="../quotes/detail.html" class="text-primary text-sm hover:underline">View</a>` },
+        ];
+        document.addEventListener('DOMContentLoaded', () => {
+            const grid = document.getElementById('propertyQuotesGrid');
+            if (grid) agGrid.createGrid(grid, { columnDefs: propQuoteCols, rowData: propQuoteData, domLayout: 'autoHeight', defaultColDef: { resizable: true } });
+        });
     </script>
 </body>
 </html>

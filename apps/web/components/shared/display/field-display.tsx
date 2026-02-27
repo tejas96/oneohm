@@ -52,27 +52,27 @@ const SHADING_CONFIG: Record<
 > = {
   none: {
     label: 'No Shading',
-    bgClass: 'bg-green-100',
-    textClass: 'text-green-700',
-    dotClass: 'bg-green-500',
+    bgClass: 'bg-success/10',
+    textClass: 'text-success',
+    dotClass: 'bg-success',
   },
   minimal: {
     label: 'Minimal Shading',
-    bgClass: 'bg-lime-100',
-    textClass: 'text-lime-700',
-    dotClass: 'bg-lime-500',
+    bgClass: 'bg-success/10',
+    textClass: 'text-success',
+    dotClass: 'bg-success',
   },
   moderate: {
     label: 'Moderate Shading',
-    bgClass: 'bg-yellow-100',
-    textClass: 'text-yellow-700',
-    dotClass: 'bg-yellow-500',
+    bgClass: 'bg-warning/10',
+    textClass: 'text-warning',
+    dotClass: 'bg-warning',
   },
   significant: {
     label: 'Significant Shading',
-    bgClass: 'bg-red-100',
-    textClass: 'text-red-700',
-    dotClass: 'bg-red-500',
+    bgClass: 'bg-destructive/10',
+    textClass: 'text-destructive',
+    dotClass: 'bg-destructive',
   },
 };
 
@@ -90,7 +90,7 @@ function ReferralDisplay({ data, size, className }: ReferralDisplayProps) {
   if (size === 'compact') {
     return (
       <div className={cn('flex items-center gap-2', className)}>
-        <Tag className="w-4 h-4 text-amber-500" />
+        <Tag className="size-icon-sm text-warning" />
         <span className="text-sm text-foreground-secondary">Referral:</span>
         <span className="text-sm font-medium text-foreground font-mono">
           {data.referralCode}
@@ -102,17 +102,17 @@ function ReferralDisplay({ data, size, className }: ReferralDisplayProps) {
   return (
     <div
       className={cn(
-        'p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-100',
+        'p-4 bg-linear-to-r from-warning/10 to-warning/5 rounded-lg border border-warning/20',
         className
       )}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
-            <Tag className="w-5 h-5 text-amber-600" />
+          <div className="size-container-md rounded-lg bg-warning/20 flex items-center justify-center">
+            <Tag className="size-icon-md text-warning" />
           </div>
           <div>
-            <div className="text-xs text-amber-600 font-medium uppercase tracking-wide">
+            <div className="text-xs text-warning font-medium uppercase tracking-wide">
               Referred By
             </div>
             <div className="text-sm font-semibold text-foreground">
@@ -128,7 +128,7 @@ function ReferralDisplay({ data, size, className }: ReferralDisplayProps) {
         </div>
         <div className="text-right">
           <div className="text-xs text-foreground-tertiary">Referral Code</div>
-          <div className="font-mono text-sm font-medium text-amber-700">
+          <div className="font-mono text-sm font-medium text-warning">
             {data.referralCode}
           </div>
         </div>
@@ -167,7 +167,7 @@ function GPSDisplay({ data, size, className, onViewMap }: GPSDisplayProps) {
           className
         )}
       >
-        <AlertTriangle className="w-5 h-5 text-warning" />
+        <AlertTriangle className="size-icon-md text-warning" />
         <div className="flex-1">
           <div className="text-sm font-medium text-warning">GPS not captured</div>
           <div className="text-xs text-warning/80">
@@ -181,7 +181,7 @@ function GPSDisplay({ data, size, className, onViewMap }: GPSDisplayProps) {
   if (size === 'compact') {
     return (
       <div className={cn('flex items-center gap-2 text-sm', className)}>
-        <MapPin className="w-4 h-4 text-foreground-tertiary" />
+        <MapPin className="size-icon-sm text-foreground-tertiary" />
         <span className="font-mono text-foreground-secondary">
           {data.latitude.toFixed(4)}, {data.longitude.toFixed(4)}
         </span>
@@ -240,14 +240,14 @@ function GPSDisplay({ data, size, className, onViewMap }: GPSDisplayProps) {
               }
             }}
           >
-            <ExternalLink className="w-4 h-4" />
+            <ExternalLink className="size-icon-sm" />
             View on Map
           </a>
         )}
       </div>
       {data.capturedAt && (
         <div className="mt-3 text-xs text-foreground-tertiary flex items-center gap-1">
-          <Clock className="w-3 h-3" />
+          <Clock className="size-icon-2xs" />
           Captured{data.capturedBy && ` by ${data.capturedBy}`} on{' '}
           {data.capturedAt.toLocaleDateString()}
         </div>
@@ -276,8 +276,8 @@ function ShadingDisplay({ data, size, className }: ShadingDisplayProps) {
           className
         )}
       >
-        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-          <Sun className="w-4 h-4 text-foreground-tertiary" />
+        <div className="size-container-sm rounded-full bg-border flex items-center justify-center">
+          <Sun className="size-icon-sm text-foreground-tertiary" />
         </div>
         <div className="flex-1">
           <div className="text-xs font-medium text-foreground-secondary">
@@ -337,9 +337,9 @@ function ShadingDisplay({ data, size, className }: ShadingDisplayProps) {
           {data.details.map((detail, index) => (
             <div key={index} className="flex items-center gap-2">
               {detail.status === 'clear' ? (
-                <Check className="w-4 h-4 text-success" />
+                <Check className="size-icon-sm text-success" />
               ) : (
-                <AlertTriangle className="w-4 h-4 text-warning" />
+                <AlertTriangle className="size-icon-sm text-warning" />
               )}
               <span className="text-foreground-secondary">
                 {detail.timeRange}: {detail.note || (detail.status === 'clear' ? 'No obstruction' : 'Shading present')}
@@ -353,7 +353,7 @@ function ShadingDisplay({ data, size, className }: ShadingDisplayProps) {
       {data.assessedAt && (
         <div className="mt-4 pt-3 border-t border-border-light">
           <div className="flex items-center gap-2 text-xs text-foreground-tertiary">
-            <Clock className="w-4 h-4" />
+            <Clock className="size-icon-sm" />
             Assessed{data.assessedBy && ` by ${data.assessedBy}`} on{' '}
             {data.assessedAt.toLocaleDateString()}
           </div>
@@ -379,22 +379,22 @@ function DocumentStatusDisplay({ data, size, className }: DocumentStatusDisplayP
   const getStatusIcon = (status: 'uploaded' | 'pending' | 'missing') => {
     switch (status) {
       case 'uploaded':
-        return <Check className="w-3 h-3" />;
+        return <Check className="size-icon-2xs" />;
       case 'pending':
-        return <Clock className="w-3 h-3" />;
+        return <Clock className="size-icon-2xs" />;
       case 'missing':
-        return <Plus className="w-3 h-3" />;
+        return <Plus className="size-icon-2xs" />;
     }
   };
 
   const getStatusClasses = (status: 'uploaded' | 'pending' | 'missing') => {
     switch (status) {
       case 'uploaded':
-        return 'bg-green-100 text-green-700';
+        return 'bg-success/10 text-success';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-700';
+        return 'bg-warning/10 text-warning';
       case 'missing':
-        return 'bg-gray-100 text-foreground-tertiary';
+        return 'bg-muted text-foreground-tertiary';
     }
   };
 
@@ -457,7 +457,7 @@ function ConnectionDisplay({ data, size, className }: ConnectionDisplayProps) {
       <div className={cn('flex items-center gap-4 text-sm', className)}>
         {data.connectionType && (
           <div className="flex items-center gap-1.5">
-            <Zap className="w-4 h-4 text-foreground-tertiary" />
+            <Zap className="size-icon-sm text-foreground-tertiary" />
             <span className="text-foreground-secondary">
               {data.connectionType === 'three' ? 'Three Phase' : 'Single Phase'}
             </span>
@@ -505,7 +505,7 @@ function ConnectionDisplay({ data, size, className }: ConnectionDisplayProps) {
               <span
                 className={cn(
                   'w-2 h-2 rounded-full',
-                  data.connectionType === 'three' ? 'bg-blue-500' : 'bg-gray-400'
+                  data.connectionType === 'three' ? 'bg-secondary' : 'bg-border-medium'
                 )}
               />
               {data.connectionType === 'three' ? 'Three Phase' : 'Single Phase'}
@@ -559,7 +559,7 @@ function LoanDisplay({ data, size, className }: LoanDisplayProps) {
   if (!data.interested) {
     return (
       <div className={cn('flex items-center gap-2 text-sm text-foreground-secondary', className)}>
-        <X className="w-4 h-4" />
+        <X className="size-icon-sm" />
         <span>Not interested in financing</span>
       </div>
     );
@@ -567,8 +567,8 @@ function LoanDisplay({ data, size, className }: LoanDisplayProps) {
 
   if (size === 'compact') {
     return (
-      <Badge className={cn('bg-blue-100 text-blue-700', className)}>
-        <CreditCard className="w-3 h-3 mr-1" />
+      <Badge className={cn('bg-primary/10 text-primary', className)}>
+        <CreditCard className="size-icon-2xs mr-1" />
         Loan Enquiry
       </Badge>
     );
@@ -577,13 +577,13 @@ function LoanDisplay({ data, size, className }: LoanDisplayProps) {
   return (
     <div
       className={cn(
-        'p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100',
+        'p-4 bg-linear-to-r from-info/10 to-info/5 rounded-lg border border-info/20',
         className
       )}
     >
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-          <CreditCard className="w-6 h-6 text-blue-600" />
+        <div className="size-container-lg rounded-lg bg-primary/10 flex items-center justify-center">
+          <CreditCard className="size-icon-lg text-primary" />
         </div>
         <div className="flex-1">
           <div className="font-semibold text-foreground">Interested in Solar Loan</div>
@@ -591,11 +591,11 @@ function LoanDisplay({ data, size, className }: LoanDisplayProps) {
             Customer wants financing assistance
           </div>
         </div>
-        <Badge className="bg-blue-600 text-white">Loan Enquiry</Badge>
+        <Badge className="bg-primary text-white">Loan Enquiry</Badge>
       </div>
 
       {(data.systemValue || data.estimatedEMI || data.tenure) && (
-        <div className="mt-4 pt-3 border-t border-blue-100 grid grid-cols-3 gap-4 text-center">
+        <div className="mt-4 pt-3 border-t border-primary/20 grid grid-cols-3 gap-4 text-center">
           {data.systemValue !== undefined && (
             <div>
               <div className="text-xs text-foreground-tertiary">System Value</div>

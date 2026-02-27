@@ -99,24 +99,28 @@ export class OrganizationRepository {
     limit?: number;
     offset?: number;
     status?: OrganizationStatus;
+    search?: string;
   }): Promise<{ items: OrganizationEntity[]; total: number }> {
-    const { limit = 10, offset = 0, status } = params;
+    const { limit = 10, offset = 0, status, search } = params;
 
-    const where: FindOptionsWhere<OrganizationEntity> = {
-      deletedAt: IsNull(),
-    };
+    const qb = this.repository
+      .createQueryBuilder('org')
+      .where('org.deletedAt IS NULL');
 
     if (status) {
-      where.status = status;
+      qb.andWhere('org.status = :status', { status });
     }
 
-    const [items, total] = await this.repository.findAndCount({
-      where,
-      take: limit,
-      skip: offset,
-      order: { createdAt: 'DESC' },
-    });
+    if (search) {
+      qb.andWhere(
+        '(LOWER(org.name) LIKE LOWER(:search) OR LOWER(org.code) LIKE LOWER(:search) OR LOWER(org.email) LIKE LOWER(:search))',
+        { search: `%${search}%` },
+      );
+    }
 
+    qb.orderBy('org.createdAt', 'DESC').skip(offset).take(limit);
+
+    const [items, total] = await qb.getManyAndCount();
     return { items, total };
   }
 

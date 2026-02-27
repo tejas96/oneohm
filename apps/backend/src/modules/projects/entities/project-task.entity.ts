@@ -9,21 +9,17 @@ import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from '
 
 import { ProjectMilestoneEntity } from './project-milestone.entity';
 import { ProjectEntity } from './project.entity';
-import { TaskTemplateEntity } from './task-template.entity';
+import { WorkflowStepEntity } from './workflow-step.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
-/**
- * ProjectTaskEntity
- * Represents individual tasks within project milestones (Kanban-style)
- */
 @Entity('project_tasks')
 @Index(['projectId', 'deletedAt'])
 @Index(['milestoneId', 'deletedAt'])
 @Index(['assignedToUserId', 'deletedAt'])
 @Index(['status', 'deletedAt'])
 @Index(['priority', 'deletedAt'])
-@Index(['taskTemplateId', 'deletedAt'])
+@Index(['workflowStepId', 'deletedAt'])
 export class ProjectTaskEntity extends BaseEntity {
   // ==================== Relations ====================
 
@@ -37,12 +33,12 @@ export class ProjectTaskEntity extends BaseEntity {
   @JoinColumn({ name: 'milestone_id' })
   milestone?: ProjectMilestoneEntity;
 
-  @ManyToOne(() => TaskTemplateEntity, (template) => template.tasks, {
+  @ManyToOne(() => WorkflowStepEntity, (step) => step.tasks, {
     nullable: true,
-    onDelete: 'SET NULL',
+    onDelete: 'RESTRICT',
   })
-  @JoinColumn({ name: 'task_template_id' })
-  template?: TaskTemplateEntity;
+  @JoinColumn({ name: 'workflow_step_id' })
+  workflowStep?: WorkflowStepEntity;
 
   @ManyToOne(() => UserEntity, { nullable: true })
   @JoinColumn({ name: 'assigned_to_user_id' })
@@ -56,22 +52,36 @@ export class ProjectTaskEntity extends BaseEntity {
   @Column({ name: 'milestone_id', type: 'uuid', nullable: true })
   milestoneId?: string;
 
-  @Column({ name: 'task_template_id', type: 'uuid', nullable: true })
-  taskTemplateId?: string;
+  @Column({ name: 'workflow_step_id', type: 'uuid', nullable: true })
+  workflowStepId?: string;
 
   @Column({ name: 'assigned_to_user_id', type: 'uuid', nullable: true })
   assignedToUserId?: string;
 
   // ==================== Task Info ====================
 
-  @Column({ type: 'varchar', length: 255 })
-  name!: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  name?: string | null;
 
   @Column({ type: 'varchar', length: 100 })
   code!: string;
 
   @Column({ type: 'text', nullable: true })
   description?: string;
+
+  // ==================== Override Columns ====================
+
+  @Column({ name: 'name_override', type: 'varchar', length: 255, nullable: true })
+  nameOverride?: string;
+
+  @Column({ name: 'description_override', type: 'text', nullable: true })
+  descriptionOverride?: string;
+
+  @Column({ name: 'checklist_override', type: 'jsonb', nullable: true })
+  checklistOverride?: TaskChecklist;
+
+  @Column({ name: 'labels_override', type: 'text', array: true, nullable: true })
+  labelsOverride?: string[];
 
   // ==================== Ordering ====================
 

@@ -28,6 +28,7 @@ export class SiteVisitService {
     propertyId: string,
     organizationId: string,
     createDto: CreateSiteVisitDto,
+    createdBy?: string,
   ): Promise<SiteVisitEntity> {
     this.logger.log(`Creating site visit for property: ${propertyId}`);
 
@@ -59,6 +60,7 @@ export class SiteVisitService {
       shadingAnalysis: createDto.shadingAnalysis,
       photos: createDto.photos,
       visitNotes: createDto.visitNotes,
+      createdBy,
     });
 
     // Fetch with relations for response
@@ -152,6 +154,7 @@ export class SiteVisitService {
     propertyId: string,
     organizationId: string,
     updateDto: UpdateSiteVisitDto,
+    updatedBy?: string,
   ): Promise<SiteVisitEntity> {
     this.logger.log(`Updating site visit for property: ${propertyId}`);
 
@@ -160,7 +163,6 @@ export class SiteVisitService {
 
     // Build update object with only defined values
     const updateData: Partial<SiteVisitEntity> = {};
-    if (updateDto.status !== undefined) updateData.status = updateDto.status;
     if (updateDto.gpsCoordinates !== undefined)
       updateData.gpsCoordinates = updateDto.gpsCoordinates;
     if (updateDto.availableRoofAreaSqft !== undefined)
@@ -169,6 +171,7 @@ export class SiteVisitService {
       updateData.shadingAnalysis = updateDto.shadingAnalysis;
     if (updateDto.photos !== undefined) updateData.photos = updateDto.photos;
     if (updateDto.visitNotes !== undefined) updateData.visitNotes = updateDto.visitNotes;
+    if (updatedBy) updateData.updatedBy = updatedBy;
 
     const updated = await this.siteVisitRepository.update(siteVisit.id, updateData);
 
@@ -183,13 +186,18 @@ export class SiteVisitService {
   /**
    * Mark site visit as completed
    */
-  async complete(propertyId: string, organizationId: string): Promise<SiteVisitEntity> {
+  async complete(
+    propertyId: string,
+    organizationId: string,
+    updatedBy?: string,
+  ): Promise<SiteVisitEntity> {
     this.logger.log(`Completing site visit for property: ${propertyId}`);
 
     const siteVisit = await this.findByPropertyId(propertyId, organizationId);
 
     const updated = await this.siteVisitRepository.update(siteVisit.id, {
       status: SiteVisitStatus.COMPLETED,
+      updatedBy,
     });
 
     if (!updated) {
@@ -203,12 +211,12 @@ export class SiteVisitService {
   /**
    * Delete site visit (soft delete)
    */
-  async delete(propertyId: string, organizationId: string): Promise<void> {
+  async delete(propertyId: string, organizationId: string, deletedBy?: string): Promise<void> {
     this.logger.log(`Deleting site visit for property: ${propertyId}`);
 
     const siteVisit = await this.findByPropertyId(propertyId, organizationId);
 
-    await this.siteVisitRepository.softDelete(siteVisit.id);
+    await this.siteVisitRepository.softDelete(siteVisit.id, deletedBy);
 
     this.logger.log(`Site visit deleted: ${siteVisit.id}`);
   }

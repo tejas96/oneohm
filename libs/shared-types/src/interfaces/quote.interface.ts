@@ -1,4 +1,9 @@
-import type { PaymentMilestoneStage } from '../enums/quote.enum';
+import type { PanelTechnology, PhaseType, StructureType } from '../enums/product.enum';
+import type {
+  DcrPreference,
+  PaymentMilestoneStage,
+  QuoteCalculationMode,
+} from '../enums/quote.enum';
 
 /**
  * Payment Milestone Interface
@@ -25,6 +30,43 @@ export interface PaymentMilestone {
 
   /** Display order in the quote */
   order: number;
+}
+
+/**
+ * Calculator Inputs
+ * Captures all user-chosen parameters for a quote calculation.
+ * Stored as JSONB on quote_versions.
+ */
+export interface CalculatorInputs {
+  phaseType: PhaseType;
+  dcrPreference: DcrPreference;
+  calculationMode: QuoteCalculationMode;
+  dcrSystemSizeKw?: number;
+  nonDcrSystemSizeKw?: number;
+  floorNumber: number;
+  distanceKm?: number;
+  structureType: StructureType;
+  preferredPanelBrand?: string;
+  preferredPanelTechnology?: PanelTechnology;
+  preferredPanelWattage?: number;
+  preferredInverterBrand?: string;
+  subsidyApplicable: boolean;
+}
+
+/**
+ * Pricing Breakdown
+ * Detailed pricing components stored as JSONB on quote_versions.
+ * Top-level final_price and effective_price remain as sortable columns.
+ */
+export interface PricingBreakdown {
+  basePrice: number;
+  gst12On70Percent: number;
+  gst18On30Percent: number;
+  totalGst: number;
+  totalPrice: number;
+  discountAmount: number;
+  subsidyAmount: number;
+  isSubsidyApplicable: boolean;
 }
 
 /**

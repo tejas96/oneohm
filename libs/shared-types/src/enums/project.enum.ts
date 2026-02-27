@@ -30,12 +30,18 @@ export enum ProjectPriority {
 export enum MilestoneType {
   SITE_SURVEY = 'site_survey',
   DESIGN = 'design',
+  PLANNING = 'planning',
   APPROVAL = 'approval',
+  PERMITS = 'permits',
   MATERIAL_PROCUREMENT = 'material_procurement',
+  ELECTRICAL = 'electrical',
   INSTALLATION = 'installation',
+  INSPECTION = 'inspection',
   TESTING = 'testing',
   COMMISSIONING = 'commissioning',
+  MONITORING = 'monitoring',
   HANDOVER = 'handover',
+  CUSTOM = 'custom',
 }
 
 /**

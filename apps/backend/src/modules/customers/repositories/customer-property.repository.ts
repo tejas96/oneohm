@@ -1,9 +1,29 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LeadTemperature, PropertyStatus } from '@oneohm-epc/shared-types';
-import { IsNull, LessThanOrEqual, Repository } from 'typeorm';
+import {
+  LeadTemperature,
+  type PropertyStatus,
+  PropertySortField,
+  SortOrder,
+} from '@oneohm-epc/shared-types';
+import { type EntityManager, IsNull, Repository } from 'typeorm';
 
+import { PropertyQueryDto } from '../dto/property-query.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
+
+/**
+ * Field mapping for safe sorting (prevents SQL injection via sortBy)
+ * Maps enum values to entity property paths (camelCase) - TypeORM resolves these to DB columns
+ */
+const SORT_FIELD_MAP: Record<PropertySortField, string> = {
+  [PropertySortField.CREATED_AT]: 'property.createdAt',
+  [PropertySortField.UPDATED_AT]: 'property.updatedAt',
+  [PropertySortField.PROPERTY_NAME]: 'property.propertyName',
+  [PropertySortField.CITY]: 'property.city',
+  [PropertySortField.LEAD_TEMPERATURE]: 'property.leadTemperature',
+  [PropertySortField.PROPERTY_TYPE]: 'property.propertyType',
+  [PropertySortField.STATUS]: 'property.status',
+};
 
 @Injectable()
 export class CustomerPropertyRepository {
@@ -11,6 +31,18 @@ export class CustomerPropertyRepository {
     @InjectRepository(CustomerPropertyEntity)
     public readonly repository: Repository<CustomerPropertyEntity>,
   ) {}
+
+  /**
+   * Update property status by ID (transaction-aware, no ownership check — caller must pre-validate)
+   */
+  async updateStatusById(
+    propertyId: string,
+    status: PropertyStatus,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = this.getRepo(manager);
+    await repo.update(propertyId, { status });
+  }
 
   async findById(id: string): Promise<CustomerPropertyEntity | null> {
     return this.repository.findOne({
@@ -25,7 +57,7 @@ export class CustomerPropertyRepository {
   ): Promise<CustomerPropertyEntity | null> {
     return this.repository.findOne({
       where: { id, organizationId, deletedAt: IsNull() },
-      relations: ['customer'],
+      relations: ['customer', 'creator'],
     });
   }
 
@@ -63,32 +95,15 @@ export class CustomerPropertyRepository {
   async findByTemperature(
     organizationId: string,
     temperature: LeadTemperature,
-  ): Promise<CustomerPropertyEntity[]> {
-    return this.repository.find({
+    page = 1,
+    limit = 20,
+  ): Promise<[CustomerPropertyEntity[], number]> {
+    return this.repository.findAndCount({
       where: { organizationId, leadTemperature: temperature, deletedAt: IsNull() },
       relations: ['customer'],
-      order: { nextFollowUpDate: 'ASC' },
-    });
-  }
-
-  async findPendingFollowUps(
-    organizationId: string,
-    beforeDate?: Date,
-  ): Promise<CustomerPropertyEntity[]> {
-    const where: Record<string, unknown> = {
-      organizationId,
-      deletedAt: IsNull(),
-      status: PropertyStatus.ACTIVE,
-    };
-
-    if (beforeDate) {
-      where.nextFollowUpDate = LessThanOrEqual(beforeDate);
-    }
-
-    return this.repository.find({
-      where,
-      relations: ['customer'],
-      order: { nextFollowUpDate: 'ASC' },
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
     });
   }
 
@@ -142,6 +157,92 @@ export class CustomerPropertyRepository {
   }
 
   /**
+   * Find properties with comprehensive filtering, sorting, and pagination
+   * This is the primary method for the property list API
+   *
+   * @param organizationId - Organization context
+   * @param query - Query parameters (filters, sorting, pagination)
+   * @returns Tuple of [properties, total count]
+   */
+  async findWithFilters(
+    organizationId: string,
+    query: PropertyQueryDto,
+  ): Promise<[CustomerPropertyEntity[], number]> {
+    const qb = this.repository
+      .createQueryBuilder('property')
+      .leftJoinAndSelect('property.customer', 'customer')
+      .leftJoinAndSelect('property.creator', 'creator')
+      .where('property.organizationId = :organizationId', { organizationId })
+      .andWhere('property.deletedAt IS NULL');
+
+    // ===== Search (case-insensitive, multiple fields including customer name) =====
+    if (query.search && query.search.length >= 2) {
+      const searchTerm = `%${query.search.toLowerCase()}%`;
+      qb.andWhere(
+        `(
+          LOWER(property.property_name) LIKE :searchTerm OR
+          LOWER(property.address) LIKE :searchTerm OR
+          LOWER(property.city) LIKE :searchTerm OR
+          property.consumer_number LIKE :searchTerm OR
+          LOWER(customer.first_name) LIKE :searchTerm OR
+          LOWER(customer.last_name) LIKE :searchTerm OR
+          LOWER(CONCAT(customer.first_name, ' ', customer.last_name)) LIKE :searchTerm
+        )`,
+        { searchTerm },
+      );
+    }
+
+    // ===== Filters =====
+    if (query.leadTemperature) {
+      qb.andWhere('property.leadTemperature = :leadTemperature', {
+        leadTemperature: query.leadTemperature,
+      });
+    }
+
+    if (query.propertyType) {
+      qb.andWhere('property.propertyType = :propertyType', {
+        propertyType: query.propertyType,
+      });
+    }
+
+    if (query.status) {
+      qb.andWhere('property.status = :status', { status: query.status });
+    }
+
+    if (query.city) {
+      qb.andWhere('LOWER(property.city) LIKE LOWER(:city)', { city: `%${query.city}%` });
+    }
+
+    if (query.state) {
+      qb.andWhere('LOWER(property.state) LIKE LOWER(:state)', { state: `%${query.state}%` });
+    }
+
+    if (query.createdBy) {
+      qb.andWhere('property.created_by = :createdBy', { createdBy: query.createdBy });
+    }
+
+    if (query.fromDate) {
+      qb.andWhere('property.created_at >= :fromDate', { fromDate: query.fromDate });
+    }
+
+    if (query.toDate) {
+      qb.andWhere('property.created_at <= :toDate', {
+        toDate: `${query.toDate}T23:59:59.999Z`,
+      });
+    }
+
+    // ===== Sorting (using safe field mapping) =====
+    const sortColumn = SORT_FIELD_MAP[query.sortBy] ?? SORT_FIELD_MAP[PropertySortField.CREATED_AT];
+    const sortDirection = query.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
+    qb.orderBy(sortColumn, sortDirection);
+
+    // ===== Pagination =====
+    qb.skip((query.page - 1) * query.limit).take(query.limit);
+
+    return qb.getManyAndCount();
+  }
+
+  /**
    * Get temperature statistics in a single query
    * Returns count of properties grouped by lead_temperature
    */
@@ -161,5 +262,9 @@ export class CustomerPropertyRepository {
       temperature: r.temperature,
       count: parseInt(r.count, 10),
     }));
+  }
+
+  private getRepo(manager?: EntityManager): Repository<CustomerPropertyEntity> {
+    return manager ? manager.getRepository(CustomerPropertyEntity) : this.repository;
   }
 }

@@ -170,10 +170,9 @@ export class UserController {
     @Param('id', ParseUUIDPipe) userId: string,
     @Body() createProfileDto: CreateProfileDto,
     @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const createdBy = currentUser?.id;
 
-    // Create profile with auto role assignment
     const profile = await this.profileService.createProfile({
       userId,
       organizationId: createProfileDto.organizationId,
@@ -182,6 +181,6 @@ export class UserController {
       createdBy,
     });
 
-    return profile;
+    return profile as unknown as Record<string, unknown>;
   }
 }

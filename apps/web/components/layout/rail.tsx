@@ -4,8 +4,10 @@ import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { CountBadge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { navigationConfig, isNavItemActive } from '@/lib/config';
+import { isNavItemActive } from '@/lib/config';
+import { useFilteredNavigation } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 
 interface RailProps {
@@ -17,10 +19,12 @@ interface RailProps {
 /**
  * Rail - 48px fixed icon navigation strip
  * Features: Icon buttons with tooltips, active state, notification badges
- * Uses centralized navigation config from lib/config/navigation.ts
+ * Uses filtered navigation based on user permissions and roles
+ * Note: Uses usePathname directly to avoid useSearchParams Suspense requirement
  */
 export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
   const pathname = usePathname();
+  const { navigation } = useFilteredNavigation();
 
   return (
     <TooltipProvider delayDuration={100}>
@@ -37,8 +41,9 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
       >
         {/* Top Navigation */}
         <nav className="flex-1 flex flex-col pt-1.5">
-          {navigationConfig.railTop.map((item) => {
-            const isActive = isNavItemActive(pathname, item.href);
+          {navigation.railTop.map((item) => {
+            // Pass panelKey for accurate active state (e.g., /properties shows CRM as active)
+            const isActive = isNavItemActive(pathname, item.href, item.panelKey);
             const Icon = item.icon;
 
             return (
@@ -53,13 +58,14 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
                     )}
                     aria-disabled={item.disabled}
                   >
-                    {Icon && <Icon className="w-5 h-5" strokeWidth={2} />}
-                    {item.badge !== undefined && (
-                      <span className="badge-notification">
-                        {typeof item.badge === 'number' && item.badge > 99
-                          ? '99+'
-                          : item.badge}
-                      </span>
+                    {Icon && <Icon className="size-icon" strokeWidth={2} />}
+                    {typeof item.badge === 'number' && (
+                      <CountBadge
+                        count={item.badge}
+                        variant="primary"
+                        size="2xs"
+                        className="absolute top-0.5 right-0.5"
+                      />
                     )}
                   </Link>
                 </TooltipTrigger>
@@ -82,9 +88,9 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
                 aria-label={isPanelOpen ? 'Collapse panel' : 'Expand panel'}
               >
                 {isPanelOpen ? (
-                  <ChevronsLeft className="w-5 h-5" strokeWidth={2} />
+                  <ChevronsLeft className="size-icon" strokeWidth={2} />
                 ) : (
-                  <ChevronsRight className="w-5 h-5" strokeWidth={2} />
+                  <ChevronsRight className="size-icon" strokeWidth={2} />
                 )}
               </button>
             </TooltipTrigger>
@@ -94,8 +100,9 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
           </Tooltip>
 
           {/* Bottom Nav Items */}
-          {navigationConfig.railBottom.map((item) => {
-            const isActive = isNavItemActive(pathname, item.href);
+          {navigation.railBottom.map((item) => {
+            // Pass panelKey for accurate active state
+            const isActive = isNavItemActive(pathname, item.href, item.panelKey);
             const Icon = item.icon;
 
             return (
@@ -110,7 +117,7 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
                     )}
                     aria-disabled={item.disabled}
                   >
-                    {Icon && <Icon className="w-5 h-5" strokeWidth={2} />}
+                    {Icon && <Icon className="size-icon" strokeWidth={2} />}
                   </Link>
                 </TooltipTrigger>
                 <TooltipContent side="right" sideOffset={12}>

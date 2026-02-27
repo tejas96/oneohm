@@ -2,16 +2,19 @@ import type { CustomerStatus, LeadTemperature } from '@oneohm-epc/shared-types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { apiClient } from '@/lib/api/client';
+import { useAuth } from '@/providers/auth-provider';
 
 /**
  * Lead query keys for cache management
  */
 export const leadKeys = {
-  all: ['leads'] as const,
-  lists: () => [...leadKeys.all, 'list'] as const,
-  list: (filters: LeadFilters) => [...leadKeys.lists(), filters] as const,
-  details: () => [...leadKeys.all, 'detail'] as const,
-  detail: (id: string) => [...leadKeys.details(), id] as const,
+  all: (orgId?: string) => ['leads', orgId] as const,
+  lists: (orgId?: string) => [...leadKeys.all(orgId), 'list'] as const,
+  list: (orgId: string | undefined, filters: LeadFilters) =>
+    [...leadKeys.lists(orgId), filters] as const,
+  details: (orgId?: string) => [...leadKeys.all(orgId), 'detail'] as const,
+  detail: (orgId: string | undefined, id: string) =>
+    [...leadKeys.details(orgId), id] as const,
 };
 
 /**
@@ -57,17 +60,19 @@ export interface PaginatedResponse<T> {
  * Hook to fetch leads with pagination and filters
  */
 export function useLeads(filters: LeadFilters = {}) {
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
+
   return useQuery({
-    queryKey: leadKeys.list(filters),
+    queryKey: leadKeys.list(organizationId, filters),
     queryFn: async (): Promise<PaginatedResponse<Lead>> => {
       const { data } = await apiClient.get('/customers', {
-        params: {
-          ...filters,
-          status: 'lead', // Only fetch leads
-        },
+        params: { ...filters, status: 'lead' },
+        headers: { 'X-Organization-Id': organizationId },
       });
       return data;
     },
+    enabled: !!organizationId,
   });
 }
 
@@ -75,13 +80,18 @@ export function useLeads(filters: LeadFilters = {}) {
  * Hook to fetch a single lead by ID
  */
 export function useLead(id: string) {
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
+
   return useQuery({
-    queryKey: leadKeys.detail(id),
+    queryKey: leadKeys.detail(organizationId, id),
     queryFn: async (): Promise<Lead> => {
-      const { data } = await apiClient.get(`/customers/${id}`);
+      const { data } = await apiClient.get(`/customers/${id}`, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
       return data;
     },
-    enabled: !!id,
+    enabled: !!id && !!organizationId,
   });
 }
 
@@ -103,18 +113,19 @@ export interface CreateLeadDto {
  */
 export function useCreateLead() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
 
   return useMutation({
     mutationFn: async (lead: CreateLeadDto): Promise<Lead> => {
       const { data } = await apiClient.post('/customers', {
         ...lead,
         status: 'lead',
-      });
+      }, { headers: { 'X-Organization-Id': organizationId } });
       return data;
     },
     onSuccess: () => {
-      // Invalidate leads list to refetch
-      void queryClient.invalidateQueries({ queryKey: leadKeys.lists() });
+      void queryClient.invalidateQueries({ queryKey: leadKeys.lists(organizationId) });
     },
   });
 }
@@ -131,17 +142,19 @@ export interface UpdateLeadDto extends Partial<CreateLeadDto> {
  */
 export function useUpdateLead() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: UpdateLeadDto & { id: string }): Promise<Lead> => {
-      const { data } = await apiClient.patch(`/customers/${id}`, updates);
+      const { data } = await apiClient.patch(`/customers/${id}`, updates, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
       return data;
     },
     onSuccess: (data) => {
-      // Update the specific lead in cache
-      queryClient.setQueryData(leadKeys.detail(data.id), data);
-      // Invalidate lists to refetch
-      void queryClient.invalidateQueries({ queryKey: leadKeys.lists() });
+      queryClient.setQueryData(leadKeys.detail(organizationId, data.id), data);
+      void queryClient.invalidateQueries({ queryKey: leadKeys.lists(organizationId) });
     },
   });
 }
@@ -151,16 +164,18 @@ export function useUpdateLead() {
  */
 export function useDeleteLead() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      await apiClient.delete(`/customers/${id}`);
+      await apiClient.delete(`/customers/${id}`, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
     },
     onSuccess: (_, id) => {
-      // Remove from cache
-      queryClient.removeQueries({ queryKey: leadKeys.detail(id) });
-      // Invalidate lists
-      void queryClient.invalidateQueries({ queryKey: leadKeys.lists() });
+      queryClient.removeQueries({ queryKey: leadKeys.detail(organizationId, id) });
+      void queryClient.invalidateQueries({ queryKey: leadKeys.lists(organizationId) });
     },
   });
 }

@@ -1,12 +1,13 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import type ms from 'ms';
 
 import { AuthController } from './controllers';
 import { JwtAuthGuard } from './guards';
 import { AuthService, OtpService } from './services';
 import { JwtStrategy, LocalStrategy, OtpStrategy } from './strategies';
+import { ConfigService } from '../../config/config.service';
 import { CustomersModule } from '../customers/customers.module';
 import { EmployeesModule } from '../employees/employees.module';
 import { IamModule } from '../iam/iam.module';
@@ -32,17 +33,16 @@ import { UsersModule } from '../users/users.module';
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
-      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService): JwtModuleOptions => {
-        const secret = configService.get<string>('JWT_SECRET');
+        const secret = configService.jwt.secret;
         if (!secret) {
           throw new Error('JWT_SECRET is not configured');
         }
         return {
           secret,
           signOptions: {
-            expiresIn: (configService.get<string>('JWT_EXPIRES_IN') || '15m') as any,
+            expiresIn: configService.jwt.expiresIn as ms.StringValue,
           },
         };
       },

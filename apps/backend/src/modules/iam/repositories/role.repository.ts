@@ -98,18 +98,7 @@ export class RoleRepository {
       relations: [
         'rolePermissions',
         'rolePermissions.permission',
-        'rolePermissions.permission.feature',
       ],
-    });
-  }
-
-  /**
-   * Get role with feature access
-   */
-  async findWithFeatureAccess(roleId: string): Promise<RoleEntity | null> {
-    return this.repository.findOne({
-      where: { id: roleId, deletedAt: IsNull() },
-      relations: [],
     });
   }
 

@@ -33,7 +33,7 @@
         }
     </script>
 </head>
-<body class="font-sans bg-gray-50 min-h-screen">
+<body class="font-sans bg-gray-50 min-h-screen text-[13px]">
     <!-- Global Header -->
     <header class="h-12 bg-white border-b border-gray-100 fixed top-0 left-0 right-0 z-50 flex items-center px-4">
         <div class="flex items-center">
@@ -56,7 +56,7 @@
                 </svg>
             </button>
             <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors">
-                <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">RK</div>
+                <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">RK</div>
             </button>
         </div>
     </header>
@@ -81,7 +81,7 @@
             </a>
         </div>
         <div class="w-12 h-12 flex items-center justify-center cursor-pointer hover:bg-gray-50">
-            <div class="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">RK</div>
+            <div class="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">RK</div>
         </div>
     </aside>
     
@@ -127,7 +127,7 @@
                         <div id="selectedCustomer" class="hidden mt-3 p-4 bg-primary/5 border border-primary/20 rounded-lg">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">RS</div>
+                                    <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">RS</div>
                                     <div>
                                         <div class="font-medium text-gray-900">Rajesh Sharma</div>
                                         <div class="text-xs text-gray-500">+91 98765 43210</div>
@@ -368,7 +368,7 @@
             } else {
                 resultsEl.innerHTML = filtered.map(c => `
                     <button onclick="selectCustomer(${c.id})" class="w-full p-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors">
-                        <div class="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-primary font-bold text-sm">${c.initials}</div>
+                        <div class="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold text-sm">${c.initials}</div>
                         <div class="flex-1">
                             <div class="font-medium text-gray-900 text-sm">${c.name}</div>
                             <div class="text-xs text-gray-500">${c.phone}</div>

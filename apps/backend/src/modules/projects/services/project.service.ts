@@ -1,17 +1,43 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { ProjectPriority, ProjectStatus, QuoteStatus, TaskStatus } from '@oneohm-epc/shared-types';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  type MilestoneType,
+  MilestoneStatus,
+  type PaymentMilestone,
+  PaymentMilestoneStage,
+  ProjectPriority,
+  ProjectStatus,
+  PropertyStatus,
+  QuoteStatus,
+  TaskStatus,
+} from '@oneohm-epc/shared-types';
+import { DataSource, type EntityManager } from 'typeorm';
 
 import { CustomerPropertyRepository } from '../../customers/repositories/customer-property.repository';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { QuoteService } from '../../quotes/services/quote.service';
-import { CreateProjectDto, UpdateProjectDto } from '../dto';
+import { ConvertFromQuoteDto, UpdateProjectDto } from '../dto';
 import { ProjectEntity } from '../entities/project.entity';
 import {
   MilestoneRepository,
   ProjectRepository,
   ProjectTaskRepository,
-  TaskTemplateRepository,
+  ProjectTeamRepository,
+  WorkflowStepRepository,
 } from '../repositories';
+import { FALLBACK_TRANSITIONS } from './workflow-engine.service';
+
+const STAGE_TO_MILESTONE_TYPE: Partial<Record<PaymentMilestoneStage, MilestoneType>> = {
+  [PaymentMilestoneStage.MATERIAL_PROCUREMENT]: 'material_procurement' as MilestoneType,
+  [PaymentMilestoneStage.INSTALLATION_START]: 'installation' as MilestoneType,
+  [PaymentMilestoneStage.INSTALLATION_COMPLETE]: 'installation' as MilestoneType,
+  [PaymentMilestoneStage.COMMISSIONING]: 'commissioning' as MilestoneType,
+  [PaymentMilestoneStage.NET_METERING]: 'handover' as MilestoneType,
+};
+
+const PROJECT_CONSTANTS = {
+  ALL_TASKS_LIMIT: 10000,
+  KANBAN_ORDER_MULTIPLIER: 100,
+} as const;
 
 /**
  * Project Service
@@ -24,144 +50,22 @@ import {
  */
 @Injectable()
 export class ProjectService {
+  private readonly logger = new Logger(ProjectService.name);
+
   constructor(
     private readonly projectRepository: ProjectRepository,
     private readonly milestoneRepository: MilestoneRepository,
     private readonly organizationRepository: OrganizationRepository,
     private readonly quoteService: QuoteService,
     private readonly customerPropertyRepository: CustomerPropertyRepository,
-    private readonly taskTemplateRepository: TaskTemplateRepository,
+    private readonly workflowStepRepository: WorkflowStepRepository,
     private readonly taskRepository: ProjectTaskRepository,
+    private readonly teamRepository: ProjectTeamRepository,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
-   * Create a new project
-   * Requires a valid propertyId that belongs to the organization
-   * Enforces OneToOne constraint: one property can have only one project
-   */
-  async create(
-    organizationId: string,
-    createDto: CreateProjectDto,
-    createdBy: string,
-  ): Promise<ProjectEntity> {
-    // Validate property exists and belongs to org
-    const property = await this.customerPropertyRepository.findByIdAndOrganization(
-      createDto.propertyId,
-      organizationId,
-    );
-    if (!property) {
-      throw new NotFoundException(`Property with ID ${createDto.propertyId} not found`);
-    }
-
-    // Check OneToOne constraint: property must not have existing project
-    const existingProject = await this.projectRepository.findOneByPropertyId(
-      createDto.propertyId,
-      organizationId,
-    );
-    if (existingProject) {
-      throw new BadRequestException(
-        `Property already has a project (${existingProject.projectNumber}). One property can only have one project.`,
-      );
-    }
-
-    // Get organization for project number generation
-    const org = await this.organizationRepository.findOneById(organizationId);
-    if (!org) {
-      throw new NotFoundException(`Organization with ID ${organizationId} not found`);
-    }
-
-    // Generate project number
-    const projectNumber = await this.generateProjectNumber(organizationId, org.code);
-
-    // Create project - organizationId, customerId, siteAddress, siteCoordinates
-    // are derived from property relation
-    const project = await this.projectRepository.create({
-      propertyId: createDto.propertyId,
-      createdBy,
-      projectNumber,
-      name: createDto.name,
-      description: createDto.description,
-      systemSizeKw: createDto.systemSizeKw,
-      projectType: createDto.projectType,
-      status: createDto.status || ProjectStatus.DRAFT,
-      priority: createDto.priority || ProjectPriority.NORMAL,
-      progressPercentage: createDto.progressPercentage || 0,
-      startDate: createDto.startDate ? new Date(createDto.startDate) : undefined,
-      endDate: createDto.endDate ? new Date(createDto.endDate) : undefined,
-      estimatedCost: createDto.estimatedCost,
-      actualCost: createDto.actualCost,
-      metadata: createDto.metadata,
-    });
-
-    // Auto-apply task templates after project creation
-    await this.applyTaskTemplates(project.id, organizationId, createdBy);
-
-    return this.projectRepository.findById(project.id, organizationId);
-  }
-
-  /**
-   * Auto-apply active task templates to a project
-   * Creates tasks from templates and resolves dependencies
-   */
-  private async applyTaskTemplates(
-    projectId: string,
-    organizationId: string,
-    createdBy: string,
-  ): Promise<void> {
-    // Get all active task templates for the organization
-    const templates = await this.taskTemplateRepository.findAllActive(organizationId);
-
-    if (templates.length === 0) {
-      return;
-    }
-
-    // Map from template code to created task ID (for dependency resolution)
-    const codeToTaskId = new Map<string, string>();
-
-    // First pass: create all tasks
-    for (const template of templates) {
-      const task = await this.taskRepository.create({
-        projectId,
-        taskTemplateId: template.id,
-        name: template.name,
-        code: template.code,
-        description: template.description,
-        kanbanOrder: template.sequenceOrder * 100, // Space out for insertion
-        status: TaskStatus.BACKLOG,
-        checklist: template.checklistTemplate,
-        labels: template.type ? [template.type] : undefined,
-        createdBy,
-        updatedBy: createdBy,
-      });
-
-      codeToTaskId.set(template.code, task.id);
-    }
-
-    // Second pass: resolve dependencies (template.dependsOnTaskCodes -> task.dependsOnTaskIds)
-    for (const template of templates) {
-      if (template.dependsOnTaskCodes && template.dependsOnTaskCodes.length > 0) {
-        const taskId = codeToTaskId.get(template.code);
-        if (!taskId) continue;
-
-        const dependsOnTaskIds: string[] = [];
-        for (const depCode of template.dependsOnTaskCodes) {
-          const depTaskId = codeToTaskId.get(depCode);
-          if (depTaskId) {
-            dependsOnTaskIds.push(depTaskId);
-          }
-        }
-
-        if (dependsOnTaskIds.length > 0) {
-          await this.taskRepository.update(taskId, projectId, {
-            dependsOnTaskIds,
-          });
-        }
-      }
-    }
-  }
-
-  /**
-   * Find all projects with filters
+   * Find all projects with filters, computed fields, and payment summaries
    */
   async findAll(
     organizationId: string,
@@ -175,8 +79,19 @@ export class ProjectService {
       fromDate?: string;
       toDate?: string;
       search?: string;
+      sortBy?: string;
+      sortOrder?: 'ASC' | 'DESC';
     },
-  ): Promise<{ projects: ProjectEntity[]; total: number; page: number; limit: number }> {
+  ): Promise<{
+    projects: (ProjectEntity & {
+      currentPhase: string | null;
+      healthStatus: string | null;
+      paymentSummary: { totalExpected: number; totalPaid: number };
+    })[];
+    total: number;
+    page: number;
+    limit: number;
+  }> {
     const { projects, total } = await this.projectRepository.findAll(
       organizationId,
       page,
@@ -184,12 +99,18 @@ export class ProjectService {
       filters,
     );
 
-    return {
-      projects,
-      total,
-      page,
-      limit,
-    };
+    const projectIds = projects.map((p) => p.id);
+    const paymentMap = await this.projectRepository.getPaymentSummaries(projectIds);
+
+    const enriched = projects.map((project) => {
+      const currentPhase = this.computeCurrentPhase(project);
+      const healthStatus = this.computeHealthStatus(project);
+      const paymentSummary = paymentMap.get(project.id) ?? { totalExpected: 0, totalPaid: 0 };
+
+      return Object.assign(project, { currentPhase, healthStatus, paymentSummary });
+    });
+
+    return { projects: enriched, total, page, limit };
   }
 
   /**
@@ -201,7 +122,8 @@ export class ProjectService {
 
   /**
    * Update a project
-   * Note: propertyId cannot be changed after creation
+   * Note: propertyId and quoteId cannot be changed after creation.
+   * actualCost is routed to metadata.actualCost.
    */
   async update(
     id: string,
@@ -209,18 +131,25 @@ export class ProjectService {
     updateDto: UpdateProjectDto,
     updatedBy: string,
   ): Promise<ProjectEntity> {
-    // Verify project exists (repository handles org validation via property)
-    await this.projectRepository.findById(id, organizationId);
+    const project = await this.projectRepository.findById(id, organizationId);
 
-    // Prepare update data
+    const { actualCost, metadata: incomingMetadata, ...safeDto } = updateDto;
+
     const updateData: Record<string, unknown> = {
-      ...updateDto,
+      ...safeDto,
       updatedBy,
-      startDate: updateDto.startDate ? new Date(updateDto.startDate) : undefined,
-      endDate: updateDto.endDate ? new Date(updateDto.endDate) : undefined,
+      startDate: safeDto.startDate ? new Date(safeDto.startDate) : undefined,
+      endDate: safeDto.endDate ? new Date(safeDto.endDate) : undefined,
     };
 
-    // Remove undefined values
+    if (actualCost !== undefined || incomingMetadata !== undefined) {
+      updateData.metadata = {
+        ...project.metadata,
+        ...(incomingMetadata ?? {}),
+        ...(actualCost !== undefined ? { actualCost } : {}),
+      };
+    }
+
     Object.keys(updateData).forEach((key) => {
       if (updateData[key] === undefined) {
         delete updateData[key];
@@ -234,17 +163,22 @@ export class ProjectService {
    * Delete a project
    */
   async delete(id: string, organizationId: string): Promise<void> {
-    // Verify project exists
     const project = await this.projectRepository.findById(id, organizationId);
 
-    // Check if project can be deleted (only draft/cancelled projects)
     if (project.status !== ProjectStatus.DRAFT && project.status !== ProjectStatus.CANCELLED) {
       throw new BadRequestException(
         `Cannot delete project with status ${project.status}. Only draft or cancelled projects can be deleted.`,
       );
     }
 
-    await this.projectRepository.delete(id, organizationId);
+    await this.dataSource.transaction(async (manager) => {
+      await manager.getRepository(ProjectEntity).softDelete({ id });
+      await this.customerPropertyRepository.updateStatusById(
+        project.propertyId,
+        PropertyStatus.ACTIVE,
+        manager,
+      );
+    });
   }
 
   /**
@@ -311,31 +245,52 @@ export class ProjectService {
   }
 
   /**
-   * Convert a quote to a project
-   * Quote must have a propertyId assigned
-   * Enforces OneToOne constraint: one property can have only one project
+   * Convert a quote to a project (full orchestrated flow, transactional)
+   *
+   * Steps:
+   * 1. Validate quote (must be ACCEPTED with propertyId)
+   * 2. Check OneToOne constraint (property -> project)
+   * 3. Create project record
+   * 4. Set property status to CONVERTED
+   * 5. Create milestones from quote payment terms
+   * 6. Apply workflow steps (filtering excluded)
+   * 7. Link tasks to milestones via step.defaultMilestoneType
+   * 8. Add PM + team members if provided
+   * 9. Apply explicit task assignments from API payload
    */
   async convertFromQuote(
     quoteId: string,
     organizationId: string,
     createdBy: string,
+    convertDto?: ConvertFromQuoteDto,
   ): Promise<ProjectEntity> {
-    // Fetch the quote with all details
     const quote = await this.quoteService.findById(quoteId, organizationId);
 
-    // Check if quote is accepted
     if (quote.status !== QuoteStatus.ACCEPTED) {
       throw new BadRequestException('Only accepted quotes can be converted to projects');
     }
 
-    // Validate quote has propertyId - required for project creation
     if (!quote.propertyId) {
       throw new BadRequestException(
         'Cannot convert quote to project: Quote must have a property assigned',
       );
     }
 
-    // Check OneToOne constraint: property must not have existing project
+    const property = await this.customerPropertyRepository.findByIdAndOrganization(
+      quote.propertyId,
+      organizationId,
+    );
+    if (!property) {
+      throw new NotFoundException(
+        `Property with ID ${quote.propertyId} not found in this organization`,
+      );
+    }
+    if (property.status === PropertyStatus.CONVERTED) {
+      throw new BadRequestException(
+        'This property has already been converted to a project. Cannot create another.',
+      );
+    }
+
     const existingProject = await this.projectRepository.findOneByPropertyId(
       quote.propertyId,
       organizationId,
@@ -346,76 +301,58 @@ export class ProjectService {
       );
     }
 
-    // Get organization for project number generation
     const org = await this.organizationRepository.findOneById(organizationId);
     if (!org) {
       throw new NotFoundException(`Organization with ID ${organizationId} not found`);
     }
 
-    // Generate project number
-    const projectNumber = await this.generateProjectNumber(organizationId, org.code);
+    const currentVersion = quote.versions?.find((v) => v.isCurrent) || quote.versions?.[0];
 
-    // Determine project type from quote
-    const projectType = quote.projectType;
-
-    // Get customer name from property or customer
     const customerName =
-      quote.property?.consumerName ||
+      property?.consumerName ||
       `${quote.customer.firstName} ${quote.customer.lastName || ''}`.trim() ||
       'Customer';
+    const autoName = `${customerName} - ${currentVersion?.systemSizeKw ?? ''}kW Solar Installation`.trim();
+    const paymentMilestones: PaymentMilestone[] = currentVersion?.paymentMilestones || [];
 
-    // Create project from quote data
-    // Note: quoteId and projectManagerId are no longer stored on project entity
-    // Quote info is stored in metadata for reference
-    const project = await this.projectRepository.create({
-      propertyId: quote.propertyId,
-      createdBy,
-      projectNumber,
-      name: `${customerName} - ${quote.systemSizeKw}kW Solar Installation`.trim(),
-      description: `Solar installation project converted from quote ${quote.quoteNumber}`,
-      systemSizeKw: quote.systemSizeKw,
-      projectType,
-      status: ProjectStatus.DRAFT,
-      priority: ProjectPriority.NORMAL,
-      progressPercentage: 0,
-      estimatedCost: quote.finalPrice,
-      metadata: {
-        convertedFromQuote: true,
-        quoteNumber: quote.quoteNumber,
-        quoteId, // Store for reference
-        originalQuoteAmount: quote.finalPrice,
+    const milestones = convertDto?.milestones?.length
+      ? convertDto.milestones.map((m) => ({
+          name: m.name,
+          type: m.type as MilestoneType,
+          order: m.order,
+        }))
+      : paymentMilestones.map((pm, i) => ({
+          name: pm.name,
+          type: STAGE_TO_MILESTONE_TYPE[pm.stage] || ('custom' as MilestoneType),
+          order: pm.order || i + 1,
+        }));
+
+    return this.orchestrateProjectCreation({
+      projectData: {
+        propertyId: quote.propertyId,
+        quoteId,
+        name: convertDto?.name || autoName,
+        description:
+          convertDto?.description ||
+          `Solar installation project converted from quote ${quote.quoteNumber}`,
+        status: ProjectStatus.DRAFT,
+        priority: convertDto?.priority || ProjectPriority.NORMAL,
+        progressPercentage: 0,
+        startDate: convertDto?.startDate ? new Date(convertDto.startDate) : undefined,
+        endDate: convertDto?.endDate ? new Date(convertDto.endDate) : undefined,
       },
-    });
-
-    return this.projectRepository.findById(project.id, organizationId);
-  }
-
-  /**
-   * Generate unique project number
-   * @param organizationId - UUID of the organization (for querying)
-   * @param orgCode - Organization code (for project number prefix)
-   */
-  private async generateProjectNumber(organizationId: string, orgCode: string): Promise<string> {
-    const year = new Date().getFullYear();
-    const prefix = `PRJ-${orgCode}-${year}`;
-
-    // Find the last project number for this organization and year
-    // IMPORTANT: This includes soft-deleted projects to ensure unique numbers
-    const lastProjectNumber = await this.projectRepository.findLastProjectNumber(
+      propertyId: quote.propertyId,
       organizationId,
-      prefix,
-    );
-
-    let nextNumber = 1;
-    if (lastProjectNumber) {
-      const parts = lastProjectNumber.split('-');
-      const lastNumber = parts[parts.length - 1];
-      if (lastNumber) {
-        nextNumber = parseInt(lastNumber, 10) + 1;
-      }
-    }
-
-    return `${prefix}-${String(nextNumber).padStart(4, '0')}`;
+      orgCode: org.code,
+      createdBy,
+      milestones,
+      teamConfig: convertDto
+        ? { pmId: convertDto.projectManagerId, members: convertDto.teamMembers }
+        : undefined,
+      excludedStepIds: convertDto?.excludedStepIds,
+      taskAssignments: convertDto?.taskAssignments,
+      taskMilestoneOverrides: convertDto?.taskMilestoneOverrides,
+    });
   }
 
   /**
@@ -448,7 +385,12 @@ export class ProjectService {
     const project = await this.findById(projectId, organizationId);
 
     // Get all tasks for timeline (get all tasks without pagination)
-    const { data: tasks } = await this.taskRepository.findAll(projectId, 1, 10000, {});
+    const { data: tasks } = await this.taskRepository.findAll(
+      projectId,
+      1,
+      PROJECT_CONSTANTS.ALL_TASKS_LIMIT,
+      {},
+    );
 
     // Get milestones
     const milestones = await this.milestoneRepository.findByProject(projectId);
@@ -462,7 +404,7 @@ export class ProjectService {
       },
       tasks: tasks.map((task) => ({
         id: task.id,
-        name: task.name,
+        name: task.name ?? task.nameOverride ?? task.code,
         code: task.code,
         status: task.status,
         startDate: task.startDate,
@@ -516,7 +458,7 @@ export class ProjectService {
       blockedTasksCount: statusCounts[TaskStatus.BLOCKED] || 0,
       upcomingDeadlines: upcomingTasks.map((task) => ({
         id: task.id,
-        name: task.name,
+        name: task.name ?? task.nameOverride ?? task.code,
         endDate: task.endDate!,
       })),
     };
@@ -551,6 +493,416 @@ export class ProjectService {
       throw new BadRequestException(
         `Cannot transition from ${currentStatus} to ${newStatus}. Allowed transitions: ${allowed.join(', ')}`,
       );
+    }
+  }
+
+  private computeCurrentPhase(project: ProjectEntity): string | null {
+    if (!project.milestones || project.milestones.length === 0) return null;
+
+    const inProgress = project.milestones.find((m) => m.status === MilestoneStatus.IN_PROGRESS);
+    if (inProgress) return inProgress.milestoneType;
+
+    const latest = [...project.milestones].sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    );
+    return latest[0]?.milestoneType ?? null;
+  }
+
+  private computeHealthStatus(project: ProjectEntity): 'on_track' | 'at_risk' | 'delayed' | null {
+    const inactiveStatuses = [
+      ProjectStatus.ON_HOLD,
+      ProjectStatus.COMPLETED,
+      ProjectStatus.CANCELLED,
+      ProjectStatus.DRAFT,
+    ];
+    if (inactiveStatuses.includes(project.status)) return null;
+    if (!project.endDate) return 'on_track';
+
+    const now = new Date();
+    const due = new Date(project.endDate);
+
+    if (due < now) return 'delayed';
+
+    const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
+    if (due.getTime() - now.getTime() < fourteenDaysMs && project.progressPercentage < 80) {
+      return 'at_risk';
+    }
+
+    return 'on_track';
+  }
+
+  /**
+   * Generate unique project number using centralized code generator
+   */
+  private async generateProjectNumber(orgCode: string, manager?: EntityManager): Promise<string> {
+    return this.projectRepository.generateProjectNumber(orgCode, manager);
+  }
+
+  /**
+   * Detect dependency cycles among workflow steps via topological sort.
+   * Logs a warning if cycles are found but does not block execution.
+   */
+  private detectDependencyCycles(steps: { code: string; dependsOnTaskCodes?: string[] | null }[]): void {
+    const codeSet = new Set(steps.map((s) => s.code));
+    const adjList = new Map<string, string[]>();
+    const inDegree = new Map<string, number>();
+
+    for (const s of steps) {
+      adjList.set(s.code, []);
+      inDegree.set(s.code, 0);
+    }
+
+    for (const s of steps) {
+      if (s.dependsOnTaskCodes) {
+        for (const dep of s.dependsOnTaskCodes) {
+          if (!codeSet.has(dep)) {
+            this.logger.warn(`Step "${s.code}" depends on missing code "${dep}" — skipping dep`);
+            continue;
+          }
+          adjList.get(dep)!.push(s.code);
+          inDegree.set(s.code, (inDegree.get(s.code) || 0) + 1);
+        }
+      }
+    }
+
+    const queue: string[] = [];
+    for (const [code, deg] of inDegree) {
+      if (deg === 0) queue.push(code);
+    }
+
+    let visited = 0;
+    while (queue.length > 0) {
+      const node = queue.shift()!;
+      visited++;
+      for (const neighbor of adjList.get(node) || []) {
+        const newDeg = (inDegree.get(neighbor) || 1) - 1;
+        inDegree.set(neighbor, newDeg);
+        if (newDeg === 0) queue.push(neighbor);
+      }
+    }
+
+    if (visited < steps.length) {
+      this.logger.warn(
+        `Dependency cycle detected among workflow steps — proceeding without dependency links for cycled nodes`,
+      );
+    }
+  }
+
+  /**
+   * Auto-apply active workflow steps to a project.
+   * Filters out excluded templates, detects dependency cycles, and resolves dependencies.
+   */
+  private async applyWorkflowSteps(
+    projectId: string,
+    organizationId: string,
+    createdBy: string,
+    excludedStepIds?: string[],
+    manager?: EntityManager,
+  ): Promise<void> {
+    let steps = await this.workflowStepRepository.findAllActive(organizationId, manager);
+
+    if (steps.length === 0) return;
+
+    if (excludedStepIds && excludedStepIds.length > 0) {
+      const excludeSet = new Set(excludedStepIds);
+      steps = steps.filter((s) => !excludeSet.has(s.id));
+    }
+
+    if (steps.length === 0) return;
+
+    this.detectDependencyCycles(steps);
+
+    const org = await this.organizationRepository.findOneById(organizationId);
+    const orgCode = org?.code || 'UNKNOWN';
+    const codeToTaskId = new Map<string, string>();
+
+    for (const step of steps) {
+      let taskCode: string;
+      try {
+        taskCode = await this.taskRepository.generateTaskCode(orgCode, manager);
+      } catch {
+        taskCode = step.code;
+      }
+
+      const task = await this.taskRepository.create(
+        {
+          projectId,
+          workflowStepId: step.id,
+          code: taskCode,
+          kanbanOrder: step.sequenceOrder * PROJECT_CONSTANTS.KANBAN_ORDER_MULTIPLIER,
+          status: TaskStatus.BACKLOG,
+          createdBy,
+          updatedBy: createdBy,
+        },
+        manager,
+      );
+
+      codeToTaskId.set(step.code, task.id);
+    }
+
+    for (const step of steps) {
+      if (step.dependsOnTaskCodes && step.dependsOnTaskCodes.length > 0) {
+        const taskId = codeToTaskId.get(step.code);
+        if (!taskId) continue;
+
+        const dependsOnTaskIds: string[] = [];
+        for (const depCode of step.dependsOnTaskCodes) {
+          const depTaskId = codeToTaskId.get(depCode);
+          if (depTaskId) {
+            dependsOnTaskIds.push(depTaskId);
+          } else {
+            this.logger.warn(
+              `Task dependency resolution: code "${depCode}" not found for step "${step.code}"`,
+            );
+          }
+        }
+
+        if (dependsOnTaskIds.length > 0) {
+          await this.taskRepository.updateById(taskId, { dependsOnTaskIds }, manager);
+        }
+      }
+    }
+  }
+
+  /**
+   * Shared orchestration for project creation (quote conversion flow).
+   * Wrapped in a database transaction for atomicity.
+   */
+  private async orchestrateProjectCreation(params: {
+    projectData: Partial<ProjectEntity>;
+    propertyId: string;
+    organizationId: string;
+    orgCode: string;
+    createdBy: string;
+    milestones: Array<{ name: string; type: MilestoneType; order: number }>;
+    teamConfig?: {
+      pmId?: string;
+      members?: Array<{ userId: string; roleName: string; isProjectManager?: boolean }>;
+    };
+    excludedStepIds?: string[];
+    taskAssignments?: Array<{ workflowStepId: string; assignedToUserId: string }>;
+    taskMilestoneOverrides?: Array<{ workflowStepId: string; milestoneOrder: number }>;
+  }): Promise<ProjectEntity> {
+    const {
+      projectData,
+      propertyId,
+      organizationId,
+      orgCode,
+      createdBy,
+      milestones,
+      teamConfig,
+      excludedStepIds,
+      taskAssignments,
+      taskMilestoneOverrides,
+    } = params;
+
+    return this.dataSource.transaction(async (manager) => {
+      // 1. Generate project number inside transaction to avoid race conditions
+      if (!projectData.projectNumber) {
+        projectData.projectNumber = await this.generateProjectNumber(orgCode, manager);
+      }
+
+      // 2. Create project
+      const project = await this.projectRepository.create({ ...projectData, createdBy }, manager);
+
+      // 3. Update property to CONVERTED
+      await this.customerPropertyRepository.updateStatusById(propertyId, PropertyStatus.CONVERTED, manager);
+
+      // 4. Create milestones
+      const { milestoneTypeMap, milestoneOrderMap } = await this.createProjectMilestones(
+        project.id,
+        milestones,
+        orgCode,
+        createdBy,
+        manager,
+      );
+
+      // 5. Set default transitions and excluded steps on project
+      await this.projectRepository.updateById(
+        project.id,
+        { defaultTransitions: FALLBACK_TRANSITIONS, excludedStepIds: excludedStepIds ?? [] },
+        manager,
+      );
+
+      // 6. Apply workflow steps (lean rows, no data copy)
+      await this.applyWorkflowSteps(project.id, organizationId, createdBy, excludedStepIds, manager);
+
+      // 7. Link tasks to milestones via step.defaultMilestoneType
+      await this.linkTasksToMilestones(project.id, organizationId, milestoneTypeMap, manager);
+
+      // 8. Apply milestone overrides from frontend
+      if (taskMilestoneOverrides?.length) {
+        await this.applyMilestoneOverrides(project.id, taskMilestoneOverrides, milestoneOrderMap, manager);
+      }
+
+      // 9. Add PM + team members
+      await this.addTeamMembers(project.id, teamConfig, manager);
+
+      // 10. Apply explicit task assignments from API payload (sole assignment path)
+      await this.applyTaskAssignments(project.id, taskAssignments ?? [], manager);
+
+      // 11. Compute initial progress
+      const { done, total } = await this.taskRepository.computeProgress(project.id, manager);
+      const progress = total > 0 ? Math.round((100 * done) / total) : 0;
+      await this.projectRepository.updateById(project.id, { progressPercentage: progress }, manager);
+      await this.milestoneRepository.updateProgressForProject(project.id, manager);
+
+      return this.projectRepository.findById(project.id, organizationId, manager);
+    });
+  }
+
+  private async createProjectMilestones(
+    projectId: string,
+    milestones: Array<{ name: string; type: MilestoneType; order: number }>,
+    orgCode: string,
+    createdBy: string,
+    manager: EntityManager,
+  ): Promise<{ milestoneTypeMap: Map<string, string>; milestoneOrderMap: Map<number, string> }> {
+    const milestoneTypeMap = new Map<string, string>();
+    const milestoneOrderMap = new Map<number, string>();
+
+    for (const ms of milestones) {
+      const milestone = await this.milestoneRepository.create(
+        {
+          projectId,
+          name: ms.name,
+          milestoneType: ms.type,
+          status: MilestoneStatus.PENDING,
+          sequenceOrder: ms.order,
+          createdBy,
+        },
+        manager,
+      );
+
+      try {
+        const milestoneCode = await this.milestoneRepository.generateMilestoneCode(orgCode, manager);
+        await this.milestoneRepository.updateById(milestone.id, { milestoneCode }, manager);
+      } catch (err) {
+        this.logger.warn(`Failed to generate milestone code for ${milestone.id}: ${String(err)}`);
+      }
+
+      milestoneTypeMap.set(ms.type, milestone.id);
+      milestoneOrderMap.set(ms.order, milestone.id);
+    }
+
+    return { milestoneTypeMap, milestoneOrderMap };
+  }
+
+  private async linkTasksToMilestones(
+    projectId: string,
+    organizationId: string,
+    milestoneTypeMap: Map<string, string>,
+    manager: EntityManager,
+  ): Promise<void> {
+    const allTasks = await this.taskRepository.findByProjectRaw(
+      projectId,
+      { relations: ['workflowStep'] },
+      manager,
+    );
+    const steps = await this.workflowStepRepository.findAllActive(organizationId, manager);
+    const stepMap = new Map(steps.map((s) => [s.id, s]));
+
+    for (const task of allTasks) {
+      if (!task.workflowStepId || task.milestoneId) continue;
+      const step = stepMap.get(task.workflowStepId);
+      if (!step?.defaultMilestoneType) continue;
+      const milestoneId = milestoneTypeMap.get(step.defaultMilestoneType);
+      if (milestoneId) {
+        await this.taskRepository.updateById(task.id, { milestoneId }, manager);
+      }
+    }
+  }
+
+  private async applyMilestoneOverrides(
+    projectId: string,
+    overrides: Array<{ workflowStepId: string; milestoneOrder: number }>,
+    milestoneOrderMap: Map<number, string>,
+    manager: EntityManager,
+  ): Promise<void> {
+    const tasks = await this.taskRepository.findByProjectRaw(projectId, undefined, manager);
+    for (const override of overrides) {
+      const task = tasks.find((t) => t.workflowStepId === override.workflowStepId);
+      if (!task) continue;
+      const milestoneId =
+        override.milestoneOrder === 0 ? null : milestoneOrderMap.get(override.milestoneOrder);
+      if (override.milestoneOrder === 0 || milestoneId) {
+        await this.taskRepository.updateById(task.id, { milestoneId: milestoneId ?? undefined }, manager);
+      }
+    }
+  }
+
+  private async addTeamMembers(
+    projectId: string,
+    teamConfig?: {
+      pmId?: string;
+      members?: Array<{ userId: string; roleName: string; isProjectManager?: boolean }>;
+    },
+    manager?: EntityManager,
+  ): Promise<void> {
+    if (teamConfig?.pmId) {
+      const existing = await this.teamRepository.findOneByUserAndProject(teamConfig.pmId, projectId, manager);
+      if (!existing) {
+        await this.teamRepository.create(
+          { projectId, userId: teamConfig.pmId, roleName: 'Project Manager', isProjectManager: true },
+          manager,
+        );
+      }
+    }
+
+    if (teamConfig?.members) {
+      for (const member of teamConfig.members) {
+        const existing = await this.teamRepository.findOneByUserAndProject(member.userId, projectId, manager);
+        if (existing) continue;
+        await this.teamRepository.create(
+          {
+            projectId,
+            userId: member.userId,
+            roleName: member.roleName,
+            isProjectManager: member.isProjectManager ?? false,
+          },
+          manager,
+        );
+      }
+    }
+  }
+
+  private async applyTaskAssignments(
+    projectId: string,
+    assignments: Array<{ workflowStepId: string; assignedToUserId: string }>,
+    manager: EntityManager,
+  ): Promise<void> {
+    if (assignments.length === 0) return;
+
+    const seenStepIds = new Set<string>();
+    for (const a of assignments) {
+      if (seenStepIds.has(a.workflowStepId)) {
+        throw new BadRequestException(
+          `Duplicate task assignment for workflow step ${a.workflowStepId}`,
+        );
+      }
+      seenStepIds.add(a.workflowStepId);
+    }
+
+    const tasks = await this.taskRepository.findByProjectRaw(projectId, undefined, manager);
+    const teamMembers = await this.teamRepository.findByProject(projectId, manager);
+    const teamUserIds = new Set(teamMembers.map((m) => m.userId));
+
+    for (const assignment of assignments) {
+      if (!teamUserIds.has(assignment.assignedToUserId)) {
+        throw new BadRequestException(
+          `Cannot assign task: user ${assignment.assignedToUserId} is not a team member of this project`,
+        );
+      }
+
+      const task = tasks.find((t) => t.workflowStepId === assignment.workflowStepId);
+      if (!task) {
+        this.logger.warn(
+          `Task assignment skipped: no task found for workflow step ${assignment.workflowStepId} in project ${projectId}`,
+        );
+        continue;
+      }
+
+      await this.taskRepository.updateById(task.id, { assignedToUserId: assignment.assignedToUserId }, manager);
     }
   }
 }

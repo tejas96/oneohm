@@ -1,10 +1,11 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { MilestoneStatus, MilestoneType } from '@oneohm-epc/shared-types';
 
+import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { CreateMilestoneDto, UpdateMilestoneDto } from '../dto';
+import { ProjectService } from './project.service';
 import { ProjectMilestoneEntity } from '../entities/project-milestone.entity';
 import { MilestoneRepository, ProjectRepository } from '../repositories';
-import { ProjectService } from './project.service';
 
 /**
  * Milestone Service
@@ -12,9 +13,12 @@ import { ProjectService } from './project.service';
  */
 @Injectable()
 export class MilestoneService {
+  private readonly logger = new Logger(MilestoneService.name);
+
   constructor(
     private readonly milestoneRepository: MilestoneRepository,
     private readonly projectRepository: ProjectRepository,
+    private readonly organizationRepository: OrganizationRepository,
     private readonly projectService: ProjectService,
   ) {}
 
@@ -48,6 +52,17 @@ export class MilestoneService {
       dependencies: createDto.dependencies,
       deliverables: createDto.deliverables,
     });
+
+    // Generate human-readable code (e.g. MS-ONEOHM_EPC-2026-0001)
+    try {
+      const org = await this.organizationRepository.findOneById(organizationId);
+      if (org) {
+        const milestoneCode = await this.milestoneRepository.generateMilestoneCode(org.code);
+        await this.milestoneRepository.updateById(milestone.id, { milestoneCode });
+      }
+    } catch (err) {
+      this.logger.warn(`Failed to generate milestone code for ${milestone.id}: ${String(err)}`);
+    }
 
     // Recalculate project progress
     await this.projectService.calculateProgress(createDto.projectId, organizationId);
@@ -243,14 +258,15 @@ export class MilestoneService {
     dependencies: string[],
     excludeId?: string,
   ): Promise<void> {
-    for (const depId of dependencies) {
-      if (depId === excludeId) {
-        throw new BadRequestException('Milestone cannot depend on itself');
-      }
+    if (excludeId && dependencies.includes(excludeId)) {
+      throw new BadRequestException('Milestone cannot depend on itself');
+    }
 
-      try {
-        await this.milestoneRepository.findById(depId, projectId);
-      } catch {
+    const milestones = await this.milestoneRepository.findByProject(projectId);
+    const milestoneIds = new Set(milestones.map((m) => m.id));
+
+    for (const depId of dependencies) {
+      if (!milestoneIds.has(depId)) {
         throw new BadRequestException(`Dependency milestone ${depId} not found`);
       }
     }
@@ -263,8 +279,14 @@ export class MilestoneService {
     projectId: string,
     dependencies: string[],
   ): Promise<void> {
+    const milestones = await this.milestoneRepository.findByProject(projectId);
+    const milestoneMap = new Map(milestones.map((m) => [m.id, m]));
+
     for (const depId of dependencies) {
-      const depMilestone = await this.milestoneRepository.findById(depId, projectId);
+      const depMilestone = milestoneMap.get(depId);
+      if (!depMilestone) {
+        throw new BadRequestException(`Dependency milestone ${depId} not found`);
+      }
       if (depMilestone.status !== MilestoneStatus.COMPLETED) {
         throw new BadRequestException(
           `Cannot start milestone. Dependency "${depMilestone.name}" is not completed yet.`,

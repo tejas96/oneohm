@@ -1,19 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SiteSurveyStatus } from '@oneohm-epc/shared-types';
-import { IsNull, Repository } from 'typeorm';
+import { type EntityManager, IsNull, Repository } from 'typeorm';
 
+import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { SiteSurveyEntity } from '../entities/site-survey.entity';
 
 /**
  * Site Survey Repository
- * Handles database operations for site surveys
+ * Handles database operations for site surveys (one-to-one with project)
  */
 @Injectable()
 export class SurveyRepository {
   constructor(
     @InjectRepository(SiteSurveyEntity)
-    private readonly repository: Repository<SiteSurveyEntity>,
+    public readonly repository: Repository<SiteSurveyEntity>,
   ) {}
 
   /**
@@ -25,106 +26,69 @@ export class SurveyRepository {
   }
 
   /**
-   * Find survey by ID
+   * Find the survey for a project (returns null if none exists)
    */
-  async findById(id: string, projectId: string): Promise<SiteSurveyEntity> {
-    const survey = await this.repository.findOne({
-      where: { id, projectId },
-      relations: ['project', 'surveyor'],
+  async findByProject(projectId: string): Promise<SiteSurveyEntity | null> {
+    return this.repository.findOne({
+      where: { projectId, deletedAt: IsNull() },
+      relations: ['surveyor'],
     });
+  }
+
+  /**
+   * Find the survey for a project or throw NotFoundException
+   */
+  async findByProjectOrFail(projectId: string): Promise<SiteSurveyEntity> {
+    const survey = await this.findByProject(projectId);
 
     if (!survey) {
-      throw new NotFoundException(`Site survey with ID ${id} not found`);
+      throw new NotFoundException(`Site survey for project ${projectId} not found`);
     }
 
     return survey;
   }
 
   /**
-   * Find all surveys for a project
+   * Update survey by ID (no project ownership check — caller must pre-validate)
    */
-  async findByProject(
-    projectId: string,
-    filters?: {
-      status?: SiteSurveyStatus;
-      surveyorId?: string;
-    },
-  ): Promise<SiteSurveyEntity[]> {
-    const query = this.repository
-      .createQueryBuilder('survey')
-      .leftJoinAndSelect('survey.surveyor', 'surveyor')
-      .where('survey.projectId = :projectId', { projectId })
-      .andWhere('survey.deletedAt IS NULL');
-
-    // Apply filters
-    if (filters?.status) {
-      query.andWhere('survey.status = :status', { status: filters.status });
-    }
-
-    if (filters?.surveyorId) {
-      query.andWhere('survey.surveyorId = :surveyorId', { surveyorId: filters.surveyorId });
-    }
-
-    return query.orderBy('survey.surveyDate', 'DESC').getMany();
+  async updateById(id: string, data: Record<string, unknown>): Promise<void> {
+    await this.repository.update(id, data);
   }
 
   /**
-   * Update a survey
+   * Update a survey identified by projectId
    */
-  async update(
-    id: string,
-    projectId: string,
-    updateData: Record<string, unknown>,
-  ): Promise<SiteSurveyEntity> {
-    await this.repository.update({ id, projectId }, updateData);
-    return this.findById(id, projectId);
+  async update(projectId: string, updateData: Record<string, unknown>): Promise<SiteSurveyEntity> {
+    const survey = await this.findByProjectOrFail(projectId);
+    await this.repository.update(survey.id, updateData);
+    return this.findByProjectOrFail(projectId);
   }
 
   /**
-   * Delete a survey
+   * Soft delete a survey by projectId
    */
-  async delete(id: string, projectId: string): Promise<void> {
-    const result = await this.repository.softDelete({ id, projectId });
+  async delete(projectId: string): Promise<void> {
+    const survey = await this.findByProjectOrFail(projectId);
+    const result = await this.repository.softDelete(survey.id);
 
     if (!result.affected || result.affected === 0) {
-      throw new NotFoundException(`Site survey with ID ${id} not found`);
+      throw new NotFoundException(`Site survey for project ${projectId} not found`);
     }
   }
 
   /**
-   * Update survey status
+   * Update survey status by projectId
    */
-  async updateStatus(
-    id: string,
-    projectId: string,
-    status: SiteSurveyStatus,
-  ): Promise<SiteSurveyEntity> {
-    await this.repository.update({ id, projectId }, { status });
-    return this.findById(id, projectId);
+  async updateStatus(projectId: string, status: SiteSurveyStatus): Promise<SiteSurveyEntity> {
+    const survey = await this.findByProjectOrFail(projectId);
+    await this.repository.update(survey.id, { status });
+    return this.findByProjectOrFail(projectId);
   }
 
   /**
-   * Find completed surveys for a project
+   * Generate a unique survey code (e.g. SSV-ONEOHM-2026-0001)
    */
-  async findCompleted(projectId: string): Promise<SiteSurveyEntity[]> {
-    return this.repository.find({
-      where: {
-        projectId,
-        status: SiteSurveyStatus.COMPLETED,
-        deletedAt: IsNull(),
-      },
-      order: { surveyDate: 'DESC' },
-    });
-  }
-
-  /**
-   * Find latest survey for a project
-   */
-  async findLatest(projectId: string): Promise<SiteSurveyEntity | null> {
-    return this.repository.findOne({
-      where: { projectId, deletedAt: IsNull() },
-      order: { surveyDate: 'DESC' },
-      relations: ['surveyor'],
-    });
+  async generateSurveyCode(orgCode: string, manager?: EntityManager): Promise<string> {
+    return generateEntityCode(this.repository, 'surveyCode', 'SSV', orgCode, 'survey_code', manager);
   }
 }

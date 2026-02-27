@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CommissionStatus } from '@oneohm-epc/shared-types';
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Transform } from 'class-transformer';
+
+import { toNum } from '../../../common/utils';
 
 /**
  * DTO for commission response
@@ -27,14 +29,17 @@ export class CommissionResponseDto {
   // ==================== Commission Calculation ====================
   @ApiProperty()
   @Expose()
+  @Transform(({ value }) => toNum(value))
   projectValue!: number;
 
   @ApiProperty()
   @Expose()
+  @Transform(({ value }) => toNum(value))
   commissionPercentage!: number;
 
   @ApiProperty()
   @Expose()
+  @Transform(({ value }) => toNum(value))
   commissionAmount!: number;
 
   // ==================== Payment Status ====================

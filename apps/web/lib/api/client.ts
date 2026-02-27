@@ -1,12 +1,14 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import Cookies from 'js-cookie';
 
+import { ROUTES } from '@/lib/config/routes';
+
 /**
  * OneOhm EPC - API Client
  * Configured with JWT authentication interceptors
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085/api/v1';
 
 // Create axios instance
 export const apiClient = axios.create({
@@ -157,7 +159,7 @@ apiClient.interceptors.response.use(
         processQueue(new Error('Token refresh failed'));
         // Redirect to login
         if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          window.location.href = ROUTES.AUTH.LOGIN;
         }
         return Promise.reject(error instanceof Error ? error : new Error(String(error)));
       } catch (refreshError) {
@@ -165,7 +167,7 @@ apiClient.interceptors.response.use(
         processQueue(err);
         clearTokens();
         if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          window.location.href = ROUTES.AUTH.LOGIN;
         }
         return Promise.reject(err);
       } finally {

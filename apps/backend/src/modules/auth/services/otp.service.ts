@@ -5,7 +5,6 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   SecurityEventType,
   SecurityEventCategory,
@@ -14,6 +13,7 @@ import {
 import * as bcrypt from 'bcrypt';
 import { MoreThan } from 'typeorm';
 
+import { ConfigService } from '../../../config/config.service';
 import { SecurityEventRepository } from '../../security-events/repositories/security-event.repository';
 import { SecurityEventService } from '../../security-events/services/security-event.service';
 /**
@@ -39,7 +39,7 @@ export class OtpService {
     private readonly securityEventRepository: SecurityEventRepository,
     private readonly configService: ConfigService,
   ) {
-    this.isDevelopment = this.configService.get('NODE_ENV') === 'development';
+    this.isDevelopment = this.configService.isDevelopment;
     if (this.isDevelopment) {
       this.logger.warn('🔓 Development mode: Test OTP "123456" enabled');
     }
@@ -227,34 +227,6 @@ export class OtpService {
   }
 
   /**
-   * Invalidate existing pending OTPs for the phone
-   */
-  private async invalidateExistingOtps(phone: string): Promise<void> {
-    await this.securityEventRepository.repository
-      .createQueryBuilder()
-      .update()
-      .set({ status: SecurityEventStatus.FAILED })
-      .where('eventType = :eventType', { eventType: SecurityEventType.OTP_SENT })
-      .andWhere('status = :status', { status: SecurityEventStatus.PENDING })
-      .andWhere('metadata @> :metadata', { metadata: { phone } })
-      .execute();
-
-    this.logger.debug(`Invalidated existing OTPs for ${phone}`);
-  }
-
-  /**
-   * Generate random OTP
-   */
-  private generateOtp(): string {
-    const digits = '0123456789';
-    let otp = '';
-    for (let i = 0; i < this.OTP_LENGTH; i++) {
-      otp += digits[Math.floor(Math.random() * 10)];
-    }
-    return otp;
-  }
-
-  /**
    * Request OTP - Public endpoint
    * Creates user if doesn't exist (Firebase-like)
    */
@@ -335,5 +307,33 @@ export class OtpService {
     throw new BadRequestException(
       'OTP verification successful but JWT generation not yet implemented',
     );
+  }
+
+  /**
+   * Invalidate existing pending OTPs for the phone
+   */
+  private async invalidateExistingOtps(phone: string): Promise<void> {
+    await this.securityEventRepository.repository
+      .createQueryBuilder()
+      .update()
+      .set({ status: SecurityEventStatus.FAILED })
+      .where('eventType = :eventType', { eventType: SecurityEventType.OTP_SENT })
+      .andWhere('status = :status', { status: SecurityEventStatus.PENDING })
+      .andWhere('metadata @> :metadata', { metadata: { phone } })
+      .execute();
+
+    this.logger.debug(`Invalidated existing OTPs for ${phone}`);
+  }
+
+  /**
+   * Generate random OTP
+   */
+  private generateOtp(): string {
+    const digits = '0123456789';
+    let otp = '';
+    for (let i = 0; i < this.OTP_LENGTH; i++) {
+      otp += digits[Math.floor(Math.random() * 10)];
+    }
+    return otp;
   }
 }

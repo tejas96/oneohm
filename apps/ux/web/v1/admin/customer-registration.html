@@ -319,35 +319,6 @@
                                 </div>
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <!-- Location Capture -->
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                                            GPS Location Coordinates
-                                        </label>
-                                        <div class="flex space-x-2">
-                                            <input 
-                                                type="text" 
-                                                id="locationCoordinates" 
-                                                name="locationCoordinates" 
-                                                class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50"
-                                                placeholder="Click to capture GPS location"
-                                                readonly
-                                            />
-                                            <button 
-                                                type="button" 
-                                                onclick="captureLocation()"
-                                                class="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center space-x-2"
-                                            >
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                </svg>
-                                                <span>Capture</span>
-                                            </button>
-                                        </div>
-                                        <p class="mt-1 text-xs text-gray-500">Recommended for accurate site identification</p>
-                                    </div>
-
                                     <!-- Property Name -->
                                     <div>
                                         <label for="propertyName" class="block text-sm font-medium text-gray-700 mb-2">
@@ -621,23 +592,6 @@
             this.value = this.value.toUpperCase();
         });
 
-        // Capture GPS location
-        function captureLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude.toFixed(6);
-                        const lng = position.coords.longitude.toFixed(6);
-                        document.getElementById('locationCoordinates').value = `POINT(${lat} ${lng})`;
-                    },
-                    (error) => {
-                        alert('Unable to capture location. Please enable location access.');
-                    }
-                );
-            } else {
-                alert('Geolocation is not supported by your browser');
-            }
-        }
 
         // Save draft
         function saveDraft() {
@@ -698,7 +652,6 @@
                 state: document.getElementById('state').value.trim() || null,
                 country: document.getElementById('country').value.trim(),
                 pincode: document.getElementById('pincode').value.trim() || null,
-                locationCoordinates: document.getElementById('locationCoordinates').value || null,
                 propertyType: propertyTypeRadio ? propertyTypeRadio.value : null,
                 propertyName: document.getElementById('propertyName').value.trim() || null,
                 consumerNumber: document.getElementById('consumerNumber').value.trim() || null,

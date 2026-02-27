@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectType, InstallationCostComponents } from '@oneohm-epc/shared-types';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
+
+import { toNum } from '../../../../common/utils';
 
 /**
  * DTO for installation pricing response
@@ -24,10 +26,12 @@ export class InstallationPricingResponseDto {
 
   @ApiProperty({ example: 3 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   minSystemSizeKw!: number;
 
   @ApiProperty({ example: 3 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   maxSystemSizeKw!: number;
 
   @ApiProperty({ enum: ProjectType, example: ProjectType.RESIDENTIAL })
@@ -50,14 +54,17 @@ export class InstallationPricingResponseDto {
 
   @ApiProperty({ example: 35 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   transportRatePerKm!: number;
 
   @ApiProperty({ example: 25 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   floorIncrementPercent!: number;
 
   @ApiProperty({ example: 18 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   gstRate!: number;
 
   @ApiProperty({ example: '2024-01-01' })
@@ -91,6 +98,7 @@ export class InstallationPricingResponseDto {
    */
   @ApiPropertyOptional({ example: 33436, description: 'Total fixed costs' })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   totalFixedCosts?: number;
 }
 

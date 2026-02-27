@@ -1,0 +1,61 @@
+---
+globs: apps/backend/src/database/migrations/**/*.ts
+---
+
+# TypeORM Migrations
+
+> **DDL only. Always include down(). Test both directions.**
+
+---
+
+## 📝 Template
+
+```typescript
+import { MigrationInterface, QueryRunner } from 'typeorm';
+
+export class AddColumnName1770300000000 implements MigrationInterface {
+  name = 'AddColumnName1770300000000';
+
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
+      ALTER TABLE "table_name"
+      ADD COLUMN "column_name" varchar(50) DEFAULT 'value'
+    `);
+  }
+
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
+      ALTER TABLE "table_name"
+      DROP COLUMN "column_name"
+    `);
+  }
+}
+```
+
+---
+
+## ⚡ Common Patterns
+
+```sql
+-- Add column
+ALTER TABLE "t" ADD COLUMN "c" type DEFAULT value;
+
+-- Add index (partial for soft delete)
+CREATE INDEX "idx_t_c" ON "t" ("c") WHERE deleted_at IS NULL;
+
+-- Add trigger for updated_at
+CREATE TRIGGER update_t_updated_at
+  BEFORE UPDATE ON "t"
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+```
+
+---
+
+## 🚫 NEVER
+
+```
+❌ DML in migrations (INSERT/UPDATE/DELETE)
+❌ Skip down() method
+❌ Modify existing migration files
+❌ Hardcode data — use seeds
+```

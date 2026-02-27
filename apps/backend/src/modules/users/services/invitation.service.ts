@@ -1,8 +1,8 @@
 import { randomBytes } from 'crypto';
 
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 
+import { ConfigService } from '../../../config/config.service';
 import { InvitationEntity, InvitationStatus } from '../entities/invitation.entity';
 import { InvitationRepository } from '../repositories/invitation.repository';
 
@@ -144,8 +144,7 @@ export class InvitationService {
    * Generate invitation link
    */
   generateInvitationLink(token: string): string {
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
-    return `${frontendUrl}/auth/accept-invitation?token=${token}`;
+    return `${this.configService.app.frontendUrl}/auth/accept-invitation?token=${token}`;
   }
 
   /**

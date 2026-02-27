@@ -1,7 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ServiceRequestPriority, ServiceRequestStatus } from '@oneohm-epc/shared-types';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 
+import { toNum } from '../../../common/utils';
 import { CustomerResponseDto } from '../../customers/dto/customer-response.dto';
 import { OrganizationResponseDto } from '../../organizations/dto/organization-response.dto';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
@@ -111,10 +112,12 @@ export class ServiceRequestResponseDto {
 
   @ApiPropertyOptional({ description: 'Estimated cost', example: 5000.0 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   estimatedCost?: number;
 
   @ApiPropertyOptional({ description: 'Actual cost', example: 4500.0 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   actualCost?: number;
 
   @ApiPropertyOptional({

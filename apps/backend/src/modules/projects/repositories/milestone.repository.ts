@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MilestoneStatus, MilestoneType } from '@oneohm-epc/shared-types';
-import { IsNull, Repository } from 'typeorm';
+import { type EntityManager, IsNull, Repository } from 'typeorm';
 
+import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { ProjectMilestoneEntity } from '../entities/project-milestone.entity';
 
 /**
@@ -13,15 +14,30 @@ import { ProjectMilestoneEntity } from '../entities/project-milestone.entity';
 export class MilestoneRepository {
   constructor(
     @InjectRepository(ProjectMilestoneEntity)
-    private readonly repository: Repository<ProjectMilestoneEntity>,
+    public readonly repository: Repository<ProjectMilestoneEntity>,
   ) {}
-
   /**
    * Create a new milestone
    */
-  async create(milestoneData: Partial<ProjectMilestoneEntity>): Promise<ProjectMilestoneEntity> {
-    const milestone = this.repository.create(milestoneData);
-    return this.repository.save(milestone);
+  async create(
+    milestoneData: Partial<ProjectMilestoneEntity>,
+    manager?: EntityManager,
+  ): Promise<ProjectMilestoneEntity> {
+    const repo = this.getRepo(manager);
+    const milestone = repo.create(milestoneData);
+    return repo.save(milestone);
+  }
+
+  /**
+   * Update milestone by ID (no project ownership check — use inside transactions where ownership is pre-validated)
+   */
+  async updateById(
+    id: string,
+    data: Record<string, unknown>,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = this.getRepo(manager);
+    await repo.update(id, data);
   }
 
   /**
@@ -137,11 +153,45 @@ export class MilestoneRepository {
   }
 
   /**
+   * Recalculate and update progress for all milestones in a project.
+   * Uses a single SQL statement for efficiency.
+   */
+  async updateProgressForProject(projectId: string, manager?: EntityManager): Promise<void> {
+    const repo = this.getRepo(manager);
+    await repo.query(
+      `
+      UPDATE project_milestones pm
+      SET progress_percentage = COALESCE((
+        SELECT ROUND(100.0 *
+          COUNT(*) FILTER (WHERE pt.status = 'done') /
+          NULLIF(COUNT(*) FILTER (WHERE pt.status != 'cancelled'), 0)
+        )
+        FROM project_tasks pt
+        WHERE pt.milestone_id = pm.id AND pt.deleted_at IS NULL
+      ), 0)
+      WHERE pm.project_id = $1 AND pm.deleted_at IS NULL
+      `,
+      [projectId],
+    );
+  }
+
+  /**
    * Count milestones by status
    */
   async countByStatus(projectId: string, status: MilestoneStatus): Promise<number> {
     return this.repository.count({
       where: { projectId, status, deletedAt: IsNull() },
     });
+  }
+
+  /**
+   * Generate a unique milestone code (e.g. MS-ONEOHM-2026-0001)
+   */
+  async generateMilestoneCode(orgCode: string, manager?: EntityManager): Promise<string> {
+    return generateEntityCode(this.repository, 'milestoneCode', 'MS', orgCode, 'milestone_code', manager);
+  }
+
+  private getRepo(manager?: EntityManager): Repository<ProjectMilestoneEntity> {
+    return manager ? manager.getRepository(ProjectMilestoneEntity) : this.repository;
   }
 }

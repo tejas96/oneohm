@@ -12,59 +12,20 @@ import { ProjectTeamMemberEntity } from './project-team-member.entity';
 import { SiteSurveyEntity } from './site-survey.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { CustomerPropertyEntity } from '../../customers/entities/customer-property.entity';
+import { QuoteEntity } from '../../quotes/entities/quote.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
- * Project Entity
- * Represents a solar installation project from quote acceptance to handover
+ * ProjectEntity
+ * Represents a solar installation project from quote acceptance to handover.
  *
- * Note: organizationId, customerId, siteAddress, and siteCoordinates are derived
- * from the required property relation (property.organizationId, property.customerId,
- * property.address, property.locationCoordinates)
- *
- * Business Rule: One Property can have only ONE Project (OneToOne relationship)
+ * Organization, customer, address, and coordinates are derived from the
+ * required property relation (OneToOne: one property = one project).
  */
 @Entity('projects')
 export class ProjectEntity extends BaseEntity {
-  // ==================== Relations ====================
-  @Column({ type: 'uuid', name: 'property_id' })
-  propertyId!: string;
+  // ==================== Identity ====================
 
-  @OneToOne(() => CustomerPropertyEntity, (property) => property.project)
-  @JoinColumn({ name: 'property_id' })
-  property!: CustomerPropertyEntity;
-
-  @Column({ type: 'uuid', name: 'created_by' })
-  createdBy!: string;
-
-  @ManyToOne(() => UserEntity)
-  @JoinColumn({ name: 'created_by' })
-  creator!: UserEntity;
-
-  @Column({ type: 'uuid', name: 'updated_by', nullable: true })
-  updatedBy?: string;
-
-  @ManyToOne(() => UserEntity, { nullable: true })
-  @JoinColumn({ name: 'updated_by' })
-  updater?: UserEntity;
-
-  // Child relations
-  @OneToMany(() => ProjectMilestoneEntity, (milestone) => milestone.project)
-  milestones!: ProjectMilestoneEntity[];
-
-  @OneToMany(() => ProjectTaskEntity, (task) => task.project)
-  tasks!: ProjectTaskEntity[];
-
-  @OneToMany(() => SiteSurveyEntity, (survey) => survey.project)
-  surveys!: SiteSurveyEntity[];
-
-  @OneToMany(() => ProjectMaterialEntity, (material) => material.project)
-  materials!: ProjectMaterialEntity[];
-
-  @OneToMany(() => ProjectTeamMemberEntity, (teamMember) => teamMember.project)
-  teamMembers!: ProjectTeamMemberEntity[];
-
-  // ==================== Project Info ====================
   @Column({ type: 'varchar', length: 50, unique: true, name: 'project_number' })
   projectNumber!: string;
 
@@ -74,50 +35,87 @@ export class ProjectEntity extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   description?: string;
 
-  // ==================== System Details ====================
-  @Column({ type: 'decimal', precision: 10, scale: 2, name: 'system_size_kw' })
-  systemSizeKw!: number;
+  // ==================== Quote Reference ====================
 
-  @Column({ type: 'varchar', length: 50, name: 'project_type' })
-  projectType!: string;
+  @Column({ type: 'uuid', name: 'quote_id' })
+  quoteId!: string;
 
   // ==================== Status & Progress ====================
-  @Column({
-    type: 'varchar',
-    length: 50,
-    default: ProjectStatus.DRAFT,
-  })
+
+  @Column({ type: 'varchar', length: 50, default: ProjectStatus.DRAFT })
   status!: ProjectStatus;
 
-  @Column({
-    type: 'varchar',
-    length: 20,
-    default: ProjectPriority.NORMAL,
-  })
+  @Column({ type: 'varchar', length: 20, default: ProjectPriority.NORMAL })
   priority!: ProjectPriority;
 
   @Column({ type: 'int', default: 0, name: 'progress_percentage' })
   progressPercentage!: number;
 
   // ==================== Dates ====================
+
   @Column({ type: 'date', nullable: true, name: 'start_date' })
   startDate?: Date;
 
   @Column({ type: 'date', nullable: true, name: 'end_date' })
   endDate?: Date;
 
-  // ==================== Financials ====================
-  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true, name: 'estimated_cost' })
-  estimatedCost?: number;
+  // ==================== Workflow Configuration ====================
 
-  @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true, name: 'actual_cost' })
-  actualCost?: number;
+  @Column({ name: 'excluded_step_ids', type: 'uuid', array: true, nullable: true })
+  excludedStepIds?: string[];
 
-  // ==================== Additional Data ====================
+  @Column({ name: 'default_transitions', type: 'jsonb', nullable: true })
+  defaultTransitions?: Record<string, string[]>;
+
+  // ==================== Metadata ====================
+
   @Column({ type: 'jsonb', nullable: true })
   metadata?: ProjectMetadata;
 
-  // ==================== Soft Delete ====================
+  // ==================== Ownership / Audit ====================
+
+  @Column({ type: 'uuid', name: 'property_id' })
+  propertyId!: string;
+
+  @Column({ type: 'uuid', name: 'created_by' })
+  createdBy!: string;
+
+  @Column({ type: 'uuid', name: 'updated_by', nullable: true })
+  updatedBy?: string;
+
   @DeleteDateColumn({ type: 'timestamp', nullable: true, name: 'deleted_at' })
   deletedAt?: Date;
+
+  // ==================== Relations ====================
+
+  @OneToOne(() => CustomerPropertyEntity, (property) => property.project)
+  @JoinColumn({ name: 'property_id' })
+  property!: CustomerPropertyEntity;
+
+  @ManyToOne(() => QuoteEntity, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'quote_id' })
+  quote!: QuoteEntity;
+
+  @ManyToOne(() => UserEntity)
+  @JoinColumn({ name: 'created_by' })
+  creator!: UserEntity;
+
+  @ManyToOne(() => UserEntity, { nullable: true })
+  @JoinColumn({ name: 'updated_by' })
+  updater?: UserEntity;
+
+  @OneToMany(() => ProjectMilestoneEntity, (milestone) => milestone.project)
+  milestones!: ProjectMilestoneEntity[];
+
+  @OneToMany(() => ProjectTaskEntity, (task) => task.project)
+  tasks!: ProjectTaskEntity[];
+
+  @OneToOne(() => SiteSurveyEntity, (survey) => survey.project)
+  survey?: SiteSurveyEntity;
+
+  @OneToMany(() => ProjectMaterialEntity, (material) => material.project)
+  materials!: ProjectMaterialEntity[];
+
+  @OneToMany(() => ProjectTeamMemberEntity, (teamMember) => teamMember.project)
+  teamMembers!: ProjectTeamMemberEntity[];
 }

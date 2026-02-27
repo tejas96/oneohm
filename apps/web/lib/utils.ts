@@ -8,3 +8,9 @@ import { twMerge } from 'tailwind-merge';
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+// Re-export utilities
+export { getErrorMessage } from './utils/error';
+export { getFileExtension, isImageFile, isPdfFile, isPreviewableFile } from './utils/file';
+export { formatCurrency, formatCurrencyCompact, formatDate, getDueDateColor, formatRelativeDate, formatSystemSize, getInitials } from './utils/format';
+export { formatPhoneForWhatsApp, formatPhoneForDisplay, isValidPhone } from './utils/phone';

@@ -138,7 +138,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
         {icon && (
           <IconComponent
             className={cn(
-              'size-5 flex-shrink-0 mt-0.5',
+              'size-icon-md flex-shrink-0 mt-0.5',
               isBanner ? 'text-current' : variant && iconColorVariants[variant],
             )}
           />
@@ -164,7 +164,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
             )}
             aria-label="Dismiss"
           >
-            <X className="size-4" />
+            <X className="size-icon-sm" />
           </button>
         )}
       </div>

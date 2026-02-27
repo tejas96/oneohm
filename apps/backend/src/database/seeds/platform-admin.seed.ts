@@ -3,6 +3,7 @@ import { UserStatus } from '@oneohm-epc/shared-types';
 import * as bcrypt from 'bcrypt';
 
 import { AppModule } from '../../app.module';
+import { ConfigService } from '../../config/config.service';
 import { PermissionRepository } from '../../modules/iam/repositories/permission.repository';
 import { RolePermissionRepository } from '../../modules/iam/repositories/role-permission.repository';
 import { RoleRepository } from '../../modules/iam/repositories/role.repository';
@@ -27,6 +28,7 @@ async function seedPlatformAdmin() {
   const app = await NestFactory.createApplicationContext(AppModule);
 
   try {
+    const configService = app.get(ConfigService);
     const roleRepository = app.get(RoleRepository);
     const permissionRepository = app.get(PermissionRepository);
     const rolePermissionRepository = app.get(RolePermissionRepository);
@@ -70,17 +72,12 @@ async function seedPlatformAdmin() {
     // eslint-disable-next-line no-console
     console.log(`Found ${allPermissions.length} permissions`);
 
-    // Get permission IDs that aren't already assigned
-    const permissionIdsToAssign: string[] = [];
-    for (const permission of allPermissions) {
-      const hasPermission = await rolePermissionRepository.hasPermission(
-        platformAdminRole.id,
-        permission.id,
-      );
-      if (!hasPermission) {
-        permissionIdsToAssign.push(permission.id);
-      }
-    }
+    // Batch-fetch existing permissions for this role (avoids N+1)
+    const existingRolePermissions = await rolePermissionRepository.findByRoleId(platformAdminRole.id);
+    const existingPermissionIds = new Set(existingRolePermissions.map((rp) => rp.permissionId));
+    const permissionIdsToAssign = allPermissions
+      .filter((p) => !existingPermissionIds.has(p.id))
+      .map((p) => p.id);
 
     // Assign new permissions in batch (createdBy is nullable, use null for system actions)
     if (permissionIdsToAssign.length > 0) {
@@ -109,9 +106,11 @@ async function seedPlatformAdmin() {
     // eslint-disable-next-line no-console
     console.log('\n📝 Creating platform admin user...');
 
-    const email = 'tejas.patil@beyondnyx.com';
-    const phone = '+918087823247';
-    const password = 'admin@123'; // Change this in production!
+    const { platformAdminEmail: email, platformAdminPhone: phone, platformAdminPassword: password } = configService.seed;
+
+    if (password === 'admin@123' && configService.isProduction) {
+      throw new Error('PLATFORM_ADMIN_PASSWORD must be set in production. Do not use default credentials.');
+    }
 
     let platformUser = await userRepository.findByEmail(email);
 

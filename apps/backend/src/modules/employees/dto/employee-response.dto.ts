@@ -139,6 +139,11 @@ export class EmployeeResponseDto {
   @ApiPropertyOptional({ type: EmployeeOrganizationDto })
   organization?: EmployeeOrganizationDto;
 
+  // ==================== Roles ====================
+  @Expose()
+  @ApiPropertyOptional({ type: [String], description: 'Role codes assigned to this employee' })
+  roles?: string[];
+
   // ==================== Audit ====================
   @Expose()
   @ApiProperty()

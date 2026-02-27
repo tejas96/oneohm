@@ -1,6 +1,7 @@
 export * from './approval.enum';
 export * from './audit.enum';
 export * from './comment.enum';
+export * from './common.enum';
 export * from './compliance.enum';
 export * from './customer.enum';
 export * from './customer-feedback.enum';

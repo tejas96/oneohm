@@ -25,6 +25,7 @@ import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
 import { CreateMaterialDto, MaterialResponseDto, UpdateMaterialDto } from '../dto';
+import { ProjectTeamGuard } from '../guards';
 import { MaterialService } from '../services/material.service';
 
 /**
@@ -34,7 +35,7 @@ import { MaterialService } from '../services/material.service';
 @ApiTags('Projects & Installation')
 @ApiBearerAuth()
 @Controller('projects/:projectId/materials')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, ProjectTeamGuard)
 export class MaterialController {
   constructor(private readonly materialService: MaterialService) {}
 
@@ -110,6 +111,30 @@ export class MaterialController {
   }
 
   /**
+   * Get material statistics
+   * NOTE: Must be defined before :id route to avoid NestJS treating "statistics" as a UUID
+   */
+  @Get('statistics/summary')
+  @ApiOperation({
+    summary: 'Get material statistics',
+    description: 'Get comprehensive material statistics for the project',
+  })
+  async getStatistics(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+  ): Promise<{
+    totalMaterials: number;
+    requiredCount: number;
+    orderedCount: number;
+    allocatedCount: number;
+    usedCount: number;
+    totalCost: number;
+  }> {
+    return this.materialService.getStatistics(projectId, organizationId);
+  }
+
+  /**
    * Get material by ID
    */
   @Get(':id')
@@ -179,18 +204,12 @@ export class MaterialController {
     summary: 'Update material status',
     description: 'Change material status with auto-date updates',
   })
-  @ApiQuery({
-    name: 'status',
-    required: true,
-    enum: Object.values(MaterialStatus),
-    description: 'New status',
-  })
   async updateStatus(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Query('status') status: MaterialStatus,
+    @Body('status') status: MaterialStatus,
   ): Promise<MaterialResponseDto> {
     const material = await this.materialService.updateStatus(id, projectId, organizationId, status);
 
@@ -235,28 +254,5 @@ export class MaterialController {
     return plainToInstance(MaterialResponseDto, material, {
       excludeExtraneousValues: true,
     });
-  }
-
-  /**
-   * Get material statistics
-   */
-  @Get('statistics/summary')
-  @ApiOperation({
-    summary: 'Get material statistics',
-    description: 'Get comprehensive material statistics for the project',
-  })
-  async getStatistics(
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
-    @Param('projectId', ParseUUIDPipe) projectId: string,
-  ): Promise<{
-    totalMaterials: number;
-    requiredCount: number;
-    orderedCount: number;
-    allocatedCount: number;
-    usedCount: number;
-    totalCost: number;
-  }> {
-    return this.materialService.getStatistics(projectId, organizationId);
   }
 }

@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { MaterialStatus } from '@oneohm-epc/shared-types';
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
+
+import { toNum } from '../../../../common/utils';
 
 /**
  * Project Material Response DTO
@@ -29,14 +31,17 @@ export class MaterialResponseDto {
 
   @ApiProperty({ example: 10 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   quantityRequired!: number;
 
   @ApiProperty({ example: 10 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   quantityAllocated!: number;
 
   @ApiProperty({ example: 8 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   quantityUsed!: number;
 
   @ApiProperty({ example: 'pcs' })
@@ -45,10 +50,12 @@ export class MaterialResponseDto {
 
   @ApiPropertyOptional({ example: 15000 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   unitCost?: number;
 
   @ApiPropertyOptional({ example: 150000 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   totalCost?: number;
 
   @ApiProperty({

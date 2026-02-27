@@ -1,8 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PaymentStatus, PurchaseOrderStatus, PurchaseOrderType } from '@oneohm-epc/shared-types';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 
 import { PurchaseOrderItemResponseDto } from './purchase-order-item-response.dto';
+import { toNum } from '../../../../common/utils';
 
 /**
  * Purchase Order Response DTO
@@ -68,14 +69,17 @@ export class PurchaseOrderResponseDto {
 
   @ApiProperty({ example: 100000.0 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   subtotal!: number;
 
   @ApiProperty({ example: 18000.0 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   taxAmount!: number;
 
   @ApiProperty({ example: 118000.0 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   totalAmount!: number;
 
   // ==================== Payment ====================

@@ -23,7 +23,9 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { DocumentStatus, DocumentType } from '@oneohm-epc/shared-types';
+import { OrganizationContext } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
+
 
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -36,7 +38,7 @@ import {
   SignDocumentDto,
   UpdateDocumentDto,
   UpdateDocumentStatusDto,
-  VerifyOtpDto,
+  VerifyDocumentOtpDto,
 } from '../dto';
 import { DocumentService } from '../services/document.service';
 
@@ -102,6 +104,7 @@ export class DocumentController {
     type: [DocumentResponseDto],
   })
   async findAll(
+    @OrganizationContext() orgId: string,
     @Query('organizationId') organizationId?: string,
     @Query('projectId') projectId?: string,
     @Query('customerId') customerId?: string,
@@ -115,7 +118,7 @@ export class DocumentController {
     if (organizationId) {
       documents = await this.documentService.findByOrganization(organizationId);
     } else if (projectId) {
-      documents = await this.documentService.findByProject(projectId);
+      documents = await this.documentService.findByProject(projectId, orgId);
     } else if (customerId) {
       documents = await this.documentService.findByCustomer(customerId);
     } else if (quoteId) {
@@ -286,7 +289,7 @@ export class DocumentController {
   @ApiResponse({ status: 404, description: 'Document not found' })
   async verifyOtp(
     @Param('id') id: string,
-    @Body() dto: VerifyOtpDto,
+    @Body() dto: VerifyDocumentOtpDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<DocumentResponseDto> {
     const document = await this.documentService.verifyOtp(id, dto, currentUser.id);

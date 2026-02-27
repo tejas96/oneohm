@@ -101,4 +101,5 @@ export class UpdateCustomerDto {
   @IsOptional()
   @MaxLength(50)
   referralCode?: string;
+
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus, Query } from '@nestjs/common';
+import { Controller, Get, HttpStatus, NotFoundException, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 
@@ -101,15 +101,15 @@ export class OrganizationPublicController {
   })
   async getOrganizationByCode(
     @Query('code') code: string,
-  ): Promise<OrganizationResponseDto | null> {
+  ): Promise<OrganizationResponseDto> {
     if (!code) {
-      return null;
+      throw new NotFoundException('Organization code is required');
     }
 
     const organization = await this.organizationRepository.findOneByCode(code);
 
     if (!organization) {
-      return null;
+      throw new NotFoundException(`Organization with code '${code}' not found`);
     }
 
     return plainToInstance(OrganizationResponseDto, organization, {

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 import { IsBoolean, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 /**
@@ -56,6 +56,24 @@ export class UpdateTeamMemberDto {
 }
 
 /**
+ * Nested user info exposed inside TeamMemberResponseDto.
+ * Keeps the response lean — only name + email.
+ */
+class TeamMemberUserDto {
+  @ApiProperty({ example: 'Vikram' })
+  @Expose()
+  firstName!: string;
+
+  @ApiPropertyOptional({ example: 'Singh' })
+  @Expose()
+  lastName?: string;
+
+  @ApiPropertyOptional({ example: 'vikram@example.com' })
+  @Expose()
+  email?: string;
+}
+
+/**
  * Response DTO for team member
  */
 export class TeamMemberResponseDto {
@@ -78,6 +96,19 @@ export class TeamMemberResponseDto {
   @ApiProperty({ example: false })
   @Expose()
   isProjectManager!: boolean;
+
+  @ApiPropertyOptional({ type: TeamMemberUserDto })
+  @Expose()
+  @Type(() => TeamMemberUserDto)
+  @Transform(({ obj }) => {
+    if (!obj.user) return undefined;
+    return {
+      firstName: obj.user.firstName ?? '',
+      lastName: obj.user.lastName ?? undefined,
+      email: obj.user.email ?? undefined,
+    };
+  })
+  user?: TeamMemberUserDto;
 
   @ApiProperty({ example: '2024-01-01T00:00:00Z' })
   @Expose()

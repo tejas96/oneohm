@@ -3,30 +3,19 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-/**
- * Spinner Component
- * Loading indicator with size and color variants
- * 
- * Sizes use standard Tailwind spacing:
- * - xs: w-4 h-4 (16px)
- * - sm: w-5 h-5 (20px)
- * - md: w-6 h-6 (24px)
- * - lg: w-8 h-8 (32px)
- * - xl: w-12 h-12 (48px)
- */
 const spinnerVariants = cva('rounded-full border-3 animate-spin', {
   variants: {
     size: {
-      xs: 'w-4 h-4',
-      sm: 'w-5 h-5',
-      md: 'w-6 h-6',
-      lg: 'w-8 h-8',
-      xl: 'w-12 h-12',
+      xs: 'size-icon-sm',
+      sm: 'size-icon-md',
+      md: 'size-icon-lg',
+      lg: 'size-icon-xl',
+      xl: 'size-container-lg',
     },
     variant: {
-      primary: 'border-gray-200 border-t-primary',
+      primary: 'border-border border-t-primary',
       white: 'border-white/30 border-t-white',
-      muted: 'border-gray-300 border-t-gray-600',
+      muted: 'border-border-medium border-t-foreground-muted',
     },
   },
   defaultVariants: {
@@ -37,27 +26,87 @@ const spinnerVariants = cva('rounded-full border-3 animate-spin', {
 
 export interface SpinnerProps
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof spinnerVariants> {}
+    VariantProps<typeof spinnerVariants> {
+  /** Message to display with spinner */
+  message?: string;
+  /** Position of message relative to spinner */
+  messagePosition?: 'bottom' | 'right';
+  /** Show as overlay within parent container (needs relative parent) */
+  overlay?: boolean;
+  /** Show as full-screen fixed overlay */
+  fullScreen?: boolean;
+  /** Custom icon to use instead of default spinner */
+  icon?: React.ReactNode;
+}
 
 const Spinner = React.forwardRef<HTMLDivElement, SpinnerProps>(
-  ({ className, size, variant, ...props }, ref) => {
-    return (
+  (
+    {
+      className,
+      size,
+      variant,
+      message,
+      messagePosition = 'bottom',
+      overlay,
+      fullScreen,
+      icon,
+      ...props
+    },
+    ref,
+  ) => {
+    const spinnerElement = icon || (
       <div
-        ref={ref}
         className={cn(spinnerVariants({ size, variant }), className)}
         role="status"
-        aria-label="Loading"
-        {...props}
+        aria-label={message || 'Loading'}
       />
     );
-  }
+
+    const content = (
+      <div
+        ref={ref}
+        className={cn(
+          'flex items-center justify-center',
+          messagePosition === 'bottom' && 'flex-col gap-2',
+          messagePosition === 'right' && 'flex-row gap-3',
+        )}
+        {...props}
+      >
+        {spinnerElement}
+        {message && (
+          <span
+            className={cn(
+              'text-sm',
+              fullScreen || overlay ? 'text-foreground-secondary' : 'text-foreground-tertiary',
+            )}
+          >
+            {message}
+          </span>
+        )}
+      </div>
+    );
+
+    if (fullScreen) {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          {content}
+        </div>
+      );
+    }
+
+    if (overlay) {
+      return (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-[1px]">
+          {content}
+        </div>
+      );
+    }
+
+    return content;
+  },
 );
 Spinner.displayName = 'Spinner';
 
-/**
- * LoadingDots Component
- * Animated dots for typing/processing indicators
- */
 const loadingDotsVariants = cva('flex items-center gap-1', {
   variants: {
     size: {
@@ -65,7 +114,7 @@ const loadingDotsVariants = cva('flex items-center gap-1', {
       md: '[&>span]:w-2 [&>span]:h-2',
     },
     variant: {
-      muted: '[&>span]:bg-gray-400',
+      muted: '[&>span]:bg-foreground-tertiary',
       primary: '[&>span]:bg-primary',
     },
   },
@@ -94,7 +143,7 @@ const LoadingDots = React.forwardRef<HTMLDivElement, LoadingDotsProps>(
         <span className="rounded-full animate-bounce" />
       </div>
     );
-  }
+  },
 );
 LoadingDots.displayName = 'LoadingDots';
 

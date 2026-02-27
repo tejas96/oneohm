@@ -1,0 +1,207 @@
+---
+globs: apps/backend/**/*.ts
+---
+
+# Backend Protocol
+
+**Think first, code second. First implementation = production ready.**
+
+---
+
+## Before Writing Code
+
+- **Scenarios** — List ALL user scenarios before coding
+- **Edge cases** — What can fail? Handle it upfront
+- **Reuse** — Search existing code. Don't duplicate
+- **Security** — Auth? Org isolation? Data validation?
+
+Wrong approach → STOP → Explain → Propose better
+
+---
+
+## Code Quality Standards
+
+**TypeScript:**
+- Strict mode enabled — no implicit `any`, null checks enforced
+- Explicit return types on functions
+- Use `unknown` over `any`, narrow with type guards
+- Prefer `interface` for objects, `type` for unions/intersections
+
+**Lint & Format:**
+- Zero lint errors before commit — `npx nx lint backend --skip-nx-cache`
+- Run typecheck — `npx tsc --noEmit -p apps/backend/tsconfig.json`
+- Follow existing patterns — consistency > preference
+- No `@ts-ignore` without justification comment
+- Follow all ESLint rules strictly — no `any`, no unused vars (prefix with `_` if intentional), no floating promises (`void` or `await`), use enum values not string literals for comparisons
+
+**Clean Code:**
+- Single responsibility — one function, one job
+- Meaningful names — `getUserById` not `getData`
+- Small functions — < 30 lines, extract if larger
+- Early returns — reduce nesting, fail fast
+- No magic numbers — use named constants
+- Private methods at the END of the class — public API first, internals last
+
+---
+
+## Architecture
+
+**Controller → Service → Repository**
+
+| Layer | Responsibility |
+|-------|----------------|
+| Controller | HTTP layer, call service, return DTO |
+| Service | Business logic, validation, orchestration |
+| Repository | Database queries, no business decisions |
+
+---
+
+## Module Structure
+
+```
+modules/[feature]/
+├── [feature].module.ts
+├── controllers/
+├── services/
+├── repositories/
+├── entities/
+├── dto/
+├── types/          ← Backend-only types
+└── index.ts        ← Barrel exports
+```
+
+---
+
+## Types & Shared Code
+
+| Location | Use For |
+|----------|---------|
+| `@oneohm-epc/shared-types` | Interfaces, enums, state transitions — anything frontend also needs |
+| `modules/[feature]/types/` | Internal service types, repository-specific types |
+| `common/utils/` | toDto, toPaginatedResponse |
+| `@oneohm-epc/shared-utils` | Decorators, guards, helpers (pagination, rate limiting, etc.) |
+
+**Rule:** If frontend needs it → shared-types. Always.
+**Rule:** State machine transitions → shared-types. Single source of truth for both ends.
+
+---
+
+## Multi-Tenant Security
+
+**Every query:**
+- Filter by `organizationId` + `deletedAt: IsNull()`
+
+**Every mutation:**
+- Track `createdBy` / `updatedBy`
+- Soft delete only (never hard delete)
+
+---
+
+## Error Handling
+
+| Scenario | Exception |
+|----------|-----------|
+| Not found | `NotFoundException('Resource not found')` |
+| Duplicate | `ConflictException('Already exists')` |
+| Invalid input | `BadRequestException('Validation failed')` |
+| No permission | `ForbiddenException('Access denied')` |
+
+Never throw raw `Error()` or return `{ error: string }`.
+
+---
+
+## Reusable Patterns
+
+```typescript
+// Response transforms
+toDto(DtoClass, entity)
+toDtoArray(DtoClass, entities)
+toPaginatedResponse(Dto, data, total, page, limit)
+
+// Guards & Context
+@UseGuards(JwtAuthGuard)
+@OrganizationContext()
+@CurrentUser()
+
+// Pagination (ALWAYS use — never manual parseInt)
+const { page, limit } = parsePaginationParams(rawPage, rawLimit);
+
+// Rate limiting on sensitive endpoints
+@UseGuards(SecurityRateLimitGuard)
+@SecurityRateLimit({ eventType, trackBy: ['ipAddress'], limits: [...] })
+
+// Transactions — ALWAYS use manager inside callback
+await this.dataSource.transaction(async (manager) => {
+  const repo = manager.getRepository(Entity);
+  await repo.save(entity);
+});
+```
+
+---
+
+## DTO Rules
+
+- **Input:** Validators + `@ApiProperty()`
+- **Response:** `@Exclude()` class + `@Expose()` fields
+- **Transform:** Always use `toDto()` helpers
+- **Dates:** Use `@IsDateString()` for JSON body dates (not `@IsDate()` — JSON sends strings)
+- **UUIDs:** Use `ParseUUIDPipe` on query/param UUID fields
+- **Status fields:** NEVER include in update DTOs — use dedicated FSM-aware endpoint (`PATCH :id/status`)
+
+---
+
+## Naming
+
+| Type | Pattern |
+|------|---------|
+| Entity | `CustomerProfileEntity` |
+| Service | `CustomerService` |
+| Controller | `CustomerController` |
+| Repository | `CustomerRepository` |
+| Create DTO | `CreateCustomerDto` |
+| Response DTO | `CustomerResponseDto` |
+
+---
+
+## Never / Always
+
+| Never | Always |
+|-------|--------|
+| Skip org filter | `@UseGuards(JwtAuthGuard)` on all endpoints |
+| Skip soft delete filter | `@OrganizationContext()` on all endpoints |
+| Use `any` type | `deletedAt: IsNull()` in queries |
+| Use `console.log` | `this.logger.log()` for logging |
+| Return raw entities | `toDto()` for responses |
+| Hardcode values | Config/constants |
+| Trust client input | Validate everything |
+| Duplicate code | Import and extend |
+| Trust client `organizationId` | Override from `@OrganizationContext()`: `dto.organizationId = orgId` |
+| Manual `parseInt` for pagination | Use `parsePaginationParams()` from shared-utils |
+| Raw SQL status literals | Use parameterized queries with enum values (`TaskStatus.DONE`) |
+| Dev-only bypasses without gate | Guard with `process.env.NODE_ENV === 'development'` |
+| Hardcode seed credentials | Use env vars + throw in production if unset |
+| Status change via generic update | Dedicated `PATCH :id/status` endpoint with FSM validation |
+| Use `this.repository` inside `transaction()` | Use `manager.getRepository(Entity)` for atomicity |
+
+---
+
+## Data Integrity
+
+- **Transactions:** Multi-entity writes MUST use `dataSource.transaction()` with `manager.getRepository()`
+- **Date columns:** Compare `DATE` type with `YYYY-MM-DD` string using local date math — never `toISOString()` (timezone shift)
+- **Summary vs list:** Aggregate counts (totals, overdue) must be independent queries — never compute from filtered list results
+- **Error handling:** Catch specific exceptions and rethrow unexpected ones — don't swallow all errors with generic `BadRequestException`
+
+---
+
+## Checklist (Before Ship)
+
+- [ ] `npx nx affected -t lint` + `typecheck` — zero errors
+- [ ] All scenarios + edge cases handled
+- [ ] Auth guard + org isolation on all endpoints
+- [ ] Multi-entity writes use transactions
+- [ ] Error handling — specific exceptions, not generic catch-all
+- [ ] No `any`, no `console.log`, no duplication
+- [ ] All Never/Always rules above followed
+
+**Unchecked → Fix first → Then ship**

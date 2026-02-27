@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
+
+import { toNum } from '../../../../common/utils';
 
 /**
  * Inventory Stock Response DTO
@@ -28,28 +30,34 @@ export class InventoryStockResponseDto {
 
   @ApiProperty({ example: 500 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   availableQuantity!: number;
 
   @ApiProperty({ example: 50 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   reservedQuantity!: number;
 
   @ApiProperty({ example: 100 })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   inTransitQuantity!: number;
 
   // ==================== Reorder Settings ====================
 
   @ApiProperty({ example: 100, required: false })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   minimumStockLevel?: number;
 
   @ApiProperty({ example: 200, required: false })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   reorderQuantity?: number;
 
   @ApiProperty({ example: 1000, required: false })
   @Expose()
+  @Transform(({ value }) => toNum(value))
   maximumStockLevel?: number;
 
   // ==================== Last Activity ====================

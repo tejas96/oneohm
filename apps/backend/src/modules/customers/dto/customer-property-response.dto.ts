@@ -6,7 +6,10 @@ import {
   PropertyType,
   QuoteStatus,
 } from '@oneohm-epc/shared-types';
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
+
+import { PropertyDocumentDto } from './property-document.dto';
+import { toNum } from '../../../common/utils';
 
 /**
  * DTO for customer property response
@@ -25,6 +28,10 @@ export class CustomerPropertyResponseDto {
   @ApiProperty()
   @Expose()
   organizationId!: string;
+
+  @ApiPropertyOptional()
+  @Expose()
+  propertyCode?: string;
 
   // ==================== Property Details ====================
   @ApiPropertyOptional()
@@ -56,10 +63,6 @@ export class CustomerPropertyResponseDto {
   @Expose()
   pincode?: string;
 
-  @ApiPropertyOptional()
-  @Expose()
-  locationCoordinates?: string;
-
   // ==================== Electricity/Consumer Details ====================
   @ApiPropertyOptional()
   @Expose()
@@ -83,6 +86,7 @@ export class CustomerPropertyResponseDto {
 
   @ApiPropertyOptional()
   @Expose()
+  @Transform(({ value }) => toNum(value))
   sanctionedLoad?: number;
 
   @ApiPropertyOptional()
@@ -92,28 +96,13 @@ export class CustomerPropertyResponseDto {
   // ==================== Site Details ====================
   @ApiPropertyOptional()
   @Expose()
+  @Transform(({ value }) => toNum(value))
   monthlyBill?: number;
-
-  @ApiPropertyOptional()
-  @Expose()
-  roofAreaSqft?: number;
 
   // ==================== Lead Tracking ====================
   @ApiProperty({ enum: LeadTemperature })
   @Expose()
   leadTemperature!: LeadTemperature;
-
-  @ApiPropertyOptional()
-  @Expose()
-  nextFollowUpDate?: Date;
-
-  @ApiPropertyOptional()
-  @Expose()
-  lastContactDate?: Date;
-
-  @ApiPropertyOptional()
-  @Expose()
-  followUpNotes?: string;
 
   // ==================== Flags ====================
   @ApiProperty()
@@ -123,6 +112,15 @@ export class CustomerPropertyResponseDto {
   @ApiProperty({ description: 'Customer wants loan financing for this property' })
   @Expose()
   wantsLoan!: boolean;
+
+  // ==================== Documents ====================
+  @ApiPropertyOptional({
+    description: 'Property-level documents (identity docs, KYC, etc.)',
+    type: [PropertyDocumentDto],
+  })
+  @Expose()
+  @Type(() => PropertyDocumentDto)
+  documents!: PropertyDocumentDto[];
 
   // ==================== Status ====================
   @ApiProperty({ enum: PropertyStatus })
@@ -150,6 +148,56 @@ export class CustomerPropertyResponseDto {
   @ApiPropertyOptional()
   @Expose()
   updatedBy?: string;
+
+  // ==================== Customer Info (populated from customer relation) ====================
+
+  @ApiPropertyOptional({
+    description: 'Customer full name (firstName + lastName from customer profile)',
+    example: 'Rajesh Sharma',
+  })
+  @Expose()
+  @Transform(({ obj }) => {
+    if (!obj.customer) return undefined;
+    const firstName = obj.customer.firstName || '';
+    const lastName = obj.customer.lastName || '';
+    return `${firstName} ${lastName}`.trim() || undefined;
+  })
+  customerName?: string;
+
+  @ApiPropertyOptional({
+    description: 'Customer phone number (from customer profile)',
+    example: '+919876543210',
+  })
+  @Expose()
+  @Transform(({ obj }) => obj.customer?.phone ?? undefined)
+  customerPhone?: string;
+
+  @ApiPropertyOptional({
+    description: 'Customer email address (from customer profile)',
+    example: 'rajesh@example.com',
+  })
+  @Expose()
+  @Transform(({ obj }) => obj.customer?.email ?? undefined)
+  customerEmail?: string;
+
+  // ==================== Creator Info (populated from creator relation) ====================
+
+  /**
+   * Name of the user who created this property
+   */
+  @ApiPropertyOptional({
+    description: 'Name of the user who created this property',
+    example: 'Rahul Kumar',
+  })
+  @Expose()
+  @Transform(({ obj }) => {
+    if (!obj.createdBy) return undefined;
+    if (!obj.creator) return undefined;
+    const firstName = obj.creator.firstName || '';
+    const lastName = obj.creator.lastName || '';
+    return `${firstName} ${lastName}`.trim() || undefined;
+  })
+  creatorName?: string;
 
   // ==================== Quote Info (enriched from quotes table) ====================
   @ApiPropertyOptional({

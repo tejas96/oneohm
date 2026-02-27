@@ -10,8 +10,8 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { type PaginatedResponse, QuoteStatus } from '@oneohm-epc/shared-types';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { type PaginatedResponse } from '@oneohm-epc/shared-types';
 import {
   ApiCreate,
   ApiDelete,
@@ -22,10 +22,18 @@ import {
 } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import { CreateQuoteDto, QuoteResponseDto, UpdateQuoteDto, UpdateQuoteStatusDto } from '../dto';
+import {
+  CreateQuoteDto,
+  QuoteQueryDto,
+  QuoteResponseDto,
+  QuoteVersionResponseDto,
+  UpdateQuoteDto,
+  UpdateQuoteStatusDto,
+} from '../dto';
 import { QuoteService } from '../services/quote.service';
 
 /**
@@ -61,104 +69,31 @@ export class QuoteController {
   }
 
   /**
-   * Get all quotes with filters
+   * Get all quotes with filtering, sorting, and pagination
+   * Unified endpoint supporting search, filters, and sorting via query parameters
    */
   @Get()
   @ApiReadAll({
     summary: 'Get all quotes',
-    description: 'Retrieve all quotes with optional filters and pagination',
+    description:
+      'Retrieve quotes with comprehensive filtering, sorting, and pagination. ' +
+      'Supports search (quote number, customer name, phone, property name), ' +
+      'status filter, date range, and sorting.',
     responseType: QuoteResponseDto,
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number',
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Items per page',
-    example: 20,
-  })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: Object.values(QuoteStatus),
-    description: 'Filter by status',
-  })
-  @ApiQuery({
-    name: 'customerId',
-    required: false,
-    type: String,
-    description: 'Filter by customer ID',
-  })
-  @ApiQuery({
-    name: 'salesPersonId',
-    required: false,
-    type: String,
-    description: 'Filter by sales person ID',
-  })
-  @ApiQuery({
-    name: 'resellerId',
-    required: false,
-    type: String,
-    description: 'Filter by reseller ID',
-  })
-  @ApiQuery({
-    name: 'fromDate',
-    required: false,
-    type: String,
-    description: 'Filter from date (YYYY-MM-DD)',
-  })
-  @ApiQuery({
-    name: 'toDate',
-    required: false,
-    type: String,
-    description: 'Filter to date (YYYY-MM-DD)',
-  })
-  @ApiQuery({
-    name: 'search',
-    required: false,
-    type: String,
-    description: 'Search in quote number or customer name',
   })
   async findAll(
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
-    @Query('page') page = 1,
-    @Query('limit') limit = 20,
-    @Query('status') status?: QuoteStatus,
-    @Query('customerId') customerId?: string,
-    @Query('salesPersonId') salesPersonId?: string,
-    @Query('resellerId') resellerId?: string,
-    @Query('fromDate') fromDate?: string,
-    @Query('toDate') toDate?: string,
-    @Query('search') search?: string,
+    @Query() query: QuoteQueryDto,
   ): Promise<PaginatedResponse<QuoteResponseDto>> {
-    const result = await this.quoteService.findAll(organizationId, page, limit, {
-      status,
-      customerId,
-      salesPersonId,
-      resellerId,
-      fromDate,
-      toDate,
-      search,
-    });
-
-    return {
-      data: plainToInstance(QuoteResponseDto, result.quotes, {
-        excludeExtraneousValues: true,
-      }),
-      meta: {
-        page,
-        limit,
-        total: result.total,
-        totalPages: Math.ceil(result.total / limit),
-      },
-    };
+    const result = await this.quoteService.findAll(organizationId, query);
+    return toPaginatedResponse(
+      QuoteResponseDto,
+      result.data,
+      result.total,
+      query.page,
+      query.limit,
+    );
   }
 
   /**
@@ -178,6 +113,28 @@ export class QuoteController {
     const quote = await this.quoteService.findById(id, organizationId);
 
     return plainToInstance(QuoteResponseDto, quote, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  /**
+   * Get a specific version of a quote with its line items
+   */
+  @Get(':id/versions/:versionId')
+  @ApiReadOne({
+    summary: 'Get quote version by ID',
+    description: 'Retrieve a specific version of a quote with all its line items',
+    responseType: QuoteVersionResponseDto,
+  })
+  async findVersion(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('versionId', ParseUUIDPipe) versionId: string,
+  ): Promise<QuoteVersionResponseDto> {
+    const version = await this.quoteService.findVersionById(id, versionId, organizationId);
+
+    return plainToInstance(QuoteVersionResponseDto, version, {
       excludeExtraneousValues: true,
     });
   }

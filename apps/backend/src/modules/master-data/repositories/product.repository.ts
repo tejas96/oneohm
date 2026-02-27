@@ -262,7 +262,7 @@ export class ProductRepository {
     // Filter by minimum wattage if specified (for quantity-constrained selection)
     if (minWattage) {
       query.andWhere("(product.specifications->'panel'->>'wattage')::int >= :minWattage", {
-        minWattage,
+        minWattage: Math.ceil(minWattage),
       });
     }
 

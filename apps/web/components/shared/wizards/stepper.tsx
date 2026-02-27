@@ -79,15 +79,15 @@ interface StepCircleProps {
 }
 
 const CIRCLE_SIZES = {
-  sm: 'w-8 h-8',
-  md: 'w-10 h-10',
-  lg: 'w-12 h-12',
+  sm: 'size-container-sm',
+  md: 'size-container-md',
+  lg: 'size-container-lg',
 } as const;
 
 const ICON_SIZES = {
-  sm: 'w-4 h-4',
-  md: 'w-5 h-5',
-  lg: 'w-6 h-6',
+  sm: 'size-icon-sm',
+  md: 'size-icon-md',
+  lg: 'size-icon-lg',
 } as const;
 
 const TEXT_SIZES = {
@@ -109,7 +109,7 @@ const StepCircle = ({
     {
       'bg-primary text-white': status === 'completed' || status === 'current',
       'ring-4 ring-primary/20': status === 'current',
-      'bg-gray-200 text-foreground-secondary': status === 'pending',
+      'bg-border text-foreground-secondary': status === 'pending',
       'bg-error text-error-foreground ring-4 ring-error/20': status === 'error',
     }
   );
@@ -150,7 +150,7 @@ interface ConnectorProps {
 const Connector = ({ status, orientation }: ConnectorProps) => {
   const classes = cn(
     'transition-colors duration-fast',
-    status === 'completed' ? 'bg-primary' : 'bg-gray-200',
+    status === 'completed' ? 'bg-primary' : 'bg-border',
     orientation === 'horizontal' ? 'flex-1 h-0.5 mx-4' : 'w-0.5 h-16'
   );
 
@@ -171,21 +171,35 @@ function HorizontalStepper({
 }: StepperProps) {
   return (
     <div
-      className={cn('flex items-center justify-between', className)}
+      className={cn('relative', className)}
       role="list"
       aria-label="Progress steps"
     >
-      {steps.map((step, index) => {
-        const status = getStepStatus(index, currentStep, errorStep);
-        const isClickable =
-          onStepClick && (allowClickPrevious ? index < currentStep : false);
+      {/* Connecting line - positioned behind circles, spans from first to last step center */}
+      <div 
+        className="absolute top-5 h-0.5 bg-border" 
+        style={{ left: `calc(100% / ${steps.length} / 2)`, right: `calc(100% / ${steps.length} / 2)` }}
+        aria-hidden="true"
+      >
+        <div
+          className="h-full bg-primary transition-all duration-300"
+          style={{ width: currentStep === 0 ? '0%' : `${(currentStep / (steps.length - 1)) * 100}%` }}
+        />
+      </div>
 
-        return (
-          <React.Fragment key={step.id}>
+      {/* Steps */}
+      <div className="relative flex justify-between">
+        {steps.map((step, index) => {
+          const status = getStepStatus(index, currentStep, errorStep);
+          const isClickable =
+            onStepClick && (allowClickPrevious ? index < currentStep : false);
+
+          return (
             <div
+              key={step.id}
               className={cn(
-                'flex items-center',
-                isClickable && 'cursor-pointer'
+                'flex flex-col items-center',
+                isClickable && 'cursor-pointer group'
               )}
               role="listitem"
               aria-current={status === 'current' ? 'step' : undefined}
@@ -203,43 +217,42 @@ function HorizontalStepper({
               }
               tabIndex={isClickable ? 0 : undefined}
             >
-              <StepCircle index={index} status={status} />
-              <div className="ml-3">
-                <p
-                  className={cn(
-                    'text-sm font-medium',
-                    status === 'pending'
-                      ? 'text-foreground-tertiary'
-                      : 'text-foreground'
-                  )}
-                >
-                  {step.label}
-                </p>
-                {step.description && (
-                  <p
-                    className={cn(
-                      'text-xs',
-                      status === 'current'
-                        ? 'text-primary'
-                        : status === 'error'
-                          ? 'text-error'
-                          : 'text-foreground-secondary'
-                    )}
-                  >
-                    {step.description}
-                  </p>
+              {/* Step circle */}
+              <div
+                className={cn(
+                  'w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-200 bg-background',
+                  status === 'completed' && 'bg-primary text-white',
+                  status === 'current' && 'bg-primary text-white ring-4 ring-primary/20',
+                  status === 'pending' && 'bg-white border-2 border-border text-foreground-tertiary',
+                  status === 'error' && 'bg-error text-white ring-4 ring-error/20',
+                  isClickable && 'group-hover:ring-4 group-hover:ring-primary/10'
+                )}
+              >
+                {status === 'completed' ? (
+                  <Check className="size-icon-sm" aria-hidden="true" />
+                ) : status === 'error' ? (
+                  <AlertTriangle className="size-icon-sm" aria-hidden="true" />
+                ) : (
+                  <span>{index + 1}</span>
                 )}
               </div>
+
+              {/* Step label */}
+              <p
+                className={cn(
+                  'mt-2 text-xs font-medium text-center whitespace-nowrap',
+                  status === 'completed' && 'text-primary',
+                  status === 'current' && 'text-primary',
+                  status === 'pending' && 'text-foreground-tertiary',
+                  status === 'error' && 'text-error'
+                )}
+              >
+                {step.label}
+              </p>
             </div>
-            {index < steps.length - 1 && (
-              <Connector
-                status={index < currentStep ? 'completed' : 'pending'}
-                orientation="horizontal"
-              />
-            )}
-          </React.Fragment>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -361,7 +374,7 @@ function SimpleStepper({
               <div
                 className={cn(
                   'w-12 h-0.5',
-                  index < currentStep ? 'bg-primary' : 'bg-gray-200'
+                  index < currentStep ? 'bg-primary' : 'bg-border'
                 )}
                 aria-hidden="true"
               />
@@ -444,7 +457,7 @@ function IconStepper({
               <div
                 className={cn(
                   'flex-1 h-0.5 mx-2',
-                  index < currentStep ? 'bg-primary' : 'bg-gray-200'
+                  index < currentStep ? 'bg-primary' : 'bg-border'
                 )}
                 aria-hidden="true"
               />
@@ -485,7 +498,7 @@ function CompactStepper({
             key={step.id}
             className={cn(
               'w-8 h-1 rounded-full transition-colors duration-fast',
-              index <= currentStep ? 'bg-primary' : 'bg-gray-200'
+              index <= currentStep ? 'bg-primary' : 'bg-border'
             )}
           />
         ))}
@@ -529,7 +542,7 @@ function DotStepper({
                 ? 'w-3 h-3 bg-primary ring-4 ring-primary/20'
                 : 'w-2 h-2',
               !isCurrent && index < currentStep && 'bg-primary',
-              !isCurrent && index > currentStep && 'bg-gray-300',
+              !isCurrent && index > currentStep && 'bg-border-medium',
               isClickable && 'cursor-pointer hover:scale-110'
             )}
           />

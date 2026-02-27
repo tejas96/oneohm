@@ -1,56 +1,81 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type TaskActivityEntry, TaskStatus } from '@oneohm-epc/shared-types';
-import { DataSource, IsNull, type Repository } from 'typeorm';
+import { type TaskActivityEntry, TaskStatus, ProjectStatus } from '@oneohm-epc/shared-types';
+import {
+  DataSource,
+  type EntityManager,
+  In,
+  IsNull,
+  LessThan,
+  MoreThanOrEqual,
+  Not,
+  type Repository,
+} from 'typeorm';
 
+import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { ProjectTaskEntity } from '../entities/project-task.entity';
 
-/**
- * Repository Constants
- * Centralized configuration values for task data access
- */
 const REPOSITORY_CONSTANTS = {
   MAX_ACTIVITY_LOG_ENTRIES: 100,
   DEFAULT_KANBAN_ORDER: 1000,
 } as const;
 
-/**
- * ProjectTaskRepository
- * Data access layer for project tasks
- */
 @Injectable()
 export class ProjectTaskRepository {
   constructor(
     @InjectRepository(ProjectTaskEntity)
-    private readonly repository: Repository<ProjectTaskEntity>,
+    public readonly repository: Repository<ProjectTaskEntity>,
     private readonly dataSource: DataSource,
   ) {}
 
-  /**
-   * Create a new project task
-   */
-  async create(data: Partial<ProjectTaskEntity>): Promise<ProjectTaskEntity> {
-    const task = this.repository.create(data);
-    return this.repository.save(task);
+  async create(
+    data: Partial<ProjectTaskEntity>,
+    manager?: EntityManager,
+  ): Promise<ProjectTaskEntity> {
+    const repo = this.getRepo(manager);
+    const task = repo.create(data);
+    return repo.save(task);
   }
 
   /**
-   * Find project task by ID
+   * Update task by ID (no project ownership check — use inside transactions where ownership is pre-validated)
    */
+  async updateById(
+    id: string,
+    data: Record<string, unknown>,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = this.getRepo(manager);
+    await repo.update(id, data);
+  }
+
+  /**
+   * Find all tasks for a project with optional relations (transaction-aware)
+   */
+  async findByProjectRaw(
+    projectId: string,
+    options?: { relations?: string[] },
+    manager?: EntityManager,
+  ): Promise<ProjectTaskEntity[]> {
+    const repo = this.getRepo(manager);
+    return repo.find({
+      where: { projectId, deletedAt: undefined },
+      ...(options?.relations ? { relations: options.relations } : {}),
+    });
+  }
+
   async findById(id: string, projectId: string): Promise<ProjectTaskEntity | null> {
-    return this.repository.findOne({
+    const task = await this.repository.findOne({
       where: {
         id,
         projectId,
         deletedAt: IsNull(),
       },
-      relations: ['assignee', 'milestone', 'template'],
+      relations: ['assignee', 'milestone', 'workflowStep'],
     });
+    return task ? this.resolveTaskFields(task) : null;
   }
 
-  /**
-   * Find all project tasks with pagination and filters
-   */
   async findAll(
     projectId: string,
     page: number,
@@ -65,78 +90,82 @@ export class ProjectTaskRepository {
   ): Promise<{ data: ProjectTaskEntity[]; total: number }> {
     const skip = (page - 1) * limit;
 
-    // Build where condition
-    const where: Record<string, unknown> = {
-      projectId,
-      deletedAt: IsNull(),
-    };
+    const qb = this.repository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.assignee', 'assignee')
+      .leftJoinAndSelect('task.milestone', 'milestone')
+      .leftJoinAndSelect('task.workflowStep', 'workflowStep')
+      .where('task.project_id = :projectId', { projectId })
+      .andWhere('task.deleted_at IS NULL');
 
     if (filters.milestoneId) {
-      where.milestoneId = filters.milestoneId;
+      qb.andWhere('task.milestone_id = :milestoneId', { milestoneId: filters.milestoneId });
     }
     if (filters.assignedToUserId) {
-      where.assignedToUserId = filters.assignedToUserId;
+      qb.andWhere('task.assigned_to_user_id = :assignedToUserId', {
+        assignedToUserId: filters.assignedToUserId,
+      });
     }
     if (filters.status) {
-      where.status = filters.status;
+      qb.andWhere('task.status = :status', { status: filters.status });
     }
     if (filters.priority) {
-      where.priority = filters.priority;
+      qb.andWhere('task.priority = :priority', { priority: filters.priority });
     }
 
-    // Use repository.findAndCount instead of QueryBuilder to avoid databaseName error
-    const [data, total] = await this.repository.findAndCount({
-      where,
-      relations: ['assignee', 'milestone'],
-      order: {
-        kanbanOrder: 'ASC',
-        createdAt: 'DESC',
-      },
-      skip,
-      take: limit,
-    });
+    if (filters.search) {
+      qb.andWhere(
+        `(
+          LOWER(task.name_override) LIKE LOWER(:search)
+          OR LOWER(task.code) LIKE LOWER(:search)
+          OR LOWER(workflowStep.name) LIKE LOWER(:search)
+          OR LOWER(task.description_override) LIKE LOWER(:search)
+          OR LOWER(workflowStep.description) LIKE LOWER(:search)
+        )`,
+        { search: `%${filters.search}%` },
+      );
+    }
 
-    return { data, total };
+    qb.orderBy('task.kanbanOrder', 'ASC')
+      .addOrderBy('task.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
+    return { data: this.resolveMany(data), total };
   }
 
-  /**
-   * Find tasks by milestone
-   */
   async findByMilestone(projectId: string, milestoneId: string): Promise<ProjectTaskEntity[]> {
-    return this.repository.find({
+    const tasks = await this.repository.find({
       where: {
         projectId,
         milestoneId,
         deletedAt: IsNull(),
       },
-      relations: ['assignee'],
+      relations: ['assignee', 'workflowStep'],
       order: {
         kanbanOrder: 'ASC',
       },
     });
+    return this.resolveMany(tasks);
   }
 
-  /**
-   * Find tasks assigned to user
-   */
   async findByAssignee(projectId: string, assignedToUserId: string): Promise<ProjectTaskEntity[]> {
-    return this.repository.find({
+    const tasks = await this.repository.find({
       where: {
         projectId,
         assignedToUserId,
         deletedAt: IsNull(),
       },
-      relations: ['milestone'],
+      relations: ['milestone', 'workflowStep'],
       order: {
         priority: 'DESC',
         startDate: 'ASC',
       },
     });
+    return this.resolveMany(tasks);
   }
 
-  /**
-   * Update project task
-   */
   async update(
     id: string,
     projectId: string,
@@ -153,16 +182,6 @@ export class ProjectTaskRepository {
     return this.findById(id, projectId);
   }
 
-  /**
-   * Update project task with activity logs in a single transaction
-   * Ensures atomicity - if either update or activity log fails, both are rolled back
-   *
-   * @param id - Task ID
-   * @param projectId - Project ID
-   * @param data - Update data
-   * @param activityEntries - Array of activity log entries to prepend
-   * @returns Updated task entity or null if not found
-   */
   async updateWithActivityLogs(
     id: string,
     projectId: string,
@@ -172,7 +191,6 @@ export class ProjectTaskRepository {
     return this.dataSource.transaction(async (manager) => {
       const taskRepo = manager.getRepository(ProjectTaskEntity);
 
-      // Step 1: Update the task
       await taskRepo.update(
         {
           id,
@@ -182,7 +200,6 @@ export class ProjectTaskRepository {
         data,
       );
 
-      // Step 2: Prepend all activity log entries (in order)
       if (activityEntries.length > 0) {
         for (const entry of activityEntries) {
           await manager.query(
@@ -201,27 +218,19 @@ export class ProjectTaskRepository {
             )
             WHERE id = $3 AND project_id = $4 AND deleted_at IS NULL
           `,
-            [
-              JSON.stringify(entry),
-              REPOSITORY_CONSTANTS.MAX_ACTIVITY_LOG_ENTRIES,
-              id,
-              projectId,
-            ],
+            [JSON.stringify(entry), REPOSITORY_CONSTANTS.MAX_ACTIVITY_LOG_ENTRIES, id, projectId],
           );
         }
       }
 
-      // Step 3: Return the updated task
-      return taskRepo.findOne({
+      const task = await taskRepo.findOne({
         where: { id, projectId, deletedAt: IsNull() },
-        relations: ['assignee', 'milestone', 'template'],
+        relations: ['assignee', 'milestone', 'workflowStep'],
       });
+      return task ? this.resolveTaskFields(task) : null;
     });
   }
 
-  /**
-   * Soft delete project task
-   */
   async softDelete(id: string, projectId: string): Promise<boolean> {
     const result = await this.repository.softDelete({
       id,
@@ -230,24 +239,12 @@ export class ProjectTaskRepository {
     return (result.affected ?? 0) > 0;
   }
 
-  /**
-   * Prepend an activity log entry to the task's activityLog JSONB array
-   * Automatically trims the array to MAX_ACTIVITY_LOG_ENTRIES to prevent unbounded growth
-   *
-   * @param id - Task ID
-   * @param projectId - Project ID
-   * @param entry - The activity entry to prepend
-   * @param maxEntries - Maximum entries to keep (defaults to 100)
-   */
   async prependActivityLogEntry(
     id: string,
     projectId: string,
     entry: TaskActivityEntry,
     maxEntries: number = REPOSITORY_CONSTANTS.MAX_ACTIVITY_LOG_ENTRIES,
   ): Promise<void> {
-    // Use a subquery to:
-    // 1. Prepend the new entry to the existing array
-    // 2. Limit the result to maxEntries to prevent unbounded growth
     await this.repository
       .createQueryBuilder()
       .update(ProjectTaskEntity)
@@ -272,9 +269,6 @@ export class ProjectTaskRepository {
       .execute();
   }
 
-  /**
-   * Count tasks by status for a project
-   */
   async countByStatus(projectId: string): Promise<Record<TaskStatus, number>> {
     const results = await this.repository
       .createQueryBuilder('task')
@@ -303,14 +297,10 @@ export class ProjectTaskRepository {
     return statusCounts;
   }
 
-  /**
-   * Get overdue tasks
-   */
   async findOverdue(projectId: string): Promise<ProjectTaskEntity[]> {
-    // Use QueryBuilder without joins to avoid databaseName error
-    // Then populate relations with a separate query if needed
-    return this.repository
+    const tasks = await this.repository
       .createQueryBuilder('task')
+      .leftJoinAndSelect('task.workflowStep', 'workflowStep')
       .where('task.project_id = :projectId', { projectId })
       .andWhere('task.deleted_at IS NULL')
       .andWhere('task.status NOT IN (:...completedStatuses)', {
@@ -319,11 +309,9 @@ export class ProjectTaskRepository {
       .andWhere('task.end_date < CURRENT_DATE')
       .orderBy('task.end_date', 'ASC')
       .getMany();
+    return this.resolveMany(tasks);
   }
 
-  /**
-   * Check if code exists for project
-   */
   async existsByCode(code: string, projectId: string, excludeId?: string): Promise<boolean> {
     const queryBuilder = this.repository
       .createQueryBuilder('task')
@@ -339,9 +327,6 @@ export class ProjectTaskRepository {
     return count > 0;
   }
 
-  /**
-   * Get next task code for project
-   */
   async getNextTaskCode(projectId: string): Promise<string> {
     const lastTask = await this.repository
       .createQueryBuilder('task')
@@ -359,9 +344,6 @@ export class ProjectTaskRepository {
     return `TASK-${nextNumber.toString().padStart(3, '0')}`;
   }
 
-  /**
-   * Get tasks for Kanban board grouped by status with pagination
-   */
   async findForKanban(
     projectId: string,
     status: TaskStatus,
@@ -370,14 +352,13 @@ export class ProjectTaskRepository {
   ): Promise<{ data: ProjectTaskEntity[]; total: number }> {
     const skip = (page - 1) * limit;
 
-    // Use repository.findAndCount instead of QueryBuilder to avoid databaseName error
     const [data, total] = await this.repository.findAndCount({
       where: {
         projectId,
         status,
         deletedAt: IsNull(),
       },
-      relations: ['assignee'],
+      relations: ['assignee', 'workflowStep'],
       order: {
         kanbanOrder: 'ASC',
       },
@@ -385,12 +366,9 @@ export class ProjectTaskRepository {
       take: limit,
     });
 
-    return { data, total };
+    return { data: this.resolveMany(data), total };
   }
 
-  /**
-   * Move task to new status and position atomically
-   */
   async moveTask(
     id: string,
     projectId: string,
@@ -398,7 +376,6 @@ export class ProjectTaskRepository {
     newKanbanOrder: number,
     expectedVersion: number,
   ): Promise<ProjectTaskEntity | null> {
-    // Use optimistic locking
     const result = await this.repository
       .createQueryBuilder()
       .update(ProjectTaskEntity)
@@ -414,24 +391,12 @@ export class ProjectTaskRepository {
       .execute();
 
     if (result.affected === 0) {
-      return null; // Version mismatch or not found
+      return null;
     }
 
     return this.findById(id, projectId);
   }
 
-  /**
-   * Move task to new status/position with activity logging in a single transaction
-   * Ensures atomicity - both move and activity log are committed together
-   *
-   * @param id - Task ID
-   * @param projectId - Project ID
-   * @param newStatus - New task status
-   * @param newKanbanOrder - New kanban order position
-   * @param expectedVersion - Expected version for optimistic locking
-   * @param activityEntry - Activity log entry to record (if status changed)
-   * @returns Updated task entity or null if version mismatch
-   */
   async moveTaskWithActivityLog(
     id: string,
     projectId: string,
@@ -439,17 +404,25 @@ export class ProjectTaskRepository {
     newKanbanOrder: number,
     expectedVersion: number,
     activityEntry?: TaskActivityEntry,
+    extraFields?: Partial<
+      Pick<ProjectTaskEntity, 'startDate' | 'endDate' | 'completionPercentage'>
+    >,
   ): Promise<ProjectTaskEntity | null> {
     return this.dataSource.transaction(async (manager) => {
-      // Step 1: Move task with optimistic locking
+      const setClause: Record<string, unknown> = {
+        status: newStatus,
+        kanbanOrder: newKanbanOrder,
+        version: () => 'version + 1',
+      };
+      if (extraFields?.startDate !== undefined) setClause.startDate = extraFields.startDate;
+      if (extraFields?.endDate !== undefined) setClause.endDate = extraFields.endDate;
+      if (extraFields?.completionPercentage !== undefined)
+        setClause.completionPercentage = extraFields.completionPercentage;
+
       const result = await manager
         .createQueryBuilder()
         .update(ProjectTaskEntity)
-        .set({
-          status: newStatus,
-          kanbanOrder: newKanbanOrder,
-          version: () => 'version + 1',
-        })
+        .set(setClause)
         .where('id = :id', { id })
         .andWhere('project_id = :projectId', { projectId })
         .andWhere('version = :expectedVersion', { expectedVersion })
@@ -457,10 +430,9 @@ export class ProjectTaskRepository {
         .execute();
 
       if (result.affected === 0) {
-        return null; // Version mismatch or not found
+        return null;
       }
 
-      // Step 2: Prepend activity log entry if provided
       if (activityEntry) {
         await manager.query(
           `
@@ -487,45 +459,60 @@ export class ProjectTaskRepository {
         );
       }
 
-      // Step 3: Return updated task
-      return manager.findOne(ProjectTaskEntity, {
+      const task = await manager.findOne(ProjectTaskEntity, {
         where: { id, projectId, deletedAt: IsNull() },
-        relations: ['assignee', 'milestone', 'template'],
+        relations: ['assignee', 'milestone', 'workflowStep'],
       });
+      return task ? this.resolveTaskFields(task) : null;
     });
   }
 
-  /**
-   * Find tasks by user ID across all projects
-   */
   async findByUserId(
     userId: string,
+    organizationId: string,
     page: number,
     limit: number,
     filters: {
       status?: TaskStatus;
       priority?: string;
     } = {},
+    teamProjectIds: string[] = [],
   ): Promise<{ data: ProjectTaskEntity[]; total: number }> {
     const skip = (page - 1) * limit;
 
-    // Build where condition
-    const where: Record<string, unknown> = {
-      assignedToUserId: userId,
+    const base: Record<string, unknown> = {
       deletedAt: IsNull(),
+      status: Not(In([TaskStatus.DONE, TaskStatus.CANCELLED])),
+      project: {
+        property: { organizationId },
+        status: Not(ProjectStatus.CANCELLED),
+      },
     };
 
-    if (filters.status) {
-      where.status = filters.status;
+    if (
+      filters.status &&
+      filters.status !== TaskStatus.DONE &&
+      filters.status !== TaskStatus.CANCELLED
+    ) {
+      base.status = filters.status;
     }
     if (filters.priority) {
-      where.priority = filters.priority;
+      base.priority = filters.priority;
     }
 
-    // Use repository.findAndCount instead of QueryBuilder to avoid databaseName error
+    const whereConditions: Record<string, unknown>[] = [{ ...base, assignedToUserId: userId }];
+
+    if (teamProjectIds.length > 0) {
+      whereConditions.push({
+        ...base,
+        assignedToUserId: IsNull(),
+        projectId: In(teamProjectIds),
+      });
+    }
+
     const [data, total] = await this.repository.findAndCount({
-      where,
-      relations: ['project', 'milestone'],
+      where: whereConditions,
+      relations: ['project', 'milestone', 'workflowStep'],
       order: {
         priority: 'DESC',
         endDate: 'ASC',
@@ -534,36 +521,266 @@ export class ProjectTaskRepository {
       take: limit,
     });
 
-    return { data, total };
+    return { data: this.resolveMany(data), total };
   }
 
-  /**
-   * Check if all dependencies are complete
-   */
-  async areAllDependenciesComplete(dependsOnTaskIds: string[]): Promise<boolean> {
-    if (!dependsOnTaskIds || dependsOnTaskIds.length === 0) {
-      return true;
+  async areAllDependenciesResolved(dependsOnTaskIds: string[]): Promise<{
+    resolved: boolean;
+    blockers: Array<{ name: string; status: string }>;
+  }> {
+    if (!dependsOnTaskIds?.length) return { resolved: true, blockers: [] };
+
+    const tasks = await this.repository.find({
+      where: { id: In(dependsOnTaskIds) },
+      relations: ['workflowStep'],
+      withDeleted: true,
+    });
+
+    const blockers: Array<{ name: string; status: string }> = [];
+    for (const dep of tasks) {
+      if (dep.deletedAt) continue;
+      if (dep.status === TaskStatus.CANCELLED) continue;
+      if (dep.status === TaskStatus.DONE) continue;
+      const name = dep.nameOverride ?? dep.workflowStep?.name ?? dep.code;
+      blockers.push({ name, status: dep.status });
     }
 
-    const incompleteTasks = await this.repository
-      .createQueryBuilder('task')
-      .where('task.id IN (:...taskIds)', { taskIds: dependsOnTaskIds })
-      .andWhere('task.status != :doneStatus', { doneStatus: TaskStatus.DONE })
-      .andWhere('task.deleted_at IS NULL')
-      .getCount();
+    return { resolved: blockers.length === 0, blockers };
+  }
 
-    return incompleteTasks === 0;
+  async findAllByUserId(
+    userId: string,
+    organizationId: string,
+    filters: {
+      status?: TaskStatus;
+      priority?: string;
+      projectId?: string;
+    } = {},
+    teamProjectIds: string[] = [],
+  ): Promise<ProjectTaskEntity[]> {
+    const base: Record<string, unknown> = {
+      deletedAt: IsNull(),
+      status: Not(In([TaskStatus.DONE, TaskStatus.CANCELLED])),
+      project: {
+        property: { organizationId },
+        status: Not(ProjectStatus.CANCELLED),
+      },
+    };
+
+    if (
+      filters.status &&
+      filters.status !== TaskStatus.DONE &&
+      filters.status !== TaskStatus.CANCELLED
+    ) {
+      base.status = filters.status;
+    }
+    if (filters.priority) {
+      base.priority = filters.priority;
+    }
+    if (filters.projectId) {
+      base.projectId = filters.projectId;
+    }
+
+    const whereConditions: Record<string, unknown>[] = [{ ...base, assignedToUserId: userId }];
+
+    if (teamProjectIds.length > 0) {
+      const teamWhere: Record<string, unknown> = {
+        ...base,
+        assignedToUserId: IsNull(),
+      };
+      if (filters.projectId) {
+        if (teamProjectIds.includes(filters.projectId)) {
+          teamWhere.projectId = filters.projectId;
+        } else {
+          teamWhere.projectId = In([]);
+        }
+      } else {
+        teamWhere.projectId = In(teamProjectIds);
+      }
+      whereConditions.push(teamWhere);
+    }
+
+    const results = await this.repository.find({
+      where: whereConditions,
+      relations: ['project', 'milestone', 'workflowStep'],
+      order: {
+        endDate: { direction: 'ASC', nulls: 'LAST' },
+        priority: 'DESC',
+      },
+    });
+
+    return this.resolveMany(results);
+  }
+
+  async findByIdForAssignee(
+    taskId: string,
+    userId: string,
+    organizationId: string,
+    teamProjectIds: string[] = [],
+  ): Promise<ProjectTaskEntity | null> {
+    const whereConditions: Record<string, unknown>[] = [
+      {
+        id: taskId,
+        assignedToUserId: userId,
+        deletedAt: IsNull(),
+        project: { property: { organizationId } },
+      },
+    ];
+
+    if (teamProjectIds.length > 0) {
+      whereConditions.push({
+        id: taskId,
+        assignedToUserId: IsNull(),
+        deletedAt: IsNull(),
+        projectId: In(teamProjectIds),
+        project: { property: { organizationId } },
+      });
+    }
+
+    const task = await this.repository.findOne({
+      where: whereConditions,
+      relations: ['project', 'milestone', 'assignee', 'workflowStep'],
+    });
+    return task ? this.resolveTaskFields(task) : null;
+  }
+
+  async countCompletedThisWeek(
+    userId: string,
+    organizationId: string,
+    projectId?: string,
+    teamProjectIds: string[] = [],
+  ): Promise<number> {
+    const startOfWeek = new Date();
+    const day = startOfWeek.getDay();
+    const diff = day === 0 ? 6 : day - 1;
+    startOfWeek.setDate(startOfWeek.getDate() - diff);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const base: Record<string, unknown> = {
+      status: TaskStatus.DONE,
+      deletedAt: IsNull(),
+      updatedAt: MoreThanOrEqual(startOfWeek),
+      project: { property: { organizationId } },
+    };
+
+    if (projectId) {
+      base.projectId = projectId;
+    }
+
+    const whereConditions: Record<string, unknown>[] = [{ ...base, assignedToUserId: userId }];
+
+    if (teamProjectIds.length > 0) {
+      const teamWhere: Record<string, unknown> = {
+        ...base,
+        assignedToUserId: IsNull(),
+      };
+      if (!projectId) {
+        teamWhere.projectId = In(teamProjectIds);
+      }
+      whereConditions.push(teamWhere);
+    }
+
+    return this.repository.count({ where: whereConditions });
+  }
+
+  async findUserTaskProjects(
+    userId: string,
+    organizationId: string,
+    teamProjectIds: string[] = [],
+  ): Promise<Array<{ id: string; name: string; projectNumber: string }>> {
+    const whereConditions: Record<string, unknown>[] = [
+      {
+        assignedToUserId: userId,
+        deletedAt: IsNull(),
+        status: Not(In([TaskStatus.DONE, TaskStatus.CANCELLED])),
+        project: { property: { organizationId } },
+      },
+    ];
+
+    if (teamProjectIds.length > 0) {
+      whereConditions.push({
+        assignedToUserId: IsNull(),
+        deletedAt: IsNull(),
+        status: Not(In([TaskStatus.DONE, TaskStatus.CANCELLED])),
+        projectId: In(teamProjectIds),
+        project: { property: { organizationId } },
+      });
+    }
+
+    const tasks = await this.repository.find({
+      where: whereConditions,
+      relations: ['project'],
+      select: ['id', 'projectId'],
+    });
+
+    const projectMap = new Map<string, { id: string; name: string; projectNumber: string }>();
+    for (const task of tasks) {
+      if (task.project && !projectMap.has(task.projectId)) {
+        projectMap.set(task.projectId, {
+          id: task.project.id,
+          name: task.project.name,
+          projectNumber: task.project.projectNumber,
+        });
+      }
+    }
+
+    return Array.from(projectMap.values());
   }
 
   /**
-   * Find tasks with upcoming deadlines
+   * Compute unfiltered summary counts for the My Tasks dashboard cards.
+   * Uses COUNT queries (no full entity load) for efficiency.
    */
+  async countSummaryForUser(
+    userId: string,
+    organizationId: string,
+    teamProjectIds: string[] = [],
+  ): Promise<{ total: number; overdue: number; dueToday: number }> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const baseWhere = {
+      deletedAt: IsNull(),
+      status: Not(In([TaskStatus.DONE, TaskStatus.CANCELLED])),
+      project: {
+        property: { organizationId },
+        status: Not(ProjectStatus.CANCELLED),
+      },
+    };
+
+    const buildWhere = (extra: Record<string, unknown> = {}): Record<string, unknown>[] => {
+      const conditions: Record<string, unknown>[] = [
+        { ...baseWhere, ...extra, assignedToUserId: userId },
+      ];
+      if (teamProjectIds.length > 0) {
+        conditions.push({
+          ...baseWhere,
+          ...extra,
+          assignedToUserId: IsNull(),
+          projectId: In(teamProjectIds),
+        });
+      }
+      return conditions;
+    };
+
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    const [total, overdue, dueToday] = await Promise.all([
+      this.repository.count({ where: buildWhere() }),
+      this.repository.count({ where: buildWhere({ endDate: LessThan(todayStr) }) }),
+      this.repository.count({ where: buildWhere({ endDate: todayStr }) }),
+    ]);
+
+    return { total, overdue, dueToday };
+  }
+
   async findUpcomingDeadlines(projectId: string, daysAhead: number): Promise<ProjectTaskEntity[]> {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + daysAhead);
 
-    return this.repository
+    const tasks = await this.repository
       .createQueryBuilder('task')
+      .leftJoinAndSelect('task.workflowStep', 'workflowStep')
       .where('task.project_id = :projectId', { projectId })
       .andWhere('task.deleted_at IS NULL')
       .andWhere('task.status NOT IN (:...completedStatuses)', {
@@ -574,5 +791,65 @@ export class ProjectTaskRepository {
       .andWhere('task.end_date >= CURRENT_DATE')
       .orderBy('task.end_date', 'ASC')
       .getMany();
+    return this.resolveMany(tasks);
+  }
+
+  async computeProgress(
+    projectId: string,
+    manager?: EntityManager,
+  ): Promise<{ done: number; total: number }> {
+    const repo = this.getRepo(manager);
+    const result = await repo
+      .createQueryBuilder('t')
+      .select(`COUNT(*) FILTER (WHERE t.status = :done)`, 'done')
+      .addSelect(`COUNT(*) FILTER (WHERE t.status != :cancelled)`, 'total')
+      .where('t.project_id = :projectId', { projectId })
+      .andWhere('t.deleted_at IS NULL')
+      .setParameters({ done: TaskStatus.DONE, cancelled: TaskStatus.CANCELLED })
+      .getRawOne();
+    return {
+      done: parseInt(result?.done ?? '0', 10),
+      total: parseInt(result?.total ?? '0', 10),
+    };
+  }
+
+  async countByWorkflowStepId(workflowStepId: string): Promise<number> {
+    return this.repository.count({
+      where: {
+        workflowStepId,
+        deletedAt: IsNull(),
+      },
+    });
+  }
+
+  /**
+   * Generate a unique task code (e.g. TSK-ONEOHM-2026-0001)
+   */
+  async generateTaskCode(orgCode: string, manager?: EntityManager): Promise<string> {
+    return generateEntityCode(this.repository, 'code', 'TSK', orgCode, undefined, manager);
+  }
+
+  private resolveTaskFields(task: ProjectTaskEntity): ProjectTaskEntity {
+    if (task.workflowStep) {
+      task.name = task.nameOverride ?? task.workflowStep.name;
+      task.description = task.descriptionOverride ?? task.workflowStep.description;
+      task.checklist = task.checklistOverride ?? task.workflowStep.checklistTemplate;
+      task.labels =
+        task.labelsOverride ?? (task.workflowStep.type ? [task.workflowStep.type] : undefined);
+    } else {
+      task.name = task.nameOverride ?? '';
+      task.description = task.descriptionOverride;
+      task.checklist = task.checklistOverride;
+      task.labels = task.labelsOverride;
+    }
+    return task;
+  }
+
+  private resolveMany(tasks: ProjectTaskEntity[]): ProjectTaskEntity[] {
+    return tasks.map((t) => this.resolveTaskFields(t));
+  }
+
+  private getRepo(manager?: EntityManager): Repository<ProjectTaskEntity> {
+    return manager ? manager.getRepository(ProjectTaskEntity) : this.repository;
   }
 }

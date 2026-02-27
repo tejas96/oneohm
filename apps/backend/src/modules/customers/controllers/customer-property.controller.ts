@@ -33,6 +33,8 @@ import {
   CreateCustomerPropertyDto,
   CreateSiteVisitDto,
   CustomerPropertyResponseDto,
+  PropertyDocumentDto,
+  PropertyQueryDto,
   SiteVisitResponseDto,
   UpdateCustomerPropertyDto,
   UpdateSiteVisitDto,
@@ -86,37 +88,42 @@ export class CustomerPropertyController {
   }
 
   /**
-   * Get all properties
+   * Get all properties with filtering, sorting, and pagination
+   * Unified endpoint supporting search, filters, and sorting via query parameters
    */
   @Get()
   @ApiOperation({
     summary: 'Get all properties',
-    description: 'Retrieve all customer properties for the organization with pagination.',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number (default: 1)',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Items per page (default: 20)',
+    description:
+      'Retrieve properties with comprehensive filtering, sorting, and pagination. ' +
+      'Supports search (property name, address, city, consumer number, customer name), ' +
+      'lead temperature filter, property type filter, status filter, location filters (city, state), ' +
+      'date range, creator filter (createdBy=me), and sorting. ' +
+      'Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'List of properties',
+    description: 'Paginated list of properties',
     type: [CustomerPropertyResponseDto],
   })
   async findAll(
     @OrganizationContext() organizationId: string,
-    @Query('page', new ParseIntPipe({ optional: true })) page = 1,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Query() query: PropertyQueryDto,
   ): Promise<PaginatedResponse<CustomerPropertyResponseDto>> {
-    const result = await this.propertyService.findAll(organizationId, page, limit);
-    return toPaginatedResponse(CustomerPropertyResponseDto, result.data, result.total, page, limit);
+    // Substitute 'me' with actual user ID for createdBy filter
+    if (query.createdBy === 'me') {
+      query.createdBy = currentUser.id;
+    }
+
+    const result = await this.propertyService.findAll(organizationId, query);
+    return toPaginatedResponse(
+      CustomerPropertyResponseDto,
+      result.data,
+      result.total,
+      query.page,
+      query.limit,
+    );
   }
 
   /**
@@ -148,46 +155,37 @@ export class CustomerPropertyController {
   @Get('temperature/:temperature')
   @ApiOperation({
     summary: 'Get properties by lead temperature',
-    description: 'Retrieve all properties with a specific lead temperature (hot/warm/cold).',
+    description: 'Retrieve properties with a specific lead temperature (hot/warm/cold) with pagination.',
   })
   @ApiParam({
     name: 'temperature',
     enum: LeadTemperature,
     description: 'Lead temperature filter',
   })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 20)',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'List of properties',
-    type: [CustomerPropertyResponseDto],
+    description: 'Paginated list of properties',
   })
   async findByTemperature(
     @Param('temperature') temperature: LeadTemperature,
     @OrganizationContext() organizationId: string,
-  ): Promise<CustomerPropertyResponseDto[]> {
-    const properties = await this.propertyService.findByTemperature(organizationId, temperature);
-    return toDtoArray(CustomerPropertyResponseDto, properties);
-  }
-
-  /**
-   * Get pending follow-ups
-   */
-  @Get('follow-ups/pending')
-  @ApiOperation({
-    summary: 'Get pending follow-ups',
-    description: 'Retrieve all properties with pending follow-ups (due today or overdue).',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'List of properties with pending follow-ups',
-    type: [CustomerPropertyResponseDto],
-  })
-  async findPendingFollowUps(
-    @OrganizationContext() organizationId: string,
-  ): Promise<CustomerPropertyResponseDto[]> {
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    const properties = await this.propertyService.findPendingFollowUps(organizationId, today);
-    return toDtoArray(CustomerPropertyResponseDto, properties);
+    @Query('page', new ParseIntPipe({ optional: true })) page = 1,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
+  ): Promise<PaginatedResponse<CustomerPropertyResponseDto>> {
+    const result = await this.propertyService.findByTemperature(organizationId, temperature, page, limit);
+    return toPaginatedResponse(CustomerPropertyResponseDto, result.data, result.total, page, limit);
   }
 
   /**
@@ -276,8 +274,7 @@ export class CustomerPropertyController {
   @Patch(':id/temperature')
   @ApiOperation({
     summary: 'Update property lead temperature',
-    description:
-      'Update the lead temperature (hot/warm/cold) for a property. Automatically recalculates the next follow-up date.',
+    description: 'Update the lead temperature (hot/warm/cold) for a property.',
   })
   @ApiParam({ name: 'id', type: String, description: 'Property ID' })
   @ApiBody({
@@ -291,11 +288,6 @@ export class CustomerPropertyController {
           example: 'hot',
           description: 'New lead temperature',
         },
-        followUpNotes: {
-          type: 'string',
-          example: 'Customer interested, schedule site visit',
-          description: 'Notes for follow-up',
-        },
       },
     },
   })
@@ -308,7 +300,6 @@ export class CustomerPropertyController {
   async updateTemperature(
     @Param('id', ParseUUIDPipe) id: string,
     @Body('temperature') temperature: LeadTemperature,
-    @Body('followUpNotes') followUpNotes: string | undefined,
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<CustomerPropertyResponseDto> {
@@ -316,7 +307,6 @@ export class CustomerPropertyController {
       id,
       organizationId,
       temperature,
-      followUpNotes,
       currentUser.id,
     );
     return toDto(CustomerPropertyResponseDto, property);
@@ -368,6 +358,78 @@ export class CustomerPropertyController {
     await this.propertyService.delete(id, organizationId, currentUser.id);
   }
 
+  // ==================== DOCUMENT NESTED ROUTES ====================
+
+  /**
+   * Add document to property
+   */
+  @Post(':id/documents')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Add document to property',
+    description: 'Atomically adds a document to the property documents JSONB array.',
+  })
+  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Document added successfully',
+    type: CustomerPropertyResponseDto,
+  })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Property not found' })
+  async addDocument(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() document: PropertyDocumentDto,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<CustomerPropertyResponseDto> {
+    const property = await this.propertyService.addDocument(
+      id,
+      organizationId,
+      document,
+      currentUser.id,
+    );
+    return toDto(CustomerPropertyResponseDto, property);
+  }
+
+  /**
+   * Remove document from property
+   */
+  @Delete(':id/documents/:encodedUrl')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Remove document from property',
+    description:
+      'Atomically removes a document from the property documents JSONB array. ' +
+      'The encodedUrl parameter must be the base64-encoded document URL.',
+  })
+  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
+  @ApiParam({
+    name: 'encodedUrl',
+    type: String,
+    description: 'Base64-encoded document URL',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Document removed successfully',
+    type: CustomerPropertyResponseDto,
+  })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Property not found' })
+  async removeDocument(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('encodedUrl') encodedUrl: string,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<CustomerPropertyResponseDto> {
+    const url = Buffer.from(encodedUrl, 'base64').toString('utf-8');
+    const property = await this.propertyService.removeDocument(
+      id,
+      organizationId,
+      url,
+      currentUser.id,
+    );
+    return toDto(CustomerPropertyResponseDto, property);
+  }
+
   // ==================== SITE VISIT NESTED ROUTES ====================
 
   /**
@@ -395,8 +457,14 @@ export class CustomerPropertyController {
     @Param('id', ParseUUIDPipe) propertyId: string,
     @Body() createDto: CreateSiteVisitDto,
     @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<SiteVisitResponseDto> {
-    const siteVisit = await this.siteVisitService.create(propertyId, organizationId, createDto);
+    const siteVisit = await this.siteVisitService.create(
+      propertyId,
+      organizationId,
+      createDto,
+      currentUser.id,
+    );
     return toDto(SiteVisitResponseDto, siteVisit);
   }
 
@@ -442,8 +510,14 @@ export class CustomerPropertyController {
     @Param('id', ParseUUIDPipe) propertyId: string,
     @Body() updateDto: UpdateSiteVisitDto,
     @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<SiteVisitResponseDto> {
-    const siteVisit = await this.siteVisitService.update(propertyId, organizationId, updateDto);
+    const siteVisit = await this.siteVisitService.update(
+      propertyId,
+      organizationId,
+      updateDto,
+      currentUser.id,
+    );
     return toDto(SiteVisitResponseDto, siteVisit);
   }
 
@@ -466,8 +540,13 @@ export class CustomerPropertyController {
   async completeSiteVisit(
     @Param('id', ParseUUIDPipe) propertyId: string,
     @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<SiteVisitResponseDto> {
-    const siteVisit = await this.siteVisitService.complete(propertyId, organizationId);
+    const siteVisit = await this.siteVisitService.complete(
+      propertyId,
+      organizationId,
+      currentUser.id,
+    );
     return toDto(SiteVisitResponseDto, siteVisit);
   }
 
@@ -486,7 +565,8 @@ export class CustomerPropertyController {
   async deleteSiteVisit(
     @Param('id', ParseUUIDPipe) propertyId: string,
     @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
-    await this.siteVisitService.delete(propertyId, organizationId);
+    await this.siteVisitService.delete(propertyId, organizationId, currentUser.id);
   }
 }

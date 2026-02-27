@@ -2,19 +2,22 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ConnectionType,
   LeadTemperature,
-  PropertyStatus,
   PropertyType,
 } from '@oneohm-epc/shared-types';
+import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
-  IsDateString,
   IsEnum,
   IsNumber,
   IsOptional,
   IsString,
   MaxLength,
   Min,
+  ValidateNested,
 } from 'class-validator';
+
+import { PropertyDocumentDto } from './property-document.dto';
 
 /**
  * DTO for updating a customer property (installation site)
@@ -72,14 +75,6 @@ export class UpdateCustomerPropertyDto {
   @IsOptional()
   @MaxLength(10)
   pincode?: string;
-
-  @ApiPropertyOptional({
-    example: 'POINT(12.9352 77.6245)',
-    description: 'GPS coordinates in POINT format',
-  })
-  @IsString()
-  @IsOptional()
-  locationCoordinates?: string;
 
   // ==================== Electricity/Consumer Details ====================
   @ApiPropertyOptional({
@@ -155,15 +150,6 @@ export class UpdateCustomerPropertyDto {
   @Min(0)
   monthlyBill?: number;
 
-  @ApiPropertyOptional({
-    example: 500,
-    description: 'Available roof area in square feet',
-  })
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  roofAreaSqft?: number;
-
   // ==================== Lead Tracking ====================
   @ApiPropertyOptional({
     enum: LeadTemperature,
@@ -173,21 +159,6 @@ export class UpdateCustomerPropertyDto {
   @IsEnum(LeadTemperature)
   @IsOptional()
   leadTemperature?: LeadTemperature;
-
-  @ApiPropertyOptional({
-    example: '2025-01-20',
-    description: 'Next follow-up date',
-  })
-  @IsDateString()
-  @IsOptional()
-  nextFollowUpDate?: string;
-
-  @ApiPropertyOptional({
-    description: 'Notes for next follow-up',
-  })
-  @IsString()
-  @IsOptional()
-  followUpNotes?: string;
 
   // ==================== Flags ====================
   @ApiPropertyOptional({
@@ -206,15 +177,19 @@ export class UpdateCustomerPropertyDto {
   @IsOptional()
   wantsLoan?: boolean;
 
-  // ==================== Status ====================
+  // ==================== Documents ====================
   @ApiPropertyOptional({
-    enum: PropertyStatus,
-    example: PropertyStatus.ACTIVE,
-    description: 'Property status',
+    type: [PropertyDocumentDto],
+    description: 'Property-level documents (identity docs, KYC, etc.)',
+    example: [
+      { url: 'https://storage.example.com/aadhaar.jpg', tag: 'aadhaar_card', fileName: 'aadhaar.jpg' },
+    ],
   })
-  @IsEnum(PropertyStatus)
   @IsOptional()
-  status?: PropertyStatus;
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PropertyDocumentDto)
+  documents?: PropertyDocumentDto[];
 
   // ==================== Notes ====================
   @ApiPropertyOptional({

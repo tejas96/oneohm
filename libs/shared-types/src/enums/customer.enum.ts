@@ -30,6 +30,7 @@ export enum PropertyStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
   PENDING_VERIFICATION = 'pending_verification',
+  CONVERTED = 'converted',
 }
 
 /**
@@ -69,4 +70,63 @@ export enum LeadSource {
   EXHIBITION = 'exhibition',
   COLD_CALL = 'cold_call',
   OTHER = 'other',
+}
+
+/**
+ * Followup Type Enum
+ * Types of scheduled follow-up activities
+ */
+export enum FollowupType {
+  VISIT = 'visit',
+  MEETING = 'meeting',
+  TASK = 'task',
+  REMINDER = 'reminder',
+  DOCUMENT_COLLECTION = 'document_collection',
+}
+
+/**
+ * Followup Status Enum
+ * Simple 3-state lifecycle
+ */
+export enum FollowupStatus {
+  PENDING = 'pending',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+}
+
+/**
+ * Followup Priority Enum
+ */
+export enum FollowupPriority {
+  LOW = 'low',
+  NORMAL = 'normal',
+  HIGH = 'high',
+}
+
+/**
+ * Customer Sort Field Enum
+ * Allowed sort fields for customer list API
+ * Values must match entity property names (camelCase)
+ */
+export enum CustomerSortField {
+  CREATED_AT = 'createdAt',
+  UPDATED_AT = 'updatedAt',
+  FIRST_NAME = 'firstName',
+  CITY = 'city',
+  STATUS = 'status',
+}
+
+/**
+ * Property Sort Field Enum
+ * Allowed sort fields for property list API
+ * Values must match entity property names (camelCase)
+ */
+export enum PropertySortField {
+  CREATED_AT = 'createdAt',
+  UPDATED_AT = 'updatedAt',
+  PROPERTY_NAME = 'propertyName',
+  CITY = 'city',
+  LEAD_TEMPERATURE = 'leadTemperature',
+  PROPERTY_TYPE = 'propertyType',
+  STATUS = 'status',
 }

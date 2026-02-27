@@ -28,7 +28,7 @@
   --panel-width: 200px;
   --content-offset: 248px;
   --rail-icon-height: 36px;
-  --panel-item-height: 36px; /* synced with tailwind spacing.panel-item */
+  --panel-item-height: 30px; /* synced with tailwind spacing.panel-item - per UX spec */
   
   /* Shadcn radius variable */
   --radius: 0.5rem;
@@ -43,7 +43,7 @@ html {
 }
 
 body {
-  @apply text-sm leading-normal antialiased;
+  @apply text-sm leading-normal;
 }
 
 /* ============================================================================
@@ -103,45 +103,39 @@ body {
   width: var(--rail-width);
   height: var(--rail-icon-height);
   @apply flex items-center justify-center relative cursor-pointer;
-  @apply text-gray-500 transition-all duration-150;
+  @apply text-foreground-secondary transition-all duration-150;
 }
 
 .rail-icon:hover {
-  @apply bg-gray-100 text-gray-700;
+  @apply bg-muted text-foreground;
 }
 
 .rail-icon.active {
   @apply text-primary bg-primary/10 border-l-[3px] border-primary;
 }
 
-/* Badge Notification */
-.badge-notification {
-  @apply absolute flex items-center justify-center;
-  @apply text-[10px] font-semibold text-white bg-error;
-  top: 6px;
-  right: 10px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 9px;
-}
-
 /* Panel Section Header */
 .panel-section-header {
-  @apply text-2xs font-semibold uppercase tracking-wide text-gray-400;
+  @apply text-section font-semibold uppercase tracking-wider text-foreground-tertiary;
   padding: 12px 8px 6px 8px;
 }
 
 /* Panel Item */
 .panel-item {
   height: var(--panel-item-height);
-  @apply px-3 flex items-center text-sm text-gray-700;
+  @apply px-3 flex items-center text-sm font-medium text-foreground-secondary;
   @apply cursor-pointer rounded-lg transition-all duration-100;
   text-decoration: none;
 }
 
+.panel-item.sub-item {
+  padding-left: 28px;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
 .panel-item:hover {
-  @apply bg-gray-50;
+  @apply bg-muted text-foreground;
 }
 
 .panel-item.active {

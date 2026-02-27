@@ -98,8 +98,20 @@ export {
 } from './form';
 
 // Input
-export { Input, inputVariants, InputWrapper, InputIcon } from './input';
-export type { InputProps, InputWrapperProps, InputIconProps } from './input';
+export { Input, inputVariants } from './input';
+export type { InputProps } from './input';
+
+// PasswordInput
+export { PasswordInput } from './password-input';
+export type { PasswordInputProps } from './password-input';
+
+// OtpInput
+export { OtpInput } from './otp-input';
+export type { OtpInputProps } from './otp-input';
+
+// FormFieldInput
+export { FormFieldInput } from './form-field';
+export type { FormFieldInputProps } from './form-field';
 
 // Label
 export { Label, labelVariants } from './label';
@@ -107,6 +119,18 @@ export type { LabelProps } from './label';
 
 // Popover
 export { Popover, PopoverTrigger, PopoverContent } from './popover';
+
+// Calendar
+export { Calendar } from './calendar';
+export type { CalendarProps } from './calendar';
+
+// DatePicker
+export { DatePicker } from './date-picker';
+export type { DatePickerProps } from './date-picker';
+
+// DateRangePicker
+export { DateRangePicker } from './date-range-picker';
+export type { DateRangePickerProps } from './date-range-picker';
 
 // Select
 export {
@@ -148,7 +172,7 @@ export {
 export { Skeleton } from './skeleton';
 
 // Switch
-export { Switch } from './switch';
+export { Switch, switchVariants } from './switch';
 export type { SwitchProps } from './switch';
 
 // Sonner (Toasts)
@@ -234,3 +258,10 @@ export type { ProgressProps, ProgressWithLabelProps, CircularProgressProps, Segm
 // Spinner
 export { Spinner, spinnerVariants, LoadingDots, loadingDotsVariants } from './spinner';
 export type { SpinnerProps, LoadingDotsProps } from './spinner';
+
+// Typography
+export { Typography } from './typography';
+export type { TypographyProps } from './typography';
+
+// WhatsApp Icon
+export { WhatsAppIcon } from './whatsapp-icon';

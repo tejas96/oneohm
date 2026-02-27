@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { Badge, CountBadge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { navigationConfig, getPanelConfigByPath, isNavItemActive } from '@/lib/config';
 import { cn } from '@/lib/utils';
@@ -13,6 +14,7 @@ import { cn } from '@/lib/utils';
  * MobileNav - Mobile navigation drawer
  * Shows hamburger menu on mobile, opens sheet with full navigation
  * Uses mounted check to avoid hydration mismatch with Radix UI
+ * Note: Uses usePathname directly to avoid useSearchParams Suspense requirement
  */
 export function MobileNav() {
   const [mounted, setMounted] = useState(false);
@@ -34,7 +36,7 @@ export function MobileNav() {
         className="lg:hidden p-2 -ml-2 hover:bg-muted rounded-lg transition-colors"
         aria-label="Open menu"
       >
-        <Menu className="w-5 h-5 text-foreground-secondary" />
+        <Menu className="size-icon-md text-foreground-secondary" />
       </button>
     );
   }
@@ -46,11 +48,11 @@ export function MobileNav() {
           className="lg:hidden p-2 -ml-2 hover:bg-muted rounded-lg transition-colors"
           aria-label="Open menu"
         >
-          <Menu className="w-5 h-5 text-foreground-secondary" />
+          <Menu className="size-icon-md text-foreground-secondary" />
         </button>
       </SheetTrigger>
 
-      <SheetContent side="left" className="w-[280px] p-0">
+      <SheetContent side="left" className="w-sheet-mobile p-0">
         {/* Header */}
         <SheetHeader className="px-4 py-3 border-b border-border-light">
           <div className="flex items-center justify-between">
@@ -85,14 +87,10 @@ export function MobileNav() {
                       : 'text-foreground-secondary hover:bg-muted'
                   )}
                 >
-                  {Icon && <Icon className="w-5 h-5" strokeWidth={2} />}
+                  {Icon && <Icon className="size-icon-md" strokeWidth={2} />}
                   <span className="flex-1">{item.label}</span>
-                  {item.badge !== undefined && (
-                    <span className="px-2 py-0.5 text-2xs font-medium bg-error text-error-foreground rounded-full">
-                      {typeof item.badge === 'number' && item.badge > 99
-                        ? '99+'
-                        : item.badge}
-                    </span>
+                  {typeof item.badge === 'number' && (
+                    <CountBadge count={item.badge} variant="error" />
                   )}
                 </Link>
               );
@@ -126,12 +124,12 @@ export function MobileNav() {
                           : 'text-foreground-secondary hover:bg-muted'
                       )}
                     >
-                      {Icon && <Icon className="w-4 h-4" />}
+                      {Icon && <Icon className="size-icon" />}
                       <span className="flex-1 truncate">{item.label}</span>
                       {item.badge !== undefined && (
-                        <span className="px-1.5 py-0.5 text-2xs font-medium bg-muted text-muted-foreground rounded">
+                        <Badge variant="secondary" size="sm">
                           {item.badge}
-                        </span>
+                        </Badge>
                       )}
                     </Link>
                   );
@@ -159,7 +157,7 @@ export function MobileNav() {
                       : 'text-foreground-secondary hover:bg-muted'
                   )}
                 >
-                  {Icon && <Icon className="w-5 h-5" strokeWidth={2} />}
+                  {Icon && <Icon className="size-icon-md" strokeWidth={2} />}
                   <span>{item.label}</span>
                 </Link>
               );

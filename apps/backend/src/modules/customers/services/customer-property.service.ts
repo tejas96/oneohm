@@ -5,10 +5,22 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { LeadTemperature, PropertyStatus, QuoteStatus } from '@oneohm-epc/shared-types';
+import {
+  LeadTemperature,
+  LoanStatus,
+  type PropertyDocument,
+  PropertyStatus,
+  QuoteStatus,
+} from '@oneohm-epc/shared-types';
 
+import { generateEntityCode } from '../../../common/utils/code-generator.util';
+import { LoanApplicationRepository } from '../../loan-finance/repositories/loan-application.repository';
+import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { QuoteRepository } from '../../quotes/repositories/quote.repository';
+import { StorageService } from '../../storage/services/storage.service';
 import { CreateCustomerPropertyDto } from '../dto/create-customer-property.dto';
+import type { PropertyDocumentDto } from '../dto/property-document.dto';
+import { PropertyQueryDto } from '../dto/property-query.dto';
 import { UpdateCustomerPropertyDto } from '../dto/update-customer-property.dto';
 import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
@@ -34,7 +46,10 @@ export class CustomerPropertyService {
   constructor(
     private readonly propertyRepository: CustomerPropertyRepository,
     private readonly customerRepository: CustomerProfileRepository,
+    private readonly organizationRepository: OrganizationRepository,
     private readonly quoteRepository: QuoteRepository,
+    private readonly loanApplicationRepository: LoanApplicationRepository,
+    private readonly storageService: StorageService,
   ) {}
 
   /**
@@ -70,18 +85,14 @@ export class CustomerPropertyService {
     const existingProperties = await this.propertyRepository.countByCustomer(createDto.customerId);
     const isPrimary = createDto.isPrimary ?? existingProperties === 0;
 
-    // Calculate next follow-up date based on temperature
-    const nextFollowUpDate = this.calculateNextFollowUpDate(
-      createDto.leadTemperature || LeadTemperature.WARM,
-    );
+    // Normalize documents to ensure required fields have defaults
+    const { documents, ...restCreateDto } = createDto;
 
     const property = await this.propertyRepository.create({
-      ...createDto,
+      ...restCreateDto,
+      documents: this.normalizeDocuments(documents),
       organizationId,
       isPrimary,
-      nextFollowUpDate: createDto.nextFollowUpDate
-        ? new Date(createDto.nextFollowUpDate)
-        : nextFollowUpDate,
       status: createDto.status || PropertyStatus.ACTIVE,
       createdBy,
     });
@@ -89,6 +100,24 @@ export class CustomerPropertyService {
     // If this property is primary, unset other properties
     if (isPrimary && existingProperties > 0) {
       await this.propertyRepository.setPrimary(property.id, createDto.customerId);
+    }
+
+    // Generate human-readable code (e.g. PROP-ONEOHM_EPC-2026-0001)
+    try {
+      const org = await this.organizationRepository.findOneById(organizationId);
+      if (org) {
+        const propertyCode = await generateEntityCode(
+          this.propertyRepository.repository,
+          'propertyCode',
+          'PROP',
+          org.code,
+          'property_code',
+        );
+        await this.propertyRepository.repository.update(property.id, { propertyCode });
+        property.propertyCode = propertyCode;
+      }
+    } catch (err) {
+      this.logger.warn(`Failed to generate property code for ${property.id}: ${String(err)}`);
     }
 
     this.logger.log(`✅ Property created: ${property.id}`);
@@ -109,19 +138,46 @@ export class CustomerPropertyService {
   }
 
   /**
-   * Find all properties for an organization
+   * Find all properties for an organization with filters, sorting, and pagination
+   * Enriches results with latest quote info per property
+   *
+   * @param organizationId - Organization context
+   * @param query - Query parameters (filters, sorting, pagination)
+   * @returns Properties enriched with quote info and total count
    */
   async findAll(
     organizationId: string,
-    page = 1,
-    limit = 20,
-  ): Promise<{ data: CustomerPropertyEntity[]; total: number }> {
-    const [data, total] = await this.propertyRepository.findByOrganization(
+    query: PropertyQueryDto,
+  ): Promise<{ data: PropertyWithQuoteInfo[]; total: number }> {
+    const [properties, total] = await this.propertyRepository.findWithFilters(
       organizationId,
-      page,
-      limit,
+      query,
     );
-    return { data, total };
+
+    // Early return if no properties (skip quote lookup)
+    if (properties.length === 0) {
+      return { data: [], total };
+    }
+
+    // Batch-load latest quote per property (single query, avoids N+1)
+    const propertyIds = properties.map((p) => p.id);
+    const quoteMap = await this.quoteRepository.findLatestByPropertyIds(
+      propertyIds,
+      organizationId,
+    );
+
+    // Enrich properties with quote data
+    const enriched: PropertyWithQuoteInfo[] = properties.map((property) => {
+      const quoteInfo = quoteMap.get(property.id);
+      return {
+        ...property,
+        latestQuoteNumber: quoteInfo?.quoteNumber,
+        latestQuoteStatus: quoteInfo?.status,
+        latestQuoteDate: quoteInfo?.quoteDate,
+      };
+    });
+
+    return { data: enriched, total };
   }
 
   /**
@@ -171,23 +227,21 @@ export class CustomerPropertyService {
   }
 
   /**
-   * Find properties by lead temperature
+   * Find properties by lead temperature (with pagination)
    */
   async findByTemperature(
     organizationId: string,
     temperature: LeadTemperature,
-  ): Promise<CustomerPropertyEntity[]> {
-    return this.propertyRepository.findByTemperature(organizationId, temperature);
-  }
-
-  /**
-   * Find pending follow-ups
-   */
-  async findPendingFollowUps(
-    organizationId: string,
-    beforeDate?: Date,
-  ): Promise<CustomerPropertyEntity[]> {
-    return this.propertyRepository.findPendingFollowUps(organizationId, beforeDate);
+    page = 1,
+    limit = 20,
+  ): Promise<{ data: CustomerPropertyEntity[]; total: number }> {
+    const [data, total] = await this.propertyRepository.findByTemperature(
+      organizationId,
+      temperature,
+      page,
+      limit,
+    );
+    return { data, total };
   }
 
   /**
@@ -203,6 +257,19 @@ export class CustomerPropertyService {
 
     // Verify property exists and belongs to organization
     const property = await this.findById(id, organizationId);
+
+    // Validate loan status if trying to disable loan
+    if (property.wantsLoan === true && updateDto.wantsLoan === false) {
+      const loanApp = await this.loanApplicationRepository.findByProperty(id);
+      if (loanApp) {
+        const finalizedStatuses = [LoanStatus.APPROVED, LoanStatus.REJECTED];
+        if (finalizedStatuses.includes(loanApp.status)) {
+          throw new BadRequestException(
+            `Cannot disable loan financing. This loan has been ${loanApp.status} by the bank and cannot be modified.`,
+          );
+        }
+      }
+    }
 
     // Check for consumer number conflicts (if being updated)
     if (updateDto.consumerNumber && updateDto.consumerNumber !== property.consumerNumber) {
@@ -222,24 +289,13 @@ export class CustomerPropertyService {
       await this.propertyRepository.setPrimary(id, property.customerId, updatedBy);
     }
 
-    // Prepare update data (exclude isPrimary since handled above)
+    // Prepare update data (exclude isPrimary since handled above, normalize documents)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { isPrimary: unusedIsPrimary, ...restDto } = updateDto;
-
-    // If temperature changes, recalculate next follow-up date (unless explicitly provided)
-    let nextFollowUpDate = updateDto.nextFollowUpDate
-      ? new Date(updateDto.nextFollowUpDate)
-      : undefined;
-
-    if (updateDto.leadTemperature && updateDto.leadTemperature !== property.leadTemperature) {
-      if (!updateDto.nextFollowUpDate) {
-        nextFollowUpDate = this.calculateNextFollowUpDate(updateDto.leadTemperature);
-      }
-    }
+    const { isPrimary: unusedIsPrimary, documents, ...restDto } = updateDto;
 
     const updated = await this.propertyRepository.update(id, {
       ...restDto,
-      nextFollowUpDate,
+      documents: this.normalizeDocuments(documents),
       updatedBy,
     });
 
@@ -258,20 +314,14 @@ export class CustomerPropertyService {
     id: string,
     organizationId: string,
     temperature: LeadTemperature,
-    followUpNotes?: string,
     updatedBy?: string,
   ): Promise<CustomerPropertyEntity> {
     this.logger.log(`Updating property ${id} temperature to: ${temperature}`);
 
     await this.findById(id, organizationId);
 
-    const nextFollowUpDate = this.calculateNextFollowUpDate(temperature);
-
     const updated = await this.propertyRepository.update(id, {
       leadTemperature: temperature,
-      nextFollowUpDate,
-      lastContactDate: new Date(),
-      followUpNotes,
       updatedBy,
     });
 
@@ -342,19 +392,95 @@ export class CustomerPropertyService {
 
     return result;
   }
+  /**
+   * Add a document to property
+   */
+  async addDocument(
+    propertyId: string,
+    organizationId: string,
+    document: PropertyDocumentDto,
+    userId: string,
+  ): Promise<CustomerPropertyEntity> {
+    this.logger.log(`Adding document to property ${propertyId}`);
+
+    const property = await this.findById(propertyId, organizationId);
+    const documents: PropertyDocument[] = [
+      ...(property.documents || []),
+      this.normalizeDocument(document),
+    ];
+
+    const updated = await this.propertyRepository.update(propertyId, {
+      documents,
+      updatedBy: userId,
+    });
+
+    if (!updated) {
+      throw new NotFoundException(`Property with ID '${propertyId}' not found after update`);
+    }
+
+    return updated;
+  }
 
   /**
-   * Calculate next follow-up date based on temperature
+   * Remove a document from property
    */
-  private calculateNextFollowUpDate(temperature: LeadTemperature): Date {
-    const daysToAdd = {
-      [LeadTemperature.HOT]: 3,
-      [LeadTemperature.WARM]: 10,
-      [LeadTemperature.COLD]: 15,
-    };
+  async removeDocument(
+    propertyId: string,
+    organizationId: string,
+    documentUrl: string,
+    userId: string,
+  ): Promise<CustomerPropertyEntity> {
+    this.logger.log(`Removing document from property ${propertyId}`);
 
-    const date = new Date();
-    date.setDate(date.getDate() + daysToAdd[temperature]);
-    return date;
+    const property = await this.findById(propertyId, organizationId);
+    const documents = (property.documents || []).filter((d) => d.url !== documentUrl);
+
+    const updated = await this.propertyRepository.update(propertyId, {
+      documents,
+      updatedBy: userId,
+    });
+
+    if (!updated) {
+      throw new NotFoundException(`Property with ID '${propertyId}' not found after update`);
+    }
+
+    // S3 cleanup (non-blocking — DB update already succeeded)
+    const fileKey = this.storageService.extractFileKeyFromUrl(documentUrl);
+    if (fileKey) {
+      try {
+        await this.storageService.deleteFile(fileKey);
+        this.logger.log(`Deleted file from storage: ${fileKey}`);
+      } catch (error) {
+        this.logger.warn(`Failed to delete file from storage: ${fileKey}`, error);
+      }
+    }
+
+    return updated;
+  }
+
+  /**
+   * Normalize a single document from DTO to entity format
+   */
+  private normalizeDocument(doc: PropertyDocumentDto): PropertyDocument {
+    return {
+      url: doc.url,
+      tag: doc.tag,
+      fileName: doc.fileName,
+      isLoanDoc: doc.isLoanDoc ?? false,
+      isVerified: doc.isVerified ?? false,
+      verifiedAt: doc.verifiedAt,
+      verifiedBy: doc.verifiedBy,
+      fileSize: doc.fileSize,
+      uploadedAt: doc.uploadedAt ?? new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Normalize documents from DTO to entity format
+   * Applies default values for optional fields
+   */
+  private normalizeDocuments(documents?: PropertyDocumentDto[]): PropertyDocument[] | undefined {
+    if (!documents) return undefined;
+    return documents.map((doc) => this.normalizeDocument(doc));
   }
 }

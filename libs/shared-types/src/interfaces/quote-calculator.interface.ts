@@ -502,6 +502,8 @@ export interface CalculatedPanelConfig {
   lineTotal: number;
   /** GST amount */
   gstAmount: number;
+  /** GST rate applied (e.g., 12) */
+  gstRate: number;
   /** Product warranty in years */
   productWarrantyYears?: number;
   /** Performance warranty in years */
@@ -522,6 +524,8 @@ export interface CalculatedInverterConfig {
     unitPrice: number;
     lineTotal: number;
     gstAmount: number;
+    /** GST rate applied (e.g., 12) */
+    gstRate: number;
     /** Product warranty in years */
     productWarrantyYears?: number;
   }[];
@@ -559,6 +563,8 @@ export interface CalculatedInstallationCost {
   totalBeforeTax: number;
   /** GST on installation */
   gstAmount: number;
+  /** GST rate applied (e.g., 18) */
+  gstRate: number;
   /** Total with GST */
   totalWithGst: number;
   /** Full breakdown of all cost components */
@@ -624,6 +630,7 @@ export interface QuoteCalculationResult {
     unitPrice: number;
     lineTotal: number;
     gstAmount: number;
+    gstRate: number;
   };
   /** Installation costs */
   installation: CalculatedInstallationCost;
@@ -670,6 +677,9 @@ export interface QuoteConfigSnapshot {
     brand: string;
     pricePerWatt: number;
     isDcr: boolean;
+    technology?: string;
+    gstRate?: number;
+    wattage?: number;
   }[];
   /** Inverter products used */
   inverters: {
@@ -678,12 +688,15 @@ export interface QuoteConfigSnapshot {
     brand: string;
     capacityKw: number;
     unitPrice: number;
+    gstRate?: number;
   }[];
   /** Structure product used */
   structure: {
     productId: string;
     name: string;
     pricePerKw: number;
+    gstRate?: number;
+    structureType?: string;
   };
   /** Installation pricing at time of quote */
   installationPricing: InstallationPricingConfig;

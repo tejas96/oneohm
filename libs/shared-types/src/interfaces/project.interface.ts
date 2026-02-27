@@ -1,3 +1,10 @@
+import type {
+  ProjectPriority,
+  ProjectStatus,
+  RoofCondition,
+  RoofOrientation,
+} from '../enums/project.enum';
+
 /**
  * GPS Coordinates
  * Represents geographical location of a site
@@ -38,6 +45,26 @@ export interface ShadingAnalysis {
 }
 
 /**
+ * Survey Data
+ * Consolidated assessment data collected during a site survey.
+ * Stored as JSONB in the site_surveys table.
+ */
+export interface SurveyData {
+  roofType?: string;
+  roofCondition?: RoofCondition;
+  roofOrientation?: RoofOrientation;
+  roofTiltAngle?: number;
+  availableAreaSqm?: number;
+  shadingAnalysis?: ShadingAnalysis;
+  electricalDetails?: ElectricalDetails;
+  structuralAssessment?: string;
+  siteAccess?: string;
+  safetyConcerns?: string;
+  recommendations?: string;
+  notes?: string;
+}
+
+/**
  * Milestone Deliverable
  * Expected output from a milestone
  */
@@ -68,9 +95,12 @@ export interface FileAttachment {
 
 /**
  * Project Metadata
- * Additional flexible data for projects
+ * Additional flexible data for projects.
+ * Quote-related fields (quoteId, quoteNumber, etc.) are now accessed via
+ * the project → quote FK relation, not stored in metadata.
  */
 export interface ProjectMetadata {
+  actualCost?: number;
   customFields?: Record<string, unknown>;
   tags?: string[];
   externalReferences?: {
@@ -165,27 +195,24 @@ export interface TaskActivityEntry {
  * - property.organizationId
  * - property.customerId
  * - property.address
- * - property.locationCoordinates
  *
  * Business Rule: One property can have only one project (OneToOne relationship)
  */
 export interface Project {
   id: string;
-  propertyId: string; // Required - customer/org/address derived from property (OneToOne)
+  propertyId: string;
+  quoteId: string;
+  quoteNumber?: string;
   createdBy: string;
   updatedBy?: string;
   projectNumber: string;
   name: string;
   description?: string;
-  systemSizeKw: number;
-  projectType: string;
-  status: string;
-  priority: string;
+  status: ProjectStatus;
+  priority: ProjectPriority;
   progressPercentage: number;
   startDate?: string;
   endDate?: string;
-  estimatedCost?: number;
-  actualCost?: number;
   metadata?: ProjectMetadata;
   createdAt: string;
   updatedAt: string;

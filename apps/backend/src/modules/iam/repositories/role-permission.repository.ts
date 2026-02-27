@@ -53,7 +53,7 @@ export class RolePermissionRepository {
   async findByRoleId(roleId: string): Promise<RolePermissionEntity[]> {
     return this.repository.find({
       where: { roleId },
-      relations: ['permission', 'permission.feature'],
+      relations: ['permission'],
     });
   }
 

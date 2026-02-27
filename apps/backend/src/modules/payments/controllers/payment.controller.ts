@@ -14,9 +14,10 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { PaymentTransactionStatus } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate } from '@oneohm-epc/shared-utils';
+import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate, OrganizationContext } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
+import { toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
@@ -100,11 +101,10 @@ export class PaymentController {
   @ApiParam({ name: 'projectId', type: String })
   async findByProject(
     @Param('projectId', ParseUUIDPipe) projectId: string,
+    @OrganizationContext() organizationId: string,
   ): Promise<PaymentResponseDto[]> {
-    const payments = await this.paymentService.findByProject(projectId);
-    return plainToInstance(PaymentResponseDto, payments, {
-      excludeExtraneousValues: true,
-    });
+    const payments = await this.paymentService.findByProject(projectId, organizationId);
+    return toDtoArray(PaymentResponseDto, payments);
   }
 
   @Get('milestone/:milestoneId')
@@ -223,13 +223,16 @@ export class PaymentController {
   @Get('project/:projectId/summary')
   @ApiOperation({ summary: 'Get payment summary for project' })
   @ApiParam({ name: 'projectId', type: String })
-  async getProjectPaymentSummary(@Param('projectId', ParseUUIDPipe) projectId: string): Promise<{
+  async getProjectPaymentSummary(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @OrganizationContext() organizationId: string,
+  ): Promise<{
     totalExpected: number;
     totalPaid: number;
     pendingAmount: number;
     paymentCount: number;
   }> {
-    return this.paymentService.getProjectPaymentSummary(projectId);
+    return this.paymentService.getProjectPaymentSummary(projectId, organizationId);
   }
 
   @Get('organization/:organizationId/stats')

@@ -19,6 +19,10 @@ export class MilestoneResponseDto {
   @Expose()
   projectId!: string;
 
+  @ApiPropertyOptional({ example: 'MS-ONEOHM_EPC-2026-0001' })
+  @Expose()
+  milestoneCode?: string;
+
   @ApiPropertyOptional({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()
   assignedTo?: string;

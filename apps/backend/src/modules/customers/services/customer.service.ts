@@ -9,10 +9,13 @@ import {
 } from '@nestjs/common';
 import { CustomerStatus, UserProfileType, UserStatus } from '@oneohm-epc/shared-types';
 
+import { generateEntityCode } from '../../../common/utils/code-generator.util';
+import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { UserRepository } from '../../users/repositories/user.repository';
 import { ProfileService } from '../../users/services/profile.service';
 import { AvailabilityResponseDto } from '../dto/check-availability.dto';
 import { CreateCustomerDto } from '../dto/create-customer.dto';
+import { CustomerQueryDto } from '../dto/customer-query.dto';
 import { UpdateCustomerDto } from '../dto/update-customer.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
@@ -27,6 +30,7 @@ export class CustomerService {
 
   constructor(
     private readonly customerRepository: CustomerProfileRepository,
+    private readonly organizationRepository: OrganizationRepository,
     @Inject(forwardRef(() => ProfileService))
     private readonly profileService: ProfileService,
     @Inject(forwardRef(() => UserRepository))
@@ -87,6 +91,24 @@ export class CustomerService {
       createdBy,
     })) as CustomerProfileEntity;
 
+    // Step 4: Generate human-readable code (e.g. CUST-ONEOHM_EPC-2026-0001)
+    try {
+      const org = await this.organizationRepository.findOneById(organizationId);
+      if (org) {
+        const customerCode = await generateEntityCode(
+          this.customerRepository.repository,
+          'customerCode',
+          'CUST',
+          org.code,
+          'customer_code',
+        );
+        await this.customerRepository.update(customer.id, { customerCode });
+        customer.customerCode = customerCode;
+      }
+    } catch (err) {
+      this.logger.warn(`Failed to generate customer code for ${customer.id}: ${String(err)}`);
+    }
+
     this.logger.log(`✅ Customer profile created with auto-assigned role: ${customer.id}`);
     return customer;
   }
@@ -105,17 +127,42 @@ export class CustomerService {
   }
 
   /**
-   * Find all customers for an organization (with pagination)
+   * Find all customers for an organization with filters, sorting, and pagination
+   * Supports both legacy signature (page, limit) and new query DTO
+   *
+   * @overload Legacy signature for backward compatibility
+   * @overload New signature with CustomerQueryDto for full filtering
    */
   async findAll(
     organizationId: string,
-    page = 1,
+    query: CustomerQueryDto,
+  ): Promise<{ data: CustomerProfileEntity[]; total: number }>;
+  async findAll(
+    organizationId: string,
+    page: number,
+    limit: number,
+  ): Promise<{ data: CustomerProfileEntity[]; total: number }>;
+  async findAll(
+    organizationId: string,
+    pageOrQuery: number | CustomerQueryDto = 1,
     limit = 20,
   ): Promise<{ data: CustomerProfileEntity[]; total: number }> {
-    const [data, total] = await this.customerRepository.findByOrganization(
+    // New query-based approach
+    if (typeof pageOrQuery === 'object') {
+      const [data, total] = await this.customerRepository.findWithFilters(
+        organizationId,
+        pageOrQuery,
+      );
+      return { data, total };
+    }
+
+    // Legacy approach - convert to query DTO
+    const legacyQuery = new CustomerQueryDto();
+    legacyQuery.page = pageOrQuery;
+    legacyQuery.limit = limit;
+    const [data, total] = await this.customerRepository.findWithFilters(
       organizationId,
-      page,
-      limit,
+      legacyQuery,
     );
     return { data, total };
   }
