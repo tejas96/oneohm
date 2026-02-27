@@ -623,8 +623,20 @@ export function ProjectCreatePage(): React.JSX.Element {
         type: m.type,
         order: m.order,
       }));
+
+      const resolvedAssignments: Array<{ workflowStepId: string; assignedToUserId: string }> = [];
+      const includedSteps = (templates || []).filter(
+        (t) => !values.excludedStepIds.includes(t.id),
+      );
+      for (const step of includedSteps) {
+        const assignee = getEffectiveAssignee(step.id);
+        if (assignee) {
+          resolvedAssignments.push({ workflowStepId: step.id, assignedToUserId: assignee });
+        }
+      }
       const assignmentsPayload =
-        values.taskAssignments.length > 0 ? values.taskAssignments : undefined;
+        resolvedAssignments.length > 0 ? resolvedAssignments : undefined;
+
       const milestoneOverridesPayload =
         values.taskMilestoneOverrides.length > 0 ? values.taskMilestoneOverrides : undefined;
 
