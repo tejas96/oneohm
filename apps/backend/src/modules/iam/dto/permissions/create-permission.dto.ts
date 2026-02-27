@@ -5,15 +5,10 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
 } from 'class-validator';
 
 export class CreatePermissionDto {
-  @IsUUID()
-  @IsNotEmpty()
-  featureId!: string;
-
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)

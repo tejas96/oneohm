@@ -168,7 +168,7 @@ export class EmployeeService {
     const rolesMap = new Map<string, string[]>();
     for (const ur of allRoles) {
       const list = rolesMap.get(ur.userId) || [];
-      list.push(ur.role);
+      if (ur.role) list.push(ur.role);
       rolesMap.set(ur.userId, list);
     }
 
@@ -237,20 +237,6 @@ export class EmployeeService {
   }
 
   /**
-   * Check if employee profile has all required fields filled
-   */
-  private isProfileComplete(profile: EmployeeProfileEntity): boolean {
-    return !!(
-      profile.dateOfBirth &&
-      profile.gender &&
-      profile.address &&
-      profile.city &&
-      profile.state &&
-      profile.pincode
-    );
-  }
-
-  /**
    * Update employee status
    */
   async updateStatus(
@@ -315,5 +301,19 @@ export class EmployeeService {
     return plainToInstance(EmployeeResponseDto, entity, {
       excludeExtraneousValues: true,
     });
+  }
+
+  /**
+   * Check if employee profile has all required fields filled
+   */
+  private isProfileComplete(profile: EmployeeProfileEntity): boolean {
+    return !!(
+      profile.dateOfBirth &&
+      profile.gender &&
+      profile.address &&
+      profile.city &&
+      profile.state &&
+      profile.pincode
+    );
   }
 }

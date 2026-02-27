@@ -243,7 +243,7 @@ export class ProjectTeamService {
       userId,
       organizationId,
     );
-    const systemRoleCodes = userRoles.map((ur) => ur.role.toLowerCase());
+    const systemRoleCodes = userRoles.map((ur) => (ur.role ?? '').toLowerCase()).filter(Boolean);
     const projectRoleLower = roleName.toLowerCase();
 
     for (const task of unassignedTasks) {
