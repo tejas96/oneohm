@@ -120,7 +120,6 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     ref,
   ) => {
     const inputId = id || React.useId();
-    const hasLeftAddon = leftIcon || prefix;
     const hasRightAddon = rightIcon || suffix || clearable || loading;
     const showClear = clearable && value && !disabled && !loading;
     // Coerce error to boolean for styling, and derive error message
@@ -175,8 +174,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           disabled={disabled}
           className={cn(
             inputVariants({ size, variant: hasError ? 'error' : variant }),
-            hasLeftAddon && 'pl-10',
-            prefix && 'pl-8',
+            leftIcon && !prefix && 'pl-10',
+            prefix && 'pl-12',
             hasRightAddon && 'pr-10',
             suffix && 'pr-12',
             className,

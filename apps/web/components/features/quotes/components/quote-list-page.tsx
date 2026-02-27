@@ -9,14 +9,12 @@ import {
   ArrowUpDown,
   Copy,
   Download,
-  Edit,
   Eye,
   FileText,
   Loader2,
   MoreHorizontal,
   Plus,
   Search,
-  Send,
   Trash2,
   Upload,
   X,
@@ -26,8 +24,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef, useMemo, useCallback, type JSX } from 'react';
 
 import {
-  QUOTE_STATUS_LABELS,
-  QUOTE_STATUS_BADGE_VARIANTS,
   QUOTE_FILTER_TABS,
   DEFAULT_PAGE_SIZE,
   SEARCH_DEBOUNCE_MS,
@@ -35,10 +31,10 @@ import {
 import {
   useQuotes,
   useQuoteStatusCounts,
-  useSendQuote,
   useDeleteQuote,
   type QuoteListItem,
 } from '../hooks';
+import { QuoteStatusDropdown } from './quote-status-dropdown';
 
 import {
   DataTable,
@@ -51,7 +47,6 @@ import {
 import {
   Avatar,
   AvatarFallback,
-  Badge,
   Button,
   DropdownMenu,
   DropdownMenuContent,
@@ -167,7 +162,6 @@ export function QuoteListPage(): JSX.Element {
 
   const { data: statusCounts } = useQuoteStatusCounts();
 
-  const sendQuoteMutation = useSendQuote();
   const deleteQuoteMutation = useDeleteQuote();
 
   // Derived values
@@ -229,16 +223,6 @@ export function QuoteListPage(): JSX.Element {
     setSortOrder(SortOrder.DESC);
     setPage(1);
   };
-
-  const handleSendQuote = useCallback(
-    (quoteId: string) => {
-      sendQuoteMutation.mutate(quoteId, {
-        onSuccess: () => showToast.success('Quote sent successfully'),
-        onError: (err) => showToast.error(getErrorMessage(err)),
-      });
-    },
-    [sendQuoteMutation],
-  );
 
   const handleDeleteQuote = useCallback(
     (quoteId: string) => {
@@ -380,20 +364,10 @@ export function QuoteListPage(): JSX.Element {
         header: 'Status',
         enableSorting: false,
         cell: ({ row }) => (
-          <Badge
-            variant={
-              QUOTE_STATUS_BADGE_VARIANTS[row.original.status] as
-                | 'muted'
-                | 'info'
-                | 'success'
-                | 'warning'
-                | 'error'
-                | 'pending'
-            }
-            shape="pill"
-          >
-            {QUOTE_STATUS_LABELS[row.original.status]}
-          </Badge>
+          <QuoteStatusDropdown
+            quoteId={row.original.id}
+            status={row.original.status}
+          />
         ),
       },
       {
@@ -435,7 +409,6 @@ export function QuoteListPage(): JSX.Element {
         header: '',
         cell: ({ row }) => {
           const quote = row.original;
-          const isDraft = quote.status === QuoteStatus.DRAFT;
           const isAccepted = quote.status === QuoteStatus.ACCEPTED;
           return (
             <DropdownMenu>
@@ -452,24 +425,10 @@ export function QuoteListPage(): JSX.Element {
                   <Eye className="mr-2 size-icon-sm" />
                   View Details
                 </DropdownMenuItem>
-                {isDraft && (
-                  <DropdownMenuItem
-                    onClick={() => router.push(buildRoute(ROUTES.QUOTES.EDIT, { id: quote.id }))}
-                  >
-                    <Edit className="mr-2 size-icon-sm" />
-                    Edit Quote
-                  </DropdownMenuItem>
-                )}
                 <DropdownMenuItem onClick={() => showToast.info('Coming Soon')}>
                   <Copy className="mr-2 size-icon-sm" />
                   Duplicate
                 </DropdownMenuItem>
-                {isDraft && (
-                  <DropdownMenuItem onClick={() => handleSendQuote(quote.id)}>
-                    <Send className="mr-2 size-icon-sm" />
-                    Send Quote
-                  </DropdownMenuItem>
-                )}
                 <DropdownMenuItem onClick={() => showToast.info('Coming Soon')}>
                   <Download className="mr-2 size-icon-sm" />
                   Download PDF
@@ -492,7 +451,7 @@ export function QuoteListPage(): JSX.Element {
         },
       },
     ],
-    [router, handleSendQuote, handleDeleteQuote, SortableHeader],
+    [router, handleDeleteQuote, SortableHeader],
   );
 
   // ---------------------------------------------------------------------------

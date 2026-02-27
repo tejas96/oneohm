@@ -6,6 +6,7 @@ export { QuoteBuilder } from './components/quote-builder';
 export { QuotePreviewPanel } from './components/quote-preview-panel';
 export type { QuotePreviewPanelProps } from './components/quote-preview-panel';
 export { QuoteDetailPage } from './components/quote-detail-page';
+export { QuoteStatusDropdown } from './components/quote-status-dropdown';
 
 // Hooks
 export {
@@ -60,6 +61,7 @@ export type {
 export {
   QUOTE_STATUS_LABELS,
   QUOTE_STATUS_BADGE_VARIANTS,
+  QUOTE_STATUS_TRANSITIONS,
   SYSTEM_TYPE_LABELS,
   QUOTE_FILTER_TABS,
   QUOTE_DETAIL_TABS,
