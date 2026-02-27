@@ -1,16 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { TaskStatus } from '@oneohm-epc/shared-types';
 
-import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { type AddTeamMemberDto, type UpdateTeamMemberDto } from '../dto/project-team';
 import { type ProjectTeamMemberEntity } from '../entities';
-import { ProjectTaskRepository } from '../repositories/project-task.repository';
 import { ProjectTeamRepository } from '../repositories/project-team.repository';
-import { WorkflowStepRepository } from '../repositories/workflow-step.repository';
-
-const TEAM_CONSTANTS = {
-  ALL_TASKS_LIMIT: 10000,
-} as const;
 
 /**
  * Internal input type that extends DTO with projectId from URL
@@ -28,9 +21,6 @@ interface AddTeamMemberInput extends AddTeamMemberDto {
 export class ProjectTeamService {
   constructor(
     private readonly teamRepository: ProjectTeamRepository,
-    private readonly taskRepository: ProjectTaskRepository,
-    private readonly userRoleRepository: UserRoleRepository,
-    private readonly workflowStepRepository: WorkflowStepRepository,
   ) {}
 
   /**
@@ -57,13 +47,6 @@ export class ProjectTeamService {
       roleName: dto.roleName,
       isProjectManager: dto.isProjectManager ?? false,
     });
-
-    await this.autoAssignTasksByRole(
-      dto.projectId,
-      member.userId,
-      dto.roleName,
-      dto.organizationId,
-    );
 
     return member;
   }
@@ -218,45 +201,4 @@ export class ProjectTeamService {
     }));
   }
 
-  /**
-   * Auto-assign unassigned tasks to a new team member based on role.
-   * Checks user's system roles (user_roles table) first, then falls back to project roleName.
-   * When multiple members match, assigns to the one with fewer tasks.
-   */
-  private async autoAssignTasksByRole(
-    projectId: string,
-    userId: string,
-    roleName: string,
-    organizationId: string,
-  ): Promise<void> {
-    const { data: tasks } = await this.taskRepository.findAll(projectId, 1, TEAM_CONSTANTS.ALL_TASKS_LIMIT, {});
-    const unassignedTasks = tasks.filter(
-      (t) => !t.assignedToUserId && t.workflowStepId,
-    );
-
-    if (unassignedTasks.length === 0) return;
-
-    const allSteps = await this.workflowStepRepository.findAllActive(organizationId);
-    const stepMap = new Map(allSteps.map((s) => [s.id, s]));
-
-    const userRoles = await this.userRoleRepository.findByUserAndOrganization(
-      userId,
-      organizationId,
-    );
-    const systemRoleCodes = userRoles.map((ur) => (ur.role ?? '').toLowerCase()).filter(Boolean);
-    const projectRoleLower = roleName.toLowerCase();
-
-    for (const task of unassignedTasks) {
-      const step = stepMap.get(task.workflowStepId!);
-      if (!step?.defaultRoleCode) continue;
-
-      const targetRole = step.defaultRoleCode.toLowerCase();
-
-      if (systemRoleCodes.includes(targetRole) || projectRoleLower === targetRole) {
-        await this.taskRepository.update(task.id, projectId, {
-          assignedToUserId: userId,
-        });
-      }
-    }
-  }
 }

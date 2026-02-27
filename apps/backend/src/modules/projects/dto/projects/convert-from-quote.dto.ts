@@ -114,7 +114,7 @@ export class ConvertFromQuoteDto {
   @IsUUID('4', { each: true })
   excludedStepIds?: string[];
 
-  @ApiPropertyOptional({ description: 'Manual task assignment overrides', type: [TaskAssignmentOverrideDto] })
+  @ApiPropertyOptional({ description: 'Explicit task assignments (sole assignment path — no auto-assignment)', type: [TaskAssignmentOverrideDto] })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })

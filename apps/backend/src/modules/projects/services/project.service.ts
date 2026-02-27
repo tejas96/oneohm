@@ -15,7 +15,6 @@ import { DataSource, type EntityManager } from 'typeorm';
 import { CustomerPropertyRepository } from '../../customers/repositories/customer-property.repository';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { QuoteService } from '../../quotes/services/quote.service';
-import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { ConvertFromQuoteDto, UpdateProjectDto } from '../dto';
 import { ProjectEntity } from '../entities/project.entity';
 import {
@@ -62,7 +61,6 @@ export class ProjectService {
     private readonly workflowStepRepository: WorkflowStepRepository,
     private readonly taskRepository: ProjectTaskRepository,
     private readonly teamRepository: ProjectTeamRepository,
-    private readonly userRoleRepository: UserRoleRepository,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -258,7 +256,7 @@ export class ProjectService {
    * 6. Apply workflow steps (filtering excluded)
    * 7. Link tasks to milestones via step.defaultMilestoneType
    * 8. Add PM + team members if provided
-   * 9. Auto-assign tasks by role
+   * 9. Apply explicit task assignments from API payload
    */
   async convertFromQuote(
     quoteId: string,
@@ -534,68 +532,6 @@ export class ProjectService {
   }
 
   /**
-   * Auto-assign unassigned tasks to project team members based on their system roles.
-   * Uses user_roles table (multi-role) for matching, with project_team_members.roleName as fallback.
-   * When multiple members match, assigns to the one with fewer tasks (workload balancing).
-   */
-  private async autoAssignTasksByRole(
-    projectId: string,
-    organizationId: string,
-    manager?: EntityManager,
-  ): Promise<void> {
-    const allTasks = await this.taskRepository.findByProjectRaw(
-      projectId,
-      { relations: ['workflowStep'] },
-      manager,
-    );
-    const unassignedTasks = allTasks.filter((t) => !t.assignedToUserId && t.workflowStepId);
-
-    if (unassignedTasks.length === 0) return;
-
-    const teamMembers = await this.teamRepository.findByProject(projectId, manager);
-
-    if (teamMembers.length === 0) return;
-
-    const steps = await this.workflowStepRepository.findAllActive(organizationId, manager);
-    const stepMap = new Map(steps.map((s) => [s.id, s]));
-
-    const userRolesMap = new Map<string, string[]>();
-    for (const member of teamMembers) {
-      const userRoles = await this.userRoleRepository.findByUserAndOrganization(
-        member.userId,
-        organizationId,
-      );
-      const roleCodes = userRoles.map((ur) => (ur.role ?? '').toLowerCase()).filter(Boolean);
-      userRolesMap.set(member.userId, roleCodes);
-    }
-
-    const assignmentCounts = new Map<string, number>();
-    for (const task of allTasks) {
-      if (task.assignedToUserId) {
-        assignmentCounts.set(
-          task.assignedToUserId,
-          (assignmentCounts.get(task.assignedToUserId) || 0) + 1,
-        );
-      }
-    }
-
-    for (const task of unassignedTasks) {
-      const step = stepMap.get(task.workflowStepId!);
-      if (!step?.defaultRoleCode) {
-        continue;
-      }
-
-      const targetRole = step.defaultRoleCode.toLowerCase();
-      const bestMatch = this.findBestRoleMatch(targetRole, teamMembers, userRolesMap, assignmentCounts);
-
-      if (bestMatch) {
-        await this.taskRepository.updateById(task.id, { assignedToUserId: bestMatch.userId }, manager);
-        assignmentCounts.set(bestMatch.userId, (assignmentCounts.get(bestMatch.userId) || 0) + 1);
-      }
-    }
-  }
-
-  /**
    * Generate unique project number using centralized code generator
    */
   private async generateProjectNumber(orgCode: string, manager?: EntityManager): Promise<string> {
@@ -650,43 +586,6 @@ export class ProjectService {
         `Dependency cycle detected among workflow steps — proceeding without dependency links for cycled nodes`,
       );
     }
-  }
-
-  /**
-   * Find the best team member match for a target role, using workload balancing.
-   * Priority 1: system-level roles (user_roles table).
-   * Priority 2: project-level roleName.
-   */
-  private findBestRoleMatch(
-    targetRole: string,
-    teamMembers: { userId: string; roleName?: string | null }[],
-    userRolesMap: Map<string, string[]>,
-    assignmentCounts: Map<string, number>,
-  ): { userId: string; count: number } | null {
-    let bestMatch: { userId: string; count: number } | null = null;
-
-    for (const member of teamMembers) {
-      const systemRoles = userRolesMap.get(member.userId) || [];
-      if (systemRoles.includes(targetRole)) {
-        const count = assignmentCounts.get(member.userId) || 0;
-        if (!bestMatch || count < bestMatch.count) {
-          bestMatch = { userId: member.userId, count };
-        }
-      }
-    }
-
-    if (!bestMatch) {
-      for (const member of teamMembers) {
-        if (member.roleName?.toLowerCase() === targetRole) {
-          const count = assignmentCounts.get(member.userId) || 0;
-          if (!bestMatch || count < bestMatch.count) {
-            bestMatch = { userId: member.userId, count };
-          }
-        }
-      }
-    }
-
-    return bestMatch;
   }
 
   /**
@@ -839,15 +738,10 @@ export class ProjectService {
       // 9. Add PM + team members
       await this.addTeamMembers(project.id, teamConfig, manager);
 
-      // 10. Auto-assign tasks by role
-      await this.autoAssignTasksByRole(project.id, organizationId, manager);
+      // 10. Apply explicit task assignments from API payload (sole assignment path)
+      await this.applyTaskAssignments(project.id, taskAssignments ?? [], manager);
 
-      // 11. Apply manual assignment overrides from frontend
-      if (taskAssignments?.length) {
-        await this.applyTaskAssignments(project.id, taskAssignments, manager);
-      }
-
-      // 12. Compute initial progress
+      // 11. Compute initial progress
       const { done, total } = await this.taskRepository.computeProgress(project.id, manager);
       const progress = total > 0 ? Math.round((100 * done) / total) : 0;
       await this.projectRepository.updateById(project.id, { progressPercentage: progress }, manager);
@@ -977,12 +871,38 @@ export class ProjectService {
     assignments: Array<{ workflowStepId: string; assignedToUserId: string }>,
     manager: EntityManager,
   ): Promise<void> {
-    const tasks = await this.taskRepository.findByProjectRaw(projectId, undefined, manager);
-    for (const assignment of assignments) {
-      const task = tasks.find((t) => t.workflowStepId === assignment.workflowStepId);
-      if (task) {
-        await this.taskRepository.updateById(task.id, { assignedToUserId: assignment.assignedToUserId }, manager);
+    if (assignments.length === 0) return;
+
+    const seenStepIds = new Set<string>();
+    for (const a of assignments) {
+      if (seenStepIds.has(a.workflowStepId)) {
+        throw new BadRequestException(
+          `Duplicate task assignment for workflow step ${a.workflowStepId}`,
+        );
       }
+      seenStepIds.add(a.workflowStepId);
+    }
+
+    const tasks = await this.taskRepository.findByProjectRaw(projectId, undefined, manager);
+    const teamMembers = await this.teamRepository.findByProject(projectId, manager);
+    const teamUserIds = new Set(teamMembers.map((m) => m.userId));
+
+    for (const assignment of assignments) {
+      if (!teamUserIds.has(assignment.assignedToUserId)) {
+        throw new BadRequestException(
+          `Cannot assign task: user ${assignment.assignedToUserId} is not a team member of this project`,
+        );
+      }
+
+      const task = tasks.find((t) => t.workflowStepId === assignment.workflowStepId);
+      if (!task) {
+        this.logger.warn(
+          `Task assignment skipped: no task found for workflow step ${assignment.workflowStepId} in project ${projectId}`,
+        );
+        continue;
+      }
+
+      await this.taskRepository.updateById(task.id, { assignedToUserId: assignment.assignedToUserId }, manager);
     }
   }
 }
