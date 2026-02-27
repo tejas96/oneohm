@@ -134,14 +134,14 @@ export class UserRoleRepository {
   async create(data: {
     userId: string;
     roleId: string;
-    role: string; // Legacy role code (required by entity)
+    role?: string | null;
     organizationId?: string | null;
     createdBy?: string;
   }): Promise<UserRoleEntity> {
     const userRole = this.repository.create({
       userId: data.userId,
       roleId: data.roleId,
-      role: data.role,
+      role: data.role ?? null,
       organizationId: data.organizationId || null,
       createdBy: data.createdBy,
     });

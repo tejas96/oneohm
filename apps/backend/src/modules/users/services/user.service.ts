@@ -143,7 +143,7 @@ export class UserService {
     const itemsWithRoles = await Promise.all(
       items.map(async (user) => {
         const userRoles = await this.userRoleRepository.findByUserId(user.id);
-        user.roles = userRoles.map((ur) => ur.role);
+        user.roles = userRoles.map((ur) => ur.role).filter((r): r is string => r != null);
         return user;
       }),
     );

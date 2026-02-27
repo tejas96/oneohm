@@ -1,7 +1,5 @@
-export * from './decorators/require-feature.decorator';
 export * from './decorators/require-permission.decorator';
 export * from './entities';
-export * from './guards/feature.guard';
 export * from './guards/permission.guard';
 export * from './iam.module';
 export * from './repositories';

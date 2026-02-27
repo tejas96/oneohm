@@ -20,9 +20,9 @@ export class UserRoleEntity {
   @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;
 
-  // ===== ROLE (Old enum-based) =====
-  @Column({ type: 'varchar', length: 50 })
-  role!: string;
+  // ===== ROLE (Old enum-based, now nullable — deprecated in favour of role_id) =====
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  role?: string | null;
 
   // ===== NEW IAM: Dynamic Role ID =====
   @Column({ name: 'role_id', type: 'uuid', nullable: true })

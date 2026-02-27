@@ -290,7 +290,7 @@ export class UserRoleController {
       userName: user ? `${user.firstName} ${user.lastName ?? ''}`.trim() : undefined,
       userEmail: user?.email,
       roleId: entity.roleId ?? '',
-      roleCode: iamRole?.code ?? entity.role,
+      roleCode: iamRole?.code ?? entity.role ?? '',
       roleName: iamRole?.name,
       organizationId: entity.organizationId ?? undefined,
       createdAt: entity.createdAt,

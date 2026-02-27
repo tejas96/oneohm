@@ -565,7 +565,7 @@ export class ProjectService {
         member.userId,
         organizationId,
       );
-      const roleCodes = userRoles.map((ur) => ur.role.toLowerCase());
+      const roleCodes = userRoles.map((ur) => (ur.role ?? '').toLowerCase()).filter(Boolean);
       userRolesMap.set(member.userId, roleCodes);
     }
 

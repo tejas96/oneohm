@@ -2,7 +2,6 @@ import * as bcrypt from 'bcrypt';
 
 import loadConfig from '../../config/configuration';
 import dataSource from '../ormconfig';
-import { seedDefaultProfileRoles } from './default-profile-roles.seed';
 
 const config = loadConfig();
 
@@ -101,14 +100,19 @@ async function seed(): Promise<void> {
 
     await dataSource.query(
       `
-      INSERT INTO user_roles (user_id, role, created_by)
+      INSERT INTO user_roles (user_id, role, role_id, organization_id, created_by)
       SELECT
         u.id,
         'super_admin',
+        r.id,
+        r.organization_id,
         u.id
       FROM users u
+      LEFT JOIN roles r ON r.code = 'super_admin' AND r.deleted_at IS NULL
       WHERE u.email = $1
-      ON CONFLICT (user_id, role) DO NOTHING;
+      ON CONFLICT (user_id, role) DO UPDATE SET
+        role_id = EXCLUDED.role_id,
+        organization_id = EXCLUDED.organization_id;
     `,
       [seedEmail],
     );
@@ -1209,11 +1213,6 @@ async function seed(): Promise<void> {
 
     console.error('✓ Quote Line Items seeded (7 line items across 3 quotes)');
 
-    // ============================================
-    // SEED DEFAULT PROFILE ROLES
-    // ============================================
-    await seedDefaultProfileRoles(dataSource);
-
     console.error('\n✅ Database seeding completed successfully!\n');
     console.error('📊 Seeded Data Summary:');
     console.error('  - 1 Organization');
@@ -1226,7 +1225,6 @@ async function seed(): Promise<void> {
     console.error('  - 3 Quotes (1 draft, 1 sent, 1 accepted)');
     console.error('  - 3 Quote Versions (with GST calculations & payment milestones)');
     console.error('  - 7 Quote Line Items (linked to products)');
-    console.error('  - 3 Default Profile Roles (customer, reseller, employee_basic)');
     console.error('');
   } catch (error) {
     console.error('\n❌ Error during seeding:', error);

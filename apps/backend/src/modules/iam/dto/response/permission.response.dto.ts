@@ -7,9 +7,6 @@ export class PermissionResponseDto {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   id: string;
 
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174001' })
-  featureId: string;
-
   @ApiProperty({ example: 'Read Customers' })
   name: string;
 
