@@ -60,7 +60,6 @@ export interface CustomerPropertyResponse {
   meterNumber?: string;
   // Site Details
   monthlyBill?: number;
-  roofAreaSqft?: number;
   // Lead Tracking
   leadTemperature: LeadTemperature;
   // Flags

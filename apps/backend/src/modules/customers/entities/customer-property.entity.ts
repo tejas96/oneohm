@@ -117,9 +117,6 @@ export class CustomerPropertyEntity extends BaseEntity {
   @Column({ name: 'monthly_bill', type: 'decimal', precision: 10, scale: 2, nullable: true })
   monthlyBill?: number;
 
-  @Column({ name: 'roof_area_sqft', type: 'decimal', precision: 10, scale: 2, nullable: true })
-  roofAreaSqft?: number;
-
   // ==================== LEAD TRACKING ====================
   @Column({
     name: 'lead_temperature',
