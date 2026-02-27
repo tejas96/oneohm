@@ -1056,12 +1056,6 @@ export function ProjectCreatePage(): React.JSX.Element {
                       value={formatCurrency(selectedProperty.monthlyBill)}
                     />
                   )}
-                  {selectedProperty.roofAreaSqft != null && (
-                    <FieldRow
-                      label="Roof Area"
-                      value={`${selectedProperty.roofAreaSqft} sq ft`}
-                    />
-                  )}
                 </div>
               </TabsContent>
 

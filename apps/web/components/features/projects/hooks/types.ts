@@ -29,7 +29,6 @@ export interface ProjectDetailProperty {
   city?: string;
   state?: string;
   pincode?: string;
-  roofAreaSqft?: number;
   propertyType?: string;
 }
 

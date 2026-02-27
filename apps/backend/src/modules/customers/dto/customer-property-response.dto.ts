@@ -99,11 +99,6 @@ export class CustomerPropertyResponseDto {
   @Transform(({ value }) => toNum(value))
   monthlyBill?: number;
 
-  @ApiPropertyOptional()
-  @Expose()
-  @Transform(({ value }) => toNum(value))
-  roofAreaSqft?: number;
-
   // ==================== Lead Tracking ====================
   @ApiProperty({ enum: LeadTemperature })
   @Expose()

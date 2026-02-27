@@ -173,9 +173,7 @@ function SiteCard({ project }: { project: ProjectDetail }) {
           value={
             survey?.surveyData?.availableAreaSqm != null
               ? `${survey.surveyData.availableAreaSqm} sqm`
-              : p?.roofAreaSqft != null
-                ? `${p.roofAreaSqft} sqft`
-                : 'N/A'
+              : 'N/A'
           }
         />
       </div>

@@ -161,15 +161,6 @@ export class CreateCustomerPropertyDto {
   @Min(0)
   monthlyBill?: number;
 
-  @ApiPropertyOptional({
-    example: 500,
-    description: 'Available roof area in square feet',
-  })
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  roofAreaSqft?: number;
-
   // ==================== Lead Tracking ====================
   @ApiPropertyOptional({
     enum: LeadTemperature,
