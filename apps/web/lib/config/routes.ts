@@ -66,7 +66,6 @@ export const ROUTES = {
     LIST: '/quotes',
     DETAIL: '/quotes/[id]',
     NEW: '/quotes/new',
-    EDIT: '/quotes/[id]/edit',
   },
 
   // Projects
@@ -211,7 +210,6 @@ export interface RouteParamTypes {
   '/customers/[id]/edit': { id: string };
   '/customers/[id]/properties/new': { id: string };
   '/quotes/[id]': { id: string };
-  '/quotes/[id]/edit': { id: string };
   '/projects/[id]': { id: string };
   '/properties/[id]': { id: string };
   '/properties/[id]/edit': { id: string };

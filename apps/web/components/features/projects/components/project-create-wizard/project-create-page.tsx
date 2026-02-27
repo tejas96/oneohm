@@ -222,6 +222,12 @@ export function ProjectCreatePage(): React.JSX.Element {
       });
   }, [allQuotes, selectedPropertyId]);
 
+  const linkedQuoteNotAccepted = useMemo(() => {
+    if (!initialQuoteId || allQuotes.length === 0) return false;
+    const linkedQuote = allQuotes.find((q) => q.id === initialQuoteId);
+    return linkedQuote != null && linkedQuote.status !== QuoteStatus.ACCEPTED;
+  }, [initialQuoteId, allQuotes]);
+
   const { data: employeesData, isLoading: employeesLoading } = useEmployees({ limit: 100 });
   const employees = employeesData?.items ?? [];
 
@@ -727,6 +733,7 @@ export function ProjectCreatePage(): React.JSX.Element {
   const canSubmit =
     !isPending &&
     !propertyConverted &&
+    !linkedQuoteNotAccepted &&
     !!selectedCustomerId &&
     !!selectedPropertyId &&
     !!selectedQuoteId &&
@@ -902,6 +909,16 @@ export function ProjectCreatePage(): React.JSX.Element {
               {errors.propertyId && (
                 <p className="text-xs text-error">{errors.propertyId.message}</p>
               )}
+            </div>
+          )}
+
+          {/* Linked quote not accepted */}
+          {linkedQuoteNotAccepted && (
+            <div className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3">
+              <AlertTriangle className="size-4 shrink-0 text-warning" />
+              <span className="text-sm text-warning">
+                The linked quote has not been accepted yet. Only accepted quotes can be converted to projects.
+              </span>
             </div>
           )}
 

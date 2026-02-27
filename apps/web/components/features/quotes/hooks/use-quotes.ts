@@ -251,8 +251,7 @@ export function useSendQuote(): UseMutationResult<unknown, AxiosError, string> {
       return data;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.lists(organizationId) });
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.statusCounts(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all(organizationId) });
     },
   });
 }

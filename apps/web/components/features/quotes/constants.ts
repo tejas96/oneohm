@@ -34,6 +34,19 @@ export const QUOTE_STATUS_BADGE_VARIANTS: Record<string, string> = {
 };
 
 // ============================================================================
+// Status Transitions (mirrors backend validateStatusTransition)
+// ============================================================================
+
+export const QUOTE_STATUS_TRANSITIONS: Record<QuoteStatus, QuoteStatus[]> = {
+  [QuoteStatus.DRAFT]: [QuoteStatus.SENT],
+  [QuoteStatus.SENT]: [QuoteStatus.ACCEPTED, QuoteStatus.REJECTED],
+  [QuoteStatus.VIEWED]: [QuoteStatus.ACCEPTED, QuoteStatus.REJECTED],
+  [QuoteStatus.ACCEPTED]: [],
+  [QuoteStatus.REJECTED]: [],
+  [QuoteStatus.EXPIRED]: [],
+};
+
+// ============================================================================
 // System Type Labels
 // ============================================================================
 
