@@ -269,7 +269,7 @@ export function DocumentSlot({
         <div className="relative w-full h-[150px] bg-background-secondary">
           {isImage ? (
             <img
-              src={document!.previewUrl}
+              src={document!.previewUrl ?? document!.uploadedUrl}
               alt={document!.fileName}
               className="size-full object-contain"
             />

@@ -44,8 +44,8 @@ export interface DocumentSlot {
 export interface CapturedDocument {
   /** Unique ID for this document */
   id: string;
-  /** File object */
-  file: File;
+  /** File object (undefined for pre-existing docs loaded from backend) */
+  file?: File;
   /** Slot ID this document belongs to */
   slotId: string;
   /** Original filename */
@@ -54,8 +54,8 @@ export interface CapturedDocument {
   fileSize: number;
   /** MIME type */
   mimeType: string;
-  /** Local preview URL (blob URL) */
-  previewUrl: string;
+  /** Local preview URL (blob URL, undefined for pre-existing docs) */
+  previewUrl?: string;
   /** Upload status */
   status: 'pending' | 'uploading' | 'success' | 'error';
   /** Upload progress (0-100) */

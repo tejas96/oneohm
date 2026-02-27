@@ -7,6 +7,7 @@ import {
   PropertyType,
   SortOrder,
   type ConnectionType,
+  type PropertyDocument,
   type QuoteStatus,
 } from '@oneohm-epc/shared-types';
 import {
@@ -140,6 +141,7 @@ export interface UpdatePropertyData {
   status?: PropertyStatus;
   notes?: string;
   isPrimary?: boolean;
+  documents?: PropertyDocument[];
 }
 
 // ============================================================================

@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   ConnectionType,
   PropertyType,
+  type PropertyDocument,
 } from '@oneohm-epc/shared-types';
 import {
   ArrowLeft,
@@ -16,13 +17,18 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type JSX } from 'react';
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { type CustomerResponse } from '../../customers';
 import { PROPERTY_ALERTS, REQUIRED_FIELDS_TOTAL } from '../constants';
-import { useCreateProperty, useCustomerById } from '../hooks';
-import { createPropertySchema, type CreatePropertyFormData } from '../schemas/property.schema';
+import { useCreateProperty, useCustomerById, useUpdateProperty, type CustomerPropertyResponse } from '../hooks';
+import {
+  createPropertySchema,
+  editPropertySchema,
+  type CreatePropertyFormData,
+  type EditPropertyFormData,
+} from '../schemas/property.schema';
 
 import {
   Alert,
@@ -50,6 +56,7 @@ import {
   Switch,
   Textarea,
 } from '@/components/ui';
+import { apiClient } from '@/lib/api/client';
 import { FileCategory, uploadFile } from '@/lib/api/storage';
 import {
   CONNECTION_TYPE_OPTIONS,
@@ -57,35 +64,79 @@ import {
   INDIAN_STATES,
   PROPERTY_TYPE_OPTIONS,
 } from '@/lib/config/constants';
-import { ROUTES } from '@/lib/config/routes';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { getErrorMessage } from '@/lib/utils';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-interface CreatePropertyFormProps {
+type PropertyFormMode = 'create' | 'edit';
+
+interface PropertyFormProps {
+  mode: PropertyFormMode;
   customerId?: string;
   customer?: CustomerResponse;
   customers?: CustomerResponse[];
   isLoadingCustomers?: boolean;
+  propertyId?: string;
+  initialData?: CustomerPropertyResponse;
+}
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+function inferMimeType(fileName: string): string {
+  const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
+  const map: Record<string, string> = {
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+    gif: 'image/gif',
+    webp: 'image/webp',
+    pdf: 'application/pdf',
+  };
+  return map[ext] ?? 'application/octet-stream';
+}
+
+function mapExistingDocs(docs: PropertyDocument[]): CapturedDocument[] {
+  return docs.map((doc) => ({
+    id: `existing_${doc.url}`,
+    file: undefined,
+    slotId: doc.tag,
+    fileName: doc.fileName,
+    fileSize: doc.fileSize ?? 0,
+    mimeType: inferMimeType(doc.fileName),
+    previewUrl: doc.url,
+    status: 'success' as const,
+    progress: 100,
+    uploadedUrl: doc.url,
+    fileKey: undefined,
+  }));
 }
 
 // ============================================================================
 // Component
 // ============================================================================
 
-export function CreatePropertyForm({
+export function PropertyForm({
+  mode,
   customerId: initialCustomerId,
   customer: preloadedCustomer,
   customers = [],
   isLoadingCustomers = false,
-}: CreatePropertyFormProps): JSX.Element {
+  propertyId,
+  initialData,
+}: PropertyFormProps): JSX.Element {
   const router = useRouter();
+  const isEditMode = mode === 'edit';
+
   const createPropertyMutation = useCreateProperty();
+  const updatePropertyMutation = useUpdateProperty();
 
   const { data: fetchedCustomer } = useCustomerById(
-    initialCustomerId && !preloadedCustomer ? initialCustomerId : undefined
+    !isEditMode && initialCustomerId && !preloadedCustomer ? initialCustomerId : undefined
   );
 
   const customer = preloadedCustomer ?? fetchedCustomer;
@@ -94,7 +145,9 @@ export function CreatePropertyForm({
     initialCustomerId ?? ''
   );
 
-  const effectiveCustomerId = initialCustomerId ?? selectedCustomerId;
+  const effectiveCustomerId = isEditMode
+    ? initialData?.customerId ?? ''
+    : (initialCustomerId ?? selectedCustomerId);
 
   const selectedCustomer = initialCustomerId
     ? customer
@@ -108,34 +161,78 @@ export function CreatePropertyForm({
   const [documents, setDocuments] = useState<CapturedDocument[]>([]);
   const [isUploadingDocs, setIsUploadingDocs] = useState(false);
 
-  const form = useForm<CreatePropertyFormData>({
-    resolver: zodResolver(createPropertySchema),
-    defaultValues: {
-      customerId: effectiveCustomerId,
-      propertyName: '',
-      propertyType: PropertyType.RESIDENTIAL,
-      isPrimary: false,
-      address: resolvedCustomer?.address || '',
-      city: resolvedCustomer?.city || '',
-      state: customerStateMatch || '',
-      pincode: resolvedCustomer?.pincode || '',
-      consumerNumber: '',
-      discomName: '',
-      connectionType: undefined,
-      sanctionedLoad: undefined,
-      meterNumber: '',
-      monthlyBill: undefined,
-      leadTemperature: undefined,
-      wantsLoan: false,
-      notes: '',
-    },
+  const [initialDocUrls] = useState<Set<string>>(
+    () => new Set((initialData?.documents ?? []).map((d) => d.url))
+  );
+
+  const schema = isEditMode ? editPropertySchema : createPropertySchema;
+
+  const form = useForm<CreatePropertyFormData | EditPropertyFormData>({
+    resolver: zodResolver(schema),
+    defaultValues: isEditMode
+      ? {
+          propertyName: '',
+          address: '',
+          city: '',
+          state: '',
+          pincode: '',
+          consumerNumber: '',
+          discomName: '',
+          meterNumber: '',
+          notes: '',
+          wantsLoan: false,
+        }
+      : {
+          customerId: effectiveCustomerId,
+          propertyName: '',
+          propertyType: PropertyType.RESIDENTIAL,
+          isPrimary: false,
+          address: resolvedCustomer?.address || '',
+          city: resolvedCustomer?.city || '',
+          state: customerStateMatch || '',
+          pincode: resolvedCustomer?.pincode || '',
+          consumerNumber: '',
+          discomName: '',
+          connectionType: undefined,
+          sanctionedLoad: undefined,
+          meterNumber: '',
+          monthlyBill: undefined,
+          leadTemperature: undefined,
+          wantsLoan: false,
+          notes: '',
+        },
   });
 
+  // Populate form + documents when initialData loads (edit mode)
   useEffect(() => {
-    if (effectiveCustomerId) {
-      form.setValue('customerId', effectiveCustomerId);
+    if (isEditMode && initialData) {
+      form.reset({
+        propertyName: initialData.propertyName || '',
+        propertyType: initialData.propertyType as PropertyType,
+        address: initialData.address || '',
+        city: initialData.city || '',
+        state: initialData.state ?? '',
+        pincode: initialData.pincode || '',
+        consumerNumber: initialData.consumerNumber || '',
+        discomName: initialData.discomName ?? '',
+        connectionType: initialData.connectionType as ConnectionType | undefined,
+        sanctionedLoad: initialData.sanctionedLoad ?? undefined,
+        meterNumber: initialData.meterNumber || '',
+        monthlyBill: initialData.monthlyBill ?? undefined,
+        leadTemperature: initialData.leadTemperature,
+        wantsLoan: initialData.wantsLoan || false,
+        notes: initialData.notes || '',
+      });
+      setDocuments(mapExistingDocs(initialData.documents ?? []));
     }
-  }, [effectiveCustomerId, form]);
+  }, [isEditMode, initialData, form]);
+
+  // Sync customerId into form when it changes (create mode)
+  useEffect(() => {
+    if (!isEditMode && effectiveCustomerId) {
+      form.setValue('customerId' as keyof CreatePropertyFormData, effectiveCustomerId);
+    }
+  }, [isEditMode, effectiveCustomerId, form]);
 
   const documentsRef = useRef<CapturedDocument[]>([]);
   useEffect(() => {
@@ -152,34 +249,74 @@ export function CreatePropertyForm({
     };
   }, []);
 
-  const watchedCustomerId = form.watch('customerId');
+  // Progress tracking (create mode only)
   const watchedPropertyName = form.watch('propertyName');
   const watchedPropertyType = form.watch('propertyType');
   const watchedAddress = form.watch('address');
   const watchedCity = form.watch('city');
   const watchedPincode = form.watch('pincode');
   const watchedLeadTemp = form.watch('leadTemperature');
-  const filledCount = [
-    watchedCustomerId,
-    watchedPropertyName,
-    watchedPropertyType,
-    watchedAddress,
-    watchedCity,
-    watchedPincode,
-    watchedLeadTemp,
-  ].filter(Boolean).length;
+  const filledCount = isEditMode
+    ? 0
+    : [
+        effectiveCustomerId,
+        watchedPropertyName,
+        watchedPropertyType,
+        watchedAddress,
+        watchedCity,
+        watchedPincode,
+        watchedLeadTemp,
+      ].filter(Boolean).length;
   const isComplete = filledCount === REQUIRED_FIELDS_TOTAL;
 
   const wantsLoan = form.watch('wantsLoan');
-  const isContextAware = !!initialCustomerId;
+  const isContextAware = !isEditMode && !!initialCustomerId;
 
+  const activeMutation = isEditMode ? updatePropertyMutation : createPropertyMutation;
   const isSubmitting =
-    form.formState.isSubmitting || createPropertyMutation.isPending || isUploadingDocs;
+    form.formState.isSubmitting || activeMutation.isPending || isUploadingDocs;
 
-  const backLink = isContextAware
-    ? ROUTES.CUSTOMERS.DETAIL.replace('[id]', initialCustomerId)
-    : ROUTES.PROPERTIES.LIST;
-  const backLabel = isContextAware ? 'Back to Customer' : 'Back to Properties';
+  // Dirty tracking for edit mode — includes document changes
+  const hasDocumentChanges = useMemo(() => {
+    if (!isEditMode) return false;
+    const currentUrls = new Set(
+      documents.filter((d) => d.uploadedUrl).map((d) => d.uploadedUrl!)
+    );
+    if (currentUrls.size !== initialDocUrls.size) return true;
+    for (const url of currentUrls) {
+      if (!initialDocUrls.has(url)) return true;
+    }
+    return false;
+  }, [isEditMode, documents, initialDocUrls]);
+
+  const canSave = isEditMode
+    ? form.formState.isDirty || hasDocumentChanges
+    : true;
+
+  // Navigation
+  const backLink = isEditMode
+    ? buildRoute(ROUTES.PROPERTIES.DETAIL, { id: propertyId! })
+    : isContextAware
+      ? ROUTES.CUSTOMERS.DETAIL.replace('[id]', initialCustomerId)
+      : ROUTES.PROPERTIES.LIST;
+
+  const backLabel = isEditMode
+    ? 'Back to Property'
+    : isContextAware
+      ? 'Back to Customer'
+      : 'Back to Properties';
+
+  const pageTitle = isEditMode
+    ? 'Edit Property'
+    : isContextAware
+      ? 'Add Property'
+      : 'Create New Property';
+
+  const pageSubtitle = isEditMode
+    ? (initialData?.propertyName || 'Unnamed Property')
+    : isContextAware
+      ? `Add a new property for ${customer ? `${customer.firstName} ${customer.lastName ?? ''}`.trim() : 'this customer'}`
+      : 'Add a new property to your database';
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-24">
@@ -193,101 +330,103 @@ export function CreatePropertyForm({
           {backLabel}
         </Link>
         <h1 className="text-xl font-semibold text-foreground">
-          {isContextAware ? 'Add Property' : 'Create New Property'}
+          {pageTitle}
         </h1>
         <p className="text-foreground-secondary text-sm mt-1">
-          {isContextAware
-            ? `Add a new property for ${customer ? `${customer.firstName} ${customer.lastName ?? ''}`.trim() : 'this customer'}`
-            : 'Add a new property to your database'}
+          {pageSubtitle}
         </p>
       </div>
 
-      {/* Customer Card / Selector */}
-      {isContextAware ? (
-        customer && (
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <span className="text-base font-semibold text-primary">
-                    {customer.firstName.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">
-                    {customer.firstName} {customer.lastName ?? ''}
-                  </p>
-                  <p className="text-sm text-foreground-secondary">{customer.phone}</p>
-                </div>
-                <Badge variant="success" size="xs" shape="pill" className="ml-auto shrink-0">
-                  Customer
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-        )
-      ) : (
-        <Card>
-          <CardContent className="p-5 space-y-4">
-            <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-foreground">Select Customer</h3>
-              <p className="text-xs text-foreground-secondary">Choose which customer this property belongs to</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="customerId" required>Customer</Label>
-              <Select
-                value={selectedCustomerId}
-                onValueChange={setSelectedCustomerId}
-                disabled={isLoadingCustomers}
-              >
-                <SelectTrigger id="customerId">
-                  <SelectValue
-                    placeholder={isLoadingCustomers ? 'Loading customers...' : 'Select a customer'}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {customers.length === 0 && !isLoadingCustomers ? (
-                    <div className="p-2 text-sm text-foreground-secondary text-center">
-                      No customers found.{' '}
-                      <button
-                        type="button"
-                        onClick={() => router.push(ROUTES.CUSTOMERS.NEW)}
-                        className="text-primary hover:underline"
-                      >
-                        Create one first
-                      </button>
+      {/* Customer Card / Selector (create mode only) */}
+      {!isEditMode && (
+        <>
+          {isContextAware ? (
+            customer && (
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <span className="text-base font-semibold text-primary">
+                        {customer.firstName.charAt(0).toUpperCase()}
+                      </span>
                     </div>
-                  ) : (
-                    customers.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.firstName} {c.lastName ?? ''} &bull; {c.phone}
-                      </SelectItem>
-                    ))
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">
+                        {customer.firstName} {customer.lastName ?? ''}
+                      </p>
+                      <p className="text-sm text-foreground-secondary">{customer.phone}</p>
+                    </div>
+                    <Badge variant="success" size="xs" shape="pill" className="ml-auto shrink-0">
+                      Customer
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          ) : (
+            <Card>
+              <CardContent className="p-5 space-y-4">
+                <div className="space-y-1">
+                  <h3 className="text-sm font-semibold text-foreground">Select Customer</h3>
+                  <p className="text-xs text-foreground-secondary">Choose which customer this property belongs to</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="customerId" required>Customer</Label>
+                  <Select
+                    value={selectedCustomerId}
+                    onValueChange={setSelectedCustomerId}
+                    disabled={isLoadingCustomers}
+                  >
+                    <SelectTrigger id="customerId">
+                      <SelectValue
+                        placeholder={isLoadingCustomers ? 'Loading customers...' : 'Select a customer'}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers.length === 0 && !isLoadingCustomers ? (
+                        <div className="p-2 text-sm text-foreground-secondary text-center">
+                          No customers found.{' '}
+                          <button
+                            type="button"
+                            onClick={() => router.push(ROUTES.CUSTOMERS.NEW)}
+                            className="text-primary hover:underline"
+                          >
+                            Create one first
+                          </button>
+                        </div>
+                      ) : (
+                        customers.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.firstName} {c.lastName ?? ''} &bull; {c.phone}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {'customerId' in form.formState.errors && form.formState.errors.customerId && (
+                    <p className="text-xs text-error">{(form.formState.errors.customerId as { message?: string }).message}</p>
                   )}
-                </SelectContent>
-              </Select>
-              {form.formState.errors.customerId && (
-                <p className="text-xs text-error">{form.formState.errors.customerId.message}</p>
-              )}
-            </div>
+                </div>
 
-            {selectedCustomer && (
-              <div className="flex items-center gap-3 p-3 bg-background-secondary rounded-lg">
-                <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <span className="text-sm font-semibold text-primary">
-                    {selectedCustomer.firstName.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {selectedCustomer.firstName} {selectedCustomer.lastName ?? ''}
-                  </p>
-                  <p className="text-xs text-foreground-secondary">{selectedCustomer.phone}</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                {selectedCustomer && (
+                  <div className="flex items-center gap-3 p-3 bg-background-secondary rounded-lg">
+                    <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <span className="text-sm font-semibold text-primary">
+                        {selectedCustomer.firstName.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">
+                        {selectedCustomer.firstName} {selectedCustomer.lastName ?? ''}
+                      </p>
+                      <p className="text-xs text-foreground-secondary">{selectedCustomer.phone}</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
       {/* Form */}
@@ -295,7 +434,6 @@ export function CreatePropertyForm({
         {/* Section 1: Property Details */}
         <Card>
           <CardContent className="p-0">
-            {/* Section Header */}
             <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
               <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <Home className="size-icon-sm text-primary" />
@@ -306,7 +444,6 @@ export function CreatePropertyForm({
               </div>
             </div>
 
-            {/* Section Body */}
             <div className="p-5 space-y-5">
               <Alert variant="info" appearance="minimal" title={PROPERTY_ALERTS.propertyTip.title}>
                 {PROPERTY_ALERTS.propertyTip.message}
@@ -326,7 +463,7 @@ export function CreatePropertyForm({
                 <Label className="text-sm" required>Property Type</Label>
                 <RadioCardGroup
                   value={form.watch('propertyType')}
-                  onValueChange={(v) => form.setValue('propertyType', v as PropertyType)}
+                  onValueChange={(v) => form.setValue('propertyType', v as PropertyType, { shouldDirty: true })}
                   orientation="horizontal"
                 >
                   {PROPERTY_TYPE_OPTIONS.map((type) => (
@@ -343,16 +480,19 @@ export function CreatePropertyForm({
                 )}
               </div>
 
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-background-secondary">
-                <Checkbox
-                  id="isPrimary"
-                  checked={form.watch('isPrimary')}
-                  onCheckedChange={(checked) => form.setValue('isPrimary', checked === true)}
-                />
-                <Label htmlFor="isPrimary" className="cursor-pointer text-sm">
-                  Set as primary property
-                </Label>
-              </div>
+              {/* isPrimary checkbox — create mode only */}
+              {!isEditMode && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-background-secondary">
+                  <Checkbox
+                    id="isPrimary"
+                    checked={form.watch('isPrimary' as keyof CreatePropertyFormData) as boolean | undefined}
+                    onCheckedChange={(checked) => form.setValue('isPrimary' as keyof CreatePropertyFormData, checked === true)}
+                  />
+                  <Label htmlFor="isPrimary" className="cursor-pointer text-sm">
+                    Set as primary property
+                  </Label>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -371,7 +511,7 @@ export function CreatePropertyForm({
             </div>
 
             <div className="p-5 space-y-5">
-              {resolvedCustomer?.address && (
+              {!isEditMode && resolvedCustomer?.address && (
                 <Alert variant="info" appearance="minimal">
                   {PROPERTY_ALERTS.addressPrefill.message}
                 </Alert>
@@ -400,8 +540,8 @@ export function CreatePropertyForm({
                 <div className="space-y-2">
                   <Label htmlFor="state" className="text-sm">State</Label>
                   <Select
-                    value={form.watch('state') || undefined}
-                    onValueChange={(v) => form.setValue('state', v)}
+                    value={form.watch('state')}
+                    onValueChange={(v) => form.setValue('state', v, { shouldDirty: true })}
                   >
                     <SelectTrigger id="state">
                       <SelectValue placeholder="Select state" />
@@ -455,8 +595,8 @@ export function CreatePropertyForm({
                 <div className="space-y-2">
                   <Label htmlFor="discomName" className="text-sm">DISCOM Provider</Label>
                   <Select
-                    value={form.watch('discomName') || undefined}
-                    onValueChange={(v) => form.setValue('discomName', v)}
+                    value={form.watch('discomName')}
+                    onValueChange={(v) => form.setValue('discomName', v, { shouldDirty: true })}
                   >
                     <SelectTrigger id="discomName">
                       <SelectValue placeholder="Select DISCOM" />
@@ -489,7 +629,7 @@ export function CreatePropertyForm({
                       <button
                         key={type.value}
                         type="button"
-                        onClick={() => form.setValue('connectionType', type.value as ConnectionType)}
+                        onClick={() => form.setValue('connectionType', type.value as ConnectionType, { shouldDirty: true })}
                         className={`flex flex-col items-center gap-1 rounded-lg border-2 p-4 text-center transition-all ${
                           isSelected
                             ? 'border-primary bg-primary/5 text-primary'
@@ -563,7 +703,7 @@ export function CreatePropertyForm({
                 <Label className="text-sm" required>Lead Temperature</Label>
                 <LeadTemperatureSelector
                   value={form.watch('leadTemperature')}
-                  onChange={(v) => form.setValue('leadTemperature', v)}
+                  onChange={(v) => form.setValue('leadTemperature', v, { shouldDirty: true })}
                   error={!!form.formState.errors.leadTemperature}
                   errorMessage={form.formState.errors.leadTemperature?.message}
                   disabled={isSubmitting}
@@ -585,7 +725,7 @@ export function CreatePropertyForm({
                 <Switch
                   id="wantsLoan"
                   checked={wantsLoan}
-                  onCheckedChange={(checked) => form.setValue('wantsLoan', checked)}
+                  onCheckedChange={(checked) => form.setValue('wantsLoan', checked, { shouldDirty: true })}
                 />
               </div>
 
@@ -648,26 +788,30 @@ export function CreatePropertyForm({
           <div className="absolute inset-x-0 -top-6 h-6 bg-linear-to-t from-background-tertiary to-transparent pointer-events-none" />
           <div className="bg-background border-t border-border-light py-4 -mx-4 px-4 lg:-mx-5 lg:px-5">
             <div className="flex items-center justify-between gap-4">
-              <p className="text-xs text-foreground-secondary hidden sm:block">
-                {isComplete ? 'Ready to create property' : `${REQUIRED_FIELDS_TOTAL - filledCount} required field(s) remaining`}
-              </p>
+              {!isEditMode && (
+                <p className="text-xs text-foreground-secondary hidden sm:block">
+                  {isComplete ? 'Ready to create property' : `${REQUIRED_FIELDS_TOTAL - filledCount} required field(s) remaining`}
+                </p>
+              )}
               <div className="flex items-center gap-3 ml-auto">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() =>
-                    router.push(
-                      isContextAware
-                        ? ROUTES.CUSTOMERS.DETAIL.replace('[id]', initialCustomerId)
-                        : ROUTES.PROPERTIES.LIST
-                    )
-                  }
+                  onClick={() => router.push(backLink)}
                   disabled={isSubmitting}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting || !effectiveCustomerId}>
-                  {isSubmitting ? 'Creating...' : 'Create Property'}
+                <Button
+                  type="submit"
+                  disabled={
+                    isSubmitting ||
+                    (isEditMode ? !canSave : !effectiveCustomerId)
+                  }
+                >
+                  {isSubmitting
+                    ? (isEditMode ? 'Saving...' : 'Creating...')
+                    : (isEditMode ? 'Save Changes' : 'Create Property')}
                 </Button>
               </div>
             </div>
@@ -681,17 +825,18 @@ export function CreatePropertyForm({
   // Private: Form submission handler
   // ============================================================================
 
-  async function onSubmit(data: CreatePropertyFormData): Promise<void> {
+  async function onSubmit(data: CreatePropertyFormData | EditPropertyFormData): Promise<void> {
     try {
       setIsUploadingDocs(true);
 
       const pendingDocs = documents.filter(
-        (d) => d.status === 'pending' || d.status === 'error'
+        (d) => (d.status === 'pending' || d.status === 'error') && d.file
       );
 
       let currentDocs = [...documents];
 
       for (const doc of pendingDocs) {
+        if (!doc.file) continue;
         try {
           currentDocs = currentDocs.map((d) =>
             d.id === doc.id ? { ...d, status: 'uploading' as const, progress: 0 } : d
@@ -742,19 +887,44 @@ export function CreatePropertyForm({
           showToast.error('Required document (Aadhaar) failed to upload. Please retry.');
           return;
         }
-        showToast.warning(`${failedDocs.length} document(s) failed to upload. Property will be created without them.`);
+        showToast.warning(`${failedDocs.length} document(s) failed to upload. Property will be ${isEditMode ? 'saved' : 'created'} without them.`);
       }
 
       const successfulDocs = currentDocs.filter((d) => d.status === 'success' && d.uploadedUrl);
       const propertyDocuments = toPropertyDocuments(successfulDocs, data.wantsLoan ?? false);
 
-      await createPropertyMutation.mutateAsync({
-        ...data,
-        documents: propertyDocuments,
-      });
+      if (isEditMode && propertyId) {
+        await updatePropertyMutation.mutateAsync({
+          id: propertyId,
+          data: {
+            ...data,
+            documents: propertyDocuments,
+          },
+        });
 
-      showToast.success('Property created successfully');
-      router.push(ROUTES.CUSTOMERS.DETAIL.replace('[id]', data.customerId));
+        // Post-save S3 cleanup for removed pre-existing docs
+        const removedExistingUrls = (initialData?.documents ?? [])
+          .filter((d) => !currentDocs.some((doc) => doc.uploadedUrl === d.url))
+          .map((d) => d.url);
+
+        for (const url of removedExistingUrls) {
+          void apiClient
+            .delete(`/customer-properties/${propertyId}/documents/${btoa(url)}`)
+            .catch((err) => console.warn('S3 cleanup failed for removed doc', err));
+        }
+
+        showToast.success('Property updated successfully');
+        router.push(buildRoute(ROUTES.PROPERTIES.DETAIL, { id: propertyId }));
+      } else {
+        const createData = data as CreatePropertyFormData;
+        await createPropertyMutation.mutateAsync({
+          ...createData,
+          documents: propertyDocuments,
+        });
+
+        showToast.success('Property created successfully');
+        router.push(ROUTES.CUSTOMERS.DETAIL.replace('[id]', createData.customerId));
+      }
     } catch (error) {
       setIsUploadingDocs(false);
       showToast.error(getErrorMessage(error));
