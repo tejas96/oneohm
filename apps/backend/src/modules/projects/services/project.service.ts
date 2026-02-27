@@ -165,17 +165,22 @@ export class ProjectService {
    * Delete a project
    */
   async delete(id: string, organizationId: string): Promise<void> {
-    // Verify project exists
     const project = await this.projectRepository.findById(id, organizationId);
 
-    // Check if project can be deleted (only draft/cancelled projects)
     if (project.status !== ProjectStatus.DRAFT && project.status !== ProjectStatus.CANCELLED) {
       throw new BadRequestException(
         `Cannot delete project with status ${project.status}. Only draft or cancelled projects can be deleted.`,
       );
     }
 
-    await this.projectRepository.delete(id, organizationId);
+    await this.dataSource.transaction(async (manager) => {
+      await manager.getRepository(ProjectEntity).softDelete({ id });
+      await this.customerPropertyRepository.updateStatusById(
+        project.propertyId,
+        PropertyStatus.ACTIVE,
+        manager,
+      );
+    });
   }
 
   /**
@@ -303,7 +308,6 @@ export class ProjectService {
       throw new NotFoundException(`Organization with ID ${organizationId} not found`);
     }
 
-    const projectNumber = await this.generateProjectNumber(org.code);
     const currentVersion = quote.versions?.find((v) => v.isCurrent) || quote.versions?.[0];
 
     const customerName =
@@ -329,7 +333,6 @@ export class ProjectService {
       projectData: {
         propertyId: quote.propertyId,
         quoteId,
-        projectNumber,
         name: convertDto?.name || autoName,
         description:
           convertDto?.description ||
@@ -595,8 +598,8 @@ export class ProjectService {
   /**
    * Generate unique project number using centralized code generator
    */
-  private async generateProjectNumber(orgCode: string): Promise<string> {
-    return this.projectRepository.generateProjectNumber(orgCode);
+  private async generateProjectNumber(orgCode: string, manager?: EntityManager): Promise<string> {
+    return this.projectRepository.generateProjectNumber(orgCode, manager);
   }
 
   /**
@@ -717,7 +720,7 @@ export class ProjectService {
     for (const step of steps) {
       let taskCode: string;
       try {
-        taskCode = await this.taskRepository.generateTaskCode(orgCode);
+        taskCode = await this.taskRepository.generateTaskCode(orgCode, manager);
       } catch {
         taskCode = step.code;
       }
@@ -795,13 +798,18 @@ export class ProjectService {
     } = params;
 
     return this.dataSource.transaction(async (manager) => {
-      // 1. Create project
+      // 1. Generate project number inside transaction to avoid race conditions
+      if (!projectData.projectNumber) {
+        projectData.projectNumber = await this.generateProjectNumber(orgCode, manager);
+      }
+
+      // 2. Create project
       const project = await this.projectRepository.create({ ...projectData, createdBy }, manager);
 
-      // 2. Update property to CONVERTED
+      // 3. Update property to CONVERTED
       await this.customerPropertyRepository.updateStatusById(propertyId, PropertyStatus.CONVERTED, manager);
 
-      // 3. Create milestones
+      // 4. Create milestones
       const { milestoneTypeMap, milestoneOrderMap } = await this.createProjectMilestones(
         project.id,
         milestones,
@@ -810,42 +818,42 @@ export class ProjectService {
         manager,
       );
 
-      // 4. Set default transitions and excluded steps on project
+      // 5. Set default transitions and excluded steps on project
       await this.projectRepository.updateById(
         project.id,
         { defaultTransitions: FALLBACK_TRANSITIONS, excludedStepIds: excludedStepIds ?? [] },
         manager,
       );
 
-      // 5. Apply workflow steps (lean rows, no data copy)
+      // 6. Apply workflow steps (lean rows, no data copy)
       await this.applyWorkflowSteps(project.id, organizationId, createdBy, excludedStepIds, manager);
 
-      // 6. Link tasks to milestones via step.defaultMilestoneType
+      // 7. Link tasks to milestones via step.defaultMilestoneType
       await this.linkTasksToMilestones(project.id, organizationId, milestoneTypeMap, manager);
 
-      // 7. Apply milestone overrides from frontend
+      // 8. Apply milestone overrides from frontend
       if (taskMilestoneOverrides?.length) {
         await this.applyMilestoneOverrides(project.id, taskMilestoneOverrides, milestoneOrderMap, manager);
       }
 
-      // 8. Add PM + team members
+      // 9. Add PM + team members
       await this.addTeamMembers(project.id, teamConfig, manager);
 
-      // 9. Auto-assign tasks by role
+      // 10. Auto-assign tasks by role
       await this.autoAssignTasksByRole(project.id, organizationId, manager);
 
-      // 10. Apply manual assignment overrides from frontend
+      // 11. Apply manual assignment overrides from frontend
       if (taskAssignments?.length) {
         await this.applyTaskAssignments(project.id, taskAssignments, manager);
       }
 
-      // 11. Compute initial progress
+      // 12. Compute initial progress
       const { done, total } = await this.taskRepository.computeProgress(project.id, manager);
       const progress = total > 0 ? Math.round((100 * done) / total) : 0;
       await this.projectRepository.updateById(project.id, { progressPercentage: progress }, manager);
       await this.milestoneRepository.updateProgressForProject(project.id, manager);
 
-      return this.projectRepository.findById(project.id, organizationId);
+      return this.projectRepository.findById(project.id, organizationId, manager);
     });
   }
 
@@ -873,7 +881,7 @@ export class ProjectService {
       );
 
       try {
-        const milestoneCode = await this.milestoneRepository.generateMilestoneCode(orgCode);
+        const milestoneCode = await this.milestoneRepository.generateMilestoneCode(orgCode, manager);
         await this.milestoneRepository.updateById(milestone.id, { milestoneCode }, manager);
       } catch (err) {
         this.logger.warn(`Failed to generate milestone code for ${milestone.id}: ${String(err)}`);

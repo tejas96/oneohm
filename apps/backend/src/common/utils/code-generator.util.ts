@@ -1,4 +1,4 @@
-import { type Repository } from 'typeorm';
+import { type EntityManager, type Repository } from 'typeorm';
 
 /**
  * Generates a human-readable entity code in the format: {PREFIX}-{ORG_CODE}-{YEAR}-{SEQ4}
@@ -13,6 +13,7 @@ import { type Repository } from 'typeorm';
  * @param prefix - Code prefix (e.g. 'CUST', 'PROP', 'MS', 'SSV', 'TSK')
  * @param orgCode - Organization code (e.g. 'ONEOHM')
  * @param dbColumnName - The actual database column name (snake_case), if different from TypeORM entity property
+ * @param manager - Optional EntityManager for transaction-aware queries
  */
 export async function generateEntityCode(
   repo: Repository<any>,
@@ -20,6 +21,7 @@ export async function generateEntityCode(
   prefix: string,
   orgCode: string,
   dbColumnName?: string,
+  manager?: EntityManager,
 ): Promise<string> {
   const year = new Date().getFullYear();
   const fullPrefix = `${prefix}-${orgCode}-${year}`;
@@ -27,7 +29,9 @@ export async function generateEntityCode(
 
   const actualDbColumn = dbColumnName || camelToSnake(columnName);
 
-  const result = await repo
+  const effectiveRepo = manager ? manager.getRepository(repo.target) : repo;
+
+  const result = await effectiveRepo
     .createQueryBuilder('e')
     .withDeleted()
     .select(`e.${actualDbColumn}`, 'code')

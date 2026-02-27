@@ -337,6 +337,7 @@ export const MAX_DISPLAYED_TEAM_MEMBERS = 5;
 export const MAX_DISPLAYED_MILESTONES = 6;
 export const MAX_TASKS_PER_COLUMN = 3;
 export const TASKS_PAGE_SIZE = 20;
+export const KANBAN_TASKS_LIMIT = 100;
 export const MS_PER_DAY = 86_400_000;
 
 // ---------------------------------------------------------------------------

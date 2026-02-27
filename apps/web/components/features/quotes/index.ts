@@ -23,6 +23,9 @@ export {
   useSaveQuote,
   useQuoteFormLogic,
   useQuotePdf,
+  quoteDetailKeys,
+  useQuoteDetail,
+  useQuoteVersion,
 } from './hooks';
 export type {
   QuoteFilters,
@@ -34,6 +37,10 @@ export type {
   PanelTechnologyVariant,
   UseQuoteFormLogicOptions,
   UseQuoteFormLogicReturn,
+  QuoteDetail,
+  QuoteVersionDetail,
+  QuoteLineItemDetail,
+  QuotePaymentMilestone,
 } from './hooks';
 
 // Types
@@ -55,6 +62,9 @@ export {
   QUOTE_STATUS_BADGE_VARIANTS,
   SYSTEM_TYPE_LABELS,
   QUOTE_FILTER_TABS,
+  QUOTE_DETAIL_TABS,
+  ITEM_CATEGORY_LABELS,
+  PROJECT_TYPE_LABELS,
   DEFAULT_PAGE_SIZE,
   SEARCH_DEBOUNCE_MS,
   PROJECT_TYPE_OPTIONS,
@@ -64,6 +74,7 @@ export {
   QUICK_SIZE_OPTIONS,
   DISCOUNT_PRESETS,
 } from './constants';
+export type { QuoteDetailTab } from './constants';
 
 // Schemas
 export { quoteBuilderSchema, createQuoteSchema } from './schemas/quote.schema';

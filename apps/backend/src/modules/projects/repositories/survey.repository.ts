@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SiteSurveyStatus } from '@oneohm-epc/shared-types';
-import { IsNull, Repository } from 'typeorm';
+import { type EntityManager, IsNull, Repository } from 'typeorm';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { SiteSurveyEntity } from '../entities/site-survey.entity';
@@ -88,7 +88,7 @@ export class SurveyRepository {
   /**
    * Generate a unique survey code (e.g. SSV-ONEOHM-2026-0001)
    */
-  async generateSurveyCode(orgCode: string): Promise<string> {
-    return generateEntityCode(this.repository, 'surveyCode', 'SSV', orgCode, 'survey_code');
+  async generateSurveyCode(orgCode: string, manager?: EntityManager): Promise<string> {
+    return generateEntityCode(this.repository, 'surveyCode', 'SSV', orgCode, 'survey_code', manager);
   }
 }

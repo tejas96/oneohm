@@ -30,6 +30,7 @@ import {
   CreateQuoteDto,
   QuoteQueryDto,
   QuoteResponseDto,
+  QuoteVersionResponseDto,
   UpdateQuoteDto,
   UpdateQuoteStatusDto,
 } from '../dto';
@@ -112,6 +113,28 @@ export class QuoteController {
     const quote = await this.quoteService.findById(id, organizationId);
 
     return plainToInstance(QuoteResponseDto, quote, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  /**
+   * Get a specific version of a quote with its line items
+   */
+  @Get(':id/versions/:versionId')
+  @ApiReadOne({
+    summary: 'Get quote version by ID',
+    description: 'Retrieve a specific version of a quote with all its line items',
+    responseType: QuoteVersionResponseDto,
+  })
+  async findVersion(
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() _currentUser: CurrentUserType,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('versionId', ParseUUIDPipe) versionId: string,
+  ): Promise<QuoteVersionResponseDto> {
+    const version = await this.quoteService.findVersionById(id, versionId, organizationId);
+
+    return plainToInstance(QuoteVersionResponseDto, version, {
       excludeExtraneousValues: true,
     });
   }
