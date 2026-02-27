@@ -120,7 +120,6 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     ref,
   ) => {
     const inputId = id || React.useId();
-    const hasLeftAddon = leftIcon || prefix;
     const hasRightAddon = rightIcon || suffix || clearable || loading;
     const showClear = clearable && value && !disabled && !loading;
     // Coerce error to boolean for styling, and derive error message
