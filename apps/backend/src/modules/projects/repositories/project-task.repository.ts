@@ -825,8 +825,8 @@ export class ProjectTaskRepository {
   /**
    * Generate a unique task code (e.g. TSK-ONEOHM-2026-0001)
    */
-  async generateTaskCode(orgCode: string): Promise<string> {
-    return generateEntityCode(this.repository, 'code', 'TSK', orgCode);
+  async generateTaskCode(orgCode: string, manager?: EntityManager): Promise<string> {
+    return generateEntityCode(this.repository, 'code', 'TSK', orgCode, undefined, manager);
   }
 
   private resolveTaskFields(task: ProjectTaskEntity): ProjectTaskEntity {

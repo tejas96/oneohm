@@ -187,8 +187,8 @@ export class MilestoneRepository {
   /**
    * Generate a unique milestone code (e.g. MS-ONEOHM-2026-0001)
    */
-  async generateMilestoneCode(orgCode: string): Promise<string> {
-    return generateEntityCode(this.repository, 'milestoneCode', 'MS', orgCode, 'milestone_code');
+  async generateMilestoneCode(orgCode: string, manager?: EntityManager): Promise<string> {
+    return generateEntityCode(this.repository, 'milestoneCode', 'MS', orgCode, 'milestone_code', manager);
   }
 
   private getRepo(manager?: EntityManager): Repository<ProjectMilestoneEntity> {

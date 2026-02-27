@@ -67,8 +67,9 @@ export class ProjectRepository {
    * Find project by ID with relations
    * Filters by organization via property.organizationId
    */
-  async findById(id: string, organizationId: string): Promise<ProjectEntity> {
-    const project = await this.repository
+  async findById(id: string, organizationId: string, manager?: EntityManager): Promise<ProjectEntity> {
+    const repo = this.getRepo(manager);
+    const project = await repo
       .createQueryBuilder('project')
       .innerJoinAndSelect('project.property', 'property')
       .innerJoinAndSelect('project.quote', 'quote')
@@ -353,8 +354,8 @@ export class ProjectRepository {
   /**
    * Generate a unique project number (e.g. PRJ-ONEOHM-2026-0001)
    */
-  async generateProjectNumber(orgCode: string): Promise<string> {
-    return generateEntityCode(this.repository, 'projectNumber', 'PRJ', orgCode, 'project_number');
+  async generateProjectNumber(orgCode: string, manager?: EntityManager): Promise<string> {
+    return generateEntityCode(this.repository, 'projectNumber', 'PRJ', orgCode, 'project_number', manager);
   }
 
   private getRepo(manager?: EntityManager): Repository<ProjectEntity> {

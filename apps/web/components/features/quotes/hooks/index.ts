@@ -13,6 +13,17 @@ import { useAuth } from '@/providers/auth-provider';
 // Re-export everything from use-quotes
 export * from './use-quotes';
 
+// Quote detail hooks
+export { quoteDetailKeys, useQuoteDetail, useQuoteVersion } from './use-quote-detail';
+
+// Types
+export type {
+  QuoteDetail,
+  QuoteVersionDetail,
+  QuoteLineItemDetail,
+  QuotePaymentMilestone,
+} from './types';
+
 // Quote builder hooks
 export { useQuoteConfig } from './use-quote-config';
 export type { PanelBrandOption, InverterBrandOption, PanelTechnologyVariant } from './use-quote-config';
@@ -74,7 +85,7 @@ export function useAcceptQuote() {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
 
-  return useMutation<unknown, AxiosError, { quoteId: string; customerSignature?: string }>({
+  return useMutation<unknown, AxiosError, { quoteId: string; customerSignature: string }>({
     mutationFn: ({ quoteId, customerSignature }) =>
       updateQuoteStatus(quoteId, {
         status: QuoteStatus.ACCEPTED,

@@ -266,15 +266,21 @@ export class QuoteService {
       throw new BadRequestException('Cannot update accepted or rejected quotes');
     }
 
+    const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
+
     const newVersionNumber = quote.currentVersion + 1;
+
+    if (quoteConfig.maxVersions != null && quoteConfig.maxVersions > 0 && newVersionNumber > quoteConfig.maxVersions) {
+      throw new BadRequestException(
+        `Maximum number of versions (${quoteConfig.maxVersions}) reached for this quote`,
+      );
+    }
 
     const currentVersion = await this.quoteVersionRepository.getCurrentVersion(quote.id);
 
     if (!currentVersion) {
       throw new NotFoundException('Current quote version not found');
     }
-
-    const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
 
     // Resolve values: DTO overrides > current version fallbacks
     const systemType = updateDto.systemType || currentVersion.systemType;
@@ -455,6 +461,27 @@ export class QuoteService {
     }
 
     return this.quoteRepository.update(id, organizationId, updateData);
+  }
+
+  /**
+   * Find a specific version of a quote, with line items.
+   * Validates quote ownership by organizationId to prevent IDOR.
+   */
+  async findVersionById(
+    quoteId: string,
+    versionId: string,
+    organizationId: string,
+  ): Promise<import('../entities/quote-version.entity').QuoteVersionEntity> {
+    // First verify the quote belongs to this organization
+    await this.quoteRepository.findById(quoteId, organizationId);
+
+    const version = await this.quoteVersionRepository.findByIdAndQuoteId(versionId, quoteId);
+
+    if (!version) {
+      throw new NotFoundException(`Version with ID ${versionId} not found for quote ${quoteId}`);
+    }
+
+    return version;
   }
 
   /**

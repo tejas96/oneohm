@@ -74,7 +74,7 @@ export class SurveyService {
         try {
           const org = await this.organizationRepository.findOneById(organizationId);
           if (org) {
-            const surveyCode = await this.surveyRepository.generateSurveyCode(org.code);
+            const surveyCode = await this.surveyRepository.generateSurveyCode(org.code, manager);
             await repo.update(saved.id, { surveyCode });
           }
         } catch (err) {

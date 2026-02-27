@@ -5,6 +5,7 @@ import {
   PhaseType,
   DcrPreference,
   StructureType,
+  ItemCategory,
 } from '@oneohm-epc/shared-types';
 import { type LucideIcon , Building2, Factory, Home, Landmark, Warehouse } from 'lucide-react';
 
@@ -269,3 +270,48 @@ export const PRICING_AFFECTING_FIELDS = [
   'floorNumber',
   'distanceKm',
 ] as const;
+
+// ============================================================================
+// Quote Detail Tabs
+// ============================================================================
+
+export const QUOTE_DETAIL_TABS = [
+  { value: 'overview', label: 'Overview' },
+  { value: 'line-items', label: 'Line Items' },
+  { value: 'versions', label: 'Versions' },
+  { value: 'payments', label: 'Payments' },
+  { value: 'activity', label: 'Activity' },
+] as const;
+
+export type QuoteDetailTab = (typeof QUOTE_DETAIL_TABS)[number]['value'];
+
+// ============================================================================
+// Item Category Labels
+// ============================================================================
+
+export const ITEM_CATEGORY_LABELS: Record<ItemCategory, string> = {
+  [ItemCategory.SOLAR_PANELS]: 'Solar Panels',
+  [ItemCategory.INVERTERS]: 'Inverters',
+  [ItemCategory.BATTERIES]: 'Batteries',
+  [ItemCategory.MOUNTING]: 'Mounting Structure',
+  [ItemCategory.ACCESSORIES]: 'Accessories',
+  [ItemCategory.CABLES_WIRING]: 'Cables & Wiring',
+  [ItemCategory.EARTHING]: 'Earthing',
+  [ItemCategory.LABOR]: 'Labor',
+  [ItemCategory.INSTALLATION]: 'Installation',
+  [ItemCategory.COMMISSIONING]: 'Commissioning',
+  [ItemCategory.TRANSPORTATION]: 'Transportation',
+  [ItemCategory.OTHER]: 'Other',
+};
+
+// ============================================================================
+// Project Type Labels (for detail view)
+// ============================================================================
+
+export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
+  [ProjectType.RESIDENTIAL]: 'Residential',
+  [ProjectType.RESIDENTIAL_APARTMENT]: 'Residential Apartment',
+  [ProjectType.COMMERCIAL]: 'Commercial',
+  [ProjectType.INDUSTRIAL]: 'Industrial',
+  [ProjectType.AGRICULTURAL]: 'Agricultural',
+};

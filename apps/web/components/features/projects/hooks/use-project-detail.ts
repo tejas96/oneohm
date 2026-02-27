@@ -3,7 +3,7 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
-import { TASKS_PAGE_SIZE } from '../constants';
+import { KANBAN_TASKS_LIMIT } from '../constants';
 import type { ProjectDetail, ProjectTaskItem, ProjectTeamMember, TaskStatsSummary } from './types';
 import { projectKeys } from './use-projects';
 
@@ -102,7 +102,7 @@ export function useProjectTasks(
     queryKey: projectDetailKeys.tasks(organizationId, projectId),
     queryFn: async (): Promise<ProjectTaskItem[]> => {
       const { data } = await apiClient.get<{ data: ProjectTaskItem[] }>(
-        `/projects/${projectId}/tasks?limit=${TASKS_PAGE_SIZE}`,
+        `/projects/${projectId}/tasks?limit=${KANBAN_TASKS_LIMIT}`,
         { headers: { 'X-Organization-Id': organizationId } },
       );
       return data.data ?? [];
