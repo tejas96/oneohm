@@ -1,12 +1,23 @@
 'use client';
 
-import { TaskStatus } from '@oneohm-epc/shared-types';
-import { AlertTriangle, Calendar, CheckCircle2, ClipboardList, Inbox, X } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { TASK_STATUS_TRANSITIONS, TaskStatus } from '@oneohm-epc/shared-types';
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  ClipboardList,
+  Inbox,
+  Search,
+  X,
+} from 'lucide-react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import {
+  QUICK_FILTER_CHIPS,
   TASK_GROUP_BY_OPTIONS,
-  TASK_GROUP_VARIANT_MAP,
+  TASK_PRIORITY_FILTER_OPTIONS,
   TASK_STATUS_FILTER_OPTIONS,
 } from '../constants';
 import {
@@ -15,11 +26,12 @@ import {
   type GroupByMode,
   type MyTask,
   type MyTaskFilters,
-  type MyTasksGroup,
 } from '../hooks';
-import { TaskDetailDrawer } from './task-detail-drawer';
-import { TaskRow } from './task-row';
+import { CollapsibleTaskGroup } from './collapsible-task-group';
+import { useCollapsedGroups } from '../hooks/use-collapsed-groups';
+import { useTaskKeyboardNav } from '../hooks/use-task-keyboard-nav';
 
+import { TaskDrawer } from '@/components/features/tasks';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { Button } from '@/components/ui/button';
 import {
@@ -30,7 +42,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUrlFilters } from '@/lib/hooks';
+import { useDebounce, useUrlFilters } from '@/lib/hooks';
 import { cn } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
@@ -40,87 +52,111 @@ import { cn } from '@/lib/utils';
 const MY_TASKS_URL_DEFAULTS = {
   projectId: '',
   status: '',
+  priority: '',
   groupBy: 'dueDate',
+  search: '',
+  dueDateFilter: '',
 };
-
-const INITIAL_VISIBLE_COUNT = 5;
-
-const DEFAULT_GROUP_VARIANT = {
-  dot: 'bg-foreground-tertiary',
-  border: 'border-border-light',
-  badge: 'secondary',
-};
-
-// ---------------------------------------------------------------------------
-// Summary card config
-// ---------------------------------------------------------------------------
 
 interface SummaryCard {
+  key: string;
   label: string;
   getValue: (s: { total: number; overdue: number; dueToday: number; completedThisWeek: number }) => number;
   bg: string;
   text: string;
+  iconBg: string;
   icon: React.ReactNode;
 }
 
 const SUMMARY_CARDS: SummaryCard[] = [
   {
+    key: 'total',
     label: 'Total Tasks',
     getValue: (s) => s.total,
     bg: 'bg-background',
     text: 'text-foreground',
-    icon: <ClipboardList className="size-4 text-foreground-tertiary" />,
+    iconBg: 'bg-muted',
+    icon: <ClipboardList className="size-4 text-foreground-secondary" />,
   },
   {
+    key: 'overdue',
     label: 'Overdue',
     getValue: (s) => s.overdue,
     bg: 'bg-error/5',
     text: 'text-error',
+    iconBg: 'bg-error/10',
     icon: <AlertTriangle className="size-4 text-error" />,
   },
   {
+    key: 'dueToday',
     label: 'Due Today',
     getValue: (s) => s.dueToday,
     bg: 'bg-warning/5',
     text: 'text-warning',
+    iconBg: 'bg-warning/10',
     icon: <Calendar className="size-4 text-warning" />,
   },
   {
-    label: 'Completed This Week',
+    key: 'completedThisWeek',
+    label: 'Done This Week',
     getValue: (s) => s.completedThisWeek,
     bg: 'bg-success/5',
     text: 'text-success',
+    iconBg: 'bg-success/10',
     icon: <CheckCircle2 className="size-4 text-success" />,
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Morning brief
+// ---------------------------------------------------------------------------
+
+function getMorningBrief(overdue: number, dueToday: number): string | null {
+  if (overdue > 0 && dueToday > 0) {
+    return `You have ${overdue} overdue task${overdue > 1 ? 's' : ''} and ${dueToday} due today. Focus on overdue first.`;
+  }
+  if (overdue > 0) {
+    return `You have ${overdue} overdue task${overdue > 1 ? 's' : ''}. Address ${overdue > 1 ? 'them' : 'it'} as soon as possible.`;
+  }
+  if (dueToday > 0) {
+    return `No overdue tasks. ${dueToday} task${dueToday > 1 ? 's' : ''} due today.`;
+  }
+  return null;
+}
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export function ProjectMyTasksPage(): React.JSX.Element {
-  const { filters: urlFilters, setFilter, clearFilters: clearUrlFilters } =
+  const { filters: urlFilters, setFilter } =
     useUrlFilters(MY_TASKS_URL_DEFAULTS);
 
   const projectFilter = urlFilters.projectId;
   const statusFilter = urlFilters.status;
+  const priorityFilter = urlFilters.priority;
+  const dueDateFilter = urlFilters.dueDateFilter;
   const groupBy = (urlFilters.groupBy || 'dueDate') as GroupByMode;
+  const [searchInput, setSearchInput] = useState(urlFilters.search || '');
+  const debouncedSearch = useDebounce(searchInput, 300);
 
   // Drawer state
-  const [drawerTask, setDrawerTask] = useState<MyTask | null>(null);
+  const [drawerTaskId, setDrawerTaskId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-
-  // Expand/collapse per group (client-side "show more")
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [briefDismissed, setBriefDismissed] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Data
   const filters: MyTaskFilters = useMemo(
     () => ({
       groupBy,
       status: statusFilter || undefined,
+      priority: priorityFilter || undefined,
       projectId: projectFilter || undefined,
+      search: debouncedSearch || undefined,
+      dueDateFilter: (dueDateFilter as MyTaskFilters['dueDateFilter']) || undefined,
     }),
-    [groupBy, statusFilter, projectFilter],
+    [groupBy, statusFilter, priorityFilter, projectFilter, debouncedSearch, dueDateFilter],
   );
 
   const { data, isLoading, isError, refetch } = useMyTasks(filters);
@@ -130,7 +166,15 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   const groups = data?.groups ?? [];
   const projects = summary?.projects ?? [];
 
-  // Project filter options derived from summary.projects (always unfiltered)
+  // All tasks flat for keyboard nav indexing
+  const allTasks = useMemo(() => groups.flatMap((g) => g.tasks), [groups]);
+
+  // Collapse state
+  const groupKeys = useMemo(() => groups.map((g) => g.key), [groups]);
+  const { isExpanded, toggle, expandAll, collapseAll, allExpanded } =
+    useCollapsedGroups(groupBy, groupKeys);
+
+  // Project filter options
   const projectFilterOptions = useMemo(
     () => [
       { value: '', label: 'All Projects' },
@@ -150,6 +194,11 @@ export function ProjectMyTasksPage(): React.JSX.Element {
     [setFilter],
   );
 
+  const handleClearFilters = useCallback(() => {
+    setFilter({ projectId: '', status: '', priority: '', search: '', dueDateFilter: '' });
+    setSearchInput('');
+  }, [setFilter]);
+
   const handleStatusChange = useCallback(
     (taskId: string, status: TaskStatus) => {
       updateStatus.mutate({ taskId, status });
@@ -164,8 +213,15 @@ export function ProjectMyTasksPage(): React.JSX.Element {
     [updateStatus],
   );
 
+  const handleStartTask = useCallback(
+    (taskId: string) => {
+      updateStatus.mutate({ taskId, status: TaskStatus.IN_PROGRESS });
+    },
+    [updateStatus],
+  );
+
   const handleOpenDrawer = useCallback((task: MyTask) => {
-    setDrawerTask(task);
+    setDrawerTaskId(task.id);
     setDrawerOpen(true);
   }, []);
 
@@ -173,147 +229,296 @@ export function ProjectMyTasksPage(): React.JSX.Element {
     setDrawerOpen(false);
   }, []);
 
-  const handleCompleteFromDrawer = useCallback(
-    (taskId: string) => {
-      updateStatus.mutate({ taskId, status: TaskStatus.DONE });
-      setDrawerOpen(false);
+  // Keyboard nav
+  const keyboardOpenDrawer = useCallback(
+    (index: number) => {
+      const task = allTasks[index];
+      if (task) handleOpenDrawer(task);
     },
-    [updateStatus],
+    [allTasks, handleOpenDrawer],
   );
 
-  const toggleGroupExpansion = useCallback((key: string) => {
-    setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
-  }, []);
+  const keyboardMarkDone = useCallback(
+    (index: number) => {
+      const task = allTasks[index];
+      if (!task) return;
+      const canDone = (TASK_STATUS_TRANSITIONS[task.status] ?? []).includes(TaskStatus.DONE);
+      if (canDone) handleMarkDone(task.id);
+    },
+    [allTasks, handleMarkDone],
+  );
 
-  const hasActiveFilters = projectFilter || statusFilter;
+  const keyboardStartTask = useCallback(
+    (index: number) => {
+      const task = allTasks[index];
+      if (!task) return;
+      const canStart = (TASK_STATUS_TRANSITIONS[task.status] ?? []).includes(TaskStatus.IN_PROGRESS);
+      if (canStart) handleStartTask(task.id);
+    },
+    [allTasks, handleStartTask],
+  );
+
+  const { focusedIndex, containerRef } = useTaskKeyboardNav({
+    totalTasks: allTasks.length,
+    onOpenDrawer: keyboardOpenDrawer,
+    onMarkDone: keyboardMarkDone,
+    onStartTask: keyboardStartTask,
+    onExpandAll: expandAll,
+    onCollapseAll: collapseAll,
+    searchInputRef,
+    drawerOpen,
+    onCloseDrawer: handleCloseDrawer,
+  });
+
+  const focusedTaskId = focusedIndex >= 0 ? allTasks[focusedIndex]?.id : undefined;
+
+  const hasActiveFilters = projectFilter || statusFilter || priorityFilter || debouncedSearch || dueDateFilter;
+  const morningBrief = summary && !briefDismissed ? getMorningBrief(summary.overdue, summary.dueToday) : null;
 
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
 
   return (
-    <div className="space-y-5">
-      {/* Page Header + Filters */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="space-y-3">
+      {/* Page Header + Search */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
           <h1 className="text-xl font-semibold text-foreground">My Tasks</h1>
           <p className="text-sm text-foreground-secondary mt-0.5">
             All tasks assigned to you across projects
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Project Filter */}
-          <Select
-            value={projectFilter || 'all'}
-            onValueChange={(v) => handleFilterChange('projectId', v === 'all' ? '' : v)}
-          >
-            <SelectTrigger className="w-48 h-8 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {projectFilterOptions.map((opt) => (
-                <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
-          {/* Status Filter */}
-          <Select
-            value={statusFilter || 'all'}
-            onValueChange={(v) => handleFilterChange('status', v === 'all' ? '' : v)}
-          >
-            <SelectTrigger className="w-36 h-8 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TASK_STATUS_FILTER_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Group By */}
-          <Select
-            value={groupBy}
-            onValueChange={(v) => handleFilterChange('groupBy', v)}
-          >
-            <SelectTrigger className="w-44 h-8 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TASK_GROUP_BY_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Clear Filters */}
-          {hasActiveFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => clearUrlFilters()}
-              className="text-foreground-secondary h-8"
-            >
-              <X className="mr-1 size-3" />
-              Clear
-            </Button>
-          )}
+        {/* Search */}
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-foreground-muted" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Search tasks... (press /)"
+            className="w-full rounded-lg border border-border-light bg-background pl-8 pr-3 h-8 text-sm placeholder:text-foreground-muted focus:outline-none focus:ring-1 focus:ring-primary"
+          />
         </div>
       </div>
 
       {/* Summary Cards */}
       {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-lg border border-border-light p-4">
-              <Skeleton className="h-3 w-24 mb-3" />
+            <div key={i} className="rounded-lg border border-border-light p-3">
+              <Skeleton className="h-3 w-20 mb-2" />
               <Skeleton className="h-7 w-10" />
             </div>
           ))}
         </div>
       ) : (
         summary && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {SUMMARY_CARDS.map((card) => (
               <div
-                key={card.label}
+                key={card.key}
                 className={cn(
-                  'rounded-lg border border-border-light p-4',
+                  'rounded-lg border border-border-light px-3 py-2.5 transition-colors hover:shadow-sm',
                   card.bg,
+                  card.key !== 'completedThisWeek' && 'cursor-pointer',
                 )}
+                onClick={() => {
+                  if (card.key === 'overdue') {
+                    setFilter({ status: '', priority: '', dueDateFilter: dueDateFilter === 'overdue' ? '' : 'overdue' });
+                  }
+                  if (card.key === 'dueToday') {
+                    setFilter({ status: '', priority: '', dueDateFilter: dueDateFilter === 'dueToday' ? '' : 'dueToday' });
+                  }
+                  if (card.key === 'total') {
+                    handleClearFilters();
+                  }
+                }}
+                role={card.key !== 'completedThisWeek' ? 'button' : undefined}
+                tabIndex={card.key !== 'completedThisWeek' ? 0 : undefined}
               >
-                <div className="flex items-center justify-between">
-                  <span className={cn('text-sm', card.text)}>{card.label}</span>
-                  <span className={cn('text-2xl font-semibold', card.text)}>
-                    {card.getValue(summary)}
-                  </span>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={cn('flex items-center justify-center size-6 rounded', card.iconBg)}>
+                    {card.icon}
+                  </div>
+                  <span className="text-xs text-foreground-secondary">{card.label}</span>
                 </div>
+                <span className={cn('text-2xl font-bold tabular-nums', card.text)}>
+                  {card.getValue(summary)}
+                </span>
               </div>
             ))}
           </div>
         )
       )}
 
+      {/* Morning Brief Banner */}
+      {morningBrief && (
+        <div className="flex items-center justify-between rounded-lg border border-info/20 bg-info/5 px-3 py-2">
+          <p className="text-sm text-foreground-secondary">{morningBrief}</p>
+          <button
+            type="button"
+            onClick={() => setBriefDismissed(true)}
+            className="text-foreground-muted hover:text-foreground-secondary shrink-0 ml-3"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Quick Filter Chips */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+        {QUICK_FILTER_CHIPS.map((chip) => {
+          const isActive =
+            chip.key === 'all'
+              ? !statusFilter && !priorityFilter && !dueDateFilter
+              : (chip.filter.status && statusFilter === chip.filter.status) ||
+                (chip.filter.priority && priorityFilter === chip.filter.priority) ||
+                (chip.filter.dueDateFilter && dueDateFilter === chip.filter.dueDateFilter);
+
+          return (
+            <button
+              key={chip.key}
+              type="button"
+              onClick={() => {
+                if (chip.key === 'all') {
+                  setFilter({ status: '', priority: '', dueDateFilter: '' });
+                } else if (chip.filter.dueDateFilter) {
+                  setFilter({ status: '', priority: '', dueDateFilter: isActive ? '' : chip.filter.dueDateFilter });
+                } else if (chip.filter.status) {
+                  setFilter({ dueDateFilter: '', status: isActive ? '' : chip.filter.status, priority: '' });
+                } else if (chip.filter.priority) {
+                  setFilter({ dueDateFilter: '', priority: isActive ? '' : chip.filter.priority, status: '' });
+                }
+              }}
+              className={cn(
+                'shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors border',
+                isActive
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background text-foreground-secondary border-border-light hover:bg-background-secondary',
+              )}
+            >
+              {chip.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Filters row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Select
+          value={projectFilter || 'all'}
+          onValueChange={(v) => handleFilterChange('projectId', v === 'all' ? '' : v)}
+        >
+          <SelectTrigger className="w-48 h-8 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {projectFilterOptions.map((opt) => (
+              <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={statusFilter || 'all'}
+          onValueChange={(v) => handleFilterChange('status', v === 'all' ? '' : v)}
+        >
+          <SelectTrigger className="w-36 h-8 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {TASK_STATUS_FILTER_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={priorityFilter || 'all'}
+          onValueChange={(v) => handleFilterChange('priority', v === 'all' ? '' : v)}
+        >
+          <SelectTrigger className="w-36 h-8 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {TASK_PRIORITY_FILTER_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={groupBy}
+          onValueChange={(v) => handleFilterChange('groupBy', v)}
+        >
+          <SelectTrigger className="w-44 h-8 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {TASK_GROUP_BY_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClearFilters}
+            className="text-foreground-secondary h-8"
+          >
+            <X className="mr-1 size-3" />
+            Clear
+          </Button>
+        )}
+
+        {/* Expand/Collapse All */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={allExpanded ? collapseAll : expandAll}
+          className="text-foreground-tertiary h-8 ml-auto"
+        >
+          {allExpanded ? (
+            <>
+              <ChevronUp className="mr-1 size-3" />
+              Collapse All
+            </>
+          ) : (
+            <>
+              <ChevronDown className="mr-1 size-3" />
+              Expand All
+            </>
+          )}
+        </Button>
+      </div>
+
       {/* Error State */}
       {isError && <ErrorState onRetry={() => refetch()} />}
 
       {/* Content */}
       {!isError && (
-        <>
+        <div ref={containerRef}>
           {/* Loading skeletons */}
           {isLoading && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {Array.from({ length: 3 }).map((_, gi) => (
                 <div key={gi}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Skeleton className="size-3 rounded-full" />
+                  <div className="flex items-center gap-2 mb-2">
+                    <Skeleton className="size-4" />
+                    <Skeleton className="size-2.5 rounded-full" />
                     <Skeleton className="h-4 w-24" />
                     <Skeleton className="h-5 w-8 rounded-full" />
                   </div>
@@ -353,7 +558,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
                     hasActiveFilters
                       ? {
                           label: 'Clear Filters',
-                          onClick: () => clearUrlFilters(),
+                          onClick: handleClearFilters,
                         }
                       : undefined
                   }
@@ -362,112 +567,37 @@ export function ProjectMyTasksPage(): React.JSX.Element {
             </div>
           )}
 
-          {/* Grouped Task List */}
-          {!isLoading &&
-            groups.map((group) => (
-              <TaskGroup
-                key={group.key}
-                group={group}
-                expanded={expandedGroups[group.key] ?? false}
-                onToggleExpand={() => toggleGroupExpansion(group.key)}
-                onOpenDrawer={handleOpenDrawer}
-                onStatusChange={handleStatusChange}
-                onMarkDone={handleMarkDone}
-              />
-            ))}
-        </>
+          {/* Grouped Task List - Jira-style collapsible */}
+          {!isLoading && (
+            <div className="space-y-1.5">
+              {groups.map((group) => (
+                <CollapsibleTaskGroup
+                  key={group.key}
+                  groupKey={group.key}
+                  label={group.label}
+                  count={group.count}
+                  tasks={group.tasks}
+                  expanded={isExpanded(group.key)}
+                  onToggleExpand={() => toggle(group.key)}
+                  onOpenDrawer={handleOpenDrawer}
+                  onStatusChange={handleStatusChange}
+                  onMarkDone={handleMarkDone}
+                  onStartTask={handleStartTask}
+                  focusedTaskId={focusedTaskId}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
-      {/* Task Detail Drawer */}
-      <TaskDetailDrawer
-        task={drawerTask}
+      {/* Task Detail Drawer (reusable) */}
+      <TaskDrawer
+        taskId={drawerTaskId}
         open={drawerOpen}
         onClose={handleCloseDrawer}
-        onComplete={handleCompleteFromDrawer}
+        onTaskUpdated={() => void refetch()}
       />
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// TaskGroup sub-component
-// ---------------------------------------------------------------------------
-
-interface TaskGroupProps {
-  group: MyTasksGroup;
-  expanded: boolean;
-  onToggleExpand: () => void;
-  onOpenDrawer: (task: MyTask) => void;
-  onStatusChange: (taskId: string, status: TaskStatus) => void;
-  onMarkDone: (taskId: string) => void;
-}
-
-function TaskGroup({
-  group,
-  expanded,
-  onToggleExpand,
-  onOpenDrawer,
-  onStatusChange,
-  onMarkDone,
-}: TaskGroupProps): React.JSX.Element {
-  const variant = TASK_GROUP_VARIANT_MAP[group.key] ?? DEFAULT_GROUP_VARIANT;
-  const visibleTasks = expanded
-    ? group.tasks
-    : group.tasks.slice(0, INITIAL_VISIBLE_COUNT);
-  const hiddenCount = group.tasks.length - INITIAL_VISIBLE_COUNT;
-
-  return (
-    <div>
-      {/* Group header */}
-      <div className="flex items-center gap-2 mb-3">
-        <span className={cn('size-3 rounded-full', variant.dot)} />
-        <h2 className="text-sm font-semibold uppercase">{group.label}</h2>
-        <span
-          className={cn(
-            'text-xs px-2 py-0.5 rounded-full font-medium',
-            variant.badge === 'error' && 'bg-error/10 text-error',
-            variant.badge === 'warning' && 'bg-warning/10 text-warning',
-            variant.badge === 'info' && 'bg-info/10 text-info',
-            variant.badge === 'success' && 'bg-success/10 text-success',
-            variant.badge === 'secondary' && 'bg-muted text-foreground-tertiary',
-          )}
-        >
-          {group.count}
-        </span>
-      </div>
-
-      {/* Tasks container */}
-      <div
-        className={cn(
-          'bg-background rounded-lg border overflow-hidden',
-          variant.border,
-        )}
-      >
-        {visibleTasks.map((task) => (
-          <TaskRow
-            key={task.id}
-            task={task}
-            onOpenDrawer={onOpenDrawer}
-            onStatusChange={onStatusChange}
-            onMarkDone={onMarkDone}
-          />
-        ))}
-
-        {/* Show more / less toggle */}
-        {hiddenCount > 0 && (
-          <div className="text-center py-3 border-t border-border-light">
-            <button
-              type="button"
-              onClick={onToggleExpand}
-              className="text-xs text-foreground-tertiary hover:text-foreground-secondary transition-colors"
-            >
-              {expanded
-                ? 'Show less'
-                : `Show ${hiddenCount} more\u2026`}
-            </button>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

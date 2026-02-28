@@ -271,8 +271,13 @@ export class ProjectRepository {
    * Update progress by project ID only (no org ownership check).
    * Used internally by ProjectTaskService after task status changes.
    */
-  async updateProgressById(projectId: string, progressPercentage: number): Promise<void> {
-    await this.repository.update({ id: projectId }, { progressPercentage });
+  async updateProgressById(
+    projectId: string,
+    progressPercentage: number,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repo = this.getRepo(manager);
+    await repo.update({ id: projectId }, { progressPercentage });
   }
 
   /**

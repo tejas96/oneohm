@@ -59,9 +59,30 @@ export class ProjectTaskRepository {
   ): Promise<ProjectTaskEntity[]> {
     const repo = this.getRepo(manager);
     return repo.find({
-      where: { projectId, deletedAt: undefined },
+      where: { projectId },
       ...(options?.relations ? { relations: options.relations } : {}),
     });
+  }
+
+  /**
+   * Lightweight projection for DFS cycle detection.
+   * Loads ONLY id and dependsOnTaskIds to avoid heavy JSONB columns.
+   */
+  async findDependencyGraph(
+    projectId: string,
+    manager?: EntityManager,
+  ): Promise<Array<{ id: string; dependsOnTaskIds: string[] }>> {
+    const repo = this.getRepo(manager);
+    const rows = await repo
+      .createQueryBuilder('task')
+      .select(['task.id', 'task.dependsOnTaskIds'])
+      .where('task.project_id = :projectId', { projectId })
+      .andWhere('task.deleted_at IS NULL')
+      .getMany();
+    return rows.map((r) => ({
+      id: r.id,
+      dependsOnTaskIds: r.dependsOnTaskIds ?? [],
+    }));
   }
 
   async findById(id: string, projectId: string): Promise<ProjectTaskEntity | null> {
@@ -295,6 +316,17 @@ export class ProjectTaskRepository {
     }
 
     return statusCounts;
+  }
+
+  async findAllForBoard(
+    projectId: string,
+  ): Promise<ProjectTaskEntity[]> {
+    const tasks = await this.repository.find({
+      where: { projectId, deletedAt: IsNull() },
+      relations: ['assignee', 'workflowStep', 'milestone'],
+      order: { kanbanOrder: 'ASC', createdAt: 'DESC' },
+    });
+    return this.resolveMany(tasks);
   }
 
   async findOverdue(projectId: string): Promise<ProjectTaskEntity[]> {
@@ -555,60 +587,89 @@ export class ProjectTaskRepository {
       status?: TaskStatus;
       priority?: string;
       projectId?: string;
+      search?: string;
+      dueDateFilter?: string;
     } = {},
     teamProjectIds: string[] = [],
   ): Promise<ProjectTaskEntity[]> {
-    const base: Record<string, unknown> = {
-      deletedAt: IsNull(),
-      status: Not(In([TaskStatus.DONE, TaskStatus.CANCELLED])),
-      project: {
-        property: { organizationId },
-        status: Not(ProjectStatus.CANCELLED),
-      },
-    };
+    const qb = this.repository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.project', 'project')
+      .leftJoinAndSelect('project.property', 'property')
+      .leftJoinAndSelect('task.milestone', 'milestone')
+      .leftJoinAndSelect('task.workflowStep', 'workflowStep')
+      .leftJoinAndSelect('task.assignee', 'assignee')
+      .where('task.deleted_at IS NULL')
+      .andWhere('property.organization_id = :organizationId', { organizationId })
+      .andWhere('project.status != :cancelledStatus', { cancelledStatus: ProjectStatus.CANCELLED });
 
+    // Status filter
     if (
       filters.status &&
       filters.status !== TaskStatus.DONE &&
       filters.status !== TaskStatus.CANCELLED
     ) {
-      base.status = filters.status;
+      qb.andWhere('task.status = :status', { status: filters.status });
+    } else {
+      qb.andWhere('task.status NOT IN (:...excludedStatuses)', {
+        excludedStatuses: [TaskStatus.DONE, TaskStatus.CANCELLED],
+      });
     }
+
     if (filters.priority) {
-      base.priority = filters.priority;
+      qb.andWhere('task.priority = :priority', { priority: filters.priority });
     }
     if (filters.projectId) {
-      base.projectId = filters.projectId;
+      qb.andWhere('task.project_id = :projectId', { projectId: filters.projectId });
     }
 
-    const whereConditions: Record<string, unknown>[] = [{ ...base, assignedToUserId: userId }];
+    // Text search on name/code
+    if (filters.search) {
+      qb.andWhere(
+        `(
+          LOWER(task.name_override) LIKE LOWER(:search)
+          OR LOWER(task.code) LIKE LOWER(:search)
+          OR LOWER(workflowStep.name) LIKE LOWER(:search)
+        )`,
+        { search: `%${filters.search}%` },
+      );
+    }
 
-    if (teamProjectIds.length > 0) {
-      const teamWhere: Record<string, unknown> = {
-        ...base,
-        assignedToUserId: IsNull(),
-      };
-      if (filters.projectId) {
-        if (teamProjectIds.includes(filters.projectId)) {
-          teamWhere.projectId = filters.projectId;
-        } else {
-          teamWhere.projectId = In([]);
-        }
-      } else {
-        teamWhere.projectId = In(teamProjectIds);
+    // Due date proximity filter
+    if (filters.dueDateFilter) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+      if (filters.dueDateFilter === 'overdue') {
+        qb.andWhere('task.end_date IS NOT NULL')
+          .andWhere('task.end_date < :todayStr', { todayStr });
+      } else if (filters.dueDateFilter === 'dueToday') {
+        qb.andWhere('task.end_date = :todayStr', { todayStr });
+      } else if (filters.dueDateFilter === 'thisWeek') {
+        const endOfWeek = new Date(today);
+        endOfWeek.setDate(endOfWeek.getDate() + (7 - endOfWeek.getDay()));
+        const endOfWeekStr = `${endOfWeek.getFullYear()}-${String(endOfWeek.getMonth() + 1).padStart(2, '0')}-${String(endOfWeek.getDate()).padStart(2, '0')}`;
+        qb.andWhere('task.end_date IS NOT NULL')
+          .andWhere('task.end_date > :todayStr', { todayStr })
+          .andWhere('task.end_date <= :endOfWeekStr', { endOfWeekStr });
       }
-      whereConditions.push(teamWhere);
     }
 
-    const results = await this.repository.find({
-      where: whereConditions,
-      relations: ['project', 'milestone', 'workflowStep'],
-      order: {
-        endDate: { direction: 'ASC', nulls: 'LAST' },
-        priority: 'DESC',
-      },
-    });
+    // Ownership: assigned to user OR unassigned in team projects
+    if (teamProjectIds.length > 0) {
+      qb.andWhere(
+        `(task.assigned_to_user_id = :userId OR (task.assigned_to_user_id IS NULL AND task.project_id IN (:...teamProjectIds)))`,
+        { userId, teamProjectIds },
+      );
+    } else {
+      qb.andWhere('task.assigned_to_user_id = :userId', { userId });
+    }
 
+    qb.orderBy('task.end_date', 'ASC', 'NULLS LAST')
+      .addOrderBy('task.priority', 'DESC');
+
+    const results = await qb.getMany();
     return this.resolveMany(results);
   }
 
@@ -617,30 +678,69 @@ export class ProjectTaskRepository {
     userId: string,
     organizationId: string,
     teamProjectIds: string[] = [],
+    isAdmin = false,
   ): Promise<ProjectTaskEntity | null> {
-    const whereConditions: Record<string, unknown>[] = [
-      {
-        id: taskId,
-        assignedToUserId: userId,
-        deletedAt: IsNull(),
-        project: { property: { organizationId } },
-      },
-    ];
+    const orgFilter = { project: { property: { organizationId } } };
 
-    if (teamProjectIds.length > 0) {
-      whereConditions.push({
-        id: taskId,
-        assignedToUserId: IsNull(),
-        deletedAt: IsNull(),
-        projectId: In(teamProjectIds),
-        project: { property: { organizationId } },
-      });
+    let whereConditions: Record<string, unknown>[];
+
+    if (isAdmin) {
+      whereConditions = [
+        { id: taskId, deletedAt: IsNull(), ...orgFilter },
+      ];
+    } else if (teamProjectIds.length > 0) {
+      whereConditions = [
+        { id: taskId, assignedToUserId: userId, deletedAt: IsNull(), ...orgFilter },
+        { id: taskId, projectId: In(teamProjectIds), deletedAt: IsNull(), ...orgFilter },
+      ];
+    } else {
+      whereConditions = [
+        { id: taskId, assignedToUserId: userId, deletedAt: IsNull(), ...orgFilter },
+      ];
     }
 
     const task = await this.repository.findOne({
       where: whereConditions,
       relations: ['project', 'milestone', 'assignee', 'workflowStep'],
     });
+    return task ? this.resolveTaskFields(task) : null;
+  }
+
+  /**
+   * Fetch a single task with full relations for the cross-project detail drawer.
+   * Access: admin sees any org task, team members see any task in their projects,
+   * otherwise user sees only their own assigned tasks.
+   */
+  async findByIdCrossProject(
+    taskId: string,
+    userId: string,
+    organizationId: string,
+    teamProjectIds: string[] = [],
+    isAdmin = false,
+  ): Promise<ProjectTaskEntity | null> {
+    const qb = this.repository
+      .createQueryBuilder('task')
+      .leftJoinAndSelect('task.project', 'project')
+      .leftJoinAndSelect('project.property', 'property')
+      .leftJoinAndSelect('task.milestone', 'milestone')
+      .leftJoinAndSelect('task.workflowStep', 'workflowStep')
+      .leftJoinAndSelect('task.assignee', 'assignee')
+      .where('task.id = :taskId', { taskId })
+      .andWhere('task.deleted_at IS NULL')
+      .andWhere('property.organization_id = :organizationId', { organizationId });
+
+    if (isAdmin) {
+      // Admin bypass — org filter is sufficient
+    } else if (teamProjectIds.length > 0) {
+      qb.andWhere(
+        `(task.assigned_to_user_id = :userId OR task.project_id IN (:...teamProjectIds))`,
+        { userId, teamProjectIds },
+      );
+    } else {
+      qb.andWhere('task.assigned_to_user_id = :userId', { userId });
+    }
+
+    const task = await qb.getOne();
     return task ? this.resolveTaskFields(task) : null;
   }
 
@@ -688,43 +788,30 @@ export class ProjectTaskRepository {
     organizationId: string,
     teamProjectIds: string[] = [],
   ): Promise<Array<{ id: string; name: string; projectNumber: string }>> {
-    const whereConditions: Record<string, unknown>[] = [
-      {
-        assignedToUserId: userId,
-        deletedAt: IsNull(),
-        status: Not(In([TaskStatus.DONE, TaskStatus.CANCELLED])),
-        project: { property: { organizationId } },
-      },
-    ];
+    const qb = this.repository
+      .createQueryBuilder('task')
+      .innerJoin('task.project', 'project')
+      .innerJoin('project.property', 'property')
+      .select('project.id', 'id')
+      .addSelect('project.name', 'name')
+      .addSelect('project.project_number', 'projectNumber')
+      .distinct(true)
+      .where('task.deleted_at IS NULL')
+      .andWhere('task.status NOT IN (:...excludedStatuses)', {
+        excludedStatuses: [TaskStatus.DONE, TaskStatus.CANCELLED],
+      })
+      .andWhere('property.organization_id = :organizationId', { organizationId });
 
     if (teamProjectIds.length > 0) {
-      whereConditions.push({
-        assignedToUserId: IsNull(),
-        deletedAt: IsNull(),
-        status: Not(In([TaskStatus.DONE, TaskStatus.CANCELLED])),
-        projectId: In(teamProjectIds),
-        project: { property: { organizationId } },
-      });
+      qb.andWhere(
+        `(task.assigned_to_user_id = :userId OR (task.assigned_to_user_id IS NULL AND task.project_id IN (:...teamProjectIds)))`,
+        { userId, teamProjectIds },
+      );
+    } else {
+      qb.andWhere('task.assigned_to_user_id = :userId', { userId });
     }
 
-    const tasks = await this.repository.find({
-      where: whereConditions,
-      relations: ['project'],
-      select: ['id', 'projectId'],
-    });
-
-    const projectMap = new Map<string, { id: string; name: string; projectNumber: string }>();
-    for (const task of tasks) {
-      if (task.project && !projectMap.has(task.projectId)) {
-        projectMap.set(task.projectId, {
-          id: task.project.id,
-          name: task.project.name,
-          projectNumber: task.project.projectNumber,
-        });
-      }
-    }
-
-    return Array.from(projectMap.values());
+    return qb.getRawMany<{ id: string; name: string; projectNumber: string }>();
   }
 
   /**

@@ -122,7 +122,7 @@ export function DateRangePicker({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>
         <Button
           id="date"
@@ -167,7 +167,7 @@ export function DateRangePicker({
             selected={value}
             onSelect={handleSelect}
             numberOfMonths={numberOfMonths}
-            initialFocus
+            autoFocus
           />
         </div>
       </PopoverContent>

@@ -37,6 +37,8 @@ export function useUrlFilters<T extends Record<string, string>>(
   const defaultsRef = useRef(defaults);
   defaultsRef.current = defaults;
 
+  const userChangedRef = useRef(false);
+
   // Sync from URL on browser back/forward
   useEffect(() => {
     const handler = () => {
@@ -52,14 +54,13 @@ export function useUrlFilters<T extends Record<string, string>>(
     return () => window.removeEventListener('popstate', handler);
   }, []);
 
-  // Also sync when searchParams changes (e.g. from programmatic navigation)
+  // Sync filter state → URL after render (only for user-initiated changes)
   useEffect(() => {
-    setFilters(readFromUrl());
-  }, [searchParams, readFromUrl]);
+    if (!userChangedRef.current) return;
+    userChangedRef.current = false;
 
-  const writeToUrl = useCallback((updated: T) => {
     const params = new URLSearchParams(window.location.search);
-    for (const [key, value] of Object.entries(updated)) {
+    for (const [key, value] of Object.entries(filters)) {
       if (value && value !== defaultsRef.current[key as keyof T]) {
         params.set(key, value);
       } else {
@@ -69,10 +70,11 @@ export function useUrlFilters<T extends Record<string, string>>(
     const qs = params.toString();
     const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
     window.history.replaceState(null, '', url);
-  }, []);
+  }, [filters]);
 
   const setFilter = useCallback(
     (keyOrUpdates: keyof T | Partial<T>, value?: string) => {
+      userChangedRef.current = true;
       setFilters((prev) => {
         const next: Record<string, string> = { ...prev };
         if (typeof keyOrUpdates === 'string') {
@@ -80,18 +82,16 @@ export function useUrlFilters<T extends Record<string, string>>(
         } else {
           Object.assign(next, keyOrUpdates);
         }
-        const typed = next as T;
-        writeToUrl(typed);
-        return typed;
+        return next as T;
       });
     },
-    [writeToUrl],
+    [],
   );
 
   const clearFilters = useCallback(() => {
+    userChangedRef.current = true;
     setFilters(defaultsRef.current);
-    writeToUrl(defaultsRef.current);
-  }, [writeToUrl]);
+  }, []);
 
   return { filters, setFilter: setFilter as never, clearFilters };
 }

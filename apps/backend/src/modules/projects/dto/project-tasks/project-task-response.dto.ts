@@ -74,6 +74,18 @@ export class ProjectTaskResponseDto {
   @Expose()
   dependsOnTaskIds?: string[];
 
+  @ApiPropertyOptional({ description: 'Whether any dependency tasks are incomplete (informational only)' })
+  @Expose()
+  hasDependencyBlockers?: boolean;
+
+  @ApiPropertyOptional({ type: [String], description: 'Resolved names of dependency tasks' })
+  @Expose()
+  dependencyNames?: string[];
+
+  @ApiPropertyOptional({ type: [String], description: 'Task codes of dependency tasks' })
+  @Expose()
+  dependencyCodes?: string[];
+
   @ApiProperty({ example: 50 })
   @Expose()
   completionPercentage!: number;

@@ -197,13 +197,83 @@ export const TASK_GROUP_BY_OPTIONS = [
   { value: 'status', label: 'Group by: Status' },
 ] as const;
 
-export const TASK_GROUP_VARIANT_MAP: Record<string, { dot: string; border: string; badge: string }> = {
-  overdue: { dot: 'bg-error', border: 'border-error/30', badge: 'error' },
-  due_today: { dot: 'bg-warning', border: 'border-warning/30', badge: 'warning' },
-  this_week: { dot: 'bg-info', border: 'border-info/30', badge: 'info' },
-  later: { dot: 'bg-success', border: 'border-success/30', badge: 'success' },
-  no_date: { dot: 'bg-foreground-tertiary', border: 'border-border-light', badge: 'secondary' },
+export const TASK_GROUP_VARIANT_MAP: Record<string, { dot: string; border: string; leftBorder: string; badge: string }> = {
+  // Due date groups
+  overdue: { dot: 'bg-error', border: 'border-border-light', leftBorder: 'border-l-error', badge: 'error' },
+  due_today: { dot: 'bg-warning', border: 'border-border-light', leftBorder: 'border-l-warning', badge: 'warning' },
+  this_week: { dot: 'bg-info', border: 'border-border-light', leftBorder: 'border-l-info', badge: 'info' },
+  later: { dot: 'bg-success', border: 'border-border-light', leftBorder: 'border-l-success', badge: 'success' },
+  no_date: { dot: 'bg-foreground-tertiary', border: 'border-border-light', leftBorder: 'border-l-border', badge: 'secondary' },
+  // Status groups
+  [TaskStatus.BLOCKED]: { dot: 'bg-error', border: 'border-border-light', leftBorder: 'border-l-error', badge: 'error' },
+  [TaskStatus.IN_REVIEW]: { dot: 'bg-warning', border: 'border-border-light', leftBorder: 'border-l-warning', badge: 'warning' },
+  [TaskStatus.IN_PROGRESS]: { dot: 'bg-info', border: 'border-border-light', leftBorder: 'border-l-info', badge: 'info' },
+  [TaskStatus.TODO]: { dot: 'bg-foreground-tertiary', border: 'border-border-light', leftBorder: 'border-l-border', badge: 'secondary' },
+  [TaskStatus.TESTING]: { dot: 'bg-primary', border: 'border-border-light', leftBorder: 'border-l-primary', badge: 'info' },
+  [TaskStatus.BACKLOG]: { dot: 'bg-foreground-tertiary', border: 'border-border-light', leftBorder: 'border-l-border', badge: 'secondary' },
+  // Priority groups
+  [TaskPriority.URGENT]: { dot: 'bg-error', border: 'border-border-light', leftBorder: 'border-l-error', badge: 'error' },
+  [TaskPriority.HIGH]: { dot: 'bg-warning', border: 'border-border-light', leftBorder: 'border-l-warning', badge: 'warning' },
+  [TaskPriority.MEDIUM]: { dot: 'bg-info', border: 'border-border-light', leftBorder: 'border-l-info', badge: 'info' },
+  [TaskPriority.LOW]: { dot: 'bg-foreground-tertiary', border: 'border-border-light', leftBorder: 'border-l-border', badge: 'secondary' },
 };
+
+export const SMART_EXPAND_DEFAULTS: Record<string, Record<string, boolean>> = {
+  dueDate: { overdue: true, due_today: true, this_week: true, later: false, no_date: false },
+  priority: {
+    [TaskPriority.URGENT]: true,
+    [TaskPriority.HIGH]: true,
+    [TaskPriority.MEDIUM]: false,
+    [TaskPriority.LOW]: false,
+  },
+  status: {
+    [TaskStatus.BLOCKED]: true,
+    [TaskStatus.IN_PROGRESS]: true,
+    [TaskStatus.IN_REVIEW]: false,
+    [TaskStatus.TODO]: false,
+    [TaskStatus.TESTING]: false,
+    [TaskStatus.BACKLOG]: false,
+  },
+  project: {},
+};
+
+export const NEXT_ACTION_HINTS: Record<string, string> = {
+  [TaskStatus.BACKLOG]: 'Move to To Do when ready',
+  [TaskStatus.TODO]: 'Start working on this',
+  [TaskStatus.IN_PROGRESS]: 'Submit for review when done',
+  [TaskStatus.IN_REVIEW]: 'Awaiting reviewer feedback',
+  [TaskStatus.TESTING]: 'Verify and mark done',
+  [TaskStatus.BLOCKED]: 'Resolve blocker',
+};
+
+export const STALE_THRESHOLDS: Record<string, number> = {
+  [TaskStatus.IN_PROGRESS]: 3,
+  [TaskStatus.BLOCKED]: 2,
+  [TaskStatus.IN_REVIEW]: 5,
+  [TaskStatus.TODO]: 7,
+};
+
+export const TASK_PRIORITY_FILTER_OPTIONS = [
+  { value: '', label: 'All Priority' },
+  { value: TaskPriority.URGENT, label: 'Urgent' },
+  { value: TaskPriority.HIGH, label: 'High' },
+  { value: TaskPriority.MEDIUM, label: 'Medium' },
+  { value: TaskPriority.LOW, label: 'Low' },
+] as const;
+
+export interface QuickFilterChip {
+  key: string;
+  label: string;
+  filter: { status?: string; priority?: string; dueDateFilter?: string };
+}
+
+export const QUICK_FILTER_CHIPS: QuickFilterChip[] = [
+  { key: 'all', label: 'All', filter: {} },
+  { key: 'overdue', label: 'Overdue', filter: { dueDateFilter: 'overdue' } },
+  { key: 'due-today', label: 'Due Today', filter: { dueDateFilter: 'dueToday' } },
+  { key: 'blocked', label: 'Blocked', filter: { status: TaskStatus.BLOCKED } },
+  { key: 'high-priority', label: 'High/Urgent', filter: { priority: TaskPriority.HIGH } },
+];
 
 // ---------------------------------------------------------------------------
 // Payment constants (for Project Detail - Payments tab)
