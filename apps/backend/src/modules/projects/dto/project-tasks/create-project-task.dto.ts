@@ -7,6 +7,7 @@ import {
 } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsArray,
   IsDateString,
   IsEnum,
@@ -103,9 +104,10 @@ export class CreateProjectTaskDto {
   @IsOptional()
   priority?: TaskPriority;
 
-  @ApiPropertyOptional({ description: 'Task dependencies (UUIDs)', type: [String] })
+  @ApiPropertyOptional({ description: 'Task dependencies (UUIDs, max 50)', type: [String] })
   @IsArray()
   @IsUUID('4', { each: true })
+  @ArrayMaxSize(50)
   @IsOptional()
   dependsOnTaskIds?: string[];
 

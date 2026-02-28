@@ -49,6 +49,9 @@ export interface ProjectTask {
   status: TaskStatus;
   priority: TaskPriority;
   dependsOnTaskIds?: string[];
+  hasDependencyBlockers?: boolean;
+  dependencyNames?: string[];
+  dependencyCodes?: string[];
   completionPercentage: number;
   checklist?: TaskChecklist;
   attachments?: FileAttachment[];
@@ -68,10 +71,23 @@ export interface ProjectTask {
 // My Tasks (cross-project views)
 // ============================================================================
 
+export interface ChecklistProgress {
+  done: number;
+  total: number;
+}
+
 export interface MyTask extends ProjectTask {
   projectNumber: string;
   projectName: string;
   milestoneName?: string;
+  assigneeName?: string;
+  urgencyScore?: number;
+  isOverdue?: boolean;
+  daysSinceLastUpdate?: number;
+  checklistProgress?: ChecklistProgress;
+  dependencyNames?: string[];
+  dependencyCodes?: string[];
+  hasDependencyBlockers?: boolean;
 }
 
 export interface MyTasksProject {
@@ -103,10 +119,15 @@ export interface GroupedMyTasksResponse {
 
 export type GroupByMode = 'dueDate' | 'priority' | 'project' | 'status';
 
+export type DueDateFilter = 'overdue' | 'dueToday' | 'thisWeek';
+
 export interface MyTaskFilters {
   groupBy?: GroupByMode;
   status?: string;
+  priority?: string;
   projectId?: string;
+  search?: string;
+  dueDateFilter?: DueDateFilter;
 }
 
 // ============================================================================

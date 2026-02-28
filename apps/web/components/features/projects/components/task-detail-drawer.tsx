@@ -1,3 +1,8 @@
+/**
+ * @deprecated Use `TaskDrawer` from `@/components/features/tasks` instead.
+ * This component is read-only and has been replaced by the reusable task drawer
+ * which supports full editing capabilities (status, priority, due date, comments, etc.).
+ */
 'use client';
 
 import { TASK_STATUS_TRANSITIONS, TaskStatus } from '@oneohm-epc/shared-types';

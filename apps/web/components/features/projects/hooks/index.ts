@@ -36,6 +36,9 @@ export type {
   MyTasksSummary,
 } from './use-my-tasks';
 
+export { useCollapsedGroups } from './use-collapsed-groups';
+export { useTaskKeyboardNav } from './use-task-keyboard-nav';
+
 export {
   projectDetailKeys,
   useProject,

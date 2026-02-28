@@ -53,7 +53,10 @@ export function useMyTasks(
       const params = new URLSearchParams();
       if (filters.groupBy) params.set('groupBy', filters.groupBy);
       if (filters.status) params.set('status', filters.status);
+      if (filters.priority) params.set('priority', filters.priority);
       if (filters.projectId) params.set('projectId', filters.projectId);
+      if (filters.search) params.set('search', filters.search);
+      if (filters.dueDateFilter) params.set('dueDateFilter', filters.dueDateFilter);
 
       const url = `/tasks/my?${params.toString()}`;
       const { data } = await apiClient.get<GroupedMyTasksResponse>(

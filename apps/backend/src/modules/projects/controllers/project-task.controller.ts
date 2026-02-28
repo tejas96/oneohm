@@ -147,6 +147,14 @@ export class ProjectTaskController {
     };
   }
 
+  @Get('board')
+  @ApiOperation({ summary: 'Get full board data for Kanban view (all columns in one response)' })
+  async getBoardData(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+  ): Promise<unknown> {
+    return this.taskService.getBoardData(projectId);
+  }
+
   @Post(':id/move')
   @ApiOperation({ summary: 'Move task to new status/position (Kanban drag-drop)' })
   @ApiBadRequestResponse({ description: 'Invalid input or dependencies not complete' })

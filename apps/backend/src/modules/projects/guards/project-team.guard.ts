@@ -31,7 +31,7 @@ export class ProjectTeamGuard implements CanActivate {
 
     // Admin bypass - check if user has admin role
     const roles: string[] = user.roles || [];
-    if (roles.includes('admin') || roles.includes('platform_admin')) {
+    if (roles.includes('admin') || roles.includes('super_admin') || roles.includes('platform_admin')) {
       return true;
     }
 

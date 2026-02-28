@@ -1,7 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 
 import { ProjectTaskResponseDto } from './project-task-response.dto';
+
+class ChecklistProgressDto {
+  @ApiProperty({ example: 3 })
+  @Expose()
+  done!: number;
+
+  @ApiProperty({ example: 5 })
+  @Expose()
+  total!: number;
+}
 
 /**
  * MyTaskResponseDto
@@ -21,4 +31,21 @@ export class MyTaskResponseDto extends ProjectTaskResponseDto {
   @ApiPropertyOptional({ example: 'Installation', description: 'Milestone name if task is linked to one' })
   @Expose()
   milestoneName?: string;
+
+  @ApiPropertyOptional({ example: 145, description: 'Computed urgency score for intelligent sorting' })
+  @Expose()
+  urgencyScore?: number;
+
+  @ApiPropertyOptional({ example: true, description: 'Whether the task is past its due date' })
+  @Expose()
+  isOverdue?: boolean;
+
+  @ApiPropertyOptional({ example: 5, description: 'Days since the task was last updated' })
+  @Expose()
+  daysSinceLastUpdate?: number;
+
+  @ApiPropertyOptional({ type: ChecklistProgressDto, description: 'Checklist completion progress' })
+  @Expose()
+  @Type(() => ChecklistProgressDto)
+  checklistProgress?: ChecklistProgressDto;
 }

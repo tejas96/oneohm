@@ -2,7 +2,9 @@
 
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { useMemo } from 'react';
 
+import { useMyTasksSummary } from '@/components/features/tasks';
 import { Badge } from '@/components/ui/badge';
 import { getFilteredPanelByPath, useFilteredNavigation, useRoutes } from '@/lib/hooks';
 import type { NavItem, NavBadgeVariant, StatusDotColor } from '@/lib/types';
@@ -46,6 +48,18 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
   const { pathname, searchParams } = useRoutes();
   const { navigation } = useFilteredNavigation();
   const panelData = getFilteredPanelByPath(navigation, pathname);
+  const { data: tasksSummary } = useMyTasksSummary();
+
+  const dynamicBadges = useMemo<Record<string, { value: number | string; variant?: NavBadgeVariant }>>(() => {
+    const badges: Record<string, { value: number | string; variant?: NavBadgeVariant }> = {};
+    if (tasksSummary && tasksSummary.total > 0) {
+      badges['projects-my-tasks'] = {
+        value: tasksSummary.total,
+        variant: tasksSummary.overdue > 0 ? 'error' : undefined,
+      };
+    }
+    return badges;
+  }, [tasksSummary]);
   
   // Build current full URL for comparison (pathname + search params)
   const searchString = searchParams.toString();
@@ -97,7 +111,10 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
     }
     
     const Icon = item.icon;
-    const badgeVariant = item.badgeVariant ? BADGE_VARIANT_MAP[item.badgeVariant] : 'secondary';
+    const dynamicBadge = dynamicBadges[item.id];
+    const displayBadge = item.badge ?? dynamicBadge?.value;
+    const resolvedBadgeVariant = dynamicBadge?.variant ?? item.badgeVariant;
+    const badgeVariant = resolvedBadgeVariant ? BADGE_VARIANT_MAP[resolvedBadgeVariant] : 'secondary';
 
     return (
       <Link
@@ -130,10 +147,10 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
         
         <span className="flex-1 truncate">{item.label}</span>
         
-        {/* Badge with variant */}
-        {item.badge !== undefined && (
+        {/* Badge with variant (static or dynamic) */}
+        {displayBadge !== undefined && (
           <Badge variant={badgeVariant} size="xs" className="ml-2">
-            {item.badge}
+            {displayBadge}
           </Badge>
         )}
       </Link>
