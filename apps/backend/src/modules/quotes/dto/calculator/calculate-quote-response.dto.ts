@@ -270,8 +270,8 @@ export class PricingSummaryDto {
   @ApiProperty({ description: 'Sum of all line items before tax in INR', example: 250000 })
   basePrice!: number;
 
-  @ApiProperty({ description: 'GST at 12% on 70% of base in INR', example: 21000 })
-  gst12Amount!: number;
+  @ApiProperty({ description: 'GST at 5% on solar equipment (panels + inverters) in INR', example: 10500 })
+  gst5Amount!: number;
 
   @ApiProperty({ description: 'GST at 18% on 30% of base in INR', example: 13500 })
   gst18Amount!: number;

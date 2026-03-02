@@ -154,7 +154,7 @@ export interface CalculatedSubsidy {
 
 export interface PricingSummary {
   basePrice: number;
-  gst12Amount: number;
+  gst5Amount: number;
   gst18Amount: number;
   totalGst: number;
   totalPrice: number;

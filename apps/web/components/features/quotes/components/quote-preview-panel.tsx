@@ -500,12 +500,19 @@ export function QuotePreviewPanel({
           </p>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-foreground-secondary">Base Price</span>
+              <span className="text-foreground-secondary">
+                Base Price
+                {calculation.profitabilityPercent > 0 && (
+                  <span className="ml-1 text-xs text-foreground-tertiary">
+                    + Margin ({calculation.profitabilityPercent}%)
+                  </span>
+                )}
+              </span>
               <span>{formatCurrency(calculation.pricing.basePrice)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-foreground-secondary">GST on Equipment (5%)</span>
-              <span>{formatCurrency(calculation.pricing.gst12Amount)}</span>
+              <span>{formatCurrency(calculation.pricing.gst5Amount)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-foreground-secondary">GST on Services (18%)</span>
@@ -515,14 +522,6 @@ export function QuotePreviewPanel({
               <span className="text-foreground-secondary">Total GST</span>
               <span>{formatCurrency(calculation.pricing.totalGst)}</span>
             </div>
-            {calculation.profitabilityPercent > 0 && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-foreground-secondary">
-                  Margin ({calculation.profitabilityPercent}%)
-                </span>
-                <span>+{formatCurrency(calculation.profitabilityAmount)}</span>
-              </div>
-            )}
             <div className="flex items-center justify-between border-t border-border-light pt-1.5 text-sm font-medium">
               <span>Gross Total</span>
               <span>{formatCurrency(calculation.pricing.totalPrice)}</span>

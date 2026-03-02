@@ -224,21 +224,23 @@ export class QuoteCalculatorService {
       input.dcrPreference,
     );
 
-    // 9. Calculate pricing summary
-    const pricing = this.calculatePricing(panels, inverters, structure, installation, quoteConfig);
-
-    // 10. Calculate profitability and add to total price
+    // 9. Resolve margin percentage before pricing so it can be applied pre-tax
     const profitabilityPercent = Number(
       installationPricing.costComponents?.profitability_percent || 0,
     );
-    // Calculate margin on base pricing (before adding margin)
-    const profitabilityAmount = Math.round((pricing.finalPrice * profitabilityPercent) / 100);
 
-    // Add margin to the pricing
-    pricing.totalPrice = Math.round((pricing.totalPrice + profitabilityAmount) * 100) / 100;
-    pricing.finalPrice = Math.round((pricing.finalPrice + profitabilityAmount) * 100) / 100;
+    // 10. Calculate pricing summary – margin is applied to raw base BEFORE GST
+    //     so that tax is computed on the full pre-tax value (components + margin)
+    const { profitabilityAmount, ...pricing } = this.calculatePricing(
+      panels,
+      inverters,
+      structure,
+      installation,
+      quoteConfig,
+      profitabilityPercent,
+    );
 
-    // 11. Calculate effective price (final price with margin, minus subsidy)
+    // 11. Calculate effective price (final price with margin already included, minus subsidy)
     const effectivePrice = pricing.finalPrice - subsidy.amount;
 
     // Determine if any overrides or manual counts were used
@@ -2004,47 +2006,48 @@ export class QuoteCalculatorService {
     inverters: CalculatedInverterConfig,
     structure: { lineTotal: number; gstAmount: number },
     installation: CalculatedInstallationCost,
-    _quoteConfig: QuoteConfiguration, // Kept for future use, using per-item GST now
+    _quoteConfig: QuoteConfiguration, // Kept for future use, using composite GST calculation
+    profitabilityPercent: number,
   ): {
     basePrice: number;
-    gst12Amount: number;
+    gst5Amount: number;
     gst18Amount: number;
     totalGst: number;
     totalPrice: number;
     discountAmount: number;
     finalPrice: number;
+    profitabilityAmount: number;
   } {
-    // Sum all base prices (before tax)
+    // Sum all component costs (before margin and tax)
     const panelsTotal = panels.reduce((sum, p) => sum + p.lineTotal, 0);
-    const basePrice =
+    const rawBasePrice =
       panelsTotal + inverters.totalCost + structure.lineTotal + installation.totalBeforeTax;
 
-    // Use actual per-item GST amounts instead of composite rate
-    // GST at lower rates (5% for solar equipment - panels, inverters)
-    const panelsGst = panels.reduce((sum, p) => sum + p.gstAmount, 0);
-    const invertersGst = inverters.totalGst;
-    const gst5Amount = panelsGst + invertersGst;
+    // Apply margin to raw base BEFORE tax so GST is computed on the full pre-tax value
+    const profitabilityAmount = Math.round((rawBasePrice * profitabilityPercent) / 100);
+    const basePrice = rawBasePrice + profitabilityAmount;
 
-    // GST at higher rate (18% for structure and installation services)
-    const structureGst = structure.gstAmount;
-    const installationGst = installation.gstAmount;
-    const gst18Amount = structureGst + installationGst;
+    // Composite GST on the margin-inclusive base:
+    // - 5% GST on 70% of base price (solar equipment portion)
+    // - 18% GST on 30% of base price (services portion)
+    const equipmentPortion = (basePrice * 70) / 100;
+    const servicesPortion = (basePrice * 30) / 100;
 
-    // For backward compatibility, map 5% GST to gst12Amount field
-    // (gst12Amount now represents lower-rate GST from equipment)
-    const gst12Amount = gst5Amount;
+    const gst5Amount = (equipmentPortion * 5) / 100;
+    const gst18Amount = (servicesPortion * 18) / 100;
 
-    const totalGst = gst12Amount + gst18Amount;
+    const totalGst = gst5Amount + gst18Amount;
     const totalPrice = basePrice + totalGst;
 
     return {
-      basePrice: Math.round(basePrice * 100) / 100,
-      gst12Amount: Math.round(gst12Amount * 100) / 100, // Equipment GST (5%)
-      gst18Amount: Math.round(gst18Amount * 100) / 100, // Services GST (18%)
+      basePrice: Math.round(basePrice * 100) / 100, // raw components + margin (taxable base)
+      gst5Amount: Math.round(gst5Amount * 100) / 100,
+      gst18Amount: Math.round(gst18Amount * 100) / 100,
       totalGst: Math.round(totalGst * 100) / 100,
       totalPrice: Math.round(totalPrice * 100) / 100,
       discountAmount: 0,
       finalPrice: Math.round(totalPrice * 100) / 100,
+      profitabilityAmount: Math.round(profitabilityAmount * 100) / 100,
     };
   }
 
