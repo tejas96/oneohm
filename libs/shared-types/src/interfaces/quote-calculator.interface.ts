@@ -638,9 +638,9 @@ export interface QuoteCalculationResult {
   pricing: {
     /** Sum of all line items before tax */
     basePrice: number;
-    /** GST at 12% on 70% of base */
-    gst12Amount: number;
-    /** GST at 18% on 30% of base */
+    /** GST at 5% on solar equipment (panels + inverters) */
+    gst5Amount: number;
+    /** GST at 18% on services (structure + installation) */
     gst18Amount: number;
     /** Total GST */
     totalGst: number;

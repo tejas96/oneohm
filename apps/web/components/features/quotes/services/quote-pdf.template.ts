@@ -65,7 +65,7 @@ export function generateQuoteHtml(data: QuotePdfData): string {
   const dcrPanels = calculation.panels.filter((p) => p.isDcr);
   const nonDcrPanels = calculation.panels.filter((p) => !p.isDcr);
 
-  const displayGst5Amount = calculation.pricing.gst12Amount;
+  const displayGst5Amount = calculation.pricing.gst5Amount;
   const displayGst18Amount = calculation.pricing.gst18Amount;
   const totalTax = calculation.pricing.totalGst;
   const projectPriceExcludingTax = calculation.pricing.totalPrice - totalTax;

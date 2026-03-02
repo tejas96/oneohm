@@ -52,6 +52,16 @@ export class CustomerService {
     let user = await this.userRepository.findByPhone(createDto.phone);
 
     if (!user) {
+      // Guard against duplicate email before attempting user creation
+      if (createDto.email) {
+        const existingEmailUser = await this.userRepository.findByEmail(createDto.email);
+        if (existingEmailUser) {
+          throw new ConflictException(
+            `A customer with email '${createDto.email}' is already registered`,
+          );
+        }
+      }
+
       this.logger.log(`Creating new user for phone: ${createDto.phone}`);
       user = await this.userRepository.create({
         phone: createDto.phone,

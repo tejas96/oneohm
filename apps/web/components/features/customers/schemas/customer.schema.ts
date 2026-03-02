@@ -20,8 +20,9 @@ export const createCustomerProfileSchema = z.object({
     .regex(/^[6-9]\d{9}$/, 'Enter a valid Indian mobile number'),
   email: z
     .string()
-    .min(1, 'Email is required')
-    .email('Invalid email address'),
+    .email('Invalid email address')
+    .optional()
+    .or(z.literal('')),
   alternatePhone: z
     .string()
     .regex(/^\d{0,10}$/, 'Phone must contain only digits')
@@ -29,8 +30,9 @@ export const createCustomerProfileSchema = z.object({
     .or(z.literal('')),
   address: z
     .string()
-    .min(1, 'Address is required')
-    .max(500, 'Address too long'),
+    .max(500, 'Address too long')
+    .optional()
+    .or(z.literal('')),
   city: z
     .string()
     .min(1, 'City is required')

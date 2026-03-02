@@ -371,7 +371,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
               {/* Email */}
               <div className="space-y-2">
                 <Label htmlFor="email">
-                  Email Address <span className="text-error">*</span>
+                  Email Address
                 </Label>
                 <Input
                   id="email"
@@ -400,7 +400,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
               {/* Street Address */}
               <div className="space-y-2">
                 <Label htmlFor="address">
-                  Street Address <span className="text-error">*</span>
+                  Street Address
                 </Label>
                 <Input
                   id="address"

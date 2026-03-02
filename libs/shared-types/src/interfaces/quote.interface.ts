@@ -60,8 +60,10 @@ export interface CalculatorInputs {
  */
 export interface PricingBreakdown {
   basePrice: number;
-  gst12On70Percent: number;
-  gst18On30Percent: number;
+  /** GST at 5% on solar equipment (panels + inverters) */
+  gst5OnEquipment: number;
+  /** GST at 18% on services (structure + installation) */
+  gst18OnServices: number;
   totalGst: number;
   totalPrice: number;
   discountAmount: number;

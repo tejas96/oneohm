@@ -79,7 +79,7 @@ export class QuoteCalculatorController {
       - Inverter combination logic (e.g., 60KW → 50KW + 10KW)
       - Installation cost calculation
       - Tiered subsidy calculation
-      - GST split (70% @ 12%, 30% @ 18%)
+      - GST split (70% @ 5%, 30% @ 18%)
     `,
   })
   @ApiResponse({
@@ -95,7 +95,8 @@ export class QuoteCalculatorController {
     @OrganizationContext() organizationId: string,
     @Body() input: CalculateQuoteDto,
   ): Promise<CalculateQuoteResponseDto> {
-    return this.calculatorService.calculateQuote(organizationId, input);
+    const result = await this.calculatorService.calculateQuote(organizationId, input);
+    return result;
   }
 
   /**
@@ -170,8 +171,8 @@ export class QuoteCalculatorController {
 
     const pricingBreakdown: PricingBreakdown = {
       basePrice: calculation.pricing.basePrice,
-      gst12On70Percent: calculation.pricing.gst12Amount,
-      gst18On30Percent: calculation.pricing.gst18Amount,
+      gst5OnEquipment: calculation.pricing.gst5Amount,
+      gst18OnServices: calculation.pricing.gst18Amount,
       totalGst: calculation.pricing.totalGst,
       totalPrice: calculation.pricing.totalPrice,
       discountAmount,

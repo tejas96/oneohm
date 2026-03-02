@@ -596,18 +596,18 @@ export class QuoteService {
     const portion1 = (basePrice * gstConfig.rate1Percentage) / 100;
     const portion2 = (basePrice * gstConfig.rate2Percentage) / 100;
 
-    const gst12On70Percent = (portion1 * gstConfig.rate1) / 100;
-    const gst18On30Percent = (portion2 * gstConfig.rate2) / 100;
-    const totalGst = gst12On70Percent + gst18On30Percent;
+    const gstOnEquipment = (portion1 * gstConfig.rate1) / 100;
+    const gstOnServices = (portion2 * gstConfig.rate2) / 100;
+    const totalGst = gstOnEquipment + gstOnServices;
 
     const totalPrice = basePrice + totalGst;
     const finalPrice = totalPrice - discountAmount;
 
-    return {
+    const result = {
       pricingBreakdown: {
         basePrice: Math.round(basePrice * 100) / 100,
-        gst12On70Percent: Math.round(gst12On70Percent * 100) / 100,
-        gst18On30Percent: Math.round(gst18On30Percent * 100) / 100,
+        gst5OnEquipment: Math.round(gstOnEquipment * 100) / 100,
+        gst18OnServices: Math.round(gstOnServices * 100) / 100,
         totalGst: Math.round(totalGst * 100) / 100,
         totalPrice: Math.round(totalPrice * 100) / 100,
         discountAmount: Math.round(discountAmount * 100) / 100,
@@ -616,5 +616,6 @@ export class QuoteService {
       },
       finalPrice: Math.round(finalPrice * 100) / 100,
     };
+    return result;
   }
 }
