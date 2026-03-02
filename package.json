@@ -133,7 +133,7 @@
     "@nx/next": "^22.0.2",
     "@nx/react": "^22.0.2",
     "@nx/web": "22.0.2",
-    "@nx/webpack": "22.0.2",
+    "@nx/webpack": "22.5.3",
     "@nx/workspace": "^22.0.2",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.7",
     "@svgr/webpack": "^8.0.1",
