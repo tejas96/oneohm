@@ -25,16 +25,7 @@ export interface OtpInputProps {
 
 const OtpInput = React.forwardRef<HTMLDivElement, OtpInputProps>(
   (
-    {
-      length = 6,
-      value = '',
-      onChange,
-      onComplete,
-      disabled,
-      error,
-      autoFocus = true,
-      className,
-    },
+    { length = 6, value = '', onChange, onComplete, disabled, error, autoFocus = true, className },
     ref,
   ) => {
     const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);

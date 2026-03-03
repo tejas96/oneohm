@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  FollowupPriority,
-  FollowupStatus,
-  FollowupType,
-} from '@oneohm-epc/shared-types';
+import { FollowupPriority, FollowupStatus, FollowupType } from '@oneohm-epc/shared-types';
 import {
   useQuery,
   useMutation,
@@ -157,11 +153,9 @@ export function useCreateFollowup(): UseMutationResult<
 
   return useMutation({
     mutationFn: async (data: CreateFollowupData): Promise<FollowupResponse> => {
-      const { data: response } = await apiClient.post<FollowupResponse>(
-        '/followups',
-        data,
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
+      const { data: response } = await apiClient.post<FollowupResponse>('/followups', data, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
       return response;
     },
     onSuccess: () => {
@@ -191,16 +185,16 @@ export function useUpdateFollowup(): UseMutationResult<
       id: string;
       data: UpdateFollowupData;
     }): Promise<FollowupResponse> => {
-      const { data: response } = await apiClient.patch<FollowupResponse>(
-        `/followups/${id}`,
-        data,
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
+      const { data: response } = await apiClient.patch<FollowupResponse>(`/followups/${id}`, data, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
       return response;
     },
     onSuccess: (_, variables) => {
       void queryClient.invalidateQueries({ queryKey: followupKeys.lists(organizationId) });
-      void queryClient.invalidateQueries({ queryKey: followupKeys.detail(organizationId, variables.id) });
+      void queryClient.invalidateQueries({
+        queryKey: followupKeys.detail(organizationId, variables.id),
+      });
     },
   });
 }

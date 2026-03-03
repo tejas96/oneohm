@@ -36,7 +36,6 @@ import {
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
-
 // ============================================================================
 // Types
 // ============================================================================
@@ -87,7 +86,7 @@ export interface DataTableProps<TData, TValue> {
  */
 export function createSortableHeader(
   column: { getIsSorted: () => false | 'asc' | 'desc'; toggleSorting: (desc?: boolean) => void },
-  label: string
+  label: string,
 ): React.ReactNode {
   return (
     <Button
@@ -226,7 +225,11 @@ export function DataTable<TData, TValue>({
               <div className="flex-1 max-w-md">
                 <Input
                   placeholder={searchPlaceholder}
-                  value={searchColumn ? (table.getColumn(searchColumn)?.getFilterValue() as string) ?? '' : globalFilter}
+                  value={
+                    searchColumn
+                      ? ((table.getColumn(searchColumn)?.getFilterValue() as string) ?? '')
+                      : globalFilter
+                  }
                   onChange={(e) => handleSearch(e.target.value)}
                   leftIcon={<Search />}
                   size="default"
@@ -276,7 +279,11 @@ export function DataTable<TData, TValue>({
                     key={header.id}
                     sortable={header.column.getCanSort()}
                     sorted={header.column.getIsSorted()}
-                    onClick={header.column.getCanSort() ? header.column.getToggleSortingHandler() : undefined}
+                    onClick={
+                      header.column.getCanSort()
+                        ? header.column.getToggleSortingHandler()
+                        : undefined
+                    }
                   >
                     {header.isPlaceholder
                       ? null

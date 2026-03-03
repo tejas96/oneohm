@@ -175,7 +175,10 @@ export class PaymentService {
   // ============================================
   // STATISTICS
   // ============================================
-  async getProjectPaymentSummary(projectId: string, organizationId: string): Promise<{
+  async getProjectPaymentSummary(
+    projectId: string,
+    organizationId: string,
+  ): Promise<{
     totalExpected: number;
     totalPaid: number;
     pendingAmount: number;

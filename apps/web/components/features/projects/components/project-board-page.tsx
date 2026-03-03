@@ -98,9 +98,10 @@ export function ProjectBoardPage(): React.JSX.Element {
 
   const { data: projectsData } = useProjects({ limit: 100 });
   const projects = useMemo(
-    () => (projectsData?.data ?? []).filter(
-      (p) => p.status !== ProjectStatus.COMPLETED && p.status !== ProjectStatus.CANCELLED,
-    ),
+    () =>
+      (projectsData?.data ?? []).filter(
+        (p) => p.status !== ProjectStatus.COMPLETED && p.status !== ProjectStatus.CANCELLED,
+      ),
     [projectsData],
   );
 
@@ -215,10 +216,7 @@ export function ProjectBoardPage(): React.JSX.Element {
   return (
     <div className="flex h-full flex-col gap-3 p-4">
       <div className="flex items-center gap-3">
-        <Select
-          value={selectedProjectId}
-          onValueChange={(v) => setFilter('project', v)}
-        >
+        <Select value={selectedProjectId} onValueChange={(v) => setFilter('project', v)}>
           <SelectTrigger className="h-8 w-[240px] text-xs">
             <SelectValue placeholder="Select project" />
           </SelectTrigger>
@@ -248,9 +246,7 @@ export function ProjectBoardPage(): React.JSX.Element {
       {boardError && (
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
           <AlertCircle className="h-10 w-10 text-red-500" />
-          <p className="text-sm text-foreground-secondary">
-            Failed to load board data
-          </p>
+          <p className="text-sm text-foreground-secondary">Failed to load board data</p>
           <Button variant="outline" size="sm" onClick={() => void refetchBoard()}>
             Retry
           </Button>

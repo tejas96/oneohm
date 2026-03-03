@@ -1,11 +1,11 @@
 /**
  * Centralized Route Configuration
  * TRUE Single source of truth - paths defined ONCE in ROUTES, types derived automatically
- * 
+ *
  * To add a new route:
  * 1. Add path to ROUTES object
  * 2. If it has params, add to ROUTE_PARAM_TYPES
- * 
+ *
  * This file is imported by:
  * - useRoutes hook (for type-safe navigation)
  * - middleware.ts (for route protection)
@@ -194,7 +194,7 @@ type ExtractPaths<T> = T extends string
 /** All valid route paths (derived from ROUTES) */
 export type RoutePath = ExtractPaths<typeof ROUTES>;
 
-/** 
+/**
  * Route parameter types - only define for routes WITH params
  * Routes not listed here have no required params
  */
@@ -203,7 +203,7 @@ export interface RouteParamTypes {
   '/login': { redirect?: string };
   '/otp-verify': { phone?: string };
   '/reset-password': { token?: string };
-  
+
   // Dynamic routes with [id]
   '/crm/leads/[id]': { id: string };
   '/customers/[id]': { id: string };
@@ -219,15 +219,30 @@ export interface RouteParamTypes {
   '/service/[id]': { id: string };
   '/users/[id]': { id: string };
   '/employees/[id]': { id: string };
-  
+
   // Routes with query filters
   '/quotes': { status?: 'draft' | 'sent' | 'viewed' | 'accepted' | 'rejected' | 'expired' };
   '/projects/list': {
-    status?: 'draft' | 'planning' | 'approved' | 'in_progress' | 'testing' | 'on_hold' | 'completed' | 'cancelled';
+    status?:
+      | 'draft'
+      | 'planning'
+      | 'approved'
+      | 'in_progress'
+      | 'testing'
+      | 'on_hold'
+      | 'completed'
+      | 'cancelled';
     priority?: 'low' | 'normal' | 'high' | 'urgent';
     projectType?: 'residential' | 'residential_apartment' | 'commercial' | 'industrial';
     search?: string;
-    sortBy?: 'name' | 'createdAt' | 'endDate' | 'systemSizeKw' | 'estimatedCost' | 'progressPercentage' | 'status';
+    sortBy?:
+      | 'name'
+      | 'createdAt'
+      | 'endDate'
+      | 'systemSizeKw'
+      | 'estimatedCost'
+      | 'progressPercentage'
+      | 'status';
     sortOrder?: 'ASC' | 'DESC';
     view?: 'card' | 'table';
     page?: string;
@@ -247,10 +262,7 @@ export type RouteParams<T extends RoutePath> = T extends keyof RouteParamTypes
 // ============================================
 
 /** Routes that don't require authentication (fully public) */
-export const PUBLIC_ROUTES: string[] = [
-  '/not-found',
-  '/favicon.ico',
-];
+export const PUBLIC_ROUTES: string[] = ['/not-found', '/favicon.ico'];
 
 /** Routes that are only for unauthenticated users (redirect if logged in) */
 export const AUTH_ROUTES = [
@@ -282,7 +294,7 @@ export const ADMIN_ROUTES = [
 export function buildRoute<T extends RoutePath>(
   path: T,
   params?: RouteParams<T> extends undefined ? undefined : Partial<RouteParams<T>>,
-  query?: Record<string, string | number | boolean | undefined>
+  query?: Record<string, string | number | boolean | undefined>,
 ): string {
   let url = path as string;
 
@@ -336,10 +348,7 @@ export function matchRoute(pathname: string, pattern: RoutePath): boolean {
  * @example
  * extractParams('/customers/123', '/customers/[id]') // { id: '123' }
  */
-export function extractParams(
-  pathname: string,
-  pattern: RoutePath
-): Record<string, string> | null {
+export function extractParams(pathname: string, pattern: RoutePath): Record<string, string> | null {
   const patternParts = pattern.split('/');
   const pathParts = pathname.split('/');
 
@@ -385,39 +394,39 @@ export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
   [ROUTES.FOLLOWUPS.LIST]: 'crm',
   [ROUTES.PIPELINE.HOME]: 'crm',
   [ROUTES.CRM.HOME]: 'crm',
-  
+
   // Quotes routes
   [ROUTES.QUOTES.LIST]: 'quotes',
-  
+
   // Projects routes
   [ROUTES.PROJECTS.DASHBOARD]: 'projects',
-  
+
   // Inventory routes
   [ROUTES.INVENTORY.LIST]: 'inventory',
   [ROUTES.INVENTORY.PURCHASE_ORDERS]: 'inventory',
-  
+
   // Finance routes
   [ROUTES.FINANCE.HOME]: 'finance',
   [ROUTES.FINANCE.INVOICES]: 'finance',
   [ROUTES.FINANCE.PAYMENTS]: 'finance',
-  
+
   // Service routes
   [ROUTES.SERVICE.HOME]: 'service',
   [ROUTES.SERVICE.AMC]: 'service',
-  
+
   // Analytics routes
   [ROUTES.ANALYTICS.HOME]: 'analytics',
-  
+
   // More/Settings routes
   [ROUTES.ACCOUNT.SETTINGS]: 'more',
   [ROUTES.MORE.HOME]: 'more',
-  
+
   // Help routes
   [ROUTES.HELP.HOME]: 'help',
-  
+
   // Admin routes
   [ROUTES.ADMIN.HOME]: 'admin',
-  
+
   // Dashboard (default)
   [ROUTES.DASHBOARD.HOME]: 'dashboard',
 };
@@ -429,12 +438,16 @@ export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
 export function getPanelKeyForPath(pathname: string): string {
   // Sort keys by length (descending) to match most specific route first
   const sortedKeys = Object.keys(ROUTE_TO_PANEL_MAP).sort((a, b) => b.length - a.length);
-  
+
   for (const prefix of sortedKeys) {
-    if (pathname === prefix || pathname.startsWith(`${prefix}/`) || pathname.startsWith(`${prefix}?`)) {
+    if (
+      pathname === prefix ||
+      pathname.startsWith(`${prefix}/`) ||
+      pathname.startsWith(`${prefix}?`)
+    ) {
       return ROUTE_TO_PANEL_MAP[prefix] ?? 'dashboard';
     }
   }
-  
+
   return 'dashboard';
 }

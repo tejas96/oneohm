@@ -86,7 +86,9 @@ export function LeadTemperatureSelector({
       const nextOption = TEMPERATURE_OPTIONS[nextIndex] as TemperatureOption;
       handleSelect(nextOption.value);
       // Focus the next element
-      const nextElement = document.querySelector(`[data-temp="${nextOption.value}"]`) as HTMLElement;
+      const nextElement = document.querySelector(
+        `[data-temp="${nextOption.value}"]`,
+      ) as HTMLElement;
       nextElement?.focus();
     } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
       e.preventDefault();
@@ -94,7 +96,9 @@ export function LeadTemperatureSelector({
       const prevOption = TEMPERATURE_OPTIONS[prevIndex] as TemperatureOption;
       handleSelect(prevOption.value);
       // Focus the previous element
-      const prevElement = document.querySelector(`[data-temp="${prevOption.value}"]`) as HTMLElement;
+      const prevElement = document.querySelector(
+        `[data-temp="${prevOption.value}"]`,
+      ) as HTMLElement;
       prevElement?.focus();
     }
   };
@@ -125,13 +129,13 @@ export function LeadTemperatureSelector({
                   ? cn(option.selectedBorder, option.selectedBg)
                   : 'border-border-light bg-background hover:border-border-medium',
                 disabled && 'opacity-50 cursor-not-allowed',
-                error && !isSelected && 'border-error/50'
+                error && !isSelected && 'border-error/50',
               )}
             >
               <div className="flex items-center gap-3">
                 {/* Color dot */}
                 <div className={cn('size-icon-sm rounded-full shrink-0', option.dotColor)} />
-                
+
                 {/* Label and description */}
                 <div>
                   <div className="font-medium text-foreground">{option.label}</div>
@@ -144,9 +148,7 @@ export function LeadTemperatureSelector({
       </div>
 
       {/* Error message */}
-      {error && errorMessage && (
-        <p className="text-xs text-error">{errorMessage}</p>
-      )}
+      {error && errorMessage && <p className="text-xs text-error">{errorMessage}</p>}
     </div>
   );
 }

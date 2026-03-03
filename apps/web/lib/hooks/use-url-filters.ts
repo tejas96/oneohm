@@ -72,21 +72,18 @@ export function useUrlFilters<T extends Record<string, string>>(
     window.history.replaceState(null, '', url);
   }, [filters]);
 
-  const setFilter = useCallback(
-    (keyOrUpdates: keyof T | Partial<T>, value?: string) => {
-      userChangedRef.current = true;
-      setFilters((prev) => {
-        const next: Record<string, string> = { ...prev };
-        if (typeof keyOrUpdates === 'string') {
-          next[keyOrUpdates] = value ?? '';
-        } else {
-          Object.assign(next, keyOrUpdates);
-        }
-        return next as T;
-      });
-    },
-    [],
-  );
+  const setFilter = useCallback((keyOrUpdates: keyof T | Partial<T>, value?: string) => {
+    userChangedRef.current = true;
+    setFilters((prev) => {
+      const next: Record<string, string> = { ...prev };
+      if (typeof keyOrUpdates === 'string') {
+        next[keyOrUpdates] = value ?? '';
+      } else {
+        Object.assign(next, keyOrUpdates);
+      }
+      return next as T;
+    });
+  }, []);
 
   const clearFilters = useCallback(() => {
     userChangedRef.current = true;

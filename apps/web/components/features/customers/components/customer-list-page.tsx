@@ -29,7 +29,13 @@ import { DeleteCustomerModal } from './delete-customer-modal';
 import { ImportCustomersModal } from './import-customers-modal';
 import { useCustomers, type Customer } from '../hooks';
 
-import { DataTable, EmptyState, FilterTabs, TablePagination, type FilterTab } from '@/components/shared';
+import {
+  DataTable,
+  EmptyState,
+  FilterTabs,
+  TablePagination,
+  type FilterTab,
+} from '@/components/shared';
 import {
   Avatar,
   AvatarFallback,
@@ -222,7 +228,8 @@ export function CustomerListPage(): JSX.Element {
     limit: pageSize,
     search: debouncedSearch.length >= 2 ? debouncedSearch : undefined,
     status: debouncedStatusFilter !== 'all' ? (debouncedStatusFilter as CustomerStatus) : undefined,
-    leadSource: debouncedLeadSourceFilter !== 'all' ? (debouncedLeadSourceFilter as LeadSource) : undefined,
+    leadSource:
+      debouncedLeadSourceFilter !== 'all' ? (debouncedLeadSourceFilter as LeadSource) : undefined,
     sortBy: debouncedSortBy,
     sortOrder: debouncedSortOrder,
   });
@@ -269,17 +276,20 @@ export function CustomerListPage(): JSX.Element {
   };
 
   // Memoized sort handler for column headers
-  const handleSort = useCallback((field: CustomerSortField) => {
-    if (sortBy === field) {
-      // Same column clicked - toggle sort order
-      setSortOrder((current) => (current === SortOrder.ASC ? SortOrder.DESC : SortOrder.ASC));
-    } else {
-      // Different column clicked - switch to new column with ASC
-      setSortBy(field);
-      setSortOrder(SortOrder.ASC);
-    }
-    setPage(1);
-  }, [sortBy]);
+  const handleSort = useCallback(
+    (field: CustomerSortField) => {
+      if (sortBy === field) {
+        // Same column clicked - toggle sort order
+        setSortOrder((current) => (current === SortOrder.ASC ? SortOrder.DESC : SortOrder.ASC));
+      } else {
+        // Different column clicked - switch to new column with ASC
+        setSortBy(field);
+        setSortOrder(SortOrder.ASC);
+      }
+      setPage(1);
+    },
+    [sortBy],
+  );
 
   // Sortable column header component
   const SortableHeader = useCallback(
@@ -304,7 +314,7 @@ export function CustomerListPage(): JSX.Element {
         </button>
       );
     },
-    [sortBy, sortOrder, handleSort]
+    [sortBy, sortOrder, handleSort],
   );
 
   // Table columns matching UX spec
@@ -414,7 +424,7 @@ export function CustomerListPage(): JSX.Element {
             <span
               className={cn(
                 'px-1.5 py-0.5 text-2xs font-medium rounded',
-                LEAD_SOURCE_COLORS[source] || 'bg-muted text-foreground-secondary'
+                LEAD_SOURCE_COLORS[source] || 'bg-muted text-foreground-secondary',
               )}
             >
               {LEAD_SOURCE_LABELS[source] || source}
@@ -465,7 +475,7 @@ export function CustomerListPage(): JSX.Element {
             <span
               className={cn(
                 'text-sm',
-                creatorName === 'Self' ? 'text-primary font-medium' : 'text-foreground-secondary'
+                creatorName === 'Self' ? 'text-primary font-medium' : 'text-foreground-secondary',
               )}
             >
               {creatorName || '-'}
@@ -527,7 +537,7 @@ export function CustomerListPage(): JSX.Element {
         ),
       },
     ],
-    [router, SortableHeader]
+    [router, SortableHeader],
   );
 
   // Loading state (initial load only)

@@ -95,7 +95,8 @@ export function formatRelativeDate(date: string | Date): string {
   const diffMs = target.getTime() - now.getTime();
   const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffDays < 0) return `Overdue by ${Math.abs(diffDays)} day${Math.abs(diffDays) === 1 ? '' : 's'}`;
+  if (diffDays < 0)
+    return `Overdue by ${Math.abs(diffDays)} day${Math.abs(diffDays) === 1 ? '' : 's'}`;
   if (diffDays === 0) return 'Due today';
   if (diffDays <= 7) return `Due in ${diffDays} day${diffDays === 1 ? '' : 's'}`;
   return formatDate(d, 'medium');

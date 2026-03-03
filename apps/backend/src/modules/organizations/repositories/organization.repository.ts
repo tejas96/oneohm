@@ -103,9 +103,7 @@ export class OrganizationRepository {
   }): Promise<{ items: OrganizationEntity[]; total: number }> {
     const { limit = 10, offset = 0, status, search } = params;
 
-    const qb = this.repository
-      .createQueryBuilder('org')
-      .where('org.deletedAt IS NULL');
+    const qb = this.repository.createQueryBuilder('org').where('org.deletedAt IS NULL');
 
     if (status) {
       qb.andWhere('org.status = :status', { status });

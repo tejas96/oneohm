@@ -68,9 +68,7 @@ export function FollowupMiniList({
   onViewAll,
   onMarkComplete,
 }: FollowupMiniListProps): JSX.Element {
-  const pendingFollowups = followups
-    .filter((f) => f.status === FollowupStatus.PENDING)
-    .slice(0, 5);
+  const pendingFollowups = followups.filter((f) => f.status === FollowupStatus.PENDING).slice(0, 5);
 
   if (isLoading) {
     return (
@@ -83,9 +81,7 @@ export function FollowupMiniList({
 
   if (pendingFollowups.length === 0) {
     return (
-      <p className="text-sm text-foreground-tertiary py-3 text-center">
-        No pending followups
-      </p>
+      <p className="text-sm text-foreground-tertiary py-3 text-center">No pending followups</p>
     );
   }
 
@@ -108,13 +104,12 @@ export function FollowupMiniList({
                   {TYPE_LABELS[followup.type]}
                 </Badge>
                 <span
-                  className={cn(
-                    'size-2 rounded-full shrink-0',
-                    PRIORITY_DOTS[followup.priority],
-                  )}
+                  className={cn('size-2 rounded-full shrink-0', PRIORITY_DOTS[followup.priority])}
                 />
                 {isOverdue(followup.scheduledAt, followup.status) && (
-                  <Badge variant="warning" size="xs">Overdue</Badge>
+                  <Badge variant="warning" size="xs">
+                    Overdue
+                  </Badge>
                 )}
               </div>
               <p className="text-sm text-foreground truncate">{followup.subject}</p>

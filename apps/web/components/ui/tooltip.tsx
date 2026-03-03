@@ -81,25 +81,30 @@ export interface TooltipContentProps
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
   TooltipContentProps
->(({ className, variant = 'primary', showArrow = false, sideOffset = 4, children, ...props }, ref) => (
-  <TooltipPrimitive.Portal>
-    <TooltipPrimitive.Content
-      ref={ref}
-      sideOffset={sideOffset}
-      className={cn(tooltipContentVariants({ variant }), className)}
-      {...props}
-    >
-      {children}
-      {showArrow && (
-        <TooltipPrimitive.Arrow
-          className={cn('fill-current', ARROW_COLORS[variant ?? 'primary'])}
-          width={8}
-          height={4}
-        />
-      )}
-    </TooltipPrimitive.Content>
-  </TooltipPrimitive.Portal>
-));
+>(
+  (
+    { className, variant = 'primary', showArrow = false, sideOffset = 4, children, ...props },
+    ref,
+  ) => (
+    <TooltipPrimitive.Portal>
+      <TooltipPrimitive.Content
+        ref={ref}
+        sideOffset={sideOffset}
+        className={cn(tooltipContentVariants({ variant }), className)}
+        {...props}
+      >
+        {children}
+        {showArrow && (
+          <TooltipPrimitive.Arrow
+            className={cn('fill-current', ARROW_COLORS[variant ?? 'primary'])}
+            width={8}
+            height={4}
+          />
+        )}
+      </TooltipPrimitive.Content>
+    </TooltipPrimitive.Portal>
+  ),
+);
 TooltipContent.displayName = TooltipPrimitive.Content.displayName;
 
 /**
@@ -114,12 +119,7 @@ const RichTooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
   RichTooltipContentProps
 >(({ className, variant = 'primary', title, children, ...props }, ref) => (
-  <TooltipContent
-    ref={ref}
-    variant={variant}
-    className={cn('p-3 w-tooltip', className)}
-    {...props}
-  >
+  <TooltipContent ref={ref} variant={variant} className={cn('p-3 w-tooltip', className)} {...props}>
     {title && <p className="font-medium mb-1">{title}</p>}
     <div className={cn('leading-relaxed', RICH_TEXT_COLORS[variant ?? 'primary'])}>{children}</div>
   </TooltipContent>

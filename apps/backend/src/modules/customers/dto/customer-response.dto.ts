@@ -118,7 +118,9 @@ export class CustomerResponseDto {
    * Name of the user who created this customer
    * Returns 'Self' if customer self-registered (userId === createdBy)
    */
-  @ApiPropertyOptional({ description: 'Name of the user who created this customer, or "Self" if self-registered' })
+  @ApiPropertyOptional({
+    description: 'Name of the user who created this customer, or "Self" if self-registered',
+  })
   @Expose()
   @Transform(({ obj }) => {
     // If no createdBy (legacy data or system-created), return undefined

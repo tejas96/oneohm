@@ -22,7 +22,12 @@ type FollowupFormInput = {
 };
 
 import { useCustomersList, useCustomerProperties } from '@/components/features/properties/hooks';
-import { CustomerSearchCombobox, PropertySelector, RadioCard, RadioCardGroup } from '@/components/shared';
+import {
+  CustomerSearchCombobox,
+  PropertySelector,
+  RadioCard,
+  RadioCardGroup,
+} from '@/components/shared';
 import {
   Button,
   Card,
@@ -333,11 +338,7 @@ export function FollowupForm({ followupId }: FollowupFormProps = {}): JSX.Elemen
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="scheduledTime">Time *</Label>
-                  <Input
-                    id="scheduledTime"
-                    type="time"
-                    {...form.register('scheduledTime')}
-                  />
+                  <Input id="scheduledTime" type="time" {...form.register('scheduledTime')} />
                 </div>
               </div>
             </div>

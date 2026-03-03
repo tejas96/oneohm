@@ -7,20 +7,13 @@
  * @module lib/config/constants
  */
 
-import {
-  ConnectionType,
-  LeadTemperature,
-  PropertyType,
-} from '@oneohm-epc/shared-types';
+import { ConnectionType, LeadTemperature, PropertyType } from '@oneohm-epc/shared-types';
 
 // ============================================================================
 // Indian States
 // ============================================================================
 
-export const INDIAN_STATES = [
-  'Karnataka',
-  'Maharashtra',
-] as const;
+export const INDIAN_STATES = ['Karnataka', 'Maharashtra'] as const;
 
 // ============================================================================
 // Property Type Options
@@ -28,10 +21,18 @@ export const INDIAN_STATES = [
 
 export const PROPERTY_TYPE_OPTIONS = [
   { value: PropertyType.RESIDENTIAL, label: 'Residential', description: 'House or villa' },
-  { value: PropertyType.RESIDENTIAL_APARTMENT, label: 'Apartment', description: 'Flat in a building' },
+  {
+    value: PropertyType.RESIDENTIAL_APARTMENT,
+    label: 'Apartment',
+    description: 'Flat in a building',
+  },
   { value: PropertyType.COMMERCIAL, label: 'Commercial', description: 'Shop or office' },
   { value: PropertyType.INDUSTRIAL, label: 'Industrial', description: 'Factory or warehouse' },
-  { value: PropertyType.AGRICULTURAL, label: 'Agricultural', description: 'Farm or agricultural land' },
+  {
+    value: PropertyType.AGRICULTURAL,
+    label: 'Agricultural',
+    description: 'Farm or agricultural land',
+  },
   { value: PropertyType.INSTITUTIONAL, label: 'Institutional', description: 'School or hospital' },
 ] as const;
 

@@ -10,7 +10,6 @@ import { projectKeys } from './use-projects';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
 
-
 // ============================================================================
 // Query Keys
 // ============================================================================
@@ -44,7 +43,7 @@ export function useProject(
       });
       return data;
     },
-    enabled: !!projectId && !!organizationId && (options?.enabled !== false),
+    enabled: !!projectId && !!organizationId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }
@@ -59,13 +58,12 @@ export function useProjectTeam(
   return useQuery({
     queryKey: projectDetailKeys.team(organizationId, projectId),
     queryFn: async (): Promise<ProjectTeamMember[]> => {
-      const { data } = await apiClient.get<ProjectTeamMember[]>(
-        `/projects/${projectId}/team`,
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
+      const { data } = await apiClient.get<ProjectTeamMember[]>(`/projects/${projectId}/team`, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
       return data;
     },
-    enabled: !!projectId && !!organizationId && (options?.enabled !== false),
+    enabled: !!projectId && !!organizationId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }
@@ -86,7 +84,7 @@ export function useProjectTaskStats(
       );
       return data;
     },
-    enabled: !!projectId && !!organizationId && (options?.enabled !== false),
+    enabled: !!projectId && !!organizationId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }
@@ -107,7 +105,7 @@ export function useProjectTasks(
       );
       return data.data ?? [];
     },
-    enabled: !!projectId && !!organizationId && (options?.enabled !== false),
+    enabled: !!projectId && !!organizationId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }

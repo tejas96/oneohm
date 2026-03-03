@@ -53,7 +53,17 @@ export interface CheckboxProps
 
 const Checkbox = React.forwardRef<React.ElementRef<typeof CheckboxPrimitive.Root>, CheckboxProps>(
   (
-    { className, size = 'default', checked, indeterminate, label, description, error, id, ...props },
+    {
+      className,
+      size = 'default',
+      checked,
+      indeterminate,
+      label,
+      description,
+      error,
+      id,
+      ...props
+    },
     ref,
   ) => {
     const checkboxId = id || React.useId();
@@ -100,9 +110,7 @@ const Checkbox = React.forwardRef<React.ElementRef<typeof CheckboxPrimitive.Root
               {label}
             </label>
           )}
-          {description && (
-            <p className="text-xs text-foreground-tertiary">{description}</p>
-          )}
+          {description && <p className="text-xs text-foreground-tertiary">{description}</p>}
         </div>
       </div>
     );

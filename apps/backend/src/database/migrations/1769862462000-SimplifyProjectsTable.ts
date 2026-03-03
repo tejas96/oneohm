@@ -26,9 +26,7 @@ export class SimplifyProjectsTable1769862462000 implements MigrationInterface {
     // 1. DROP FOREIGN KEYS
     // Note: FK_projects_lead_technician may or may not exist depending on DB state
     // ============================================
-    await queryRunner.query(
-      `ALTER TABLE "projects" DROP CONSTRAINT IF EXISTS "FK_projects_quote"`,
-    );
+    await queryRunner.query(`ALTER TABLE "projects" DROP CONSTRAINT IF EXISTS "FK_projects_quote"`);
     await queryRunner.query(
       `ALTER TABLE "projects" DROP CONSTRAINT IF EXISTS "FK_projects_lead_technician"`,
     );
@@ -104,12 +102,24 @@ export class SimplifyProjectsTable1769862462000 implements MigrationInterface {
     // 2. RE-ADD OLD COLUMNS (nullable for data migration)
     // ============================================
     await queryRunner.query(`ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "quote_id" UUID`);
-    await queryRunner.query(`ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "project_manager_id" UUID`);
-    await queryRunner.query(`ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "lead_technician_id" UUID`);
-    await queryRunner.query(`ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "planned_start_date" DATE`);
-    await queryRunner.query(`ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "planned_end_date" DATE`);
-    await queryRunner.query(`ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "actual_start_date" DATE`);
-    await queryRunner.query(`ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "actual_end_date" DATE`);
+    await queryRunner.query(
+      `ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "project_manager_id" UUID`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "lead_technician_id" UUID`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "planned_start_date" DATE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "planned_end_date" DATE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "actual_start_date" DATE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "projects" ADD COLUMN IF NOT EXISTS "actual_end_date" DATE`,
+    );
 
     // ============================================
     // 3. MIGRATE DATA BACK

@@ -1,15 +1,7 @@
 'use client';
 
 import { QuoteStatus } from '@oneohm-epc/shared-types';
-import {
-  Building2,
-  Edit,
-  FileText,
-  Mail,
-  Phone,
-  Plus,
-  Upload,
-} from 'lucide-react';
+import { Building2, Edit, FileText, Mail, Phone, Plus, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { type JSX, useCallback, useMemo, useState } from 'react';
@@ -101,13 +93,14 @@ const mockActivityData = [
   },
 ];
 
-
 // ============================================================================
 // Helper Functions
 // ============================================================================
 
 // Get dot variant for timeline based on activity type
-const getActivityDotVariant = (type: 'quote' | 'visit' | 'property' | 'update' | 'created'): 'primary' | 'secondary' | 'default' => {
+const getActivityDotVariant = (
+  type: 'quote' | 'visit' | 'property' | 'update' | 'created',
+): 'primary' | 'secondary' | 'default' => {
   switch (type) {
     case 'quote':
       return 'primary';
@@ -140,7 +133,7 @@ function SimpleTimeline({ items }: SimpleTimelineProps): JSX.Element {
     <div className="relative pl-6">
       {/* Vertical line */}
       <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-border" />
-      
+
       {/* Items */}
       <div className="space-y-4">
         {items.map((item) => (
@@ -153,7 +146,7 @@ function SimpleTimeline({ items }: SimpleTimelineProps): JSX.Element {
                   ? 'border-primary bg-primary'
                   : item.dotVariant === 'secondary'
                     ? 'border-secondary bg-secondary'
-                    : 'border-border bg-background'
+                    : 'border-border bg-background',
               )}
             />
             {/* Content */}
@@ -188,7 +181,7 @@ const formatActivityTimestamp = (date: Date): string => {
   const diffMs = now.getTime() - date.getTime();
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  
+
   if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
   if (diffDays === 1) {
     return `Yesterday at ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
@@ -266,20 +259,19 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
   const propertyFilter = searchParams.get('docProperty') || 'all';
 
   // Data fetching
-  const { data: customer, isLoading: isLoadingCustomer, error: customerError } = useCustomer(customerId);
+  const {
+    data: customer,
+    isLoading: isLoadingCustomer,
+    error: customerError,
+  } = useCustomer(customerId);
   const { data: properties, isLoading: isLoadingProperties } = useCustomerProperties(customerId);
   const { data: quotesData, isLoading: isLoadingQuotes } = useCustomerQuotes(customerId);
   const updateCustomerMutation = useUpdateCustomer();
 
   // Document mutations & preview
   const removeMutation = useRemovePropertyDocument();
-  const {
-    previewDocument,
-    isPreviewOpen,
-    openPreview,
-    closePreview,
-    downloadToSystem,
-  } = useDocumentPreview();
+  const { previewDocument, isPreviewOpen, openPreview, closePreview, downloadToSystem } =
+    useDocumentPreview();
 
   // Aggregate documents from all properties
   const allDocuments = useMemo((): AggregatedDocument[] => {
@@ -306,7 +298,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
       params.set('tab', tab);
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
-    [pathname, router, searchParams]
+    [pathname, router, searchParams],
   );
 
   // Field save handler
@@ -321,10 +313,10 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
           onError: () => {
             showToast.error(`Failed to update ${field}`);
           },
-        }
+        },
       );
     },
-    [customerId, updateCustomerMutation]
+    [customerId, updateCustomerMutation],
   );
 
   // Document property filter handler
@@ -342,12 +334,9 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
   );
 
   // Document action handlers
-  const handleDeleteDocument = useCallback(
-    (doc: AggregatedDocument) => {
-      setDocToDelete(doc);
-    },
-    [],
-  );
+  const handleDeleteDocument = useCallback((doc: AggregatedDocument) => {
+    setDocToDelete(doc);
+  }, []);
 
   const confirmDeleteDocument = useCallback(async () => {
     if (!docToDelete) return;
@@ -603,7 +592,10 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                 <div className="mt-1 flex items-center gap-2">
                   <Avatar size="xs" className="size-6">
                     <AvatarFallback size="xs" name={customer.creatorName || 'Self'}>
-                      {getInitials(customer.creatorName?.split(' ')[0], customer.creatorName?.split(' ')[1])}
+                      {getInitials(
+                        customer.creatorName?.split(' ')[0],
+                        customer.creatorName?.split(' ')[1],
+                      )}
                     </AvatarFallback>
                   </Avatar>
                   <span className="text-sm text-foreground">{customer.creatorName || 'Self'}</span>
@@ -618,7 +610,10 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
           <div className="rounded-lg border border-border bg-background">
             <div className="flex items-center justify-between border-b border-border p-4">
               <h3 className="font-semibold text-foreground">
-                Properties <span className="font-normal text-muted-foreground">({properties?.length || 0})</span>
+                Properties{' '}
+                <span className="font-normal text-muted-foreground">
+                  ({properties?.length || 0})
+                </span>
               </h3>
               <button
                 onClick={handleAddProperty}
@@ -640,7 +635,9 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                     property={property}
                     customerId={customerId}
                     onCreateQuote={() => {
-                      router.push(`${ROUTES.QUOTES.NEW}?customerId=${customerId}&propertyId=${property.id}`);
+                      router.push(
+                        `${ROUTES.QUOTES.NEW}?customerId=${customerId}&propertyId=${property.id}`,
+                      );
                     }}
                   />
                 ))
@@ -671,11 +668,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
               <SimpleTimeline
                 items={mockActivityData.map((a) => ({
                   id: a.id,
-                  title: (
-                    <span>
-                      {a.description}
-                    </span>
-                  ),
+                  title: <span>{a.description}</span>,
                   timestamp: formatActivityTimestamp(a.timestamp),
                   dotVariant: getActivityDotVariant(a.type),
                 }))}
@@ -697,7 +690,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                 'px-3.5 py-2.5 text-[13px] font-medium border-b-2 transition-all',
                 activeTab === tab
                   ? 'text-primary border-primary'
-                  : 'text-muted-foreground border-transparent hover:text-foreground'
+                  : 'text-muted-foreground border-transparent hover:text-foreground',
               )}
             >
               {tab === 'quotes' && 'Quotes'}
@@ -771,7 +764,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                               className={cn(
                                 'rounded px-1.5 py-0.5 text-[11px] font-medium',
                                 statusStyle.bg,
-                                statusStyle.text
+                                statusStyle.text,
                               )}
                             >
                               {statusStyle.label}
@@ -864,7 +857,9 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                     key={`${doc.propertyId}-${doc.url}-${idx}`}
                     document={doc}
                     onPreview={openPreview}
-                    onDownload={(doc) => { void downloadToSystem(doc); }}
+                    onDownload={(doc) => {
+                      void downloadToSystem(doc);
+                    }}
                     onDelete={handleDeleteDocument}
                     isDeleting={removeMutation.isPending}
                   />
@@ -893,11 +888,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
             <SimpleTimeline
               items={mockActivityData.map((a) => ({
                 id: a.id,
-                title: (
-                  <span>
-                    {a.description}
-                  </span>
-                ),
+                title: <span>{a.description}</span>,
                 timestamp: `${a.timestamp.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })} at ${a.timestamp.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`,
                 dotVariant: getActivityDotVariant(a.type),
               }))}
@@ -926,7 +917,9 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
         document={previewDocument}
         open={isPreviewOpen}
         onOpenChange={closePreview}
-        onDownload={(doc) => { void downloadToSystem(doc); }}
+        onDownload={(doc) => {
+          void downloadToSystem(doc);
+        }}
       />
 
       {/* Delete Document Confirmation */}

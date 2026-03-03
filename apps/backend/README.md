@@ -108,71 +108,71 @@ apps/backend/
 
 ### Authentication & Authorization
 
-| Module | Description | Key Features |
-|--------|-------------|--------------|
-| **auth** | Authentication | JWT login, refresh tokens, logout |
-| **iam** | Identity & Access Management | Roles, Permissions, Features, Guards |
-| **users** | User management | User CRUD, profile management |
+| Module    | Description                  | Key Features                         |
+| --------- | ---------------------------- | ------------------------------------ |
+| **auth**  | Authentication               | JWT login, refresh tokens, logout    |
+| **iam**   | Identity & Access Management | Roles, Permissions, Features, Guards |
+| **users** | User management              | User CRUD, profile management        |
 
 ### Customer Management
 
-| Module | Description | Key Entities |
-|--------|-------------|--------------|
-| **customers** | Customer & property management | `CustomerProfile`, `CustomerProperty` |
-| **customer-feedback** | Feedback collection | `CustomerFeedback`, `Rating` |
+| Module                | Description                    | Key Entities                          |
+| --------------------- | ------------------------------ | ------------------------------------- |
+| **customers**         | Customer & property management | `CustomerProfile`, `CustomerProperty` |
+| **customer-feedback** | Feedback collection            | `CustomerFeedback`, `Rating`          |
 
 ### Sales & Quotation
 
-| Module | Description | Key Entities |
-|--------|-------------|--------------|
-| **quotes** | Quote management | `Quote`, `QuoteVersion`, `QuoteLineItem` |
+| Module          | Description               | Key Entities                                               |
+| --------------- | ------------------------- | ---------------------------------------------------------- |
+| **quotes**      | Quote management          | `Quote`, `QuoteVersion`, `QuoteLineItem`                   |
 | **master-data** | Product catalog & pricing | `ProductCategory`, `Product`, `PricingRule`, `SubsidyRule` |
 
 ### Project Management
 
-| Module | Description | Key Entities |
-|--------|-------------|--------------|
-| **projects** | Full project lifecycle | `Project`, `Phase`, `Task`, `Timeline` |
-| **approvals** | Approval workflows | `ApprovalRequest`, `ApprovalStep`, `ApprovalAction` |
+| Module        | Description            | Key Entities                                        |
+| ------------- | ---------------------- | --------------------------------------------------- |
+| **projects**  | Full project lifecycle | `Project`, `Phase`, `Task`, `Timeline`              |
+| **approvals** | Approval workflows     | `ApprovalRequest`, `ApprovalStep`, `ApprovalAction` |
 
 ### Inventory & Operations
 
-| Module | Description | Key Entities |
-|--------|-------------|--------------|
-| **inventory** | Stock management | `Product`, `Warehouse`, `StockMovement`, `PurchaseOrder` |
-| **documents** | Document management | `Document`, `DocumentVersion` |
-| **storage** | File storage (S3) | Pre-signed URLs, uploads |
+| Module        | Description         | Key Entities                                             |
+| ------------- | ------------------- | -------------------------------------------------------- |
+| **inventory** | Stock management    | `Product`, `Warehouse`, `StockMovement`, `PurchaseOrder` |
+| **documents** | Document management | `Document`, `DocumentVersion`                            |
+| **storage**   | File storage (S3)   | Pre-signed URLs, uploads                                 |
 
 ### Finance
 
-| Module | Description | Key Entities |
-|--------|-------------|--------------|
-| **payments** | Payment tracking | `Payment`, `PaymentSchedule` |
-| **loan-finance** | Loan applications | `LoanApplication` |
+| Module           | Description       | Key Entities                 |
+| ---------------- | ----------------- | ---------------------------- |
+| **payments**     | Payment tracking  | `Payment`, `PaymentSchedule` |
+| **loan-finance** | Loan applications | `LoanApplication`            |
 
 ### Compliance & Audit
 
-| Module | Description | Key Entities |
-|--------|-------------|--------------|
-| **compliance** | Regulatory compliance | `SubsidyApplication`, `ComplianceCheck` |
-| **audit** | Audit logging | `AuditLog`, `ChangeHistory` |
-| **security-events** | Security tracking | `SecurityEvent` |
+| Module              | Description           | Key Entities                            |
+| ------------------- | --------------------- | --------------------------------------- |
+| **compliance**      | Regulatory compliance | `SubsidyApplication`, `ComplianceCheck` |
+| **audit**           | Audit logging         | `AuditLog`, `ChangeHistory`             |
+| **security-events** | Security tracking     | `SecurityEvent`                         |
 
 ### Service & Support
 
-| Module | Description | Key Entities |
-|--------|-------------|--------------|
-| **service-maintenance** | AMC & service | `ServiceRequest`, `MaintenanceSchedule` |
-| **comments** | Universal comments | `Comment`, `Thread` |
+| Module                  | Description        | Key Entities                            |
+| ----------------------- | ------------------ | --------------------------------------- |
+| **service-maintenance** | AMC & service      | `ServiceRequest`, `MaintenanceSchedule` |
+| **comments**            | Universal comments | `Comment`, `Thread`                     |
 
 ### Partners & Integrations
 
-| Module | Description | Key Entities |
-|--------|-------------|--------------|
-| **organizations** | Multi-tenant support | `Organization`, `OrganizationSettings` |
-| **employees** | Employee management | `Employee`, `Designation` |
-| **resellers** | Partner management | `Reseller`, `Commission` |
-| **integrations** | Third-party integrations | `IntegrationProvider`, `Webhook` |
+| Module            | Description              | Key Entities                           |
+| ----------------- | ------------------------ | -------------------------------------- |
+| **organizations** | Multi-tenant support     | `Organization`, `OrganizationSettings` |
+| **employees**     | Employee management      | `Employee`, `Designation`              |
+| **resellers**     | Partner management       | `Reseller`, `Commission`               |
+| **integrations**  | Third-party integrations | `IntegrationProvider`, `Webhook`       |
 
 ---
 
@@ -272,20 +272,20 @@ Available at `/api/v1/docs` when running.
 
 ### Key Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/auth/login` | User login |
-| POST | `/auth/refresh` | Refresh token |
-| GET | `/users/me` | Current user |
-| GET | `/customers` | List customers |
-| POST | `/customers` | Create customer |
-| GET | `/quotes` | List quotes |
-| POST | `/quotes` | Create quote |
-| POST | `/quotes/calculate` | Calculate pricing |
-| GET | `/projects` | List projects |
-| POST | `/projects` | Create project |
-| GET | `/inventory/products` | List products |
-| GET | `/inventory/stock` | Stock levels |
+| Method | Endpoint              | Description       |
+| ------ | --------------------- | ----------------- |
+| POST   | `/auth/login`         | User login        |
+| POST   | `/auth/refresh`       | Refresh token     |
+| GET    | `/users/me`           | Current user      |
+| GET    | `/customers`          | List customers    |
+| POST   | `/customers`          | Create customer   |
+| GET    | `/quotes`             | List quotes       |
+| POST   | `/quotes`             | Create quote      |
+| POST   | `/quotes/calculate`   | Calculate pricing |
+| GET    | `/projects`           | List projects     |
+| POST   | `/projects`           | Create project    |
+| GET    | `/inventory/products` | List products     |
+| GET    | `/inventory/stock`    | Stock levels      |
 
 ### Response Format
 
@@ -423,23 +423,23 @@ fly ssh console   # SSH into container
 
 ## 🌍 Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NODE_ENV` | Environment | development |
-| `PORT` | Server port | 8085 |
-| `BACKEND_API_PREFIX` | API prefix | /api/v1 |
-| `DATABASE_HOST` | Database host | localhost |
-| `DATABASE_PORT` | Database port | 5436 |
-| `DATABASE_USERNAME` | Database user | oneohm |
-| `DATABASE_PASSWORD` | Database password | postgres |
-| `DATABASE_NAME` | Database name | oneohm_epc |
-| `JWT_SECRET` | JWT signing secret | - |
-| `JWT_EXPIRATION` | Access token expiry | 7d |
-| `AWS_ACCESS_KEY_ID` | AWS access key | - |
-| `AWS_SECRET_ACCESS_KEY` | AWS secret | - |
-| `AWS_S3_BUCKET` | S3 bucket name | - |
-| `ENABLE_SWAGGER` | Enable Swagger | true |
-| `ENABLE_RATE_LIMITING` | Enable rate limits | true |
+| Variable                | Description         | Default     |
+| ----------------------- | ------------------- | ----------- |
+| `NODE_ENV`              | Environment         | development |
+| `PORT`                  | Server port         | 8085        |
+| `BACKEND_API_PREFIX`    | API prefix          | /api/v1     |
+| `DATABASE_HOST`         | Database host       | localhost   |
+| `DATABASE_PORT`         | Database port       | 5436        |
+| `DATABASE_USERNAME`     | Database user       | oneohm      |
+| `DATABASE_PASSWORD`     | Database password   | postgres    |
+| `DATABASE_NAME`         | Database name       | oneohm_epc  |
+| `JWT_SECRET`            | JWT signing secret  | -           |
+| `JWT_EXPIRATION`        | Access token expiry | 7d          |
+| `AWS_ACCESS_KEY_ID`     | AWS access key      | -           |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret          | -           |
+| `AWS_S3_BUCKET`         | S3 bucket name      | -           |
+| `ENABLE_SWAGGER`        | Enable Swagger      | true        |
+| `ENABLE_RATE_LIMITING`  | Enable rate limits  | true        |
 
 ---
 

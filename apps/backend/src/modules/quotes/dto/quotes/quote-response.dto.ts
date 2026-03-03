@@ -40,9 +40,7 @@ export class QuoteResponseDto {
   @ApiPropertyOptional({ example: 'Rajesh Sharma' })
   @Expose()
   @Transform(({ obj }) =>
-    obj.customer
-      ? `${obj.customer.firstName} ${obj.customer.lastName || ''}`.trim()
-      : undefined,
+    obj.customer ? `${obj.customer.firstName} ${obj.customer.lastName || ''}`.trim() : undefined,
   )
   customerName?: string;
 
@@ -247,9 +245,7 @@ export class QuoteResponseDto {
   @Expose()
   @Transform(({ obj }) => {
     if (!obj.versions) return undefined;
-    const sorted = [...obj.versions].sort(
-      (a: any, b: any) => b.versionNumber - a.versionNumber,
-    );
+    const sorted = [...obj.versions].sort((a: any, b: any) => b.versionNumber - a.versionNumber);
     return sorted.map((v: any) => ({
       id: v.id,
       quoteId: v.quoteId,
@@ -268,26 +264,27 @@ export class QuoteResponseDto {
       configSnapshot: v.configSnapshot,
       createdBy: v.createdBy,
       createdAt: v.createdAt,
-      lineItems: v.isCurrent && v.lineItems
-        ? v.lineItems
-            .sort((a: any, b: any) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
-            .map((li: any) => ({
-              id: li.id,
-              quoteVersionId: li.quoteVersionId,
-              productId: li.productId,
-              itemCategory: li.itemCategory,
-              itemName: li.itemName,
-              itemDescription: li.itemDescription,
-              specifications: li.specifications,
-              quantity: li.quantity,
-              unitOfMeasure: li.unitOfMeasure,
-              unitPrice: li.unitPrice != null ? Number(li.unitPrice) : undefined,
-              lineTotal: li.lineTotal != null ? Number(li.lineTotal) : undefined,
-              taxRate: li.taxRate != null ? Number(li.taxRate) : undefined,
-              taxAmount: li.taxAmount != null ? Number(li.taxAmount) : undefined,
-              displayOrder: li.displayOrder,
-            }))
-        : undefined,
+      lineItems:
+        v.isCurrent && v.lineItems
+          ? v.lineItems
+              .sort((a: any, b: any) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+              .map((li: any) => ({
+                id: li.id,
+                quoteVersionId: li.quoteVersionId,
+                productId: li.productId,
+                itemCategory: li.itemCategory,
+                itemName: li.itemName,
+                itemDescription: li.itemDescription,
+                specifications: li.specifications,
+                quantity: li.quantity,
+                unitOfMeasure: li.unitOfMeasure,
+                unitPrice: li.unitPrice != null ? Number(li.unitPrice) : undefined,
+                lineTotal: li.lineTotal != null ? Number(li.lineTotal) : undefined,
+                taxRate: li.taxRate != null ? Number(li.taxRate) : undefined,
+                taxAmount: li.taxAmount != null ? Number(li.taxAmount) : undefined,
+                displayOrder: li.displayOrder,
+              }))
+          : undefined,
     }));
   })
   versions?: QuoteVersionResponseDto[];

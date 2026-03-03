@@ -1,8 +1,5 @@
 import type { PanelTechnology, PhaseType, StructureType } from '../enums/product.enum';
-import type {
-  DcrPreference,
-  QuoteCalculationMode,
-} from '../enums/quote.enum';
+import type { DcrPreference, QuoteCalculationMode } from '../enums/quote.enum';
 
 /**
  * Payment Milestone Interface

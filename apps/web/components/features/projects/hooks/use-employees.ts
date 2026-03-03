@@ -41,9 +41,12 @@ export const employeeKeys = {
     [...employeeKeys.lists(orgId), filters] as const,
 };
 
-export function useEmployees(
-  options?: { page?: number; limit?: number; status?: string; department?: string },
-): UseQueryResult<EmployeeListResponse, AxiosError> {
+export function useEmployees(options?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  department?: string;
+}): UseQueryResult<EmployeeListResponse, AxiosError> {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
 

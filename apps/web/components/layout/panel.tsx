@@ -10,7 +10,6 @@ import { getFilteredPanelByPath, useFilteredNavigation, useRoutes } from '@/lib/
 import type { NavItem, NavBadgeVariant, StatusDotColor } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
-
 interface PanelProps {
   isOpen: boolean;
   onClose: () => void;
@@ -29,7 +28,10 @@ const STATUS_DOT_COLORS: Record<StatusDotColor, string> = {
 };
 
 // Badge variant mapping
-const BADGE_VARIANT_MAP: Record<NavBadgeVariant, 'default' | 'secondary' | 'success' | 'warning' | 'error' | 'info'> = {
+const BADGE_VARIANT_MAP: Record<
+  NavBadgeVariant,
+  'default' | 'secondary' | 'success' | 'warning' | 'error' | 'info'
+> = {
   default: 'secondary',
   primary: 'default',
   warning: 'warning',
@@ -50,7 +52,9 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
   const panelData = getFilteredPanelByPath(navigation, pathname);
   const { data: tasksSummary } = useMyTasksSummary();
 
-  const dynamicBadges = useMemo<Record<string, { value: number | string; variant?: NavBadgeVariant }>>(() => {
+  const dynamicBadges = useMemo<
+    Record<string, { value: number | string; variant?: NavBadgeVariant }>
+  >(() => {
     const badges: Record<string, { value: number | string; variant?: NavBadgeVariant }> = {};
     if (tasksSummary && tasksSummary.total > 0) {
       badges['projects-my-tasks'] = {
@@ -60,7 +64,7 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
     }
     return badges;
   }, [tasksSummary]);
-  
+
   // Build current full URL for comparison (pathname + search params)
   const searchString = searchParams.toString();
   const currentFullUrl = searchString ? `${pathname}?${searchString}` : pathname;
@@ -80,9 +84,9 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
     // 3. Items that are dynamic route TARGETS (like /customers/[id]) → match dynamic segments
     // 4. List items → exact match OR nested dynamic routes (NOT sibling routes)
     const hasQueryParams = item.href.includes('?');
-    
+
     let isActive = false;
-    
+
     if (hasQueryParams) {
       // Filtered views: exact full URL match only
       isActive = currentFullUrl === item.href;
@@ -93,7 +97,7 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
       // List items: active if exact match OR viewing a DETAIL page (dynamic ID)
       // NOT active for sibling static routes like /customers/new
       const isExact = pathname === item.href && !searchString;
-      
+
       // Check if we're on a nested route that should highlight this item
       // Only match if the segment after the base is a dynamic ID (not a static route)
       // Dynamic IDs are typically UUIDs or numeric IDs, not words like "new", "edit"
@@ -106,15 +110,17 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
         const isLikelyDynamicId = /^[0-9a-f-]{8,}$/i.test(nextSegment) || /^\d+$/.test(nextSegment);
         isNestedDynamic = isLikelyDynamicId;
       }
-      
+
       isActive = isExact || isNestedDynamic;
     }
-    
+
     const Icon = item.icon;
     const dynamicBadge = dynamicBadges[item.id];
     const displayBadge = item.badge ?? dynamicBadge?.value;
     const resolvedBadgeVariant = dynamicBadge?.variant ?? item.badgeVariant;
-    const badgeVariant = resolvedBadgeVariant ? BADGE_VARIANT_MAP[resolvedBadgeVariant] : 'secondary';
+    const badgeVariant = resolvedBadgeVariant
+      ? BADGE_VARIANT_MAP[resolvedBadgeVariant]
+      : 'secondary';
 
     return (
       <Link
@@ -124,7 +130,7 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
           'panel-item',
           isActive && 'active',
           item.disabled && 'opacity-50 pointer-events-none',
-          isSubItem && 'sub-item'
+          isSubItem && 'sub-item',
         )}
         aria-disabled={item.disabled}
         target={item.external ? '_blank' : undefined}
@@ -133,20 +139,15 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
         {/* Status dot (for lead temperature) - 8px for better visibility */}
         {item.statusDot && (
           <span
-            className={cn(
-              'size-2 rounded-full mr-2 shrink-0',
-              STATUS_DOT_COLORS[item.statusDot]
-            )}
+            className={cn('size-2 rounded-full mr-2 shrink-0', STATUS_DOT_COLORS[item.statusDot])}
           />
         )}
-        
+
         {/* Icon (for regular items without status dot) */}
-        {!item.statusDot && Icon && (
-          <Icon className="size-icon-sm mr-2.5 shrink-0" />
-        )}
-        
+        {!item.statusDot && Icon && <Icon className="size-icon-sm mr-2.5 shrink-0" />}
+
         <span className="flex-1 truncate">{item.label}</span>
-        
+
         {/* Badge with variant (static or dynamic) */}
         {displayBadge !== undefined && (
           <Badge variant={badgeVariant} size="xs" className="ml-2">
@@ -167,17 +168,15 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
         'transition-all duration-200 ease-out',
         // Hide on mobile
         'hidden lg:flex',
-        isOpen 
-          ? 'translate-x-0 opacity-100' 
+        isOpen
+          ? 'translate-x-0 opacity-100'
           : '-translate-x-content-offset opacity-0 pointer-events-none',
-        className
+        className,
       )}
     >
       {/* Panel Header - 48px per UX spec */}
       <div className="h-header px-4 flex items-center justify-between border-b border-border-light shrink-0">
-        <span className="text-base font-semibold text-foreground">
-          {config.title}
-        </span>
+        <span className="text-base font-semibold text-foreground">{config.title}</span>
         <button
           onClick={onClose}
           className="size-7 flex items-center justify-center text-foreground-tertiary rounded-md cursor-pointer hover:bg-muted hover:text-foreground-secondary transition-all"
@@ -193,9 +192,7 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
         {config.sections.map((section) => (
           <div key={section.title} className="px-2 mb-2">
             {/* Section Header */}
-            <div className="panel-section-header">
-              {section.title}
-            </div>
+            <div className="panel-section-header">{section.title}</div>
 
             {/* Section Items */}
             {section.items.map((item) => (

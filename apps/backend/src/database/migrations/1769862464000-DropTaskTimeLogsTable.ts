@@ -3,7 +3,7 @@ import { type MigrationInterface, type QueryRunner } from 'typeorm';
 /**
  * Migration: Drop Task Time Logs Table and logged_hours Column
  * Purpose: Remove time tracking functionality - consolidating to TaskActivityLog only
- * 
+ *
  * Drops:
  * - task_time_logs table (and its indexes)
  * - logged_hours column from project_tasks table

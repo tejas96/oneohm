@@ -64,9 +64,15 @@ export class EmbedActivityLogInTask1769862465000 implements MigrationInterface {
     `);
 
     // Recreate indexes
-    await queryRunner.query(`CREATE INDEX idx_task_activity_log_task ON task_activity_log(task_id);`);
-    await queryRunner.query(`CREATE INDEX idx_task_activity_log_created ON task_activity_log(created_at);`);
-    await queryRunner.query(`CREATE INDEX idx_task_activity_log_type ON task_activity_log(activity_type);`);
+    await queryRunner.query(
+      `CREATE INDEX idx_task_activity_log_task ON task_activity_log(task_id);`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX idx_task_activity_log_created ON task_activity_log(created_at);`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX idx_task_activity_log_type ON task_activity_log(activity_type);`,
+    );
 
     // Migrate data back from JSONB to table
     await queryRunner.query(`

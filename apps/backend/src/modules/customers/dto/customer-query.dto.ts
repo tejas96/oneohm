@@ -1,10 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  CustomerSortField,
-  CustomerStatus,
-  LeadSource,
-  SortOrder,
-} from '@oneohm-epc/shared-types';
+import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@oneohm-epc/shared-types';
 import { Transform, Type } from 'class-transformer';
 import {
   IsDateString,

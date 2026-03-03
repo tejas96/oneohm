@@ -14,11 +14,7 @@ interface MainContentProps {
  * - Desktop (lg+): Margin based on panel open/closed state
  * Reference: apps/ux/web/v2/dashboard/index.html
  */
-export function MainContent({
-  isPanelOpen,
-  children,
-  className,
-}: MainContentProps) {
+export function MainContent({ isPanelOpen, children, className }: MainContentProps) {
   return (
     <main
       className={cn(
@@ -28,16 +24,12 @@ export function MainContent({
         // Mobile: no left margin
         'ml-0',
         // Desktop: margin based on panel state (rail: 48px, panel: 200px)
-        isPanelOpen
-          ? 'lg:ml-content-offset'
-          : 'lg:ml-rail',
-        className
+        isPanelOpen ? 'lg:ml-content-offset' : 'lg:ml-rail',
+        className,
       )}
     >
       {/* p-5 (20px) per UX STYLE-GUIDE.md */}
-      <div className="p-4 lg:p-5">
-        {children}
-      </div>
+      <div className="p-4 lg:p-5">{children}</div>
     </main>
   );
 }

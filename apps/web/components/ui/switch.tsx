@@ -39,7 +39,8 @@ const switchThumbVariants = cva(
     variants: {
       size: {
         sm: 'size-3 translate-x-0 data-[state=checked]:translate-x-3',
-        default: 'h-switch-thumb w-switch-thumb translate-x-0 data-[state=checked]:translate-x-switch-thumb',
+        default:
+          'h-switch-thumb w-switch-thumb translate-x-0 data-[state=checked]:translate-x-switch-thumb',
         lg: 'size-5 translate-x-0 data-[state=checked]:translate-x-5',
       },
     },
@@ -61,7 +62,10 @@ export interface SwitchProps
 }
 
 const Switch = React.forwardRef<React.ElementRef<typeof SwitchPrimitive.Root>, SwitchProps>(
-  ({ className, size = 'default', label, description, labelPosition = 'right', id, ...props }, ref) => {
+  (
+    { className, size = 'default', label, description, labelPosition = 'right', id, ...props },
+    ref,
+  ) => {
     const switchId = id || React.useId();
 
     const switchElement = (
@@ -80,12 +84,7 @@ const Switch = React.forwardRef<React.ElementRef<typeof SwitchPrimitive.Root>, S
     }
 
     return (
-      <div
-        className={cn(
-          'flex items-start gap-3',
-          labelPosition === 'left' && 'flex-row-reverse',
-        )}
-      >
+      <div className={cn('flex items-start gap-3', labelPosition === 'left' && 'flex-row-reverse')}>
         {switchElement}
         <div className="flex flex-col gap-0.5">
           {label && (
@@ -96,9 +95,7 @@ const Switch = React.forwardRef<React.ElementRef<typeof SwitchPrimitive.Root>, S
               {label}
             </label>
           )}
-          {description && (
-            <p className="text-xs text-foreground-tertiary">{description}</p>
-          )}
+          {description && <p className="text-xs text-foreground-tertiary">{description}</p>}
         </div>
       </div>
     );

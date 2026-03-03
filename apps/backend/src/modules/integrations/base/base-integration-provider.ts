@@ -52,10 +52,8 @@ export abstract class BaseIntegrationProvider implements IBaseIntegration {
       message?: string;
       code?: string;
     };
-    const errorMessage =
-      err.response?.data?.message || err.message || 'Unknown error';
-    const errorCode =
-      err.response?.status?.toString() || err.code || 'UNKNOWN';
+    const errorMessage = err.response?.data?.message || err.message || 'Unknown error';
+    const errorCode = err.response?.status?.toString() || err.code || 'UNKNOWN';
 
     return {
       error: {

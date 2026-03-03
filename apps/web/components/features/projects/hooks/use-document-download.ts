@@ -5,7 +5,6 @@ import { useCallback } from 'react';
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
 
-
 export function useDocumentDownload(): {
   download: (filePath: string) => void;
 } {

@@ -48,10 +48,7 @@ export function TaskDrawerDependencies({
       if (currentDepIds.has(t.id)) return false;
       if (!searchTerm) return true;
       const lower = searchTerm.toLowerCase();
-      return (
-        t.name?.toLowerCase().includes(lower) ||
-        t.code.toLowerCase().includes(lower)
-      );
+      return t.name?.toLowerCase().includes(lower) || t.code.toLowerCase().includes(lower);
     });
   }, [projectTasks, task.id, currentDepIds, searchTerm]);
 
@@ -94,9 +91,7 @@ export function TaskDrawerDependencies({
       {hasDependencyBlockers && (
         <div className="flex items-center gap-1.5 rounded bg-error/5 border border-error/20 px-2 py-1">
           <Lock className="h-3 w-3 text-error" />
-          <span className="text-xs text-error">
-            Blocked by incomplete dependencies
-          </span>
+          <span className="text-xs text-error">Blocked by incomplete dependencies</span>
         </div>
       )}
 
@@ -116,9 +111,7 @@ export function TaskDrawerDependencies({
                       {depCode}
                     </span>
                   )}
-                  <span className="text-sm text-foreground-secondary truncate">
-                    {name}
-                  </span>
+                  <span className="text-sm text-foreground-secondary truncate">{name}</span>
                 </div>
                 {depId && (
                   <button
@@ -184,9 +177,7 @@ export function TaskDrawerDependencies({
                   <span className="shrink-0 text-xs font-medium text-foreground-secondary">
                     {t.code}
                   </span>
-                  <span className="flex-1 truncate text-foreground">
-                    {t.name}
-                  </span>
+                  <span className="flex-1 truncate text-foreground">{t.name}</span>
                   {statusInfo && (
                     <span className={cn('shrink-0 text-section', statusInfo.color)}>
                       {statusInfo.label}
@@ -196,9 +187,7 @@ export function TaskDrawerDependencies({
               );
             })}
             {filteredTasks.length === 0 && (
-              <p className="py-2 text-center text-xs text-foreground-muted">
-                No matching tasks
-              </p>
+              <p className="py-2 text-center text-xs text-foreground-muted">No matching tasks</p>
             )}
           </div>
         </div>

@@ -68,8 +68,8 @@ export function DeleteCustomerModal({
 
         <DialogBody>
           <p className="text-sm text-foreground-secondary">
-            This will permanently delete the customer and all associated data including
-            properties, quotes, and site visits.
+            This will permanently delete the customer and all associated data including properties,
+            quotes, and site visits.
           </p>
         </DialogBody>
 

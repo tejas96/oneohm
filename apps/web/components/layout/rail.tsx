@@ -36,7 +36,7 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
           'flex flex-col',
           // Hide on mobile, show on lg and above
           'hidden lg:flex',
-          className
+          className,
         )}
       >
         {/* Top Navigation */}
@@ -54,7 +54,7 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
                     className={cn(
                       'rail-icon',
                       isActive && 'active',
-                      item.disabled && 'opacity-50 pointer-events-none'
+                      item.disabled && 'opacity-50 pointer-events-none',
                     )}
                     aria-disabled={item.disabled}
                   >
@@ -113,7 +113,7 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
                     className={cn(
                       'rail-icon',
                       isActive && 'active',
-                      item.disabled && 'opacity-50 pointer-events-none'
+                      item.disabled && 'opacity-50 pointer-events-none',
                     )}
                     aria-disabled={item.disabled}
                   >

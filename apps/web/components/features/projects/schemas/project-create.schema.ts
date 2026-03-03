@@ -18,14 +18,13 @@ export const projectCreateSchema = z
     startDate: isoDateOrEmpty,
     endDate: isoDateOrEmpty,
     projectManagerId: z.string().uuid().optional().or(z.literal('')),
-    teamMembers: z
-      .array(
-        z.object({
-          userId: z.string().uuid(),
-          roleName: z.string().min(1, 'Role is required'),
-          isProjectManager: z.boolean().optional(),
-        }),
-      ),
+    teamMembers: z.array(
+      z.object({
+        userId: z.string().uuid(),
+        roleName: z.string().min(1, 'Role is required'),
+        isProjectManager: z.boolean().optional(),
+      }),
+    ),
     excludedStepIds: z.array(z.string().uuid()),
     taskAssignments: z.array(
       z.object({
@@ -50,12 +49,9 @@ export const projectCreateSchema = z
       )
       .min(1, 'At least one milestone is required'),
   })
-  .refine(
-    (d) =>
-      !d.startDate ||
-      !d.endDate ||
-      new Date(d.endDate) >= new Date(d.startDate),
-    { message: 'End date must be on or after start date', path: ['endDate'] },
-  );
+  .refine((d) => !d.startDate || !d.endDate || new Date(d.endDate) >= new Date(d.startDate), {
+    message: 'End date must be on or after start date',
+    path: ['endDate'],
+  });
 
 export type ProjectCreateFormData = z.infer<typeof projectCreateSchema>;

@@ -58,7 +58,9 @@ export class PropertyFollowupDto {
   notes?: string;
 
   // Read-only field (populated by service)
-  @ApiPropertyOptional({ description: 'Set on create and update (also serves as completion timestamp)' })
+  @ApiPropertyOptional({
+    description: 'Set on create and update (also serves as completion timestamp)',
+  })
   @IsOptional()
   @IsDateString()
   @Expose()

@@ -53,11 +53,7 @@ export class FollowupController {
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<FollowupResponseDto> {
-    const followup = await this.followupService.create(
-      organizationId,
-      createDto,
-      currentUser.id,
-    );
+    const followup = await this.followupService.create(organizationId, createDto, currentUser.id);
     return toDto(FollowupResponseDto, followup);
   }
 
@@ -66,7 +62,8 @@ export class FollowupController {
    */
   @ApiReadAll({
     summary: 'List all followups',
-    description: 'Get all followups with optional filters (status, assignee, customer, property, date range)',
+    description:
+      'Get all followups with optional filters (status, assignee, customer, property, date range)',
     responseType: FollowupResponseDto,
   })
   @ApiQuery({ name: 'status', required: false, enum: FollowupStatus })
@@ -90,7 +87,8 @@ export class FollowupController {
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
   ): Promise<PaginatedResponse<FollowupResponseDto>> {
-    const hasFilters = status || assignedToUserId || customerId || propertyId || priority || from || to;
+    const hasFilters =
+      status || assignedToUserId || customerId || propertyId || priority || from || to;
 
     if (hasFilters) {
       const result = await this.followupService.findWithFilters(
@@ -140,11 +138,16 @@ export class FollowupController {
    */
   @Get('today')
   @ApiReadAll({
-    summary: 'Get today\'s followups',
+    summary: "Get today's followups",
     description: 'Get pending followups scheduled for today',
     responseType: FollowupResponseDto,
   })
-  @ApiQuery({ name: 'assignedToUserId', required: false, type: String, description: 'Filter by assignee (optional)' })
+  @ApiQuery({
+    name: 'assignedToUserId',
+    required: false,
+    type: String,
+    description: 'Filter by assignee (optional)',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async findTodayFollowups(
@@ -171,7 +174,12 @@ export class FollowupController {
     description: 'Get pending followups that are past their scheduled date',
     responseType: FollowupResponseDto,
   })
-  @ApiQuery({ name: 'assignedToUserId', required: false, type: String, description: 'Filter by assignee (optional)' })
+  @ApiQuery({
+    name: 'assignedToUserId',
+    required: false,
+    type: String,
+    description: 'Filter by assignee (optional)',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async findOverdueFollowups(
@@ -243,11 +251,7 @@ export class FollowupController {
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<FollowupResponseDto> {
-    const followup = await this.followupService.markAsCompleted(
-      id,
-      organizationId,
-      currentUser.id,
-    );
+    const followup = await this.followupService.markAsCompleted(id, organizationId, currentUser.id);
     return toDto(FollowupResponseDto, followup);
   }
 
@@ -265,11 +269,7 @@ export class FollowupController {
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<FollowupResponseDto> {
-    const followup = await this.followupService.markAsCancelled(
-      id,
-      organizationId,
-      currentUser.id,
-    );
+    const followup = await this.followupService.markAsCancelled(id, organizationId, currentUser.id);
     return toDto(FollowupResponseDto, followup);
   }
 

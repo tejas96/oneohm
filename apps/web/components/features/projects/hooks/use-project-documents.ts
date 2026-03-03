@@ -8,7 +8,6 @@ import type { ProjectDocument } from './types';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
 
-
 // ============================================================================
 // Query Keys
 // ============================================================================
@@ -33,13 +32,12 @@ export function useProjectDocuments(
   return useQuery({
     queryKey: documentKeys.byProject(organizationId, projectId),
     queryFn: async (): Promise<ProjectDocument[]> => {
-      const { data } = await apiClient.get<ProjectDocument[]>(
-        `/documents?projectId=${projectId}`,
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
+      const { data } = await apiClient.get<ProjectDocument[]>(`/documents?projectId=${projectId}`, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
       return data;
     },
-    enabled: !!projectId && !!organizationId && (options?.enabled !== false),
+    enabled: !!projectId && !!organizationId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }

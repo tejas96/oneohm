@@ -134,7 +134,10 @@ function OverflowPopover({
   return (
     <div
       className="inline-flex"
-      onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
       onMouseDown={(e) => e.stopPropagation()}
     >
       <Popover modal={false}>
@@ -180,12 +183,8 @@ function OverflowPopover({
                     {getInitials(member.firstName, member.lastName)}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm text-foreground truncate flex-1">
-                  {fullName}
-                </span>
-                {selectable && isSelected && (
-                  <Check className="size-3.5 text-primary shrink-0" />
-                )}
+                <span className="text-sm text-foreground truncate flex-1">{fullName}</span>
+                {selectable && isSelected && <Check className="size-3.5 text-primary shrink-0" />}
                 {!selectable && member.isProjectManager && (
                   <Crown className="size-3.5 text-warning shrink-0 ml-auto" />
                 )}

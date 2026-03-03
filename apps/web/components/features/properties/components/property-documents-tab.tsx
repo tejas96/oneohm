@@ -9,7 +9,8 @@ import {
   type AggregatedDocument,
 } from '@/components/features/customers/components/document-row';
 import { UploadDocumentModal } from '@/components/features/customers/components/upload-document-modal';
-import { type CustomerPropertyResponse ,
+import {
+  type CustomerPropertyResponse,
   useDocumentPreview,
   useRemovePropertyDocument,
 } from '@/components/features/customers/hooks';
@@ -24,13 +25,8 @@ export function PropertyDocumentsTab({ property }: PropertyDocumentsTabProps): J
   const [uploadOpen, setUploadOpen] = useState(false);
   const [deletingUrl, setDeletingUrl] = useState<string | null>(null);
 
-  const {
-    previewDocument,
-    isPreviewOpen,
-    openPreview,
-    closePreview,
-    downloadToSystem,
-  } = useDocumentPreview();
+  const { previewDocument, isPreviewOpen, openPreview, closePreview, downloadToSystem } =
+    useDocumentPreview();
 
   const { mutate: removeDocumentMutate } = useRemovePropertyDocument();
 

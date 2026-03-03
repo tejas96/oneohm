@@ -24,8 +24,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ROUTES } from '@/lib/config/routes';
-import { formatCurrency, formatCurrencyCompact, formatDate, formatRelativeDate, formatSystemSize, getInitials } from '@/lib/utils';
-
+import {
+  formatCurrency,
+  formatCurrencyCompact,
+  formatDate,
+  formatRelativeDate,
+  formatSystemSize,
+  getInitials,
+} from '@/lib/utils';
 
 export const projectColumns: ColumnDef<ProjectListItem>[] = [
   {
@@ -63,7 +69,8 @@ export const projectColumns: ColumnDef<ProjectListItem>[] = [
             <div className="font-medium text-foreground text-sm truncate">{name}</div>
             {property.address && (
               <div className="text-foreground-tertiary text-2xs truncate max-w-44">
-                {property.address}{property.city ? `, ${property.city}` : ''}
+                {property.address}
+                {property.city ? `, ${property.city}` : ''}
               </div>
             )}
           </div>
@@ -78,7 +85,9 @@ export const projectColumns: ColumnDef<ProjectListItem>[] = [
       const project = row.original;
       return (
         <div>
-          <div className="text-sm text-foreground font-medium">{formatSystemSize(project.systemSizeKw)} kW</div>
+          <div className="text-sm text-foreground font-medium">
+            {formatSystemSize(project.systemSizeKw)} kW
+          </div>
           <div className="text-section text-foreground-tertiary">
             {PROJECT_TYPE_LABELS[project.projectType] ?? project.projectType}
           </div>
@@ -125,9 +134,7 @@ export const projectColumns: ColumnDef<ProjectListItem>[] = [
   {
     id: 'team',
     header: 'Team',
-    cell: ({ row }) => (
-      <TeamAvatarGroup members={row.original.teamMembers} max={3} size="xs" />
-    ),
+    cell: ({ row }) => <TeamAvatarGroup members={row.original.teamMembers} max={3} size="xs" />,
   },
   {
     accessorKey: 'endDate',
@@ -141,7 +148,9 @@ export const projectColumns: ColumnDef<ProjectListItem>[] = [
       const relative = formatRelativeDate(project.endDate);
       const isOverdue = relative.startsWith('Overdue');
       return (
-        <span className={`text-sm ${isOverdue ? 'text-error font-medium' : 'text-foreground-secondary'}`}>
+        <span
+          className={`text-sm ${isOverdue ? 'text-error font-medium' : 'text-foreground-secondary'}`}
+        >
           {isOverdue ? relative : formatDate(project.endDate, 'short')}
         </span>
       );
@@ -157,7 +166,9 @@ export const projectColumns: ColumnDef<ProjectListItem>[] = [
         return <span className="text-sm font-medium text-success">{'\u2713'} Paid</span>;
       }
       const pending = totalExpected - totalPaid;
-      return <span className="text-sm font-medium text-warning">{formatCurrencyCompact(pending)}</span>;
+      return (
+        <span className="text-sm font-medium text-warning">{formatCurrencyCompact(pending)}</span>
+      );
     },
   },
   {

@@ -144,7 +144,12 @@ export class OrganizationService {
           }),
         );
 
-        return { organization: org, rolesCreated: roles, superAdminUser: adminUser, superAdminRole: adminRole };
+        return {
+          organization: org,
+          rolesCreated: roles,
+          superAdminUser: adminUser,
+          superAdminRole: adminRole,
+        };
       });
 
     // Invitation (outside transaction — safe to fail independently)
@@ -394,16 +399,56 @@ export class OrganizationService {
 
   // ==================== PRIVATE HELPERS ====================
 
-  private getDefaultRoleDefinitions(): Array<{ code: string; name: string; description: string; level: number }> {
+  private getDefaultRoleDefinitions(): Array<{
+    code: string;
+    name: string;
+    description: string;
+    level: number;
+  }> {
     return [
-      { code: 'super_admin', name: 'Super Administrator', description: 'Full access to organization', level: 0 },
+      {
+        code: 'super_admin',
+        name: 'Super Administrator',
+        description: 'Full access to organization',
+        level: 0,
+      },
       { code: 'admin', name: 'Administrator', description: 'Administrative access', level: 1 },
-      { code: 'manager', name: 'Manager', description: 'Management access with limited admin capabilities', level: 2 },
-      { code: 'employee_basic', name: 'Employee (Basic)', description: 'Basic employee access', level: 5 },
-      { code: 'field_worker', name: 'Field Worker', description: 'Field worker access - can create leads and quotes', level: 5 },
-      { code: 'sales_person', name: 'Sales Person', description: 'Sales access - can manage leads and quotes', level: 5 },
-      { code: 'telecaller', name: 'Telecaller', description: 'Telecaller access - can manage leads', level: 6 },
-      { code: 'customer', name: 'Customer', description: 'Customer self-service access', level: 10 },
+      {
+        code: 'manager',
+        name: 'Manager',
+        description: 'Management access with limited admin capabilities',
+        level: 2,
+      },
+      {
+        code: 'employee_basic',
+        name: 'Employee (Basic)',
+        description: 'Basic employee access',
+        level: 5,
+      },
+      {
+        code: 'field_worker',
+        name: 'Field Worker',
+        description: 'Field worker access - can create leads and quotes',
+        level: 5,
+      },
+      {
+        code: 'sales_person',
+        name: 'Sales Person',
+        description: 'Sales access - can manage leads and quotes',
+        level: 5,
+      },
+      {
+        code: 'telecaller',
+        name: 'Telecaller',
+        description: 'Telecaller access - can manage leads',
+        level: 6,
+      },
+      {
+        code: 'customer',
+        name: 'Customer',
+        description: 'Customer self-service access',
+        level: 10,
+      },
       { code: 'reseller', name: 'Reseller', description: 'Reseller partner access', level: 10 },
     ];
   }

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { Button , Typography } from '@/components/ui';
+import { Button, Typography } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
 
 // eslint-disable-next-line import/no-default-export -- Next.js requires default export for special files

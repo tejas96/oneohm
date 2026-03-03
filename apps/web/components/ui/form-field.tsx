@@ -89,14 +89,7 @@ function FormFieldInput<T extends FieldValues>({
         }
 
         // Default: render enhanced Input
-        return (
-          <Input
-            {...inputProps}
-            {...field}
-            error={error}
-            errorMessage={errorMessage}
-          />
-        );
+        return <Input {...inputProps} {...field} error={error} errorMessage={errorMessage} />;
       }}
     />
   );

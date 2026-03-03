@@ -7,7 +7,6 @@ import { Input, type InputProps } from './input';
 
 import { cn } from '@/lib/utils';
 
-
 export interface PasswordInputProps extends Omit<InputProps, 'type'> {
   /** Show password strength meter */
   showStrength?: boolean;
@@ -101,9 +100,7 @@ const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
                 )}
               />
             </div>
-            <p className="text-xs text-foreground-tertiary mt-1">
-              {strengthLabels[strength!]}
-            </p>
+            <p className="text-xs text-foreground-tertiary mt-1">{strengthLabels[strength!]}</p>
           </div>
         )}
       </div>

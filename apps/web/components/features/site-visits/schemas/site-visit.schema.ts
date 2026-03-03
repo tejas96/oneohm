@@ -14,9 +14,7 @@ export const scheduleSiteVisitSchema = z.object({
     required_error: 'Please select a date',
     invalid_type_error: 'Invalid date',
   }),
-  scheduledTime: z
-    .string()
-    .regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format'),
+  scheduledTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format'),
 
   // Assignment
   assignedToUserId: z.string().min(1, 'Please assign a technician'),
@@ -28,11 +26,7 @@ export const scheduleSiteVisitSchema = z.object({
   priority: z.enum(['high', 'normal', 'low']).default('normal'),
 
   // Additional Info
-  notes: z
-    .string()
-    .max(1000, 'Notes too long')
-    .optional()
-    .or(z.literal('')),
+  notes: z.string().max(1000, 'Notes too long').optional().or(z.literal('')),
   sendSmsReminder: z.boolean().default(true),
 });
 
@@ -47,9 +41,7 @@ export const rescheduleVisitSchema = z.object({
     required_error: 'Please select a new date',
     invalid_type_error: 'Invalid date',
   }),
-  scheduledTime: z
-    .string()
-    .regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format'),
+  scheduledTime: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format'),
   reason: z.string().min(1, 'Please provide a reason'),
   notifyCustomer: z.boolean().default(true),
 });
@@ -72,8 +64,16 @@ export type CancelVisitFormData = z.infer<typeof cancelVisitSchema>;
 // ============================================================================
 
 export const VISIT_TYPE_OPTIONS = [
-  { value: 'initial_assessment', label: 'Initial Assessment', description: 'First site visit to assess feasibility' },
-  { value: 'technical_survey', label: 'Technical Survey', description: 'Detailed technical measurement and evaluation' },
+  {
+    value: 'initial_assessment',
+    label: 'Initial Assessment',
+    description: 'First site visit to assess feasibility',
+  },
+  {
+    value: 'technical_survey',
+    label: 'Technical Survey',
+    description: 'Detailed technical measurement and evaluation',
+  },
   { value: 'follow_up', label: 'Follow-up Visit', description: 'Follow-up on previous assessment' },
 ] as const;
 

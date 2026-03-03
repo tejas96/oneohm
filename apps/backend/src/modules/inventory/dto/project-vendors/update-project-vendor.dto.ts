@@ -1,13 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  IsDateString,
-  IsNumber,
-  IsOptional,
-  IsString,
-  MaxLength,
-  Min,
-} from 'class-validator';
+import { IsDateString, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 /**
  * DTO for updating a project-vendor association

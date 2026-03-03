@@ -25,7 +25,6 @@ import {
   showToast,
 } from '@/components/ui';
 
-
 // ============================================================================
 // Types
 // ============================================================================
@@ -77,7 +76,8 @@ export function MarkAsLostModal({
         <DialogHeader>
           <DialogTitle>Mark as Lost</DialogTitle>
           <DialogDescription>
-            Mark <span className="font-medium text-foreground">{property?.propertyName}</span> as a lost opportunity.
+            Mark <span className="font-medium text-foreground">{property?.propertyName}</span> as a
+            lost opportunity.
           </DialogDescription>
         </DialogHeader>
 
@@ -93,7 +93,7 @@ export function MarkAsLostModal({
                   <SelectValue placeholder="Select a reason" />
                 </SelectTrigger>
                 <SelectContent>
-                  {LOST_REASONS.map(reason => (
+                  {LOST_REASONS.map((reason) => (
                     <SelectItem key={reason.value} value={reason.value}>
                       {reason.label}
                     </SelectItem>

@@ -15,7 +15,6 @@ import {
 import { TASK_STATUS_TRANSITIONS, TaskStatus } from '@oneohm-epc/shared-types';
 import React, { useCallback, useMemo, useState } from 'react';
 
-
 import { KanbanColumn } from './kanban-column';
 import { KanbanTaskCard } from './kanban-task-card';
 import type {
@@ -96,28 +95,22 @@ export function KanbanBoard({
     [],
   );
 
-  const handleDragStart = useCallback(
-    (event: DragStartEvent) => {
-      const task = event.active.data.current?.task as BoardColumnTask | undefined;
-      if (task) setActiveTask(task);
-    },
-    [],
-  );
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const task = event.active.data.current?.task as BoardColumnTask | undefined;
+    if (task) setActiveTask(task);
+  }, []);
 
-  const handleDragOver = useCallback(
-    (event: DragOverEvent) => {
-      const overData = event.over?.data.current;
-      if (overData?.type === 'column') {
-        setOverColumnStatus(overData.status as TaskStatus);
-      } else if (overData?.type === 'task') {
-        const overTask = overData.task as BoardColumnTask;
-        setOverColumnStatus(overTask.status);
-      } else {
-        setOverColumnStatus(null);
-      }
-    },
-    [],
-  );
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    const overData = event.over?.data.current;
+    if (overData?.type === 'column') {
+      setOverColumnStatus(overData.status as TaskStatus);
+    } else if (overData?.type === 'task') {
+      const overTask = overData.task as BoardColumnTask;
+      setOverColumnStatus(overTask.status);
+    } else {
+      setOverColumnStatus(null);
+    }
+  }, []);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -158,9 +151,10 @@ export function KanbanBoard({
         const overIdx = tasksInTarget.findIndex((t) => t.id === overTask.id);
         kanbanOrder = overIdx >= 0 ? overTask.kanbanOrder : (tasksInTarget.length + 1) * 1000;
       } else {
-        kanbanOrder = tasksInTarget.length > 0
-          ? (tasksInTarget[tasksInTarget.length - 1]?.kanbanOrder ?? 0) + 1000
-          : 1000;
+        kanbanOrder =
+          tasksInTarget.length > 0
+            ? (tasksInTarget[tasksInTarget.length - 1]?.kanbanOrder ?? 0) + 1000
+            : 1000;
       }
 
       onMoveTask({

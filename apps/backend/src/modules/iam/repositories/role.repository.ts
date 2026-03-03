@@ -95,10 +95,7 @@ export class RoleRepository {
   async findWithPermissions(roleId: string): Promise<RoleEntity | null> {
     return this.repository.findOne({
       where: { id: roleId, deletedAt: IsNull() },
-      relations: [
-        'rolePermissions',
-        'rolePermissions.permission',
-      ],
+      relations: ['rolePermissions', 'rolePermissions.permission'],
     });
   }
 

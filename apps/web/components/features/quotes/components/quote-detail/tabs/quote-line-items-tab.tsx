@@ -75,7 +75,8 @@ export function QuoteLineItemsTab({
       {/* Summary bar */}
       <div className="flex items-center gap-4 text-sm">
         <span className="text-foreground-secondary">
-          {lineItems.length} item{lineItems.length !== 1 ? 's' : ''} across {grouped.length} categor{grouped.length !== 1 ? 'ies' : 'y'}
+          {lineItems.length} item{lineItems.length !== 1 ? 's' : ''} across {grouped.length} categor
+          {grouped.length !== 1 ? 'ies' : 'y'}
         </span>
         <span className="text-foreground-secondary">·</span>
         <span className="font-medium">Subtotal: {formatCurrency(totalAmount)}</span>
@@ -101,11 +102,21 @@ export function QuoteLineItemsTab({
             <table className="w-full">
               <thead className="bg-background-secondary border-b border-border-light">
                 <tr>
-                  <th className="px-4 py-2 text-left text-2xs font-semibold text-foreground-secondary uppercase">Item</th>
-                  <th className="px-4 py-2 text-right text-2xs font-semibold text-foreground-secondary uppercase">Qty</th>
-                  <th className="px-4 py-2 text-right text-2xs font-semibold text-foreground-secondary uppercase">Unit Price</th>
-                  <th className="px-4 py-2 text-right text-2xs font-semibold text-foreground-secondary uppercase">Tax</th>
-                  <th className="px-4 py-2 text-right text-2xs font-semibold text-foreground-secondary uppercase">Total</th>
+                  <th className="px-4 py-2 text-left text-2xs font-semibold text-foreground-secondary uppercase">
+                    Item
+                  </th>
+                  <th className="px-4 py-2 text-right text-2xs font-semibold text-foreground-secondary uppercase">
+                    Qty
+                  </th>
+                  <th className="px-4 py-2 text-right text-2xs font-semibold text-foreground-secondary uppercase">
+                    Unit Price
+                  </th>
+                  <th className="px-4 py-2 text-right text-2xs font-semibold text-foreground-secondary uppercase">
+                    Tax
+                  </th>
+                  <th className="px-4 py-2 text-right text-2xs font-semibold text-foreground-secondary uppercase">
+                    Total
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-light">

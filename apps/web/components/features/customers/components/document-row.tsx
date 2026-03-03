@@ -60,11 +60,7 @@ function formatDocDate(dateString?: string): string {
 // ============================================================================
 
 /** Thumbnail for image files, icon fallback for non-images */
-function DocumentThumbnail({
-  doc,
-}: {
-  doc: AggregatedDocument;
-}): React.JSX.Element {
+function DocumentThumbnail({ doc }: { doc: AggregatedDocument }): React.JSX.Element {
   const [imgError, setImgError] = useState(false);
   const isImage = isImageFile(doc.fileName);
 
@@ -116,9 +112,7 @@ export function DocumentRow({
         <DocumentThumbnail doc={doc} />
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <p className="truncate text-sm font-medium text-foreground">
-              {doc.fileName}
-            </p>
+            <p className="truncate text-sm font-medium text-foreground">{doc.fileName}</p>
             <Badge variant="secondary" className="shrink-0 text-xs">
               {doc.propertyName}
             </Badge>

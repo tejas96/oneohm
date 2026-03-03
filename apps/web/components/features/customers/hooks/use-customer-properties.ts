@@ -10,7 +10,6 @@ import {
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
-
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -114,7 +113,7 @@ export const propertyKeys = {
  * const { data: properties, isLoading } = useCustomerProperties(customerId);
  */
 export function useCustomerProperties(
-  customerId: string
+  customerId: string,
 ): UseQueryResult<CustomerPropertyResponse[], AxiosError> {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
@@ -124,7 +123,7 @@ export function useCustomerProperties(
     queryFn: async (): Promise<CustomerPropertyResponse[]> => {
       const { data } = await apiClient.get<CustomerPropertyResponse[]>(
         `/customer-properties/customer/${customerId}`,
-        { headers: { 'X-Organization-Id': organizationId } }
+        { headers: { 'X-Organization-Id': organizationId } },
       );
       return data;
     },
@@ -139,7 +138,7 @@ export function useCustomerProperties(
  * @returns Property details
  */
 export function useProperty(
-  propertyId: string
+  propertyId: string,
 ): UseQueryResult<CustomerPropertyResponse, AxiosError> {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
@@ -149,7 +148,7 @@ export function useProperty(
     queryFn: async (): Promise<CustomerPropertyResponse> => {
       const { data } = await apiClient.get<CustomerPropertyResponse>(
         `/customer-properties/${propertyId}`,
-        { headers: { 'X-Organization-Id': organizationId } }
+        { headers: { 'X-Organization-Id': organizationId } },
       );
       return data;
     },

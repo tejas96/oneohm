@@ -2,13 +2,7 @@
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { cva, type VariantProps } from 'class-variance-authority';
-import {
-  X,
-  HelpCircle,
-  CheckCircle,
-  AlertTriangle,
-  XCircle,
-} from 'lucide-react';
+import { X, HelpCircle, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import * as React from 'react';
 
 import { Button } from './button';
@@ -114,10 +108,7 @@ DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn(
-      'flex flex-col gap-1 px-6 py-4 border-b border-border-light',
-      className,
-    )}
+    className={cn('flex flex-col gap-1 px-6 py-4 border-b border-border-light', className)}
     {...props}
   />
 );

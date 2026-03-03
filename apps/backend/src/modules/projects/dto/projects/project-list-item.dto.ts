@@ -112,7 +112,9 @@ export class ProjectListItemDto {
 
   @ApiPropertyOptional({ example: 450000, description: 'Derived from quote current version' })
   @Expose()
-  @Transform(({ obj }) => toNum(obj.quote?.versions?.find((v: any) => v.isCurrent)?.finalPrice) ?? null)
+  @Transform(
+    ({ obj }) => toNum(obj.quote?.versions?.find((v: any) => v.isCurrent)?.finalPrice) ?? null,
+  )
   estimatedCost?: number;
 
   @ApiPropertyOptional({ example: 425000, description: 'Derived from metadata.actualCost' })
@@ -138,7 +140,10 @@ export class ProjectListItemDto {
   @Expose()
   paymentSummary!: PaymentSummaryDto;
 
-  @ApiPropertyOptional({ example: 'installation', description: 'Current milestone phase (MilestoneType)' })
+  @ApiPropertyOptional({
+    example: 'installation',
+    description: 'Current milestone phase (MilestoneType)',
+  })
   @Expose()
   currentPhase!: string | null;
 

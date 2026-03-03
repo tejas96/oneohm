@@ -1,6 +1,13 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle , Typography } from '@/components/ui';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Typography,
+} from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 interface Stat {

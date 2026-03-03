@@ -115,6 +115,9 @@ jobs:
         with:
           main-branch-name: 'main'
 
+      - name: Check code format (Prettier)
+        run: npm run format:check
+
       - name: Run lint on affected projects
         run: npx nx affected -t lint --parallel=3 --configuration=ci
 
@@ -122,7 +125,7 @@ jobs:
         if: always()
         run: |
           echo "## 🔍 Lint Results" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Linting completed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Format check (Prettier) and lint completed" >> $GITHUB_STEP_SUMMARY
 
   typecheck:
     name: Type Check

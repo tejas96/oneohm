@@ -46,19 +46,19 @@ function getInitials(firstName: string, lastName?: string): string {
 
 function searchCustomers(customers: Customer[], query: string): Customer[] {
   if (!query.trim()) return [];
-  
+
   const lowerQuery = query.toLowerCase();
-  return customers.filter((customer) => {
-    const fullName = `${customer.firstName} ${customer.lastName}`.toLowerCase();
-    const phone = customer.phone.toLowerCase();
-    const email = customer.email?.toLowerCase() || '';
-    
-    return (
-      fullName.includes(lowerQuery) ||
-      phone.includes(lowerQuery) ||
-      email.includes(lowerQuery)
-    );
-  }).slice(0, 10); // Limit results
+  return customers
+    .filter((customer) => {
+      const fullName = `${customer.firstName} ${customer.lastName}`.toLowerCase();
+      const phone = customer.phone.toLowerCase();
+      const email = customer.email?.toLowerCase() || '';
+
+      return (
+        fullName.includes(lowerQuery) || phone.includes(lowerQuery) || email.includes(lowerQuery)
+      );
+    })
+    .slice(0, 10); // Limit results
 }
 
 // ============================================================================
@@ -78,21 +78,19 @@ export function CustomerSearchCombobox({
   const [results, setResults] = React.useState<SearchResultGroup[]>([]);
 
   // If there's a selected value, show it in the input
-  const displayValue = value
-    ? `${value.firstName} ${value.lastName}`
-    : searchQuery;
+  const displayValue = value ? `${value.firstName} ${value.lastName}` : searchQuery;
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    
+
     // Clear selection when user starts typing
     if (value && query !== `${value.firstName} ${value.lastName}`) {
       onSelect(null);
     }
-    
+
     // Filter customers
     const matchedCustomers = searchCustomers(customers, query);
-    
+
     const searchResults: SearchResult[] = matchedCustomers.map((customer) => ({
       id: customer.id,
       type: 'customer',
@@ -104,11 +102,7 @@ export function CustomerSearchCombobox({
       },
     }));
 
-    setResults(
-      searchResults.length > 0
-        ? [{ category: 'Customers', results: searchResults }]
-        : []
-    );
+    setResults(searchResults.length > 0 ? [{ category: 'Customers', results: searchResults }] : []);
   };
 
   const handleResultClick = (result: SearchResult) => {

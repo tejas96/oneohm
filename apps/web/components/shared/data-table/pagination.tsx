@@ -54,10 +54,7 @@ const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 /**
  * Generate page numbers with ellipsis for large page counts
  */
-function getPageNumbers(
-  currentPage: number,
-  totalPages: number
-): (number | 'ellipsis')[] {
+function getPageNumbers(currentPage: number, totalPages: number): (number | 'ellipsis')[] {
   const pages: (number | 'ellipsis')[] = [];
 
   if (totalPages <= 7) {
@@ -110,15 +107,11 @@ const PageButton = ({ page, isActive, onClick, variant }: PageButtonProps) => {
   const variantClasses = {
     numbered: cn(
       'size-pagination-btn rounded-lg',
-      isActive
-        ? 'bg-primary text-white'
-        : 'text-foreground-secondary hover:bg-muted'
+      isActive ? 'bg-primary text-white' : 'text-foreground-secondary hover:bg-muted',
     ),
     bordered: cn(
       'px-4 py-2 border-r border-border-light',
-      isActive
-        ? 'bg-primary/10 text-primary'
-        : 'text-foreground-secondary hover:bg-muted'
+      isActive ? 'bg-primary/10 text-primary' : 'text-foreground-secondary hover:bg-muted',
     ),
   };
 
@@ -152,8 +145,7 @@ const NavButton = ({
   const Icon = direction === 'prev' ? ChevronLeft : ChevronRight;
   const label = direction === 'prev' ? 'Previous' : 'Next';
 
-  const baseClasses =
-    'flex items-center gap-2 transition-colors duration-fast';
+  const baseClasses = 'flex items-center gap-2 transition-colors duration-fast';
 
   const variantClasses = {
     simple: 'px-4 py-2 text-sm font-medium rounded-lg',
@@ -221,10 +213,7 @@ export function Pagination({
   // Simple variant: Previous / Page X of Y / Next
   if (variant === 'simple') {
     return (
-      <nav
-        aria-label="Pagination"
-        className={cn('flex items-center justify-between', className)}
-      >
+      <nav aria-label="Pagination" className={cn('flex items-center justify-between', className)}>
         <NavButton
           direction="prev"
           disabled={!canGoPrev}
@@ -264,12 +253,7 @@ export function Pagination({
           <span className="text-foreground-tertiary mx-1">/</span>
           <span>{totalPages}</span>
         </span>
-        <NavButton
-          direction="next"
-          disabled={!canGoNext}
-          onClick={handleNext}
-          variant="compact"
-        />
+        <NavButton direction="next" disabled={!canGoNext} onClick={handleNext} variant="compact" />
       </nav>
     );
   }
@@ -303,7 +287,7 @@ export function Pagination({
                 onClick={() => onPageChange(page)}
                 variant="bordered"
               />
-            )
+            ),
           )}
           <NavButton
             direction="next"
@@ -325,7 +309,7 @@ export function Pagination({
       className={cn(
         'flex items-center',
         showPageSize || showItemCount ? 'justify-between' : 'justify-center',
-        className
+        className,
       )}
     >
       {/* Page size selector */}
@@ -375,24 +359,17 @@ export function Pagination({
               onClick={() => onPageChange(page)}
               variant="numbered"
             />
-          )
+          ),
         )}
-        <NavButton
-          direction="next"
-          disabled={!canGoNext}
-          onClick={handleNext}
-          variant="numbered"
-        />
+        <NavButton direction="next" disabled={!canGoNext} onClick={handleNext} variant="numbered" />
       </div>
 
       {/* Item count */}
       {showItemCount && totalItems !== undefined && (
         <p className="text-sm text-foreground-secondary">
-          Showing{' '}
-          <span className="font-medium text-foreground">{startItem}</span> to{' '}
+          Showing <span className="font-medium text-foreground">{startItem}</span> to{' '}
           <span className="font-medium text-foreground">{endItem}</span> of{' '}
-          <span className="font-medium text-foreground">{totalItems}</span>{' '}
-          results
+          <span className="font-medium text-foreground">{totalItems}</span> results
         </p>
       )}
     </nav>
@@ -428,7 +405,7 @@ export interface TablePaginationProps {
 
 /**
  * Pagination designed for table footers
- * 
+ *
  * Variants:
  * - 'simple': "Showing 1-5 of 5 properties" (matches UX reference)
  * - 'full': Full controls with page size selector and navigation
@@ -458,7 +435,7 @@ export function TablePagination({
       <div
         className={cn(
           'px-4 py-3 border-t border-border-light flex items-center justify-center',
-          className
+          className,
         )}
       >
         <p className="text-sm text-foreground-tertiary">No results to display</p>
@@ -472,7 +449,7 @@ export function TablePagination({
       <div
         className={cn(
           'px-4 py-3 border-t border-border-light flex items-center justify-between',
-          className
+          className,
         )}
       >
         {/* Item Range - Left side */}
@@ -491,15 +468,14 @@ export function TablePagination({
               'p-1.5 rounded transition-colors duration-fast',
               canGoPrev
                 ? 'text-foreground-secondary hover:bg-muted hover:text-foreground cursor-pointer'
-                : 'text-foreground-tertiary cursor-not-allowed opacity-50'
+                : 'text-foreground-tertiary cursor-not-allowed opacity-50',
             )}
           >
             <ChevronLeft className="size-icon-sm" />
           </button>
 
           <span className="text-sm text-foreground-secondary whitespace-nowrap">
-            Page{' '}
-            <span className="font-medium text-foreground">{currentPage}</span>
+            Page <span className="font-medium text-foreground">{currentPage}</span>
             {' of '}
             <span className="font-medium text-foreground">{totalPages}</span>
           </span>
@@ -513,7 +489,7 @@ export function TablePagination({
               'p-1.5 rounded transition-colors duration-fast',
               canGoNext
                 ? 'text-foreground-secondary hover:bg-muted hover:text-foreground cursor-pointer'
-                : 'text-foreground-tertiary cursor-not-allowed opacity-50'
+                : 'text-foreground-tertiary cursor-not-allowed opacity-50',
             )}
           >
             <ChevronRight className="size-icon-sm" />
@@ -528,7 +504,7 @@ export function TablePagination({
     <div
       className={cn(
         'px-4 py-3 border-t border-border-light flex items-center justify-end gap-6',
-        className
+        className,
       )}
     >
       {/* Page Size Selector */}
@@ -575,15 +551,14 @@ export function TablePagination({
             'p-1.5 rounded transition-colors duration-fast',
             canGoPrev
               ? 'text-foreground-secondary hover:bg-muted hover:text-foreground cursor-pointer'
-              : 'text-foreground-tertiary cursor-not-allowed opacity-50'
+              : 'text-foreground-tertiary cursor-not-allowed opacity-50',
           )}
         >
           <ChevronLeft className="size-icon-sm" />
         </button>
 
         <span className="text-sm text-foreground-secondary whitespace-nowrap">
-          Page{' '}
-          <span className="font-medium text-foreground">{currentPage}</span>
+          Page <span className="font-medium text-foreground">{currentPage}</span>
           {' of '}
           <span className="font-medium text-foreground">{totalPages}</span>
         </span>
@@ -597,7 +572,7 @@ export function TablePagination({
             'p-1.5 rounded transition-colors duration-fast',
             canGoNext
               ? 'text-foreground-secondary hover:bg-muted hover:text-foreground cursor-pointer'
-              : 'text-foreground-tertiary cursor-not-allowed opacity-50'
+              : 'text-foreground-tertiary cursor-not-allowed opacity-50',
           )}
         >
           <ChevronRight className="size-icon-sm" />

@@ -61,8 +61,7 @@ function getPasswordStrength(pwd: string): PasswordStrength {
  */
 export function useResetPassword(): UseResetPasswordReturn {
   const { replace, getQueryParam } = useRoutes();
-  const { resetPassword, isLoading, error, clearError, isAuthenticated, isInitialized } =
-    useAuth();
+  const { resetPassword, isLoading, error, clearError, isAuthenticated, isInitialized } = useAuth();
 
   const token = getQueryParam('token') || '';
   const [isSuccess, setIsSuccess] = useState(false);

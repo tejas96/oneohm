@@ -1,17 +1,8 @@
 'use client';
 
 import type { TaskStatus } from '@oneohm-epc/shared-types';
-import {
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  Edit,
-  Plus,
-  Trash2,
-  XCircle,
-} from 'lucide-react';
+import { CheckCircle2, ChevronDown, ChevronRight, Edit, Plus, Trash2, XCircle } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-
 
 import { TASK_STATUS_LABELS } from '../constants';
 import {
@@ -74,12 +65,7 @@ export function ProjectWorkflowStepsPage(): React.JSX.Element {
       <div className="flex flex-col items-center justify-center py-12 text-center p-6">
         <p className="text-sm text-error font-medium">Failed to load workflow steps</p>
         <p className="text-xs text-foreground-secondary mt-1">{getErrorMessage(error)}</p>
-        <Button
-          size="sm"
-          variant="outline"
-          className="mt-3"
-          onClick={() => void refetch()}
-        >
+        <Button size="sm" variant="outline" className="mt-3" onClick={() => void refetch()}>
           Retry
         </Button>
       </div>
@@ -92,8 +78,8 @@ export function ProjectWorkflowStepsPage(): React.JSX.Element {
         <div>
           <h1 className="text-lg font-semibold text-foreground">Workflow Steps</h1>
           <p className="text-sm text-foreground-secondary mt-0.5">
-            Define the standard workflow steps for solar EPC projects.
-            Each step becomes a task when a new project is created.
+            Define the standard workflow steps for solar EPC projects. Each step becomes a task when
+            a new project is created.
           </p>
         </div>
         <Button size="sm" onClick={handleCreate}>
@@ -128,9 +114,13 @@ export function ProjectWorkflowStepsPage(): React.JSX.Element {
                   #{step.sequenceOrder}
                 </span>
                 <span className="font-medium text-sm flex-1">{step.name}</span>
-                <Badge variant="outline" className="text-xs">{step.code}</Badge>
+                <Badge variant="outline" className="text-xs">
+                  {step.code}
+                </Badge>
                 {step.defaultRoleCode && (
-                  <Badge variant="secondary" className="text-xs">{step.defaultRoleCode}</Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    {step.defaultRoleCode}
+                  </Badge>
                 )}
                 {step.isActive ? (
                   <CheckCircle2 className="h-4 w-4 text-success" />
@@ -167,7 +157,11 @@ export function ProjectWorkflowStepsPage(): React.JSX.Element {
                     className="h-7 w-7 text-error hover:text-error"
                     aria-label="Delete step"
                     onClick={() => {
-                      if (confirm('Delete this workflow step? Active tasks referencing it will prevent deletion.')) {
+                      if (
+                        confirm(
+                          'Delete this workflow step? Active tasks referencing it will prevent deletion.',
+                        )
+                      ) {
                         deleteMutation.mutate(step.id);
                       }
                     }}
@@ -184,8 +178,7 @@ export function ProjectWorkflowStepsPage(): React.JSX.Element {
                   )}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                     <div>
-                      <span className="text-foreground-secondary">Type:</span>{' '}
-                      {step.type || '—'}
+                      <span className="text-foreground-secondary">Type:</span> {step.type || '—'}
                     </div>
                     <div>
                       <span className="text-foreground-secondary">Department:</span>{' '}
@@ -204,7 +197,9 @@ export function ProjectWorkflowStepsPage(): React.JSX.Element {
                     <div className="text-xs">
                       <span className="text-foreground-secondary">Depends on: </span>
                       {step.dependsOnTaskCodes.map((code) => (
-                        <Badge key={code} variant="outline" className="text-xs mr-1">{code}</Badge>
+                        <Badge key={code} variant="outline" className="text-xs mr-1">
+                          {code}
+                        </Badge>
                       ))}
                     </div>
                   )}
@@ -214,10 +209,14 @@ export function ProjectWorkflowStepsPage(): React.JSX.Element {
                       <div className="mt-1 grid grid-cols-2 gap-1">
                         {Object.entries(step.allowedTransitions).map(([from, targets]) => (
                           <div key={from} className="flex items-center gap-1">
-                            <Badge variant="outline" className="text-2xs">{TASK_STATUS_LABELS[from as TaskStatus] || from}</Badge>
+                            <Badge variant="outline" className="text-2xs">
+                              {TASK_STATUS_LABELS[from as TaskStatus] || from}
+                            </Badge>
                             <span className="text-foreground-tertiary">→</span>
-                            {(targets).map((to) => (
-                              <Badge key={to} variant="secondary" className="text-2xs">{TASK_STATUS_LABELS[to as TaskStatus] || to}</Badge>
+                            {targets.map((to) => (
+                              <Badge key={to} variant="secondary" className="text-2xs">
+                                {TASK_STATUS_LABELS[to as TaskStatus] || to}
+                              </Badge>
                             ))}
                           </div>
                         ))}
@@ -231,11 +230,7 @@ export function ProjectWorkflowStepsPage(): React.JSX.Element {
         </div>
       )}
 
-      <StepFormSheet
-        open={isCreating || !!editingStep}
-        step={editingStep}
-        onClose={handleClose}
-      />
+      <StepFormSheet open={isCreating || !!editingStep} step={editingStep} onClose={handleClose} />
     </div>
   );
 }
@@ -281,9 +276,7 @@ function StepFormSheet({
       setCanRunParallel(step.canRunParallel);
       setDependsOnTaskCodes(step.dependsOnTaskCodes?.join(', ') || '');
       setChecklistTemplate(
-        step.checklistTemplate
-          ? JSON.stringify(step.checklistTemplate, null, 2)
-          : '',
+        step.checklistTemplate ? JSON.stringify(step.checklistTemplate, null, 2) : '',
       );
       setAllowedTransitionsJson(
         step.allowedTransitions ? JSON.stringify(step.allowedTransitions, null, 2) : '',
@@ -323,14 +316,22 @@ function StepFormSheet({
   const handleSave = useCallback(() => {
     let parsedChecklist: unknown = undefined;
     if (checklistTemplate.trim()) {
-      try { parsedChecklist = JSON.parse(checklistTemplate); }
-      catch { showToast.error('Checklist template is not valid JSON'); return; }
+      try {
+        parsedChecklist = JSON.parse(checklistTemplate);
+      } catch {
+        showToast.error('Checklist template is not valid JSON');
+        return;
+      }
     }
 
     let parsedTransitions: Record<string, string[]> | undefined = undefined;
     if (allowedTransitionsJson.trim()) {
-      try { parsedTransitions = JSON.parse(allowedTransitionsJson); }
-      catch { showToast.error('Allowed transitions is not valid JSON'); return; }
+      try {
+        parsedTransitions = JSON.parse(allowedTransitionsJson);
+      } catch {
+        showToast.error('Allowed transitions is not valid JSON');
+        return;
+      }
     }
 
     const depCodes = dependsOnTaskCodes
@@ -356,9 +357,21 @@ function StepFormSheet({
       allowedTransitions: parsedTransitions,
     });
   }, [
-    step?.id, name, code, description, type, defaultRoleCode, defaultDepartment,
-    defaultMilestoneType, sequenceOrder, estimatedDurationHours, isMandatory,
-    canRunParallel, dependsOnTaskCodes, checklistTemplate, allowedTransitionsJson,
+    step?.id,
+    name,
+    code,
+    description,
+    type,
+    defaultRoleCode,
+    defaultDepartment,
+    defaultMilestoneType,
+    sequenceOrder,
+    estimatedDurationHours,
+    isMandatory,
+    canRunParallel,
+    dependsOnTaskCodes,
+    checklistTemplate,
+    allowedTransitionsJson,
     saveMutation,
   ]);
 
@@ -372,27 +385,47 @@ function StepFormSheet({
         <div className="space-y-4 mt-4">
           <div className="space-y-2">
             <Label>Name *</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Panel Installation" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Panel Installation"
+            />
           </div>
 
           <div className="space-y-2">
             <Label>Code *</Label>
-            <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="e.g. EXEC-001" />
+            <Input
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="e.g. EXEC-001"
+            />
           </div>
 
           <div className="space-y-2">
             <Label>Description</Label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Type</Label>
-              <Input value={type} onChange={(e) => setType(e.target.value)} placeholder="e.g. execution" />
+              <Input
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                placeholder="e.g. execution"
+              />
             </div>
             <div className="space-y-2">
               <Label>Default Role Code</Label>
-              <Input value={defaultRoleCode} onChange={(e) => setDefaultRoleCode(e.target.value)} placeholder="e.g. execution" />
+              <Input
+                value={defaultRoleCode}
+                onChange={(e) => setDefaultRoleCode(e.target.value)}
+                placeholder="e.g. execution"
+              />
             </div>
           </div>
 
@@ -422,7 +455,10 @@ function StepFormSheet({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Department</Label>
-              <Input value={defaultDepartment} onChange={(e) => setDefaultDepartment(e.target.value)} />
+              <Input
+                value={defaultDepartment}
+                onChange={(e) => setDefaultDepartment(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>Milestone Type</Label>

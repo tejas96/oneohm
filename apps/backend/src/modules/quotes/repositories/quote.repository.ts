@@ -56,7 +56,14 @@ export class QuoteRepository {
   async findById(id: string, organizationId: string): Promise<QuoteEntity> {
     const quote = await this.repository.findOne({
       where: { id, organizationId },
-      relations: ['customer', 'salesPerson', 'reseller', 'property', 'versions', 'versions.lineItems'],
+      relations: [
+        'customer',
+        'salesPerson',
+        'reseller',
+        'property',
+        'versions',
+        'versions.lineItems',
+      ],
     });
 
     if (!quote) {

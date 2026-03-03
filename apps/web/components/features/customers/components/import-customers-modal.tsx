@@ -69,7 +69,7 @@ export function ImportCustomersModal({
     // TODO: Phase 2 - API call to upload and process the file
 
     // Simulate upload
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     showToast.success(`Successfully imported customers from ${file.name}`);
     setIsUploading(false);
@@ -104,7 +104,7 @@ export function ImportCustomersModal({
               onChange={handleFileSelect}
               className="hidden"
             />
-            
+
             {file ? (
               <div className="flex items-center justify-center gap-3">
                 <FileText className="size-icon-lg text-primary" />

@@ -106,7 +106,10 @@ export class PaymentRepository {
   // ============================================
   // AGGREGATIONS & STATISTICS
   // ============================================
-  async getTotalAmountByProject(projectId: string, organizationId: string): Promise<{
+  async getTotalAmountByProject(
+    projectId: string,
+    organizationId: string,
+  ): Promise<{
     totalExpected: number;
     totalPaid: number;
     pendingAmount: number;

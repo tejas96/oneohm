@@ -19,9 +19,7 @@ interface AddTeamMemberInput extends AddTeamMemberDto {
  */
 @Injectable()
 export class ProjectTeamService {
-  constructor(
-    private readonly teamRepository: ProjectTeamRepository,
-  ) {}
+  constructor(private readonly teamRepository: ProjectTeamRepository) {}
 
   /**
    * Add a new team member to a project
@@ -158,10 +156,7 @@ export class ProjectTeamService {
       .addSelect('u.first_name', 'firstName')
       .addSelect('u.last_name', 'lastName')
       .addSelect('COUNT(DISTINCT tm.projectId)', 'activeProjectCount')
-      .addSelect(
-        `COALESCE(SUM(CASE WHEN t.id IS NOT NULL THEN 1 ELSE 0 END), 0)`,
-        'totalTaskCount',
-      )
+      .addSelect(`COALESCE(SUM(CASE WHEN t.id IS NOT NULL THEN 1 ELSE 0 END), 0)`, 'totalTaskCount')
       .addSelect(
         `COALESCE(SUM(CASE WHEN t.status = '${TaskStatus.IN_PROGRESS}' THEN 1 ELSE 0 END), 0)`,
         'inProgressTaskCount',
@@ -200,5 +195,4 @@ export class ProjectTeamService {
       notCompletedTaskCount: parseInt(r.notCompletedTaskCount, 10),
     }));
   }
-
 }

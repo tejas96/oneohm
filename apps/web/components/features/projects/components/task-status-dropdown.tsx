@@ -4,10 +4,7 @@ import { TASK_STATUS_TRANSITIONS, TaskStatus } from '@oneohm-epc/shared-types';
 import { Check, RefreshCw, XCircle } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import {
-  TASK_STATUS_DOT_COLOR,
-  TASK_STATUS_LABELS,
-} from '../constants';
+import { TASK_STATUS_DOT_COLOR, TASK_STATUS_LABELS } from '../constants';
 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -57,11 +54,7 @@ export function TaskStatusDropdown({
           Status
         </button>
       </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        className="w-36 p-1"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <PopoverContent align="end" className="w-36 p-1" onClick={(e) => e.stopPropagation()}>
         {incompleteOptions.map((status) => (
           <button
             key={status}

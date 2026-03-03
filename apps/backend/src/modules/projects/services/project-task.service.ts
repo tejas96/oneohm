@@ -19,7 +19,11 @@ import {
 import { DataSource, type EntityManager, IsNull } from 'typeorm';
 
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
-import { type CreateProjectTaskDto, type UpdateProjectTaskDto, type UpdateTaskCrossProjectDto } from '../dto';
+import {
+  type CreateProjectTaskDto,
+  type UpdateProjectTaskDto,
+  type UpdateTaskCrossProjectDto,
+} from '../dto';
 import { ProjectTaskEntity } from '../entities';
 import { WorkflowEngineService } from './workflow-engine.service';
 import { WorkflowStepEntity } from '../entities/workflow-step.entity';
@@ -233,10 +237,17 @@ export class ProjectTaskService {
               );
             }
           }
-          await this.detectCircularDependencies(id, updateDto.dependsOnTaskIds!, projectId, manager);
+          await this.detectCircularDependencies(
+            id,
+            updateDto.dependsOnTaskIds!,
+            projectId,
+            manager,
+          );
         }
         await this.taskRepository.updateById(
-          id, { dependsOnTaskIds: updateDto.dependsOnTaskIds }, manager,
+          id,
+          { dependsOnTaskIds: updateDto.dependsOnTaskIds },
+          manager,
         );
       });
     }
@@ -512,10 +523,10 @@ export class ProjectTaskService {
         throw new NotFoundException(`Task with ID ${id} not found`);
       }
       if (existingTask.workflowStepId) {
-        existingTask.workflowStep = await manager.findOne(
-          WorkflowStepEntity,
-          { where: { id: existingTask.workflowStepId } },
-        ) ?? undefined;
+        existingTask.workflowStep =
+          (await manager.findOne(WorkflowStepEntity, {
+            where: { id: existingTask.workflowStepId },
+          })) ?? undefined;
       }
       if (existingTask.version !== expectedVersion) {
         throw new ConflictException(
@@ -598,9 +609,7 @@ export class ProjectTaskService {
     return result.updated;
   }
 
-  async getBoardData(
-    projectId: string,
-  ): Promise<{
+  async getBoardData(projectId: string): Promise<{
     columns: Array<{
       status: TaskStatus;
       tasks: Record<string, unknown>[];
@@ -625,8 +634,13 @@ export class ProjectTaskService {
     }
 
     const allStatuses = [
-      TaskStatus.BACKLOG, TaskStatus.TODO, TaskStatus.IN_PROGRESS,
-      TaskStatus.IN_REVIEW, TaskStatus.TESTING, TaskStatus.BLOCKED, TaskStatus.DONE,
+      TaskStatus.BACKLOG,
+      TaskStatus.TODO,
+      TaskStatus.IN_PROGRESS,
+      TaskStatus.IN_REVIEW,
+      TaskStatus.TESTING,
+      TaskStatus.BLOCKED,
+      TaskStatus.DONE,
     ];
 
     const columns = allStatuses.map((status) => {
@@ -753,7 +767,13 @@ export class ProjectTaskService {
     userId: string,
     organizationId: string,
     groupBy: 'dueDate' | 'priority' | 'project' | 'status',
-    filters: { status?: TaskStatus; priority?: string; projectId?: string; search?: string; dueDateFilter?: string } = {},
+    filters: {
+      status?: TaskStatus;
+      priority?: string;
+      projectId?: string;
+      search?: string;
+      dueDateFilter?: string;
+    } = {},
   ): Promise<{
     groups: TaskGroup[];
     summary: {
@@ -808,7 +828,9 @@ export class ProjectTaskService {
       }
     }
 
-    const enrichedTasks = tasks.map((task) => this.enrichMyTask(task, today, depNameMap, depStatusMap, depCodeMap));
+    const enrichedTasks = tasks.map((task) =>
+      this.enrichMyTask(task, today, depNameMap, depStatusMap, depCodeMap),
+    );
 
     const summary = {
       ...summaryCounts,
@@ -928,16 +950,23 @@ export class ProjectTaskService {
     // Handle assignment change with team membership validation
     if (dto.assignedToUserId !== undefined && dto.assignedToUserId !== task.assignedToUserId) {
       if (dto.assignedToUserId !== null) {
-        const isMember = await this.teamRepository.isTeamMember(dto.assignedToUserId, task.projectId);
+        const isMember = await this.teamRepository.isTeamMember(
+          dto.assignedToUserId,
+          task.projectId,
+        );
         if (!isMember) {
-          throw new BadRequestException('Cannot assign task: user is not a team member of this project');
+          throw new BadRequestException(
+            'Cannot assign task: user is not a team member of this project',
+          );
         }
       }
     }
 
     // Optimistic locking
     if (dto.version !== undefined && dto.version !== task.version) {
-      throw new ConflictException('Task was modified by another user. Please refresh and try again.');
+      throw new ConflictException(
+        'Task was modified by another user. Please refresh and try again.',
+      );
     }
 
     const updateData: Record<string, unknown> = {};
@@ -997,7 +1026,8 @@ export class ProjectTaskService {
     if (dto.endDate !== undefined) updateData.endDate = dto.endDate;
     if (dto.startDate !== undefined) updateData.startDate = dto.startDate;
     if (dto.description !== undefined) updateData.descriptionOverride = dto.description;
-    if (dto.completionPercentage !== undefined) updateData.completionPercentage = dto.completionPercentage;
+    if (dto.completionPercentage !== undefined)
+      updateData.completionPercentage = dto.completionPercentage;
     if (dto.checklist !== undefined) updateData.checklistOverride = dto.checklist;
 
     if (dto.dependsOnTaskIds !== undefined) {
@@ -1019,12 +1049,18 @@ export class ProjectTaskService {
             }
           }
           await this.detectCircularDependencies(
-            taskId, dto.dependsOnTaskIds!, task.projectId, manager,
+            taskId,
+            dto.dependsOnTaskIds!,
+            task.projectId,
+            manager,
           );
         }
         await this.taskRepository.updateById(
           taskId,
-          { dependsOnTaskIds: dto.dependsOnTaskIds, version: (() => 'version + 1') as unknown as number },
+          {
+            dependsOnTaskIds: dto.dependsOnTaskIds,
+            version: (() => 'version + 1') as unknown as number,
+          },
           manager,
         );
       });
@@ -1133,7 +1169,11 @@ export class ProjectTaskService {
 
   private isAdminRole(roles: string[]): boolean {
     const safeRoles = roles ?? [];
-    return safeRoles.includes('admin') || safeRoles.includes('super_admin') || safeRoles.includes('platform_admin');
+    return (
+      safeRoles.includes('admin') ||
+      safeRoles.includes('super_admin') ||
+      safeRoles.includes('platform_admin')
+    );
   }
 
   private async detectCircularDependencies(
@@ -1179,10 +1219,7 @@ export class ProjectTaskService {
     }
   }
 
-  private async validateDependencies(
-    depIds: string[],
-    projectId: string,
-  ): Promise<void> {
+  private async validateDependencies(depIds: string[], projectId: string): Promise<void> {
     for (const depId of depIds) {
       const dep = await this.taskRepository.findById(depId, projectId);
       if (!dep) {
@@ -1304,7 +1341,13 @@ export class ProjectTaskService {
     }
 
     const endDate = task.endDate ? new Date(task.endDate) : null;
-    const isOverdue = endDate ? (() => { const d = new Date(endDate); d.setHours(0, 0, 0, 0); return d < today; })() : false;
+    const isOverdue = endDate
+      ? (() => {
+          const d = new Date(endDate);
+          d.setHours(0, 0, 0, 0);
+          return d < today;
+        })()
+      : false;
 
     const msPerDay = 86_400_000;
     const daysSinceLastUpdate = Math.floor(
@@ -1324,14 +1367,14 @@ export class ProjectTaskService {
       daysSinceLastUpdate,
       checklistProgress,
       dependencyNames: depNameMap
-        ? (task.dependsOnTaskIds ?? [])
+        ? ((task.dependsOnTaskIds ?? [])
             .map((depId: string) => depNameMap.get(depId))
-            .filter(Boolean) as string[]
+            .filter(Boolean) as string[])
         : [],
       dependencyCodes: depCodeMap
-        ? (task.dependsOnTaskIds ?? [])
+        ? ((task.dependsOnTaskIds ?? [])
             .map((depId: string) => depCodeMap.get(depId))
-            .filter(Boolean) as string[]
+            .filter(Boolean) as string[])
         : [],
       hasDependencyBlockers: depStatusMap
         ? (task.dependsOnTaskIds ?? []).some((depId: string) => {

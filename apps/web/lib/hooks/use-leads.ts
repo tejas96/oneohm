@@ -13,8 +13,7 @@ export const leadKeys = {
   list: (orgId: string | undefined, filters: LeadFilters) =>
     [...leadKeys.lists(orgId), filters] as const,
   details: (orgId?: string) => [...leadKeys.all(orgId), 'detail'] as const,
-  detail: (orgId: string | undefined, id: string) =>
-    [...leadKeys.details(orgId), id] as const,
+  detail: (orgId: string | undefined, id: string) => [...leadKeys.details(orgId), id] as const,
 };
 
 /**
@@ -118,10 +117,14 @@ export function useCreateLead() {
 
   return useMutation({
     mutationFn: async (lead: CreateLeadDto): Promise<Lead> => {
-      const { data } = await apiClient.post('/customers', {
-        ...lead,
-        status: 'lead',
-      }, { headers: { 'X-Organization-Id': organizationId } });
+      const { data } = await apiClient.post(
+        '/customers',
+        {
+          ...lead,
+          status: 'lead',
+        },
+        { headers: { 'X-Organization-Id': organizationId } },
+      );
       return data;
     },
     onSuccess: () => {

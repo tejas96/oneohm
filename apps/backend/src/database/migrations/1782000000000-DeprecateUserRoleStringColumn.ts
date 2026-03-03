@@ -13,9 +13,7 @@ export class DeprecateUserRoleStringColumn1782000000000 implements MigrationInte
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `UPDATE "user_roles" SET "role" = 'legacy' WHERE "role" IS NULL`,
-    );
+    await queryRunner.query(`UPDATE "user_roles" SET "role" = 'legacy' WHERE "role" IS NULL`);
     await queryRunner.query(`ALTER TABLE "user_roles" ALTER COLUMN "role" SET NOT NULL`);
   }
 }

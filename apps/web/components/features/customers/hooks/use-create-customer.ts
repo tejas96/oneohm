@@ -19,8 +19,7 @@ export const customerKeys = {
   list: (orgId: string | undefined, filters: Record<string, unknown>) =>
     [...customerKeys.lists(orgId), filters] as const,
   details: (orgId?: string) => [...customerKeys.all(orgId), 'detail'] as const,
-  detail: (orgId: string | undefined, id: string) =>
-    [...customerKeys.details(orgId), id] as const,
+  detail: (orgId: string | undefined, id: string) => [...customerKeys.details(orgId), id] as const,
 };
 
 // ============================================================================
@@ -159,7 +158,7 @@ export function useCheckAvailability(): {
       });
       return data;
     },
-    [organizationId]
+    [organizationId],
   );
 
   const checkPhone = useCallback(
@@ -185,7 +184,9 @@ export function useCheckAvailability(): {
             const result = await checkAvailability({ phone, excludeCustomerId });
             setState((prev) => ({
               ...prev,
-              phoneError: result.phoneExists ? (result.phoneError ?? 'Phone already registered') : null,
+              phoneError: result.phoneExists
+                ? (result.phoneError ?? 'Phone already registered')
+                : null,
               isCheckingPhone: false,
             }));
           } catch {
@@ -194,7 +195,7 @@ export function useCheckAvailability(): {
         })();
       }, 550);
     },
-    [checkAvailability]
+    [checkAvailability],
   );
 
   const checkEmail = useCallback(
@@ -221,7 +222,9 @@ export function useCheckAvailability(): {
             const result = await checkAvailability({ email, excludeCustomerId });
             setState((prev) => ({
               ...prev,
-              emailError: result.emailExists ? (result.emailError ?? 'Email already registered') : null,
+              emailError: result.emailExists
+                ? (result.emailError ?? 'Email already registered')
+                : null,
               isCheckingEmail: false,
             }));
           } catch {
@@ -230,7 +233,7 @@ export function useCheckAvailability(): {
         })();
       }, 550);
     },
-    [checkAvailability]
+    [checkAvailability],
   );
 
   const clearErrors = useCallback(() => {

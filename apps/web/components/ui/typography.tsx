@@ -170,7 +170,21 @@ const typographyVariants = cva('', {
   },
 });
 
-type TypographyElement = 'span' | 'p' | 'div' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'label' | 'strong' | 'em' | 'small' | 'a';
+type TypographyElement =
+  | 'span'
+  | 'p'
+  | 'div'
+  | 'h1'
+  | 'h2'
+  | 'h3'
+  | 'h4'
+  | 'h5'
+  | 'h6'
+  | 'label'
+  | 'strong'
+  | 'em'
+  | 'small'
+  | 'a';
 
 export interface TypographyProps
   extends Omit<React.HTMLAttributes<HTMLElement>, 'color'>,
@@ -196,19 +210,30 @@ export interface TypographyProps
  */
 function getDefaultElement(variant: string | null | undefined): TypographyElement {
   switch (variant) {
-    case 'h1': return 'h1';
-    case 'h2': return 'h2';
-    case 'h3': return 'h3';
-    case 'h4': return 'h4';
-    case 'h5': return 'h5';
-    case 'h6': return 'h6';
-    case 'body': return 'p';
-    case 'label': return 'label';
-    case 'link': return 'a';
-    case 'helper': return 'span';
+    case 'h1':
+      return 'h1';
+    case 'h2':
+      return 'h2';
+    case 'h3':
+      return 'h3';
+    case 'h4':
+      return 'h4';
+    case 'h5':
+      return 'h5';
+    case 'h6':
+      return 'h6';
+    case 'body':
+      return 'p';
+    case 'label':
+      return 'label';
+    case 'link':
+      return 'a';
+    case 'helper':
+      return 'span';
     case null:
     case undefined:
-    default: return 'span';
+    default:
+      return 'span';
   }
 }
 
@@ -252,7 +277,6 @@ const Typography = React.forwardRef<HTMLElement, TypographyProps>(
 
     return (
       <Comp
-         
         ref={ref as never}
         className={cn(
           typographyVariants({ variant, size, color: effectiveColor, weight, align }),

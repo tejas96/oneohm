@@ -31,7 +31,13 @@ import { useState, useEffect, useCallback, useMemo, type JSX } from 'react';
 import { MarkAsLostModal } from './mark-as-lost-modal';
 import { useProperties, usePropertyStats, type Property } from '../hooks';
 
-import { DataTable, EmptyState, FilterTabs, TablePagination, type FilterTab } from '@/components/shared';
+import {
+  DataTable,
+  EmptyState,
+  FilterTabs,
+  TablePagination,
+  type FilterTab,
+} from '@/components/shared';
 import {
   Button,
   DropdownMenu,
@@ -330,9 +336,7 @@ export function PropertyListPage(): JSX.Element {
       // Property column: name + temp dot, address + customerName + type
       {
         accessorKey: 'propertyName',
-        header: () => (
-          <SortableHeader field={PropertySortField.PROPERTY_NAME} label="Property" />
-        ),
+        header: () => <SortableHeader field={PropertySortField.PROPERTY_NAME} label="Property" />,
         enableSorting: false,
         cell: ({ row }) => {
           const property = row.original;
@@ -355,14 +359,18 @@ export function PropertyListPage(): JSX.Element {
                   title={`${TEMPERATURE_LABELS[property.leadTemperature]} Lead`}
                 />
                 {property.wantsLoan && (
-                  <span className="text-primary font-semibold text-xs shrink-0" title="Loan Required">
+                  <span
+                    className="text-primary font-semibold text-xs shrink-0"
+                    title="Loan Required"
+                  >
                     $
                   </span>
                 )}
               </div>
               <div className="text-foreground-tertiary text-2xs leading-tight mt-0.5">
-                {property.address || '-'} {property.customerName ? `• ${property.customerName}` : ''}{' '}
-                • {PROPERTY_TYPE_LABELS[property.propertyType]}
+                {property.address || '-'}{' '}
+                {property.customerName ? `• ${property.customerName}` : ''} •{' '}
+                {PROPERTY_TYPE_LABELS[property.propertyType]}
               </div>
             </Link>
           );
@@ -523,16 +531,16 @@ export function PropertyListPage(): JSX.Element {
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() =>
-                  router.push(`${ROUTES.QUOTES.NEW}?propertyId=${row.original.id}&customerId=${row.original.customerId}`)
+                  router.push(
+                    `${ROUTES.QUOTES.NEW}?propertyId=${row.original.id}&customerId=${row.original.customerId}`,
+                  )
                 }
               >
                 <FileText className="mr-2 size-icon-sm" />
                 Create Quote
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() =>
-                  router.push(`${ROUTES.FOLLOWUPS.NEW}?propertyId=${row.original.id}`)
-                }
+                onClick={() => router.push(`${ROUTES.FOLLOWUPS.NEW}?propertyId=${row.original.id}`)}
               >
                 <Calendar className="mr-2 size-icon-sm" />
                 Schedule Followup

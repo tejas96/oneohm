@@ -44,13 +44,7 @@ export interface FunnelChartProps {
 // Default Colors
 // ============================================================================
 
-const DEFAULT_COLORS = [
-  'bg-primary',
-  'bg-info',
-  'bg-success',
-  'bg-warning',
-  'bg-error',
-];
+const DEFAULT_COLORS = ['bg-primary', 'bg-info', 'bg-success', 'bg-warning', 'bg-error'];
 
 // ============================================================================
 // Component
@@ -68,17 +62,18 @@ export function FunnelChart({
 }: FunnelChartProps): React.JSX.Element {
   // Calculate width percentages for each stage
   const maxValue = Math.max(...stages.map((s) => s.value));
-  
+
   const stagesWithWidth = stages.map((stage, index) => {
     // Calculate width based on value, with minimum width
     const rawPercent = maxValue > 0 ? (stage.value / maxValue) * 100 : minWidthPercent;
     const widthPercent = Math.max(rawPercent, minWidthPercent);
-    
+
     // Calculate conversion rate from previous stage
     const prevStage = stages[index - 1];
-    const conversionRate = prevStage && prevStage.value > 0
-      ? Math.round((stage.value / prevStage.value) * 100)
-      : undefined;
+    const conversionRate =
+      prevStage && prevStage.value > 0
+        ? Math.round((stage.value / prevStage.value) * 100)
+        : undefined;
 
     return {
       ...stage,
@@ -103,7 +98,7 @@ export function FunnelChart({
                 <div className="h-px w-8 bg-border-light" />
               </div>
             )}
-            
+
             {/* Stage bar */}
             <button
               type="button"
@@ -112,7 +107,7 @@ export function FunnelChart({
               className={cn(
                 'relative flex items-center justify-center rounded-lg transition-all duration-fast',
                 onStageClick && 'cursor-pointer hover:opacity-90 hover:scale-[1.02]',
-                !onStageClick && 'cursor-default'
+                !onStageClick && 'cursor-default',
               )}
               style={{
                 width: `${stage.widthPercent}%`,
@@ -121,12 +116,10 @@ export function FunnelChart({
             >
               {/* Background */}
               <div className={cn('absolute inset-0 rounded-lg', stage.color)} />
-              
+
               {/* Content */}
               <div className="relative z-10 flex items-center justify-between w-full px-4">
-                <span className="text-sm font-medium text-white truncate">
-                  {stage.label}
-                </span>
+                <span className="text-sm font-medium text-white truncate">{stage.label}</span>
                 {showValues && (
                   <span className="text-lg font-semibold text-white">
                     {stage.value.toLocaleString()}

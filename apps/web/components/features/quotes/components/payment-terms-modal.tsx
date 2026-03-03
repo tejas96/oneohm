@@ -2,7 +2,7 @@
 
 import type { PaymentMilestone } from '@oneohm-epc/shared-types';
 import { Plus, RotateCcw, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
 import { Button } from '@/components/ui/button';
@@ -77,12 +77,10 @@ export function PaymentTermsModal({
   onConfirm,
 }: PaymentTermsModalProps) {
   const [rows, setRows] = useState<MilestoneRow[]>([]);
-  const hasInitialized = useRef(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (open) {
       setRows(defaultMilestones.map(createRow));
-      hasInitialized.current = true;
     }
   }, [open, defaultMilestones]);
 

@@ -96,9 +96,7 @@ export function LoginForm(): React.JSX.Element {
             <div className="flex items-center justify-between">
               <Checkbox
                 checked={passwordForm.watch('rememberMe')}
-                onCheckedChange={(checked) =>
-                  passwordForm.setValue('rememberMe', checked === true)
-                }
+                onCheckedChange={(checked) => passwordForm.setValue('rememberMe', checked === true)}
                 size="sm"
                 label="Remember me"
               />
@@ -128,7 +126,9 @@ export function LoginForm(): React.JSX.Element {
               inputMode="numeric"
               prefix="+91"
               value={otpForm.watch('phone')}
-              onChange={(e) => otpForm.setValue('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
+              onChange={(e) =>
+                otpForm.setValue('phone', e.target.value.replace(/\D/g, '').slice(0, 10))
+              }
               label="Phone Number"
               placeholder="98765 43210"
               disabled={isLoading}

@@ -1,9 +1,5 @@
-import {
-  FollowupType,
-  FollowupPriority,
-} from '@oneohm-epc/shared-types';
+import { FollowupType, FollowupPriority } from '@oneohm-epc/shared-types';
 import { z } from 'zod';
-
 
 // ============================================================================
 // Create/Edit Followup Schema
@@ -19,10 +15,7 @@ export const followupSchema = z.object({
   }),
 
   // Subject
-  subject: z
-    .string()
-    .min(1, 'Subject is required')
-    .max(200, 'Subject too long'),
+  subject: z.string().min(1, 'Subject is required').max(200, 'Subject too long'),
 
   // Date and Time
   scheduledDate: z.date({
@@ -38,11 +31,7 @@ export const followupSchema = z.object({
   priority: z.nativeEnum(FollowupPriority).default(FollowupPriority.NORMAL),
 
   // Notes
-  notes: z
-    .string()
-    .max(1000, 'Notes too long')
-    .optional()
-    .or(z.literal('')),
+  notes: z.string().max(1000, 'Notes too long').optional().or(z.literal('')),
 
   // Assigned to (user ID)
   assignedToUserId: z.string().optional(),
@@ -64,11 +53,7 @@ export const rescheduleFollowupSchema = z.object({
     .regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format')
     .optional(),
   reason: z.string().min(1, 'Please provide a reason'),
-  notes: z
-    .string()
-    .max(500, 'Notes too long')
-    .optional()
-    .or(z.literal('')),
+  notes: z.string().max(500, 'Notes too long').optional().or(z.literal('')),
 });
 
 export type RescheduleFollowupFormData = z.infer<typeof rescheduleFollowupSchema>;
@@ -78,15 +63,8 @@ export type RescheduleFollowupFormData = z.infer<typeof rescheduleFollowupSchema
 // ============================================================================
 
 export const completeFollowupSchema = z.object({
-  outcome: z
-    .string()
-    .min(1, 'Please describe the outcome')
-    .max(500, 'Outcome too long'),
-  nextSteps: z
-    .string()
-    .max(500, 'Next steps too long')
-    .optional()
-    .or(z.literal('')),
+  outcome: z.string().min(1, 'Please describe the outcome').max(500, 'Outcome too long'),
+  nextSteps: z.string().max(500, 'Next steps too long').optional().or(z.literal('')),
   scheduleNextFollowup: z.boolean().default(false),
 });
 

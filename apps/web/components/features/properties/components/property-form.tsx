@@ -1,20 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  ConnectionType,
-  PropertyType,
-  type PropertyDocument,
-} from '@oneohm-epc/shared-types';
-import {
-  ArrowLeft,
-  Banknote,
-  FileText,
-  Home,
-  MapPin,
-  Thermometer,
-  Zap,
-} from 'lucide-react';
+import { ConnectionType, PropertyType, type PropertyDocument } from '@oneohm-epc/shared-types';
+import { ArrowLeft, Banknote, FileText, Home, MapPin, Thermometer, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
@@ -22,7 +10,12 @@ import { useForm } from 'react-hook-form';
 
 import { type CustomerResponse } from '../../customers';
 import { PROPERTY_ALERTS, REQUIRED_FIELDS_TOTAL } from '../constants';
-import { useCreateProperty, useCustomerById, useUpdateProperty, type CustomerPropertyResponse } from '../hooks';
+import {
+  useCreateProperty,
+  useCustomerById,
+  useUpdateProperty,
+  type CustomerPropertyResponse,
+} from '../hooks';
 import {
   createPropertySchema,
   editPropertySchema,
@@ -136,17 +129,15 @@ export function PropertyForm({
   const updatePropertyMutation = useUpdateProperty();
 
   const { data: fetchedCustomer } = useCustomerById(
-    !isEditMode && initialCustomerId && !preloadedCustomer ? initialCustomerId : undefined
+    !isEditMode && initialCustomerId && !preloadedCustomer ? initialCustomerId : undefined,
   );
 
   const customer = preloadedCustomer ?? fetchedCustomer;
 
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>(
-    initialCustomerId ?? ''
-  );
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>(initialCustomerId ?? '');
 
   const effectiveCustomerId = isEditMode
-    ? initialData?.customerId ?? ''
+    ? (initialData?.customerId ?? '')
     : (initialCustomerId ?? selectedCustomerId);
 
   const selectedCustomer = initialCustomerId
@@ -162,7 +153,7 @@ export function PropertyForm({
   const [isUploadingDocs, setIsUploadingDocs] = useState(false);
 
   const [initialDocUrls] = useState<Set<string>>(
-    () => new Set((initialData?.documents ?? []).map((d) => d.url))
+    () => new Set((initialData?.documents ?? []).map((d) => d.url)),
   );
 
   const schema = isEditMode ? editPropertySchema : createPropertySchema;
@@ -273,15 +264,12 @@ export function PropertyForm({
   const isContextAware = !isEditMode && !!initialCustomerId;
 
   const activeMutation = isEditMode ? updatePropertyMutation : createPropertyMutation;
-  const isSubmitting =
-    form.formState.isSubmitting || activeMutation.isPending || isUploadingDocs;
+  const isSubmitting = form.formState.isSubmitting || activeMutation.isPending || isUploadingDocs;
 
   // Dirty tracking for edit mode — includes document changes
   const hasDocumentChanges = useMemo(() => {
     if (!isEditMode) return false;
-    const currentUrls = new Set(
-      documents.filter((d) => d.uploadedUrl).map((d) => d.uploadedUrl!)
-    );
+    const currentUrls = new Set(documents.filter((d) => d.uploadedUrl).map((d) => d.uploadedUrl!));
     if (currentUrls.size !== initialDocUrls.size) return true;
     for (const url of currentUrls) {
       if (!initialDocUrls.has(url)) return true;
@@ -289,9 +277,7 @@ export function PropertyForm({
     return false;
   }, [isEditMode, documents, initialDocUrls]);
 
-  const canSave = isEditMode
-    ? form.formState.isDirty || hasDocumentChanges
-    : true;
+  const canSave = isEditMode ? form.formState.isDirty || hasDocumentChanges : true;
 
   // Navigation
   const backLink = isEditMode
@@ -313,7 +299,7 @@ export function PropertyForm({
       : 'Create New Property';
 
   const pageSubtitle = isEditMode
-    ? (initialData?.propertyName || 'Unnamed Property')
+    ? initialData?.propertyName || 'Unnamed Property'
     : isContextAware
       ? `Add a new property for ${customer ? `${customer.firstName} ${customer.lastName ?? ''}`.trim() : 'this customer'}`
       : 'Add a new property to your database';
@@ -329,12 +315,8 @@ export function PropertyForm({
           <ArrowLeft className="size-icon-sm" />
           {backLabel}
         </Link>
-        <h1 className="text-xl font-semibold text-foreground">
-          {pageTitle}
-        </h1>
-        <p className="text-foreground-secondary text-sm mt-1">
-          {pageSubtitle}
-        </p>
+        <h1 className="text-xl font-semibold text-foreground">{pageTitle}</h1>
+        <p className="text-foreground-secondary text-sm mt-1">{pageSubtitle}</p>
       </div>
 
       {/* Customer Card / Selector (create mode only) */}
@@ -368,10 +350,14 @@ export function PropertyForm({
               <CardContent className="p-5 space-y-4">
                 <div className="space-y-1">
                   <h3 className="text-sm font-semibold text-foreground">Select Customer</h3>
-                  <p className="text-xs text-foreground-secondary">Choose which customer this property belongs to</p>
+                  <p className="text-xs text-foreground-secondary">
+                    Choose which customer this property belongs to
+                  </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="customerId" required>Customer</Label>
+                  <Label htmlFor="customerId" required>
+                    Customer
+                  </Label>
                   <Select
                     value={selectedCustomerId}
                     onValueChange={setSelectedCustomerId}
@@ -379,7 +365,9 @@ export function PropertyForm({
                   >
                     <SelectTrigger id="customerId">
                       <SelectValue
-                        placeholder={isLoadingCustomers ? 'Loading customers...' : 'Select a customer'}
+                        placeholder={
+                          isLoadingCustomers ? 'Loading customers...' : 'Select a customer'
+                        }
                       />
                     </SelectTrigger>
                     <SelectContent>
@@ -404,7 +392,9 @@ export function PropertyForm({
                     </SelectContent>
                   </Select>
                   {'customerId' in form.formState.errors && form.formState.errors.customerId && (
-                    <p className="text-xs text-error">{(form.formState.errors.customerId as { message?: string }).message}</p>
+                    <p className="text-xs text-error">
+                      {(form.formState.errors.customerId as { message?: string }).message}
+                    </p>
                   )}
                 </div>
 
@@ -440,7 +430,9 @@ export function PropertyForm({
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-foreground">Property Details</h3>
-                <p className="text-xs text-foreground-secondary">Basic information about the property</p>
+                <p className="text-xs text-foreground-secondary">
+                  Basic information about the property
+                </p>
               </div>
             </div>
 
@@ -450,7 +442,9 @@ export function PropertyForm({
               </Alert>
 
               <div className="space-y-2">
-                <Label htmlFor="propertyName" className="text-sm" required>Property Name</Label>
+                <Label htmlFor="propertyName" className="text-sm" required>
+                  Property Name
+                </Label>
                 <Input
                   id="propertyName"
                   placeholder="e.g., Main Residence, Office Building"
@@ -460,10 +454,14 @@ export function PropertyForm({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm" required>Property Type</Label>
+                <Label className="text-sm" required>
+                  Property Type
+                </Label>
                 <RadioCardGroup
                   value={form.watch('propertyType')}
-                  onValueChange={(v) => form.setValue('propertyType', v as PropertyType, { shouldDirty: true })}
+                  onValueChange={(v) =>
+                    form.setValue('propertyType', v as PropertyType, { shouldDirty: true })
+                  }
                   orientation="horizontal"
                 >
                   {PROPERTY_TYPE_OPTIONS.map((type) => (
@@ -485,8 +483,12 @@ export function PropertyForm({
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-background-secondary">
                   <Checkbox
                     id="isPrimary"
-                    checked={form.watch('isPrimary' as keyof CreatePropertyFormData) as boolean | undefined}
-                    onCheckedChange={(checked) => form.setValue('isPrimary' as keyof CreatePropertyFormData, checked === true)}
+                    checked={
+                      form.watch('isPrimary' as keyof CreatePropertyFormData) as boolean | undefined
+                    }
+                    onCheckedChange={(checked) =>
+                      form.setValue('isPrimary' as keyof CreatePropertyFormData, checked === true)
+                    }
                   />
                   <Label htmlFor="isPrimary" className="cursor-pointer text-sm">
                     Set as primary property
@@ -506,7 +508,9 @@ export function PropertyForm({
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-foreground">Property Address</h3>
-                <p className="text-xs text-foreground-secondary">Location details for site visits and installation</p>
+                <p className="text-xs text-foreground-secondary">
+                  Location details for site visits and installation
+                </p>
               </div>
             </div>
 
@@ -518,7 +522,9 @@ export function PropertyForm({
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="address" className="text-sm" required>Full Address</Label>
+                <Label htmlFor="address" className="text-sm" required>
+                  Full Address
+                </Label>
                 <Textarea
                   id="address"
                   placeholder="Street address, area, landmark"
@@ -529,7 +535,9 @@ export function PropertyForm({
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="city" className="text-sm" required>City</Label>
+                  <Label htmlFor="city" className="text-sm" required>
+                    City
+                  </Label>
                   <Input
                     id="city"
                     placeholder="Enter city"
@@ -538,7 +546,9 @@ export function PropertyForm({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="state" className="text-sm">State</Label>
+                  <Label htmlFor="state" className="text-sm">
+                    State
+                  </Label>
                   <Select
                     value={form.watch('state')}
                     onValueChange={(v) => form.setValue('state', v, { shouldDirty: true })}
@@ -556,7 +566,9 @@ export function PropertyForm({
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="pincode" className="text-sm" required>Pincode</Label>
+                  <Label htmlFor="pincode" className="text-sm" required>
+                    Pincode
+                  </Label>
                   <Input
                     id="pincode"
                     placeholder="123456"
@@ -580,20 +592,30 @@ export function PropertyForm({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-semibold text-foreground">Electricity Details</h3>
-                  <Badge variant="muted" size="xs" shape="pill">OPTIONAL</Badge>
+                  <Badge variant="muted" size="xs" shape="pill">
+                    OPTIONAL
+                  </Badge>
                 </div>
-                <p className="text-xs text-foreground-secondary">Power connection and billing information</p>
+                <p className="text-xs text-foreground-secondary">
+                  Power connection and billing information
+                </p>
               </div>
             </div>
 
             <div className="p-5 space-y-5">
-              <Alert variant="info" appearance="minimal" title={PROPERTY_ALERTS.electricityTip.title}>
+              <Alert
+                variant="info"
+                appearance="minimal"
+                title={PROPERTY_ALERTS.electricityTip.title}
+              >
                 {PROPERTY_ALERTS.electricityTip.message}
               </Alert>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="discomName" className="text-sm">DISCOM Provider</Label>
+                  <Label htmlFor="discomName" className="text-sm">
+                    DISCOM Provider
+                  </Label>
                   <Select
                     value={form.watch('discomName')}
                     onValueChange={(v) => form.setValue('discomName', v, { shouldDirty: true })}
@@ -611,7 +633,9 @@ export function PropertyForm({
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="consumerNumber" className="text-sm">Consumer Number</Label>
+                  <Label htmlFor="consumerNumber" className="text-sm">
+                    Consumer Number
+                  </Label>
                   <Input
                     id="consumerNumber"
                     placeholder="Enter consumer number"
@@ -629,7 +653,11 @@ export function PropertyForm({
                       <button
                         key={type.value}
                         type="button"
-                        onClick={() => form.setValue('connectionType', type.value as ConnectionType, { shouldDirty: true })}
+                        onClick={() =>
+                          form.setValue('connectionType', type.value as ConnectionType, {
+                            shouldDirty: true,
+                          })
+                        }
                         className={`flex flex-col items-center gap-1 rounded-lg border-2 p-4 text-center transition-all ${
                           isSelected
                             ? 'border-primary bg-primary/5 text-primary'
@@ -638,7 +666,9 @@ export function PropertyForm({
                       >
                         <span className="text-sm font-medium">{type.label}</span>
                         <span className="text-xs text-foreground-secondary">
-                          {type.value === ConnectionType.SINGLE_PHASE ? 'Homes & small shops' : 'Offices & factories'}
+                          {type.value === ConnectionType.SINGLE_PHASE
+                            ? 'Homes & small shops'
+                            : 'Offices & factories'}
                         </span>
                       </button>
                     );
@@ -648,7 +678,9 @@ export function PropertyForm({
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="sanctionedLoad" className="text-sm">Sanctioned Load (kW)</Label>
+                  <Label htmlFor="sanctionedLoad" className="text-sm">
+                    Sanctioned Load (kW)
+                  </Label>
                   <Input
                     id="sanctionedLoad"
                     type="number"
@@ -661,7 +693,9 @@ export function PropertyForm({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="meterNumber" className="text-sm">Meter Number</Label>
+                  <Label htmlFor="meterNumber" className="text-sm">
+                    Meter Number
+                  </Label>
                   <Input
                     id="meterNumber"
                     placeholder="Enter meter number"
@@ -669,7 +703,9 @@ export function PropertyForm({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="monthlyBill" className="text-sm">Avg. Monthly Bill</Label>
+                  <Label htmlFor="monthlyBill" className="text-sm">
+                    Avg. Monthly Bill
+                  </Label>
                   <Input
                     id="monthlyBill"
                     type="number"
@@ -694,13 +730,17 @@ export function PropertyForm({
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-foreground">Lead Status & Financing</h3>
-                <p className="text-xs text-foreground-secondary">Interest level and loan preferences</p>
+                <p className="text-xs text-foreground-secondary">
+                  Interest level and loan preferences
+                </p>
               </div>
             </div>
 
             <div className="p-5 space-y-5">
               <div className="space-y-2">
-                <Label className="text-sm" required>Lead Temperature</Label>
+                <Label className="text-sm" required>
+                  Lead Temperature
+                </Label>
                 <LeadTemperatureSelector
                   value={form.watch('leadTemperature')}
                   onChange={(v) => form.setValue('leadTemperature', v, { shouldDirty: true })}
@@ -719,24 +759,34 @@ export function PropertyForm({
                     <Label htmlFor="wantsLoan" className="cursor-pointer text-sm font-medium">
                       Interested in financing / loan
                     </Label>
-                    <p className="text-xs text-foreground-secondary">Enable if customer wants EMI options</p>
+                    <p className="text-xs text-foreground-secondary">
+                      Enable if customer wants EMI options
+                    </p>
                   </div>
                 </div>
                 <Switch
                   id="wantsLoan"
                   checked={wantsLoan}
-                  onCheckedChange={(checked) => form.setValue('wantsLoan', checked, { shouldDirty: true })}
+                  onCheckedChange={(checked) =>
+                    form.setValue('wantsLoan', checked, { shouldDirty: true })
+                  }
                 />
               </div>
 
               {wantsLoan && (
-                <Alert variant="info" appearance="minimal" title={PROPERTY_ALERTS.loanBenefits.title}>
+                <Alert
+                  variant="info"
+                  appearance="minimal"
+                  title={PROPERTY_ALERTS.loanBenefits.title}
+                >
                   {PROPERTY_ALERTS.loanBenefits.message}
                 </Alert>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="notes" className="text-sm">Notes</Label>
+                <Label htmlFor="notes" className="text-sm">
+                  Notes
+                </Label>
                 <Textarea
                   id="notes"
                   placeholder="Any additional notes about this lead..."
@@ -760,7 +810,10 @@ export function PropertyForm({
                 <p className="text-xs text-foreground-secondary">
                   Upload identity and KYC documents
                   {wantsLoan && (
-                    <span className="text-primary font-medium"> &mdash; Aadhaar required for loan</span>
+                    <span className="text-primary font-medium">
+                      {' '}
+                      &mdash; Aadhaar required for loan
+                    </span>
                   )}
                 </p>
               </div>
@@ -790,7 +843,9 @@ export function PropertyForm({
             <div className="flex items-center justify-between gap-4">
               {!isEditMode && (
                 <p className="text-xs text-foreground-secondary hidden sm:block">
-                  {isComplete ? 'Ready to create property' : `${REQUIRED_FIELDS_TOTAL - filledCount} required field(s) remaining`}
+                  {isComplete
+                    ? 'Ready to create property'
+                    : `${REQUIRED_FIELDS_TOTAL - filledCount} required field(s) remaining`}
                 </p>
               )}
               <div className="flex items-center gap-3 ml-auto">
@@ -804,14 +859,15 @@ export function PropertyForm({
                 </Button>
                 <Button
                   type="submit"
-                  disabled={
-                    isSubmitting ||
-                    (isEditMode ? !canSave : !effectiveCustomerId)
-                  }
+                  disabled={isSubmitting || (isEditMode ? !canSave : !effectiveCustomerId)}
                 >
                   {isSubmitting
-                    ? (isEditMode ? 'Saving...' : 'Creating...')
-                    : (isEditMode ? 'Save Changes' : 'Create Property')}
+                    ? isEditMode
+                      ? 'Saving...'
+                      : 'Creating...'
+                    : isEditMode
+                      ? 'Save Changes'
+                      : 'Create Property'}
                 </Button>
               </div>
             </div>
@@ -830,7 +886,7 @@ export function PropertyForm({
       setIsUploadingDocs(true);
 
       const pendingDocs = documents.filter(
-        (d) => (d.status === 'pending' || d.status === 'error') && d.file
+        (d) => (d.status === 'pending' || d.status === 'error') && d.file,
       );
 
       let currentDocs = [...documents];
@@ -839,7 +895,7 @@ export function PropertyForm({
         if (!doc.file) continue;
         try {
           currentDocs = currentDocs.map((d) =>
-            d.id === doc.id ? { ...d, status: 'uploading' as const, progress: 0 } : d
+            d.id === doc.id ? { ...d, status: 'uploading' as const, progress: 0 } : d,
           );
           setDocuments(currentDocs);
 
@@ -850,9 +906,7 @@ export function PropertyForm({
             subCategory: doc.slotId,
             onProgress: (progress) => {
               setDocuments((prev) =>
-                prev.map((d) =>
-                  d.id === doc.id ? { ...d, progress: progress.percent } : d
-                )
+                prev.map((d) => (d.id === doc.id ? { ...d, progress: progress.percent } : d)),
               );
             },
           });
@@ -866,13 +920,13 @@ export function PropertyForm({
                   uploadedUrl: result.publicUrl,
                   fileKey: result.fileKey,
                 }
-              : d
+              : d,
           );
           setDocuments(currentDocs);
         } catch (error) {
           const msg = error instanceof Error ? error.message : 'Upload failed';
           currentDocs = currentDocs.map((d) =>
-            d.id === doc.id ? { ...d, status: 'error' as const, error: msg } : d
+            d.id === doc.id ? { ...d, status: 'error' as const, error: msg } : d,
           );
           setDocuments(currentDocs);
         }
@@ -882,12 +936,15 @@ export function PropertyForm({
 
       const failedDocs = currentDocs.filter((d) => d.status === 'error');
       if (failedDocs.length > 0) {
-        const failedRequired = data.wantsLoan && failedDocs.some((d) => d.slotId === 'aadhaar_card');
+        const failedRequired =
+          data.wantsLoan && failedDocs.some((d) => d.slotId === 'aadhaar_card');
         if (failedRequired) {
           showToast.error('Required document (Aadhaar) failed to upload. Please retry.');
           return;
         }
-        showToast.warning(`${failedDocs.length} document(s) failed to upload. Property will be ${isEditMode ? 'saved' : 'created'} without them.`);
+        showToast.warning(
+          `${failedDocs.length} document(s) failed to upload. Property will be ${isEditMode ? 'saved' : 'created'} without them.`,
+        );
       }
 
       const successfulDocs = currentDocs.filter((d) => d.status === 'success' && d.uploadedUrl);

@@ -318,9 +318,7 @@ export class ProjectTaskRepository {
     return statusCounts;
   }
 
-  async findAllForBoard(
-    projectId: string,
-  ): Promise<ProjectTaskEntity[]> {
+  async findAllForBoard(projectId: string): Promise<ProjectTaskEntity[]> {
     const tasks = await this.repository.find({
       where: { projectId, deletedAt: IsNull() },
       relations: ['assignee', 'workflowStep', 'milestone'],
@@ -642,8 +640,9 @@ export class ProjectTaskRepository {
       const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
       if (filters.dueDateFilter === 'overdue') {
-        qb.andWhere('task.end_date IS NOT NULL')
-          .andWhere('task.end_date < :todayStr', { todayStr });
+        qb.andWhere('task.end_date IS NOT NULL').andWhere('task.end_date < :todayStr', {
+          todayStr,
+        });
       } else if (filters.dueDateFilter === 'dueToday') {
         qb.andWhere('task.end_date = :todayStr', { todayStr });
       } else if (filters.dueDateFilter === 'thisWeek') {
@@ -666,8 +665,7 @@ export class ProjectTaskRepository {
       qb.andWhere('task.assigned_to_user_id = :userId', { userId });
     }
 
-    qb.orderBy('task.end_date', 'ASC', 'NULLS LAST')
-      .addOrderBy('task.priority', 'DESC');
+    qb.orderBy('task.end_date', 'ASC', 'NULLS LAST').addOrderBy('task.priority', 'DESC');
 
     const results = await qb.getMany();
     return this.resolveMany(results);
@@ -685,9 +683,7 @@ export class ProjectTaskRepository {
     let whereConditions: Record<string, unknown>[];
 
     if (isAdmin) {
-      whereConditions = [
-        { id: taskId, deletedAt: IsNull(), ...orgFilter },
-      ];
+      whereConditions = [{ id: taskId, deletedAt: IsNull(), ...orgFilter }];
     } else if (teamProjectIds.length > 0) {
       whereConditions = [
         { id: taskId, assignedToUserId: userId, deletedAt: IsNull(), ...orgFilter },

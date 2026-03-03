@@ -32,14 +32,7 @@ interface KanbanTaskCardProps {
 }
 
 export function KanbanTaskCard({ task, onTaskClick, isDragOverlay }: KanbanTaskCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
     data: { type: 'task', task },
     disabled: isDragOverlay,
@@ -94,10 +87,7 @@ export function KanbanTaskCard({ task, onTaskClick, isDragOverlay }: KanbanTaskC
             {isDone && <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-success" />}
           </div>
 
-          <button
-            className="block w-full text-left"
-            onClick={() => onTaskClick?.(task.id)}
-          >
+          <button className="block w-full text-left" onClick={() => onTaskClick?.(task.id)}>
             <p
               className={cn(
                 'text-sm font-medium text-foreground line-clamp-2',
@@ -154,9 +144,7 @@ export function KanbanTaskCard({ task, onTaskClick, isDragOverlay }: KanbanTaskC
                 <span
                   className={cn(
                     'flex items-center gap-0.5 text-2xs',
-                    isOverdue
-                      ? 'font-medium text-error'
-                      : 'text-foreground-secondary',
+                    isOverdue ? 'font-medium text-error' : 'text-foreground-secondary',
                   )}
                 >
                   {isOverdue && <AlertTriangle className="h-3 w-3" />}

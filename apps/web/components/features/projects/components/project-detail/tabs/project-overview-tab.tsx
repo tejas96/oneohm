@@ -1,15 +1,7 @@
 'use client';
 
 import { ProjectStatus } from '@oneohm-epc/shared-types';
-import {
-  Banknote,
-  Calendar,
-  Crown,
-  MapPin,
-  UserPlus,
-  Users,
-  Zap,
-} from 'lucide-react';
+import { Banknote, Calendar, Crown, MapPin, UserPlus, Users, Zap } from 'lucide-react';
 import Link from 'next/link';
 import React, { useCallback, useMemo, useState } from 'react';
 
@@ -23,7 +15,10 @@ import {
 } from '../../../constants';
 import type { ProjectDetail, ProjectTeamMember } from '../../../hooks/types';
 import { useProjectTeam, useProjectTaskStats } from '../../../hooks/use-project-detail';
-import { usePaymentMilestones, useProjectPaymentSummary } from '../../../hooks/use-project-payments';
+import {
+  usePaymentMilestones,
+  useProjectPaymentSummary,
+} from '../../../hooks/use-project-payments';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -33,7 +28,6 @@ import { showToast } from '@/components/ui/sonner';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { getErrorMessage } from '@/lib/utils/error';
 import { formatCurrency, formatDate, formatSystemSize, getInitials } from '@/lib/utils/format';
-
 
 interface ProjectOverviewTabProps {
   project: ProjectDetail;
@@ -201,8 +195,14 @@ function SystemCard({ project }: { project: ProjectDetail }) {
           label="System Size"
           value={project.systemSizeKw ? `${formatSystemSize(project.systemSizeKw)} kW` : 'N/A'}
         />
-        <InfoRow label="Estimated Cost" value={project.estimatedCost ? formatCurrency(project.estimatedCost) : 'N/A'} />
-        <InfoRow label="Actual Cost" value={project.actualCost ? formatCurrency(project.actualCost) : 'N/A'} />
+        <InfoRow
+          label="Estimated Cost"
+          value={project.estimatedCost ? formatCurrency(project.estimatedCost) : 'N/A'}
+        />
+        <InfoRow
+          label="Actual Cost"
+          value={project.actualCost ? formatCurrency(project.actualCost) : 'N/A'}
+        />
       </div>
     </div>
   );
@@ -224,15 +224,18 @@ function TeamMemberRow({ member }: { member: ProjectTeamMember }) {
         <p className="text-xs font-medium text-foreground truncate">{name}</p>
         <p className="text-2xs text-foreground-secondary">{member.roleName}</p>
       </div>
-      {member.isProjectManager && (
-        <Crown className="size-3.5 text-warning shrink-0" />
-      )}
+      {member.isProjectManager && <Crown className="size-3.5 text-warning shrink-0" />}
     </div>
   );
 }
 
 function TeamCard({ projectId, isActive }: { projectId: string; isActive: boolean }) {
-  const { data: team, isLoading, isError, error } = useProjectTeam(projectId, { enabled: isActive });
+  const {
+    data: team,
+    isLoading,
+    isError,
+    error,
+  } = useProjectTeam(projectId, { enabled: isActive });
   const [expanded, setExpanded] = useState(false);
 
   const toggleExpanded = useCallback(() => setExpanded((prev) => !prev), []);
@@ -295,7 +298,8 @@ function TeamCard({ projectId, isActive }: { projectId: string; isActive: boolea
 }
 
 function TimelineCard({ project }: { project: ProjectDetail }) {
-  const isTerminal = project.status === ProjectStatus.COMPLETED || project.status === ProjectStatus.CANCELLED;
+  const isTerminal =
+    project.status === ProjectStatus.COMPLETED || project.status === ProjectStatus.CANCELLED;
 
   const daysRemaining = useMemo(() => {
     if (!project.endDate) return null;
@@ -309,11 +313,14 @@ function TimelineCard({ project }: { project: ProjectDetail }) {
   function renderTimelineStatus(): React.ReactNode {
     if (isTerminal) {
       const label = project.status === ProjectStatus.COMPLETED ? 'Completed' : 'Cancelled';
-      const color = project.status === ProjectStatus.COMPLETED ? 'text-success' : 'text-foreground-secondary';
+      const color =
+        project.status === ProjectStatus.COMPLETED ? 'text-success' : 'text-foreground-secondary';
       return <span className={`text-xs font-medium ${color}`}>{label}</span>;
     }
     if (daysRemaining === null) {
-      return <span className="text-xs font-medium text-foreground-secondary">End date not set</span>;
+      return (
+        <span className="text-xs font-medium text-foreground-secondary">End date not set</span>
+      );
     }
     if (daysRemaining < 0) {
       return (
@@ -336,8 +343,14 @@ function TimelineCard({ project }: { project: ProjectDetail }) {
     <div className="rounded-lg border border-border-light bg-background-secondary p-4">
       <CardTitle icon={Calendar} title="Project Timeline" />
       <div className="divide-y divide-border-light">
-        <InfoRow label="Start Date" value={project.startDate ? formatDate(project.startDate) : 'Not set'} />
-        <InfoRow label="End Date" value={project.endDate ? formatDate(project.endDate) : 'Not set'} />
+        <InfoRow
+          label="Start Date"
+          value={project.startDate ? formatDate(project.startDate) : 'Not set'}
+        />
+        <InfoRow
+          label="End Date"
+          value={project.endDate ? formatDate(project.endDate) : 'Not set'}
+        />
         <div className="flex justify-between py-1">
           <span className="text-xs text-foreground-secondary">Status</span>
           {renderTimelineStatus()}
@@ -345,14 +358,21 @@ function TimelineCard({ project }: { project: ProjectDetail }) {
       </div>
       <div className="mt-3">
         <Progress value={project.progressPercentage} size="sm" variant="primary" />
-        <p className="text-2xs text-foreground-secondary mt-1">{project.progressPercentage}% complete</p>
+        <p className="text-2xs text-foreground-secondary mt-1">
+          {project.progressPercentage}% complete
+        </p>
       </div>
     </div>
   );
 }
 
 function MilestonesCard({ projectId, isActive }: { projectId: string; isActive: boolean }) {
-  const { data: milestones, isLoading, isError, error } = usePaymentMilestones(projectId, { enabled: isActive });
+  const {
+    data: milestones,
+    isLoading,
+    isError,
+    error,
+  } = usePaymentMilestones(projectId, { enabled: isActive });
   const { data: paymentSummary } = useProjectPaymentSummary(projectId, { enabled: isActive });
 
   if (isLoading) return <Skeleton className="h-32 rounded-lg lg:col-span-2" />;
@@ -382,15 +402,12 @@ function MilestonesCard({ projectId, isActive }: { projectId: string; isActive: 
       <CardTitle icon={Banknote} title="Project Milestones" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {displayed.map((m) => (
-          <div
-            key={m.id}
-            className="bg-background rounded-lg p-3 border border-border-light"
-          >
-            <span className="text-2xs font-medium text-foreground-secondary truncate block mb-1">{m.name}</span>
+          <div key={m.id} className="bg-background rounded-lg p-3 border border-border-light">
+            <span className="text-2xs font-medium text-foreground-secondary truncate block mb-1">
+              {m.name}
+            </span>
             {m.endDate && (
-              <p className="text-2xs text-foreground-tertiary">
-                {formatDate(m.endDate, 'short')}
-              </p>
+              <p className="text-2xs text-foreground-tertiary">{formatDate(m.endDate, 'short')}</p>
             )}
           </div>
         ))}
@@ -403,13 +420,22 @@ function MilestonesCard({ projectId, isActive }: { projectId: string; isActive: 
       {paymentSummary && (
         <div className="flex gap-4 mt-3 pt-3 border-t border-border-light text-xs">
           <span className="text-foreground-secondary">
-            Total: <span className="font-medium text-foreground">{formatCurrency(paymentSummary.totalExpected)}</span>
+            Total:{' '}
+            <span className="font-medium text-foreground">
+              {formatCurrency(paymentSummary.totalExpected)}
+            </span>
           </span>
           <span className="text-foreground-secondary">
-            Received: <span className="font-medium text-success">{formatCurrency(paymentSummary.totalPaid)}</span>
+            Received:{' '}
+            <span className="font-medium text-success">
+              {formatCurrency(paymentSummary.totalPaid)}
+            </span>
           </span>
           <span className="text-foreground-secondary">
-            Pending: <span className="font-medium text-warning">{formatCurrency(paymentSummary.pendingAmount)}</span>
+            Pending:{' '}
+            <span className="font-medium text-warning">
+              {formatCurrency(paymentSummary.pendingAmount)}
+            </span>
           </span>
         </div>
       )}
@@ -417,7 +443,15 @@ function MilestonesCard({ projectId, isActive }: { projectId: string; isActive: 
   );
 }
 
-function ProgressCard({ projectId, project, isActive }: { projectId: string; project: ProjectDetail; isActive: boolean }) {
+function ProgressCard({
+  projectId,
+  project,
+  isActive,
+}: {
+  projectId: string;
+  project: ProjectDetail;
+  isActive: boolean;
+}) {
   const { data: stats, isLoading, isError } = useProjectTaskStats(projectId, { enabled: isActive });
 
   const hs = project.metadata?.healthStatus as string | undefined;
@@ -437,7 +471,9 @@ function ProgressCard({ projectId, project, isActive }: { projectId: string; pro
           {!isError && stats && stats.total > 0 && (
             <div className="text-center">
               <p className="text-2xs text-foreground-secondary">Tasks</p>
-              <p className="text-xs font-semibold text-foreground">{stats.byStatus?.done ?? 0}/{stats.total} done</p>
+              <p className="text-xs font-semibold text-foreground">
+                {stats.byStatus?.done ?? 0}/{stats.total} done
+              </p>
             </div>
           )}
           <div className="flex items-center gap-2">
@@ -460,20 +496,19 @@ function ProgressCard({ projectId, project, isActive }: { projectId: string; pro
   );
 }
 
-export const ProjectOverviewTab = React.memo(({
-  project,
-  isActive,
-}: ProjectOverviewTabProps): React.JSX.Element => {
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-      <SourceBanner project={project} />
-      <CustomerCard project={project} />
-      <SiteCard project={project} />
-      <SystemCard project={project} />
-      <TimelineCard project={project} />
-      <TeamCard projectId={project.id} isActive={isActive} />
-      <MilestonesCard projectId={project.id} isActive={isActive} />
-      <ProgressCard projectId={project.id} project={project} isActive={isActive} />
-    </div>
-  );
-});
+export const ProjectOverviewTab = React.memo(
+  ({ project, isActive }: ProjectOverviewTabProps): React.JSX.Element => {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+        <SourceBanner project={project} />
+        <CustomerCard project={project} />
+        <SiteCard project={project} />
+        <SystemCard project={project} />
+        <TimelineCard project={project} />
+        <TeamCard projectId={project.id} isActive={isActive} />
+        <MilestonesCard projectId={project.id} isActive={isActive} />
+        <ProgressCard projectId={project.id} project={project} isActive={isActive} />
+      </div>
+    );
+  },
+);

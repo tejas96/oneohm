@@ -57,7 +57,7 @@ export function CollapsibleStepCard({
         'rounded-lg border transition-all duration-fast overflow-hidden',
         isExpanded ? 'border-primary' : 'border-border-light',
         isActive && 'border-primary shadow-sm',
-        className
+        className,
       )}
     >
       {/* Header */}
@@ -69,7 +69,7 @@ export function CollapsibleStepCard({
           'w-full flex items-center gap-4 px-4 py-3 text-left transition-colors duration-fast',
           !disabled && 'cursor-pointer hover:bg-muted',
           disabled && 'cursor-not-allowed opacity-50',
-          isExpanded && 'border-b border-border-light'
+          isExpanded && 'border-b border-border-light',
         )}
         aria-expanded={isExpanded}
       >
@@ -79,14 +79,10 @@ export function CollapsibleStepCard({
             'size-8 rounded-full flex items-center justify-center shrink-0 font-medium text-sm',
             isCompleted && 'bg-success text-white',
             isActive && 'bg-primary text-white',
-            isPending && 'bg-muted text-foreground-secondary border border-border-light'
+            isPending && 'bg-muted text-foreground-secondary border border-border-light',
           )}
         >
-          {isCompleted ? (
-            <Check className="size-icon-sm" />
-          ) : (
-            stepNumber
-          )}
+          {isCompleted ? <Check className="size-icon-sm" /> : stepNumber}
         </div>
 
         {/* Title and summary */}
@@ -94,7 +90,7 @@ export function CollapsibleStepCard({
           <p
             className={cn(
               'text-sm font-medium',
-              isActive || isExpanded ? 'text-foreground' : 'text-foreground-secondary'
+              isActive || isExpanded ? 'text-foreground' : 'text-foreground-secondary',
             )}
           >
             {title}
@@ -108,7 +104,7 @@ export function CollapsibleStepCard({
         <ChevronDown
           className={cn(
             'size-icon-sm text-foreground-tertiary shrink-0 transition-transform duration-fast',
-            isExpanded && 'rotate-180'
+            isExpanded && 'rotate-180',
           )}
         />
       </button>
@@ -117,7 +113,7 @@ export function CollapsibleStepCard({
       <div
         className={cn(
           'overflow-hidden transition-all duration-fast',
-          isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+          isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0',
         )}
       >
         <div className="p-4">{children}</div>
@@ -143,9 +139,6 @@ export interface StepCardGroupProps {
   className?: string;
 }
 
-export function StepCardGroup({
-  children,
-  className,
-}: StepCardGroupProps): React.JSX.Element {
+export function StepCardGroup({ children, className }: StepCardGroupProps): React.JSX.Element {
   return <div className={cn('space-y-3', className)}>{children}</div>;
 }

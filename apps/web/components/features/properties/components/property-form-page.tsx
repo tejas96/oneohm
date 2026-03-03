@@ -63,10 +63,7 @@ function ErrorState({ message, onRetry, backHref }: ErrorStateProps): React.JSX.
             </button>
           )}
           {backHref && (
-            <a
-              href={backHref}
-              className="text-sm text-foreground-secondary hover:underline"
-            >
+            <a href={backHref} className="text-sm text-foreground-secondary hover:underline">
               Go back
             </a>
           )}
@@ -80,7 +77,11 @@ function ErrorState({ message, onRetry, backHref }: ErrorStateProps): React.JSX.
 // Component
 // ============================================================================
 
-export function PropertyFormPage({ mode, customerId, propertyId }: PropertyFormPageProps): React.JSX.Element {
+export function PropertyFormPage({
+  mode,
+  customerId,
+  propertyId,
+}: PropertyFormPageProps): React.JSX.Element {
   const isEditMode = mode === 'edit';
 
   // Edit mode: fetch property by ID
@@ -118,7 +119,11 @@ export function PropertyFormPage({ mode, customerId, propertyId }: PropertyFormP
       <ErrorState
         message={propertyError ? getErrorMessage(propertyError) : 'Property not found'}
         onRetry={() => void refetchProperty()}
-        backHref={propertyId ? buildRoute(ROUTES.PROPERTIES.DETAIL, { id: propertyId }) : ROUTES.PROPERTIES.LIST}
+        backHref={
+          propertyId
+            ? buildRoute(ROUTES.PROPERTIES.DETAIL, { id: propertyId })
+            : ROUTES.PROPERTIES.LIST
+        }
       />
     );
   }
@@ -131,10 +136,7 @@ export function PropertyFormPage({ mode, customerId, propertyId }: PropertyFormP
   // Create context-aware mode: error loading customer
   if (!isEditMode && customerId && customerError) {
     return (
-      <ErrorState
-        message={getErrorMessage(customerError)}
-        onRetry={() => void refetchCustomer()}
-      />
+      <ErrorState message={getErrorMessage(customerError)} onRetry={() => void refetchCustomer()} />
     );
   }
 
@@ -149,13 +151,7 @@ export function PropertyFormPage({ mode, customerId, propertyId }: PropertyFormP
   }
 
   if (isEditMode) {
-    return (
-      <PropertyForm
-        mode="edit"
-        propertyId={propertyId}
-        initialData={property}
-      />
-    );
+    return <PropertyForm mode="edit" propertyId={propertyId} initialData={property} />;
   }
 
   return (

@@ -4,7 +4,12 @@ import { TrendingUp, Users, FileText, CheckCircle } from 'lucide-react';
 import * as React from 'react';
 import type { DateRange } from 'react-day-picker';
 
-import { FunnelChart, DrillDownDrawer, StatsCard ,type  FunnelStage as SharedFunnelStage } from '@/components/shared';
+import {
+  FunnelChart,
+  DrillDownDrawer,
+  StatsCard,
+  type FunnelStage as SharedFunnelStage,
+} from '@/components/shared';
 import {
   Card,
   CardContent,
@@ -41,10 +46,38 @@ interface Property {
 // ============================================================================
 
 const mockFunnelStages: FunnelStage[] = [
-  { id: 'leads', label: 'New Leads', count: 150, value: 22500000, color: '#6366F1', conversionRate: 100 },
-  { id: 'qualified', label: 'Qualified', count: 95, value: 14250000, color: '#8B5CF6', conversionRate: 63.3 },
-  { id: 'quoted', label: 'Quote Sent', count: 60, value: 9000000, color: '#A855F7', conversionRate: 63.2 },
-  { id: 'negotiation', label: 'Negotiation', count: 35, value: 5250000, color: '#D946EF', conversionRate: 58.3 },
+  {
+    id: 'leads',
+    label: 'New Leads',
+    count: 150,
+    value: 22500000,
+    color: '#6366F1',
+    conversionRate: 100,
+  },
+  {
+    id: 'qualified',
+    label: 'Qualified',
+    count: 95,
+    value: 14250000,
+    color: '#8B5CF6',
+    conversionRate: 63.3,
+  },
+  {
+    id: 'quoted',
+    label: 'Quote Sent',
+    count: 60,
+    value: 9000000,
+    color: '#A855F7',
+    conversionRate: 63.2,
+  },
+  {
+    id: 'negotiation',
+    label: 'Negotiation',
+    count: 35,
+    value: 5250000,
+    color: '#D946EF',
+    conversionRate: 58.3,
+  },
   { id: 'won', label: 'Won', count: 25, value: 3750000, color: '#22C55E', conversionRate: 71.4 },
 ];
 
@@ -57,20 +90,42 @@ const mockStats = {
 
 const mockPropertiesInStage: Record<string, Property[]> = {
   leads: [
-    { id: 'p1', name: 'Green Valley Residence', customer: 'Rajesh Sharma', value: 350000, daysInStage: 2 },
-    { id: 'p2', name: 'Sunset Apartments', customer: 'Priya Kulkarni', value: 450000, daysInStage: 5 },
+    {
+      id: 'p1',
+      name: 'Green Valley Residence',
+      customer: 'Rajesh Sharma',
+      value: 350000,
+      daysInStage: 2,
+    },
+    {
+      id: 'p2',
+      name: 'Sunset Apartments',
+      customer: 'Priya Kulkarni',
+      value: 450000,
+      daysInStage: 5,
+    },
   ],
   qualified: [
     { id: 'p3', name: 'Tech Park Office', customer: 'ABC Corp', value: 850000, daysInStage: 8 },
   ],
-  quoted: [
-    { id: 'p4', name: 'Farm House', customer: 'Amit Patil', value: 280000, daysInStage: 3 },
-  ],
+  quoted: [{ id: 'p4', name: 'Farm House', customer: 'Amit Patil', value: 280000, daysInStage: 3 }],
   negotiation: [
-    { id: 'p5', name: 'Industrial Unit', customer: 'XYZ Manufacturing', value: 1200000, daysInStage: 12 },
+    {
+      id: 'p5',
+      name: 'Industrial Unit',
+      customer: 'XYZ Manufacturing',
+      value: 1200000,
+      daysInStage: 12,
+    },
   ],
   won: [
-    { id: 'p6', name: 'Residential Complex', customer: 'Housing Society', value: 550000, daysInStage: 0 },
+    {
+      id: 'p6',
+      name: 'Residential Complex',
+      customer: 'Housing Society',
+      value: 550000,
+      daysInStage: 0,
+    },
   ],
 };
 
@@ -89,7 +144,9 @@ export function PipelinePage(): React.JSX.Element {
     setDrawerOpen(true);
   };
 
-  const selectedStageData = selectedStage ? mockFunnelStages.find(s => s.id === selectedStage) : null;
+  const selectedStageData = selectedStage
+    ? mockFunnelStages.find((s) => s.id === selectedStage)
+    : null;
   const propertiesInSelectedStage = selectedStage ? mockPropertiesInStage[selectedStage] || [] : [];
 
   return (
@@ -208,15 +265,23 @@ export function PipelinePage(): React.JSX.Element {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {Object.values(mockPropertiesInStage).flat().slice(0, 5).map(property => (
-                <div key={property.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <div>
-                    <p className="text-sm font-medium">{property.name}</p>
-                    <p className="text-xs text-foreground-secondary">{property.customer}</p>
+              {Object.values(mockPropertiesInStage)
+                .flat()
+                .slice(0, 5)
+                .map((property) => (
+                  <div
+                    key={property.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                  >
+                    <div>
+                      <p className="text-sm font-medium">{property.name}</p>
+                      <p className="text-xs text-foreground-secondary">{property.customer}</p>
+                    </div>
+                    <p className="text-sm font-semibold">
+                      ₹{(property.value / 100000).toFixed(1)}L
+                    </p>
                   </div>
-                  <p className="text-sm font-semibold">₹{(property.value / 100000).toFixed(1)}L</p>
-                </div>
-              ))}
+                ))}
             </div>
           </CardContent>
         </Card>
@@ -228,7 +293,7 @@ export function PipelinePage(): React.JSX.Element {
         onOpenChange={setDrawerOpen}
         title={selectedStageData?.label || ''}
         subtitle={`${selectedStageData?.count || 0} properties • ₹${((selectedStageData?.value || 0) / 100000).toFixed(1)}L`}
-        items={propertiesInSelectedStage.map(property => ({
+        items={propertiesInSelectedStage.map((property) => ({
           id: property.id,
           title: property.name,
           subtitle: property.customer,

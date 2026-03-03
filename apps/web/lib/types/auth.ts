@@ -139,4 +139,3 @@ export interface AuthError {
   statusCode?: number;
   error?: string;
 }
-

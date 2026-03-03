@@ -46,10 +46,7 @@ export class QuoteVersionRepository {
   /**
    * Find a specific version by ID, scoped to a quote
    */
-  async findByIdAndQuoteId(
-    versionId: string,
-    quoteId: string,
-  ): Promise<QuoteVersionEntity | null> {
+  async findByIdAndQuoteId(versionId: string, quoteId: string): Promise<QuoteVersionEntity | null> {
     return this.repository.findOne({
       where: { id: versionId, quoteId },
       relations: ['lineItems', 'lineItems.product'],

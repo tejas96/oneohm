@@ -17,13 +17,7 @@ import { getDocumentTypeLabel } from '../constants';
 
 import { Badge, Button } from '@/components/ui';
 import { useBodyScrollLock } from '@/lib/hooks';
-import {
-  cn,
-  getFileExtension,
-  isImageFile,
-  isPdfFile,
-  isPreviewableFile,
-} from '@/lib/utils';
+import { cn, getFileExtension, isImageFile, isPdfFile, isPreviewableFile } from '@/lib/utils';
 
 // ============================================================================
 // Types
@@ -92,9 +86,7 @@ export function DocumentPreviewModal({
         <div className="flex items-center gap-3 overflow-hidden">
           <FileText className="size-icon shrink-0 text-white/70" />
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-white">
-              {doc.fileName}
-            </p>
+            <p className="truncate text-sm font-medium text-white">{doc.fileName}</p>
             <div className="mt-0.5 flex items-center gap-2">
               <Badge variant="secondary" className="text-xs">
                 {doc.propertyName}
@@ -170,9 +162,7 @@ export function DocumentPreviewModal({
                 <FileText className="size-icon-lg text-foreground-muted" />
               </div>
               <div>
-                <p className="font-medium text-foreground">
-                  Preview not available
-                </p>
+                <p className="font-medium text-foreground">Preview not available</p>
                 <p className="mt-1 text-sm text-foreground-secondary">
                   {imageError
                     ? 'Failed to load the image'

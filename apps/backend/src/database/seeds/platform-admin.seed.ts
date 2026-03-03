@@ -73,7 +73,9 @@ async function seedPlatformAdmin() {
     console.log(`Found ${allPermissions.length} permissions`);
 
     // Batch-fetch existing permissions for this role (avoids N+1)
-    const existingRolePermissions = await rolePermissionRepository.findByRoleId(platformAdminRole.id);
+    const existingRolePermissions = await rolePermissionRepository.findByRoleId(
+      platformAdminRole.id,
+    );
     const existingPermissionIds = new Set(existingRolePermissions.map((rp) => rp.permissionId));
     const permissionIdsToAssign = allPermissions
       .filter((p) => !existingPermissionIds.has(p.id))
@@ -106,10 +108,16 @@ async function seedPlatformAdmin() {
     // eslint-disable-next-line no-console
     console.log('\n📝 Creating platform admin user...');
 
-    const { platformAdminEmail: email, platformAdminPhone: phone, platformAdminPassword: password } = configService.seed;
+    const {
+      platformAdminEmail: email,
+      platformAdminPhone: phone,
+      platformAdminPassword: password,
+    } = configService.seed;
 
     if (password === 'admin@123' && configService.isProduction) {
-      throw new Error('PLATFORM_ADMIN_PASSWORD must be set in production. Do not use default credentials.');
+      throw new Error(
+        'PLATFORM_ADMIN_PASSWORD must be set in production. Do not use default credentials.',
+      );
     }
 
     let platformUser = await userRepository.findByEmail(email);

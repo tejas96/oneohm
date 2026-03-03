@@ -84,9 +84,7 @@ function formatDate(date: Date): string {
   });
 }
 
-function groupItemsByDate(
-  items: TimelineItem[]
-): Map<string, TimelineItem[]> {
+function groupItemsByDate(items: TimelineItem[]): Map<string, TimelineItem[]> {
   const groups = new Map<string, TimelineItem[]>();
 
   items.forEach((item) => {
@@ -118,7 +116,7 @@ function TimelineItemFull({ item, isLast }: TimelineItemFullProps) {
       <div
         className={cn(
           'absolute left-1.5 size-icon-md rounded-full border-2 border-white shadow flex items-center justify-center',
-          item.iconBgClass || 'bg-muted'
+          item.iconBgClass || 'bg-muted',
         )}
       >
         <span className={cn('w-2.5 h-2.5', item.iconTextClass || 'text-foreground-muted')}>
@@ -131,16 +129,14 @@ function TimelineItemFull({ item, isLast }: TimelineItemFullProps) {
         className={cn(
           'bg-background rounded-lg border border-border-light p-4 shadow-sm',
           'transition-all duration-fast hover:shadow-sm hover:translate-x-1',
-          !isLast && 'mb-6'
+          !isLast && 'mb-6',
         )}
       >
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium text-foreground">{item.title}</div>
             {item.description && (
-              <div className="text-xs text-foreground-secondary mt-1">
-                {item.description}
-              </div>
+              <div className="text-xs text-foreground-secondary mt-1">{item.description}</div>
             )}
           </div>
           <span className="text-xs text-foreground-tertiary ml-3 flex-shrink-0">
@@ -154,13 +150,9 @@ function TimelineItemFull({ item, isLast }: TimelineItemFullProps) {
         {/* Badge and Action */}
         {(item.badge || item.action) && (
           <div className="mt-3 flex items-center gap-2 flex-wrap">
-            {item.badge && (
-              <Badge variant={item.badge.variant}>
-                {item.badge.label}
-              </Badge>
-            )}
-            {item.action && (
-              item.action.href ? (
+            {item.badge && <Badge variant={item.badge.variant}>{item.badge.label}</Badge>}
+            {item.action &&
+              (item.action.href ? (
                 <a
                   href={item.action.href}
                   className="text-xs text-primary hover:text-primary-dark font-medium"
@@ -175,17 +167,12 @@ function TimelineItemFull({ item, isLast }: TimelineItemFullProps) {
                 >
                   {item.action.label} →
                 </button>
-              )
-            )}
+              ))}
           </div>
         )}
 
         {/* Actor */}
-        {item.actor && (
-          <div className="mt-2 text-xs text-foreground-tertiary">
-            by {item.actor}
-          </div>
-        )}
+        {item.actor && <div className="mt-2 text-xs text-foreground-tertiary">by {item.actor}</div>}
       </div>
     </div>
   );
@@ -205,7 +192,7 @@ function TimelineItemCompact({ item }: TimelineItemCompactProps) {
       <div
         className={cn(
           'size-container-sm rounded-full flex items-center justify-center flex-shrink-0',
-          item.iconBgClass || 'bg-muted'
+          item.iconBgClass || 'bg-muted',
         )}
       >
         <span className={cn('size-icon-sm', item.iconTextClass || 'text-foreground-muted')}>
@@ -238,13 +225,13 @@ function DateMarker({ date }: DateMarkerProps) {
       <div
         className={cn(
           'absolute left-2.5 w-3 h-3 rounded-full border-2 border-white shadow',
-          today ? 'bg-primary' : 'bg-border-medium'
+          today ? 'bg-primary' : 'bg-border-medium',
         )}
       />
       <span
         className={cn(
           'text-xs font-semibold uppercase tracking-wide',
-          today ? 'text-primary' : 'text-foreground-tertiary'
+          today ? 'text-primary' : 'text-foreground-tertiary',
         )}
       >
         {formatDate(date)}
@@ -274,24 +261,20 @@ export function Timeline({
   // Sort items by timestamp (newest first)
   const sortedItems = React.useMemo(
     () => [...items].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()),
-    [items]
+    [items],
   );
 
   // Group by date if enabled
   const groupedItems = React.useMemo(
     () => (groupByDate ? groupItemsByDate(sortedItems) : null),
-    [groupByDate, sortedItems]
+    [groupByDate, sortedItems],
   );
 
   // Render full variant
   const renderFullVariant = () => {
     if (!groupedItems) {
       return sortedItems.map((item, index) => (
-        <TimelineItemFull
-          key={item.id}
-          item={item}
-          isLast={index === sortedItems.length - 1}
-        />
+        <TimelineItemFull key={item.id} item={item} isLast={index === sortedItems.length - 1} />
       ));
     }
 
@@ -303,10 +286,7 @@ export function Timeline({
           <TimelineItemFull
             key={item.id}
             item={item}
-            isLast={
-              groupIndex === entries.length - 1 &&
-              itemIndex === dateItems.length - 1
-            }
+            isLast={groupIndex === entries.length - 1 && itemIndex === dateItems.length - 1}
           />
         ))}
       </React.Fragment>
@@ -352,18 +332,14 @@ export function Timeline({
 
       {/* Empty State */}
       {items.length === 0 && !isLoading && (
-        <div className="text-center py-8 text-sm text-foreground-tertiary">
-          {emptyMessage}
-        </div>
+        <div className="text-center py-8 text-sm text-foreground-tertiary">{emptyMessage}</div>
       )}
 
       {/* Timeline Content */}
       {items.length > 0 && (
         <div className="relative">
           {/* Timeline Line (full variant only) */}
-          {variant === 'full' && (
-            <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
-          )}
+          {variant === 'full' && <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />}
 
           {variant === 'full' ? renderFullVariant() : renderCompactVariant()}
         </div>

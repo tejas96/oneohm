@@ -4,9 +4,7 @@ import type { TaskStatus } from '@oneohm-epc/shared-types';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 
-import {
-  TASK_GROUP_VARIANT_MAP,
-} from '../constants';
+import { TASK_GROUP_VARIANT_MAP } from '../constants';
 import type { MyTask } from '../hooks';
 import { TaskRow } from './task-row';
 
@@ -55,11 +53,16 @@ export function CollapsibleTaskGroup({
 
   const badgeColorClass = (() => {
     switch (variant.badge) {
-      case 'error': return 'bg-error/10 text-error';
-      case 'warning': return 'bg-warning/10 text-warning';
-      case 'info': return 'bg-info/10 text-info';
-      case 'success': return 'bg-success/10 text-success';
-      default: return 'bg-muted text-foreground-tertiary';
+      case 'error':
+        return 'bg-error/10 text-error';
+      case 'warning':
+        return 'bg-warning/10 text-warning';
+      case 'info':
+        return 'bg-info/10 text-info';
+      case 'success':
+        return 'bg-success/10 text-success';
+      default:
+        return 'bg-muted text-foreground-tertiary';
     }
   })();
 
@@ -77,13 +80,10 @@ export function CollapsibleTaskGroup({
           <ChevronRight className="size-3.5 text-foreground-tertiary transition-transform" />
         )}
         <span className={cn('size-2 rounded-full shrink-0', variant.dot)} />
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground-secondary">{label}</h2>
-        <span
-          className={cn(
-            'text-2xs px-1.5 py-0.5 rounded-full font-medium',
-            badgeColorClass,
-          )}
-        >
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-foreground-secondary">
+          {label}
+        </h2>
+        <span className={cn('text-2xs px-1.5 py-0.5 rounded-full font-medium', badgeColorClass)}>
           {count}
         </span>
       </button>
@@ -124,9 +124,7 @@ export function CollapsibleTaskGroup({
                 }}
                 className="text-xs text-foreground-tertiary hover:text-foreground-secondary transition-colors"
               >
-                {showAll
-                  ? 'Show less'
-                  : `Show ${hiddenCount} more\u2026`}
+                {showAll ? 'Show less' : `Show ${hiddenCount} more\u2026`}
               </button>
             </div>
           )}

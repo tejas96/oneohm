@@ -9,11 +9,7 @@ import { RoleController } from './controllers/role.controller';
 import { UserRoleController } from './controllers/user-role.controller';
 import { PermissionGuard } from './guards/permission.guard';
 import { RoleGuard } from './guards/role.guard';
-import {
-  PermissionRepository,
-  RolePermissionRepository,
-  RoleRepository,
-} from './repositories';
+import { PermissionRepository, RolePermissionRepository, RoleRepository } from './repositories';
 import { IamService } from './services/iam.service';
 
 @Module({

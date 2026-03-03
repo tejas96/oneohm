@@ -5,13 +5,7 @@ import * as React from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetClose,
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 
 // ============================================================================
@@ -69,9 +63,7 @@ function DefaultItemRenderer({ item }: { item: DrillDownItem }): React.JSX.Eleme
           <p className="text-xs text-foreground-secondary truncate mt-0.5">{item.subtitle}</p>
         )}
       </div>
-      {item.actions && (
-        <div className="flex items-center gap-2 ml-4 shrink-0">{item.actions}</div>
-      )}
+      {item.actions && <div className="flex items-center gap-2 ml-4 shrink-0">{item.actions}</div>}
     </div>
   );
 }
@@ -115,8 +107,7 @@ export function DrillDownDrawer({
         if (!searchQuery.trim()) return true;
         const query = searchQuery.toLowerCase();
         return (
-          item.title.toLowerCase().includes(query) ||
-          item.subtitle?.toLowerCase().includes(query)
+          item.title.toLowerCase().includes(query) || item.subtitle?.toLowerCase().includes(query)
         );
       });
 
@@ -128,9 +119,7 @@ export function DrillDownDrawer({
           <div className="flex items-center justify-between">
             <div>
               <SheetTitle className="text-lg">{title}</SheetTitle>
-              {subtitle && (
-                <p className="text-sm text-foreground-secondary mt-0.5">{subtitle}</p>
-              )}
+              {subtitle && <p className="text-sm text-foreground-secondary mt-0.5">{subtitle}</p>}
             </div>
             <div className="flex items-center gap-2">
               {headerActions}
@@ -161,9 +150,7 @@ export function DrillDownDrawer({
         <div className="flex-1 overflow-y-auto">
           {filteredItems.length === 0 ? (
             <div className="flex items-center justify-center h-full p-8">
-              {emptyContent || (
-                <p className="text-sm text-foreground-secondary">No items found</p>
-              )}
+              {emptyContent || <p className="text-sm text-foreground-secondary">No items found</p>}
             </div>
           ) : (
             <div className="divide-y divide-border-light">
@@ -172,7 +159,7 @@ export function DrillDownDrawer({
                   <div key={item.id}>{renderItem(item)}</div>
                 ) : (
                   <DefaultItemRenderer key={item.id} item={item} />
-                )
+                ),
               )}
             </div>
           )}

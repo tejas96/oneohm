@@ -155,7 +155,9 @@ export function DocumentSlot({
           'relative rounded-lg border-2 transition-all overflow-hidden',
           !document && 'border-dashed cursor-pointer',
           !document && !disabled && 'hover:border-primary/50 hover:bg-primary/5',
-          !document && !disabled && 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+          !document &&
+            !disabled &&
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
           isDragging && 'border-primary bg-primary/10',
           document && 'border-solid cursor-default',
           isSuccess && 'border-success/30',
@@ -163,7 +165,7 @@ export function DocumentSlot({
           isPending && 'border-border-light',
           isUploading && 'border-primary/30',
           disabled && 'opacity-50 cursor-not-allowed',
-          className
+          className,
         )}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
@@ -199,9 +201,7 @@ export function DocumentSlot({
             <DialogHeader className="px-5 pt-5 pb-3">
               <div className="flex items-center justify-between">
                 <div className="min-w-0 pr-8">
-                  <DialogTitle className="text-sm font-semibold truncate">
-                    {slot.label}
-                  </DialogTitle>
+                  <DialogTitle className="text-sm font-semibold truncate">{slot.label}</DialogTitle>
                   <p className="text-xs text-foreground-secondary mt-0.5 truncate">
                     {document.fileName} &middot; {formatFileSize(document.fileSize)}
                   </p>
@@ -246,7 +246,7 @@ export function DocumentSlot({
             'size-10 rounded-full flex items-center justify-center mb-3 transition-colors',
             isDragging
               ? 'bg-primary/20 text-primary'
-              : 'bg-background-secondary text-foreground-tertiary'
+              : 'bg-background-secondary text-foreground-tertiary',
           )}
         >
           <Upload className="size-icon-sm" />
@@ -312,7 +312,10 @@ export function DocumentSlot({
           {!isUploading && isImage && (
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); setIsPreviewOpen(true); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsPreviewOpen(true);
+              }}
               className="absolute top-2 left-2 flex items-center gap-1 bg-black/60 hover:bg-black/80 text-white text-[10px] font-medium px-2 py-1 rounded-lg transition-colors"
               title="View full size"
             >
@@ -340,7 +343,10 @@ export function DocumentSlot({
                   variant="ghost"
                   size="sm"
                   className="size-7 p-0 text-foreground-tertiary hover:text-primary"
-                  onClick={(e) => { e.stopPropagation(); void onRetry(slot.id); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void onRetry(slot.id);
+                  }}
                   title="Retry upload"
                 >
                   <RefreshCw className="size-3.5" />
@@ -352,7 +358,10 @@ export function DocumentSlot({
                   variant="ghost"
                   size="sm"
                   className="size-7 p-0 text-foreground-tertiary hover:text-primary"
-                  onClick={(e) => { e.stopPropagation(); handleReplace(); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleReplace();
+                  }}
                   title="Replace file"
                 >
                   <Replace className="size-3.5" />
@@ -364,7 +373,10 @@ export function DocumentSlot({
                   variant="ghost"
                   size="sm"
                   className="size-7 p-0 text-foreground-tertiary hover:text-error"
-                  onClick={(e) => { e.stopPropagation(); void onRemove(slot.id); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void onRemove(slot.id);
+                  }}
                   title="Remove file"
                 >
                   <Trash2 className="size-3.5" />

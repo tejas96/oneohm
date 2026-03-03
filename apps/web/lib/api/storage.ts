@@ -67,7 +67,9 @@ export interface UploadResult {
 /**
  * Get a presigned URL for uploading a file
  */
-export async function getPresignedUrl(dto: RequestUploadUrlDto): Promise<PresignedUploadUrlResponse> {
+export async function getPresignedUrl(
+  dto: RequestUploadUrlDto,
+): Promise<PresignedUploadUrlResponse> {
   const { data } = await apiClient.post<PresignedUploadUrlResponse>('/storage/presigned-url', dto);
   return data;
 }
@@ -78,7 +80,7 @@ export async function getPresignedUrl(dto: RequestUploadUrlDto): Promise<Presign
 async function uploadToPresignedUrl(
   presignedUrl: string,
   file: File,
-  onProgress?: (progress: UploadProgress) => void
+  onProgress?: (progress: UploadProgress) => void,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -126,10 +128,7 @@ async function uploadToPresignedUrl(
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 
-async function uploadWithRetry(
-  options: UploadOptions,
-  retryCount = 0
-): Promise<UploadResult> {
+async function uploadWithRetry(options: UploadOptions, retryCount = 0): Promise<UploadResult> {
   const { file, category, entityId, entityType, subCategory, onProgress } = options;
 
   try {
@@ -195,10 +194,7 @@ export interface PresignedDownloadUrlResponse {
  * @param fileKey The storage key of the file
  * @param downloadFilename Optional custom filename for download
  */
-export async function getDownloadUrl(
-  fileKey: string,
-  downloadFilename?: string,
-): Promise<string> {
+export async function getDownloadUrl(fileKey: string, downloadFilename?: string): Promise<string> {
   const params = new URLSearchParams();
   if (downloadFilename) {
     params.set('filename', downloadFilename);

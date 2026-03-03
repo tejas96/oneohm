@@ -139,22 +139,44 @@ export function FollowupListPage(): React.JSX.Element {
 
   // Calculate counts
   const counts = {
-    today: mockFollowups.filter(f => isToday(new Date(f.scheduledAt)) && f.status === FollowupStatus.PENDING).length,
-    overdue: mockFollowups.filter(f => isOverdue(new Date(f.scheduledAt), f.status)).length,
-    upcoming: mockFollowups.filter(f => isUpcoming(new Date(f.scheduledAt), f.status)).length,
-    completed: mockFollowups.filter(f => f.status === FollowupStatus.COMPLETED).length,
+    today: mockFollowups.filter(
+      (f) => isToday(new Date(f.scheduledAt)) && f.status === FollowupStatus.PENDING,
+    ).length,
+    overdue: mockFollowups.filter((f) => isOverdue(new Date(f.scheduledAt), f.status)).length,
+    upcoming: mockFollowups.filter((f) => isUpcoming(new Date(f.scheduledAt), f.status)).length,
+    completed: mockFollowups.filter((f) => f.status === FollowupStatus.COMPLETED).length,
   };
 
   // Filter tabs
   const filterTabs = [
-    { id: 'today' as const, label: 'Today', count: counts.today, icon: <Clock className="size-icon-sm" /> },
-    { id: 'overdue' as const, label: 'Overdue', count: counts.overdue, icon: <AlertTriangle className="size-icon-sm" /> },
-    { id: 'upcoming' as const, label: 'Upcoming', count: counts.upcoming, icon: <Calendar className="size-icon-sm" /> },
-    { id: 'completed' as const, label: 'Completed', count: counts.completed, icon: <CheckCircle className="size-icon-sm" /> },
+    {
+      id: 'today' as const,
+      label: 'Today',
+      count: counts.today,
+      icon: <Clock className="size-icon-sm" />,
+    },
+    {
+      id: 'overdue' as const,
+      label: 'Overdue',
+      count: counts.overdue,
+      icon: <AlertTriangle className="size-icon-sm" />,
+    },
+    {
+      id: 'upcoming' as const,
+      label: 'Upcoming',
+      count: counts.upcoming,
+      icon: <Calendar className="size-icon-sm" />,
+    },
+    {
+      id: 'completed' as const,
+      label: 'Completed',
+      count: counts.completed,
+      icon: <CheckCircle className="size-icon-sm" />,
+    },
   ];
 
   // Filtered data
-  const filteredFollowups = mockFollowups.filter(f => {
+  const filteredFollowups = mockFollowups.filter((f) => {
     const date = new Date(f.scheduledAt);
     switch (activeTab) {
       case 'today':
@@ -183,9 +205,7 @@ export function FollowupListPage(): React.JSX.Element {
       cell: ({ row }) => (
         <div>
           <p className="text-sm font-medium text-foreground">{row.original.subject}</p>
-          <p className="text-xs text-foreground-secondary">
-            {TYPE_LABELS[row.original.type]}
-          </p>
+          <p className="text-xs text-foreground-secondary">{TYPE_LABELS[row.original.type]}</p>
         </div>
       ),
     },
@@ -211,9 +231,10 @@ export function FollowupListPage(): React.JSX.Element {
         const date = new Date(row.original.scheduledAt);
         const isOverdueItem = isOverdue(date, row.original.status);
         return (
-          <span className={`text-sm ${isOverdueItem ? 'text-error font-medium' : 'text-foreground-secondary'}`}>
-            {date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-            {' '}
+          <span
+            className={`text-sm ${isOverdueItem ? 'text-error font-medium' : 'text-foreground-secondary'}`}
+          >
+            {date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}{' '}
             {date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
           </span>
         );
@@ -245,7 +266,9 @@ export function FollowupListPage(): React.JSX.Element {
                 Mark Complete
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onClick={() => router.push(ROUTES.FOLLOWUPS.EDIT.replace('[id]', row.original.id))}>
+            <DropdownMenuItem
+              onClick={() => router.push(ROUTES.FOLLOWUPS.EDIT.replace('[id]', row.original.id))}
+            >
               <Calendar className="mr-2 size-icon-sm" />
               Reschedule
             </DropdownMenuItem>
@@ -272,12 +295,7 @@ export function FollowupListPage(): React.JSX.Element {
       </div>
 
       {/* Filter Tabs */}
-      <FilterTabs
-        tabs={filterTabs}
-        value={activeTab}
-        onChange={setActiveTab}
-        variant="pills"
-      />
+      <FilterTabs tabs={filterTabs} value={activeTab} onChange={setActiveTab} variant="pills" />
 
       {/* Data Table */}
       {filteredFollowups.length > 0 ? (
@@ -300,7 +318,11 @@ export function FollowupListPage(): React.JSX.Element {
         <EmptyState
           icon={<Calendar className="size-icon-lg" />}
           title={`No ${activeTab} follow-ups`}
-          description={activeTab === 'overdue' ? 'Great! You have no overdue tasks.' : 'Follow-ups will appear here once scheduled.'}
+          description={
+            activeTab === 'overdue'
+              ? 'Great! You have no overdue tasks.'
+              : 'Follow-ups will appear here once scheduled.'
+          }
         />
       )}
     </div>

@@ -14,9 +14,7 @@ export function getEmployeeInitials(emp: EmployeeListItem): string {
   return initials || '?';
 }
 
-export function getWorkloadVariant(
-  activeProjects: number,
-): 'success' | 'warning' | 'error' {
+export function getWorkloadVariant(activeProjects: number): 'success' | 'warning' | 'error' {
   if (activeProjects <= 2) return 'success';
   if (activeProjects <= 4) return 'warning';
   return 'error';

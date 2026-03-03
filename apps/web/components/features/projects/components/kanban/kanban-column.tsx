@@ -36,11 +36,7 @@ interface KanbanColumnProps {
   isInvalidDrop?: boolean;
 }
 
-export function KanbanColumn({
-  column,
-  onTaskClick,
-  isInvalidDrop,
-}: KanbanColumnProps) {
+export function KanbanColumn({ column, onTaskClick, isInvalidDrop }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: column.status,
     data: { type: 'column', status: column.status },
@@ -72,11 +68,7 @@ export function KanbanColumn({
       <div className="flex-1 space-y-2 overflow-y-auto px-2 pb-2">
         <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
           {column.tasks.map((task) => (
-            <KanbanTaskCard
-              key={task.id}
-              task={task}
-              onTaskClick={onTaskClick}
-            />
+            <KanbanTaskCard key={task.id} task={task} onTaskClick={onTaskClick} />
           ))}
         </SortableContext>
 

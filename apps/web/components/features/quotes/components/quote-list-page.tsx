@@ -23,17 +23,8 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useRef, useMemo, useCallback, type JSX } from 'react';
 
-import {
-  QUOTE_FILTER_TABS,
-  DEFAULT_PAGE_SIZE,
-  SEARCH_DEBOUNCE_MS,
-} from '../constants';
-import {
-  useQuotes,
-  useQuoteStatusCounts,
-  useDeleteQuote,
-  type QuoteListItem,
-} from '../hooks';
+import { QUOTE_FILTER_TABS, DEFAULT_PAGE_SIZE, SEARCH_DEBOUNCE_MS } from '../constants';
+import { useQuotes, useQuoteStatusCounts, useDeleteQuote, type QuoteListItem } from '../hooks';
 import { QuoteStatusDropdown } from './quote-status-dropdown';
 
 import {
@@ -364,10 +355,7 @@ export function QuoteListPage(): JSX.Element {
         header: 'Status',
         enableSorting: false,
         cell: ({ row }) => (
-          <QuoteStatusDropdown
-            quoteId={row.original.id}
-            status={row.original.status}
-          />
+          <QuoteStatusDropdown quoteId={row.original.id} status={row.original.status} />
         ),
       },
       {

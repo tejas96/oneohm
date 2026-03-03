@@ -9,7 +9,6 @@ import type { QuoteConfigResponse, SubsidyConfigResponse } from '../types';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
 
-
 // ============================================================================
 // Types
 // ============================================================================
@@ -76,8 +75,10 @@ export interface StructureTypeOption {
 const quoteConfigKeys = {
   all: (orgId?: string) => ['quote-config', orgId] as const,
   panelProducts: (orgId?: string) => [...quoteConfigKeys.all(orgId), 'panel-products'] as const,
-  inverterProducts: (orgId?: string) => [...quoteConfigKeys.all(orgId), 'inverter-products'] as const,
-  structureProducts: (orgId?: string) => [...quoteConfigKeys.all(orgId), 'structure-products'] as const,
+  inverterProducts: (orgId?: string) =>
+    [...quoteConfigKeys.all(orgId), 'inverter-products'] as const,
+  structureProducts: (orgId?: string) =>
+    [...quoteConfigKeys.all(orgId), 'structure-products'] as const,
   config: (orgId?: string) => [...quoteConfigKeys.all(orgId), 'config'] as const,
   subsidyRules: (orgId?: string) => [...quoteConfigKeys.all(orgId), 'subsidy-rules'] as const,
 };
@@ -89,7 +90,13 @@ const quoteConfigKeys = {
 function derivePanelBrands(products: ProductResponse[]): PanelBrandOption[] {
   const brandMap = new Map<
     string,
-    { wattages: number[]; variants: Map<string, { technology: string; minWattage: number; maxWattage: number; count: number }> }
+    {
+      wattages: number[];
+      variants: Map<
+        string,
+        { technology: string; minWattage: number; maxWattage: number; count: number }
+      >;
+    }
   >();
 
   for (const product of products) {
@@ -204,10 +211,7 @@ export function useQuoteConfig() {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
 
-  const headers = useMemo(
-    () => ({ 'X-Organization-Id': organizationId }),
-    [organizationId],
-  );
+  const headers = useMemo(() => ({ 'X-Organization-Id': organizationId }), [organizationId]);
 
   const results = useQueries({
     queries: [
@@ -250,10 +254,9 @@ export function useQuoteConfig() {
       {
         queryKey: quoteConfigKeys.config(organizationId),
         queryFn: async () => {
-          const { data } = await apiClient.get<QuoteConfigResponse>(
-            '/quote-calculator/config',
-            { headers },
-          );
+          const { data } = await apiClient.get<QuoteConfigResponse>('/quote-calculator/config', {
+            headers,
+          });
           return data;
         },
         staleTime: FIVE_MINUTES,
@@ -279,10 +282,7 @@ export function useQuoteConfig() {
   const isLoading = results.some((r) => r.isLoading);
   const error = results.find((r) => r.error)?.error?.message ?? null;
 
-  const panelBrands = useMemo(
-    () => derivePanelBrands(panelsQuery.data ?? []),
-    [panelsQuery.data],
-  );
+  const panelBrands = useMemo(() => derivePanelBrands(panelsQuery.data ?? []), [panelsQuery.data]);
 
   const inverterBrands = useMemo(
     () => deriveInverterBrands(invertersQuery.data ?? []),

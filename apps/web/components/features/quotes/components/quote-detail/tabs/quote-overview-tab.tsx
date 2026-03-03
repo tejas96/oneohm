@@ -4,10 +4,7 @@ import { Phone, Mail, MapPin, Copy, Download } from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';
 
-import {
-  SYSTEM_TYPE_LABELS,
-  PROJECT_TYPE_LABELS,
-} from '../../../constants';
+import { SYSTEM_TYPE_LABELS, PROJECT_TYPE_LABELS } from '../../../constants';
 import type { QuoteDetail, QuoteVersionDetail } from '../../../hooks/types';
 
 import { Button } from '@/components/ui/button';
@@ -43,7 +40,9 @@ export function QuoteOverviewTab({
           <CardContent className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <p className="text-2xs text-foreground-secondary uppercase font-medium mb-2">Customer</p>
+                <p className="text-2xs text-foreground-secondary uppercase font-medium mb-2">
+                  Customer
+                </p>
                 {quote.customerId ? (
                   <Link
                     href={ROUTES.CUSTOMERS.DETAIL.replace('[id]', quote.customerId)}
@@ -69,7 +68,9 @@ export function QuoteOverviewTab({
               </div>
               {(quote.propertyId || quote.propertyName) && (
                 <div>
-                  <p className="text-2xs text-foreground-secondary uppercase font-medium mb-2">Property</p>
+                  <p className="text-2xs text-foreground-secondary uppercase font-medium mb-2">
+                    Property
+                  </p>
                   {quote.propertyId ? (
                     <Link
                       href={ROUTES.PROPERTIES.DETAIL.replace('[id]', quote.propertyId)}
@@ -78,7 +79,9 @@ export function QuoteOverviewTab({
                       {quote.propertyName ?? 'Unnamed Property'}
                     </Link>
                   ) : (
-                    <p className="text-sm font-medium">{quote.propertyName ?? 'Unnamed Property'}</p>
+                    <p className="text-sm font-medium">
+                      {quote.propertyName ?? 'Unnamed Property'}
+                    </p>
                   )}
                   {quote.propertyAddress && (
                     <div className="flex items-center gap-1.5 mt-1">
@@ -147,7 +150,9 @@ export function QuoteOverviewTab({
               {breakdown?.totalPrice != null && (
                 <div className="flex justify-between border-t border-border-light pt-2">
                   <span className="text-sm font-medium">Total Price</span>
-                  <span className="text-sm font-medium">{formatCurrency(breakdown.totalPrice)}</span>
+                  <span className="text-sm font-medium">
+                    {formatCurrency(breakdown.totalPrice)}
+                  </span>
                 </div>
               )}
               {breakdown?.subsidyAmount != null && breakdown.subsidyAmount > 0 && (

@@ -45,7 +45,7 @@ export function useQuoteDetail(
       });
       return data;
     },
-    enabled: !!quoteId && !!organizationId && (options?.enabled !== false),
+    enabled: !!quoteId && !!organizationId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }
@@ -72,11 +72,7 @@ export function useQuoteVersion(
       );
       return data;
     },
-    enabled:
-      !!quoteId &&
-      !!versionId &&
-      !!organizationId &&
-      (options?.enabled !== false),
+    enabled: !!quoteId && !!versionId && !!organizationId && options?.enabled !== false,
     staleTime: Infinity,
   });
 }

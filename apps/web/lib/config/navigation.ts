@@ -32,7 +32,7 @@ import type { NavigationConfig, PanelConfig } from '@/lib/types';
 /**
  * Centralized Navigation Configuration
  * Single source of truth for Rail and Panel navigation
- * 
+ *
  * To add a new navigation item:
  * 1. Add to railTop/railBottom with a unique panelKey
  * 2. Add corresponding panel config in panels object
@@ -148,7 +148,12 @@ export const navigationConfig: NavigationConfig = {
           title: 'Views',
           items: [
             { id: 'overview', icon: LayoutGrid, label: 'Overview', href: ROUTES.DASHBOARD.HOME },
-            { id: 'activity', icon: TrendingUp, label: 'Activity Feed', href: ROUTES.DASHBOARD.ACTIVITY },
+            {
+              id: 'activity',
+              icon: TrendingUp,
+              label: 'Activity Feed',
+              href: ROUTES.DASHBOARD.ACTIVITY,
+            },
           ],
         },
       ],
@@ -160,17 +165,17 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Customers',
           items: [
-            { 
-              id: 'customers', 
-              icon: Users, 
-              label: 'All Customers', 
+            {
+              id: 'customers',
+              icon: Users,
+              label: 'All Customers',
               href: ROUTES.CUSTOMERS.LIST,
               // badge: dynamically set via useNavigationCounts (crm.totalCustomers)
             },
-            { 
-              id: 'new-customer', 
-              icon: Plus, 
-              label: 'Add Customer', 
+            {
+              id: 'new-customer',
+              icon: Plus,
+              label: 'Add Customer',
               href: ROUTES.CUSTOMERS.NEW,
               exactMatch: true, // Action route - don't match as child of /customers
             },
@@ -179,10 +184,10 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Properties',
           items: [
-            { 
-              id: 'properties', 
-              icon: Building2, 
-              label: 'All Properties', 
+            {
+              id: 'properties',
+              icon: Building2,
+              label: 'All Properties',
               href: ROUTES.PROPERTIES.LIST,
               // badge: dynamically set via useNavigationCounts (crm.totalProperties)
               // Sub-items for lead temperature filtering
@@ -213,10 +218,10 @@ export const navigationConfig: NavigationConfig = {
                 },
               ],
             },
-            { 
-              id: 'site-visits', 
-              icon: MapPin, 
-              label: 'Site Visits', 
+            {
+              id: 'site-visits',
+              icon: MapPin,
+              label: 'Site Visits',
               href: ROUTES.SITE_VISITS.LIST,
             },
           ],
@@ -224,10 +229,10 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Pipeline',
           items: [
-            { 
-              id: 'pipeline', 
-              icon: TrendingUp, 
-              label: 'Sales Funnel', 
+            {
+              id: 'pipeline',
+              icon: TrendingUp,
+              label: 'Sales Funnel',
               href: ROUTES.PIPELINE.HOME,
             },
           ],
@@ -235,26 +240,26 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Follow-ups',
           items: [
-            { 
-              id: 'followups-today', 
-              icon: Clock, 
-              label: 'Today', 
+            {
+              id: 'followups-today',
+              icon: Clock,
+              label: 'Today',
               href: ROUTES.FOLLOWUPS.LIST,
               // badge: dynamically set via useNavigationCounts (crm.followups.today)
               badgeVariant: 'warning' as const,
             },
-            { 
-              id: 'followups-overdue', 
-              icon: Clock, 
-              label: 'Overdue', 
+            {
+              id: 'followups-overdue',
+              icon: Clock,
+              label: 'Overdue',
               href: `${ROUTES.FOLLOWUPS.LIST}?filter=overdue`,
               // badge: dynamically set via useNavigationCounts (crm.followups.overdue)
               badgeVariant: 'error' as const,
             },
-            { 
-              id: 'followups-upcoming', 
-              icon: Calendar, 
-              label: 'Upcoming', 
+            {
+              id: 'followups-upcoming',
+              icon: Calendar,
+              label: 'Upcoming',
               href: `${ROUTES.FOLLOWUPS.LIST}?filter=upcoming`,
             },
           ],
@@ -274,9 +279,24 @@ export const navigationConfig: NavigationConfig = {
               label: 'All Quotes',
               href: ROUTES.QUOTES.LIST,
               children: [
-                { id: 'drafts', icon: Edit, label: 'Drafts', href: `${ROUTES.QUOTES.LIST}?status=draft` },
-                { id: 'sent', icon: Send, label: 'Sent', href: `${ROUTES.QUOTES.LIST}?status=sent` },
-                { id: 'accepted', icon: CheckCircle, label: 'Accepted', href: `${ROUTES.QUOTES.LIST}?status=accepted` },
+                {
+                  id: 'drafts',
+                  icon: Edit,
+                  label: 'Drafts',
+                  href: `${ROUTES.QUOTES.LIST}?status=draft`,
+                },
+                {
+                  id: 'sent',
+                  icon: Send,
+                  label: 'Sent',
+                  href: `${ROUTES.QUOTES.LIST}?status=sent`,
+                },
+                {
+                  id: 'accepted',
+                  icon: CheckCircle,
+                  label: 'Accepted',
+                  href: `${ROUTES.QUOTES.LIST}?status=accepted`,
+                },
               ],
             },
           ],
@@ -284,7 +304,13 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Tools',
           items: [
-            { id: 'quote-builder', icon: Plus, label: 'Quote Builder', href: ROUTES.QUOTES.NEW, exactMatch: true },
+            {
+              id: 'quote-builder',
+              icon: Plus,
+              label: 'Quote Builder',
+              href: ROUTES.QUOTES.NEW,
+              exactMatch: true,
+            },
           ],
         },
       ],
@@ -296,7 +322,13 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Overview',
           items: [
-            { id: 'projects-dashboard', icon: Home, label: 'Dashboard', href: ROUTES.PROJECTS.DASHBOARD, exactMatch: true },
+            {
+              id: 'projects-dashboard',
+              icon: Home,
+              label: 'Dashboard',
+              href: ROUTES.PROJECTS.DASHBOARD,
+              exactMatch: true,
+            },
             {
               id: 'all-projects',
               icon: List,
@@ -357,15 +389,30 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Scheduling',
           items: [
-            { id: 'projects-kanban', icon: LayoutGrid, label: 'Kanban Board', href: ROUTES.PROJECTS.BOARD },
-            { id: 'projects-timeline', icon: GanttChart, label: 'Timeline / Gantt', href: ROUTES.PROJECTS.TIMELINE },
+            {
+              id: 'projects-kanban',
+              icon: LayoutGrid,
+              label: 'Kanban Board',
+              href: ROUTES.PROJECTS.BOARD,
+            },
+            {
+              id: 'projects-timeline',
+              icon: GanttChart,
+              label: 'Timeline / Gantt',
+              href: ROUTES.PROJECTS.TIMELINE,
+            },
           ],
         },
         {
           title: 'Settings',
           roles: ['admin', 'super_admin', 'platform_admin'],
           items: [
-            { id: 'projects-workflow-steps', icon: Settings, label: 'Workflow Steps', href: ROUTES.PROJECTS.WORKFLOW_STEPS },
+            {
+              id: 'projects-workflow-steps',
+              icon: Settings,
+              label: 'Workflow Steps',
+              href: ROUTES.PROJECTS.WORKFLOW_STEPS,
+            },
           ],
         },
       ],
@@ -378,14 +425,24 @@ export const navigationConfig: NavigationConfig = {
           title: 'Stock',
           items: [
             { id: 'all-inventory', icon: Box, label: 'All Items', href: ROUTES.INVENTORY.LIST },
-            { id: 'low-stock', icon: Box, label: 'Low Stock', href: `${ROUTES.INVENTORY.LIST}?filter=low-stock` },
+            {
+              id: 'low-stock',
+              icon: Box,
+              label: 'Low Stock',
+              href: `${ROUTES.INVENTORY.LIST}?filter=low-stock`,
+            },
           ],
         },
         {
           title: 'Management',
           items: [
             { id: 'vendors', icon: Users, label: 'Vendors', href: ROUTES.VENDORS.LIST },
-            { id: 'purchase-orders', icon: FileText, label: 'Purchase Orders', href: ROUTES.INVENTORY.PURCHASE_ORDERS },
+            {
+              id: 'purchase-orders',
+              icon: FileText,
+              label: 'Purchase Orders',
+              href: ROUTES.INVENTORY.PURCHASE_ORDERS,
+            },
           ],
         },
       ],
@@ -405,7 +462,12 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Reports',
           items: [
-            { id: 'finance-reports', icon: BarChart3, label: 'Reports', href: ROUTES.FINANCE.REPORTS },
+            {
+              id: 'finance-reports',
+              icon: BarChart3,
+              label: 'Reports',
+              href: ROUTES.FINANCE.REPORTS,
+            },
           ],
         },
       ],
@@ -418,14 +480,17 @@ export const navigationConfig: NavigationConfig = {
           title: 'Tickets',
           items: [
             { id: 'all-service', icon: Wrench, label: 'All Tickets', href: ROUTES.SERVICE.HOME },
-            { id: 'open-tickets', icon: Wrench, label: 'Open', href: `${ROUTES.SERVICE.HOME}?status=open` },
+            {
+              id: 'open-tickets',
+              icon: Wrench,
+              label: 'Open',
+              href: `${ROUTES.SERVICE.HOME}?status=open`,
+            },
           ],
         },
         {
           title: 'Contracts',
-          items: [
-            { id: 'amc', icon: FileText, label: 'AMC Contracts', href: ROUTES.SERVICE.AMC },
-          ],
+          items: [{ id: 'amc', icon: FileText, label: 'AMC Contracts', href: ROUTES.SERVICE.AMC }],
         },
       ],
     },
@@ -436,9 +501,24 @@ export const navigationConfig: NavigationConfig = {
         {
           title: 'Reports',
           items: [
-            { id: 'analytics-dashboard', icon: BarChart3, label: 'Dashboard', href: ROUTES.ANALYTICS.HOME },
-            { id: 'sales-report', icon: TrendingUp, label: 'Sales Report', href: ROUTES.ANALYTICS.SALES },
-            { id: 'projects-report', icon: FileText, label: 'Project Report', href: ROUTES.ANALYTICS.PROJECTS },
+            {
+              id: 'analytics-dashboard',
+              icon: BarChart3,
+              label: 'Dashboard',
+              href: ROUTES.ANALYTICS.HOME,
+            },
+            {
+              id: 'sales-report',
+              icon: TrendingUp,
+              label: 'Sales Report',
+              href: ROUTES.ANALYTICS.SALES,
+            },
+            {
+              id: 'projects-report',
+              icon: FileText,
+              label: 'Project Report',
+              href: ROUTES.ANALYTICS.PROJECTS,
+            },
           ],
         },
       ],
@@ -451,7 +531,12 @@ export const navigationConfig: NavigationConfig = {
           title: 'Organization',
           items: [
             { id: 'employees', icon: Users, label: 'Employees', href: ROUTES.ORG.EMPLOYEES },
-            { id: 'organizations', icon: LayoutGrid, label: 'Organizations', href: ROUTES.ORG.ORGANIZATIONS },
+            {
+              id: 'organizations',
+              icon: LayoutGrid,
+              label: 'Organizations',
+              href: ROUTES.ORG.ORGANIZATIONS,
+            },
             { id: 'resellers', icon: Users, label: 'Resellers', href: ROUTES.ORG.RESELLERS },
           ],
         },
@@ -471,7 +556,12 @@ export const navigationConfig: NavigationConfig = {
           title: 'Resources',
           items: [
             { id: 'documentation', icon: FileText, label: 'Documentation', href: ROUTES.HELP.DOCS },
-            { id: 'support', icon: HelpCircle, label: 'Contact Support', href: ROUTES.HELP.SUPPORT },
+            {
+              id: 'support',
+              icon: HelpCircle,
+              label: 'Contact Support',
+              href: ROUTES.HELP.SUPPORT,
+            },
           ],
         },
       ],
@@ -533,15 +623,15 @@ export const navigationConfig: NavigationConfig = {
 export function getPanelConfigByPath(pathname: string): { key: string; config: PanelConfig } {
   // Find matching rail item
   const allRailItems = [...navigationConfig.railTop, ...navigationConfig.railBottom];
-  
+
   // Check for exact match first, then prefix match
   const matchedItem = allRailItems.find(
-    (item) => pathname === item.href || (item.href !== ROUTES.DASHBOARD.HOME && pathname.startsWith(item.href))
+    (item) =>
+      pathname === item.href ||
+      (item.href !== ROUTES.DASHBOARD.HOME && pathname.startsWith(item.href)),
   );
 
-  const panelConfig = matchedItem
-    ? navigationConfig.panels[matchedItem.panelKey]
-    : undefined;
+  const panelConfig = matchedItem ? navigationConfig.panels[matchedItem.panelKey] : undefined;
 
   if (panelConfig) {
     return {
@@ -570,13 +660,13 @@ export function isNavItemActive(pathname: string, href: string, panelKey?: strin
   if (href === ROUTES.DASHBOARD.HOME) {
     return pathname === ROUTES.DASHBOARD.HOME || pathname === ROUTES.HOME;
   }
-  
+
   // If panelKey is provided, check if current path belongs to the same panel
   if (panelKey) {
     const currentPanelKey = getPanelKeyForPath(pathname);
     return currentPanelKey === panelKey;
   }
-  
+
   // Fallback to prefix matching
   return pathname.startsWith(href);
 }

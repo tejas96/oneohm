@@ -133,7 +133,7 @@ export function EditableField({
             'inline-flex items-center gap-2 text-left rounded-md px-2 py-1 -mx-2 -my-1',
             'transition-colors duration-fast',
             !disabled && 'hover:bg-muted cursor-pointer',
-            disabled && 'cursor-default'
+            disabled && 'cursor-default',
           )}
         >
           <span className={cn('text-sm', !value && 'text-foreground-tertiary italic')}>
@@ -171,12 +171,10 @@ export function EditableField({
             placeholder={placeholder}
             className={cn(
               'h-input-md',
-              error && 'border-error focus:border-error focus:ring-error/15'
+              error && 'border-error focus:border-error focus:ring-error/15',
             )}
           />
-          {error && (
-            <p className="text-xs text-error mt-1">{error}</p>
-          )}
+          {error && <p className="text-xs text-error mt-1">{error}</p>}
         </div>
         <div className="flex gap-1">
           <Button

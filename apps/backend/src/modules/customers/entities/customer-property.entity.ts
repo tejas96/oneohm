@@ -5,7 +5,16 @@ import {
   PropertyStatus,
   PropertyType,
 } from '@oneohm-epc/shared-types';
-import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';
+import {
+  Column,
+  DeleteDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  OneToOne,
+} from 'typeorm';
 
 import { CustomerProfileEntity } from './customer-profile.entity';
 import type { FollowupEntity } from './followup.entity';

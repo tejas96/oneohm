@@ -146,18 +146,18 @@ apps/web/
 
 ## 🎨 Feature Modules
 
-| Module | Description | Key Components |
-|--------|-------------|----------------|
-| **Dashboard** | Overview & KPIs | Charts, metrics, quick actions |
-| **Customers** | Customer management | Customer list, profile, properties |
-| **Quotes** | Quote management | Quote builder, calculator, versions |
-| **Projects** | Project tracking | Timeline, tasks, phases |
-| **Inventory** | Stock management | Products, warehouses, movements |
-| **Finance** | Financial operations | Invoices, payments, reports |
-| **Approvals** | Approval workflows | Pending approvals, approval history |
-| **Users** | User management | User list, roles, permissions |
-| **Organizations** | Org settings | Company profile, settings |
-| **Analytics** | Reports & analytics | Charts, exports, dashboards |
+| Module            | Description          | Key Components                      |
+| ----------------- | -------------------- | ----------------------------------- |
+| **Dashboard**     | Overview & KPIs      | Charts, metrics, quick actions      |
+| **Customers**     | Customer management  | Customer list, profile, properties  |
+| **Quotes**        | Quote management     | Quote builder, calculator, versions |
+| **Projects**      | Project tracking     | Timeline, tasks, phases             |
+| **Inventory**     | Stock management     | Products, warehouses, movements     |
+| **Finance**       | Financial operations | Invoices, payments, reports         |
+| **Approvals**     | Approval workflows   | Pending approvals, approval history |
+| **Users**         | User management      | User list, roles, permissions       |
+| **Organizations** | Org settings         | Company profile, settings           |
+| **Analytics**     | Reports & analytics  | Charts, exports, dashboards         |
 
 ---
 
@@ -388,7 +388,7 @@ import { useTheme } from 'next-themes';
 
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-  
+
   return (
     <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
       Toggle Theme

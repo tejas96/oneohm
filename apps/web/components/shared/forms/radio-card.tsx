@@ -57,9 +57,7 @@ const RadioCard = React.forwardRef<HTMLButtonElement, RadioCardProps>(
       {/* Content */}
       <div className="flex-1 space-y-1">
         <div className="text-sm font-medium text-foreground">{title}</div>
-        {description && (
-          <div className="text-xs text-foreground-tertiary">{description}</div>
-        )}
+        {description && <div className="text-xs text-foreground-tertiary">{description}</div>}
       </div>
     </Item>
   ),

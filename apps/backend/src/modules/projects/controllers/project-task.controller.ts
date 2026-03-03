@@ -28,7 +28,14 @@ import {
   TaskPriority,
   TaskStatus,
 } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiDelete, ApiReadAll, ApiReadOne, ApiUpdate, OrganizationContext } from '@oneohm-epc/shared-utils';
+import {
+  ApiCreate,
+  ApiDelete,
+  ApiReadAll,
+  ApiReadOne,
+  ApiUpdate,
+  OrganizationContext,
+} from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
 import { CurrentUser } from '../../auth/decorators';
@@ -149,9 +156,7 @@ export class ProjectTaskController {
 
   @Get('board')
   @ApiOperation({ summary: 'Get full board data for Kanban view (all columns in one response)' })
-  async getBoardData(
-    @Param('projectId', ParseUUIDPipe) projectId: string,
-  ): Promise<unknown> {
+  async getBoardData(@Param('projectId', ParseUUIDPipe) projectId: string): Promise<unknown> {
     return this.taskService.getBoardData(projectId);
   }
 
@@ -280,7 +285,12 @@ export class ProjectTaskController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AssignTaskDto,
   ): Promise<ProjectTaskResponseDto> {
-    const task = await this.taskService.assignTask(id, projectId, dto.assignedToUserId, currentUser.id);
+    const task = await this.taskService.assignTask(
+      id,
+      projectId,
+      dto.assignedToUserId,
+      currentUser.id,
+    );
     return plainToInstance(ProjectTaskResponseDto, task, {
       excludeExtraneousValues: true,
     });

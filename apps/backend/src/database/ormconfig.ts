@@ -22,7 +22,6 @@ const configService: ConfigService<ConfigInterface> = {
     let value: any = configObj; // Need 'any' for dynamic property access
 
     for (const k of keys) {
-       
       value = value?.[k];
     }
 

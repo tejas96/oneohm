@@ -52,9 +52,7 @@ export function NumberStepper({
 
   return (
     <div className={cn('space-y-1', className)}>
-      {label && (
-        <span className="text-sm font-medium text-foreground">{label}</span>
-      )}
+      {label && <span className="text-sm font-medium text-foreground">{label}</span>}
       <div className="flex items-center gap-1">
         <Button
           type="button"
@@ -86,9 +84,7 @@ export function NumberStepper({
           <Plus className={iconSize} />
         </Button>
       </div>
-      {hint && (
-        <p className="text-xs text-foreground-secondary">{hint}</p>
-      )}
+      {hint && <p className="text-xs text-foreground-secondary">{hint}</p>}
     </div>
   );
 }

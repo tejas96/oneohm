@@ -10,7 +10,13 @@ import {
   type MyTasksProject,
   type MyTasksSummary,
 } from '@oneohm-epc/shared-types';
-import { useQuery, useMutation, useQueryClient, keepPreviousData, type UseQueryResult } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+  type UseQueryResult,
+} from '@tanstack/react-query';
 
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
@@ -41,9 +47,7 @@ export const myTaskKeys = {
 // Hooks
 // ============================================================================
 
-export function useMyTasks(
-  filters: MyTaskFilters,
-): UseQueryResult<GroupedMyTasksResponse> {
+export function useMyTasks(filters: MyTaskFilters): UseQueryResult<GroupedMyTasksResponse> {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
 
@@ -59,10 +63,9 @@ export function useMyTasks(
       if (filters.dueDateFilter) params.set('dueDateFilter', filters.dueDateFilter);
 
       const url = `/tasks/my?${params.toString()}`;
-      const { data } = await apiClient.get<GroupedMyTasksResponse>(
-        url,
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
+      const { data } = await apiClient.get<GroupedMyTasksResponse>(url, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
       return data;
     },
     enabled: !!user && !!organizationId,

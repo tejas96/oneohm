@@ -155,7 +155,8 @@ export class CustomerPropertyController {
   @Get('temperature/:temperature')
   @ApiOperation({
     summary: 'Get properties by lead temperature',
-    description: 'Retrieve properties with a specific lead temperature (hot/warm/cold) with pagination.',
+    description:
+      'Retrieve properties with a specific lead temperature (hot/warm/cold) with pagination.',
   })
   @ApiParam({
     name: 'temperature',
@@ -184,7 +185,12 @@ export class CustomerPropertyController {
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
   ): Promise<PaginatedResponse<CustomerPropertyResponseDto>> {
-    const result = await this.propertyService.findByTemperature(organizationId, temperature, page, limit);
+    const result = await this.propertyService.findByTemperature(
+      organizationId,
+      temperature,
+      page,
+      limit,
+    );
     return toPaginatedResponse(CustomerPropertyResponseDto, result.data, result.total, page, limit);
   }
 

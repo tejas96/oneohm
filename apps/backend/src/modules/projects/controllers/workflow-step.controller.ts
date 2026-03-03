@@ -26,11 +26,7 @@ import { plainToInstance } from 'class-transformer';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
-import {
-  CreateWorkflowStepDto,
-  WorkflowStepResponseDto,
-  UpdateWorkflowStepDto,
-} from '../dto';
+import { CreateWorkflowStepDto, WorkflowStepResponseDto, UpdateWorkflowStepDto } from '../dto';
 import { WorkflowStepService } from '../services';
 
 @ApiTags('Workflow Steps')
@@ -116,12 +112,7 @@ export class WorkflowStepController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateWorkflowStepDto,
   ): Promise<WorkflowStepResponseDto> {
-    const step = await this.stepService.update(
-      id,
-      organizationId,
-      updateDto,
-      currentUser.id,
-    );
+    const step = await this.stepService.update(id, organizationId, updateDto, currentUser.id);
     return plainToInstance(WorkflowStepResponseDto, step, {
       excludeExtraneousValues: true,
     });

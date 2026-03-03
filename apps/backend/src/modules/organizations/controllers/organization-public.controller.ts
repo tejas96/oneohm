@@ -99,9 +99,7 @@ export class OrganizationPublicController {
     status: HttpStatus.NOT_FOUND,
     description: 'Organization not found',
   })
-  async getOrganizationByCode(
-    @Query('code') code: string,
-  ): Promise<OrganizationResponseDto> {
+  async getOrganizationByCode(@Query('code') code: string): Promise<OrganizationResponseDto> {
     if (!code) {
       throw new NotFoundException('Organization code is required');
     }

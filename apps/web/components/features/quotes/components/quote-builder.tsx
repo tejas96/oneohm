@@ -1,7 +1,12 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { DcrPreference, PhaseType, ProjectType, type PaymentMilestone } from '@oneohm-epc/shared-types';
+import {
+  DcrPreference,
+  PhaseType,
+  ProjectType,
+  type PaymentMilestone,
+} from '@oneohm-epc/shared-types';
 import {
   AlertCircle,
   Calculator,
@@ -184,8 +189,11 @@ export function QuoteBuilder(): JSX.Element {
   const systemSizeKw = form.watch('systemSizeKw');
   const projectType = form.watch('projectType');
 
-  const { transportRatePerKm, floorIncrementPercent, isFetched: isPricingFetched } =
-    useInstallationPricing(systemSizeKw, projectType);
+  const {
+    transportRatePerKm,
+    floorIncrementPercent,
+    isFetched: isPricingFetched,
+  } = useInstallationPricing(systemSizeKw, projectType);
 
   // Fetch properties for selected customer (use isFetching since query is disabled when customerId is empty)
   const { data: propertiesRaw, isFetching: isPropertiesFetching } =
@@ -391,18 +399,20 @@ export function QuoteBuilder(): JSX.Element {
         },
         quoteNumber: savedQuoteNumber,
         validityDays: config.quoteConfig?.defaultValidityDays ?? 30,
-        paymentMilestones: savedMilestones ?? config.quoteConfig?.paymentMilestones?.map(
-          (m: {
-            stage: string;
-            name: string;
-            description?: string;
-            percentage: number;
-            color?: string;
-          }) => ({
-            ...m,
-            amount: Math.round(calculation.pricing.totalPrice * (m.percentage / 100)),
-          }),
-        ),
+        paymentMilestones:
+          savedMilestones ??
+          config.quoteConfig?.paymentMilestones?.map(
+            (m: {
+              stage: string;
+              name: string;
+              description?: string;
+              percentage: number;
+              color?: string;
+            }) => ({
+              ...m,
+              amount: Math.round(calculation.pricing.totalPrice * (m.percentage / 100)),
+            }),
+          ),
         discountAmount: discount,
       });
       showToast.success('PDF downloaded');
@@ -1192,16 +1202,14 @@ export function QuoteBuilder(): JSX.Element {
       <PaymentTermsModal
         open={paymentTermsModalOpen}
         onClose={() => setPaymentTermsModalOpen(false)}
-        defaultMilestones={
-          (config.quoteConfig?.paymentMilestones ?? []).map(
-            (m: { stage: string; name: string; percentage: number; order?: number }, i: number) => ({
-              stage: m.stage,
-              name: m.name,
-              percentage: m.percentage,
-              order: m.order ?? i + 1,
-            }),
-          )
-        }
+        defaultMilestones={(config.quoteConfig?.paymentMilestones ?? []).map(
+          (m: { stage: string; name: string; percentage: number; order?: number }, i: number) => ({
+            stage: m.stage,
+            name: m.name,
+            percentage: m.percentage,
+            order: m.order ?? i + 1,
+          }),
+        )}
         grossTotal={calculation?.pricing.totalPrice ?? 0}
         onConfirm={handlePaymentTermsConfirm}
       />

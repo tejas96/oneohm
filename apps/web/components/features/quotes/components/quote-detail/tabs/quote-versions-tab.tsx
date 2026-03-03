@@ -45,12 +45,24 @@ export function QuoteVersionsTab({
           <table className="w-full">
             <thead className="bg-background-secondary border-b border-border-light">
               <tr>
-                <th className="px-4 py-3 text-left text-2xs font-semibold text-foreground-secondary uppercase">Version</th>
-                <th className="px-4 py-3 text-left text-2xs font-semibold text-foreground-secondary uppercase">Date</th>
-                <th className="px-4 py-3 text-left text-2xs font-semibold text-foreground-secondary uppercase">Changes</th>
-                <th className="px-4 py-3 text-right text-2xs font-semibold text-foreground-secondary uppercase">System</th>
-                <th className="px-4 py-3 text-right text-2xs font-semibold text-foreground-secondary uppercase">Price</th>
-                <th className="px-4 py-3 text-right text-2xs font-semibold text-foreground-secondary uppercase">Actions</th>
+                <th className="px-4 py-3 text-left text-2xs font-semibold text-foreground-secondary uppercase">
+                  Version
+                </th>
+                <th className="px-4 py-3 text-left text-2xs font-semibold text-foreground-secondary uppercase">
+                  Date
+                </th>
+                <th className="px-4 py-3 text-left text-2xs font-semibold text-foreground-secondary uppercase">
+                  Changes
+                </th>
+                <th className="px-4 py-3 text-right text-2xs font-semibold text-foreground-secondary uppercase">
+                  System
+                </th>
+                <th className="px-4 py-3 text-right text-2xs font-semibold text-foreground-secondary uppercase">
+                  Price
+                </th>
+                <th className="px-4 py-3 text-right text-2xs font-semibold text-foreground-secondary uppercase">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-light">
@@ -65,7 +77,9 @@ export function QuoteVersionsTab({
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">v{version.versionNumber}</span>
                         {version.isCurrent && (
-                          <Badge variant="success" size="xs" shape="pill">Current</Badge>
+                          <Badge variant="success" size="xs" shape="pill">
+                            Current
+                          </Badge>
                         )}
                       </div>
                     </td>
@@ -73,7 +87,8 @@ export function QuoteVersionsTab({
                       {formatDate(version.createdAt, 'medium')}
                     </td>
                     <td className="px-4 py-3 text-sm text-foreground-secondary">
-                      {version.changeSummary || (version.versionNumber === 1 ? 'Initial quote' : '—')}
+                      {version.changeSummary ||
+                        (version.versionNumber === 1 ? 'Initial quote' : '—')}
                     </td>
                     <td className="px-4 py-3 text-right text-sm text-foreground-secondary">
                       {version.systemSizeKw} kW
@@ -88,11 +103,7 @@ export function QuoteVersionsTab({
                     <td className="px-4 py-3 text-right">
                       {version.isCurrent ? (
                         isSelected ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => onVersionSelect(null)}
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => onVersionSelect(null)}>
                             Clear
                           </Button>
                         ) : null
@@ -100,9 +111,7 @@ export function QuoteVersionsTab({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() =>
-                            onVersionSelect(isSelected ? null : version.id)
-                          }
+                          onClick={() => onVersionSelect(isSelected ? null : version.id)}
                         >
                           <Eye className="size-icon-sm mr-1" />
                           {isSelected ? 'Deselect' : 'View'}

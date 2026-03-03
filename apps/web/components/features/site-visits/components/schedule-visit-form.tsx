@@ -12,7 +12,12 @@ import {
   VISIT_TYPE_OPTIONS,
 } from '../schemas/site-visit.schema';
 
-import { CustomerSearchCombobox, PropertySelector, RadioCard, RadioCardGroup } from '@/components/shared';
+import {
+  CustomerSearchCombobox,
+  PropertySelector,
+  RadioCard,
+  RadioCardGroup,
+} from '@/components/shared';
 import type { Property as PropertySelectorProperty } from '@/components/shared/forms/property-selector';
 import {
   Button,
@@ -39,7 +44,6 @@ import {
   BreadcrumbPage,
 } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
-
 
 // ============================================================================
 // Types
@@ -71,13 +75,37 @@ interface Technician {
 // ============================================================================
 
 const mockCustomers: Customer[] = [
-  { id: '1', firstName: 'Rajesh', lastName: 'Sharma', phone: '+91 98765 43210', email: 'rajesh@example.com' },
-  { id: '2', firstName: 'Priya', lastName: 'Patel', phone: '+91 87654 32109', email: 'priya@example.com' },
+  {
+    id: '1',
+    firstName: 'Rajesh',
+    lastName: 'Sharma',
+    phone: '+91 98765 43210',
+    email: 'rajesh@example.com',
+  },
+  {
+    id: '2',
+    firstName: 'Priya',
+    lastName: 'Patel',
+    phone: '+91 87654 32109',
+    email: 'priya@example.com',
+  },
 ];
 
 const mockProperties: Property[] = [
-  { id: 'p1', propertyName: 'Main Residence', address: '456 Green Valley', city: 'Pune', propertyType: PropertyType.RESIDENTIAL },
-  { id: 'p2', propertyName: 'Office Building', address: '789 Business Park', city: 'Pune', propertyType: PropertyType.COMMERCIAL },
+  {
+    id: 'p1',
+    propertyName: 'Main Residence',
+    address: '456 Green Valley',
+    city: 'Pune',
+    propertyType: PropertyType.RESIDENTIAL,
+  },
+  {
+    id: 'p2',
+    propertyName: 'Office Building',
+    address: '789 Business Park',
+    city: 'Pune',
+    propertyType: PropertyType.COMMERCIAL,
+  },
 ];
 
 const mockTechnicians: Technician[] = [
@@ -99,8 +127,6 @@ export function ScheduleVisitForm(): React.JSX.Element {
   const [properties, setProperties] = React.useState<Property[]>([]);
 
   const form = useForm<ScheduleSiteVisitFormData>({
-     
-     
     resolver: zodResolver(scheduleSiteVisitSchema) as any,
     defaultValues: {
       customerId: '',
@@ -177,7 +203,9 @@ export function ScheduleVisitForm(): React.JSX.Element {
                       onSelect={(v: string) => form.setValue('propertyId', v)}
                     />
                     {form.formState.errors.propertyId && (
-                      <p className="text-xs text-error">{form.formState.errors.propertyId.message}</p>
+                      <p className="text-xs text-error">
+                        {form.formState.errors.propertyId.message}
+                      </p>
                     )}
                   </div>
                 )}
@@ -189,7 +217,12 @@ export function ScheduleVisitForm(): React.JSX.Element {
               <Label>Visit Type *</Label>
               <RadioCardGroup
                 value={form.watch('visitType')}
-                onValueChange={(v: string) => form.setValue('visitType', v as 'initial_assessment' | 'technical_survey' | 'follow_up')}
+                onValueChange={(v: string) =>
+                  form.setValue(
+                    'visitType',
+                    v as 'initial_assessment' | 'technical_survey' | 'follow_up',
+                  )
+                }
                 orientation="horizontal"
               >
                 {VISIT_TYPE_OPTIONS.map((type) => (
@@ -225,7 +258,9 @@ export function ScheduleVisitForm(): React.JSX.Element {
                 </SelectContent>
               </Select>
               {form.formState.errors.assignedToUserId && (
-                <p className="text-xs text-error">{form.formState.errors.assignedToUserId.message}</p>
+                <p className="text-xs text-error">
+                  {form.formState.errors.assignedToUserId.message}
+                </p>
               )}
             </div>
 
@@ -235,20 +270,20 @@ export function ScheduleVisitForm(): React.JSX.Element {
                 <Label>Date *</Label>
                 <DatePicker
                   value={form.watch('scheduledDate')}
-                  onChange={(date: Date | undefined) => date && form.setValue('scheduledDate', date)}
+                  onChange={(date: Date | undefined) =>
+                    date && form.setValue('scheduledDate', date)
+                  }
                   placeholder="Select date"
                 />
                 {form.formState.errors.scheduledDate && (
-                  <p className="text-xs text-error">{form.formState.errors.scheduledDate.message}</p>
+                  <p className="text-xs text-error">
+                    {form.formState.errors.scheduledDate.message}
+                  </p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="scheduledTime">Time *</Label>
-                <Input
-                  id="scheduledTime"
-                  type="time"
-                  {...form.register('scheduledTime')}
-                />
+                <Input id="scheduledTime" type="time" {...form.register('scheduledTime')} />
               </div>
             </div>
 

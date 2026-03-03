@@ -1,12 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority';
-import {
-  AlertTriangle,
-  FileText,
-  Inbox,
-  RefreshCw,
-  Search,
-  Users,
-} from 'lucide-react';
+import { AlertTriangle, FileText, Inbox, RefreshCw, Search, Users } from 'lucide-react';
 import * as React from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -15,7 +8,7 @@ import { cn } from '@/lib/utils';
 /**
  * EmptyState Component
  * Placeholder content for empty lists, tables, and error states
- * 
+ *
  * Icon container sizes use standard Tailwind:
  * - default: w-20 h-20 (80px)
  * - compact: w-12 h-12 (48px)
@@ -34,27 +27,24 @@ const emptyStateVariants = cva('text-center', {
   },
 });
 
-const iconContainerVariants = cva(
-  'rounded-full flex items-center justify-center mx-auto',
-  {
-    variants: {
-      variant: {
-        default: 'size-container-2xl mb-6',
-        compact: 'size-container-lg mb-3',
-        table: 'size-container-lg mb-4',
-      },
-      iconColor: {
-        muted: 'bg-muted',
-        primary: 'bg-primary/10',
-        error: 'bg-error/10',
-      },
+const iconContainerVariants = cva('rounded-full flex items-center justify-center mx-auto', {
+  variants: {
+    variant: {
+      default: 'size-container-2xl mb-6',
+      compact: 'size-container-lg mb-3',
+      table: 'size-container-lg mb-4',
     },
-    defaultVariants: {
-      variant: 'default',
-      iconColor: 'muted',
+    iconColor: {
+      muted: 'bg-muted',
+      primary: 'bg-primary/10',
+      error: 'bg-error/10',
     },
-  }
-);
+  },
+  defaultVariants: {
+    variant: 'default',
+    iconColor: 'muted',
+  },
+});
 
 const ICON_TEXT_COLORS = {
   muted: 'text-foreground-tertiary',
@@ -99,27 +89,22 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
       secondaryAction,
       ...props
     },
-    ref
+    ref,
   ) => {
-    const iconSize = variant === 'compact' || variant === 'table' ? 'size-icon-lg' : 'size-icon-2xl';
+    const iconSize =
+      variant === 'compact' || variant === 'table' ? 'size-icon-lg' : 'size-icon-2xl';
 
     return (
-      <div
-        ref={ref}
-        className={cn(emptyStateVariants({ variant }), className)}
-        {...props}
-      >
+      <div ref={ref} className={cn(emptyStateVariants({ variant }), className)} {...props}>
         {icon && (
           <div className={cn(iconContainerVariants({ variant, iconColor }))}>
-            <div className={cn(iconSize, ICON_TEXT_COLORS[iconColor])}>
-              {icon}
-            </div>
+            <div className={cn(iconSize, ICON_TEXT_COLORS[iconColor])}>{icon}</div>
           </div>
         )}
         <h3
           className={cn(
             'font-semibold text-foreground',
-            variant === 'compact' || variant === 'table' ? 'text-sm mb-1' : 'text-lg mb-2'
+            variant === 'compact' || variant === 'table' ? 'text-sm mb-1' : 'text-lg mb-2',
           )}
         >
           {title}
@@ -128,7 +113,7 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
           <p
             className={cn(
               'text-foreground-secondary max-w-sm mx-auto',
-              variant === 'compact' || variant === 'table' ? 'text-sm' : 'text-sm mb-6'
+              variant === 'compact' || variant === 'table' ? 'text-sm' : 'text-sm mb-6',
             )}
           >
             {description}
@@ -145,7 +130,7 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
             onClick={secondaryAction.onClick}
             className={cn(
               'text-sm text-primary font-medium hover:underline cursor-pointer',
-              variant === 'compact' ? 'mt-2 block' : 'mt-4 block'
+              variant === 'compact' ? 'mt-2 block' : 'mt-4 block',
             )}
           >
             {secondaryAction.label}
@@ -153,7 +138,7 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
         )}
       </div>
     );
-  }
+  },
 );
 EmptyState.displayName = 'EmptyState';
 
@@ -184,24 +169,23 @@ export interface NoSearchResultsProps
   onClear?: () => void;
 }
 
-export const NoSearchResults = React.forwardRef<
-  HTMLDivElement,
-  NoSearchResultsProps
->(({ searchTerm, onClear, ...props }, ref) => (
-  <EmptyState
-    ref={ref}
-    icon={<Search className="w-full h-full" />}
-    iconColor="muted"
-    title="No results found"
-    description={
-      searchTerm
-        ? `We couldn't find anything matching "${searchTerm}". Try different keywords.`
-        : "We couldn't find any matches. Try different keywords."
-    }
-    secondaryAction={onClear ? { label: 'Clear search', onClick: onClear } : undefined}
-    {...props}
-  />
-));
+export const NoSearchResults = React.forwardRef<HTMLDivElement, NoSearchResultsProps>(
+  ({ searchTerm, onClear, ...props }, ref) => (
+    <EmptyState
+      ref={ref}
+      icon={<Search className="w-full h-full" />}
+      iconColor="muted"
+      title="No results found"
+      description={
+        searchTerm
+          ? `We couldn't find anything matching "${searchTerm}". Try different keywords.`
+          : "We couldn't find any matches. Try different keywords."
+      }
+      secondaryAction={onClear ? { label: 'Clear search', onClick: onClear } : undefined}
+      {...props}
+    />
+  ),
+);
 NoSearchResults.displayName = 'NoSearchResults';
 
 /** No customers state */
@@ -221,8 +205,7 @@ export const NoCustomers = React.forwardRef<
 NoCustomers.displayName = 'NoCustomers';
 
 /** Error state */
-export interface ErrorStateProps
-  extends Omit<EmptyStateProps, 'icon' | 'title' | 'iconColor'> {
+export interface ErrorStateProps extends Omit<EmptyStateProps, 'icon' | 'title' | 'iconColor'> {
   title?: string;
   onRetry?: () => void;
 }
@@ -246,7 +229,7 @@ export const ErrorState = React.forwardRef<HTMLDivElement, ErrorStateProps>(
       }
       {...props}
     />
-  )
+  ),
 );
 ErrorState.displayName = 'ErrorState';
 

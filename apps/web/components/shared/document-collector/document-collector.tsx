@@ -81,7 +81,7 @@ export function DocumentCollector({
     (slotId: string): CapturedDocument | undefined => {
       return documents.find((d) => d.slotId === slotId);
     },
-    [documents]
+    [documents],
   );
 
   // Get additional documents (not in predefined slots)
@@ -94,18 +94,18 @@ export function DocumentCollector({
   const handleFileSelect = React.useCallback(
     (slotId: string, file: File) => {
       const newDoc = createDocumentFromFile(file, slotId);
-      
+
       // Revoke blob URL of existing document in same slot (prevent memory leak)
       const existingDoc = documents.find((d) => d.slotId === slotId);
       if (existingDoc?.previewUrl) {
         URL.revokeObjectURL(existingDoc.previewUrl);
       }
-      
+
       // Remove existing document in same slot
       const filtered = documents.filter((d) => d.slotId !== slotId);
       onDocumentsChange([...filtered, newDoc]);
     },
-    [documents, onDocumentsChange]
+    [documents, onDocumentsChange],
   );
 
   // Handle file removal
@@ -130,7 +130,7 @@ export function DocumentCollector({
 
       onDocumentsChange(documents.filter((d) => d.slotId !== slotId));
     },
-    [documents, onDocumentsChange]
+    [documents, onDocumentsChange],
   );
 
   // Handle retry upload
@@ -142,11 +142,11 @@ export function DocumentCollector({
       // Reset status and trigger re-upload
       onDocumentsChange(
         documents.map((d) =>
-          d.slotId === slotId ? { ...d, status: 'pending' as const, error: undefined } : d
-        )
+          d.slotId === slotId ? { ...d, status: 'pending' as const, error: undefined } : d,
+        ),
       );
     },
-    [documents, onDocumentsChange]
+    [documents, onDocumentsChange],
   );
 
   // Handle additional document selection
@@ -177,7 +177,7 @@ export function DocumentCollector({
         additionalFileInputRef.current.value = '';
       }
     },
-    [documents, onDocumentsChange, additionalDocCounter]
+    [documents, onDocumentsChange, additionalDocCounter],
   );
 
   // Check if all required documents are present
@@ -201,9 +201,7 @@ export function DocumentCollector({
       {/* Additional documents */}
       {additionalDocs.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-xs text-foreground-secondary">
-            Additional Documents
-          </Label>
+          <Label className="text-xs text-foreground-secondary">Additional Documents</Label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {additionalDocs.map((doc) => {
               const slot: DocumentSlotType = {
@@ -250,7 +248,6 @@ export function DocumentCollector({
           Add Another Document
         </Button>
       </div>
-
     </div>
   );
 }
