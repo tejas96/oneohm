@@ -3,14 +3,13 @@
 import { FileText, Upload } from 'lucide-react';
 import { useCallback, useMemo, useState, type JSX } from 'react';
 
-import type { CustomerPropertyResponse } from '@/components/features/customers/hooks';
+import { DocumentPreviewModal } from '@/components/features/customers/components/document-preview-modal';
 import {
   DocumentRow,
   type AggregatedDocument,
 } from '@/components/features/customers/components/document-row';
-import { DocumentPreviewModal } from '@/components/features/customers/components/document-preview-modal';
 import { UploadDocumentModal } from '@/components/features/customers/components/upload-document-modal';
-import {
+import { type CustomerPropertyResponse ,
   useDocumentPreview,
   useRemovePropertyDocument,
 } from '@/components/features/customers/hooks';

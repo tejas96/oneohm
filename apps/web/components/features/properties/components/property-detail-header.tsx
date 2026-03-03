@@ -9,7 +9,6 @@ import React from 'react';
 import { LEAD_TEMPERATURE_CONFIG, PROPERTY_TYPE_LABELS } from '../constants';
 
 import type { CustomerPropertyResponse } from '@/components/features/customers/hooks';
-
 import {
   Badge,
   Breadcrumb,
