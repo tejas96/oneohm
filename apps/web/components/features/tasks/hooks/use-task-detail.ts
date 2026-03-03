@@ -12,19 +12,16 @@ export const taskDetailKeys = {
     [...taskDetailKeys.all(orgId), taskId] as const,
 };
 
-export function useTaskDetail(
-  taskId: string | null,
-): UseQueryResult<MyTask> {
+export function useTaskDetail(taskId: string | null): UseQueryResult<MyTask> {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
 
   return useQuery({
     queryKey: taskDetailKeys.detail(organizationId, taskId ?? ''),
     queryFn: async () => {
-      const { data } = await apiClient.get<MyTask>(
-        `/tasks/${taskId}`,
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
+      const { data } = await apiClient.get<MyTask>(`/tasks/${taskId}`, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
       return data;
     },
     enabled: !!user && !!organizationId && !!taskId,

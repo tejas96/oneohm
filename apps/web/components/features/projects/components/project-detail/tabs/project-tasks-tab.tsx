@@ -25,7 +25,6 @@ import { getErrorMessage } from '@/lib/utils/error';
 import { formatDate, getDueDateColor, getInitials } from '@/lib/utils/format';
 import { useAuth } from '@/providers/auth-provider';
 
-
 interface ProjectTasksTabProps {
   projectId: string;
   isActive: boolean;
@@ -78,7 +77,9 @@ function TaskCard({ task, isDone }: { task: ProjectTaskItem; isDone?: boolean })
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className={`rounded-md border border-border-light bg-background p-2.5 border-l-[3px] ${borderAccent} ${isDone ? 'opacity-70' : ''}`}>
+      <div
+        className={`rounded-md border border-border-light bg-background p-2.5 border-l-[3px] ${borderAccent} ${isDone ? 'opacity-70' : ''}`}
+      >
         {/* Row 1: task code + priority dot */}
         <div className="flex items-center justify-between mb-1">
           <span className="text-2xs text-foreground-secondary font-mono">{task.code}</span>
@@ -95,7 +96,9 @@ function TaskCard({ task, isDone }: { task: ProjectTaskItem; isDone?: boolean })
         {/* Row 2: task name with tooltip */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <p className={`text-xs font-medium truncate ${isDone ? 'line-through text-foreground-secondary' : 'text-foreground'}`}>
+            <p
+              className={`text-xs font-medium truncate ${isDone ? 'line-through text-foreground-secondary' : 'text-foreground'}`}
+            >
               {task.name}
             </p>
           </TooltipTrigger>
@@ -154,7 +157,12 @@ function TaskCard({ task, isDone }: { task: ProjectTaskItem; isDone?: boolean })
   );
 }
 
-function KanbanColumn({ status, label, tasks, count }: {
+function KanbanColumn({
+  status,
+  label,
+  tasks,
+  count,
+}: {
   status: TaskStatus;
   label: string;
   tasks: ProjectTaskItem[];
@@ -170,8 +178,16 @@ function KanbanColumn({ status, label, tasks, count }: {
   return (
     <div className={`rounded-lg p-3 ${COLUMN_BG[status] ?? 'bg-background-secondary'}`}>
       <div className="flex items-center justify-between mb-2">
-        <span className={`text-2xs font-semibold uppercase ${COLUMN_LABEL_COLOR[status] ?? 'text-foreground-secondary'}`}>{label}</span>
-        <span className={`text-2xs font-semibold ${COLUMN_LABEL_COLOR[status] ?? 'text-foreground-tertiary'}`}>{count}</span>
+        <span
+          className={`text-2xs font-semibold uppercase ${COLUMN_LABEL_COLOR[status] ?? 'text-foreground-secondary'}`}
+        >
+          {label}
+        </span>
+        <span
+          className={`text-2xs font-semibold ${COLUMN_LABEL_COLOR[status] ?? 'text-foreground-tertiary'}`}
+        >
+          {count}
+        </span>
       </div>
       {tasks.length === 0 ? (
         <p className="text-2xs text-foreground-tertiary py-4 text-center">No tasks</p>
@@ -195,142 +211,147 @@ function KanbanColumn({ status, label, tasks, count }: {
   );
 }
 
-export const ProjectTasksTab = React.memo(({
-  projectId,
-  isActive,
-}: ProjectTasksTabProps): React.JSX.Element => {
-  const { user } = useAuth();
-  const { data: tasks, isLoading, isError, error, refetch } = useProjectTasks(projectId, { enabled: isActive });
-  const { data: team } = useProjectTeam(projectId, { enabled: isActive });
+export const ProjectTasksTab = React.memo(
+  ({ projectId, isActive }: ProjectTasksTabProps): React.JSX.Element => {
+    const { user } = useAuth();
+    const {
+      data: tasks,
+      isLoading,
+      isError,
+      error,
+      refetch,
+    } = useProjectTasks(projectId, { enabled: isActive });
+    const { data: team } = useProjectTeam(projectId, { enabled: isActive });
 
-  const avatarMembers: TeamMemberSummary[] = useMemo(() => {
-    if (!team) return [];
-    const mapped = team.map((m) => ({
-      id: m.userId,
-      firstName: m.user?.firstName ?? 'Unknown',
-      lastName: m.user?.lastName,
-      isProjectManager: m.isProjectManager,
-    }));
-    const currentUserId = user?.id;
-    return mapped.sort((a, b) => {
-      if (a.id === currentUserId) return -1;
-      if (b.id === currentUserId) return 1;
-      return 0;
-    });
-  }, [team, user?.id]);
+    const avatarMembers: TeamMemberSummary[] = useMemo(() => {
+      if (!team) return [];
+      const mapped = team.map((m) => ({
+        id: m.userId,
+        firstName: m.user?.firstName ?? 'Unknown',
+        lastName: m.user?.lastName,
+        isProjectManager: m.isProjectManager,
+      }));
+      const currentUserId = user?.id;
+      return mapped.sort((a, b) => {
+        if (a.id === currentUserId) return -1;
+        if (b.id === currentUserId) return 1;
+        return 0;
+      });
+    }, [team, user?.id]);
 
-  const isCurrentUserInTeam = useMemo(
-    () => !!user?.id && avatarMembers.some((m) => m.id === user.id),
-    [avatarMembers, user?.id],
-  );
+    const isCurrentUserInTeam = useMemo(
+      () => !!user?.id && avatarMembers.some((m) => m.id === user.id),
+      [avatarMembers, user?.id],
+    );
 
-  const [selectedAssignees, setSelectedAssignees] = useState<Set<string>>(() => new Set());
+    const [selectedAssignees, setSelectedAssignees] = useState<Set<string>>(() => new Set());
 
-  const initializedRef = useRef(false);
-  useEffect(() => {
-    if (initializedRef.current || !team) return;
-    if (isCurrentUserInTeam && user?.id) {
-      setSelectedAssignees(new Set([user.id]));
-    }
-    initializedRef.current = true;
-  }, [team, isCurrentUserInTeam, user?.id]);
-
-  const handleToggleAssignee = useCallback((memberId: string) => {
-    setSelectedAssignees((prev) => {
-      const next = new Set(prev);
-      if (next.has(memberId)) {
-        next.delete(memberId);
-      } else {
-        next.add(memberId);
+    const initializedRef = useRef(false);
+    useEffect(() => {
+      if (initializedRef.current || !team) return;
+      if (isCurrentUserInTeam && user?.id) {
+        setSelectedAssignees(new Set([user.id]));
       }
-      return next;
-    });
-  }, []);
+      initializedRef.current = true;
+    }, [team, isCurrentUserInTeam, user?.id]);
 
-  const handleClearFilter = useCallback(() => {
-    setSelectedAssignees(new Set());
-  }, []);
+    const handleToggleAssignee = useCallback((memberId: string) => {
+      setSelectedAssignees((prev) => {
+        const next = new Set(prev);
+        if (next.has(memberId)) {
+          next.delete(memberId);
+        } else {
+          next.add(memberId);
+        }
+        return next;
+      });
+    }, []);
 
-  const filteredTasks = useMemo(() => {
-    if (!tasks) return [];
-    if (selectedAssignees.size === 0) return tasks;
-    return tasks.filter((t) => t.assignedToUserId && selectedAssignees.has(t.assignedToUserId));
-  }, [tasks, selectedAssignees]);
+    const handleClearFilter = useCallback(() => {
+      setSelectedAssignees(new Set());
+    }, []);
 
-  const grouped = useMemo(() => {
-    const groups: Record<string, ProjectTaskItem[]> = {};
-    for (const task of filteredTasks) {
-      const column = STATUS_TO_COLUMN[task.status];
-      if (!column) continue;
-      if (!groups[column]) groups[column] = [];
-      groups[column].push(task);
+    const filteredTasks = useMemo(() => {
+      if (!tasks) return [];
+      if (selectedAssignees.size === 0) return tasks;
+      return tasks.filter((t) => t.assignedToUserId && selectedAssignees.has(t.assignedToUserId));
+    }, [tasks, selectedAssignees]);
+
+    const grouped = useMemo(() => {
+      const groups: Record<string, ProjectTaskItem[]> = {};
+      for (const task of filteredTasks) {
+        const column = STATUS_TO_COLUMN[task.status];
+        if (!column) continue;
+        if (!groups[column]) groups[column] = [];
+        groups[column].push(task);
+      }
+      return groups;
+    }, [filteredTasks]);
+
+    if (isLoading && isActive) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-48 rounded-lg" />
+          ))}
+        </div>
+      );
     }
-    return groups;
-  }, [filteredTasks]);
 
-  if (isLoading && isActive) {
+    if (isError) {
+      return (
+        <ErrorState
+          title="Failed to load tasks"
+          description={getErrorMessage(error)}
+          onRetry={() => refetch()}
+        />
+      );
+    }
+
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-48 rounded-lg" />
-        ))}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <h3 className="text-xs font-semibold text-foreground">Project Tasks</h3>
+            {avatarMembers.length > 0 && (
+              <TeamAvatarGroup
+                members={avatarMembers}
+                max={4}
+                size="xs"
+                selectable
+                selectedIds={selectedAssignees}
+                onToggle={handleToggleAssignee}
+                onClear={handleClearFilter}
+              />
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link href={buildRoute(ROUTES.PROJECTS.BOARD, undefined, { project: projectId })}>
+                Open Full Kanban
+              </Link>
+            </Button>
+            <Button size="sm" onClick={() => showToast.info('Coming Soon')}>
+              + Add Task
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {KANBAN_COLUMNS.map((col) => {
+            const columnTasks = grouped[col.status] ?? [];
+            return (
+              <KanbanColumn
+                key={col.status}
+                status={col.status}
+                label={col.label}
+                tasks={columnTasks}
+                count={columnTasks.length}
+              />
+            );
+          })}
+        </div>
       </div>
     );
-  }
-
-  if (isError) {
-    return (
-      <ErrorState
-        title="Failed to load tasks"
-        description={getErrorMessage(error)}
-        onRetry={() => refetch()}
-      />
-    );
-  }
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <h3 className="text-xs font-semibold text-foreground">Project Tasks</h3>
-          {avatarMembers.length > 0 && (
-            <TeamAvatarGroup
-              members={avatarMembers}
-              max={4}
-              size="xs"
-              selectable
-              selectedIds={selectedAssignees}
-              onToggle={handleToggleAssignee}
-              onClear={handleClearFilter}
-            />
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link href={buildRoute(ROUTES.PROJECTS.BOARD, undefined, { project: projectId })}>
-              Open Full Kanban
-            </Link>
-          </Button>
-          <Button size="sm" onClick={() => showToast.info('Coming Soon')}>
-            + Add Task
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {KANBAN_COLUMNS.map((col) => {
-          const columnTasks = grouped[col.status] ?? [];
-          return (
-            <KanbanColumn
-              key={col.status}
-              status={col.status}
-              label={col.label}
-              tasks={columnTasks}
-              count={columnTasks.length}
-            />
-          );
-        })}
-      </div>
-    </div>
-  );
-});
+  },
+);

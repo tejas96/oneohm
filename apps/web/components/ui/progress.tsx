@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 /**
  * Progress Component
  * Linear progress bar with size and color variants
- * 
+ *
  * Heights use standard Tailwind spacing:
  * - xs: h-0.5 (2px)
  * - sm: h-1 (4px)
@@ -58,31 +58,27 @@ export interface ProgressProps
   indeterminate?: boolean;
 }
 
-const Progress = React.forwardRef<
-  React.ElementRef<typeof ProgressPrimitive.Root>,
-  ProgressProps
->(({ className, value, size, variant, showLabel, indeterminate, ...props }, ref) => (
-  <div className="relative">
-    <ProgressPrimitive.Root
-      ref={ref}
-      className={cn(progressVariants({ size }), className)}
-      {...props}
-    >
-      <ProgressPrimitive.Indicator
-        className={cn(
-          indicatorVariants({ variant }),
-          indeterminate && 'animate-pulse w-1/3'
-        )}
-        style={indeterminate ? undefined : { width: `${value || 0}%` }}
-      />
-    </ProgressPrimitive.Root>
-    {showLabel && size === 'xl' && !indeterminate && (
-      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-white">
-        {value}%
-      </span>
-    )}
-  </div>
-));
+const Progress = React.forwardRef<React.ElementRef<typeof ProgressPrimitive.Root>, ProgressProps>(
+  ({ className, value, size, variant, showLabel, indeterminate, ...props }, ref) => (
+    <div className="relative">
+      <ProgressPrimitive.Root
+        ref={ref}
+        className={cn(progressVariants({ size }), className)}
+        {...props}
+      >
+        <ProgressPrimitive.Indicator
+          className={cn(indicatorVariants({ variant }), indeterminate && 'animate-pulse w-1/3')}
+          style={indeterminate ? undefined : { width: `${value || 0}%` }}
+        />
+      </ProgressPrimitive.Root>
+      {showLabel && size === 'xl' && !indeterminate && (
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-white">
+          {value}%
+        </span>
+      )}
+    </div>
+  ),
+);
 Progress.displayName = ProgressPrimitive.Root.displayName;
 
 /**
@@ -110,7 +106,7 @@ ProgressWithLabel.displayName = 'ProgressWithLabel';
 /**
  * CircularProgress Component
  * SVG-based circular progress indicator
- * 
+ *
  * Sizes use standard Tailwind:
  * - sm: w-16 h-16 (64px)
  * - md: w-24 h-24 (96px)
@@ -139,24 +135,23 @@ const VARIANT_COLORS: Record<NonNullable<CircularProgressProps['variant']>, stri
 };
 
 const CircularProgress = React.forwardRef<HTMLDivElement, CircularProgressProps>(
-  ({ value = 0, size = 'md', variant = 'primary', showLabel = true, label, className, ...props }, ref) => {
+  (
+    { value = 0, size = 'md', variant = 'primary', showLabel = true, label, className, ...props },
+    ref,
+  ) => {
     const config = CIRCULAR_CONFIG[size];
     const circumference = 2 * Math.PI * config.radius;
     const strokeDashoffset = circumference - (value / 100) * circumference;
     const center = config.size / 2;
 
     return (
-      <div
-        ref={ref}
-        className={cn('relative inline-flex', className)}
-        {...props}
-      >
+      <div ref={ref} className={cn('relative inline-flex', className)} {...props}>
         <svg
           className={cn(
             'transform -rotate-90',
             size === 'sm' && 'size-container-xl',
             size === 'md' && 'size-container-3xl',
-            size === 'lg' && 'size-container-4xl'
+            size === 'lg' && 'size-container-4xl',
           )}
           viewBox={`0 0 ${config.size} ${config.size}`}
         >
@@ -190,7 +185,7 @@ const CircularProgress = React.forwardRef<HTMLDivElement, CircularProgressProps>
                 'font-semibold text-foreground',
                 size === 'sm' && 'text-sm',
                 size === 'md' && 'text-lg',
-                size === 'lg' && 'text-2xl'
+                size === 'lg' && 'text-2xl',
               )}
             >
               {value}%
@@ -202,7 +197,7 @@ const CircularProgress = React.forwardRef<HTMLDivElement, CircularProgressProps>
         )}
       </div>
     );
-  }
+  },
 );
 CircularProgress.displayName = 'CircularProgress';
 
@@ -234,7 +229,7 @@ const SegmentedProgress = React.forwardRef<HTMLDivElement, SegmentedProgressProp
               'flex-1 h-2',
               SEGMENT_STATUS_CLASSES[step.status],
               index === 0 && 'rounded-l-full',
-              index === steps.length - 1 && 'rounded-r-full'
+              index === steps.length - 1 && 'rounded-r-full',
             )}
           />
         ))}
@@ -245,7 +240,7 @@ const SegmentedProgress = React.forwardRef<HTMLDivElement, SegmentedProgressProp
         ))}
       </div>
     </div>
-  )
+  ),
 );
 SegmentedProgress.displayName = 'SegmentedProgress';
 

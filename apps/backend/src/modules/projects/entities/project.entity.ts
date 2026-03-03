@@ -1,9 +1,13 @@
+import { ProjectPriority, ProjectStatus, type ProjectMetadata } from '@oneohm-epc/shared-types';
 import {
-  ProjectPriority,
-  ProjectStatus,
-  type ProjectMetadata,
-} from '@oneohm-epc/shared-types';
-import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from 'typeorm';
+  Column,
+  DeleteDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  OneToOne,
+} from 'typeorm';
 
 import { ProjectMaterialEntity } from './project-material.entity';
 import { ProjectMilestoneEntity } from './project-milestone.entity';

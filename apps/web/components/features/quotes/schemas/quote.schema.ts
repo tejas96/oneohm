@@ -52,10 +52,7 @@ export const quoteBuilderSchema = z.object({
     .default(0),
 
   // Section 5: Notes & Discount (save-only, not sent to calculate API)
-  discountAmount: z
-    .number({ coerce: true })
-    .min(0, 'Discount cannot be negative')
-    .default(0),
+  discountAmount: z.number({ coerce: true }).min(0, 'Discount cannot be negative').default(0),
   internalNotes: z.string().max(1000, 'Notes too long').optional(),
   customerNotes: z.string().max(1000, 'Notes too long').optional(),
 });
@@ -70,9 +67,7 @@ export type CreateQuoteFormData = QuoteBuilderFormData;
 // ============================================================================
 
 export const acceptQuoteSchema = z.object({
-  acceptedByCustomerSignature: z
-    .string()
-    .min(1, 'Customer signature/confirmation is required'),
+  acceptedByCustomerSignature: z.string().min(1, 'Customer signature/confirmation is required'),
   createProject: z.boolean().default(false),
   projectStartDate: z.date().optional(),
 });
@@ -86,11 +81,7 @@ export type AcceptQuoteFormData = z.infer<typeof acceptQuoteSchema>;
 export const rejectQuoteSchema = z.object({
   rejectionReason: z.string().min(1, 'Please provide a reason'),
   createRevision: z.boolean().default(false),
-  revisionNotes: z
-    .string()
-    .max(500, 'Notes too long')
-    .optional()
-    .or(z.literal('')),
+  revisionNotes: z.string().max(500, 'Notes too long').optional().or(z.literal('')),
 });
 
 export type RejectQuoteFormData = z.infer<typeof rejectQuoteSchema>;

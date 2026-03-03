@@ -111,8 +111,7 @@ export const quoteKeys = {
   list: (orgId: string | undefined, filters: Record<string, unknown>) =>
     [...quoteKeys.lists(orgId), filters] as const,
   details: (orgId?: string) => [...quoteKeys.all(orgId), 'detail'] as const,
-  detail: (orgId: string | undefined, id: string) =>
-    [...quoteKeys.details(orgId), id] as const,
+  detail: (orgId: string | undefined, id: string) => [...quoteKeys.details(orgId), id] as const,
   byCustomer: (orgId: string | undefined, customerId: string) =>
     [...quoteKeys.all(orgId), 'customer', customerId] as const,
   byProperty: (orgId: string | undefined, propertyId: string) =>
@@ -154,10 +153,9 @@ export function useQuotes(
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
-      const { data } = await apiClient.get<QuoteListResponse>(
-        `/quotes?${params.toString()}`,
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
+      const { data } = await apiClient.get<QuoteListResponse>(`/quotes?${params.toString()}`, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
       return data;
     },
     enabled: !!organizationId,
@@ -175,10 +173,9 @@ export function useQuote(id: string): UseQueryResult<QuoteListItem, AxiosError> 
   return useQuery({
     queryKey: quoteKeys.detail(organizationId, id),
     queryFn: async (): Promise<QuoteListItem> => {
-      const { data } = await apiClient.get<QuoteListItem>(
-        `/quotes/${id}`,
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
+      const { data } = await apiClient.get<QuoteListItem>(`/quotes/${id}`, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
       return data;
     },
     enabled: !!id && !!organizationId,

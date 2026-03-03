@@ -61,7 +61,12 @@ const MY_TASKS_URL_DEFAULTS = {
 interface SummaryCard {
   key: string;
   label: string;
-  getValue: (s: { total: number; overdue: number; dueToday: number; completedThisWeek: number }) => number;
+  getValue: (s: {
+    total: number;
+    overdue: number;
+    dueToday: number;
+    completedThisWeek: number;
+  }) => number;
   bg: string;
   text: string;
   iconBg: string;
@@ -129,8 +134,7 @@ function getMorningBrief(overdue: number, dueToday: number): string | null {
 // ---------------------------------------------------------------------------
 
 export function ProjectMyTasksPage(): React.JSX.Element {
-  const { filters: urlFilters, setFilter } =
-    useUrlFilters(MY_TASKS_URL_DEFAULTS);
+  const { filters: urlFilters, setFilter } = useUrlFilters(MY_TASKS_URL_DEFAULTS);
 
   const projectFilter = urlFilters.projectId;
   const statusFilter = urlFilters.status;
@@ -171,8 +175,10 @@ export function ProjectMyTasksPage(): React.JSX.Element {
 
   // Collapse state
   const groupKeys = useMemo(() => groups.map((g) => g.key), [groups]);
-  const { isExpanded, toggle, expandAll, collapseAll, allExpanded } =
-    useCollapsedGroups(groupBy, groupKeys);
+  const { isExpanded, toggle, expandAll, collapseAll, allExpanded } = useCollapsedGroups(
+    groupBy,
+    groupKeys,
+  );
 
   // Project filter options
   const projectFilterOptions = useMemo(
@@ -252,7 +258,9 @@ export function ProjectMyTasksPage(): React.JSX.Element {
     (index: number) => {
       const task = allTasks[index];
       if (!task) return;
-      const canStart = (TASK_STATUS_TRANSITIONS[task.status] ?? []).includes(TaskStatus.IN_PROGRESS);
+      const canStart = (TASK_STATUS_TRANSITIONS[task.status] ?? []).includes(
+        TaskStatus.IN_PROGRESS,
+      );
       if (canStart) handleStartTask(task.id);
     },
     [allTasks, handleStartTask],
@@ -272,8 +280,10 @@ export function ProjectMyTasksPage(): React.JSX.Element {
 
   const focusedTaskId = focusedIndex >= 0 ? allTasks[focusedIndex]?.id : undefined;
 
-  const hasActiveFilters = projectFilter || statusFilter || priorityFilter || debouncedSearch || dueDateFilter;
-  const morningBrief = summary && !briefDismissed ? getMorningBrief(summary.overdue, summary.dueToday) : null;
+  const hasActiveFilters =
+    projectFilter || statusFilter || priorityFilter || debouncedSearch || dueDateFilter;
+  const morningBrief =
+    summary && !briefDismissed ? getMorningBrief(summary.overdue, summary.dueToday) : null;
 
   // ---------------------------------------------------------------------------
   // Render
@@ -327,10 +337,18 @@ export function ProjectMyTasksPage(): React.JSX.Element {
                 )}
                 onClick={() => {
                   if (card.key === 'overdue') {
-                    setFilter({ status: '', priority: '', dueDateFilter: dueDateFilter === 'overdue' ? '' : 'overdue' });
+                    setFilter({
+                      status: '',
+                      priority: '',
+                      dueDateFilter: dueDateFilter === 'overdue' ? '' : 'overdue',
+                    });
                   }
                   if (card.key === 'dueToday') {
-                    setFilter({ status: '', priority: '', dueDateFilter: dueDateFilter === 'dueToday' ? '' : 'dueToday' });
+                    setFilter({
+                      status: '',
+                      priority: '',
+                      dueDateFilter: dueDateFilter === 'dueToday' ? '' : 'dueToday',
+                    });
                   }
                   if (card.key === 'total') {
                     handleClearFilters();
@@ -340,7 +358,9 @@ export function ProjectMyTasksPage(): React.JSX.Element {
                 tabIndex={card.key !== 'completedThisWeek' ? 0 : undefined}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <div className={cn('flex items-center justify-center size-6 rounded', card.iconBg)}>
+                  <div
+                    className={cn('flex items-center justify-center size-6 rounded', card.iconBg)}
+                  >
                     {card.icon}
                   </div>
                   <span className="text-xs text-foreground-secondary">{card.label}</span>
@@ -386,11 +406,23 @@ export function ProjectMyTasksPage(): React.JSX.Element {
                 if (chip.key === 'all') {
                   setFilter({ status: '', priority: '', dueDateFilter: '' });
                 } else if (chip.filter.dueDateFilter) {
-                  setFilter({ status: '', priority: '', dueDateFilter: isActive ? '' : chip.filter.dueDateFilter });
+                  setFilter({
+                    status: '',
+                    priority: '',
+                    dueDateFilter: isActive ? '' : chip.filter.dueDateFilter,
+                  });
                 } else if (chip.filter.status) {
-                  setFilter({ dueDateFilter: '', status: isActive ? '' : chip.filter.status, priority: '' });
+                  setFilter({
+                    dueDateFilter: '',
+                    status: isActive ? '' : chip.filter.status,
+                    priority: '',
+                  });
                 } else if (chip.filter.priority) {
-                  setFilter({ dueDateFilter: '', priority: isActive ? '' : chip.filter.priority, status: '' });
+                  setFilter({
+                    dueDateFilter: '',
+                    priority: isActive ? '' : chip.filter.priority,
+                    status: '',
+                  });
                 }
               }}
               className={cn(
@@ -456,10 +488,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
           </SelectContent>
         </Select>
 
-        <Select
-          value={groupBy}
-          onValueChange={(v) => handleFilterChange('groupBy', v)}
-        >
+        <Select value={groupBy} onValueChange={(v) => handleFilterChange('groupBy', v)}>
           <SelectTrigger className="w-44 h-8 text-sm">
             <SelectValue />
           </SelectTrigger>

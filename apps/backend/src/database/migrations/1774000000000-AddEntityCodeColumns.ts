@@ -46,10 +46,18 @@ export class AddEntityCodeColumns1774000000000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "task_templates" DROP COLUMN IF EXISTS "default_milestone_type"`);
+    await queryRunner.query(
+      `ALTER TABLE "task_templates" DROP COLUMN IF EXISTS "default_milestone_type"`,
+    );
     await queryRunner.query(`ALTER TABLE "site_surveys" DROP COLUMN IF EXISTS "survey_code"`);
-    await queryRunner.query(`ALTER TABLE "project_milestones" DROP COLUMN IF EXISTS "milestone_code"`);
-    await queryRunner.query(`ALTER TABLE "customer_properties" DROP COLUMN IF EXISTS "property_code"`);
-    await queryRunner.query(`ALTER TABLE "customer_profiles" DROP COLUMN IF EXISTS "customer_code"`);
+    await queryRunner.query(
+      `ALTER TABLE "project_milestones" DROP COLUMN IF EXISTS "milestone_code"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "customer_properties" DROP COLUMN IF EXISTS "property_code"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "customer_profiles" DROP COLUMN IF EXISTS "customer_code"`,
+    );
   }
 }

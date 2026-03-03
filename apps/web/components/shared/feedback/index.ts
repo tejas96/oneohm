@@ -9,10 +9,6 @@ export {
   NoQuotes,
 } from './empty-state';
 
-export type {
-  EmptyStateProps,
-  NoSearchResultsProps,
-  ErrorStateProps,
-} from './empty-state';
+export type { EmptyStateProps, NoSearchResultsProps, ErrorStateProps } from './empty-state';
 
 export { ErrorBoundary } from './error-boundary';

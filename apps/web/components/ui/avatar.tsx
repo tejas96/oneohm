@@ -229,7 +229,11 @@ const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(
     };
 
     return (
-      <div ref={ref} className={cn('flex items-center', overlapClasses[size], className)} {...props}>
+      <div
+        ref={ref}
+        className={cn('flex items-center', overlapClasses[size], className)}
+        {...props}
+      >
         {visibleChildren.map((child, index) => {
           if (React.isValidElement<{ className?: string; size?: string }>(child)) {
             return React.cloneElement(child, {

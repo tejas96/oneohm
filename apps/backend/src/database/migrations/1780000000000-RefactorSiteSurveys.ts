@@ -51,17 +51,13 @@ export class RefactorSiteSurveys1780000000000 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE "site_surveys" ADD COLUMN "roof_type" varchar(100)`);
     await queryRunner.query(`ALTER TABLE "site_surveys" ADD COLUMN "roof_condition" varchar(50)`);
     await queryRunner.query(`ALTER TABLE "site_surveys" ADD COLUMN "roof_orientation" varchar(50)`);
-    await queryRunner.query(
-      `ALTER TABLE "site_surveys" ADD COLUMN "roof_tilt_angle" decimal(5,2)`,
-    );
+    await queryRunner.query(`ALTER TABLE "site_surveys" ADD COLUMN "roof_tilt_angle" decimal(5,2)`);
     await queryRunner.query(
       `ALTER TABLE "site_surveys" ADD COLUMN "available_area_sqm" decimal(10,2)`,
     );
     await queryRunner.query(`ALTER TABLE "site_surveys" ADD COLUMN "shading_analysis" jsonb`);
     await queryRunner.query(`ALTER TABLE "site_surveys" ADD COLUMN "electrical_details" jsonb`);
-    await queryRunner.query(
-      `ALTER TABLE "site_surveys" ADD COLUMN "structural_assessment" text`,
-    );
+    await queryRunner.query(`ALTER TABLE "site_surveys" ADD COLUMN "structural_assessment" text`);
     await queryRunner.query(`ALTER TABLE "site_surveys" ADD COLUMN "site_access" text`);
     await queryRunner.query(`ALTER TABLE "site_surveys" ADD COLUMN "safety_concerns" text`);
     await queryRunner.query(`ALTER TABLE "site_surveys" ADD COLUMN "recommendations" text`);

@@ -4,16 +4,11 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import { useMemo } from 'react';
 
-import type {
-  MilestoneWithPayment,
-  PaymentSummaryDetail,
-  ProjectPayment,
-} from './types';
+import type { MilestoneWithPayment, PaymentSummaryDetail, ProjectPayment } from './types';
 import { useProject } from './use-project-detail';
 
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
-
 
 // ============================================================================
 // Query Keys
@@ -41,13 +36,12 @@ export function useProjectPayments(
   return useQuery({
     queryKey: paymentKeys.byProject(organizationId, projectId),
     queryFn: async (): Promise<ProjectPayment[]> => {
-      const { data } = await apiClient.get<ProjectPayment[]>(
-        `/payments/project/${projectId}`,
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
+      const { data } = await apiClient.get<ProjectPayment[]>(`/payments/project/${projectId}`, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
       return data;
     },
-    enabled: !!projectId && !!organizationId && (options?.enabled !== false),
+    enabled: !!projectId && !!organizationId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }
@@ -68,7 +62,7 @@ export function useProjectPaymentSummary(
       );
       return data;
     },
-    enabled: !!projectId && !!organizationId && (options?.enabled !== false),
+    enabled: !!projectId && !!organizationId && options?.enabled !== false,
     staleTime: 30_000,
   });
 }
@@ -93,13 +87,15 @@ export function usePaymentMilestones(
     const milestones = projectQuery.data?.milestones;
     if (!milestones) return undefined;
 
-    return milestones.map((milestone): MilestoneWithPayment => ({
-      ...milestone,
-      payments: [],
-      totalExpected: 0,
-      totalPaid: 0,
-      paymentStatus: 'pending',
-    }));
+    return milestones.map(
+      (milestone): MilestoneWithPayment => ({
+        ...milestone,
+        payments: [],
+        totalExpected: 0,
+        totalPaid: 0,
+        paymentStatus: 'pending',
+      }),
+    );
   }, [projectQuery.data?.milestones]);
 
   return {

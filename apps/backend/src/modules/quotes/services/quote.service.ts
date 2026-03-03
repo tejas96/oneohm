@@ -78,7 +78,11 @@ export class QuoteService {
       pricingBreakdown = createDto.pricingBreakdown;
       finalPrice = createDto.finalPrice ?? pricingBreakdown.totalPrice - discount;
     } else {
-      const calculated = this.calculatePricing(createDto.lineItems, discount, quoteConfig.gstConfig);
+      const calculated = this.calculatePricing(
+        createDto.lineItems,
+        discount,
+        quoteConfig.gstConfig,
+      );
       pricingBreakdown = calculated.pricingBreakdown;
       finalPrice = calculated.finalPrice;
     }
@@ -143,7 +147,8 @@ export class QuoteService {
           pricingBreakdown,
           configSnapshot: createDto.configSnapshot,
           paymentMilestones,
-          projectCompletionWeeks: createDto.projectCompletionWeeks || quoteConfig.defaultCompletionWeeks,
+          projectCompletionWeeks:
+            createDto.projectCompletionWeeks || quoteConfig.defaultCompletionWeeks,
           isCurrent: true,
           createdBy,
         }),
@@ -181,7 +186,10 @@ export class QuoteService {
    * Get payment milestones for a given org (fetches config from DB).
    * @param grossTotal - Total price before discount and subsidy
    */
-  async getPaymentMilestones(organizationId: string, grossTotal: number): Promise<PaymentMilestone[]> {
+  async getPaymentMilestones(
+    organizationId: string,
+    grossTotal: number,
+  ): Promise<PaymentMilestone[]> {
     const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
     return this.generatePaymentMilestones(grossTotal, quoteConfig.paymentMilestones);
   }
@@ -270,7 +278,11 @@ export class QuoteService {
 
     const newVersionNumber = quote.currentVersion + 1;
 
-    if (quoteConfig.maxVersions != null && quoteConfig.maxVersions > 0 && newVersionNumber > quoteConfig.maxVersions) {
+    if (
+      quoteConfig.maxVersions != null &&
+      quoteConfig.maxVersions > 0 &&
+      newVersionNumber > quoteConfig.maxVersions
+    ) {
       throw new BadRequestException(
         `Maximum number of versions (${quoteConfig.maxVersions}) reached for this quote`,
       );
@@ -297,7 +309,11 @@ export class QuoteService {
       finalPrice = pricingBreakdown.totalPrice - (pricingBreakdown.discountAmount ?? 0);
     } else if (updateDto.lineItems) {
       const discountAmount = currentVersion.pricingBreakdown?.discountAmount ?? 0;
-      const calculated = this.calculatePricing(updateDto.lineItems, discountAmount, quoteConfig.gstConfig);
+      const calculated = this.calculatePricing(
+        updateDto.lineItems,
+        discountAmount,
+        quoteConfig.gstConfig,
+      );
       pricingBreakdown = calculated.pricingBreakdown;
       finalPrice = calculated.finalPrice;
     } else {
@@ -366,9 +382,14 @@ export class QuoteService {
           paymentMilestones:
             updateDto.paymentMilestones ||
             currentVersion?.paymentMilestones ||
-            this.generatePaymentMilestones(pricingBreakdown.totalPrice, quoteConfig.paymentMilestones),
+            this.generatePaymentMilestones(
+              pricingBreakdown.totalPrice,
+              quoteConfig.paymentMilestones,
+            ),
           projectCompletionWeeks:
-            updateDto.projectCompletionWeeks || currentVersion?.projectCompletionWeeks || quoteConfig.defaultCompletionWeeks,
+            updateDto.projectCompletionWeeks ||
+            currentVersion?.projectCompletionWeeks ||
+            quoteConfig.defaultCompletionWeeks,
           changeSummary: updateDto.changeSummary,
           isCurrent: true,
           createdBy: updatedBy,

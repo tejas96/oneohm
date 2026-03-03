@@ -31,9 +31,10 @@ export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
  * Document type options for Select components.
  * Derived from DOCUMENT_TYPE_LABELS.
  */
-export const DOCUMENT_TYPE_OPTIONS = Object.entries(DOCUMENT_TYPE_LABELS).map(
-  ([value, label]) => ({ value, label }),
-);
+export const DOCUMENT_TYPE_OPTIONS = Object.entries(DOCUMENT_TYPE_LABELS).map(([value, label]) => ({
+  value,
+  label,
+}));
 
 /**
  * Get human-readable label for a document tag.
@@ -41,9 +42,6 @@ export const DOCUMENT_TYPE_OPTIONS = Object.entries(DOCUMENT_TYPE_LABELS).map(
  */
 export function getDocumentTypeLabel(tag: string): string {
   return (
-    DOCUMENT_TYPE_LABELS[tag] ||
-    tag
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, (c) => c.toUpperCase())
+    DOCUMENT_TYPE_LABELS[tag] || tag.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
   );
 }

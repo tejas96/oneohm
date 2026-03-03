@@ -74,7 +74,9 @@ export class ProjectTaskResponseDto {
   @Expose()
   dependsOnTaskIds?: string[];
 
-  @ApiPropertyOptional({ description: 'Whether any dependency tasks are incomplete (informational only)' })
+  @ApiPropertyOptional({
+    description: 'Whether any dependency tasks are incomplete (informational only)',
+  })
   @Expose()
   hasDependencyBlockers?: boolean;
 

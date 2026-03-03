@@ -97,9 +97,7 @@ export function useLoginForm(): UseLoginFormReturn {
   );
 
   const displayError =
-    error ||
-    passwordForm.formState.errors.root?.message ||
-    otpForm.formState.errors.root?.message;
+    error || passwordForm.formState.errors.root?.message || otpForm.formState.errors.root?.message;
 
   // Wrap handlers to return void (not Promise) for form onSubmit compatibility
   const onPasswordSubmit = useCallback(

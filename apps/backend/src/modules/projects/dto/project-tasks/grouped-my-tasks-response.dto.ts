@@ -34,7 +34,10 @@ export class MyTasksSummaryDto {
   @Expose()
   completedThisWeek!: number;
 
-  @ApiProperty({ type: [MyTasksProjectDto], description: 'All projects user has incomplete tasks in (always unfiltered)' })
+  @ApiProperty({
+    type: [MyTasksProjectDto],
+    description: 'All projects user has incomplete tasks in (always unfiltered)',
+  })
   @Expose()
   @Type(() => MyTasksProjectDto)
   projects!: MyTasksProjectDto[];
@@ -53,7 +56,10 @@ export class MyTasksGroupDto {
   @Expose()
   count!: number;
 
-  @ApiProperty({ example: 'error', description: 'UI variant for styling (error, warning, info, success, secondary)' })
+  @ApiProperty({
+    example: 'error',
+    description: 'UI variant for styling (error, warning, info, success, secondary)',
+  })
   @Expose()
   variant!: string;
 

@@ -20,13 +20,7 @@ import type { MyTask } from '../hooks';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import {
-  Sheet,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { ROUTES } from '@/lib/config/routes';
 import { formatRelativeDate, getDueDateColor } from '@/lib/utils';
 
@@ -66,14 +60,22 @@ export function TaskDetailDrawer({
           </SheetTitle>
           <div className="flex items-center gap-2 pt-1">
             <Badge
-              variant={TASK_STATUS_BADGE_VARIANT[task.status] as 'info' | 'warning' | 'error' | 'secondary'}
+              variant={
+                TASK_STATUS_BADGE_VARIANT[task.status] as 'info' | 'warning' | 'error' | 'secondary'
+              }
               size="xs"
               shape="rounded"
             >
               {TASK_STATUS_LABELS[task.status]}
             </Badge>
             <Badge
-              variant={TASK_PRIORITY_BADGE_VARIANT[task.priority] as 'info' | 'warning' | 'error' | 'secondary'}
+              variant={
+                TASK_PRIORITY_BADGE_VARIANT[task.priority] as
+                  | 'info'
+                  | 'warning'
+                  | 'error'
+                  | 'secondary'
+              }
               size="xs"
               shape="rounded"
             >
@@ -99,10 +101,7 @@ export function TaskDetailDrawer({
               <FolderKanban className="size-4 text-foreground-tertiary mt-0.5 shrink-0" />
               <div>
                 <p className="text-2xs text-foreground-tertiary">Project</p>
-                <Link
-                  href={projectHref}
-                  className="text-sm text-primary hover:underline"
-                >
+                <Link href={projectHref} className="text-sm text-primary hover:underline">
                   {task.projectNumber} - {task.projectName}
                 </Link>
               </div>
@@ -127,7 +126,9 @@ export function TaskDetailDrawer({
                 <p className="text-2xs text-foreground-tertiary mb-1.5">Progress</p>
                 <div className="flex items-center gap-3">
                   <Progress value={task.completionPercentage} size="sm" className="flex-1" />
-                  <span className="text-xs text-foreground-muted">{task.completionPercentage}%</span>
+                  <span className="text-xs text-foreground-muted">
+                    {task.completionPercentage}%
+                  </span>
                 </div>
               </div>
             )}
@@ -146,10 +147,7 @@ export function TaskDetailDrawer({
 
         {canComplete && (
           <SheetFooter className="border-t border-border-light pt-4">
-            <Button
-              className="w-full"
-              onClick={() => onComplete(task.id)}
-            >
+            <Button className="w-full" onClick={() => onComplete(task.id)}>
               Complete Task
             </Button>
           </SheetFooter>

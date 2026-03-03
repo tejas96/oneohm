@@ -22,7 +22,10 @@ import {
 } from 'class-validator';
 
 export class CreateProjectTaskDto {
-  @ApiPropertyOptional({ description: 'Project ID (populated from route param)', example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiPropertyOptional({
+    description: 'Project ID (populated from route param)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @IsUUID()
   @IsOptional()
   projectId?: string;
@@ -42,13 +45,19 @@ export class CreateProjectTaskDto {
   @IsOptional()
   workflowStepId?: string;
 
-  @ApiPropertyOptional({ description: 'Task name (required for ad-hoc tasks without workflowStepId)', maxLength: 255 })
+  @ApiPropertyOptional({
+    description: 'Task name (required for ad-hoc tasks without workflowStepId)',
+    maxLength: 255,
+  })
   @IsString()
   @IsOptional()
   @MaxLength(255)
   name?: string;
 
-  @ApiPropertyOptional({ description: 'Task code (auto-generated if not provided)', maxLength: 100 })
+  @ApiPropertyOptional({
+    description: 'Task code (auto-generated if not provided)',
+    maxLength: 100,
+  })
   @IsString()
   @IsOptional()
   @MaxLength(100)
@@ -67,7 +76,11 @@ export class CreateProjectTaskDto {
   @IsOptional()
   assignedToUserId?: string;
 
-  @ApiPropertyOptional({ description: 'Kanban order within status column', example: 1000, minimum: 0 })
+  @ApiPropertyOptional({
+    description: 'Kanban order within status column',
+    example: 1000,
+    minimum: 0,
+  })
   @IsInt()
   @Min(0)
   @IsOptional()

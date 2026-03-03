@@ -46,7 +46,9 @@ export class TaskMilestoneOverrideDto {
   @IsUUID()
   workflowStepId!: string;
 
-  @ApiProperty({ description: 'Target milestone order (sequenceOrder) -- 0 means unmap from all milestones' })
+  @ApiProperty({
+    description: 'Target milestone order (sequenceOrder) -- 0 means unmap from all milestones',
+  })
   @IsNumber()
   @Min(0)
   milestoneOrder!: number;
@@ -114,21 +116,30 @@ export class ConvertFromQuoteDto {
   @IsUUID('4', { each: true })
   excludedStepIds?: string[];
 
-  @ApiPropertyOptional({ description: 'Explicit task assignments (sole assignment path — no auto-assignment)', type: [TaskAssignmentOverrideDto] })
+  @ApiPropertyOptional({
+    description: 'Explicit task assignments (sole assignment path — no auto-assignment)',
+    type: [TaskAssignmentOverrideDto],
+  })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => TaskAssignmentOverrideDto)
   taskAssignments?: TaskAssignmentOverrideDto[];
 
-  @ApiPropertyOptional({ description: 'Task milestone mapping overrides', type: [TaskMilestoneOverrideDto] })
+  @ApiPropertyOptional({
+    description: 'Task milestone mapping overrides',
+    type: [TaskMilestoneOverrideDto],
+  })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => TaskMilestoneOverrideDto)
   taskMilestoneOverrides?: TaskMilestoneOverrideDto[];
 
-  @ApiPropertyOptional({ description: 'Custom milestones (overrides defaults)', type: [MilestoneInputDto] })
+  @ApiPropertyOptional({
+    description: 'Custom milestones (overrides defaults)',
+    type: [MilestoneInputDto],
+  })
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })

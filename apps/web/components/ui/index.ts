@@ -1,14 +1,13 @@
 // Barrel export for all shadcn/ui components
 
 // Avatar
-export {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-  AvatarStatus,
-  AvatarGroup,
+export { Avatar, AvatarImage, AvatarFallback, AvatarStatus, AvatarGroup } from './avatar';
+export type {
+  AvatarProps,
+  AvatarFallbackProps,
+  AvatarStatusProps,
+  AvatarGroupProps,
 } from './avatar';
-export type { AvatarProps, AvatarFallbackProps, AvatarStatusProps, AvatarGroupProps } from './avatar';
 
 // Badge
 export { Badge, badgeVariants, DotBadge, CountBadge } from './badge';
@@ -223,12 +222,7 @@ export {
 export type { TooltipContentProps, HelpTooltipProps } from './tooltip';
 
 // Accordion
-export {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from './accordion';
+export { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './accordion';
 export type { AccordionItemProps, AccordionTriggerProps } from './accordion';
 
 // Breadcrumb
@@ -242,7 +236,11 @@ export {
   BreadcrumbEllipsis,
   BreadcrumbHome,
 } from './breadcrumb';
-export type { BreadcrumbListProps, BreadcrumbLinkProps, BreadcrumbSeparatorProps } from './breadcrumb';
+export type {
+  BreadcrumbListProps,
+  BreadcrumbLinkProps,
+  BreadcrumbSeparatorProps,
+} from './breadcrumb';
 
 // Progress
 export {
@@ -253,7 +251,12 @@ export {
   CircularProgress,
   SegmentedProgress,
 } from './progress';
-export type { ProgressProps, ProgressWithLabelProps, CircularProgressProps, SegmentedProgressProps } from './progress';
+export type {
+  ProgressProps,
+  ProgressWithLabelProps,
+  CircularProgressProps,
+  SegmentedProgressProps,
+} from './progress';
 
 // Spinner
 export { Spinner, spinnerVariants, LoadingDots, loadingDotsVariants } from './spinner';

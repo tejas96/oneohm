@@ -10,8 +10,6 @@ export class AddDependencyGINIndex1786000000000 implements MigrationInterface {
   }
 
   async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `DROP INDEX IF EXISTS idx_project_tasks_depends_on`,
-    );
+    await queryRunner.query(`DROP INDEX IF EXISTS idx_project_tasks_depends_on`);
   }
 }

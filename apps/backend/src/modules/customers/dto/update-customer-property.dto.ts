@@ -1,9 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  ConnectionType,
-  LeadTemperature,
-  PropertyType,
-} from '@oneohm-epc/shared-types';
+import { ConnectionType, LeadTemperature, PropertyType } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -182,7 +178,11 @@ export class UpdateCustomerPropertyDto {
     type: [PropertyDocumentDto],
     description: 'Property-level documents (identity docs, KYC, etc.)',
     example: [
-      { url: 'https://storage.example.com/aadhaar.jpg', tag: 'aadhaar_card', fileName: 'aadhaar.jpg' },
+      {
+        url: 'https://storage.example.com/aadhaar.jpg',
+        tag: 'aadhaar_card',
+        fileName: 'aadhaar.jpg',
+      },
     ],
   })
   @IsOptional()

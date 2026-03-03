@@ -113,7 +113,15 @@ export class ProjectController {
     name: 'sortBy',
     required: false,
     type: String,
-    enum: ['name', 'createdAt', 'endDate', 'systemSizeKw', 'estimatedCost', 'progressPercentage', 'status'],
+    enum: [
+      'name',
+      'createdAt',
+      'endDate',
+      'systemSizeKw',
+      'estimatedCost',
+      'progressPercentage',
+      'status',
+    ],
     description: 'Sort field',
   })
   @ApiQuery({
@@ -176,9 +184,7 @@ export class ProjectController {
     description:
       'Returns per-user workload metrics across all projects for team assignment decisions',
   })
-  async getTeamWorkload(
-    @OrganizationContext() organizationId: string,
-  ): Promise<
+  async getTeamWorkload(@OrganizationContext() organizationId: string): Promise<
     Array<{
       userId: string;
       firstName: string;

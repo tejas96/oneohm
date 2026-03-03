@@ -4,7 +4,6 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Info, Loader2, X } from 'lucide-react';
 import * as React from 'react';
 
-
 import { Label } from './label';
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
 
@@ -228,12 +227,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       if (!displayMessage) return null;
 
       return (
-        <p
-          className={cn(
-            'text-xs mt-1.5',
-            hasError ? 'text-error' : 'text-foreground-tertiary',
-          )}
-        >
+        <p className={cn('text-xs mt-1.5', hasError ? 'text-error' : 'text-foreground-tertiary')}>
           {displayMessage}
         </p>
       );
@@ -264,10 +258,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className={cn('flex flex-col', containerClassName)}>
         <div
-          className={cn(
-            'flex items-center gap-3',
-            labelPosition === 'right' && 'flex-row-reverse',
-          )}
+          className={cn('flex items-center gap-3', labelPosition === 'right' && 'flex-row-reverse')}
         >
           {renderLabel()}
           {renderInput()}

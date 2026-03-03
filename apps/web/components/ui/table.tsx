@@ -124,21 +124,33 @@ const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
           <div className="flex items-center gap-2">
             {children}
             <svg
-              className={cn(
-                'size-icon-sm',
-                sorted ? 'text-primary' : 'text-foreground-tertiary',
-              )}
+              className={cn('size-icon-sm', sorted ? 'text-primary' : 'text-foreground-tertiary')}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
               aria-hidden="true"
             >
               {sorted === 'asc' ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 10l7-7m0 0l7 7m-7-7v18"
+                />
               ) : sorted === 'desc' ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                />
               ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                />
               )}
             </svg>
           </div>

@@ -31,7 +31,7 @@ export function GlobalHeader({ className, onCommandOpen }: GlobalHeaderProps) {
         'fixed top-0 left-0 right-0 z-50',
         'h-header bg-white border-b border-border-light',
         'flex items-center px-3 gap-3',
-        className
+        className,
       )}
     >
       {/* Mobile: Hamburger Menu */}

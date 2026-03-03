@@ -1,6 +1,21 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { type DueDateFilter, type PaginatedResponse, TaskPriority, TaskStatus } from '@oneohm-epc/shared-types';
+import {
+  type DueDateFilter,
+  type PaginatedResponse,
+  TaskPriority,
+  TaskStatus,
+} from '@oneohm-epc/shared-types';
 import { OrganizationContext, parsePaginationParams } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
@@ -36,7 +51,11 @@ export class TasksController {
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
   @ApiQuery({ name: 'status', required: false, enum: TaskStatus })
   @ApiQuery({ name: 'priority', required: false, enum: TaskPriority })
-  @ApiQuery({ name: 'groupBy', required: false, enum: ['dueDate', 'priority', 'project', 'status'] })
+  @ApiQuery({
+    name: 'groupBy',
+    required: false,
+    enum: ['dueDate', 'priority', 'project', 'status'],
+  })
   @ApiQuery({ name: 'projectId', required: false, type: String })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'dueDateFilter', required: false, enum: ['overdue', 'dueToday', 'thisWeek'] })
@@ -53,13 +72,18 @@ export class TasksController {
     @Query('dueDateFilter') dueDateFilter?: DueDateFilter,
   ): Promise<GroupedMyTasksResponseDto | PaginatedResponse<ProjectTaskResponseDto>> {
     if (groupBy) {
-      const result = await this.taskService.getMyTasksGrouped(currentUser.id, organizationId, groupBy, {
-        status,
-        priority,
-        projectId,
-        search,
-        dueDateFilter,
-      });
+      const result = await this.taskService.getMyTasksGrouped(
+        currentUser.id,
+        organizationId,
+        groupBy,
+        {
+          status,
+          priority,
+          projectId,
+          search,
+          dueDateFilter,
+        },
+      );
 
       return plainToInstance(GroupedMyTasksResponseDto, result, {
         excludeExtraneousValues: true,
@@ -68,10 +92,16 @@ export class TasksController {
 
     const { page: pageNum, limit: limitNum } = parsePaginationParams(page, limit);
 
-    const result = await this.taskService.getMyTasks(currentUser.id, organizationId, pageNum, limitNum, {
-      status,
-      priority,
-    });
+    const result = await this.taskService.getMyTasks(
+      currentUser.id,
+      organizationId,
+      pageNum,
+      limitNum,
+      {
+        status,
+        priority,
+      },
+    );
 
     return {
       data: plainToInstance(MyTaskResponseDto, result.data, {
@@ -82,7 +112,9 @@ export class TasksController {
   }
 
   @Get('my/summary')
-  @ApiOperation({ summary: 'Get lightweight summary counts for current user tasks (for navigation badges)' })
+  @ApiOperation({
+    summary: 'Get lightweight summary counts for current user tasks (for navigation badges)',
+  })
   async getMyTasksSummary(
     @CurrentUser() currentUser: CurrentUserType,
     @OrganizationContext() organizationId: string,
@@ -97,7 +129,12 @@ export class TasksController {
     @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<MyTaskResponseDto> {
-    const task = await this.taskService.getTaskDetailCrossProject(id, currentUser.id, organizationId, currentUser.roles);
+    const task = await this.taskService.getTaskDetailCrossProject(
+      id,
+      currentUser.id,
+      organizationId,
+      currentUser.roles,
+    );
     return plainToInstance(MyTaskResponseDto, task, { excludeExtraneousValues: true });
   }
 
@@ -137,7 +174,13 @@ export class TasksController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateTaskCrossProjectDto,
   ): Promise<MyTaskResponseDto> {
-    const task = await this.taskService.updateTaskCrossProject(id, dto, currentUser.id, organizationId, currentUser.roles);
+    const task = await this.taskService.updateTaskCrossProject(
+      id,
+      dto,
+      currentUser.id,
+      organizationId,
+      currentUser.roles,
+    );
     return plainToInstance(MyTaskResponseDto, task, { excludeExtraneousValues: true });
   }
 
@@ -149,7 +192,13 @@ export class TasksController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AddCommentDto,
   ): Promise<{ success: boolean }> {
-    await this.taskService.addComment(id, dto.comment, currentUser.id, organizationId, currentUser.roles);
+    await this.taskService.addComment(
+      id,
+      dto.comment,
+      currentUser.id,
+      organizationId,
+      currentUser.roles,
+    );
     return { success: true };
   }
 }

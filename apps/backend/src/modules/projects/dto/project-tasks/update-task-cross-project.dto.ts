@@ -69,7 +69,10 @@ export class UpdateTaskCrossProjectDto {
   @IsOptional()
   checklist?: TaskChecklist;
 
-  @ApiPropertyOptional({ description: 'IDs of tasks this task depends on (max 50)', type: [String] })
+  @ApiPropertyOptional({
+    description: 'IDs of tasks this task depends on (max 50)',
+    type: [String],
+  })
   @IsArray()
   @IsUUID('4', { each: true })
   @ArrayMaxSize(50)

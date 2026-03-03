@@ -3,7 +3,7 @@
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { buildRoute, type RoutePath, type RouteParams} from '@/lib/config/routes';
+import { buildRoute, type RoutePath, type RouteParams } from '@/lib/config/routes';
 
 // Re-export types for convenience
 export type { RoutePath, RouteParams, RouteParamTypes } from '@/lib/config/routes';
@@ -21,24 +21,24 @@ interface NavigateOptions {
 
 /**
  * useRoutes Hook
- * 
+ *
  * Comprehensive routing hook that provides:
  * - Type-safe navigation methods
  * - Current route data (pathname, params, query)
  * - Navigation state helpers
  * - Route building utilities
  * - Navigation safety (debounce, duplicate prevention)
- * 
+ *
  * @example
  * ```tsx
  * const { navigate, replace, goBack, pathname, query, buildUrl } = useRoutes();
- * 
+ *
  * // Navigate with type safety
  * navigate('/customers/[id]', { id: '123' });
- * 
+ *
  * // Replace current route
  * replace('/login', undefined, { redirect: '/dashboard' });
- * 
+ *
  * // Build URL without navigating
  * const url = buildUrl('/quotes/[id]', { id: quoteId });
  * ```
@@ -88,13 +88,13 @@ export function useRoutes() {
       path: T,
       pathParams?: RouteParams<T> extends undefined ? undefined : Partial<RouteParams<T>>,
       queryParams?: Record<string, string | number | boolean | undefined>,
-      options?: Omit<NavigateOptions, 'replace'>
+      options?: Omit<NavigateOptions, 'replace'>,
     ) => {
       const url = buildRoute(path, pathParams, queryParams);
       if (shouldPreventNavigation(url)) return;
       router.push(url, { scroll: options?.scroll ?? true });
     },
-    [router, shouldPreventNavigation]
+    [router, shouldPreventNavigation],
   );
 
   /**
@@ -105,13 +105,13 @@ export function useRoutes() {
       path: T,
       pathParams?: RouteParams<T> extends undefined ? undefined : Partial<RouteParams<T>>,
       queryParams?: Record<string, string | number | boolean | undefined>,
-      options?: Omit<NavigateOptions, 'replace'>
+      options?: Omit<NavigateOptions, 'replace'>,
     ) => {
       const url = buildRoute(path, pathParams, queryParams);
       if (shouldPreventNavigation(url)) return;
       router.replace(url, { scroll: options?.scroll ?? true });
     },
-    [router, shouldPreventNavigation]
+    [router, shouldPreventNavigation],
   );
 
   /**
@@ -141,12 +141,12 @@ export function useRoutes() {
   const prefetch = useCallback(
     <T extends RoutePath>(
       path: T,
-      pathParams?: RouteParams<T> extends undefined ? undefined : Partial<RouteParams<T>>
+      pathParams?: RouteParams<T> extends undefined ? undefined : Partial<RouteParams<T>>,
     ) => {
       const url = buildRoute(path, pathParams);
       router.prefetch(url);
     },
-    [router]
+    [router],
   );
 
   /**
@@ -167,7 +167,7 @@ export function useRoutes() {
     (key: string): string | null => {
       return searchParams.get(key);
     },
-    [searchParams]
+    [searchParams],
   );
 
   /**
@@ -176,7 +176,7 @@ export function useRoutes() {
   const setQueryParams = useCallback(
     (
       newParams: Record<string, string | number | boolean | undefined | null>,
-      options?: { replace?: boolean }
+      options?: { replace?: boolean },
     ) => {
       const current = new URLSearchParams(searchParams.toString());
 
@@ -197,7 +197,7 @@ export function useRoutes() {
         router.push(newUrl, { scroll: false });
       }
     },
-    [pathname, router, searchParams]
+    [pathname, router, searchParams],
   );
 
   /**
@@ -210,7 +210,7 @@ export function useRoutes() {
       }
       return pathname.startsWith(path);
     },
-    [pathname]
+    [pathname],
   );
 
   /**

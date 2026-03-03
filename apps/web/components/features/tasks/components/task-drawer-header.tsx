@@ -1,6 +1,10 @@
 'use client';
 
-import { TASK_STATUS_TRANSITIONS, type TaskPriority, type TaskStatus } from '@oneohm-epc/shared-types';
+import {
+  TASK_STATUS_TRANSITIONS,
+  type TaskPriority,
+  type TaskStatus,
+} from '@oneohm-epc/shared-types';
 import { useMemo } from 'react';
 
 import {
@@ -38,24 +42,26 @@ export function TaskDrawerHeader({
   onStatusChange,
   onPriorityChange,
 }: TaskDrawerHeaderProps): React.JSX.Element {
-  const allowedStatuses = useMemo(
-    () => TASK_STATUS_TRANSITIONS[status] ?? [],
-    [status],
-  );
+  const allowedStatuses = useMemo(() => TASK_STATUS_TRANSITIONS[status] ?? [], [status]);
 
   return (
     <div className="space-y-1 pb-4 border-b border-border-light">
       <p className="text-2xs font-mono text-foreground-tertiary">
         {projectNumber} / {code}
       </p>
-      <h2 className="text-lg font-semibold leading-tight">
-        {name || code || 'Untitled'}
-      </h2>
+      <h2 className="text-lg font-semibold leading-tight">{name || code || 'Untitled'}</h2>
       <div className="flex items-center gap-2 pt-2">
         <Select value={status} onValueChange={(v) => onStatusChange(v as TaskStatus)}>
           <SelectTrigger className="h-6 w-auto min-w-0 gap-1 border-none px-0 shadow-none">
             <Badge
-              variant={TASK_STATUS_BADGE_VARIANT[status] as 'info' | 'warning' | 'error' | 'secondary' | 'success'}
+              variant={
+                TASK_STATUS_BADGE_VARIANT[status] as
+                  | 'info'
+                  | 'warning'
+                  | 'error'
+                  | 'secondary'
+                  | 'success'
+              }
               size="xs"
               shape="rounded"
             >
@@ -77,7 +83,9 @@ export function TaskDrawerHeader({
         <Select value={priority} onValueChange={(v) => onPriorityChange(v as TaskPriority)}>
           <SelectTrigger className="h-6 w-auto min-w-0 gap-1 border-none px-0 shadow-none">
             <Badge
-              variant={TASK_PRIORITY_BADGE_VARIANT[priority] as 'info' | 'warning' | 'error' | 'secondary'}
+              variant={
+                TASK_PRIORITY_BADGE_VARIANT[priority] as 'info' | 'warning' | 'error' | 'secondary'
+              }
               size="xs"
               shape="rounded"
             >

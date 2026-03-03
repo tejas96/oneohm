@@ -30,8 +30,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         // Primary - OneOhm Green (uses theme tokens)
-        default:
-          'bg-primary text-white shadow-sm hover:bg-primary-dark active:bg-primary-dark/90',
+        default: 'bg-primary text-white shadow-sm hover:bg-primary-dark active:bg-primary-dark/90',
 
         // Secondary - OneOhm Blue (uses theme tokens)
         secondary:

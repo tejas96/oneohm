@@ -54,11 +54,21 @@ export function QuotePaymentsTab({
           <table className="w-full">
             <thead className="bg-background-secondary border-b border-border-light">
               <tr>
-                <th className="px-4 py-3 text-left text-2xs font-semibold text-foreground-secondary uppercase">Order</th>
-                <th className="px-4 py-3 text-left text-2xs font-semibold text-foreground-secondary uppercase">Milestone</th>
-                <th className="px-4 py-3 text-left text-2xs font-semibold text-foreground-secondary uppercase">Stage</th>
-                <th className="px-4 py-3 text-right text-2xs font-semibold text-foreground-secondary uppercase">Percentage</th>
-                <th className="px-4 py-3 text-right text-2xs font-semibold text-foreground-secondary uppercase">Amount</th>
+                <th className="px-4 py-3 text-left text-2xs font-semibold text-foreground-secondary uppercase">
+                  Order
+                </th>
+                <th className="px-4 py-3 text-left text-2xs font-semibold text-foreground-secondary uppercase">
+                  Milestone
+                </th>
+                <th className="px-4 py-3 text-left text-2xs font-semibold text-foreground-secondary uppercase">
+                  Stage
+                </th>
+                <th className="px-4 py-3 text-right text-2xs font-semibold text-foreground-secondary uppercase">
+                  Percentage
+                </th>
+                <th className="px-4 py-3 text-right text-2xs font-semibold text-foreground-secondary uppercase">
+                  Amount
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-light">
@@ -69,17 +79,13 @@ export function QuotePaymentsTab({
                     <td className="px-4 py-3 text-sm text-foreground-secondary">
                       {milestone.order ?? idx + 1}
                     </td>
-                    <td className="px-4 py-3 text-sm font-medium">
-                      {milestone.name}
-                    </td>
+                    <td className="px-4 py-3 text-sm font-medium">{milestone.name}</td>
                     <td className="px-4 py-3">
                       <Badge variant="muted" shape="rounded" size="xs">
                         {milestone.stage.replace(/_/g, ' ')}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-right text-sm">
-                      {milestone.percentage}%
-                    </td>
+                    <td className="px-4 py-3 text-right text-sm">{milestone.percentage}%</td>
                     <td className="px-4 py-3 text-right text-sm font-medium">
                       {formatCurrency(milestone.amount)}
                     </td>

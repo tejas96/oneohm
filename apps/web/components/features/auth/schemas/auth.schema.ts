@@ -28,7 +28,10 @@ export type OtpRequestFormData = z.infer<typeof otpRequestSchema>;
  */
 export const otpVerifySchema = z.object({
   phone: z.string().min(1, 'Phone number is required'),
-  otp: z.string().length(6, 'OTP must be 6 digits').regex(/^\d{6}$/, 'OTP must be 6 digits'),
+  otp: z
+    .string()
+    .length(6, 'OTP must be 6 digits')
+    .regex(/^\d{6}$/, 'OTP must be 6 digits'),
 });
 
 export type OtpVerifyFormData = z.infer<typeof otpVerifySchema>;

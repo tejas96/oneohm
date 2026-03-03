@@ -11,7 +11,6 @@ import { apiClient } from '@/lib/api/client';
 import { getErrorMessage } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
-
 interface UpdateTaskPayload {
   taskId: string;
   status?: TaskStatus;
@@ -33,11 +32,9 @@ export function useUpdateTask() {
 
   return useMutation({
     mutationFn: async ({ taskId, ...payload }: UpdateTaskPayload) => {
-      const { data } = await apiClient.patch<MyTask>(
-        `/tasks/${taskId}`,
-        payload,
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
+      const { data } = await apiClient.patch<MyTask>(`/tasks/${taskId}`, payload, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
       return data;
     },
     onSuccess: (_data, variables) => {

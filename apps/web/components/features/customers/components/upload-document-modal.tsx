@@ -16,7 +16,7 @@ import { Upload } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { DOCUMENT_TYPE_OPTIONS } from '../constants';
-import { type CustomerPropertyResponse , useDocumentUpload } from '../hooks';
+import { type CustomerPropertyResponse, useDocumentUpload } from '../hooks';
 
 import { formatFileSize } from '@/components/shared/document-collector/constants';
 import {
@@ -73,13 +73,8 @@ export function UploadDocumentModal({
     }
   }, [open, defaultPropertyId]);
 
-  const {
-    uploadProgress,
-    isUploading,
-    validateFile,
-    uploadDocument,
-    resetUploadState,
-  } = useDocumentUpload();
+  const { uploadProgress, isUploading, validateFile, uploadDocument, resetUploadState } =
+    useDocumentUpload();
 
   const resetForm = useCallback(() => {
     setSelectedPropertyId(defaultPropertyId ?? '');
@@ -157,8 +152,7 @@ export function UploadDocumentModal({
     }
   }, [selectedPropertyId, selectedDocType, selectedFile, uploadDocument, handleClose]);
 
-  const canUpload =
-    selectedPropertyId && selectedDocType && selectedFile && !isUploading;
+  const canUpload = selectedPropertyId && selectedDocType && selectedFile && !isUploading;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -173,9 +167,9 @@ export function UploadDocumentModal({
             <div className="space-y-2">
               <Label className="text-sm font-medium">Property</Label>
               <div className="flex h-input-md items-center rounded-md border-1.5 border-border bg-muted px-3 text-sm text-foreground">
-                {properties.find((p) => p.id === defaultPropertyId)?.propertyName
-                  || properties.find((p) => p.id === defaultPropertyId)?.address
-                  || 'Unnamed Property'}
+                {properties.find((p) => p.id === defaultPropertyId)?.propertyName ||
+                  properties.find((p) => p.id === defaultPropertyId)?.address ||
+                  'Unnamed Property'}
               </div>
             </div>
           ) : (
@@ -261,9 +255,7 @@ export function UploadDocumentModal({
             >
               {selectedFile ? (
                 <div className="text-center">
-                  <p className="text-sm font-medium text-foreground">
-                    {selectedFile.name}
-                  </p>
+                  <p className="text-sm font-medium text-foreground">{selectedFile.name}</p>
                   <p className="mt-1 text-xs text-foreground-secondary">
                     {formatFileSize(selectedFile.size)} &middot; Click to change
                   </p>
@@ -274,9 +266,7 @@ export function UploadDocumentModal({
                   <p className="mt-2 text-sm text-foreground-secondary">
                     Drag and drop or click to upload
                   </p>
-                  <p className="mt-1 text-xs text-foreground-muted">
-                    JPEG, PNG, PDF up to 5MB
-                  </p>
+                  <p className="mt-1 text-xs text-foreground-muted">JPEG, PNG, PDF up to 5MB</p>
                 </div>
               )}
             </div>
@@ -295,11 +285,7 @@ export function UploadDocumentModal({
         </DialogBody>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => handleClose(false)}
-            disabled={isUploading}
-          >
+          <Button variant="outline" onClick={() => handleClose(false)} disabled={isUploading}>
             Cancel
           </Button>
           <Button onClick={handleUpload} disabled={!canUpload}>

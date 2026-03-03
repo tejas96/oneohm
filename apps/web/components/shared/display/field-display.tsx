@@ -92,9 +92,7 @@ function ReferralDisplay({ data, size, className }: ReferralDisplayProps) {
       <div className={cn('flex items-center gap-2', className)}>
         <Tag className="size-icon-sm text-warning" />
         <span className="text-sm text-foreground-secondary">Referral:</span>
-        <span className="text-sm font-medium text-foreground font-mono">
-          {data.referralCode}
-        </span>
+        <span className="text-sm font-medium text-foreground font-mono">{data.referralCode}</span>
       </div>
     );
   }
@@ -103,7 +101,7 @@ function ReferralDisplay({ data, size, className }: ReferralDisplayProps) {
     <div
       className={cn(
         'p-4 bg-linear-to-r from-warning/10 to-warning/5 rounded-lg border border-warning/20',
-        className
+        className,
       )}
     >
       <div className="flex items-center justify-between">
@@ -128,9 +126,7 @@ function ReferralDisplay({ data, size, className }: ReferralDisplayProps) {
         </div>
         <div className="text-right">
           <div className="text-xs text-foreground-tertiary">Referral Code</div>
-          <div className="font-mono text-sm font-medium text-warning">
-            {data.referralCode}
-          </div>
+          <div className="font-mono text-sm font-medium text-warning">{data.referralCode}</div>
         </div>
       </div>
     </div>
@@ -154,9 +150,7 @@ function GPSDisplay({ data, size, className, onViewMap }: GPSDisplayProps) {
     return `${Math.abs(value).toFixed(4)}° ${direction}`;
   };
 
-  const mapsUrl = data
-    ? `https://maps.google.com/?q=${data.latitude},${data.longitude}`
-    : null;
+  const mapsUrl = data ? `https://maps.google.com/?q=${data.latitude},${data.longitude}` : null;
 
   // Not captured state
   if (!data) {
@@ -164,15 +158,13 @@ function GPSDisplay({ data, size, className, onViewMap }: GPSDisplayProps) {
       <div
         className={cn(
           'p-3 bg-warning/10 border border-warning/20 rounded-lg flex items-center gap-3',
-          className
+          className,
         )}
       >
         <AlertTriangle className="size-icon-md text-warning" />
         <div className="flex-1">
           <div className="text-sm font-medium text-warning">GPS not captured</div>
-          <div className="text-xs text-warning/80">
-            Location will be recorded during site visit
-          </div>
+          <div className="text-xs text-warning/80">Location will be recorded during site visit</div>
         </div>
       </div>
     );
@@ -273,16 +265,14 @@ function ShadingDisplay({ data, size, className }: ShadingDisplayProps) {
       <div
         className={cn(
           'p-3 bg-muted border border-border-light rounded-lg flex items-center gap-3',
-          className
+          className,
         )}
       >
         <div className="size-container-sm rounded-full bg-border flex items-center justify-center">
           <Sun className="size-icon-sm text-foreground-tertiary" />
         </div>
         <div className="flex-1">
-          <div className="text-xs font-medium text-foreground-secondary">
-            Shading not assessed
-          </div>
+          <div className="text-xs font-medium text-foreground-secondary">Shading not assessed</div>
           <div className="text-xs text-foreground-tertiary">
             Will be evaluated during site visit
           </div>
@@ -300,7 +290,7 @@ function ShadingDisplay({ data, size, className }: ShadingDisplayProps) {
           'inline-flex items-center gap-1.5',
           config.bgClass,
           config.textClass,
-          className
+          className,
         )}
       >
         <span className={cn('w-2 h-2 rounded-full', config.dotClass)} />
@@ -310,9 +300,7 @@ function ShadingDisplay({ data, size, className }: ShadingDisplayProps) {
   }
 
   return (
-    <div
-      className={cn('p-4 bg-background rounded-lg border border-border-light', className)}
-    >
+    <div className={cn('p-4 bg-background rounded-lg border border-border-light', className)}>
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-sm font-semibold text-foreground">Shading Analysis</h4>
         <Badge className={cn(config.bgClass, config.textClass)}>{config.label}</Badge>
@@ -342,7 +330,8 @@ function ShadingDisplay({ data, size, className }: ShadingDisplayProps) {
                 <AlertTriangle className="size-icon-sm text-warning" />
               )}
               <span className="text-foreground-secondary">
-                {detail.timeRange}: {detail.note || (detail.status === 'clear' ? 'No obstruction' : 'Shading present')}
+                {detail.timeRange}:{' '}
+                {detail.note || (detail.status === 'clear' ? 'No obstruction' : 'Shading present')}
               </span>
             </div>
           ))}
@@ -410,9 +399,7 @@ function DocumentStatusDisplay({ data, size, className }: DocumentStatusDisplayP
   }
 
   return (
-    <div
-      className={cn('p-4 bg-background rounded-lg border border-border-light', className)}
-    >
+    <div className={cn('p-4 bg-background rounded-lg border border-border-light', className)}>
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-sm font-semibold text-foreground">Document Status</h4>
         <span className="text-sm font-medium text-foreground-secondary">
@@ -426,10 +413,7 @@ function DocumentStatusDisplay({ data, size, className }: DocumentStatusDisplayP
         {data.documents.map((doc, index) => (
           <Badge
             key={index}
-            className={cn(
-              'inline-flex items-center gap-1',
-              getStatusClasses(doc.status)
-            )}
+            className={cn('inline-flex items-center gap-1', getStatusClasses(doc.status))}
           >
             {getStatusIcon(doc.status)}
             {doc.name}
@@ -463,17 +447,13 @@ function ConnectionDisplay({ data, size, className }: ConnectionDisplayProps) {
             </span>
           </div>
         )}
-        {data.sanctionedLoad && (
-          <span className="text-foreground">{data.sanctionedLoad}</span>
-        )}
+        {data.sanctionedLoad && <span className="text-foreground">{data.sanctionedLoad}</span>}
       </div>
     );
   }
 
   return (
-    <div
-      className={cn('p-4 bg-background rounded-lg border border-border-light', className)}
-    >
+    <div className={cn('p-4 bg-background rounded-lg border border-border-light', className)}>
       <h4 className="text-sm font-semibold text-foreground mb-4">Connection Details</h4>
       <div className="grid grid-cols-2 gap-4">
         {data.consumerNumber && (
@@ -491,9 +471,7 @@ function ConnectionDisplay({ data, size, className }: ConnectionDisplayProps) {
             <div className="text-xs text-foreground-tertiary uppercase tracking-wide">
               Meter Number
             </div>
-            <div className="text-sm font-medium text-foreground font-mono">
-              {data.meterNumber}
-            </div>
+            <div className="text-sm font-medium text-foreground font-mono">{data.meterNumber}</div>
           </div>
         )}
         {data.connectionType && (
@@ -505,7 +483,7 @@ function ConnectionDisplay({ data, size, className }: ConnectionDisplayProps) {
               <span
                 className={cn(
                   'w-2 h-2 rounded-full',
-                  data.connectionType === 'three' ? 'bg-secondary' : 'bg-border-medium'
+                  data.connectionType === 'three' ? 'bg-secondary' : 'bg-border-medium',
                 )}
               />
               {data.connectionType === 'three' ? 'Three Phase' : 'Single Phase'}
@@ -517,16 +495,12 @@ function ConnectionDisplay({ data, size, className }: ConnectionDisplayProps) {
             <div className="text-xs text-foreground-tertiary uppercase tracking-wide">
               Sanctioned Load
             </div>
-            <div className="text-sm font-medium text-foreground">
-              {data.sanctionedLoad}
-            </div>
+            <div className="text-sm font-medium text-foreground">{data.sanctionedLoad}</div>
           </div>
         )}
         {data.discom && (
           <div>
-            <div className="text-xs text-foreground-tertiary uppercase tracking-wide">
-              DISCOM
-            </div>
+            <div className="text-xs text-foreground-tertiary uppercase tracking-wide">DISCOM</div>
             <div className="text-sm font-medium text-foreground">{data.discom}</div>
           </div>
         )}
@@ -578,7 +552,7 @@ function LoanDisplay({ data, size, className }: LoanDisplayProps) {
     <div
       className={cn(
         'p-4 bg-linear-to-r from-info/10 to-info/5 rounded-lg border border-info/20',
-        className
+        className,
       )}
     >
       <div className="flex items-center gap-4">
@@ -615,9 +589,7 @@ function LoanDisplay({ data, size, className }: LoanDisplayProps) {
           {data.tenure !== undefined && (
             <div>
               <div className="text-xs text-foreground-tertiary">Tenure</div>
-              <div className="text-sm font-semibold text-foreground">
-                {data.tenure} months
-              </div>
+              <div className="text-sm font-semibold text-foreground">{data.tenure} months</div>
             </div>
           )}
         </div>
@@ -648,13 +620,9 @@ export function FieldDisplay(props: FieldDisplayProps) {
     case 'shading':
       return <ShadingDisplay data={props.data} size={size} className={props.className} />;
     case 'document-status':
-      return (
-        <DocumentStatusDisplay data={props.data} size={size} className={props.className} />
-      );
+      return <DocumentStatusDisplay data={props.data} size={size} className={props.className} />;
     case 'connection':
-      return (
-        <ConnectionDisplay data={props.data} size={size} className={props.className} />
-      );
+      return <ConnectionDisplay data={props.data} size={size} className={props.className} />;
     case 'loan':
       return <LoanDisplay data={props.data} size={size} className={props.className} />;
     default:

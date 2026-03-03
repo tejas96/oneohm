@@ -25,9 +25,13 @@ export class ProjectManagementAndCleanup1769862463000 implements MigrationInterf
     // STEP 1: DROP OLD INDEXES FIRST (before changing columns)
     // =============================================
     await queryRunner.query(`DROP INDEX IF EXISTS "idx_project_tasks_dates"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_project_tasks_plannedStartDate_plannedEndDate_deletedAt"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_project_tasks_plannedStartDate_plannedEndDate_deletedAt"`,
+    );
     await queryRunner.query(`DROP INDEX IF EXISTS "idx_task_templates_milestone_template"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_task_templates_milestoneTemplateId_deletedAt"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "IDX_task_templates_milestoneTemplateId_deletedAt"`,
+    );
 
     // =============================================
     // STEP 2: CREATE NEW TEAM TABLE
@@ -52,17 +56,27 @@ export class ProjectManagementAndCleanup1769862463000 implements MigrationInterf
     // =============================================
     // STEP 3: PROJECT_TASKS - Initialize kanbanOrder from sequenceOrder BEFORE dropping
     // =============================================
-    await queryRunner.query(`ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "kanban_order" INTEGER`);
-    await queryRunner.query(`UPDATE "project_tasks" SET kanban_order = COALESCE(sequence_order, 1000) WHERE kanban_order IS NULL`);
-    await queryRunner.query(`ALTER TABLE "project_tasks" ALTER COLUMN "kanban_order" SET DEFAULT 1000`);
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "kanban_order" INTEGER`,
+    );
+    await queryRunner.query(
+      `UPDATE "project_tasks" SET kanban_order = COALESCE(sequence_order, 1000) WHERE kanban_order IS NULL`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" ALTER COLUMN "kanban_order" SET DEFAULT 1000`,
+    );
 
     // Add version column for optimistic locking
-    await queryRunner.query(`ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "version" INTEGER DEFAULT 1 NOT NULL`);
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "version" INTEGER DEFAULT 1 NOT NULL`,
+    );
 
     // =============================================
     // STEP 4: PROJECT_TASKS - Simplify date columns
     // =============================================
-    await queryRunner.query(`ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "start_date" DATE`);
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "start_date" DATE`,
+    );
     await queryRunner.query(`ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "end_date" DATE`);
     await queryRunner.query(`
       UPDATE "project_tasks" SET 
@@ -70,9 +84,13 @@ export class ProjectManagementAndCleanup1769862463000 implements MigrationInterf
         end_date = COALESCE(actual_end_date, planned_end_date)
       WHERE start_date IS NULL
     `);
-    await queryRunner.query(`ALTER TABLE "project_tasks" DROP COLUMN IF EXISTS "planned_start_date"`);
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" DROP COLUMN IF EXISTS "planned_start_date"`,
+    );
     await queryRunner.query(`ALTER TABLE "project_tasks" DROP COLUMN IF EXISTS "planned_end_date"`);
-    await queryRunner.query(`ALTER TABLE "project_tasks" DROP COLUMN IF EXISTS "actual_start_date"`);
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" DROP COLUMN IF EXISTS "actual_start_date"`,
+    );
     await queryRunner.query(`ALTER TABLE "project_tasks" DROP COLUMN IF EXISTS "actual_end_date"`);
 
     // =============================================
@@ -83,41 +101,73 @@ export class ProjectManagementAndCleanup1769862463000 implements MigrationInterf
     await queryRunner.query(`ALTER TABLE "project_tasks" DROP COLUMN IF EXISTS "notes"`);
     await queryRunner.query(`ALTER TABLE "project_tasks" DROP COLUMN IF EXISTS "type"`);
     await queryRunner.query(`ALTER TABLE "project_tasks" DROP COLUMN IF EXISTS "can_run_parallel"`);
-    await queryRunner.query(`ALTER TABLE "project_tasks" DROP COLUMN IF EXISTS "assigned_to_department"`);
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" DROP COLUMN IF EXISTS "assigned_to_department"`,
+    );
     await queryRunner.query(`ALTER TABLE "project_tasks" DROP COLUMN IF EXISTS "sequence_order"`);
 
     // =============================================
     // STEP 6: PROJECT_TASKS - Update status (data first, then constraint)
     // =============================================
-    await queryRunner.query(`UPDATE "project_tasks" SET status = 'backlog' WHERE status = 'pending'`);
-    await queryRunner.query(`UPDATE "project_tasks" SET status = 'done' WHERE status = 'completed'`);
-    await queryRunner.query(`ALTER TABLE "project_tasks" DROP CONSTRAINT IF EXISTS "project_tasks_status_check"`);
-    await queryRunner.query(`ALTER TABLE "project_tasks" DROP CONSTRAINT IF EXISTS "CHK_project_tasks_status"`);
+    await queryRunner.query(
+      `UPDATE "project_tasks" SET status = 'backlog' WHERE status = 'pending'`,
+    );
+    await queryRunner.query(
+      `UPDATE "project_tasks" SET status = 'done' WHERE status = 'completed'`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" DROP CONSTRAINT IF EXISTS "project_tasks_status_check"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" DROP CONSTRAINT IF EXISTS "CHK_project_tasks_status"`,
+    );
     // Drop the default FIRST, then change type, then re-add default
     await queryRunner.query(`ALTER TABLE "project_tasks" ALTER COLUMN "status" DROP DEFAULT`);
     await queryRunner.query(`ALTER TABLE "project_tasks" ALTER COLUMN "status" TYPE VARCHAR(50)`);
     await queryRunner.query(`DROP TYPE IF EXISTS "project_tasks_status_enum"`);
-    await queryRunner.query(`CREATE TYPE "project_tasks_status_enum" AS ENUM ('backlog', 'todo', 'in_progress', 'in_review', 'testing', 'blocked', 'done', 'cancelled')`);
-    await queryRunner.query(`ALTER TABLE "project_tasks" ALTER COLUMN "status" TYPE "project_tasks_status_enum" USING status::"project_tasks_status_enum"`);
-    await queryRunner.query(`ALTER TABLE "project_tasks" ALTER COLUMN "status" SET DEFAULT 'backlog'`);
+    await queryRunner.query(
+      `CREATE TYPE "project_tasks_status_enum" AS ENUM ('backlog', 'todo', 'in_progress', 'in_review', 'testing', 'blocked', 'done', 'cancelled')`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" ALTER COLUMN "status" TYPE "project_tasks_status_enum" USING status::"project_tasks_status_enum"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" ALTER COLUMN "status" SET DEFAULT 'backlog'`,
+    );
 
     // =============================================
     // STEP 7: PROJECT_MILESTONES - Simplify dates, add audit fields
     // =============================================
-    await queryRunner.query(`ALTER TABLE "project_milestones" ADD COLUMN IF NOT EXISTS "start_date" DATE`);
-    await queryRunner.query(`ALTER TABLE "project_milestones" ADD COLUMN IF NOT EXISTS "end_date" DATE`);
-    await queryRunner.query(`ALTER TABLE "project_milestones" ADD COLUMN IF NOT EXISTS "created_by" UUID`);
-    await queryRunner.query(`ALTER TABLE "project_milestones" ADD COLUMN IF NOT EXISTS "updated_by" UUID`);
+    await queryRunner.query(
+      `ALTER TABLE "project_milestones" ADD COLUMN IF NOT EXISTS "start_date" DATE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_milestones" ADD COLUMN IF NOT EXISTS "end_date" DATE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_milestones" ADD COLUMN IF NOT EXISTS "created_by" UUID`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_milestones" ADD COLUMN IF NOT EXISTS "updated_by" UUID`,
+    );
     await queryRunner.query(`
       UPDATE "project_milestones" SET 
         start_date = COALESCE(actual_start_date, planned_start_date),
         end_date = COALESCE(actual_end_date, planned_end_date)
       WHERE start_date IS NULL
     `);
-    await queryRunner.query(`ALTER TABLE "project_milestones" DROP COLUMN IF EXISTS "planned_start_date"`);
-    await queryRunner.query(`ALTER TABLE "project_milestones" DROP COLUMN IF EXISTS "planned_end_date"`);
-    await queryRunner.query(`ALTER TABLE "project_milestones" DROP COLUMN IF EXISTS "actual_start_date"`);
-    await queryRunner.query(`ALTER TABLE "project_milestones" DROP COLUMN IF EXISTS "actual_end_date"`);
+    await queryRunner.query(
+      `ALTER TABLE "project_milestones" DROP COLUMN IF EXISTS "planned_start_date"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_milestones" DROP COLUMN IF EXISTS "planned_end_date"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_milestones" DROP COLUMN IF EXISTS "actual_start_date"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_milestones" DROP COLUMN IF EXISTS "actual_end_date"`,
+    );
     await queryRunner.query(`ALTER TABLE "project_milestones" DROP COLUMN IF EXISTS "notes"`);
 
     // =============================================
@@ -128,20 +178,32 @@ export class ProjectManagementAndCleanup1769862463000 implements MigrationInterf
 
     // Materials - drop notes, add audit
     await queryRunner.query(`ALTER TABLE "project_materials" DROP COLUMN IF EXISTS "notes"`);
-    await queryRunner.query(`ALTER TABLE "project_materials" ADD COLUMN IF NOT EXISTS "created_by" UUID`);
-    await queryRunner.query(`ALTER TABLE "project_materials" ADD COLUMN IF NOT EXISTS "updated_by" UUID`);
+    await queryRunner.query(
+      `ALTER TABLE "project_materials" ADD COLUMN IF NOT EXISTS "created_by" UUID`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_materials" ADD COLUMN IF NOT EXISTS "updated_by" UUID`,
+    );
 
     // Surveys - add audit
-    await queryRunner.query(`ALTER TABLE "site_surveys" ADD COLUMN IF NOT EXISTS "created_by" UUID`);
-    await queryRunner.query(`ALTER TABLE "site_surveys" ADD COLUMN IF NOT EXISTS "updated_by" UUID`);
+    await queryRunner.query(
+      `ALTER TABLE "site_surveys" ADD COLUMN IF NOT EXISTS "created_by" UUID`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "site_surveys" ADD COLUMN IF NOT EXISTS "updated_by" UUID`,
+    );
 
     // Task templates - drop milestone_template_id
-    await queryRunner.query(`ALTER TABLE "task_templates" DROP COLUMN IF EXISTS "milestone_template_id"`);
+    await queryRunner.query(
+      `ALTER TABLE "task_templates" DROP COLUMN IF EXISTS "milestone_template_id"`,
+    );
 
     // =============================================
     // STEP 9: DROP MILESTONE_TEMPLATES (with trigger cleanup)
     // =============================================
-    await queryRunner.query(`DROP TRIGGER IF EXISTS "trigger_update_milestone_templates_updated_at" ON "milestone_templates"`);
+    await queryRunner.query(
+      `DROP TRIGGER IF EXISTS "trigger_update_milestone_templates_updated_at" ON "milestone_templates"`,
+    );
     await queryRunner.query(`DROP FUNCTION IF EXISTS "update_milestone_templates_updated_at"()`);
     await queryRunner.query(`DROP TABLE IF EXISTS "milestone_templates" CASCADE`);
 
@@ -205,7 +267,9 @@ export class ProjectManagementAndCleanup1769862463000 implements MigrationInterf
     // =============================================
     // STEP 3: RE-ADD TASK_TEMPLATES COLUMN
     // =============================================
-    await queryRunner.query(`ALTER TABLE "task_templates" ADD COLUMN IF NOT EXISTS "milestone_template_id" UUID`);
+    await queryRunner.query(
+      `ALTER TABLE "task_templates" ADD COLUMN IF NOT EXISTS "milestone_template_id" UUID`,
+    );
 
     // =============================================
     // STEP 4: RE-ADD AUDIT COLUMNS TO SURVEYS/MATERIALS (and drop them)
@@ -214,7 +278,9 @@ export class ProjectManagementAndCleanup1769862463000 implements MigrationInterf
     await queryRunner.query(`ALTER TABLE "site_surveys" DROP COLUMN IF EXISTS "created_by"`);
     await queryRunner.query(`ALTER TABLE "project_materials" DROP COLUMN IF EXISTS "updated_by"`);
     await queryRunner.query(`ALTER TABLE "project_materials" DROP COLUMN IF EXISTS "created_by"`);
-    await queryRunner.query(`ALTER TABLE "project_materials" ADD COLUMN IF NOT EXISTS "notes" TEXT`);
+    await queryRunner.query(
+      `ALTER TABLE "project_materials" ADD COLUMN IF NOT EXISTS "notes" TEXT`,
+    );
 
     // =============================================
     // STEP 5: RE-ADD NOTES TO PROJECTS
@@ -224,11 +290,21 @@ export class ProjectManagementAndCleanup1769862463000 implements MigrationInterf
     // =============================================
     // STEP 6: RESTORE MILESTONE DATE COLUMNS
     // =============================================
-    await queryRunner.query(`ALTER TABLE "project_milestones" ADD COLUMN IF NOT EXISTS "notes" TEXT`);
-    await queryRunner.query(`ALTER TABLE "project_milestones" ADD COLUMN IF NOT EXISTS "planned_start_date" DATE`);
-    await queryRunner.query(`ALTER TABLE "project_milestones" ADD COLUMN IF NOT EXISTS "planned_end_date" DATE`);
-    await queryRunner.query(`ALTER TABLE "project_milestones" ADD COLUMN IF NOT EXISTS "actual_start_date" DATE`);
-    await queryRunner.query(`ALTER TABLE "project_milestones" ADD COLUMN IF NOT EXISTS "actual_end_date" DATE`);
+    await queryRunner.query(
+      `ALTER TABLE "project_milestones" ADD COLUMN IF NOT EXISTS "notes" TEXT`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_milestones" ADD COLUMN IF NOT EXISTS "planned_start_date" DATE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_milestones" ADD COLUMN IF NOT EXISTS "planned_end_date" DATE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_milestones" ADD COLUMN IF NOT EXISTS "actual_start_date" DATE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_milestones" ADD COLUMN IF NOT EXISTS "actual_end_date" DATE`,
+    );
     await queryRunner.query(`
       UPDATE "project_milestones" SET 
         planned_start_date = start_date,
@@ -243,31 +319,61 @@ export class ProjectManagementAndCleanup1769862463000 implements MigrationInterf
     // =============================================
     // STEP 7: RESTORE TASK STATUS ENUM
     // =============================================
-    await queryRunner.query(`UPDATE "project_tasks" SET status = 'pending' WHERE status = 'backlog'`);
-    await queryRunner.query(`UPDATE "project_tasks" SET status = 'completed' WHERE status = 'done'`);
+    await queryRunner.query(
+      `UPDATE "project_tasks" SET status = 'pending' WHERE status = 'backlog'`,
+    );
+    await queryRunner.query(
+      `UPDATE "project_tasks" SET status = 'completed' WHERE status = 'done'`,
+    );
     await queryRunner.query(`ALTER TABLE "project_tasks" ALTER COLUMN "status" TYPE VARCHAR(50)`);
     await queryRunner.query(`DROP TYPE IF EXISTS "project_tasks_status_enum"`);
-    await queryRunner.query(`CREATE TYPE "project_tasks_status_enum" AS ENUM ('pending', 'todo', 'in_progress', 'in_review', 'blocked', 'completed', 'cancelled')`);
-    await queryRunner.query(`ALTER TABLE "project_tasks" ALTER COLUMN "status" TYPE "project_tasks_status_enum" USING status::"project_tasks_status_enum"`);
-    await queryRunner.query(`ALTER TABLE "project_tasks" ALTER COLUMN "status" SET DEFAULT 'pending'`);
+    await queryRunner.query(
+      `CREATE TYPE "project_tasks_status_enum" AS ENUM ('pending', 'todo', 'in_progress', 'in_review', 'blocked', 'completed', 'cancelled')`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" ALTER COLUMN "status" TYPE "project_tasks_status_enum" USING status::"project_tasks_status_enum"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" ALTER COLUMN "status" SET DEFAULT 'pending'`,
+    );
 
     // =============================================
     // STEP 8: RESTORE TASK COLUMNS
     // =============================================
-    await queryRunner.query(`ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "sequence_order" INTEGER`);
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "sequence_order" INTEGER`,
+    );
     await queryRunner.query(`UPDATE "project_tasks" SET sequence_order = kanban_order`);
-    await queryRunner.query(`ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "assigned_to_department" VARCHAR(100)`);
-    await queryRunner.query(`ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "can_run_parallel" BOOLEAN DEFAULT FALSE`);
-    await queryRunner.query(`ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "type" VARCHAR(50)`);
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "assigned_to_department" VARCHAR(100)`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "can_run_parallel" BOOLEAN DEFAULT FALSE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "type" VARCHAR(50)`,
+    );
     await queryRunner.query(`ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "notes" TEXT`);
-    await queryRunner.query(`ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "estimated_hours" DECIMAL(10,2)`);
-    await queryRunner.query(`ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "story_points" INTEGER`);
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "estimated_hours" DECIMAL(10,2)`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "story_points" INTEGER`,
+    );
 
     // Restore task date columns
-    await queryRunner.query(`ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "planned_start_date" DATE`);
-    await queryRunner.query(`ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "planned_end_date" DATE`);
-    await queryRunner.query(`ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "actual_start_date" DATE`);
-    await queryRunner.query(`ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "actual_end_date" DATE`);
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "planned_start_date" DATE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "planned_end_date" DATE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "actual_start_date" DATE`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "project_tasks" ADD COLUMN IF NOT EXISTS "actual_end_date" DATE`,
+    );
     await queryRunner.query(`
       UPDATE "project_tasks" SET 
         planned_start_date = start_date,

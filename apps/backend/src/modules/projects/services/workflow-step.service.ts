@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { type PaginatedResponse, type StatisticsResponse } from '@oneohm-epc/shared-types';
 
 import { type WorkflowStepEntity } from '../entities';
@@ -40,12 +45,7 @@ export class WorkflowStepService {
       search?: string;
     } = {},
   ): Promise<PaginatedResponse<WorkflowStepEntity>> {
-    const { data, total } = await this.stepRepository.findAll(
-      organizationId,
-      page,
-      limit,
-      filters,
-    );
+    const { data, total } = await this.stepRepository.findAll(organizationId, page, limit, filters);
 
     return {
       data,
@@ -79,15 +79,9 @@ export class WorkflowStepService {
     await this.findById(id, organizationId);
 
     if (updateDto.code) {
-      const codeExists = await this.stepRepository.existsByCode(
-        updateDto.code,
-        organizationId,
-        id,
-      );
+      const codeExists = await this.stepRepository.existsByCode(updateDto.code, organizationId, id);
       if (codeExists) {
-        throw new BadRequestException(
-          `Workflow step with code ${updateDto.code} already exists`,
-        );
+        throw new BadRequestException(`Workflow step with code ${updateDto.code} already exists`);
       }
     }
 

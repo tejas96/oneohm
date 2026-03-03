@@ -3,7 +3,6 @@
 import { type ReactNode } from 'react';
 import { Toaster } from 'sonner';
 
-
 import { AuthProvider } from './auth-provider';
 import { QueryProvider } from './query-provider';
 

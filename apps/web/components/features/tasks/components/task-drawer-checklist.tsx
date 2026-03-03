@@ -49,7 +49,9 @@ export function TaskDrawerChecklist({
         <div className="h-1.5 w-20 rounded-full bg-muted overflow-hidden">
           <div
             className="h-full rounded-full bg-success transition-all"
-            style={{ width: `${checklist.items.length > 0 ? (doneCount / checklist.items.length) * 100 : 0}%` }}
+            style={{
+              width: `${checklist.items.length > 0 ? (doneCount / checklist.items.length) * 100 : 0}%`,
+            }}
           />
         </div>
       </div>

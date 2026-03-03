@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 /**
  * Accordion Component
  * Collapsible content panels with variant styles
- * 
+ *
  * Uses theme tokens:
  * - border-border-light for borders
  * - hover:bg-muted for hover states
@@ -35,7 +35,7 @@ const AccordionItem = React.forwardRef<
       variant === 'default' && 'border-b border-border',
       variant === 'flush' && 'border-b border-border-light',
       variant === 'separated' && 'mb-3 border border-border-light rounded-lg overflow-hidden',
-      className
+      className,
     )}
     {...props}
   />
@@ -62,7 +62,7 @@ const AccordionTrigger = React.forwardRef<
         'text-sm font-medium text-foreground',
         'hover:bg-muted duration-fast transition-colors',
         '[&[data-state=open]>svg]:rotate-180',
-        className
+        className,
       )}
       {...props}
     >
@@ -74,9 +74,7 @@ const AccordionTrigger = React.forwardRef<
       <div className="flex-1">
         {children}
         {description && (
-          <p className="text-sm text-foreground-secondary font-normal mt-0.5">
-            {description}
-          </p>
+          <p className="text-sm text-foreground-secondary font-normal mt-0.5">{description}</p>
         )}
       </div>
       <ChevronDown className="size-icon-md shrink-0 text-foreground-tertiary transition-transform duration-fast" />

@@ -5,7 +5,8 @@ import {
   ProjectPriority,
   PropertyStatus,
   QuoteStatus,
- MilestoneType } from '@oneohm-epc/shared-types';
+  MilestoneType,
+} from '@oneohm-epc/shared-types';
 import {
   AlertCircle,
   AlertTriangle,
@@ -101,13 +102,7 @@ import {
 } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
 import { useDebounce } from '@/lib/hooks';
-import {
-  cn,
-  formatCurrency,
-  formatDate,
-  formatSystemSize,
-  getErrorMessage,
-} from '@/lib/utils';
+import { cn, formatCurrency, formatDate, formatSystemSize, getErrorMessage } from '@/lib/utils';
 
 // ============================================================================
 // Main Component
@@ -216,8 +211,7 @@ export function ProjectCreatePage(): React.JSX.Element {
         return !q.propertyId || q.propertyId === selectedPropertyId;
       })
       .sort((a: CustomerQuote, b: CustomerQuote) => {
-        const propMatch = (id: string | undefined) =>
-          id === selectedPropertyId ? 0 : 1;
+        const propMatch = (id: string | undefined) => (id === selectedPropertyId ? 0 : 1);
         return propMatch(a.propertyId) - propMatch(b.propertyId);
       });
   }, [allQuotes, selectedPropertyId]);
@@ -279,14 +273,9 @@ export function ProjectCreatePage(): React.JSX.Element {
     const custName = selectedCustomer
       ? `${selectedCustomer.firstName || ''} ${selectedCustomer.lastName || ''}`.trim()
       : '';
-    const propName =
-      selectedProperty?.propertyName ||
-      selectedProperty?.consumerName ||
-      'Property';
+    const propName = selectedProperty?.propertyName || selectedProperty?.consumerName || 'Property';
     const sizeValue = selectedQuote?.systemSizeKw;
-    const size = sizeValue && sizeValue > 0
-      ? `${formatSystemSize(sizeValue)}kW`
-      : '';
+    const size = sizeValue && sizeValue > 0 ? `${formatSystemSize(sizeValue)}kW` : '';
     const parts = [custName, propName, size].filter(Boolean);
     return parts.join(' - ');
   }, [selectedCustomer, selectedProperty, selectedQuote]);
@@ -514,7 +503,7 @@ export function ProjectCreatePage(): React.JSX.Element {
   function handleMilestoneOverride(templateId: string, newOrder: number): void {
     const template = templates?.find((t) => t.id === templateId);
     const defaultOrder = template?.defaultMilestoneType
-      ? milestones.find((m) => m.type === template.defaultMilestoneType)?.order ?? 0
+      ? (milestones.find((m) => m.type === template.defaultMilestoneType)?.order ?? 0)
       : 0;
 
     const current = [...taskMilestoneOverrides];
@@ -604,18 +593,14 @@ export function ProjectCreatePage(): React.JSX.Element {
         taskMilestoneOverrides: 'Task Milestones',
       };
       const errorFields = Object.keys(fieldErrors);
-      const labels = errorFields
-        .map((k) => FIELD_LABELS[k] || k)
-        .join(', ');
+      const labels = errorFields.map((k) => FIELD_LABELS[k] || k).join(', ');
       showToast.error(`Please fix errors in: ${labels}`);
       return;
     }
 
     const values = form.getValues();
     const members = values.teamMembers.filter((m) => m.userId);
-    const excluded = values.excludedStepIds.length > 0
-      ? values.excludedStepIds
-      : undefined;
+    const excluded = values.excludedStepIds.length > 0 ? values.excludedStepIds : undefined;
 
     try {
       const milestonesPayload = values.milestones.map((m) => ({
@@ -625,17 +610,14 @@ export function ProjectCreatePage(): React.JSX.Element {
       }));
 
       const resolvedAssignments: Array<{ workflowStepId: string; assignedToUserId: string }> = [];
-      const includedSteps = (templates || []).filter(
-        (t) => !values.excludedStepIds.includes(t.id),
-      );
+      const includedSteps = (templates || []).filter((t) => !values.excludedStepIds.includes(t.id));
       for (const step of includedSteps) {
         const assignee = getEffectiveAssignee(step.id);
         if (assignee) {
           resolvedAssignments.push({ workflowStepId: step.id, assignedToUserId: assignee });
         }
       }
-      const assignmentsPayload =
-        resolvedAssignments.length > 0 ? resolvedAssignments : undefined;
+      const assignmentsPayload = resolvedAssignments.length > 0 ? resolvedAssignments : undefined;
 
       const milestoneOverridesPayload =
         values.taskMilestoneOverrides.length > 0 ? values.taskMilestoneOverrides : undefined;
@@ -675,10 +657,7 @@ export function ProjectCreatePage(): React.JSX.Element {
   const searchResults = debouncedCustomerSearch.length >= 2 ? customers : [];
 
   // ---- Employee filtering for team section ----
-  const selectedUserIds = useMemo(
-    () => new Set(teamMembers.map((m) => m.userId)),
-    [teamMembers],
-  );
+  const selectedUserIds = useMemo(() => new Set(teamMembers.map((m) => m.userId)), [teamMembers]);
 
   const filteredEmployees = useMemo(() => {
     if (!teamSearch.trim()) return employees;
@@ -709,22 +688,17 @@ export function ProjectCreatePage(): React.JSX.Element {
   );
 
   const isManualAssignment = useCallback(
-    (templateId: string): boolean =>
-      taskAssignments.some((a) => a.workflowStepId === templateId),
+    (templateId: string): boolean => taskAssignments.some((a) => a.workflowStepId === templateId),
     [taskAssignments],
   );
 
   const getEffectiveMilestoneOrder = useCallback(
     (templateId: string): number => {
-      const override = taskMilestoneOverrides.find(
-        (o) => o.workflowStepId === templateId,
-      );
+      const override = taskMilestoneOverrides.find((o) => o.workflowStepId === templateId);
       if (override) return override.milestoneOrder;
       const template = templates?.find((t) => t.id === templateId);
       if (!template?.defaultMilestoneType) return 0;
-      const milestone = milestones.find(
-        (m) => m.type === template.defaultMilestoneType,
-      );
+      const milestone = milestones.find((m) => m.type === template.defaultMilestoneType);
       return milestone?.order ?? 0;
     },
     [taskMilestoneOverrides, templates, milestones],
@@ -749,7 +723,8 @@ export function ProjectCreatePage(): React.JSX.Element {
     !!selectedCustomerId &&
     !!selectedPropertyId &&
     !!selectedQuoteId &&
-    !!watchedName && watchedName.length >= 3;
+    !!watchedName &&
+    watchedName.length >= 3;
 
   // ===========================================================================
   // Render
@@ -801,9 +776,7 @@ export function ProjectCreatePage(): React.JSX.Element {
                     <span className="font-medium">
                       {selectedCustomer.firstName} {selectedCustomer.lastName || ''}
                     </span>
-                    <span className="ml-2 text-foreground-secondary">
-                      {selectedCustomer.phone}
-                    </span>
+                    <span className="ml-2 text-foreground-secondary">{selectedCustomer.phone}</span>
                   </div>
                 </div>
                 <button
@@ -837,9 +810,7 @@ export function ProjectCreatePage(): React.JSX.Element {
                       {customersFetching ? (
                         <div className="flex items-center gap-2 px-3 py-2">
                           <Spinner size="xs" />
-                          <span className="text-sm text-foreground-secondary">
-                            Searching...
-                          </span>
+                          <span className="text-sm text-foreground-secondary">Searching...</span>
                         </div>
                       ) : searchResults.length === 0 ? (
                         <p className="px-3 py-2 text-sm text-foreground-secondary">
@@ -862,9 +833,7 @@ export function ProjectCreatePage(): React.JSX.Element {
                               <span className="font-medium">
                                 {c.firstName} {c.lastName || ''}
                               </span>
-                              <span className="ml-2 text-foreground-secondary">
-                                {c.phone}
-                              </span>
+                              <span className="ml-2 text-foreground-secondary">{c.phone}</span>
                             </div>
                           </button>
                         ))
@@ -874,9 +843,7 @@ export function ProjectCreatePage(): React.JSX.Element {
                 )}
               </div>
             )}
-            {errors.customerId && (
-              <p className="text-xs text-error">{errors.customerId.message}</p>
-            )}
+            {errors.customerId && <p className="text-xs text-error">{errors.customerId.message}</p>}
           </div>
 
           {/* Property Selector */}
@@ -886,16 +853,12 @@ export function ProjectCreatePage(): React.JSX.Element {
               {propertiesLoading ? (
                 <div className="flex items-center gap-2 py-2">
                   <Spinner size="xs" />
-                  <span className="text-sm text-foreground-secondary">
-                    Loading properties...
-                  </span>
+                  <span className="text-sm text-foreground-secondary">Loading properties...</span>
                 </div>
               ) : !properties || properties.length === 0 ? (
                 <div className="flex items-center gap-2 rounded-lg bg-info/10 px-3 py-2">
                   <Info className="size-3.5 text-info" />
-                  <p className="text-xs text-info">
-                    No properties found for this customer.
-                  </p>
+                  <p className="text-xs text-info">No properties found for this customer.</p>
                 </div>
               ) : (
                 <Select
@@ -929,7 +892,8 @@ export function ProjectCreatePage(): React.JSX.Element {
             <div className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3">
               <AlertTriangle className="size-4 shrink-0 text-warning" />
               <span className="text-sm text-warning">
-                The linked quote has not been accepted yet. Only accepted quotes can be converted to projects.
+                The linked quote has not been accepted yet. Only accepted quotes can be converted to
+                projects.
               </span>
             </div>
           )}
@@ -951,37 +915,32 @@ export function ProjectCreatePage(): React.JSX.Element {
               {quotesLoading ? (
                 <div className="flex items-center gap-2 py-2">
                   <Spinner size="xs" />
-                  <span className="text-sm text-foreground-secondary">
-                    Loading quotes...
-                  </span>
+                  <span className="text-sm text-foreground-secondary">Loading quotes...</span>
                 </div>
               ) : usableQuotes.length === 0 ? (
                 <div className="flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2">
                   <AlertTriangle className="size-3.5 text-warning" />
                   <p className="text-xs text-warning">
-                    No accepted quotes available for this property. Please create and accept a quote first.
+                    No accepted quotes available for this property. Please create and accept a quote
+                    first.
                   </p>
                 </div>
               ) : (
-                <Select
-                  value={selectedQuoteId || ''}
-                  onValueChange={handleQuoteSelect}
-                >
+                <Select value={selectedQuoteId || ''} onValueChange={handleQuoteSelect}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select an accepted quote" />
                   </SelectTrigger>
                   <SelectContent>
                     {usableQuotes.map((q) => (
                       <SelectItem key={q.id} value={q.id}>
-                        {q.quoteNumber} · {formatSystemSize(q.systemSizeKw)} kW · {q.finalPrice != null ? formatCurrency(q.finalPrice) : '—'}
+                        {q.quoteNumber} · {formatSystemSize(q.systemSizeKw)} kW ·{' '}
+                        {q.finalPrice != null ? formatCurrency(q.finalPrice) : '—'}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
-              {errors.quoteId && (
-                <p className="text-xs text-error">{errors.quoteId.message}</p>
-              )}
+              {errors.quoteId && <p className="text-xs text-error">{errors.quoteId.message}</p>}
             </div>
           )}
         </CardContent>
@@ -1041,26 +1000,16 @@ export function ProjectCreatePage(): React.JSX.Element {
                 <div className="space-y-2">
                   <FieldRow
                     label="Name"
-                    value={
-                      selectedProperty.propertyName ||
-                      selectedProperty.consumerName ||
-                      '—'
-                    }
+                    value={selectedProperty.propertyName || selectedProperty.consumerName || '—'}
                   />
                   {selectedProperty.address && (
                     <FieldRow label="Address" value={selectedProperty.address} />
                   )}
                   {selectedProperty.connectionType && (
-                    <FieldRow
-                      label="Connection"
-                      value={selectedProperty.connectionType}
-                    />
+                    <FieldRow label="Connection" value={selectedProperty.connectionType} />
                   )}
                   {selectedProperty.sanctionedLoad != null && (
-                    <FieldRow
-                      label="Sanc. Load"
-                      value={`${selectedProperty.sanctionedLoad} kW`}
-                    />
+                    <FieldRow label="Sanc. Load" value={`${selectedProperty.sanctionedLoad} kW`} />
                   )}
                   {selectedProperty.monthlyBill != null && (
                     <FieldRow
@@ -1083,8 +1032,7 @@ export function ProjectCreatePage(): React.JSX.Element {
                     <FieldRow
                       label="Type"
                       value={
-                        PROJECT_TYPE_LABELS[selectedQuote.projectType] ||
-                        selectedQuote.projectType
+                        PROJECT_TYPE_LABELS[selectedQuote.projectType] || selectedQuote.projectType
                       }
                     />
                     {selectedQuote.finalPrice != null && (
@@ -1099,22 +1047,15 @@ export function ProjectCreatePage(): React.JSX.Element {
                         value={formatCurrency(selectedQuote.effectivePrice)}
                       />
                     )}
-                    {selectedQuote.subsidyAmount != null &&
-                      selectedQuote.subsidyAmount > 0 && (
-                        <FieldRow
-                          label="Subsidy"
-                          value={formatCurrency(selectedQuote.subsidyAmount)}
-                        />
-                      )}
-                    <FieldRow
-                      label="Quote Date"
-                      value={formatDate(selectedQuote.quoteDate)}
-                    />
-                    {selectedQuote.validUntil && (
+                    {selectedQuote.subsidyAmount != null && selectedQuote.subsidyAmount > 0 && (
                       <FieldRow
-                        label="Valid Until"
-                        value={formatDate(selectedQuote.validUntil)}
+                        label="Subsidy"
+                        value={formatCurrency(selectedQuote.subsidyAmount)}
                       />
+                    )}
+                    <FieldRow label="Quote Date" value={formatDate(selectedQuote.quoteDate)} />
+                    {selectedQuote.validUntil && (
+                      <FieldRow label="Valid Until" value={formatDate(selectedQuote.validUntil)} />
                     )}
                   </div>
                 </TabsContent>
@@ -1139,7 +1080,9 @@ export function ProjectCreatePage(): React.JSX.Element {
               <div className="flex items-center gap-2">
                 <Label required>Project Name</Label>
                 {!isNameManuallyEdited && autoName && (
-                  <Badge variant="secondary" size="xs">Auto-generated</Badge>
+                  <Badge variant="secondary" size="xs">
+                    Auto-generated
+                  </Badge>
                 )}
               </div>
               <Input
@@ -1150,9 +1093,7 @@ export function ProjectCreatePage(): React.JSX.Element {
                   },
                 })}
               />
-              {errors.name && (
-                <p className="text-xs text-error">{errors.name.message}</p>
-              )}
+              {errors.name && <p className="text-xs text-error">{errors.name.message}</p>}
             </div>
 
             {/* ---- System Specs sub-group (read-only from quote) ---- */}
@@ -1175,8 +1116,7 @@ export function ProjectCreatePage(): React.JSX.Element {
                     <Input
                       readOnly
                       value={
-                        PROJECT_TYPE_LABELS[selectedQuote.projectType] ||
-                        selectedQuote.projectType
+                        PROJECT_TYPE_LABELS[selectedQuote.projectType] || selectedQuote.projectType
                       }
                       className="bg-background-secondary text-foreground-secondary cursor-not-allowed"
                     />
@@ -1223,9 +1163,7 @@ export function ProjectCreatePage(): React.JSX.Element {
                   </div>
                   <Select
                     value={watch('priority') || ProjectPriority.NORMAL}
-                    onValueChange={(val) =>
-                      setValue('priority', val as ProjectPriority)
-                    }
+                    onValueChange={(val) => setValue('priority', val as ProjectPriority)}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -1244,18 +1182,14 @@ export function ProjectCreatePage(): React.JSX.Element {
                   <Label>Start Date</Label>
                   <Input type="date" {...register('startDate')} />
                   {errors.startDate && (
-                    <p className="text-xs text-error">
-                      {errors.startDate.message}
-                    </p>
+                    <p className="text-xs text-error">{errors.startDate.message}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
                   <Label>End Date</Label>
                   <Input type="date" {...register('endDate')} />
-                  {errors.endDate && (
-                    <p className="text-xs text-error">{errors.endDate.message}</p>
-                  )}
+                  {errors.endDate && <p className="text-xs text-error">{errors.endDate.message}</p>}
                 </div>
               </div>
             </fieldset>
@@ -1293,9 +1227,7 @@ export function ProjectCreatePage(): React.JSX.Element {
             {employeesLoading ? (
               <div className="flex items-center gap-2 py-4">
                 <Spinner size="sm" />
-                <span className="text-sm text-foreground-secondary">
-                  Loading employees...
-                </span>
+                <span className="text-sm text-foreground-secondary">Loading employees...</span>
               </div>
             ) : employees.length === 0 ? (
               <div className="flex items-center gap-2 rounded-lg border border-error/30 bg-error/5 px-4 py-3">
@@ -1333,9 +1265,7 @@ export function ProjectCreatePage(): React.JSX.Element {
                             key={emp.id}
                             className={cn(
                               'flex items-center justify-between px-3 py-2.5 transition-colors duration-fast',
-                              isSelected
-                                ? 'bg-primary/5'
-                                : 'hover:bg-background-secondary',
+                              isSelected ? 'bg-primary/5' : 'hover:bg-background-secondary',
                             )}
                           >
                             <div className="flex min-w-0 items-center gap-2.5">
@@ -1347,9 +1277,8 @@ export function ProjectCreatePage(): React.JSX.Element {
                                   {getEmployeeDisplayName(emp)}
                                 </p>
                                 <p className="truncate text-2xs text-foreground-secondary">
-                                  {[emp.designation, emp.department]
-                                    .filter(Boolean)
-                                    .join(' • ') || '—'}
+                                  {[emp.designation, emp.department].filter(Boolean).join(' • ') ||
+                                    '—'}
                                 </p>
                                 {getDisplayRoles(emp.roles).length > 0 && (
                                   <div className="mt-0.5 flex flex-wrap gap-1">
@@ -1364,10 +1293,7 @@ export function ProjectCreatePage(): React.JSX.Element {
                             </div>
                             <div className="flex shrink-0 items-center gap-2">
                               <div className="hidden items-center gap-1.5 sm:flex">
-                                <Badge
-                                  variant={getWorkloadVariant(activeProjects)}
-                                  size="xs"
-                                >
+                                <Badge variant={getWorkloadVariant(activeProjects)} size="xs">
                                   {activeProjects} projects
                                 </Badge>
                                 <Badge variant="secondary" size="xs">
@@ -1403,12 +1329,9 @@ export function ProjectCreatePage(): React.JSX.Element {
                     </h3>
                     <div className="space-y-2">
                       {teamMembers.map((member) => {
-                        const emp = employees.find(
-                          (e) => e.userId === member.userId,
-                        );
+                        const emp = employees.find((e) => e.userId === member.userId);
                         if (!emp) return null;
-                        const isPM =
-                          watch('projectManagerId') === member.userId;
+                        const isPM = watch('projectManagerId') === member.userId;
                         const w = workloadMap.get(member.userId);
 
                         return (
@@ -1416,25 +1339,17 @@ export function ProjectCreatePage(): React.JSX.Element {
                             key={member.userId}
                             className={cn(
                               'flex items-center justify-between rounded-lg border px-3 py-2.5',
-                              isPM
-                                ? 'border-primary/40 bg-primary/5'
-                                : 'border-border-light',
+                              isPM ? 'border-primary/40 bg-primary/5' : 'border-border-light',
                             )}
                           >
                             <div className="flex min-w-0 items-center gap-2.5">
                               <div
                                 className={cn(
                                   'flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
-                                  isPM
-                                    ? 'bg-primary text-white'
-                                    : 'bg-primary/10 text-primary',
+                                  isPM ? 'bg-primary text-white' : 'bg-primary/10 text-primary',
                                 )}
                               >
-                                {isPM ? (
-                                  <Crown className="size-3.5" />
-                                ) : (
-                                  getEmployeeInitials(emp)
-                                )}
+                                {isPM ? <Crown className="size-3.5" /> : getEmployeeInitials(emp)}
                               </div>
                               <div className="min-w-0">
                                 <div className="flex items-center gap-1.5">
@@ -1467,12 +1382,7 @@ export function ProjectCreatePage(): React.JSX.Element {
                                 className="h-7 w-28 text-xs"
                                 placeholder="Role"
                                 value={member.roleName ?? ''}
-                                onChange={(e) =>
-                                  handleRoleChange(
-                                    member.userId,
-                                    e.target.value,
-                                  )
-                                }
+                                onChange={(e) => handleRoleChange(member.userId, e.target.value)}
                                 disabled={isPM}
                               />
                               {!isPM && (
@@ -1488,9 +1398,7 @@ export function ProjectCreatePage(): React.JSX.Element {
                               )}
                               <button
                                 type="button"
-                                onClick={() =>
-                                  handleRemoveTeamMember(member.userId)
-                                }
+                                onClick={() => handleRemoveTeamMember(member.userId)}
                                 className="rounded p-1 text-foreground-tertiary transition-colors hover:text-error"
                               >
                                 <Trash2 className="size-3.5" />
@@ -1519,7 +1427,8 @@ export function ProjectCreatePage(): React.JSX.Element {
               Tasks & Milestones
               {templates && templates.length > 0 && (
                 <span className="ml-1.5 text-foreground-secondary font-normal">
-                  ({includedTemplates.length} of {templates.length} tasks · {milestones.length} milestones)
+                  ({includedTemplates.length} of {templates.length} tasks · {milestones.length}{' '}
+                  milestones)
                 </span>
               )}
             </h2>
@@ -1529,8 +1438,8 @@ export function ProjectCreatePage(): React.JSX.Element {
             <div className="flex items-start gap-2 rounded-lg bg-info/10 px-3 py-2">
               <Info className="mt-0.5 size-3.5 shrink-0 text-info" />
               <p className="text-xs text-info">
-                Tasks are auto-created from templates and auto-assigned by role.
-                Override assignments and milestone mapping below.
+                Tasks are auto-created from templates and auto-assigned by role. Override
+                assignments and milestone mapping below.
               </p>
             </div>
 
@@ -1548,7 +1457,8 @@ export function ProjectCreatePage(): React.JSX.Element {
               <div className="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/5 px-3 py-2">
                 <AlertTriangle className="size-3.5 text-warning" />
                 <span className="text-xs text-warning">
-                  {unassignedCount} task{unassignedCount > 1 ? 's' : ''} ha{unassignedCount > 1 ? 've' : 's'} no matching team member.
+                  {unassignedCount} task{unassignedCount > 1 ? 's' : ''} ha
+                  {unassignedCount > 1 ? 've' : 's'} no matching team member.
                 </span>
               </div>
             )}
@@ -1578,10 +1488,7 @@ export function ProjectCreatePage(): React.JSX.Element {
               <>
                 <Accordion
                   type="multiple"
-                  defaultValue={[
-                    'unmapped',
-                    ...milestones.map((m) => m.id),
-                  ]}
+                  defaultValue={['unmapped', ...milestones.map((m) => m.id)]}
                 >
                   {/* Unmapped Tasks Group */}
                   {(() => {
@@ -1676,7 +1583,9 @@ export function ProjectCreatePage(): React.JSX.Element {
                                 if (e.key === 'Enter' || e.key === ' ') {
                                   e.stopPropagation();
                                   setEditingMilestoneId(ms.id);
-                                  requestAnimationFrame(() => milestoneNameInputRef.current?.focus());
+                                  requestAnimationFrame(() =>
+                                    milestoneNameInputRef.current?.focus(),
+                                  );
                                 }
                               }}
                               className="rounded p-1 text-foreground-tertiary transition-colors duration-fast hover:text-foreground"
@@ -1767,10 +1676,7 @@ export function ProjectCreatePage(): React.JSX.Element {
           <Button variant="ghost" size="sm" onClick={handleCancel}>
             Cancel
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-          >
+          <Button onClick={handleSubmit} disabled={!canSubmit}>
             {isPending ? (
               <>
                 <Spinner size="xs" className="mr-1.5" />
@@ -1833,9 +1739,7 @@ function TaskRowGroup({
       {tasks.map((t) => {
         const isExcluded = excludedIds.includes(t.id);
         const assigneeId = getEffectiveAssignee(t.id);
-        const assigneeEmp = assigneeId
-          ? employees.find((e) => e.userId === assigneeId)
-          : null;
+        const assigneeEmp = assigneeId ? employees.find((e) => e.userId === assigneeId) : null;
         const isManual = isManualAssignment(t.id);
         const currentMsOrder = getEffectiveMilestoneOrder(t.id);
         const hasNoRoleMatch =
@@ -1865,7 +1769,9 @@ function TaskRowGroup({
             <div className="flex min-w-0 flex-1 items-center gap-1.5">
               <span className="truncate text-sm font-medium">{t.name}</span>
               {t.isMandatory && (
-                <Badge variant="default" shape="pill" size="xs">Required</Badge>
+                <Badge variant="default" shape="pill" size="xs">
+                  Required
+                </Badge>
               )}
             </div>
 
@@ -1912,7 +1818,8 @@ function TaskRowGroup({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="auto">
-                    Auto{assigneeEmp && !isManual ? ` (${getEmployeeDisplayName(assigneeEmp)})` : ''}
+                    Auto
+                    {assigneeEmp && !isManual ? ` (${getEmployeeDisplayName(assigneeEmp)})` : ''}
                   </SelectItem>
                   {teamMembers.map((m) => {
                     const emp = employees.find((e) => e.userId === m.userId);
@@ -1925,13 +1832,15 @@ function TaskRowGroup({
                 </SelectContent>
               </Select>
               {isManual ? (
-                <Badge variant="blue-subtle" size="xs">Manual</Badge>
+                <Badge variant="blue-subtle" size="xs">
+                  Manual
+                </Badge>
               ) : (
-                <Badge variant="green-subtle" size="xs">Auto</Badge>
+                <Badge variant="green-subtle" size="xs">
+                  Auto
+                </Badge>
               )}
-              {hasNoRoleMatch && (
-                <AlertTriangle className="size-3 shrink-0 text-warning" />
-              )}
+              {hasNoRoleMatch && <AlertTriangle className="size-3 shrink-0 text-warning" />}
             </div>
           </div>
         );

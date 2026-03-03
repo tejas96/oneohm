@@ -99,7 +99,7 @@ export function UserMenu({ className }: UserMenuProps) {
             'flex items-center gap-1.5 rounded-full cursor-pointer',
             'hover:bg-muted transition-colors',
             'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
-            className
+            className,
           )}
           aria-label="User menu"
         >
@@ -122,13 +122,13 @@ export function UserMenu({ className }: UserMenuProps) {
             </Avatar>
             {/* Name & Email */}
             <div className="flex flex-col space-y-0.5">
-              <p className="text-sm font-medium text-foreground">
-                {user.fullName}
-              </p>
+              <p className="text-sm font-medium text-foreground">{user.fullName}</p>
               <p className="text-xs text-muted-foreground truncate max-w-email-truncate">
                 {user.email}
               </p>
-              <Badge variant="default" size="xs">{userRole}</Badge>
+              <Badge variant="default" size="xs">
+                {userRole}
+              </Badge>
             </div>
           </div>
         </DropdownMenuLabel>

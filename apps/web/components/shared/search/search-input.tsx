@@ -151,7 +151,7 @@ function ResultItem({ result, query, isSelected, onClick }: ResultItemProps) {
       onClick={onClick}
       className={cn(
         'w-full flex items-center gap-3 px-3 py-2 text-left transition-colors duration-fast cursor-pointer',
-        isSelected ? 'bg-muted' : 'hover:bg-muted'
+        isSelected ? 'bg-muted' : 'hover:bg-muted',
       )}
     >
       {result.avatar ? (
@@ -256,15 +256,11 @@ export function SearchInput({
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setSelectedIndex((prev) =>
-          prev < flatResults.length - 1 ? prev + 1 : 0
-        );
+        setSelectedIndex((prev) => (prev < flatResults.length - 1 ? prev + 1 : 0));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setSelectedIndex((prev) =>
-          prev > 0 ? prev - 1 : flatResults.length - 1
-        );
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : flatResults.length - 1));
         break;
       case 'Enter':
         e.preventDefault();
@@ -306,7 +302,7 @@ export function SearchInput({
             <Search
               className={cn(
                 'absolute top-1/2 -translate-y-1/2 text-foreground-tertiary',
-                sizeClasses.icon
+                sizeClasses.icon,
               )}
               aria-hidden="true"
             />
@@ -319,9 +315,7 @@ export function SearchInput({
               aria-expanded={showDropdown}
               aria-controls="search-results"
               aria-activedescendant={
-                selectedIndex >= 0
-                  ? `search-result-${flatResults[selectedIndex]?.id}`
-                  : undefined
+                selectedIndex >= 0 ? `search-result-${flatResults[selectedIndex]?.id}` : undefined
               }
               value={value}
               onChange={handleChange}
@@ -339,7 +333,7 @@ export function SearchInput({
                 'placeholder:text-foreground-tertiary',
                 'transition-all duration-fast',
                 sizeClasses.input,
-                showShortcut && 'pr-16'
+                showShortcut && 'pr-16',
               )}
             />
 
@@ -351,7 +345,7 @@ export function SearchInput({
                 className={cn(
                   'absolute right-3 top-1/2 -translate-y-1/2',
                   'text-foreground-tertiary hover:text-foreground-secondary',
-                  'transition-colors duration-fast cursor-pointer'
+                  'transition-colors duration-fast cursor-pointer',
                 )}
                 aria-label="Clear search"
               >
@@ -491,7 +485,7 @@ export function SearchTrigger({
         'text-sm text-foreground-tertiary',
         'hover:border-border hover:bg-muted',
         'transition-all duration-fast cursor-pointer',
-        className
+        className,
       )}
     >
       <Search className="size-icon-sm" aria-hidden="true" />

@@ -4,10 +4,7 @@ import { QuoteStatus } from '@oneohm-epc/shared-types';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
-import {
-  quoteKeys,
-  type QuoteListItem,
-} from '@/components/features/quotes';
+import { quoteKeys, type QuoteListItem } from '@/components/features/quotes';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -46,7 +43,7 @@ export function useCustomerQuotes(
     page?: number;
     limit?: number;
     status?: QuoteStatus;
-  }
+  },
 ): UseQueryResult<CustomerQuotesResponse, AxiosError> {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
@@ -54,7 +51,10 @@ export function useCustomerQuotes(
   const limit = options?.limit ?? 50;
 
   return useQuery({
-    queryKey: [...quoteKeys.byCustomer(organizationId, customerId), { page, limit, status: options?.status }],
+    queryKey: [
+      ...quoteKeys.byCustomer(organizationId, customerId),
+      { page, limit, status: options?.status },
+    ],
     queryFn: async (): Promise<CustomerQuotesResponse> => {
       const params = new URLSearchParams();
       params.append('customerId', customerId);
@@ -64,10 +64,9 @@ export function useCustomerQuotes(
         params.append('status', options.status);
       }
 
-      const { data } = await apiClient.get<CustomerQuotesResponse>(
-        `/quotes?${params.toString()}`,
-        { headers: { 'X-Organization-Id': organizationId } }
-      );
+      const { data } = await apiClient.get<CustomerQuotesResponse>(`/quotes?${params.toString()}`, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
       return data;
     },
     enabled: !!customerId && !!organizationId,

@@ -29,35 +29,24 @@ export class WorkflowEngineService {
     }
   }
 
-  async checkDependencies(
-    task: ProjectTaskEntity,
-    newStatus: TaskStatus,
-  ): Promise<void> {
+  async checkDependencies(task: ProjectTaskEntity, newStatus: TaskStatus): Promise<void> {
     if (newStatus !== TaskStatus.IN_PROGRESS) return;
     if (!task.dependsOnTaskIds?.length) return;
 
-    const { resolved, blockers } =
-      await this.taskRepository.areAllDependenciesResolved(task.dependsOnTaskIds);
+    const { resolved, blockers } = await this.taskRepository.areAllDependenciesResolved(
+      task.dependsOnTaskIds,
+    );
 
     if (!resolved) {
       const taskName = task.nameOverride ?? task.workflowStep?.name ?? task.code;
-      const blockerNames = blockers
-        .map((b) => `'${b.name}' (${b.status})`)
-        .join(', ');
-      throw new BadRequestException(
-        `Cannot start '${taskName}': complete ${blockerNames} first`,
-      );
+      const blockerNames = blockers.map((b) => `'${b.name}' (${b.status})`).join(', ');
+      throw new BadRequestException(`Cannot start '${taskName}': complete ${blockerNames} first`);
     }
   }
 
-  getTransitionsForTask(
-    task: ProjectTaskEntity,
-    project: ProjectEntity,
-  ): Record<string, string[]> {
+  getTransitionsForTask(task: ProjectTaskEntity, project: ProjectEntity): Record<string, string[]> {
     return (
-      task.workflowStep?.allowedTransitions ??
-      project.defaultTransitions ??
-      FALLBACK_TRANSITIONS
+      task.workflowStep?.allowedTransitions ?? project.defaultTransitions ?? FALLBACK_TRANSITIONS
     );
   }
 }

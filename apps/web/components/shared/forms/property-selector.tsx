@@ -113,17 +113,22 @@ export function PropertySelector({
                 ? 'border-primary bg-primary/5'
                 : 'border-border-light bg-background hover:border-primary/50 hover:bg-primary/5',
               disabled && 'opacity-50 cursor-not-allowed',
-              !disabled && 'cursor-pointer'
+              !disabled && 'cursor-pointer',
             )}
           >
             {/* Icon */}
             <div
               className={cn(
                 'size-container-md rounded-lg flex items-center justify-center shrink-0',
-                isSelected ? 'bg-primary/10' : 'bg-muted'
+                isSelected ? 'bg-primary/10' : 'bg-muted',
               )}
             >
-              <Icon className={cn('size-icon', isSelected ? 'text-primary' : 'text-foreground-secondary')} />
+              <Icon
+                className={cn(
+                  'size-icon',
+                  isSelected ? 'text-primary' : 'text-foreground-secondary',
+                )}
+              />
             </div>
 
             {/* Content */}
@@ -150,12 +155,10 @@ export function PropertySelector({
             <div
               className={cn(
                 'size-5 rounded-full border-2 shrink-0 flex items-center justify-center',
-                isSelected ? 'border-primary bg-primary' : 'border-border-medium'
+                isSelected ? 'border-primary bg-primary' : 'border-border-medium',
               )}
             >
-              {isSelected && (
-                <div className="size-2 rounded-full bg-white" />
-              )}
+              {isSelected && <div className="size-2 rounded-full bg-white" />}
             </div>
           </button>
         );

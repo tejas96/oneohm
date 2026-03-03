@@ -6,15 +6,7 @@ import {
   type ShadingAnalysis,
 } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
-import {
-  IsEnum,
-  IsNumber,
-  IsObject,
-  IsOptional,
-  IsString,
-  MaxLength,
-  Min,
-} from 'class-validator';
+import { IsEnum, IsNumber, IsObject, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 /**
  * DTO for validating the nested survey_data JSONB payload

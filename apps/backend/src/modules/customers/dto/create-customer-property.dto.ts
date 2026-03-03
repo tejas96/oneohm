@@ -193,7 +193,11 @@ export class CreateCustomerPropertyDto {
     type: [PropertyDocumentDto],
     description: 'Property-level documents (identity docs, KYC, etc.)',
     example: [
-      { url: 'https://storage.example.com/aadhaar.jpg', tag: 'aadhaar_card', fileName: 'aadhaar.jpg' },
+      {
+        url: 'https://storage.example.com/aadhaar.jpg',
+        tag: 'aadhaar_card',
+        fileName: 'aadhaar.jpg',
+      },
     ],
   })
   @IsOptional()

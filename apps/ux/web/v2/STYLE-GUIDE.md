@@ -7,15 +7,15 @@
 
 ## Quick Reference
 
-| Property | Value | Notes |
-|----------|-------|-------|
-| Base font | `13px` (`text-[13px]` or `text-sm`) | Data-dense, compact |
-| Font family | Inter | Via Google Fonts |
-| Primary color | `#76c044` | Use `text-primary`, `bg-primary` |
-| Border radius | `rounded-lg` (8px) | Cards, modals |
-| Border color | `border-gray-100` | Subtle, light |
-| Shadow | `shadow-sm` or none | Minimal shadows |
-| Page background | `bg-gray-50` or `#fafafa` | Light neutral |
+| Property        | Value                               | Notes                            |
+| --------------- | ----------------------------------- | -------------------------------- |
+| Base font       | `13px` (`text-[13px]` or `text-sm`) | Data-dense, compact              |
+| Font family     | Inter                               | Via Google Fonts                 |
+| Primary color   | `#76c044`                           | Use `text-primary`, `bg-primary` |
+| Border radius   | `rounded-lg` (8px)                  | Cards, modals                    |
+| Border color    | `border-gray-100`                   | Subtle, light                    |
+| Shadow          | `shadow-sm` or none                 | Minimal shadows                  |
+| Page background | `bg-gray-50` or `#fafafa`           | Light neutral                    |
 
 ---
 
@@ -46,12 +46,12 @@
 
 ### Font Weights
 
-| Weight | Class | Use For |
-|--------|-------|---------|
-| 400 | `font-normal` | Body text, descriptions |
-| 500 | `font-medium` | Labels, table cells, emphasis |
-| 600 | `font-semibold` | Page titles, section headers, buttons |
-| 700 | `font-bold` | **AVOID** - too heavy |
+| Weight | Class           | Use For                               |
+| ------ | --------------- | ------------------------------------- |
+| 400    | `font-normal`   | Body text, descriptions               |
+| 500    | `font-medium`   | Labels, table cells, emphasis         |
+| 600    | `font-semibold` | Page titles, section headers, buttons |
+| 700    | `font-bold`     | **AVOID** - too heavy                 |
 
 ### ❌ DON'T Use
 
@@ -84,27 +84,34 @@
 
 ```html
 <!-- Card grids -->
-<div class="grid gap-3">...</div>  <!-- NOT gap-4, gap-6 -->
+<div class="grid gap-3">...</div>
+<!-- NOT gap-4, gap-6 -->
 
 <!-- Page header to content -->
-<div class="mb-5">Page Header</div>  <!-- NOT mb-6, mb-8 -->
+<div class="mb-5">Page Header</div>
+<!-- NOT mb-6, mb-8 -->
 
 <!-- Section spacing -->
-<section class="mb-6">...</section>  <!-- NOT mb-8, mb-12 -->
+<section class="mb-6">...</section>
+<!-- NOT mb-8, mb-12 -->
 ```
 
 ### Component Spacing
 
 ```html
 <!-- Card padding -->
-<div class="p-4">...</div>  <!-- NOT p-5, p-6 -->
+<div class="p-4">...</div>
+<!-- NOT p-5, p-6 -->
 
 <!-- Button padding -->
-<button class="px-3 py-1.5">...</button>  <!-- Compact -->
-<button class="px-3.5 py-2">...</button>  <!-- Standard -->
+<button class="px-3 py-1.5">...</button>
+<!-- Compact -->
+<button class="px-3.5 py-2">...</button>
+<!-- Standard -->
 
 <!-- Input padding -->
-<input class="px-3 py-2">  <!-- NOT px-4 py-2.5 -->
+<input class="px-3 py-2" />
+<!-- NOT px-4 py-2.5 -->
 ```
 
 ---
@@ -115,9 +122,9 @@
 
 ```css
 .global-header {
-    height: 48px;  /* NOT 56px */
-    border-bottom: 1px solid #f4f4f5;  /* Subtle border */
-    padding: 0 12px;
+  height: 48px; /* NOT 56px */
+  border-bottom: 1px solid #f4f4f5; /* Subtle border */
+  padding: 0 12px;
 }
 ```
 
@@ -125,14 +132,14 @@
 
 ```css
 .rail {
-    width: 48px;  /* NOT 56px */
-    top: 48px;
-    height: calc(100vh - 48px);
+  width: 48px; /* NOT 56px */
+  top: 48px;
+  height: calc(100vh - 48px);
 }
 
 .rail-icon {
-    width: 48px;
-    height: 36px;  /* NOT 44px */
+  width: 48px;
+  height: 36px; /* NOT 44px */
 }
 ```
 
@@ -140,24 +147,24 @@
 
 ```css
 .panel {
-    width: 200px;  /* NOT 240px */
-    top: 48px;
-    left: 48px;
-    border-right: 1px solid #f4f4f5;
+  width: 200px; /* NOT 240px */
+  top: 48px;
+  left: 48px;
+  border-right: 1px solid #f4f4f5;
 }
 
 .panel-header {
-    height: 40px;  /* NOT 48px */
+  height: 40px; /* NOT 48px */
 }
 
 .panel-item {
-    height: 30px;  /* NOT 36px */
-    font-size: 13px;  /* NOT 14px */
+  height: 30px; /* NOT 36px */
+  font-size: 13px; /* NOT 14px */
 }
 
 .section-header {
-    font-size: 10px;  /* NOT 11px */
-    font-weight: 500;
+  font-size: 10px; /* NOT 11px */
+  font-weight: 500;
 }
 ```
 
@@ -165,9 +172,9 @@
 
 ```css
 .page-container {
-    margin-left: 248px;  /* 48px rail + 200px panel */
-    margin-top: 48px;
-    background: #fafafa;
+  margin-left: 248px; /* 48px rail + 200px panel */
+  margin-top: 48px;
+  background: #fafafa;
 }
 ```
 
@@ -179,11 +186,11 @@
 
 ```html
 <thead class="bg-gray-50/80 border-b border-gray-100">
-    <tr>
-        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-            Column Name
-        </th>
-    </tr>
+  <tr>
+    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
+      Column Name
+    </th>
+  </tr>
 </thead>
 ```
 
@@ -191,20 +198,22 @@
 
 ```html
 <tr class="hover:bg-gray-50/50 transition-colors">
-    <td class="px-3 py-2">
-        <!-- Avatar with name -->
-        <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs">
-                RS
-            </div>
-            <div>
-                <div class="font-medium text-gray-900">Name</div>
-                <div class="text-gray-400 text-[11px]">+91 98765 43210</div>
-            </div>
-        </div>
-    </td>
-    <td class="px-3 py-2 text-gray-600">Content</td>
-    <td class="px-3 py-2 text-gray-400">Jan 15, 2026</td>
+  <td class="px-3 py-2">
+    <!-- Avatar with name -->
+    <div class="flex items-center gap-2.5">
+      <div
+        class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs"
+      >
+        RS
+      </div>
+      <div>
+        <div class="font-medium text-gray-900">Name</div>
+        <div class="text-gray-400 text-[11px]">+91 98765 43210</div>
+      </div>
+    </div>
+  </td>
+  <td class="px-3 py-2 text-gray-600">Content</td>
+  <td class="px-3 py-2 text-gray-400">Jan 15, 2026</td>
 </tr>
 ```
 
@@ -221,7 +230,9 @@
 <span class="px-1.5 py-0.5 text-[11px] font-medium bg-green-50 text-green-700 rounded">Active</span>
 
 <!-- Pending/Warning -->
-<span class="px-1.5 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-700 rounded">Pending</span>
+<span class="px-1.5 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-700 rounded"
+  >Pending</span
+>
 
 <!-- Error/Danger -->
 <span class="px-1.5 py-0.5 text-[11px] font-medium bg-red-50 text-red-700 rounded">Overdue</span>
@@ -251,16 +262,20 @@
 ### Primary
 
 ```html
-<button class="px-3 py-1.5 bg-primary text-white rounded-md text-[13px] font-medium hover:bg-primary-dark transition-colors">
-    Action
+<button
+  class="px-3 py-1.5 bg-primary text-white rounded-md text-[13px] font-medium hover:bg-primary-dark transition-colors"
+>
+  Action
 </button>
 ```
 
 ### Secondary
 
 ```html
-<button class="px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-md text-[13px] font-medium hover:bg-gray-50 transition-colors">
-    Cancel
+<button
+  class="px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-md text-[13px] font-medium hover:bg-gray-50 transition-colors"
+>
+  Cancel
 </button>
 ```
 
@@ -283,16 +298,16 @@
 
 ```html
 <div class="bg-white rounded-lg border border-gray-100 p-4 hover:shadow-sm transition-shadow">
-    <div class="flex items-start justify-between mb-3">
-        <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <svg class="w-4 h-4 text-primary">...</svg>
-        </div>
-        <span class="text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-            +12%
-        </span>
+  <div class="flex items-start justify-between mb-3">
+    <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+      <svg class="w-4 h-4 text-primary">...</svg>
     </div>
-    <p class="text-2xl font-semibold text-gray-800">156</p>
-    <p class="text-xs text-gray-500 mt-0.5">New Leads</p>
+    <span class="text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+      +12%
+    </span>
+  </div>
+  <p class="text-2xl font-semibold text-gray-800">156</p>
+  <p class="text-xs text-gray-500 mt-0.5">New Leads</p>
 </div>
 ```
 
@@ -318,21 +333,21 @@
 
 ```html
 <!-- Text Input -->
-<input 
-    type="text" 
-    class="w-full px-3 py-2 border border-gray-200 rounded-md text-[13px] placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
-    placeholder="Enter value..."
->
+<input
+  type="text"
+  class="w-full px-3 py-2 border border-gray-200 rounded-md text-[13px] placeholder-gray-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+  placeholder="Enter value..."
+/>
 
 <!-- Select -->
-<select class="w-full px-3 py-2 border border-gray-200 rounded-md text-[13px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20">
-    <option>Option 1</option>
+<select
+  class="w-full px-3 py-2 border border-gray-200 rounded-md text-[13px] focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+>
+  <option>Option 1</option>
 </select>
 
 <!-- Label -->
-<label class="block text-xs font-medium text-gray-700 mb-1">
-    Field Label
-</label>
+<label class="block text-xs font-medium text-gray-700 mb-1"> Field Label </label>
 ```
 
 ---
@@ -341,31 +356,29 @@
 
 ```html
 <div id="modal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog">
-    <!-- Backdrop -->
-    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal()"></div>
-    
-    <!-- Content -->
-    <div class="fixed inset-0 overflow-y-auto">
-        <div class="flex min-h-full items-center justify-center p-4">
-            <div class="relative w-full max-w-md bg-white rounded-lg shadow-xl">
-                <!-- Header -->
-                <div class="p-4 border-b border-gray-100">
-                    <h3 class="text-base font-semibold text-gray-900">Modal Title</h3>
-                </div>
-                
-                <!-- Body -->
-                <div class="p-4">
-                    Content here...
-                </div>
-                
-                <!-- Footer -->
-                <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-2 rounded-b-lg">
-                    <button class="px-3 py-1.5 border border-gray-200 rounded-md text-[13px]">Cancel</button>
-                    <button class="px-3 py-1.5 bg-primary text-white rounded-md text-[13px]">Confirm</button>
-                </div>
-            </div>
+  <!-- Backdrop -->
+  <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeModal()"></div>
+
+  <!-- Content -->
+  <div class="fixed inset-0 overflow-y-auto">
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="relative w-full max-w-md bg-white rounded-lg shadow-xl">
+        <!-- Header -->
+        <div class="p-4 border-b border-gray-100">
+          <h3 class="text-base font-semibold text-gray-900">Modal Title</h3>
         </div>
+
+        <!-- Body -->
+        <div class="p-4">Content here...</div>
+
+        <!-- Footer -->
+        <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-2 rounded-b-lg">
+          <button class="px-3 py-1.5 border border-gray-200 rounded-md text-[13px]">Cancel</button>
+          <button class="px-3 py-1.5 bg-primary text-white rounded-md text-[13px]">Confirm</button>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
 ```
 
@@ -375,26 +388,26 @@
 
 ```html
 <div class="dropdown-menu">
-    <div class="dropdown-item">
-        <svg class="w-4 h-4">...</svg>
-        Action
-    </div>
+  <div class="dropdown-item">
+    <svg class="w-4 h-4">...</svg>
+    Action
+  </div>
 </div>
 ```
 
 ```css
 .dropdown-menu {
-    min-width: 160px;
-    border: 1px solid #e4e4e7;
-    border-radius: 6px;
-    padding: 3px;
+  min-width: 160px;
+  border: 1px solid #e4e4e7;
+  border-radius: 6px;
+  padding: 3px;
 }
 
 .dropdown-item {
-    padding: 6px 10px;
-    font-size: 13px;
-    border-radius: 4px;
-    color: #52525b;
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 4px;
+  color: #52525b;
 }
 ```
 
@@ -404,31 +417,31 @@
 
 ### Primary Palette
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `primary` | `#76c044` | Buttons, links, accents |
-| `primary-dark` | `#5ea031` | Hover states |
-| `primary/10` | 10% opacity | Background tints |
+| Token          | Value       | Usage                   |
+| -------------- | ----------- | ----------------------- |
+| `primary`      | `#76c044`   | Buttons, links, accents |
+| `primary-dark` | `#5ea031`   | Hover states            |
+| `primary/10`   | 10% opacity | Background tints        |
 
 ### Semantic Colors
 
-| State | Background | Text |
-|-------|------------|------|
+| State   | Background    | Text             |
+| ------- | ------------- | ---------------- |
 | Success | `bg-green-50` | `text-green-700` |
 | Warning | `bg-amber-50` | `text-amber-700` |
-| Error | `bg-red-50` | `text-red-700` |
-| Info | `bg-blue-50` | `text-blue-700` |
+| Error   | `bg-red-50`   | `text-red-700`   |
+| Info    | `bg-blue-50`  | `text-blue-700`  |
 
 ### Gray Scale (Zinc-based)
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `gray-50` | `#fafafa` | Page background |
+| Token      | Value     | Usage                    |
+| ---------- | --------- | ------------------------ |
+| `gray-50`  | `#fafafa` | Page background          |
 | `gray-100` | `#f4f4f5` | Subtle borders, dividers |
-| `gray-400` | `#a1a1aa` | Muted text, timestamps |
-| `gray-500` | `#71717a` | Secondary text |
-| `gray-600` | `#52525b` | Body text |
-| `gray-900` | `#18181b` | Headings |
+| `gray-400` | `#a1a1aa` | Muted text, timestamps   |
+| `gray-500` | `#71717a` | Secondary text           |
+| `gray-600` | `#52525b` | Body text                |
+| `gray-900` | `#18181b` | Headings                 |
 
 ---
 
@@ -458,4 +471,4 @@ When creating a new page, verify:
 
 ---
 
-*Last updated: February 2026*
+_Last updated: February 2026_

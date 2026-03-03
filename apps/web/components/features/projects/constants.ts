@@ -85,7 +85,10 @@ export const HEALTH_STATUS_BADGE_VARIANT: Record<string, string> = {
   delayed: 'red-subtle',
 };
 
-export const HEALTH_STATUS_PROGRESS_VARIANT: Record<string, 'primary' | 'success' | 'warning' | 'error'> = {
+export const HEALTH_STATUS_PROGRESS_VARIANT: Record<
+  string,
+  'primary' | 'success' | 'warning' | 'error'
+> = {
   on_track: 'primary',
   at_risk: 'warning',
   delayed: 'error',
@@ -197,25 +200,103 @@ export const TASK_GROUP_BY_OPTIONS = [
   { value: 'status', label: 'Group by: Status' },
 ] as const;
 
-export const TASK_GROUP_VARIANT_MAP: Record<string, { dot: string; border: string; leftBorder: string; badge: string }> = {
+export const TASK_GROUP_VARIANT_MAP: Record<
+  string,
+  { dot: string; border: string; leftBorder: string; badge: string }
+> = {
   // Due date groups
-  overdue: { dot: 'bg-error', border: 'border-border-light', leftBorder: 'border-l-error', badge: 'error' },
-  due_today: { dot: 'bg-warning', border: 'border-border-light', leftBorder: 'border-l-warning', badge: 'warning' },
-  this_week: { dot: 'bg-info', border: 'border-border-light', leftBorder: 'border-l-info', badge: 'info' },
-  later: { dot: 'bg-success', border: 'border-border-light', leftBorder: 'border-l-success', badge: 'success' },
-  no_date: { dot: 'bg-foreground-tertiary', border: 'border-border-light', leftBorder: 'border-l-border', badge: 'secondary' },
+  overdue: {
+    dot: 'bg-error',
+    border: 'border-border-light',
+    leftBorder: 'border-l-error',
+    badge: 'error',
+  },
+  due_today: {
+    dot: 'bg-warning',
+    border: 'border-border-light',
+    leftBorder: 'border-l-warning',
+    badge: 'warning',
+  },
+  this_week: {
+    dot: 'bg-info',
+    border: 'border-border-light',
+    leftBorder: 'border-l-info',
+    badge: 'info',
+  },
+  later: {
+    dot: 'bg-success',
+    border: 'border-border-light',
+    leftBorder: 'border-l-success',
+    badge: 'success',
+  },
+  no_date: {
+    dot: 'bg-foreground-tertiary',
+    border: 'border-border-light',
+    leftBorder: 'border-l-border',
+    badge: 'secondary',
+  },
   // Status groups
-  [TaskStatus.BLOCKED]: { dot: 'bg-error', border: 'border-border-light', leftBorder: 'border-l-error', badge: 'error' },
-  [TaskStatus.IN_REVIEW]: { dot: 'bg-warning', border: 'border-border-light', leftBorder: 'border-l-warning', badge: 'warning' },
-  [TaskStatus.IN_PROGRESS]: { dot: 'bg-info', border: 'border-border-light', leftBorder: 'border-l-info', badge: 'info' },
-  [TaskStatus.TODO]: { dot: 'bg-foreground-tertiary', border: 'border-border-light', leftBorder: 'border-l-border', badge: 'secondary' },
-  [TaskStatus.TESTING]: { dot: 'bg-primary', border: 'border-border-light', leftBorder: 'border-l-primary', badge: 'info' },
-  [TaskStatus.BACKLOG]: { dot: 'bg-foreground-tertiary', border: 'border-border-light', leftBorder: 'border-l-border', badge: 'secondary' },
+  [TaskStatus.BLOCKED]: {
+    dot: 'bg-error',
+    border: 'border-border-light',
+    leftBorder: 'border-l-error',
+    badge: 'error',
+  },
+  [TaskStatus.IN_REVIEW]: {
+    dot: 'bg-warning',
+    border: 'border-border-light',
+    leftBorder: 'border-l-warning',
+    badge: 'warning',
+  },
+  [TaskStatus.IN_PROGRESS]: {
+    dot: 'bg-info',
+    border: 'border-border-light',
+    leftBorder: 'border-l-info',
+    badge: 'info',
+  },
+  [TaskStatus.TODO]: {
+    dot: 'bg-foreground-tertiary',
+    border: 'border-border-light',
+    leftBorder: 'border-l-border',
+    badge: 'secondary',
+  },
+  [TaskStatus.TESTING]: {
+    dot: 'bg-primary',
+    border: 'border-border-light',
+    leftBorder: 'border-l-primary',
+    badge: 'info',
+  },
+  [TaskStatus.BACKLOG]: {
+    dot: 'bg-foreground-tertiary',
+    border: 'border-border-light',
+    leftBorder: 'border-l-border',
+    badge: 'secondary',
+  },
   // Priority groups
-  [TaskPriority.URGENT]: { dot: 'bg-error', border: 'border-border-light', leftBorder: 'border-l-error', badge: 'error' },
-  [TaskPriority.HIGH]: { dot: 'bg-warning', border: 'border-border-light', leftBorder: 'border-l-warning', badge: 'warning' },
-  [TaskPriority.MEDIUM]: { dot: 'bg-info', border: 'border-border-light', leftBorder: 'border-l-info', badge: 'info' },
-  [TaskPriority.LOW]: { dot: 'bg-foreground-tertiary', border: 'border-border-light', leftBorder: 'border-l-border', badge: 'secondary' },
+  [TaskPriority.URGENT]: {
+    dot: 'bg-error',
+    border: 'border-border-light',
+    leftBorder: 'border-l-error',
+    badge: 'error',
+  },
+  [TaskPriority.HIGH]: {
+    dot: 'bg-warning',
+    border: 'border-border-light',
+    leftBorder: 'border-l-warning',
+    badge: 'warning',
+  },
+  [TaskPriority.MEDIUM]: {
+    dot: 'bg-info',
+    border: 'border-border-light',
+    leftBorder: 'border-l-info',
+    badge: 'info',
+  },
+  [TaskPriority.LOW]: {
+    dot: 'bg-foreground-tertiary',
+    border: 'border-border-light',
+    leftBorder: 'border-l-border',
+    badge: 'secondary',
+  },
 };
 
 export const SMART_EXPAND_DEFAULTS: Record<string, Record<string, boolean>> = {
@@ -355,14 +436,14 @@ export const DOCUMENT_CATEGORY_MAP: Record<string, string> = {
 export const DOCUMENT_CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
   'Contracts & Agreements': { bg: 'bg-info/10', text: 'text-info' },
   'Proposals & Quotes': { bg: 'bg-success/10', text: 'text-success' },
-  'Financial': { bg: 'bg-warning/10', text: 'text-warning' },
+  Financial: { bg: 'bg-warning/10', text: 'text-warning' },
   'Work Completion': { bg: 'bg-primary/10', text: 'text-primary' },
-  'Technical': { bg: 'bg-info/10', text: 'text-info' },
-  'Compliance': { bg: 'bg-error/10', text: 'text-error' },
+  Technical: { bg: 'bg-info/10', text: 'text-info' },
+  Compliance: { bg: 'bg-error/10', text: 'text-error' },
   'Customer Documents': { bg: 'bg-info/10', text: 'text-info' },
   'Loan & Subsidy': { bg: 'bg-success/10', text: 'text-success' },
-  'Service': { bg: 'bg-primary/10', text: 'text-primary' },
-  'Other': { bg: 'bg-muted', text: 'text-foreground-secondary' },
+  Service: { bg: 'bg-primary/10', text: 'text-primary' },
+  Other: { bg: 'bg-muted', text: 'text-foreground-secondary' },
 };
 
 // ---------------------------------------------------------------------------

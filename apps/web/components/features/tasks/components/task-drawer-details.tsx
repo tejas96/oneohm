@@ -45,7 +45,11 @@ export function TaskDrawerDetails({
 
   const currentAssigneeName = useMemo(() => {
     if (currentAssignee?.user) {
-      return `${currentAssignee.user.firstName ?? ''} ${currentAssignee.user.lastName ?? ''}`.trim() || currentAssignee.user.email || 'Unknown';
+      return (
+        `${currentAssignee.user.firstName ?? ''} ${currentAssignee.user.lastName ?? ''}`.trim() ||
+        currentAssignee.user.email ||
+        'Unknown'
+      );
     }
     return task.assigneeName ?? null;
   }, [currentAssignee, task.assigneeName]);
@@ -63,7 +67,9 @@ export function TaskDrawerDetails({
     (date: Date | undefined) => {
       if (!onDueDateChange) return;
       onDueDateChange(
-        date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` : undefined,
+        date
+          ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+          : undefined,
       );
     },
     [onDueDateChange],
@@ -101,7 +107,9 @@ export function TaskDrawerDetails({
                           {getInitials(currentAssigneeName)}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-sm text-foreground-secondary">{currentAssigneeName}</span>
+                      <span className="text-sm text-foreground-secondary">
+                        {currentAssigneeName}
+                      </span>
                     </>
                   ) : (
                     <>
@@ -119,7 +127,9 @@ export function TaskDrawerDetails({
                 </p>
                 {teamMembers.map((member) => {
                   const name = member.user
-                    ? `${member.user.firstName ?? ''} ${member.user.lastName ?? ''}`.trim() || member.user.email || 'Unknown'
+                    ? `${member.user.firstName ?? ''} ${member.user.lastName ?? ''}`.trim() ||
+                      member.user.email ||
+                      'Unknown'
                     : 'Unknown';
                   const isCurrentAssignee = member.userId === task.assignedToUserId;
                   return (
@@ -138,9 +148,7 @@ export function TaskDrawerDetails({
                         </AvatarFallback>
                       </Avatar>
                       <span className="text-sm text-foreground truncate flex-1">{name}</span>
-                      {isCurrentAssignee && (
-                        <Check className="size-3.5 text-primary shrink-0" />
-                      )}
+                      {isCurrentAssignee && <Check className="size-3.5 text-primary shrink-0" />}
                       {member.isProjectManager && !isCurrentAssignee && (
                         <Crown className="size-3.5 text-warning shrink-0" />
                       )}
@@ -150,9 +158,7 @@ export function TaskDrawerDetails({
               </PopoverContent>
             </Popover>
           ) : (
-            <p className="text-sm text-foreground-secondary">
-              {task.assigneeName ?? 'Unassigned'}
-            </p>
+            <p className="text-sm text-foreground-secondary">{task.assigneeName ?? 'Unassigned'}</p>
           )}
         </div>
       </div>
@@ -162,10 +168,7 @@ export function TaskDrawerDetails({
         <FolderKanban className="size-4 text-foreground-tertiary mt-0.5 shrink-0" />
         <div>
           <p className="text-2xs text-foreground-tertiary mb-0.5">Project</p>
-          <Link
-            href={projectHref}
-            className="text-sm text-primary hover:underline"
-          >
+          <Link href={projectHref} className="text-sm text-primary hover:underline">
             {task.projectNumber} - {task.projectName}
           </Link>
         </div>
@@ -273,12 +276,8 @@ export function TaskDrawerDetails({
       {/* Dependency blocker warning */}
       {task.hasDependencyBlockers && (
         <div className="rounded-lg bg-warning/5 border border-warning/20 p-3">
-          <p className="text-2xs font-medium text-warning mb-0.5">
-            Blocked by Dependencies
-          </p>
-          <p className="text-sm text-warning">
-            Some dependency tasks are not yet complete
-          </p>
+          <p className="text-2xs font-medium text-warning mb-0.5">Blocked by Dependencies</p>
+          <p className="text-sm text-warning">Some dependency tasks are not yet complete</p>
         </div>
       )}
     </div>
@@ -288,6 +287,6 @@ export function TaskDrawerDetails({
 function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
   const first = parts[0]?.charAt(0) ?? '';
-  const last = parts.length > 1 ? parts[parts.length - 1]?.charAt(0) ?? '' : '';
+  const last = parts.length > 1 ? (parts[parts.length - 1]?.charAt(0) ?? '') : '';
   return `${first}${last}`.toUpperCase() || '?';
 }

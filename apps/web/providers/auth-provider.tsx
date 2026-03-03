@@ -12,7 +12,12 @@ import {
   type ReactNode,
 } from 'react';
 
-import apiClient, { clearTokens, getAccessToken, getRefreshToken, setTokens } from '@/lib/api/client';
+import apiClient, {
+  clearTokens,
+  getAccessToken,
+  getRefreshToken,
+  setTokens,
+} from '@/lib/api/client';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import type {
   AuthUser,
@@ -101,13 +106,13 @@ interface AuthProviderProps {
  */
 export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element {
   const queryClient = useQueryClient();
-  
+
   // Zustand store - persisted to localStorage automatically
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const storeLogout = useAuthStore((state) => state.logout);
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
-  
+
   // Local state for loading/error (not persisted)
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -130,14 +135,14 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
     const initAuth = async (): Promise<void> => {
       try {
         let token = getAccessToken();
-        
+
         if (!token) {
           const refreshToken = getRefreshToken();
           if (refreshToken) {
             try {
               const response = await apiClient.post<{ accessToken: string; refreshToken: string }>(
                 '/auth/refresh',
-                { refreshToken }
+                { refreshToken },
               );
               if (cancelled) return;
               const { accessToken, refreshToken: newRefreshToken } = response.data;
@@ -150,7 +155,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
             }
           }
         }
-        
+
         if (cancelled) return;
 
         // Read user from ref to get latest value without depending on it
@@ -177,26 +182,29 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
     setError(null);
   }, []);
 
-  const login = useCallback(async (credentials: LoginCredentials): Promise<LoginResponse> => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await apiClient.post<LoginResponse>('/auth/login', credentials);
-      const { accessToken, refreshToken, user: authUser } = response.data;
+  const login = useCallback(
+    async (credentials: LoginCredentials): Promise<LoginResponse> => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await apiClient.post<LoginResponse>('/auth/login', credentials);
+        const { accessToken, refreshToken, user: authUser } = response.data;
 
-      setTokens(accessToken, refreshToken);
-      const transformedUser = transformAuthUser(authUser);
-      setUser(transformedUser); // Zustand will persist to localStorage
+        setTokens(accessToken, refreshToken);
+        const transformedUser = transformAuthUser(authUser);
+        setUser(transformedUser); // Zustand will persist to localStorage
 
-      return response.data;
-    } catch (err) {
-      const errorMessage = getErrorMessage(err);
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [setUser]);
+        return response.data;
+      } catch (err) {
+        const errorMessage = getErrorMessage(err);
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [setUser],
+  );
 
   const requestOtp = useCallback(async (data: OtpRequestData): Promise<OtpRequestResponse> => {
     setIsLoading(true);
@@ -213,26 +221,29 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
     }
   }, []);
 
-  const verifyOtp = useCallback(async (data: OtpVerifyData): Promise<LoginResponse> => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await apiClient.post<LoginResponse>('/auth/otp/verify', data);
-      const { accessToken, refreshToken, user: authUser } = response.data;
+  const verifyOtp = useCallback(
+    async (data: OtpVerifyData): Promise<LoginResponse> => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await apiClient.post<LoginResponse>('/auth/otp/verify', data);
+        const { accessToken, refreshToken, user: authUser } = response.data;
 
-      setTokens(accessToken, refreshToken);
-      const transformedUser = transformAuthUser(authUser);
-      setUser(transformedUser); // Zustand will persist to localStorage
+        setTokens(accessToken, refreshToken);
+        const transformedUser = transformAuthUser(authUser);
+        setUser(transformedUser); // Zustand will persist to localStorage
 
-      return response.data;
-    } catch (err) {
-      const errorMessage = getErrorMessage(err);
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [setUser]);
+        return response.data;
+      } catch (err) {
+        const errorMessage = getErrorMessage(err);
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [setUser],
+  );
 
   const forgotPassword = useCallback(
     async (data: ForgotPasswordData): Promise<PasswordResetResponse> => {

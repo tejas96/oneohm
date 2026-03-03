@@ -15,7 +15,7 @@ interface CreateProfileDto {
   userId: string;
   organizationId: string;
   profileType: UserProfileType;
-   
+
   profileData: any;
   createdBy?: string;
   roleCode?: string;
@@ -312,8 +312,8 @@ export class ProfileService {
       if (!role) {
         this.logger.error(
           `Default role '${roleCode}' not found for org ${organizationId}. ` +
-          `Ensure the SeedIAMCoreData migration has run. ` +
-          `User ${userId} will have no role until assigned manually.`,
+            `Ensure the SeedIAMCoreData migration has run. ` +
+            `User ${userId} will have no role until assigned manually.`,
         );
         return;
       }

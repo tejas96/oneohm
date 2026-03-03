@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 /**
  * Breadcrumb Component
  * Navigation breadcrumbs with separator variants
- * 
+ *
  * Uses theme tokens:
  * - text-foreground-secondary for links
  * - text-foreground for current page
@@ -22,8 +22,7 @@ const Breadcrumb = React.forwardRef<
 >(({ ...props }, ref) => <nav ref={ref} aria-label="breadcrumb" {...props} />);
 Breadcrumb.displayName = 'Breadcrumb';
 
-export interface BreadcrumbListProps
-  extends React.ComponentPropsWithoutRef<'ol'> {
+export interface BreadcrumbListProps extends React.ComponentPropsWithoutRef<'ol'> {
   /** Visual variant */
   variant?: 'default' | 'contained';
 }
@@ -35,28 +34,22 @@ const BreadcrumbList = React.forwardRef<HTMLOListElement, BreadcrumbListProps>(
       className={cn(
         'flex flex-wrap items-center gap-1.5 text-sm text-foreground-secondary',
         variant === 'contained' && 'px-3 py-1.5 bg-background-tertiary rounded-lg',
-        className
+        className,
       )}
       {...props}
     />
-  )
+  ),
 );
 BreadcrumbList.displayName = 'BreadcrumbList';
 
-const BreadcrumbItem = React.forwardRef<
-  HTMLLIElement,
-  React.ComponentPropsWithoutRef<'li'>
->(({ className, ...props }, ref) => (
-  <li
-    ref={ref}
-    className={cn('inline-flex items-center gap-1.5', className)}
-    {...props}
-  />
-));
+const BreadcrumbItem = React.forwardRef<HTMLLIElement, React.ComponentPropsWithoutRef<'li'>>(
+  ({ className, ...props }, ref) => (
+    <li ref={ref} className={cn('inline-flex items-center gap-1.5', className)} {...props} />
+  ),
+);
 BreadcrumbItem.displayName = 'BreadcrumbItem';
 
-export interface BreadcrumbLinkProps
-  extends React.ComponentPropsWithoutRef<'a'> {
+export interface BreadcrumbLinkProps extends React.ComponentPropsWithoutRef<'a'> {
   asChild?: boolean;
   /** Use primary color instead of gray */
   colored?: boolean;
@@ -71,31 +64,28 @@ const BreadcrumbLink = React.forwardRef<HTMLAnchorElement, BreadcrumbLinkProps>(
         ref={ref}
         className={cn(
           'duration-fast transition-colors',
-          colored
-            ? 'text-primary hover:text-primary-dark font-medium'
-            : 'hover:text-foreground',
-          className
+          colored ? 'text-primary hover:text-primary-dark font-medium' : 'hover:text-foreground',
+          className,
         )}
         {...props}
       />
     );
-  }
+  },
 );
 BreadcrumbLink.displayName = 'BreadcrumbLink';
 
-const BreadcrumbPage = React.forwardRef<
-  HTMLSpanElement,
-  React.ComponentPropsWithoutRef<'span'>
->(({ className, ...props }, ref) => (
-  <span
-    ref={ref}
-    role="link"
-    aria-disabled="true"
-    aria-current="page"
-    className={cn('font-medium text-foreground', className)}
-    {...props}
-  />
-));
+const BreadcrumbPage = React.forwardRef<HTMLSpanElement, React.ComponentPropsWithoutRef<'span'>>(
+  ({ className, ...props }, ref) => (
+    <span
+      ref={ref}
+      role="link"
+      aria-disabled="true"
+      aria-current="page"
+      className={cn('font-medium text-foreground', className)}
+      {...props}
+    />
+  ),
+);
 BreadcrumbPage.displayName = 'BreadcrumbPage';
 
 export interface BreadcrumbSeparatorProps extends React.ComponentProps<'li'> {
@@ -115,19 +105,17 @@ const BreadcrumbSeparator = ({
     className={cn('text-foreground-tertiary', className)}
     {...props}
   >
-    {children ?? (type === 'slash' ? (
-      <span className="mx-1">/</span>
-    ) : (
-      <ChevronRight className="size-icon-sm" />
-    ))}
+    {children ??
+      (type === 'slash' ? (
+        <span className="mx-1">/</span>
+      ) : (
+        <ChevronRight className="size-icon-sm" />
+      ))}
   </li>
 );
 BreadcrumbSeparator.displayName = 'BreadcrumbSeparator';
 
-const BreadcrumbEllipsis = ({
-  className,
-  ...props
-}: React.ComponentProps<'span'>) => (
+const BreadcrumbEllipsis = ({ className, ...props }: React.ComponentProps<'span'>) => (
   <span
     role="presentation"
     aria-hidden="true"
@@ -135,7 +123,7 @@ const BreadcrumbEllipsis = ({
       'flex size-container-sm items-center justify-center rounded cursor-pointer',
       'text-foreground-tertiary hover:bg-muted hover:text-foreground-secondary',
       'duration-fast transition-colors',
-      className
+      className,
     )}
     {...props}
   >
@@ -159,7 +147,7 @@ const BreadcrumbHome = React.forwardRef<
       ref={ref}
       className={cn(
         'text-foreground-secondary hover:text-foreground duration-fast transition-colors',
-        className
+        className,
       )}
       aria-label="Home"
       {...props}

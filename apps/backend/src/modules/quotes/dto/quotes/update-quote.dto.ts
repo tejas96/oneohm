@@ -1,5 +1,10 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { CalculatorInputs, PricingBreakdown, ProjectType, SystemType } from '@oneohm-epc/shared-types';
+import {
+  CalculatorInputs,
+  PricingBreakdown,
+  ProjectType,
+  SystemType,
+} from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,

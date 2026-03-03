@@ -106,9 +106,7 @@ export class WorkflowExecutionPattern1776000000000 implements MigrationInterface
     `);
 
     // 3f: Make name column nullable
-    await queryRunner.query(
-      `ALTER TABLE project_tasks ALTER COLUMN name DROP NOT NULL`,
-    );
+    await queryRunner.query(`ALTER TABLE project_tasks ALTER COLUMN name DROP NOT NULL`);
 
     // 3g: Null out duplicated data on ALL template tasks
     await queryRunner.query(`
@@ -186,9 +184,7 @@ export class WorkflowExecutionPattern1776000000000 implements MigrationInterface
       WHERE workflow_step_id IS NULL AND name IS NULL
     `);
 
-    await queryRunner.query(
-      `ALTER TABLE project_tasks ALTER COLUMN name SET NOT NULL`,
-    );
+    await queryRunner.query(`ALTER TABLE project_tasks ALTER COLUMN name SET NOT NULL`);
 
     // Drop override columns
     await queryRunner.query(`ALTER TABLE project_tasks DROP COLUMN IF EXISTS labels_override`);

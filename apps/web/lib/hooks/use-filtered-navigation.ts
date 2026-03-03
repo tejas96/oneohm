@@ -12,7 +12,8 @@ import {
   type RailNavItem,
   type UserAccessContext,
   type UserRole,
- hasAccess } from '@/lib/types';
+  hasAccess,
+} from '@/lib/types';
 import { useAuth } from '@/providers/auth-provider';
 
 /**
@@ -45,7 +46,7 @@ function filterNavSections(sections: NavSection[], userAccess: UserAccessContext
  */
 function filterPanelConfigs(
   panels: Record<string, PanelConfig>,
-  userAccess: UserAccessContext
+  userAccess: UserAccessContext,
 ): Record<string, PanelConfig> {
   const filtered: Record<string, PanelConfig> = {};
 
@@ -103,7 +104,7 @@ export function useFilteredNavigation(): UseFilteredNavigationReturn {
       roles: user?.roles ?? [],
       permissions: user?.permissions ?? [],
     }),
-    [user?.roles, user?.permissions]
+    [user?.roles, user?.permissions],
   );
 
   // Filter navigation based on user access
@@ -127,7 +128,7 @@ export function useFilteredNavigation(): UseFilteredNavigationReturn {
   // Helper to check access for custom items
   const canAccess = useMemo(
     () => (item: { roles?: UserRole[]; permissions?: string[] }) => hasAccess(item, userAccess),
-    [userAccess]
+    [userAccess],
   );
 
   return {
@@ -140,18 +141,18 @@ export function useFilteredNavigation(): UseFilteredNavigationReturn {
 /**
  * Get filtered panel config by route path
  * Use within components that already have useFilteredNavigation
- * 
+ *
  * Uses ROUTE_TO_PANEL_MAP for accurate route-to-panel mapping.
  * This ensures routes like /properties, /site-visits, /followups
  * correctly show the CRM panel (not dashboard).
  */
 export function getFilteredPanelByPath(
   navigation: NavigationConfig,
-  pathname: string
+  pathname: string,
 ): { key: string; config: PanelConfig } | null {
   // Use centralized route-to-panel mapping for accurate panel selection
   const panelKey = getPanelKeyForPath(pathname);
-  
+
   // Return the matched panel if user has access
   if (navigation.panels[panelKey]) {
     return {

@@ -28,11 +28,17 @@ export class MyTaskResponseDto extends ProjectTaskResponseDto {
   @Expose()
   projectName!: string;
 
-  @ApiPropertyOptional({ example: 'Installation', description: 'Milestone name if task is linked to one' })
+  @ApiPropertyOptional({
+    example: 'Installation',
+    description: 'Milestone name if task is linked to one',
+  })
   @Expose()
   milestoneName?: string;
 
-  @ApiPropertyOptional({ example: 145, description: 'Computed urgency score for intelligent sorting' })
+  @ApiPropertyOptional({
+    example: 145,
+    description: 'Computed urgency score for intelligent sorting',
+  })
   @Expose()
   urgencyScore?: number;
 

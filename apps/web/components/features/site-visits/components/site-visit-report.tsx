@@ -1,7 +1,20 @@
 'use client';
 
 import { SiteVisitStatus, VisitType } from '@oneohm-epc/shared-types';
-import { Calendar, Camera, CheckCircle, Clock, FileText, MapPin, User, Zap, Phone, Mail, Bell, PlayCircle } from 'lucide-react';
+import {
+  Calendar,
+  Camera,
+  CheckCircle,
+  Clock,
+  FileText,
+  MapPin,
+  User,
+  Zap,
+  Phone,
+  Mail,
+  Bell,
+  PlayCircle,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
 
@@ -75,14 +88,47 @@ const mockVisit = {
     { id: '3', category: 'Earthing', url: '/placeholder-earthing.jpg' },
   ],
   // Notes
-  fieldNotes: 'Customer is very interested in going solar. Discussed financing options. Roof is in excellent condition with good sun exposure. Minor tree trimming needed on the east side.',
+  fieldNotes:
+    'Customer is very interested in going solar. Discussed financing options. Roof is in excellent condition with good sun exposure. Minor tree trimming needed on the east side.',
 };
 
 const mockTimeline = [
-  { id: '1', title: 'Visit Scheduled', description: 'Visit scheduled for Feb 12, 2024', timestamp: new Date('2024-02-10T09:00:00Z'), icon: <Calendar className="size-icon-sm" />, iconBgClass: 'bg-info/10', iconTextClass: 'text-info' },
-  { id: '2', title: 'Reminder Sent', description: 'SMS reminder sent to customer', timestamp: new Date('2024-02-11T10:00:00Z'), icon: <Bell className="size-icon-sm" />, iconBgClass: 'bg-warning/10', iconTextClass: 'text-warning' },
-  { id: '3', title: 'Visit Started', description: 'Technician arrived at site', timestamp: new Date('2024-02-12T10:00:00Z'), icon: <PlayCircle className="size-icon-sm" />, iconBgClass: 'bg-primary/10', iconTextClass: 'text-primary' },
-  { id: '4', title: 'Visit Completed', description: 'Site assessment completed', timestamp: new Date('2024-02-12T12:30:00Z'), icon: <CheckCircle className="size-icon-sm" />, iconBgClass: 'bg-success/10', iconTextClass: 'text-success' },
+  {
+    id: '1',
+    title: 'Visit Scheduled',
+    description: 'Visit scheduled for Feb 12, 2024',
+    timestamp: new Date('2024-02-10T09:00:00Z'),
+    icon: <Calendar className="size-icon-sm" />,
+    iconBgClass: 'bg-info/10',
+    iconTextClass: 'text-info',
+  },
+  {
+    id: '2',
+    title: 'Reminder Sent',
+    description: 'SMS reminder sent to customer',
+    timestamp: new Date('2024-02-11T10:00:00Z'),
+    icon: <Bell className="size-icon-sm" />,
+    iconBgClass: 'bg-warning/10',
+    iconTextClass: 'text-warning',
+  },
+  {
+    id: '3',
+    title: 'Visit Started',
+    description: 'Technician arrived at site',
+    timestamp: new Date('2024-02-12T10:00:00Z'),
+    icon: <PlayCircle className="size-icon-sm" />,
+    iconBgClass: 'bg-primary/10',
+    iconTextClass: 'text-primary',
+  },
+  {
+    id: '4',
+    title: 'Visit Completed',
+    description: 'Site assessment completed',
+    timestamp: new Date('2024-02-12T12:30:00Z'),
+    icon: <CheckCircle className="size-icon-sm" />,
+    iconBgClass: 'bg-success/10',
+    iconTextClass: 'text-success',
+  },
 ];
 
 // ============================================================================
@@ -121,7 +167,11 @@ export function SiteVisitReport({ visitId: _visitId }: SiteVisitReportProps): Re
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => router.push(`${ROUTES.QUOTES.NEW  }?propertyId=${visit.propertyId}`)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push(`${ROUTES.QUOTES.NEW}?propertyId=${visit.propertyId}`)}
+          >
             <FileText className="mr-2 size-icon-sm" />
             Create Quote
           </Button>
@@ -137,7 +187,11 @@ export function SiteVisitReport({ visitId: _visitId }: SiteVisitReportProps): Re
               <div>
                 <p className="text-2xs text-foreground-secondary">Date</p>
                 <p className="text-sm font-medium">
-                  {new Date(visit.scheduledAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  {new Date(visit.scheduledAt).toLocaleDateString('en-IN', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
                 </p>
               </div>
             </div>
@@ -269,7 +323,9 @@ export function SiteVisitReport({ visitId: _visitId }: SiteVisitReportProps): Re
                     </div>
                     {visit.specialConsiderations && (
                       <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
-                        <p className="text-sm text-warning-foreground">{visit.specialConsiderations}</p>
+                        <p className="text-sm text-warning-foreground">
+                          {visit.specialConsiderations}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -281,8 +337,11 @@ export function SiteVisitReport({ visitId: _visitId }: SiteVisitReportProps): Re
               <Card>
                 <CardContent className="p-4">
                   <div className="grid grid-cols-3 gap-4">
-                    {visit.photos.map(photo => (
-                      <div key={photo.id} className="aspect-square bg-muted rounded-lg flex items-center justify-center">
+                    {visit.photos.map((photo) => (
+                      <div
+                        key={photo.id}
+                        className="aspect-square bg-muted rounded-lg flex items-center justify-center"
+                      >
                         <div className="text-center">
                           <Camera className="size-icon-lg text-foreground-tertiary mx-auto mb-2" />
                           <p className="text-xs text-foreground-secondary">{photo.category}</p>

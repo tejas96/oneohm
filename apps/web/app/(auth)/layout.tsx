@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  CheckSquare,
-  CreditCard,
-  FileText,
-  ShieldCheck,
-  Users,
-  Zap,
-} from 'lucide-react';
+import { CheckSquare, CreditCard, FileText, ShieldCheck, Users, Zap } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React, { Suspense, useEffect, type ReactNode } from 'react';
@@ -24,10 +17,10 @@ interface AuthLayoutProps {
  * Stunning diagonal split design with animated background
  * Left panel: Dark gradient with workflow cards
  * Right panel: Auth forms
- * 
+ *
  * Shows loading while checking auth to prevent flash of auth forms for logged-in users.
  * Also checks for existing tokens to handle SSR/hydration race conditions.
- * 
+ *
  * Note: Layout files should NOT use useSearchParams directly - use page-level Suspense instead.
  * We use window.location for redirect param since this is client-side only.
  */
@@ -35,7 +28,7 @@ interface AuthLayoutProps {
 export default function AuthLayout({ children }: AuthLayoutProps): React.JSX.Element {
   const { isAuthenticated, isInitialized } = useAuth();
   const router = useRouter();
-  
+
   // Redirect authenticated users away from auth pages
   useEffect(() => {
     if (isInitialized && isAuthenticated) {
@@ -118,7 +111,9 @@ export default function AuthLayout({ children }: AuthLayoutProps): React.JSX.Ele
                 <div className="size-icon-md rounded-full bg-primary/30 flex items-center justify-center text-[10px] text-primary font-semibold">
                   1
                 </div>
-                <span className="text-[10px] text-foreground-tertiary uppercase tracking-wider">Capture</span>
+                <span className="text-[10px] text-foreground-tertiary uppercase tracking-wider">
+                  Capture
+                </span>
               </div>
               <p className="text-sm font-medium text-white">Leads & Sites</p>
               <p className="text-[10px] text-foreground-muted mt-1">Customer onboarding</p>
@@ -130,7 +125,9 @@ export default function AuthLayout({ children }: AuthLayoutProps): React.JSX.Ele
                 <div className="size-icon-md rounded-full bg-secondary/30 flex items-center justify-center text-[10px] text-secondary font-semibold">
                   2
                 </div>
-                <span className="text-[10px] text-foreground-tertiary uppercase tracking-wider">Quote</span>
+                <span className="text-[10px] text-foreground-tertiary uppercase tracking-wider">
+                  Quote
+                </span>
               </div>
               <p className="text-sm font-medium text-white">Design & BOM</p>
               <p className="text-[10px] text-foreground-muted mt-1">System sizing</p>
@@ -142,7 +139,9 @@ export default function AuthLayout({ children }: AuthLayoutProps): React.JSX.Ele
                 <div className="size-icon-md rounded-full bg-warning/30 flex items-center justify-center text-[10px] text-warning font-semibold">
                   3
                 </div>
-                <span className="text-[10px] text-foreground-tertiary uppercase tracking-wider">Execute</span>
+                <span className="text-[10px] text-foreground-tertiary uppercase tracking-wider">
+                  Execute
+                </span>
               </div>
               <p className="text-sm font-medium text-white">Installation</p>
               <p className="text-[10px] text-foreground-muted mt-1">Track progress</p>
@@ -178,7 +177,9 @@ export default function AuthLayout({ children }: AuthLayoutProps): React.JSX.Ele
                 </div>
                 <div>
                   <p className="text-white text-sm font-medium">Built for Solar EPC</p>
-                  <p className="text-foreground-tertiary text-[11px]">Rooftop & ground-mount projects</p>
+                  <p className="text-foreground-tertiary text-[11px]">
+                    Rooftop & ground-mount projects
+                  </p>
                 </div>
               </div>
               <div className="text-right">
@@ -207,9 +208,7 @@ export default function AuthLayout({ children }: AuthLayoutProps): React.JSX.Ele
           </div>
 
           {/* Auth Content - Wrapped in Suspense for useSearchParams in auth forms */}
-          <Suspense fallback={<Spinner size="md" variant="primary" />}>
-            {children}
-          </Suspense>
+          <Suspense fallback={<Spinner size="md" variant="primary" />}>{children}</Suspense>
 
           {/* Footer */}
           <div className="mt-6 text-center text-[11px] text-foreground-tertiary">
@@ -254,9 +253,22 @@ export default function AuthLayout({ children }: AuthLayoutProps): React.JSX.Ele
         .mesh-gradient {
           position: absolute;
           inset: 0;
-          background: radial-gradient(ellipse 80% 50% at 20% 40%, rgba(118, 192, 68, 0.15) 0%, transparent 50%),
-            radial-gradient(ellipse 60% 80% at 80% 20%, rgba(13, 116, 184, 0.12) 0%, transparent 50%),
-            radial-gradient(ellipse 50% 60% at 60% 80%, rgba(118, 192, 68, 0.08) 0%, transparent 50%);
+          background:
+            radial-gradient(
+              ellipse 80% 50% at 20% 40%,
+              rgba(118, 192, 68, 0.15) 0%,
+              transparent 50%
+            ),
+            radial-gradient(
+              ellipse 60% 80% at 80% 20%,
+              rgba(13, 116, 184, 0.12) 0%,
+              transparent 50%
+            ),
+            radial-gradient(
+              ellipse 50% 60% at 60% 80%,
+              rgba(118, 192, 68, 0.08) 0%,
+              transparent 50%
+            );
           animation: meshMove 15s ease-in-out infinite alternate;
         }
 
@@ -318,7 +330,8 @@ export default function AuthLayout({ children }: AuthLayoutProps): React.JSX.Ele
         .grid-pattern {
           position: absolute;
           inset: 0;
-          background-image: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+          background-image:
+            linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
             linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
           background-size: 60px 60px;
           mask-image: radial-gradient(ellipse 80% 80% at center, black 40%, transparent 100%);

@@ -311,7 +311,8 @@ export class ProjectService {
       property?.consumerName ||
       `${quote.customer.firstName} ${quote.customer.lastName || ''}`.trim() ||
       'Customer';
-    const autoName = `${customerName} - ${currentVersion?.systemSizeKw ?? ''}kW Solar Installation`.trim();
+    const autoName =
+      `${customerName} - ${currentVersion?.systemSizeKw ?? ''}kW Solar Installation`.trim();
     const paymentMilestones: PaymentMilestone[] = currentVersion?.paymentMilestones || [];
 
     const milestones = convertDto?.milestones?.length
@@ -541,7 +542,9 @@ export class ProjectService {
    * Detect dependency cycles among workflow steps via topological sort.
    * Logs a warning if cycles are found but does not block execution.
    */
-  private detectDependencyCycles(steps: { code: string; dependsOnTaskCodes?: string[] | null }[]): void {
+  private detectDependencyCycles(
+    steps: { code: string; dependsOnTaskCodes?: string[] | null }[],
+  ): void {
     const codeSet = new Set(steps.map((s) => s.code));
     const adjList = new Map<string, string[]>();
     const inDegree = new Map<string, number>();
@@ -705,7 +708,11 @@ export class ProjectService {
       const project = await this.projectRepository.create({ ...projectData, createdBy }, manager);
 
       // 3. Update property to CONVERTED
-      await this.customerPropertyRepository.updateStatusById(propertyId, PropertyStatus.CONVERTED, manager);
+      await this.customerPropertyRepository.updateStatusById(
+        propertyId,
+        PropertyStatus.CONVERTED,
+        manager,
+      );
 
       // 4. Create milestones
       const { milestoneTypeMap, milestoneOrderMap } = await this.createProjectMilestones(
@@ -724,14 +731,25 @@ export class ProjectService {
       );
 
       // 6. Apply workflow steps (lean rows, no data copy)
-      await this.applyWorkflowSteps(project.id, organizationId, createdBy, excludedStepIds, manager);
+      await this.applyWorkflowSteps(
+        project.id,
+        organizationId,
+        createdBy,
+        excludedStepIds,
+        manager,
+      );
 
       // 7. Link tasks to milestones via step.defaultMilestoneType
       await this.linkTasksToMilestones(project.id, organizationId, milestoneTypeMap, manager);
 
       // 8. Apply milestone overrides from frontend
       if (taskMilestoneOverrides?.length) {
-        await this.applyMilestoneOverrides(project.id, taskMilestoneOverrides, milestoneOrderMap, manager);
+        await this.applyMilestoneOverrides(
+          project.id,
+          taskMilestoneOverrides,
+          milestoneOrderMap,
+          manager,
+        );
       }
 
       // 9. Add PM + team members
@@ -743,7 +761,11 @@ export class ProjectService {
       // 11. Compute initial progress
       const { done, total } = await this.taskRepository.computeProgress(project.id, manager);
       const progress = total > 0 ? Math.round((100 * done) / total) : 0;
-      await this.projectRepository.updateById(project.id, { progressPercentage: progress }, manager);
+      await this.projectRepository.updateById(
+        project.id,
+        { progressPercentage: progress },
+        manager,
+      );
       await this.milestoneRepository.updateProgressForProject(project.id, manager);
 
       return this.projectRepository.findById(project.id, organizationId, manager);
@@ -774,7 +796,10 @@ export class ProjectService {
       );
 
       try {
-        const milestoneCode = await this.milestoneRepository.generateMilestoneCode(orgCode, manager);
+        const milestoneCode = await this.milestoneRepository.generateMilestoneCode(
+          orgCode,
+          manager,
+        );
         await this.milestoneRepository.updateById(milestone.id, { milestoneCode }, manager);
       } catch (err) {
         this.logger.warn(`Failed to generate milestone code for ${milestone.id}: ${String(err)}`);
@@ -825,7 +850,11 @@ export class ProjectService {
       const milestoneId =
         override.milestoneOrder === 0 ? null : milestoneOrderMap.get(override.milestoneOrder);
       if (override.milestoneOrder === 0 || milestoneId) {
-        await this.taskRepository.updateById(task.id, { milestoneId: milestoneId ?? undefined }, manager);
+        await this.taskRepository.updateById(
+          task.id,
+          { milestoneId: milestoneId ?? undefined },
+          manager,
+        );
       }
     }
   }
@@ -839,10 +868,19 @@ export class ProjectService {
     manager?: EntityManager,
   ): Promise<void> {
     if (teamConfig?.pmId) {
-      const existing = await this.teamRepository.findOneByUserAndProject(teamConfig.pmId, projectId, manager);
+      const existing = await this.teamRepository.findOneByUserAndProject(
+        teamConfig.pmId,
+        projectId,
+        manager,
+      );
       if (!existing) {
         await this.teamRepository.create(
-          { projectId, userId: teamConfig.pmId, roleName: 'Project Manager', isProjectManager: true },
+          {
+            projectId,
+            userId: teamConfig.pmId,
+            roleName: 'Project Manager',
+            isProjectManager: true,
+          },
           manager,
         );
       }
@@ -850,7 +888,11 @@ export class ProjectService {
 
     if (teamConfig?.members) {
       for (const member of teamConfig.members) {
-        const existing = await this.teamRepository.findOneByUserAndProject(member.userId, projectId, manager);
+        const existing = await this.teamRepository.findOneByUserAndProject(
+          member.userId,
+          projectId,
+          manager,
+        );
         if (existing) continue;
         await this.teamRepository.create(
           {
@@ -901,7 +943,11 @@ export class ProjectService {
         continue;
       }
 
-      await this.taskRepository.updateById(task.id, { assignedToUserId: assignment.assignedToUserId }, manager);
+      await this.taskRepository.updateById(
+        task.id,
+        { assignedToUserId: assignment.assignedToUserId },
+        manager,
+      );
     }
   }
 }

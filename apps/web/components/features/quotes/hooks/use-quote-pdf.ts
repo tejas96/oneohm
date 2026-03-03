@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from 'react';
 
-
 import { generateAndDownloadPdf } from '../services';
 import type { QuotePdfData } from '../types';
 

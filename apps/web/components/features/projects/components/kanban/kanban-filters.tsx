@@ -11,11 +11,7 @@ import { TeamAvatarGroup } from '../team-avatar-group';
 import { SearchInput } from '@/components/shared/search';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
 export type { KanbanFilterState };
@@ -133,10 +129,7 @@ export function KanbanFilters({
         <PopoverContent align="end" className="w-56 p-3 space-y-3">
           {/* Priority */}
           <FilterSection icon={<Flag className="h-3.5 w-3.5" />} label="Priority">
-            <FilterOption
-              selected={!filters.priority}
-              onClick={() => setFilter('priority', '')}
-            >
+            <FilterOption selected={!filters.priority} onClick={() => setFilter('priority', '')}>
               All
             </FilterOption>
             {Object.entries(PRIORITY_CONFIG).map(([value, config]) => (
@@ -175,10 +168,7 @@ export function KanbanFilters({
           {/* Labels */}
           {boardFilters?.labels && boardFilters.labels.length > 0 && (
             <FilterSection icon={<Tag className="h-3.5 w-3.5" />} label="Label">
-              <FilterOption
-                selected={!filters.label}
-                onClick={() => setFilter('label', '')}
-              >
+              <FilterOption selected={!filters.label} onClick={() => setFilter('label', '')}>
                 All
               </FilterOption>
               {boardFilters.labels.map((l) => (
@@ -198,9 +188,7 @@ export function KanbanFilters({
           {/* My Tasks toggle */}
           <button
             type="button"
-            onClick={() =>
-              setFilter('myTasks', filters.myTasks === 'true' ? '' : 'true')
-            }
+            onClick={() => setFilter('myTasks', filters.myTasks === 'true' ? '' : 'true')}
             className={cn(
               'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
               filters.myTasks === 'true'
@@ -234,24 +222,26 @@ export function KanbanFilters({
         <div className="flex items-center gap-1">
           {filters.priority && (
             <FilterChip onRemove={() => setFilter('priority', '')}>
-              <span className={cn('inline-block h-1.5 w-1.5 rounded-full mr-1', PRIORITY_CONFIG[filters.priority]?.dot)} />
+              <span
+                className={cn(
+                  'inline-block h-1.5 w-1.5 rounded-full mr-1',
+                  PRIORITY_CONFIG[filters.priority]?.dot,
+                )}
+              />
               {PRIORITY_CONFIG[filters.priority]?.label ?? filters.priority}
             </FilterChip>
           )}
           {filters.milestoneId && boardFilters?.milestones && (
             <FilterChip onRemove={() => setFilter('milestoneId', '')}>
-              {boardFilters.milestones.find((m) => m.id === filters.milestoneId)?.name ?? 'Milestone'}
+              {boardFilters.milestones.find((m) => m.id === filters.milestoneId)?.name ??
+                'Milestone'}
             </FilterChip>
           )}
           {filters.label && (
-            <FilterChip onRemove={() => setFilter('label', '')}>
-              {filters.label}
-            </FilterChip>
+            <FilterChip onRemove={() => setFilter('label', '')}>{filters.label}</FilterChip>
           )}
           {filters.myTasks === 'true' && (
-            <FilterChip onRemove={() => setFilter('myTasks', '')}>
-              My tasks
-            </FilterChip>
+            <FilterChip onRemove={() => setFilter('myTasks', '')}>My tasks</FilterChip>
           )}
         </div>
       )}
@@ -304,13 +294,7 @@ function FilterOption({
   );
 }
 
-function FilterChip({
-  children,
-  onRemove,
-}: {
-  children: React.ReactNode;
-  onRemove: () => void;
-}) {
+function FilterChip({ children, onRemove }: { children: React.ReactNode; onRemove: () => void }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-2xs text-foreground-secondary">
       {children}

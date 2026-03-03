@@ -7,7 +7,7 @@ import {
   StructureType,
   ItemCategory,
 } from '@oneohm-epc/shared-types';
-import { type LucideIcon , Building2, Factory, Home, Landmark, Warehouse } from 'lucide-react';
+import { type LucideIcon, Building2, Factory, Home, Landmark, Warehouse } from 'lucide-react';
 
 import type { FilterTab } from '@/components/shared';
 

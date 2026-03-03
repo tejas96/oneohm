@@ -75,10 +75,7 @@ export interface CapturedDocument {
 /**
  * Convert CapturedDocument to PropertyDocument format for API
  */
-export function toPropertyDocument(
-  doc: CapturedDocument,
-  isLoanDoc: boolean
-): PropertyDocument {
+export function toPropertyDocument(doc: CapturedDocument, isLoanDoc: boolean): PropertyDocument {
   return {
     url: doc.uploadedUrl ?? '',
     tag: doc.slotId,
@@ -94,7 +91,7 @@ export function toPropertyDocument(
  */
 export function toPropertyDocuments(
   docs: CapturedDocument[],
-  wantsLoan: boolean
+  wantsLoan: boolean,
 ): PropertyDocument[] {
   // Filter only successfully uploaded documents
   const uploadedDocs = docs.filter((d) => d.status === 'success' && d.uploadedUrl);

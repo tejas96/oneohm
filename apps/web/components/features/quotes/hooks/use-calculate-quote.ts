@@ -7,7 +7,6 @@ import type { CalculateQuoteRequest, CalculateQuoteResponse } from '../types';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
 
-
 export function useCalculateQuote() {
   const { user } = useAuth();
   const organizationId = user?.organizationId;

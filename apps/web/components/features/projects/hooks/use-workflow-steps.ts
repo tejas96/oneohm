@@ -16,9 +16,9 @@ export const workflowStepKeys = {
     [...workflowStepKeys.lists(orgId), filters] as const,
 };
 
-export function useWorkflowSteps(
-  options?: { isActive?: boolean },
-): UseQueryResult<WorkflowStep[], AxiosError> {
+export function useWorkflowSteps(options?: {
+  isActive?: boolean;
+}): UseQueryResult<WorkflowStep[], AxiosError> {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
 

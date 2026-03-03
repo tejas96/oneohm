@@ -81,13 +81,15 @@ export function TaskDrawerActivity({
                       {ACTIVITY_TYPE_LABELS[entry.activityType] ?? entry.activityType}
                       {entry.fieldName === 'status' && entry.oldValue && entry.newValue && (
                         <span>
-                          {' '}from <span className="font-medium">{entry.oldValue}</span> to{' '}
+                          {' '}
+                          from <span className="font-medium">{entry.oldValue}</span> to{' '}
                           <span className="font-medium">{entry.newValue}</span>
                         </span>
                       )}
                       {entry.fieldName === 'priority' && entry.oldValue && entry.newValue && (
                         <span>
-                          {' '}from <span className="font-medium">{entry.oldValue}</span> to{' '}
+                          {' '}
+                          from <span className="font-medium">{entry.oldValue}</span> to{' '}
                           <span className="font-medium">{entry.newValue}</span>
                         </span>
                       )}

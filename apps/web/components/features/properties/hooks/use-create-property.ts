@@ -1,6 +1,11 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationResult,
+} from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
 import type { CreatePropertyFormData } from '../schemas/property.schema';
@@ -18,8 +23,7 @@ export const propertyKeys = {
   list: (orgId: string | undefined, filters: Record<string, unknown>) =>
     [...propertyKeys.lists(orgId), filters] as const,
   details: (orgId?: string) => [...propertyKeys.all(orgId), 'detail'] as const,
-  detail: (orgId: string | undefined, id: string) =>
-    [...propertyKeys.details(orgId), id] as const,
+  detail: (orgId: string | undefined, id: string) => [...propertyKeys.details(orgId), id] as const,
 };
 
 export const customerKeys = {
@@ -28,8 +32,7 @@ export const customerKeys = {
   list: (orgId: string | undefined, filters: Record<string, unknown>) =>
     [...customerKeys.lists(orgId), filters] as const,
   details: (orgId?: string) => [...customerKeys.all(orgId), 'detail'] as const,
-  detail: (orgId: string | undefined, id: string) =>
-    [...customerKeys.details(orgId), id] as const,
+  detail: (orgId: string | undefined, id: string) => [...customerKeys.details(orgId), id] as const,
 };
 
 // ============================================================================
@@ -124,7 +127,7 @@ export function useCreateProperty(): UseMutationResult<
         data,
         {
           headers: { 'X-Organization-Id': organizationId },
-        }
+        },
       );
       return response;
     },

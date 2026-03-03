@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { FollowupStatus } from '@oneohm-epc/shared-types';
 
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';

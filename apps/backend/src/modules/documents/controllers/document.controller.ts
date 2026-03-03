@@ -26,7 +26,6 @@ import { DocumentStatus, DocumentType } from '@oneohm-epc/shared-types';
 import { OrganizationContext } from '@oneohm-epc/shared-utils';
 import { plainToInstance } from 'class-transformer';
 
-
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';

@@ -84,7 +84,7 @@ export function MobileNav() {
                     'transition-colors',
                     isActive
                       ? 'bg-primary/10 text-primary font-medium'
-                      : 'text-foreground-secondary hover:bg-muted'
+                      : 'text-foreground-secondary hover:bg-muted',
                   )}
                 >
                   {Icon && <Icon className="size-icon-md" strokeWidth={2} />}
@@ -121,7 +121,7 @@ export function MobileNav() {
                         'transition-colors',
                         isActive
                           ? 'bg-primary/10 text-primary font-medium'
-                          : 'text-foreground-secondary hover:bg-muted'
+                          : 'text-foreground-secondary hover:bg-muted',
                       )}
                     >
                       {Icon && <Icon className="size-icon" />}
@@ -154,7 +154,7 @@ export function MobileNav() {
                     'transition-colors',
                     isActive
                       ? 'bg-primary/10 text-primary font-medium'
-                      : 'text-foreground-secondary hover:bg-muted'
+                      : 'text-foreground-secondary hover:bg-muted',
                   )}
                 >
                   {Icon && <Icon className="size-icon-md" strokeWidth={2} />}

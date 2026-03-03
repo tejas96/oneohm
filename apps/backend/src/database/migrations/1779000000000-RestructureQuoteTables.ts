@@ -5,9 +5,15 @@ export class RestructureQuoteTables1779000000000 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Step 1: Add new columns to quote_versions
-    await queryRunner.query(`ALTER TABLE quote_versions ADD COLUMN IF NOT EXISTS project_type VARCHAR(50)`);
-    await queryRunner.query(`ALTER TABLE quote_versions ADD COLUMN IF NOT EXISTS calculator_inputs JSONB`);
-    await queryRunner.query(`ALTER TABLE quote_versions ADD COLUMN IF NOT EXISTS pricing_breakdown JSONB`);
+    await queryRunner.query(
+      `ALTER TABLE quote_versions ADD COLUMN IF NOT EXISTS project_type VARCHAR(50)`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE quote_versions ADD COLUMN IF NOT EXISTS calculator_inputs JSONB`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE quote_versions ADD COLUMN IF NOT EXISTS pricing_breakdown JSONB`,
+    );
 
     // Step 2a: Migrate project_type from quotes to quote_versions
     await queryRunner.query(`
@@ -54,7 +60,9 @@ export class RestructureQuoteTables1779000000000 implements MigrationInterface {
 
     // Step 3: Set NOT NULL constraints
     await queryRunner.query(`ALTER TABLE quote_versions ALTER COLUMN project_type SET NOT NULL`);
-    await queryRunner.query(`ALTER TABLE quote_versions ALTER COLUMN pricing_breakdown SET NOT NULL`);
+    await queryRunner.query(
+      `ALTER TABLE quote_versions ALTER COLUMN pricing_breakdown SET NOT NULL`,
+    );
 
     // Step 4: Replace the old two-column partial index with an optimized single-column one
     // (is_current in columns is redundant when already in the WHERE clause)
@@ -65,8 +73,12 @@ export class RestructureQuoteTables1779000000000 implements MigrationInterface {
 
     // Step 5: Drop 7 pricing columns from quote_versions
     await queryRunner.query(`ALTER TABLE quote_versions DROP COLUMN IF EXISTS base_price`);
-    await queryRunner.query(`ALTER TABLE quote_versions DROP COLUMN IF EXISTS gst_12_on_70_percent`);
-    await queryRunner.query(`ALTER TABLE quote_versions DROP COLUMN IF EXISTS gst_18_on_30_percent`);
+    await queryRunner.query(
+      `ALTER TABLE quote_versions DROP COLUMN IF EXISTS gst_12_on_70_percent`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE quote_versions DROP COLUMN IF EXISTS gst_18_on_30_percent`,
+    );
     await queryRunner.query(`ALTER TABLE quote_versions DROP COLUMN IF EXISTS total_gst`);
     await queryRunner.query(`ALTER TABLE quote_versions DROP COLUMN IF EXISTS total_price`);
     await queryRunner.query(`ALTER TABLE quote_versions DROP COLUMN IF EXISTS discount_amount`);
@@ -100,8 +112,12 @@ export class RestructureQuoteTables1779000000000 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE quotes ADD COLUMN system_size_kw DECIMAL(10,2)`);
     await queryRunner.query(`ALTER TABLE quotes ADD COLUMN total_wattage_wp INTEGER`);
     await queryRunner.query(`ALTER TABLE quotes ADD COLUMN phase_type VARCHAR(20)`);
-    await queryRunner.query(`ALTER TABLE quotes ADD COLUMN dcr_preference VARCHAR(20) DEFAULT 'auto_split'`);
-    await queryRunner.query(`ALTER TABLE quotes ADD COLUMN calculation_mode VARCHAR(20) DEFAULT 'auto'`);
+    await queryRunner.query(
+      `ALTER TABLE quotes ADD COLUMN dcr_preference VARCHAR(20) DEFAULT 'auto_split'`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE quotes ADD COLUMN calculation_mode VARCHAR(20) DEFAULT 'auto'`,
+    );
     await queryRunner.query(`ALTER TABLE quotes ADD COLUMN dcr_system_size_kw DECIMAL(10,2)`);
     await queryRunner.query(`ALTER TABLE quotes ADD COLUMN non_dcr_system_size_kw DECIMAL(10,2)`);
     await queryRunner.query(`ALTER TABLE quotes ADD COLUMN floor_number INTEGER DEFAULT 0`);
@@ -110,20 +126,32 @@ export class RestructureQuoteTables1779000000000 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE quotes ADD COLUMN base_price DECIMAL(15,2)`);
     await queryRunner.query(`ALTER TABLE quotes ADD COLUMN gst_amount DECIMAL(15,2)`);
     await queryRunner.query(`ALTER TABLE quotes ADD COLUMN total_price DECIMAL(15,2)`);
-    await queryRunner.query(`ALTER TABLE quotes ADD COLUMN discount_amount DECIMAL(15,2) DEFAULT 0`);
+    await queryRunner.query(
+      `ALTER TABLE quotes ADD COLUMN discount_amount DECIMAL(15,2) DEFAULT 0`,
+    );
     await queryRunner.query(`ALTER TABLE quotes ADD COLUMN final_price DECIMAL(15,2)`);
-    await queryRunner.query(`ALTER TABLE quotes ADD COLUMN is_subsidy_applicable BOOLEAN DEFAULT false`);
+    await queryRunner.query(
+      `ALTER TABLE quotes ADD COLUMN is_subsidy_applicable BOOLEAN DEFAULT false`,
+    );
     await queryRunner.query(`ALTER TABLE quotes ADD COLUMN subsidy_amount DECIMAL(15,2) DEFAULT 0`);
     await queryRunner.query(`ALTER TABLE quotes ADD COLUMN effective_price DECIMAL(15,2)`);
 
     // Step 2: Re-add 7 pricing columns to quote_versions
     await queryRunner.query(`ALTER TABLE quote_versions ADD COLUMN base_price DECIMAL(15,2)`);
-    await queryRunner.query(`ALTER TABLE quote_versions ADD COLUMN gst_12_on_70_percent DECIMAL(15,2)`);
-    await queryRunner.query(`ALTER TABLE quote_versions ADD COLUMN gst_18_on_30_percent DECIMAL(15,2)`);
+    await queryRunner.query(
+      `ALTER TABLE quote_versions ADD COLUMN gst_12_on_70_percent DECIMAL(15,2)`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE quote_versions ADD COLUMN gst_18_on_30_percent DECIMAL(15,2)`,
+    );
     await queryRunner.query(`ALTER TABLE quote_versions ADD COLUMN total_gst DECIMAL(15,2)`);
     await queryRunner.query(`ALTER TABLE quote_versions ADD COLUMN total_price DECIMAL(15,2)`);
-    await queryRunner.query(`ALTER TABLE quote_versions ADD COLUMN discount_amount DECIMAL(15,2) DEFAULT 0`);
-    await queryRunner.query(`ALTER TABLE quote_versions ADD COLUMN subsidy_amount DECIMAL(15,2) DEFAULT 0`);
+    await queryRunner.query(
+      `ALTER TABLE quote_versions ADD COLUMN discount_amount DECIMAL(15,2) DEFAULT 0`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE quote_versions ADD COLUMN subsidy_amount DECIMAL(15,2) DEFAULT 0`,
+    );
 
     // Step 3: Copy data back from JSONB to columns
     await queryRunner.query(`

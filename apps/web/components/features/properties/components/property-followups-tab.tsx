@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  FollowupPriority,
-  FollowupStatus,
-  FollowupType,
-} from '@oneohm-epc/shared-types';
+import { FollowupPriority, FollowupStatus, FollowupType } from '@oneohm-epc/shared-types';
 import {
   AlertCircle,
   Bell,
@@ -26,7 +22,8 @@ import {
   useFollowups,
   useMarkFollowupComplete,
   useMarkFollowupCancelled,
-type  FollowupResponse } from '@/components/features/followups/hooks';
+  type FollowupResponse,
+} from '@/components/features/followups/hooks';
 import { EmptyState } from '@/components/shared';
 import { Badge, Button, Skeleton, showToast } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
@@ -55,7 +52,10 @@ const TYPE_CONFIG: Record<FollowupType, { label: string; icon: typeof MapPin }> 
   [FollowupType.DOCUMENT_COLLECTION]: { label: 'Docs', icon: FileText },
 };
 
-const PRIORITY_CONFIG: Record<FollowupPriority, { label: string; variant: 'error' | 'warning' | 'info' }> = {
+const PRIORITY_CONFIG: Record<
+  FollowupPriority,
+  { label: string; variant: 'error' | 'warning' | 'info' }
+> = {
   [FollowupPriority.HIGH]: { label: 'High', variant: 'error' },
   [FollowupPriority.NORMAL]: { label: 'Normal', variant: 'warning' },
   [FollowupPriority.LOW]: { label: 'Low', variant: 'info' },
@@ -71,7 +71,7 @@ function formatFollowupDate(dateStr: string): string {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
-  })  } at ${  date.toLocaleTimeString('en-US', {
+  })} at ${date.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
@@ -144,9 +144,7 @@ export function PropertyFollowupsTab({
   );
 
   const handleAddFollowup = useCallback(() => {
-    router.push(
-      `${ROUTES.FOLLOWUPS.NEW}?propertyId=${propertyId}&customerId=${customerId}`,
-    );
+    router.push(`${ROUTES.FOLLOWUPS.NEW}?propertyId=${propertyId}&customerId=${customerId}`);
   }, [router, propertyId, customerId]);
 
   // Loading state
@@ -177,11 +175,11 @@ export function PropertyFollowupsTab({
       {/* Header: Filters + Add Button */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          {([
+          {[
             { key: 'pending' as const, label: 'Pending', count: pendingCount },
             { key: 'completed' as const, label: 'Completed', count: completedCount },
             { key: 'all' as const, label: 'All', count: followups.length },
-          ]).map((tab) => (
+          ].map((tab) => (
             <button
               key={tab.key}
               type="button"
@@ -251,13 +249,19 @@ export function PropertyFollowupsTab({
                         {priorityConfig.label}
                       </Badge>
                       {overdue && (
-                        <Badge variant="warning" size="xs">Overdue</Badge>
+                        <Badge variant="warning" size="xs">
+                          Overdue
+                        </Badge>
                       )}
                       {isCompleted && (
-                        <Badge variant="success" size="xs">Completed</Badge>
+                        <Badge variant="success" size="xs">
+                          Completed
+                        </Badge>
                       )}
                       {isCancelled && (
-                        <Badge variant="default" size="xs">Cancelled</Badge>
+                        <Badge variant="default" size="xs">
+                          Cancelled
+                        </Badge>
                       )}
                     </div>
 

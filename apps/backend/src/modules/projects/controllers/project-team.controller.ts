@@ -110,5 +110,4 @@ export class ProjectTeamController {
     await this.teamService.removeMember(id, projectId);
     return { message: 'Team member removed successfully' };
   }
-
 }

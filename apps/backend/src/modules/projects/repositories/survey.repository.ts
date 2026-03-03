@@ -89,6 +89,13 @@ export class SurveyRepository {
    * Generate a unique survey code (e.g. SSV-ONEOHM-2026-0001)
    */
   async generateSurveyCode(orgCode: string, manager?: EntityManager): Promise<string> {
-    return generateEntityCode(this.repository, 'surveyCode', 'SSV', orgCode, 'survey_code', manager);
+    return generateEntityCode(
+      this.repository,
+      'surveyCode',
+      'SSV',
+      orgCode,
+      'survey_code',
+      manager,
+    );
   }
 }

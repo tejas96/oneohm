@@ -5,7 +5,6 @@ import { useCallback, useState } from 'react';
 
 import { SMART_EXPAND_DEFAULTS } from '../constants';
 
-
 const STORAGE_KEY_PREFIX = 'my-tasks-collapsed-';
 
 function readFromStorage(groupBy: GroupByMode): Record<string, boolean> | null {

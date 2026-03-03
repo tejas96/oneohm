@@ -8,7 +8,6 @@ import type { CreateFromCalculationRequest, SaveQuoteResponse } from '../types';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
 
-
 export function useSaveQuote() {
   const { user } = useAuth();
   const organizationId = user?.organizationId;

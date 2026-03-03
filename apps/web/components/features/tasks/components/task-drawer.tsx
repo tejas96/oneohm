@@ -1,6 +1,11 @@
 'use client';
 
-import { TASK_STATUS_TRANSITIONS, TaskStatus, type TaskChecklist, type TaskPriority } from '@oneohm-epc/shared-types';
+import {
+  TASK_STATUS_TRANSITIONS,
+  TaskStatus,
+  type TaskChecklist,
+  type TaskPriority,
+} from '@oneohm-epc/shared-types';
 import { AlertCircle } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
@@ -14,12 +19,7 @@ import { useTaskDetail } from '../hooks/use-task-detail';
 import { useAddComment, useUpdateTask } from '../hooks/use-task-mutations';
 
 import { Button } from '@/components/ui/button';
-import {
-  Sheet,
-  SheetContent,
-  SheetFooter,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetFooter, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
@@ -156,9 +156,7 @@ export function TaskDrawer({
   return (
     <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <SheetContent side="right" className="w-full sm:max-w-md flex flex-col p-0">
-        <SheetTitle className="sr-only">
-          {task?.name ?? 'Task Details'}
-        </SheetTitle>
+        <SheetTitle className="sr-only">{task?.name ?? 'Task Details'}</SheetTitle>
         {isError ? (
           <div className="flex flex-col items-center justify-center gap-3 p-6 pt-16 text-center">
             <AlertCircle className="h-10 w-10 text-foreground-muted" />
@@ -266,11 +264,7 @@ export function TaskDrawer({
 
             {canComplete && (
               <SheetFooter className="border-t border-border-light p-4">
-                <Button
-                  className="w-full"
-                  onClick={handleComplete}
-                  disabled={updateTask.isPending}
-                >
+                <Button className="w-full" onClick={handleComplete} disabled={updateTask.isPending}>
                   Complete Task
                 </Button>
               </SheetFooter>

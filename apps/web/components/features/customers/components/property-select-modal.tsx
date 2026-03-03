@@ -102,7 +102,8 @@ export function PropertySelectModal({
           ) : (
             properties.map((property) => {
               const isSelected = selectedPropertyId === property.id;
-              const tempConfig = TEMP_COLORS[property.leadTemperature] || TEMP_COLORS[LeadTemperature.COLD];
+              const tempConfig =
+                TEMP_COLORS[property.leadTemperature] || TEMP_COLORS[LeadTemperature.COLD];
               const typeLabel = PROPERTY_TYPE_LABELS[property.propertyType] || 'Property';
               const displayName = property.propertyName || property.address || 'Unnamed Property';
 
@@ -115,7 +116,7 @@ export function PropertySelectModal({
                     'w-full rounded-lg border-2 p-3 text-left transition-all',
                     isSelected
                       ? 'border-primary bg-primary/5'
-                      : 'border-border-light bg-muted hover:border-primary/50'
+                      : 'border-border-light bg-muted hover:border-primary/50',
                   )}
                 >
                   <div className="flex items-start justify-between">
@@ -150,8 +151,8 @@ export function PropertySelectModal({
                     </span>
                     {property.monthlyBill && (
                       <span className="flex items-center gap-1 text-foreground-secondary">
-                        <Zap className="size-3" />
-                        ₹{property.monthlyBill.toLocaleString('en-IN')}/month
+                        <Zap className="size-3" />₹{property.monthlyBill.toLocaleString('en-IN')}
+                        /month
                       </span>
                     )}
                   </div>

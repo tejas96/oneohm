@@ -37,7 +37,9 @@ export function AuthGuard({
     if (!isAuthenticated) {
       const currentPath = window.location.pathname + window.location.search;
       const redirectUrl =
-        currentPath !== '/' ? `${redirectTo}?redirect=${encodeURIComponent(currentPath)}` : redirectTo;
+        currentPath !== '/'
+          ? `${redirectTo}?redirect=${encodeURIComponent(currentPath)}`
+          : redirectTo;
       router.replace(redirectUrl);
     }
   }, [isAuthenticated, isInitialized, router, redirectTo]);

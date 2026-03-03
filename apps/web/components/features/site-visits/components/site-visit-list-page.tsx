@@ -2,7 +2,16 @@
 
 import { SiteVisitStatus, VisitType, VisitPriority } from '@oneohm-epc/shared-types';
 import { ColumnDef } from '@tanstack/react-table';
-import { Calendar, Plus, MoreHorizontal, Eye, MapPin, Clock, CheckCircle, XCircle } from 'lucide-react';
+import {
+  Calendar,
+  Plus,
+  MoreHorizontal,
+  Eye,
+  MapPin,
+  Clock,
+  CheckCircle,
+  XCircle,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import * as React from 'react';
@@ -118,9 +127,9 @@ export function SiteVisitListPage(): React.JSX.Element {
   // Calculate counts
   const counts = {
     all: mockSiteVisits.length,
-    pending: mockSiteVisits.filter(v => v.status === SiteVisitStatus.PENDING).length,
-    inProgress: mockSiteVisits.filter(v => v.status === SiteVisitStatus.IN_PROGRESS).length,
-    completed: mockSiteVisits.filter(v => v.status === SiteVisitStatus.COMPLETED).length,
+    pending: mockSiteVisits.filter((v) => v.status === SiteVisitStatus.PENDING).length,
+    inProgress: mockSiteVisits.filter((v) => v.status === SiteVisitStatus.IN_PROGRESS).length,
+    completed: mockSiteVisits.filter((v) => v.status === SiteVisitStatus.COMPLETED).length,
   };
 
   // Filter tabs
@@ -132,9 +141,10 @@ export function SiteVisitListPage(): React.JSX.Element {
   ];
 
   // Filtered data
-  const filteredVisits = statusFilter === 'all'
-    ? mockSiteVisits
-    : mockSiteVisits.filter(v => v.status === statusFilter);
+  const filteredVisits =
+    statusFilter === 'all'
+      ? mockSiteVisits
+      : mockSiteVisits.filter((v) => v.status === statusFilter);
 
   // Table columns
   const columns: ColumnDef<SiteVisit>[] = [
@@ -178,9 +188,7 @@ export function SiteVisitListPage(): React.JSX.Element {
       accessorKey: 'technicianName',
       header: 'Technician',
       enableSorting: false,
-      cell: ({ row }) => (
-        <span className="text-sm">{row.original.technicianName}</span>
-      ),
+      cell: ({ row }) => <span className="text-sm">{row.original.technicianName}</span>,
     },
     {
       accessorKey: 'scheduledAt',
@@ -191,8 +199,7 @@ export function SiteVisitListPage(): React.JSX.Element {
           <div className="flex items-center gap-2">
             <Clock className="size-icon-sm text-foreground-tertiary" />
             <span className="text-sm text-foreground-secondary">
-              {date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-              {' '}
+              {date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}{' '}
               {date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
@@ -204,9 +211,7 @@ export function SiteVisitListPage(): React.JSX.Element {
       header: 'Status',
       enableSorting: false,
       cell: ({ row }) => (
-        <Badge variant={STATUS_VARIANTS[row.original.status]}>
-          {row.original.status}
-        </Badge>
+        <Badge variant={STATUS_VARIANTS[row.original.status]}>{row.original.status}</Badge>
       ),
     },
     {
@@ -220,7 +225,11 @@ export function SiteVisitListPage(): React.JSX.Element {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => router.push(ROUTES.SITE_VISITS.DETAIL.replace('[id]', row.original.id))}>
+            <DropdownMenuItem
+              onClick={() =>
+                router.push(ROUTES.SITE_VISITS.DETAIL.replace('[id]', row.original.id))
+              }
+            >
               <Eye className="mr-2 size-icon-sm" />
               View Report
             </DropdownMenuItem>

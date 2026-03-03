@@ -26,22 +26,15 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn(
-        'bg-background group/calendar p-3 [--cell-size:2rem]',
-        className,
-      )}
+      className={cn('bg-background group/calendar p-3 [--cell-size:2rem]', className)}
       captionLayout={captionLayout}
       formatters={{
-        formatMonthDropdown: (date) =>
-          date.toLocaleString('default', { month: 'short' }),
+        formatMonthDropdown: (date) => date.toLocaleString('default', { month: 'short' }),
         ...formatters,
       }}
       classNames={{
         root: cn('w-fit', defaultClassNames.root),
-        months: cn(
-          'flex gap-4 flex-col md:flex-row relative',
-          defaultClassNames.months,
-        ),
+        months: cn('flex gap-4 flex-col md:flex-row relative', defaultClassNames.months),
         month: cn('flex flex-col w-full gap-4', defaultClassNames.month),
         nav: cn(
           'flex items-center gap-1 w-full absolute top-0 inset-x-0 justify-between',
@@ -69,10 +62,7 @@ function Calendar({
           'relative has-focus:border-ring border border-input shadow-xs has-focus:ring-ring/50 has-focus:ring-[3px] rounded-md',
           defaultClassNames.dropdown_root,
         ),
-        dropdown: cn(
-          'absolute inset-0 opacity-0',
-          defaultClassNames.dropdown,
-        ),
+        dropdown: cn('absolute inset-0 opacity-0', defaultClassNames.dropdown),
         caption_label: cn(
           'select-none font-medium',
           captionLayout === 'label'
@@ -87,10 +77,7 @@ function Calendar({
           defaultClassNames.weekday,
         ),
         week: cn('flex w-full mt-2', defaultClassNames.week),
-        week_number_header: cn(
-          'select-none w-[--cell-size]',
-          defaultClassNames.week_number_header,
-        ),
+        week_number_header: cn('select-none w-[--cell-size]', defaultClassNames.week_number_header),
         week_number: cn(
           'text-[0.8rem] select-none text-foreground-muted',
           defaultClassNames.week_number,
@@ -99,15 +86,9 @@ function Calendar({
           'relative w-full h-full p-0 text-center [&:first-child[data-selected=true]_button]:rounded-l-md [&:last-child[data-selected=true]_button]:rounded-r-md group/day aspect-square select-none',
           defaultClassNames.day,
         ),
-        range_start: cn(
-          'rounded-l-md bg-primary/10',
-          defaultClassNames.range_start,
-        ),
+        range_start: cn('rounded-l-md bg-primary/10', defaultClassNames.range_start),
         range_middle: cn('rounded-none', defaultClassNames.range_middle),
-        range_end: cn(
-          'rounded-r-md bg-primary/10',
-          defaultClassNames.range_end,
-        ),
+        range_end: cn('rounded-r-md bg-primary/10', defaultClassNames.range_end),
         today: cn(
           'bg-muted text-foreground rounded-md data-[selected=true]:rounded-none',
           defaultClassNames.today,
@@ -116,21 +97,13 @@ function Calendar({
           'text-foreground-muted aria-selected:text-foreground-secondary',
           defaultClassNames.outside,
         ),
-        disabled: cn(
-          'text-foreground-muted opacity-50',
-          defaultClassNames.disabled,
-        ),
+        disabled: cn('text-foreground-muted opacity-50', defaultClassNames.disabled),
         hidden: cn('invisible', defaultClassNames.hidden),
         ...classNames,
       }}
       components={{
         Root: ({ className: rootCls, rootRef, ...rootProps }) => (
-          <div
-            data-slot="calendar"
-            ref={rootRef}
-            className={cn(rootCls)}
-            {...rootProps}
-          />
+          <div data-slot="calendar" ref={rootRef} className={cn(rootCls)} {...rootProps} />
         ),
         Chevron: ({ className: chevCls, orientation, ...chevProps }) => {
           if (orientation === 'left') {

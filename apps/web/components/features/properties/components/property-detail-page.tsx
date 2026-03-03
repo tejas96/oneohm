@@ -1,13 +1,7 @@
 'use client';
 
 import { LeadTemperature, QuoteStatus } from '@oneohm-epc/shared-types';
-import {
-  Calendar,
-  Edit,
-  FileText,
-  MapPin,
-  Plus,
-} from 'lucide-react';
+import { Calendar, Edit, FileText, MapPin, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type JSX, useCallback, useMemo } from 'react';
@@ -161,7 +155,9 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
     return (
       <ErrorState
         title="Failed to load property"
-        description={error ? getErrorMessage(error) : 'Something went wrong while loading the property.'}
+        description={
+          error ? getErrorMessage(error) : 'Something went wrong while loading the property.'
+        }
         onRetry={() => void refetch()}
       />
     );
@@ -198,9 +194,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
               <CardTitle className="text-sm">Site Address</CardTitle>
               <button
                 type="button"
-                onClick={() =>
-                  router.push(buildRoute(ROUTES.PROPERTIES.EDIT, { id: propertyId }))
-                }
+                onClick={() => router.push(buildRoute(ROUTES.PROPERTIES.EDIT, { id: propertyId }))}
                 className="p-1 text-foreground-tertiary hover:text-foreground-secondary rounded transition-colors cursor-pointer"
                 title="Edit"
               >
@@ -214,35 +208,27 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
                 <p className="text-2xs font-medium text-foreground-secondary uppercase tracking-wider">
                   Address
                 </p>
-                <p className="text-sm text-foreground mt-0.5">
-                  {property.address || '-'}
-                </p>
+                <p className="text-sm text-foreground mt-0.5">{property.address || '-'}</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-2xs font-medium text-foreground-secondary uppercase tracking-wider">
                     City
                   </p>
-                  <p className="text-sm text-foreground mt-0.5">
-                    {property.city || '-'}
-                  </p>
+                  <p className="text-sm text-foreground mt-0.5">{property.city || '-'}</p>
                 </div>
                 <div>
                   <p className="text-2xs font-medium text-foreground-secondary uppercase tracking-wider">
                     State
                   </p>
-                  <p className="text-sm text-foreground mt-0.5">
-                    {property.state || '-'}
-                  </p>
+                  <p className="text-sm text-foreground mt-0.5">{property.state || '-'}</p>
                 </div>
               </div>
               <div>
                 <p className="text-2xs font-medium text-foreground-secondary uppercase tracking-wider">
                   Pincode
                 </p>
-                <p className="text-sm text-foreground mt-0.5">
-                  {property.pincode || '-'}
-                </p>
+                <p className="text-sm text-foreground mt-0.5">{property.pincode || '-'}</p>
               </div>
             </div>
             <div className="h-32 bg-muted rounded-lg flex items-center justify-center">
@@ -259,9 +245,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
               <CardTitle className="text-sm">Electricity Details</CardTitle>
               <button
                 type="button"
-                onClick={() =>
-                  router.push(buildRoute(ROUTES.PROPERTIES.EDIT, { id: propertyId }))
-                }
+                onClick={() => router.push(buildRoute(ROUTES.PROPERTIES.EDIT, { id: propertyId }))}
                 className="p-1 text-foreground-tertiary hover:text-foreground-secondary rounded transition-colors cursor-pointer"
                 title="Edit"
               >
@@ -275,33 +259,25 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
                 <p className="text-2xs font-medium text-foreground-secondary uppercase tracking-wider">
                   Consumer No.
                 </p>
-                <p className="text-sm text-foreground mt-0.5">
-                  {property.consumerNumber || '-'}
-                </p>
+                <p className="text-sm text-foreground mt-0.5">{property.consumerNumber || '-'}</p>
               </div>
               <div>
                 <p className="text-2xs font-medium text-foreground-secondary uppercase tracking-wider">
                   Consumer Name
                 </p>
-                <p className="text-sm text-foreground mt-0.5">
-                  {property.consumerName || '-'}
-                </p>
+                <p className="text-sm text-foreground mt-0.5">{property.consumerName || '-'}</p>
               </div>
               <div>
                 <p className="text-2xs font-medium text-foreground-secondary uppercase tracking-wider">
                   DISCOM
                 </p>
-                <p className="text-sm text-foreground mt-0.5">
-                  {property.discomName || '-'}
-                </p>
+                <p className="text-sm text-foreground mt-0.5">{property.discomName || '-'}</p>
               </div>
               <div>
                 <p className="text-2xs font-medium text-foreground-secondary uppercase tracking-wider">
                   Connection Type
                 </p>
-                <p className="text-sm text-foreground mt-0.5">
-                  {property.connectionType || '-'}
-                </p>
+                <p className="text-sm text-foreground mt-0.5">{property.connectionType || '-'}</p>
               </div>
               <div>
                 <p className="text-2xs font-medium text-foreground-secondary uppercase tracking-wider">
@@ -315,9 +291,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
                 <p className="text-2xs font-medium text-foreground-secondary uppercase tracking-wider">
                   Meter No.
                 </p>
-                <p className="text-sm text-foreground mt-0.5">
-                  {property.meterNumber || '-'}
-                </p>
+                <p className="text-sm text-foreground mt-0.5">{property.meterNumber || '-'}</p>
               </div>
             </div>
             <div className="border-t border-border-light pt-3">
@@ -354,21 +328,24 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
             <div className="space-y-2">
               <p className="text-2xs text-foreground-secondary uppercase">Temperature</p>
               <div className="flex gap-2">
-                {(Object.entries(LEAD_TEMPERATURE_CONFIG) as [LeadTemperature, typeof LEAD_TEMPERATURE_CONFIG[LeadTemperature]][]).map(
-                  ([temp, config]) => (
-                    <button
-                      key={temp}
-                      type="button"
-                      onClick={() => handleTemperatureChange(temp)}
-                      className={cn(
-                        'flex-1 h-8 rounded-lg text-xs font-medium transition-all cursor-pointer',
-                        property.leadTemperature === temp ? config.bgActive : config.bg,
-                      )}
-                    >
-                      {config.label}
-                    </button>
-                  ),
-                )}
+                {(
+                  Object.entries(LEAD_TEMPERATURE_CONFIG) as [
+                    LeadTemperature,
+                    (typeof LEAD_TEMPERATURE_CONFIG)[LeadTemperature],
+                  ][]
+                ).map(([temp, config]) => (
+                  <button
+                    key={temp}
+                    type="button"
+                    onClick={() => handleTemperatureChange(temp)}
+                    className={cn(
+                      'flex-1 h-8 rounded-lg text-xs font-medium transition-all cursor-pointer',
+                      property.leadTemperature === temp ? config.bgActive : config.bg,
+                    )}
+                  >
+                    {config.label}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -453,8 +430,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
               description="Schedule a site visit to assess the installation location and capture site details."
               action={{
                 label: 'Schedule Site Visit',
-                onClick: () =>
-                  router.push(`${ROUTES.SITE_VISITS.NEW}?propertyId=${propertyId}`),
+                onClick: () => router.push(`${ROUTES.SITE_VISITS.NEW}?propertyId=${propertyId}`),
                 icon: <Calendar className="size-icon-sm" />,
               }}
             />
@@ -477,7 +453,9 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
                   action={{
                     label: 'Create Quote',
                     onClick: () =>
-                      router.push(`${ROUTES.QUOTES.NEW}?propertyId=${propertyId}&customerId=${property.customerId}`),
+                      router.push(
+                        `${ROUTES.QUOTES.NEW}?propertyId=${propertyId}&customerId=${property.customerId}`,
+                      ),
                     icon: <FileText className="size-icon-sm" />,
                   }}
                 />
@@ -527,7 +505,9 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
                           </td>
                           <td className="py-3 px-3">
                             <Badge
-                              variant={QUOTE_STATUS_BADGE_VARIANT[quote.status as QuoteStatus] ?? 'default'}
+                              variant={
+                                QUOTE_STATUS_BADGE_VARIANT[quote.status as QuoteStatus] ?? 'default'
+                              }
                               size="xs"
                             >
                               {quote.status}
@@ -555,10 +535,7 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
 
           {/* Followups Tab */}
           <TabsContent value="followups">
-            <PropertyFollowupsTab
-              propertyId={propertyId}
-              customerId={property.customerId}
-            />
+            <PropertyFollowupsTab propertyId={propertyId} customerId={property.customerId} />
           </TabsContent>
 
           {/* Documents Tab */}

@@ -46,9 +46,10 @@ export function TaskRow({
   const isStale = staleThreshold !== undefined && daysStale >= staleThreshold;
 
   const hintText = NEXT_ACTION_HINTS[task.status];
-  const blockedHint = task.status === TaskStatus.BLOCKED && task.blockedReason
-    ? `Resolve blocker: ${task.blockedReason}`
-    : hintText;
+  const blockedHint =
+    task.status === TaskStatus.BLOCKED && task.blockedReason
+      ? `Resolve blocker: ${task.blockedReason}`
+      : hintText;
 
   return (
     <div
@@ -69,9 +70,7 @@ export function TaskRow({
       }}
     >
       {/* Overdue indicator */}
-      {isOverdue && (
-        <AlertTriangle className="size-3.5 text-error mr-2 shrink-0" />
-      )}
+      {isOverdue && <AlertTriangle className="size-3.5 text-error mr-2 shrink-0" />}
       {hasDependencyBlockers && !isOverdue && (
         <Lock className="size-3.5 text-amber-500 mr-2 shrink-0" />
       )}
@@ -89,7 +88,13 @@ export function TaskRow({
           <span className="text-foreground-muted">/</span>
           <span className="text-2xs font-mono text-foreground-muted">{task.code}</span>
           <Badge
-            variant={TASK_PRIORITY_BADGE_VARIANT[task.priority] as 'error' | 'warning' | 'info' | 'secondary'}
+            variant={
+              TASK_PRIORITY_BADGE_VARIANT[task.priority] as
+                | 'error'
+                | 'warning'
+                | 'info'
+                | 'secondary'
+            }
             size="xs"
             shape="rounded"
           >
@@ -110,14 +115,10 @@ export function TaskRow({
         {/* Next action hint + assignee info */}
         <div className="flex items-center gap-3 mt-0.5">
           {blockedHint && (
-            <span className="text-2xs text-foreground-muted italic truncate">
-              {blockedHint}
-            </span>
+            <span className="text-2xs text-foreground-muted italic truncate">{blockedHint}</span>
           )}
           {task.assigneeName && (
-            <span className="text-2xs text-foreground-tertiary shrink-0">
-              {task.assigneeName}
-            </span>
+            <span className="text-2xs text-foreground-tertiary shrink-0">{task.assigneeName}</span>
           )}
         </div>
 
@@ -132,7 +133,9 @@ export function TaskRow({
       {/* Right side: due date + actions */}
       <div className="flex items-center gap-2 ml-3 shrink-0">
         {task.endDate && (
-          <span className={`text-2xs font-medium whitespace-nowrap ${getDueDateColor(task.endDate)}`}>
+          <span
+            className={`text-2xs font-medium whitespace-nowrap ${getDueDateColor(task.endDate)}`}
+          >
             {formatRelativeDate(task.endDate)}
           </span>
         )}

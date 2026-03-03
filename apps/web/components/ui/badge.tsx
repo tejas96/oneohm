@@ -146,7 +146,10 @@ function DotBadge({
   };
 
   return (
-    <span className={cn('inline-flex items-center gap-2 text-sm text-foreground', className)} {...props}>
+    <span
+      className={cn('inline-flex items-center gap-2 text-sm text-foreground', className)}
+      {...props}
+    >
       <span className={cn('size-radio-indicator-sm rounded-full', dotColors[color])} />
       {children}
     </span>
@@ -199,9 +202,9 @@ function CountBadge({
   };
 
   const sizeClasses = {
-    '2xs': 'min-w-icon-xs h-icon-xs px-0.5 text-nano font-semibold',   // 14px badge, 8px text
-    xs: 'min-w-icon-sm h-icon-sm px-1 text-micro font-semibold',       // 16px badge, 9px text
-    sm: 'min-w-icon h-icon px-1 text-micro font-semibold',         // 18px badge, 9px text
+    '2xs': 'min-w-icon-xs h-icon-xs px-0.5 text-nano font-semibold', // 14px badge, 8px text
+    xs: 'min-w-icon-sm h-icon-sm px-1 text-micro font-semibold', // 16px badge, 9px text
+    sm: 'min-w-icon h-icon px-1 text-micro font-semibold', // 18px badge, 9px text
     default: 'min-w-icon-md h-icon-md px-1.5 text-xs font-medium', // 20px badge, 12px text
   };
 

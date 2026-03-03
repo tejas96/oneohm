@@ -59,14 +59,20 @@ function PermissionCheck({
 
   // Check permission
   if (permission && !hasPermission(permission)) {
-    return <>{forbidden || <ForbiddenScreen message="You don't have permission to access this page." />}</>;
+    return (
+      <>
+        {forbidden || <ForbiddenScreen message="You don't have permission to access this page." />}
+      </>
+    );
   }
 
   // Check role
   if (role && !hasRole(role)) {
     return (
       <>
-        {forbidden || <ForbiddenScreen message={`You need the "${role}" role to access this page.`} />}
+        {forbidden || (
+          <ForbiddenScreen message={`You need the "${role}" role to access this page.`} />
+        )}
       </>
     );
   }

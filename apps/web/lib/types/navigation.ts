@@ -5,7 +5,7 @@ import { ROUTES } from '@/lib/config/routes';
 /**
  * Navigation Types for OneOhm EPC Web
  * Defines structure for Rail and Panel navigation
- * 
+ *
  * HIERARCHY:
  * - Rail (Level 1): Top-level icon navigation
  * - Panel Sections (Level 2): Grouped sections with headers
@@ -14,13 +14,27 @@ import { ROUTES } from '@/lib/config/routes';
  */
 
 /** User roles for access control */
-export type UserRole = 'admin' | 'super_admin' | 'platform_admin' | 'manager' | 'sales' | 'field_worker' | 'viewer';
+export type UserRole =
+  | 'admin'
+  | 'super_admin'
+  | 'platform_admin'
+  | 'manager'
+  | 'sales'
+  | 'field_worker'
+  | 'viewer';
 
 /** Badge variants for navigation items */
 export type NavBadgeVariant = 'default' | 'primary' | 'warning' | 'error' | 'success' | 'info';
 
 /** Status dot colors for lead temperature and project status indicators */
-export type StatusDotColor = 'hot' | 'warm' | 'cold' | 'active' | 'planning' | 'on_hold' | 'completed_project';
+export type StatusDotColor =
+  | 'hot'
+  | 'warm'
+  | 'cold'
+  | 'active'
+  | 'planning'
+  | 'on_hold'
+  | 'completed_project';
 
 /** Base navigation item */
 export interface NavItem {
@@ -108,15 +122,15 @@ export const defaultPathMatcher: PathMatcher = (pathname, href, exactMatch = fal
   // Strip query params for comparison
   const cleanPathname = pathname.split('?')[0] ?? pathname;
   const cleanHref = href.split('?')[0] ?? href;
-  
+
   if (exactMatch) {
     return cleanPathname === cleanHref;
   }
-  
+
   if (cleanHref === ROUTES.DASHBOARD.HOME) {
     return cleanPathname === ROUTES.DASHBOARD.HOME || cleanPathname === ROUTES.HOME;
   }
-  
+
   return cleanPathname.startsWith(cleanHref);
 };
 
@@ -139,7 +153,7 @@ export interface UserAccessContext {
  */
 export function filterByAccess<T extends { roles?: UserRole[]; permissions?: string[] }>(
   items: T[],
-  userAccess: UserAccessContext
+  userAccess: UserAccessContext,
 ): T[] {
   return items.filter((item) => hasAccess(item, userAccess));
 }
@@ -153,7 +167,7 @@ export function filterByAccess<T extends { roles?: UserRole[]; permissions?: str
  */
 export function hasAccess(
   item: { roles?: UserRole[]; permissions?: string[] },
-  userAccess: UserAccessContext
+  userAccess: UserAccessContext,
 ): boolean {
   const hasRoleRequirement = item.roles && item.roles.length > 0;
   const hasPermissionRequirement = item.permissions && item.permissions.length > 0;
@@ -185,7 +199,7 @@ export function hasAccess(
  */
 export function filterByRole<T extends { roles?: UserRole[] }>(
   items: T[],
-  userRole: UserRole
+  userRole: UserRole,
 ): T[] {
   return items.filter((item) => {
     if (!item.roles || item.roles.length === 0) {

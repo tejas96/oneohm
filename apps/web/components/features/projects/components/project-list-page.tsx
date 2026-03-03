@@ -6,11 +6,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
 
-import {
-  PRIORITY_FILTER_OPTIONS,
-  STATUS_FILTER_OPTIONS,
-  TYPE_FILTER_OPTIONS,
-} from '../constants';
+import { PRIORITY_FILTER_OPTIONS, STATUS_FILTER_OPTIONS, TYPE_FILTER_OPTIONS } from '../constants';
 import { useProjects, type ProjectFilters } from '../hooks';
 import { ProjectCard } from './project-card';
 import { projectColumns } from './project-table-columns';
@@ -30,33 +26,26 @@ import {
 import { ROUTES } from '@/lib/config/routes';
 import { useDebounce } from '@/lib/hooks';
 
-
 const DEFAULT_PAGE_SIZE = 10;
 
 function useUrlState() {
   const searchParams = useSearchParams();
 
-  const get = useCallback(
-    (key: string) => searchParams.get(key) ?? '',
-    [searchParams],
-  );
+  const get = useCallback((key: string) => searchParams.get(key) ?? '', [searchParams]);
 
-  const set = useCallback(
-    (updates: Record<string, string>) => {
-      const params = new URLSearchParams(window.location.search);
-      for (const [key, value] of Object.entries(updates)) {
-        if (value) {
-          params.set(key, value);
-        } else {
-          params.delete(key);
-        }
+  const set = useCallback((updates: Record<string, string>) => {
+    const params = new URLSearchParams(window.location.search);
+    for (const [key, value] of Object.entries(updates)) {
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
       }
-      const qs = params.toString();
-      const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
-      window.history.replaceState(null, '', url);
-    },
-    [],
-  );
+    }
+    const qs = params.toString();
+    const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+    window.history.replaceState(null, '', url);
+  }, []);
 
   return { get, set };
 }
@@ -72,9 +61,7 @@ export function ProjectListPage() {
   const [currentView, setCurrentView] = useState<'card' | 'table'>(
     (url.get('view') as 'card' | 'table') || 'table',
   );
-  const [currentPage, setCurrentPage] = useState(
-    parseInt(url.get('page') || '1', 10),
-  );
+  const [currentPage, setCurrentPage] = useState(parseInt(url.get('page') || '1', 10));
   const [pageSize, setPageSize] = useState(
     parseInt(url.get('pageSize') || String(DEFAULT_PAGE_SIZE), 10),
   );
@@ -166,133 +153,131 @@ export function ProjectListPage() {
 
       {/* Search & Filters Row */}
       <div className="flex items-center gap-3">
-          {/* Search Bar */}
-          <div className="relative w-72">
-            <Input
-              placeholder="Search projects..."
-              value={searchInput}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              leftIcon={<Search className="size-icon-sm" />}
-              className="h-8 text-sm"
-            />
-            {searchInput && (
-              <button
-                type="button"
-                onClick={() => handleSearchChange('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded"
-              >
-                <X className="size-3.5 text-foreground-tertiary" />
-              </button>
-            )}
-          </div>
-
-          {/* Divider */}
-          <div className="h-5 w-px bg-border-light" />
-
-          {/* Status */}
-          <Select
-            value={statusFilter || 'all'}
-            onValueChange={(v) => handleFilterChange('status', v === 'all' ? '' : v)}
-          >
-            <SelectTrigger className="w-36 h-8 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_FILTER_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Priority */}
-          <Select
-            value={priorityFilter || 'all'}
-            onValueChange={(v) => handleFilterChange('priority', v === 'all' ? '' : v)}
-          >
-            <SelectTrigger className="w-32 h-8 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PRIORITY_FILTER_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Type */}
-          <Select
-            value={typeFilter || 'all'}
-            onValueChange={(v) => handleFilterChange('projectType', v === 'all' ? '' : v)}
-          >
-            <SelectTrigger className="w-32 h-8 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TYPE_FILTER_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Clear Filters */}
-          {hasActiveFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setStatusFilter('');
-                setPriorityFilter('');
-                setTypeFilter('');
-                setSearchInput('');
-                setCurrentPage(1);
-                url.set({ status: '', priority: '', projectType: '', search: '', page: '' });
-              }}
-              className="text-foreground-secondary h-8"
+        {/* Search Bar */}
+        <div className="relative w-72">
+          <Input
+            placeholder="Search projects..."
+            value={searchInput}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            leftIcon={<Search className="size-icon-sm" />}
+            className="h-8 text-sm"
+          />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={() => handleSearchChange('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded"
             >
-              <X className="mr-1 size-3" />
-              Clear
-            </Button>
+              <X className="size-3.5 text-foreground-tertiary" />
+            </button>
           )}
+        </div>
 
-          {/* Spacer + View Toggle */}
-          <div className="ml-auto flex items-center bg-muted rounded-lg p-0.5">
-            <button
-              type="button"
-              onClick={() => handleViewChange('table')}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors ${
-                currentView === 'table'
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-foreground-secondary hover:text-foreground'
-              }`}
-            >
-              <List className="size-4" />
-              Table
-            </button>
-            <button
-              type="button"
-              onClick={() => handleViewChange('card')}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors ${
-                currentView === 'card'
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-foreground-secondary hover:text-foreground'
-              }`}
-            >
-              <LayoutGrid className="size-4" />
-              Cards
-            </button>
-          </div>
+        {/* Divider */}
+        <div className="h-5 w-px bg-border-light" />
+
+        {/* Status */}
+        <Select
+          value={statusFilter || 'all'}
+          onValueChange={(v) => handleFilterChange('status', v === 'all' ? '' : v)}
+        >
+          <SelectTrigger className="w-36 h-8 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_FILTER_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Priority */}
+        <Select
+          value={priorityFilter || 'all'}
+          onValueChange={(v) => handleFilterChange('priority', v === 'all' ? '' : v)}
+        >
+          <SelectTrigger className="w-32 h-8 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PRIORITY_FILTER_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Type */}
+        <Select
+          value={typeFilter || 'all'}
+          onValueChange={(v) => handleFilterChange('projectType', v === 'all' ? '' : v)}
+        >
+          <SelectTrigger className="w-32 h-8 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {TYPE_FILTER_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Clear Filters */}
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setStatusFilter('');
+              setPriorityFilter('');
+              setTypeFilter('');
+              setSearchInput('');
+              setCurrentPage(1);
+              url.set({ status: '', priority: '', projectType: '', search: '', page: '' });
+            }}
+            className="text-foreground-secondary h-8"
+          >
+            <X className="mr-1 size-3" />
+            Clear
+          </Button>
+        )}
+
+        {/* Spacer + View Toggle */}
+        <div className="ml-auto flex items-center bg-muted rounded-lg p-0.5">
+          <button
+            type="button"
+            onClick={() => handleViewChange('table')}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors ${
+              currentView === 'table'
+                ? 'bg-primary/10 text-primary'
+                : 'text-foreground-secondary hover:text-foreground'
+            }`}
+          >
+            <List className="size-4" />
+            Table
+          </button>
+          <button
+            type="button"
+            onClick={() => handleViewChange('card')}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors ${
+              currentView === 'card'
+                ? 'bg-primary/10 text-primary'
+                : 'text-foreground-secondary hover:text-foreground'
+            }`}
+          >
+            <LayoutGrid className="size-4" />
+            Cards
+          </button>
+        </div>
       </div>
 
       {/* Error State */}
-      {isError && (
-        <ErrorState onRetry={() => refetch()} />
-      )}
+      {isError && <ErrorState onRetry={() => refetch()} />}
 
       {/* Content */}
       {!isError && (
@@ -319,7 +304,13 @@ export function ProjectListPage() {
                         setTypeFilter('');
                         setSearchInput('');
                         setCurrentPage(1);
-                        url.set({ status: '', priority: '', projectType: '', search: '', page: '' });
+                        url.set({
+                          status: '',
+                          priority: '',
+                          projectType: '',
+                          search: '',
+                          page: '',
+                        });
                       },
                     }}
                   />
@@ -331,7 +322,9 @@ export function ProjectListPage() {
                     iconColor="primary"
                     action={{
                       label: 'New Project',
-                      onClick: () => { router.push(ROUTES.PROJECTS.NEW); },
+                      onClick: () => {
+                        router.push(ROUTES.PROJECTS.NEW);
+                      },
                     }}
                   />
                 )}
@@ -345,7 +338,10 @@ export function ProjectListPage() {
               {isLoading && (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="bg-background rounded-lg border border-border-light p-4 animate-pulse">
+                    <div
+                      key={i}
+                      className="bg-background rounded-lg border border-border-light p-4 animate-pulse"
+                    >
                       <div className="h-4 bg-muted rounded w-1/3 mb-2" />
                       <div className="h-5 bg-muted rounded w-2/3 mb-3" />
                       <div className="h-3 bg-muted rounded w-1/2 mb-2" />

@@ -14,9 +14,7 @@ function matchesRoute(pathname: string, routes: readonly string[]): boolean {
  */
 function isStaticOrApi(pathname: string): boolean {
   return (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
-    pathname.includes('.') // Static files like .ico, .png, etc.
+    pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.includes('.') // Static files like .ico, .png, etc.
   );
 }
 

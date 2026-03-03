@@ -1,20 +1,11 @@
 'use client';
 
-import {
-  AlertTriangle,
-  Calendar,
-  Calculator,
-  Download,
-  Save,
-  Shield,
-  Zap,
-} from 'lucide-react';
+import { AlertTriangle, Calendar, Calculator, Download, Save, Shield, Zap } from 'lucide-react';
 
 import type { CalculateQuoteResponse } from '../types';
 
 import { Badge, Button, Card, CardContent, Skeleton, Spinner } from '@/components/ui';
 import { formatCurrency, formatCurrencyDecimal } from '@/lib/utils/format';
-
 
 // ============================================================================
 // Types
@@ -151,10 +142,7 @@ export function QuotePreviewPanel({
             Solar Panels
           </p>
           {dcrPanels.map((panel) => (
-            <div
-              key={panel.productId}
-              className="rounded-lg border border-border-light p-2.5"
-            >
+            <div key={panel.productId} className="rounded-lg border border-border-light p-2.5">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5">
@@ -179,10 +167,7 @@ export function QuotePreviewPanel({
             </div>
           ))}
           {nonDcrPanels.map((panel) => (
-            <div
-              key={panel.productId}
-              className="rounded-lg border border-border-light p-2.5"
-            >
+            <div key={panel.productId} className="rounded-lg border border-border-light p-2.5">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5">
@@ -224,18 +209,29 @@ export function QuotePreviewPanel({
             {dcrPanels.length > 0 && dcrPanels[0] && (
               <div className="flex items-center justify-between py-2.5">
                 <div className="flex items-center gap-2">
-                  <Badge variant="success" size="xs">DCR</Badge>
+                  <Badge variant="success" size="xs">
+                    DCR
+                  </Badge>
                   <div>
                     <p className="text-sm font-medium">DCR Panels</p>
                     <p className="text-2xs text-foreground-tertiary">
-                      {(((manualDcrPanelCount ?? dcrPanels[0].quantity) * dcrPanels[0].wattagePerPanel) / 1000).toFixed(2)} kW
+                      {(
+                        ((manualDcrPanelCount ?? dcrPanels[0].quantity) *
+                          dcrPanels[0].wattagePerPanel) /
+                        1000
+                      ).toFixed(2)}{' '}
+                      kW
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center overflow-hidden rounded-lg bg-muted">
                   <button
                     type="button"
-                    onClick={() => onManualDcrPanelCountChange(Math.max(1, (manualDcrPanelCount ?? dcrPanels[0]!.quantity) - 1))}
+                    onClick={() =>
+                      onManualDcrPanelCountChange(
+                        Math.max(1, (manualDcrPanelCount ?? dcrPanels[0]!.quantity) - 1),
+                      )
+                    }
                     className="px-3 py-1.5 text-sm font-medium text-foreground-secondary transition-colors duration-fast hover:bg-background-secondary"
                   >
                     &minus;
@@ -245,7 +241,11 @@ export function QuotePreviewPanel({
                   </span>
                   <button
                     type="button"
-                    onClick={() => onManualDcrPanelCountChange((manualDcrPanelCount ?? dcrPanels[0]!.quantity) + 1)}
+                    onClick={() =>
+                      onManualDcrPanelCountChange(
+                        (manualDcrPanelCount ?? dcrPanels[0]!.quantity) + 1,
+                      )
+                    }
                     className="px-3 py-1.5 text-sm font-medium text-foreground-secondary transition-colors duration-fast hover:bg-background-secondary"
                   >
                     +
@@ -257,18 +257,29 @@ export function QuotePreviewPanel({
             {nonDcrPanels.length > 0 && nonDcrPanels[0] && (
               <div className="flex items-center justify-between py-2.5">
                 <div className="flex items-center gap-2">
-                  <Badge variant="warning" size="xs">Non-DCR</Badge>
+                  <Badge variant="warning" size="xs">
+                    Non-DCR
+                  </Badge>
                   <div>
                     <p className="text-sm font-medium">Non-DCR Panels</p>
                     <p className="text-2xs text-foreground-tertiary">
-                      {(((manualNonDcrPanelCount ?? nonDcrPanels[0].quantity) * nonDcrPanels[0].wattagePerPanel) / 1000).toFixed(2)} kW
+                      {(
+                        ((manualNonDcrPanelCount ?? nonDcrPanels[0].quantity) *
+                          nonDcrPanels[0].wattagePerPanel) /
+                        1000
+                      ).toFixed(2)}{' '}
+                      kW
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center overflow-hidden rounded-lg bg-muted">
                   <button
                     type="button"
-                    onClick={() => onManualNonDcrPanelCountChange(Math.max(1, (manualNonDcrPanelCount ?? nonDcrPanels[0]!.quantity) - 1))}
+                    onClick={() =>
+                      onManualNonDcrPanelCountChange(
+                        Math.max(1, (manualNonDcrPanelCount ?? nonDcrPanels[0]!.quantity) - 1),
+                      )
+                    }
                     className="px-3 py-1.5 text-sm font-medium text-foreground-secondary transition-colors duration-fast hover:bg-background-secondary"
                   >
                     &minus;
@@ -278,7 +289,11 @@ export function QuotePreviewPanel({
                   </span>
                   <button
                     type="button"
-                    onClick={() => onManualNonDcrPanelCountChange((manualNonDcrPanelCount ?? nonDcrPanels[0]!.quantity) + 1)}
+                    onClick={() =>
+                      onManualNonDcrPanelCountChange(
+                        (manualNonDcrPanelCount ?? nonDcrPanels[0]!.quantity) + 1,
+                      )
+                    }
                     className="px-3 py-1.5 text-sm font-medium text-foreground-secondary transition-colors duration-fast hover:bg-background-secondary"
                   >
                     +
@@ -302,18 +317,29 @@ export function QuotePreviewPanel({
               <div className="flex items-center overflow-hidden rounded-lg bg-muted">
                 <button
                   type="button"
-                  onClick={() => onManualInverterCountChange(Math.max(1, (manualInverterCount ?? calculation.inverters.inverters.reduce((s, i) => s + i.quantity, 0)) - 1))}
+                  onClick={() =>
+                    onManualInverterCountChange(
+                      Math.max(
+                        1,
+                        (manualInverterCount ??
+                          calculation.inverters.inverters.reduce((s, i) => s + i.quantity, 0)) - 1,
+                      ),
+                    )
+                  }
                   className="px-3 py-1.5 text-sm font-medium text-foreground-secondary transition-colors duration-fast hover:bg-background-secondary"
                 >
                   &minus;
                 </button>
                 <span className="min-w-8 px-1 text-center text-sm font-semibold">
-                  {manualInverterCount ?? calculation.inverters.inverters.reduce((s, i) => s + i.quantity, 0)}
+                  {manualInverterCount ??
+                    calculation.inverters.inverters.reduce((s, i) => s + i.quantity, 0)}
                 </span>
                 <button
                   type="button"
                   onClick={() => {
-                    const current = manualInverterCount ?? calculation.inverters.inverters.reduce((s, i) => s + i.quantity, 0);
+                    const current =
+                      manualInverterCount ??
+                      calculation.inverters.inverters.reduce((s, i) => s + i.quantity, 0);
                     onManualInverterCountChange(Math.min(20, current + 1));
                   }}
                   className="px-3 py-1.5 text-sm font-medium text-foreground-secondary transition-colors duration-fast hover:bg-background-secondary"
@@ -344,10 +370,7 @@ export function QuotePreviewPanel({
             Inverters
           </p>
           {calculation.inverters.inverters.map((inv) => (
-            <div
-              key={inv.productId}
-              className="rounded-lg border border-border-light p-2.5"
-            >
+            <div key={inv.productId} className="rounded-lg border border-border-light p-2.5">
               <div className="flex items-start justify-between">
                 <div className="space-y-0.5">
                   <p className="text-sm font-medium">{inv.name}</p>
@@ -461,9 +484,7 @@ export function QuotePreviewPanel({
               <div>
                 <p className="text-xs font-medium text-success">Government Subsidy</p>
                 {calculation.subsidy.schemeName && (
-                  <p className="text-2xs text-success/80">
-                    {calculation.subsidy.schemeName}
-                  </p>
+                  <p className="text-2xs text-success/80">{calculation.subsidy.schemeName}</p>
                 )}
               </div>
             </div>
@@ -547,15 +568,11 @@ export function QuotePreviewPanel({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-white/80">You Pay</p>
-                <p className="text-xs text-white/60">
-                  ₹{pricePerWatt.toFixed(2)}/Watt
-                </p>
+                <p className="text-xs text-white/60">₹{pricePerWatt.toFixed(2)}/Watt</p>
               </div>
               <p className="text-2xl font-semibold text-white">
                 {formatCurrency(
-                  calculation.subsidy.isApplicable
-                    ? adjustedEffectivePrice
-                    : adjustedFinalPrice,
+                  calculation.subsidy.isApplicable ? adjustedEffectivePrice : adjustedFinalPrice,
                 )}
               </p>
             </div>
@@ -584,10 +601,7 @@ export function QuotePreviewPanel({
               <p className="text-xs font-medium text-warning">Notes</p>
             </div>
             {calculation.warnings.map((w, i) => (
-              <div
-                key={i}
-                className="rounded-lg border border-warning/20 bg-warning/5 px-3 py-2"
-              >
+              <div key={i} className="rounded-lg border border-warning/20 bg-warning/5 px-3 py-2">
                 <p className="text-xs text-warning">{w.message}</p>
               </div>
             ))}

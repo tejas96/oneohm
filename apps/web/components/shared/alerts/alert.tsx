@@ -1,13 +1,7 @@
 'use client';
 
 import { cva, type VariantProps } from 'class-variance-authority';
-import {
-  AlertCircle,
-  CheckCircle2,
-  Info,
-  AlertTriangle,
-  X,
-} from 'lucide-react';
+import { AlertCircle, CheckCircle2, Info, AlertTriangle, X } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
@@ -43,9 +37,21 @@ const alertVariants = cva('flex items-start gap-3 rounded-lg text-sm', {
   },
   compoundVariants: [
     // Banner appearance overrides - solid colors with theme tokens
-    { variant: 'success', appearance: 'banner', className: 'bg-success text-success-foreground border-0' },
-    { variant: 'error', appearance: 'banner', className: 'bg-error text-error-foreground border-0' },
-    { variant: 'warning', appearance: 'banner', className: 'bg-warning text-warning-foreground border-0' },
+    {
+      variant: 'success',
+      appearance: 'banner',
+      className: 'bg-success text-success-foreground border-0',
+    },
+    {
+      variant: 'error',
+      appearance: 'banner',
+      className: 'bg-error text-error-foreground border-0',
+    },
+    {
+      variant: 'warning',
+      appearance: 'banner',
+      className: 'bg-warning text-warning-foreground border-0',
+    },
     { variant: 'info', appearance: 'banner', className: 'bg-info text-info-foreground border-0' },
   ],
   defaultVariants: {
@@ -144,14 +150,8 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
           />
         )}
         <div className="flex-1 min-w-0">
-          {title && (
-            <p className="font-medium">
-              {title}
-            </p>
-          )}
-          <div className={cn(title && 'mt-1', 'opacity-90')}>
-            {children}
-          </div>
+          {title && <p className="font-medium">{title}</p>}
+          <div className={cn(title && 'mt-1', 'opacity-90')}>{children}</div>
           {actions && <div className="flex gap-3 mt-3">{actions}</div>}
         </div>
         {dismissible && (

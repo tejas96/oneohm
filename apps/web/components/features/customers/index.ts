@@ -1,11 +1,7 @@
 // Customers Feature - Barrel Exports
 
 // Constants
-export {
-  DOCUMENT_TYPE_LABELS,
-  DOCUMENT_TYPE_OPTIONS,
-  getDocumentTypeLabel,
-} from './constants';
+export { DOCUMENT_TYPE_LABELS, DOCUMENT_TYPE_OPTIONS, getDocumentTypeLabel } from './constants';
 
 // Components
 export { CustomerListPage } from './components/customer-list-page';
@@ -22,10 +18,7 @@ export { DocumentPreviewModal } from './components/document-preview-modal';
 export type { PreviewDocument } from './components/document-preview-modal';
 
 // Schemas
-export {
-  createCustomerProfileSchema,
-  importCustomersSchema,
-} from './schemas/customer.schema';
+export { createCustomerProfileSchema, importCustomersSchema } from './schemas/customer.schema';
 
 export type {
   CreateCustomerProfileFormData,

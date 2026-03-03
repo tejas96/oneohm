@@ -87,8 +87,7 @@ export const projectKeys = {
   list: (orgId: string | undefined, filters: Record<string, unknown>) =>
     [...projectKeys.lists(orgId), filters] as const,
   details: (orgId?: string) => [...projectKeys.all(orgId), 'detail'] as const,
-  detail: (orgId: string | undefined, id: string) =>
-    [...projectKeys.details(orgId), id] as const,
+  detail: (orgId: string | undefined, id: string) => [...projectKeys.details(orgId), id] as const,
 };
 
 // ============================================================================
@@ -119,10 +118,9 @@ export function useProjects(
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
-      const { data } = await apiClient.get<ProjectListResponse>(
-        `/projects?${params.toString()}`,
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
+      const { data } = await apiClient.get<ProjectListResponse>(`/projects?${params.toString()}`, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
       return data;
     },
     enabled: !!organizationId,

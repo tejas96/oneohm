@@ -1,9 +1,6 @@
 'use client';
 
-import {
-  TaskStatus,
-  TASK_STATUS_TRANSITIONS,
-} from '@oneohm-epc/shared-types';
+import { TaskStatus, TASK_STATUS_TRANSITIONS } from '@oneohm-epc/shared-types';
 import {
   useQuery,
   useMutation,
@@ -91,19 +88,16 @@ export const boardKeys = {
 // Hooks
 // ============================================================================
 
-export function useKanbanBoard(
-  projectId: string,
-): UseQueryResult<BoardResponse> {
+export function useKanbanBoard(projectId: string): UseQueryResult<BoardResponse> {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
 
   return useQuery({
     queryKey: boardKeys.board(organizationId, projectId),
     queryFn: async () => {
-      const { data } = await apiClient.get<BoardResponse>(
-        `/projects/${projectId}/tasks/board`,
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
+      const { data } = await apiClient.get<BoardResponse>(`/projects/${projectId}/tasks/board`, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
       return data;
     },
     enabled: !!projectId && !!organizationId,
@@ -112,16 +106,20 @@ export function useKanbanBoard(
   });
 }
 
-export function useMoveTask(
-  projectId: string,
-): UseMutationResult<unknown, Error, MoveTaskPayload> {
+export function useMoveTask(projectId: string): UseMutationResult<unknown, Error, MoveTaskPayload> {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
   const queryClient = useQueryClient();
   const pendingMutations = useRef(0);
 
   return useMutation({
-    mutationFn: async ({ taskId, projectId: pid, status, kanbanOrder, version }: MoveTaskPayload) => {
+    mutationFn: async ({
+      taskId,
+      projectId: pid,
+      status,
+      kanbanOrder,
+      version,
+    }: MoveTaskPayload) => {
       const { data } = await apiClient.post(
         `/projects/${pid}/tasks/${taskId}/move`,
         { status, kanbanOrder, version },
@@ -138,49 +136,44 @@ export function useMoveTask(
         boardKeys.board(organizationId, projectId),
       );
 
-      queryClient.setQueryData<BoardResponse>(
-        boardKeys.board(organizationId, projectId),
-        (old) => {
-          if (!old) return old;
-          const columns = old.columns.map((col) => ({
-            ...col,
-            tasks: [...col.tasks],
-          }));
+      queryClient.setQueryData<BoardResponse>(boardKeys.board(organizationId, projectId), (old) => {
+        if (!old) return old;
+        const columns = old.columns.map((col) => ({
+          ...col,
+          tasks: [...col.tasks],
+        }));
 
-          let movedTask: BoardColumnTask | undefined;
-          for (const col of columns) {
-            const idx = col.tasks.findIndex((t) => t.id === payload.taskId);
-            if (idx !== -1) {
-              [movedTask] = col.tasks.splice(idx, 1);
-              col.total = col.tasks.length;
-              break;
-            }
+        let movedTask: BoardColumnTask | undefined;
+        for (const col of columns) {
+          const idx = col.tasks.findIndex((t) => t.id === payload.taskId);
+          if (idx !== -1) {
+            [movedTask] = col.tasks.splice(idx, 1);
+            col.total = col.tasks.length;
+            break;
           }
+        }
 
-          if (movedTask) {
-            const targetCol = columns.find((c) => c.status === payload.status);
-            if (targetCol) {
-              const updated = {
-                ...movedTask,
-                status: payload.status,
-                kanbanOrder: payload.kanbanOrder,
-                version: movedTask.version + 1,
-              };
-              const insertIdx = targetCol.tasks.findIndex(
-                (t) => t.kanbanOrder > payload.kanbanOrder,
-              );
-              if (insertIdx === -1) {
-                targetCol.tasks.push(updated);
-              } else {
-                targetCol.tasks.splice(insertIdx, 0, updated);
-              }
-              targetCol.total = targetCol.tasks.length;
+        if (movedTask) {
+          const targetCol = columns.find((c) => c.status === payload.status);
+          if (targetCol) {
+            const updated = {
+              ...movedTask,
+              status: payload.status,
+              kanbanOrder: payload.kanbanOrder,
+              version: movedTask.version + 1,
+            };
+            const insertIdx = targetCol.tasks.findIndex((t) => t.kanbanOrder > payload.kanbanOrder);
+            if (insertIdx === -1) {
+              targetCol.tasks.push(updated);
+            } else {
+              targetCol.tasks.splice(insertIdx, 0, updated);
             }
+            targetCol.total = targetCol.tasks.length;
           }
+        }
 
-          return { ...old, columns };
-        },
-      );
+        return { ...old, columns };
+      });
 
       return { previous };
     },
@@ -189,14 +182,11 @@ export function useMoveTask(
     },
     onError: (err, _vars, context) => {
       if (pendingMutations.current <= 1 && context?.previous) {
-        queryClient.setQueryData(
-          boardKeys.board(organizationId, projectId),
-          context.previous,
-        );
+        queryClient.setQueryData(boardKeys.board(organizationId, projectId), context.previous);
       }
       const message =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message
-        ?? 'Failed to move task. It may have been modified by another user.';
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Failed to move task. It may have been modified by another user.';
       showToast.error(message);
     },
     onSettled: () => {
@@ -210,10 +200,7 @@ export function useMoveTask(
   });
 }
 
-export function useCanTransition(
-  currentStatus: TaskStatus,
-  targetStatus: TaskStatus,
-): boolean {
+export function useCanTransition(currentStatus: TaskStatus, targetStatus: TaskStatus): boolean {
   if (currentStatus === targetStatus) return true;
   const allowed = TASK_STATUS_TRANSITIONS[currentStatus];
   return allowed?.includes(targetStatus) ?? false;

@@ -9,7 +9,12 @@ import { type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { useCreateCustomer, useCheckAvailability } from '../hooks/use-create-customer';
-import { useCustomer, useUpdateCustomer, useUpdateCustomerStatus, type Customer } from '../hooks/use-customers';
+import {
+  useCustomer,
+  useUpdateCustomer,
+  useUpdateCustomerStatus,
+  type Customer,
+} from '../hooks/use-customers';
 import {
   createCustomerProfileSchema,
   type CreateCustomerProfileFormData,
@@ -51,10 +56,7 @@ interface CustomerFormContentProps {
 // Constants
 // ============================================================================
 
-const INDIAN_STATES_AND_UTS = [
-  'Karnataka',
-  'Maharashtra',
-];
+const INDIAN_STATES_AND_UTS = ['Karnataka', 'Maharashtra'];
 
 const LEAD_SOURCE_OPTIONS = [
   { value: LeadSource.REFERRAL, label: 'Referral' },
@@ -80,15 +82,12 @@ const STATUS_OPTIONS = [
 // ============================================================================
 
 /** Filter input to only allow digits, preserving cursor position */
-const handleNumericInput = (
-  e: React.FormEvent<HTMLInputElement>,
-  maxLength: number
-): void => {
+const handleNumericInput = (e: React.FormEvent<HTMLInputElement>, maxLength: number): void => {
   const input = e.currentTarget;
   const cursorPos = input.selectionStart ?? 0;
   const originalValue = input.value;
   const filtered = originalValue.replace(/\D/g, '').slice(0, maxLength);
-  
+
   if (filtered !== originalValue) {
     input.value = filtered;
     // Calculate new cursor position (adjust for removed characters)
@@ -100,8 +99,7 @@ const handleNumericInput = (
 };
 
 /** Strip +91 prefix from phone number for display */
-const stripPhonePrefix = (phone?: string): string =>
-  phone?.replace(/^\+91/, '') ?? '';
+const stripPhonePrefix = (phone?: string): string => phone?.replace(/^\+91/, '') ?? '';
 
 // ============================================================================
 // Loading Skeleton
@@ -147,7 +145,11 @@ function CustomerFormSkeleton(): JSX.Element {
 // Inner Form Component - Only rendered when data is ready
 // ============================================================================
 
-function CustomerFormContent({ mode, customerId, customer }: CustomerFormContentProps): JSX.Element {
+function CustomerFormContent({
+  mode,
+  customerId,
+  customer,
+}: CustomerFormContentProps): JSX.Element {
   const router = useRouter();
   const isEditMode = mode === 'edit';
 
@@ -158,35 +160,36 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
   const availability = useCheckAvailability();
 
   // Compute default values - customer is guaranteed to be available in edit mode
-  const defaultFormValues: CreateCustomerProfileFormData = isEditMode && customer
-    ? {
-        firstName: customer.firstName,
-        lastName: customer.lastName ?? '',
-        phone: stripPhonePrefix(customer.phone),
-        email: customer.email ?? '',
-        alternatePhone: stripPhonePrefix(customer.alternatePhone),
-        address: customer.address ?? '',
-        city: customer.city ?? '',
-        state: customer.state ?? '',
-        pincode: customer.pincode ?? '',
-        leadSource: customer.leadSource ? (customer.leadSource as LeadSource) : undefined,
-        referralCode: customer.referralCode ?? '',
-        status: customer.status,
-      }
-    : {
-        firstName: '',
-        lastName: '',
-        phone: '',
-        email: '',
-        alternatePhone: '',
-        address: '',
-        city: '',
-        state: '',
-        pincode: '',
-        leadSource: undefined,
-        referralCode: '',
-        status: undefined,
-      };
+  const defaultFormValues: CreateCustomerProfileFormData =
+    isEditMode && customer
+      ? {
+          firstName: customer.firstName,
+          lastName: customer.lastName ?? '',
+          phone: stripPhonePrefix(customer.phone),
+          email: customer.email ?? '',
+          alternatePhone: stripPhonePrefix(customer.alternatePhone),
+          address: customer.address ?? '',
+          city: customer.city ?? '',
+          state: customer.state ?? '',
+          pincode: customer.pincode ?? '',
+          leadSource: customer.leadSource ? (customer.leadSource as LeadSource) : undefined,
+          referralCode: customer.referralCode ?? '',
+          status: customer.status,
+        }
+      : {
+          firstName: '',
+          lastName: '',
+          phone: '',
+          email: '',
+          alternatePhone: '',
+          address: '',
+          city: '',
+          state: '',
+          pincode: '',
+          leadSource: undefined,
+          referralCode: '',
+          status: undefined,
+        };
 
   const form = useForm<CreateCustomerProfileFormData>({
     resolver: zodResolver(createCustomerProfileSchema),
@@ -245,9 +248,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
         axiosErr.response.data?.message?.includes('organizationId');
 
       if (isOrgIdError) {
-        showToast.error(
-          'Your account is not assigned to an organization. Please contact support.'
-        );
+        showToast.error('Your account is not assigned to an organization. Please contact support.');
       } else {
         showToast.error(getErrorMessage(error));
       }
@@ -258,7 +259,8 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
     router.push(ROUTES.CUSTOMERS.LIST);
   };
 
-  const isSubmitting = createCustomer.isPending || updateCustomer.isPending || updateCustomerStatus.isPending;
+  const isSubmitting =
+    createCustomer.isPending || updateCustomer.isPending || updateCustomerStatus.isPending;
 
   // Combine form validation errors with availability errors
   const phoneError =
@@ -290,10 +292,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
       {/* Form Card */}
       <Card className="overflow-hidden">
         <CardContent className="p-4">
-          <form
-            onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}
-            className="space-y-6"
-          >
+          <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-6">
             {/* Personal Information Section */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-foreground-secondary uppercase tracking-wide">
@@ -370,9 +369,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
 
               {/* Email */}
               <div className="space-y-2">
-                <Label htmlFor="email">
-                  Email Address
-                </Label>
+                <Label htmlFor="email">Email Address</Label>
                 <Input
                   id="email"
                   type="email"
@@ -399,9 +396,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
 
               {/* Street Address */}
               <div className="space-y-2">
-                <Label htmlFor="address">
-                  Street Address
-                </Label>
+                <Label htmlFor="address">Street Address</Label>
                 <Input
                   id="address"
                   placeholder="Enter street address"
@@ -448,9 +443,7 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
                     </SelectContent>
                   </Select>
                   {form.formState.errors.state && (
-                    <p className="text-xs text-error mt-1">
-                      {form.formState.errors.state.message}
-                    </p>
+                    <p className="text-xs text-error mt-1">{form.formState.errors.state.message}</p>
                   )}
                 </div>
               </div>
@@ -493,7 +486,10 @@ function CustomerFormContent({ mode, customerId, customer }: CustomerFormContent
                     onValueChange={(v) => form.setValue('leadSource', v as LeadSource)}
                     disabled={isEditMode && !!customer?.leadSource}
                   >
-                    <SelectTrigger id="leadSource" className={isEditMode && !!customer?.leadSource ? 'bg-muted' : ''}>
+                    <SelectTrigger
+                      id="leadSource"
+                      className={isEditMode && !!customer?.leadSource ? 'bg-muted' : ''}
+                    >
                       <SelectValue placeholder="Select source..." />
                     </SelectTrigger>
                     <SelectContent>

@@ -38,11 +38,7 @@ interface UseDocumentUploadReturn {
    * Upload a file to S3 and save the document reference to the property.
    * Returns true on success, false on failure.
    */
-  uploadDocument: (params: {
-    propertyId: string;
-    docType: string;
-    file: File;
-  }) => Promise<boolean>;
+  uploadDocument: (params: { propertyId: string; docType: string; file: File }) => Promise<boolean>;
   /** Reset upload state (progress, isUploading) */
   resetUploadState: () => void;
 }

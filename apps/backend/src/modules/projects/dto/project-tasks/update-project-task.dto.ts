@@ -5,7 +5,9 @@ import { IsEnum, IsInt, IsOptional, IsUUID, Min, ValidateIf } from 'class-valida
 
 import { CreateProjectTaskDto } from './create-project-task.dto';
 
-export class UpdateProjectTaskDto extends PartialType(OmitType(CreateProjectTaskDto, ['status'] as const)) {
+export class UpdateProjectTaskDto extends PartialType(
+  OmitType(CreateProjectTaskDto, ['status'] as const),
+) {
   @ApiPropertyOptional({ description: 'Expected version for optimistic locking' })
   @IsInt()
   @Min(1)

@@ -1,12 +1,14 @@
 'use client';
 
+import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@oneohm-epc/shared-types';
 import {
-  CustomerSortField,
-  CustomerStatus,
-  LeadSource,
-  SortOrder,
-} from '@oneohm-epc/shared-types';
-import { useQuery, useMutation, useQueryClient, keepPreviousData, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query';
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+  type UseQueryResult,
+  type UseMutationResult,
+} from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
 import { customerKeys } from './use-create-customer';
@@ -108,7 +110,7 @@ export interface UpdateCustomerData {
  * Supports all query parameters from CustomerQueryDto
  */
 export function useCustomers(
-  filters: CustomerFilters = {}
+  filters: CustomerFilters = {},
 ): UseQueryResult<CustomerListResponse, AxiosError> {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
@@ -142,7 +144,7 @@ export function useCustomers(
 
       const { data } = await apiClient.get<CustomerListResponse>(
         `/customers?${params.toString()}`,
-        { headers: { 'X-Organization-Id': organizationId } }
+        { headers: { 'X-Organization-Id': organizationId } },
       );
       return data;
     },
@@ -181,10 +183,9 @@ export function useCustomerStats(): UseQueryResult<CustomerStatsResponse, AxiosE
   return useQuery({
     queryKey: [...customerKeys.all(organizationId), 'stats'] as const,
     queryFn: async (): Promise<CustomerStatsResponse> => {
-      const { data } = await apiClient.get<CustomerStatsResponse>(
-        '/customers/statistics/status',
-        { headers: { 'X-Organization-Id': organizationId } }
-      );
+      const { data } = await apiClient.get<CustomerStatsResponse>('/customers/statistics/status', {
+        headers: { 'X-Organization-Id': organizationId },
+      });
       return data;
     },
     enabled: !!organizationId,
@@ -205,17 +206,20 @@ export function useUpdateCustomer(): UseMutationResult<
 
   return useMutation({
     mutationFn: async ({ id, data }): Promise<Customer> => {
-      const { data: response } = await apiClient.patch<Customer>(
-        `/customers/${id}`,
-        data,
-        { headers: { 'X-Organization-Id': organizationId } }
-      );
+      const { data: response } = await apiClient.patch<Customer>(`/customers/${id}`, data, {
+        headers: { 'X-Organization-Id': organizationId },
+      });
       return response;
     },
     onSuccess: (updatedCustomer) => {
-      queryClient.setQueryData(customerKeys.detail(organizationId, updatedCustomer.id), updatedCustomer);
+      queryClient.setQueryData(
+        customerKeys.detail(organizationId, updatedCustomer.id),
+        updatedCustomer,
+      );
       void queryClient.invalidateQueries({ queryKey: customerKeys.lists(organizationId) });
-      void queryClient.invalidateQueries({ queryKey: [...customerKeys.all(organizationId), 'stats'] });
+      void queryClient.invalidateQueries({
+        queryKey: [...customerKeys.all(organizationId), 'stats'],
+      });
     },
   });
 }
@@ -237,14 +241,19 @@ export function useUpdateCustomerStatus(): UseMutationResult<
       const { data: response } = await apiClient.post<Customer>(
         `/customers/${id}/status`,
         { status },
-        { headers: { 'X-Organization-Id': organizationId } }
+        { headers: { 'X-Organization-Id': organizationId } },
       );
       return response;
     },
     onSuccess: (updatedCustomer) => {
-      queryClient.setQueryData(customerKeys.detail(organizationId, updatedCustomer.id), updatedCustomer);
+      queryClient.setQueryData(
+        customerKeys.detail(organizationId, updatedCustomer.id),
+        updatedCustomer,
+      );
       void queryClient.invalidateQueries({ queryKey: customerKeys.lists(organizationId) });
-      void queryClient.invalidateQueries({ queryKey: [...customerKeys.all(organizationId), 'stats'] });
+      void queryClient.invalidateQueries({
+        queryKey: [...customerKeys.all(organizationId), 'stats'],
+      });
     },
   });
 }
@@ -266,7 +275,9 @@ export function useDeleteCustomer(): UseMutationResult<void, AxiosError, string>
     onSuccess: (_, id) => {
       queryClient.removeQueries({ queryKey: customerKeys.detail(organizationId, id) });
       void queryClient.invalidateQueries({ queryKey: customerKeys.lists(organizationId) });
-      void queryClient.invalidateQueries({ queryKey: [...customerKeys.all(organizationId), 'stats'] });
+      void queryClient.invalidateQueries({
+        queryKey: [...customerKeys.all(organizationId), 'stats'],
+      });
     },
   });
 }

@@ -35,9 +35,13 @@ export function useToggleWorkflowStep() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await apiClient.patch(`/workflow-steps/${id}/toggle-status`, {}, {
-        headers: { 'X-Organization-Id': organizationId },
-      });
+      await apiClient.patch(
+        `/workflow-steps/${id}/toggle-status`,
+        {},
+        {
+          headers: { 'X-Organization-Id': organizationId },
+        },
+      );
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: workflowStepKeys.all(organizationId) });

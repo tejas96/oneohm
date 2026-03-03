@@ -12,34 +12,32 @@ interface QuoteDetailTabsProps {
   children: React.ReactNode;
 }
 
-export const QuoteDetailTabs = React.memo(({
-  activeTab,
-  onTabChange,
-  children,
-}: QuoteDetailTabsProps): React.JSX.Element => {
-  const handleValueChange = useCallback(
-    (value: string) => {
-      onTabChange(value as QuoteDetailTab);
-    },
-    [onTabChange],
-  );
+export const QuoteDetailTabs = React.memo(
+  ({ activeTab, onTabChange, children }: QuoteDetailTabsProps): React.JSX.Element => {
+    const handleValueChange = useCallback(
+      (value: string) => {
+        onTabChange(value as QuoteDetailTab);
+      },
+      [onTabChange],
+    );
 
-  return (
-    <Tabs value={activeTab} onValueChange={handleValueChange}>
-      <TabsList
-        variant="underline"
-        className="overflow-x-auto overflow-y-hidden"
-        aria-label="Quote detail tabs"
-      >
-        {QUOTE_DETAIL_TABS.map((tab) => (
-          <TabsTrigger key={tab.value} value={tab.value} variant="underline">
-            {tab.label}
-          </TabsTrigger>
-        ))}
-      </TabsList>
-      {children}
-    </Tabs>
-  );
-});
+    return (
+      <Tabs value={activeTab} onValueChange={handleValueChange}>
+        <TabsList
+          variant="underline"
+          className="overflow-x-auto overflow-y-hidden"
+          aria-label="Quote detail tabs"
+        >
+          {QUOTE_DETAIL_TABS.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value} variant="underline">
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {children}
+      </Tabs>
+    );
+  },
+);
 
 QuoteDetailTabs.displayName = 'QuoteDetailTabs';

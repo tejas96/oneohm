@@ -4,24 +4,18 @@ import { MaterialStatus } from '@oneohm-epc/shared-types';
 import { Package } from 'lucide-react';
 import React from 'react';
 
-import {
-  MATERIAL_STATUS_BADGE_VARIANT,
-  MATERIAL_STATUS_LABELS,
-} from '../../../constants';
+import { MATERIAL_STATUS_BADGE_VARIANT, MATERIAL_STATUS_LABELS } from '../../../constants';
 import type { ProjectMaterial } from '../../../hooks/types';
 
 import { EmptyState } from '@/components/shared/feedback/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils/format';
 
-
 interface ProjectBomTabProps {
   materials: ProjectMaterial[];
 }
 
-export const ProjectBomTab = React.memo(({
-  materials,
-}: ProjectBomTabProps): React.JSX.Element => {
+export const ProjectBomTab = React.memo(({ materials }: ProjectBomTabProps): React.JSX.Element => {
   if (!materials || materials.length === 0) {
     return (
       <EmptyState
@@ -54,19 +48,35 @@ export const ProjectBomTab = React.memo(({
         <table className="w-full">
           <thead>
             <tr className="bg-muted/50">
-              <th className="text-2xs font-medium text-foreground-muted uppercase text-left px-3 py-2">Material</th>
-              <th className="text-2xs font-medium text-foreground-muted uppercase text-left px-3 py-2">Category</th>
-              <th className="text-2xs font-medium text-foreground-muted uppercase text-right px-3 py-2">Qty</th>
-              <th className="text-2xs font-medium text-foreground-muted uppercase text-right px-3 py-2">Unit Cost</th>
-              <th className="text-2xs font-medium text-foreground-muted uppercase text-right px-3 py-2">Total</th>
-              <th className="text-2xs font-medium text-foreground-muted uppercase text-left px-3 py-2">Status</th>
+              <th className="text-2xs font-medium text-foreground-muted uppercase text-left px-3 py-2">
+                Material
+              </th>
+              <th className="text-2xs font-medium text-foreground-muted uppercase text-left px-3 py-2">
+                Category
+              </th>
+              <th className="text-2xs font-medium text-foreground-muted uppercase text-right px-3 py-2">
+                Qty
+              </th>
+              <th className="text-2xs font-medium text-foreground-muted uppercase text-right px-3 py-2">
+                Unit Cost
+              </th>
+              <th className="text-2xs font-medium text-foreground-muted uppercase text-right px-3 py-2">
+                Total
+              </th>
+              <th className="text-2xs font-medium text-foreground-muted uppercase text-left px-3 py-2">
+                Status
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-light">
             {materials.map((material) => (
               <tr key={material.id} className="hover:bg-muted/30 transition-colors">
-                <td className="text-xs text-foreground font-medium px-3 py-2.5">{material.materialName}</td>
-                <td className="text-xs text-foreground-secondary px-3 py-2.5">{material.category ?? '—'}</td>
+                <td className="text-xs text-foreground font-medium px-3 py-2.5">
+                  {material.materialName}
+                </td>
+                <td className="text-xs text-foreground-secondary px-3 py-2.5">
+                  {material.category ?? '—'}
+                </td>
                 <td className="text-xs text-foreground text-right px-3 py-2.5">
                   {material.quantityRequired}
                   {material.unit ? ` ${material.unit}` : ''}
@@ -79,7 +89,9 @@ export const ProjectBomTab = React.memo(({
                 </td>
                 <td className="px-3 py-2.5">
                   <Badge
-                    variant={(MATERIAL_STATUS_BADGE_VARIANT[material.status] ?? 'secondary') as 'success'}
+                    variant={
+                      (MATERIAL_STATUS_BADGE_VARIANT[material.status] ?? 'secondary') as 'success'
+                    }
                     size="xs"
                   >
                     {MATERIAL_STATUS_LABELS[material.status] ?? material.status}

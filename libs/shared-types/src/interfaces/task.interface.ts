@@ -1,7 +1,6 @@
 import type { FileAttachment, TaskActivityEntry, TaskChecklist } from './project.interface';
 import { type MilestoneType, type TaskPriority, TaskStatus } from '../enums/project.enum';
 
-
 // ============================================================================
 // Workflow Step
 // ============================================================================
@@ -137,7 +136,12 @@ export interface MyTaskFilters {
 export const TASK_STATUS_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
   [TaskStatus.BACKLOG]: [TaskStatus.TODO],
   [TaskStatus.TODO]: [TaskStatus.IN_PROGRESS, TaskStatus.BACKLOG],
-  [TaskStatus.IN_PROGRESS]: [TaskStatus.IN_REVIEW, TaskStatus.BLOCKED, TaskStatus.DONE, TaskStatus.TESTING],
+  [TaskStatus.IN_PROGRESS]: [
+    TaskStatus.IN_REVIEW,
+    TaskStatus.BLOCKED,
+    TaskStatus.DONE,
+    TaskStatus.TESTING,
+  ],
   [TaskStatus.IN_REVIEW]: [TaskStatus.DONE, TaskStatus.IN_PROGRESS],
   [TaskStatus.TESTING]: [TaskStatus.DONE, TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED],
   [TaskStatus.BLOCKED]: [TaskStatus.IN_PROGRESS, TaskStatus.CANCELLED],

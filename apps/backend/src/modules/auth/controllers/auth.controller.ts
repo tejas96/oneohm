@@ -55,7 +55,11 @@ export class AuthController {
     eventType: SecurityEventType.LOGIN_FAILED,
     trackBy: ['ipAddress'],
     limits: [
-      { count: 5, windowSeconds: 300, message: 'Too many login attempts. Wait 5 minutes before trying again.' },
+      {
+        count: 5,
+        windowSeconds: 300,
+        message: 'Too many login attempts. Wait 5 minutes before trying again.',
+      },
       { count: 20, windowSeconds: 86400, message: 'Daily login attempt limit reached.' },
     ],
     blockOnExceed: true,
@@ -64,7 +68,8 @@ export class AuthController {
   @ApiCreate({
     path: 'login',
     summary: 'User login with email/password',
-    description: 'Uses LocalStrategy (Passport). Recommended for admin and employee users. Rate limited: 5 per 5 min.',
+    description:
+      'Uses LocalStrategy (Passport). Recommended for admin and employee users. Rate limited: 5 per 5 min.',
     responseType: LoginResponseDto,
     statusCode: HttpStatus.OK,
     successMessage: 'Login successful',
@@ -220,7 +225,11 @@ export class AuthController {
     eventType: SecurityEventType.PASSWORD_RESET_REQUESTED,
     trackBy: ['ipAddress'],
     limits: [
-      { count: 3, windowSeconds: 900, message: 'Too many password reset requests. Try again in 15 minutes.' },
+      {
+        count: 3,
+        windowSeconds: 900,
+        message: 'Too many password reset requests. Try again in 15 minutes.',
+      },
       { count: 10, windowSeconds: 86400, message: 'Daily password reset limit reached.' },
     ],
   })
@@ -250,7 +259,11 @@ export class AuthController {
     eventType: SecurityEventType.PASSWORD_RESET_REQUESTED,
     trackBy: ['ipAddress'],
     limits: [
-      { count: 5, windowSeconds: 900, message: 'Too many reset attempts. Try again in 15 minutes.' },
+      {
+        count: 5,
+        windowSeconds: 900,
+        message: 'Too many reset attempts. Try again in 15 minutes.',
+      },
     ],
     blockOnExceed: true,
     blockDurationSeconds: 900,
@@ -271,6 +284,11 @@ export class AuthController {
     @Body() dto: ResetPasswordDto,
     @Req() req: ExpressRequest,
   ): Promise<PasswordResetResponseDto> {
-    return this.authService.resetPassword(dto.token, dto.newPassword, req.ip, req.headers['user-agent']);
+    return this.authService.resetPassword(
+      dto.token,
+      dto.newPassword,
+      req.ip,
+      req.headers['user-agent'],
+    );
   }
 }

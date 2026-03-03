@@ -44,7 +44,7 @@ interface PresetRange {
 
 const getPresetRanges = (): PresetRange[] => {
   const today = new Date();
-  
+
   return [
     {
       label: 'Today',
@@ -130,7 +130,7 @@ export function DateRangePicker({
           className={cn(
             'w-full justify-start text-left font-normal h-input-lg',
             !value && 'text-foreground-tertiary',
-            className
+            className,
           )}
           disabled={disabled}
         >

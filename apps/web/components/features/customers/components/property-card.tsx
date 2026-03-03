@@ -1,6 +1,11 @@
 'use client';
 
-import { LeadTemperature, PropertyStatus, PropertyType, QuoteStatus } from '@oneohm-epc/shared-types';
+import {
+  LeadTemperature,
+  PropertyStatus,
+  PropertyType,
+  QuoteStatus,
+} from '@oneohm-epc/shared-types';
 import { CircleDollarSign, Eye, FileText, Folder, MoreVertical, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -111,9 +116,7 @@ export function PropertyCard({
     : null;
 
   // Estimate system size based on monthly bill (rough estimate: 1kW per ₹1500/month)
-  const estimatedSystemSize = property.monthlyBill
-    ? Math.round(property.monthlyBill / 1500)
-    : null;
+  const estimatedSystemSize = property.monthlyBill ? Math.round(property.monthlyBill / 1500) : null;
 
   const handleViewDetails = (): void => {
     router.push(buildRoute(ROUTES.PROPERTIES.DETAIL, { id: property.id }));
@@ -136,7 +139,7 @@ export function PropertyCard({
     <div
       className={cn(
         'group relative block rounded-lg border-2 border-transparent bg-muted p-4 transition-all',
-        'hover:border-primary hover:shadow-sm cursor-pointer'
+        'hover:border-primary hover:shadow-sm cursor-pointer',
       )}
     >
       {/* Quick Actions Dropdown (visible on hover) */}
@@ -165,7 +168,10 @@ export function PropertyCard({
             {property.status !== PropertyStatus.CONVERTED && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleConvertToProject} className="text-primary font-medium">
+                <DropdownMenuItem
+                  onClick={handleConvertToProject}
+                  className="text-primary font-medium"
+                >
                   <Folder className="mr-2 size-4" />
                   Convert to Project
                 </DropdownMenuItem>
@@ -201,8 +207,7 @@ export function PropertyCard({
           {/* System Size Badge */}
           {estimatedSystemSize ? (
             <span className="flex items-center gap-1 rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-              <Zap className="size-3" />
-              ~{estimatedSystemSize} kW (est.)
+              <Zap className="size-3" />~{estimatedSystemSize} kW (est.)
             </span>
           ) : null}
 
@@ -225,7 +230,7 @@ export function PropertyCard({
               className={cn(
                 'rounded px-2 py-0.5 text-xs font-medium',
                 quoteStatusConfig.bg,
-                quoteStatusConfig.text
+                quoteStatusConfig.text,
               )}
             >
               {quoteStatusConfig.label}

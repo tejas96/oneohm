@@ -2,10 +2,7 @@
 
 import { useCallback, useState } from 'react';
 
-import type {
-  NavigationCounts,
-  NavigationCountsState,
-} from '@/lib/types/navigation-counts';
+import type { NavigationCounts, NavigationCountsState } from '@/lib/types/navigation-counts';
 
 /**
  * Mock navigation counts for development
@@ -68,13 +65,13 @@ const MOCK_NAVIGATION_COUNTS: NavigationCounts = {
 
 /**
  * Hook for fetching and managing navigation badge counts
- * 
+ *
  * @returns {NavigationCountsState} State object with counts, loading state, error, and refetch function
- * 
+ *
  * @example
  * ```tsx
  * const { counts, isLoading, refetch } = useNavigationCounts();
- * 
+ *
  * // Access specific counts
  * const overdueFollowups = counts.crm.followups.overdue;
  * const hotProperties = counts.crm.properties.hot;
@@ -110,22 +107,19 @@ export function useNavigationCounts(): NavigationCountsState {
 
 /**
  * Helper to get a specific count value by path
- * 
+ *
  * @param counts - Navigation counts object
  * @param path - Dot-notation path (e.g., 'crm.followups.overdue')
  * @returns The count value or undefined
- * 
+ *
  * @example
  * ```tsx
  * const overdueCount = getCountByPath(counts, 'crm.followups.overdue');
  * ```
  */
-export function getCountByPath(
-  counts: NavigationCounts,
-  path: string
-): number | undefined {
+export function getCountByPath(counts: NavigationCounts, path: string): number | undefined {
   const keys = path.split('.');
-   
+
   let value: unknown = counts;
 
   for (const key of keys) {
