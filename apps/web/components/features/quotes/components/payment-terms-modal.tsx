@@ -4,6 +4,7 @@ import type { PaymentMilestone } from '@oneohm-epc/shared-types';
 import { Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,13 +16,6 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/format';
 
@@ -60,7 +54,12 @@ function buildOptions(currentValue: number): number[] {
 
 let globalRowId = 0;
 
-function createRow(m: { stage: string; name: string; percentage: number; order: number }): MilestoneRow {
+function createRow(m: {
+  stage: string;
+  name: string;
+  percentage: number;
+  order: number;
+}): MilestoneRow {
   return {
     id: globalRowId++,
     stage: m.stage,
@@ -102,18 +101,14 @@ export function PaymentTermsModal({
 
   const handleNameChange = useCallback((index: number, value: string) => {
     setRows((prev) =>
-      prev.map((r, i) =>
-        i === index ? { ...r, name: value, stage: toStageKey(value) } : r,
-      ),
+      prev.map((r, i) => (i === index ? { ...r, name: value, stage: toStageKey(value) } : r)),
     );
   }, []);
 
   const handlePercentageChange = useCallback((index: number, value: string) => {
     const num = parseInt(value, 10);
     setRows((prev) =>
-      prev.map((r, i) =>
-        i === index ? { ...r, percentage: isNaN(num) ? 0 : num } : r,
-      ),
+      prev.map((r, i) => (i === index ? { ...r, percentage: isNaN(num) ? 0 : num } : r)),
     );
   }, []);
 
@@ -127,11 +122,7 @@ export function PaymentTermsModal({
   const handleRemoveRow = useCallback(
     (index: number) => {
       if (rows.length <= 1) return;
-      setRows((prev) =>
-        prev
-          .filter((_, i) => i !== index)
-          .map((r, i) => ({ ...r, order: i + 1 })),
-      );
+      setRows((prev) => prev.filter((_, i) => i !== index).map((r, i) => ({ ...r, order: i + 1 })));
     },
     [rows.length],
   );
@@ -166,20 +157,13 @@ export function PaymentTermsModal({
         <DialogBody className="space-y-4 max-h-[60vh] overflow-y-auto">
           {/* Column headers */}
           <div className="grid grid-cols-[1fr_120px_40px] gap-3 items-center px-1">
-            <span className="text-2xs font-medium text-foreground-muted uppercase">
-              Milestone
-            </span>
-            <span className="text-2xs font-medium text-foreground-muted uppercase">
-              Percentage
-            </span>
+            <span className="text-2xs font-medium text-foreground-muted uppercase">Milestone</span>
+            <span className="text-2xs font-medium text-foreground-muted uppercase">Percentage</span>
             <span />
           </div>
 
           {rows.map((row, index) => (
-            <div
-              key={row.id}
-              className="grid grid-cols-[1fr_120px_40px] gap-3 items-start"
-            >
+            <div key={row.id} className="grid grid-cols-[1fr_120px_40px] gap-3 items-start">
               <Input
                 size="sm"
                 placeholder="Milestone name"
@@ -252,22 +236,16 @@ export function PaymentTermsModal({
               >
                 {totalPercentage}%
                 {percentageDiff > 0.01 && (
-                  <span className="ml-1 text-2xs">
-                    (+{percentageDiff}% over)
-                  </span>
+                  <span className="ml-1 text-2xs">(+{percentageDiff}% over)</span>
                 )}
                 {percentageDiff < -0.01 && (
-                  <span className="ml-1 text-2xs">
-                    ({percentageDiff}% remaining)
-                  </span>
+                  <span className="ml-1 text-2xs">({percentageDiff}% remaining)</span>
                 )}
               </span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-foreground-secondary">Gross Total</span>
-              <span className="font-semibold text-foreground">
-                {formatCurrency(grossTotal)}
-              </span>
+              <span className="font-semibold text-foreground">{formatCurrency(grossTotal)}</span>
             </div>
 
             {/* Per-milestone preview */}
@@ -283,10 +261,7 @@ export function PaymentTermsModal({
                       {r.name} ({r.percentage}%)
                     </span>
                     <span className="font-medium text-foreground">
-                      {formatCurrency(
-                        Math.round(grossTotal * (r.percentage / 100) * 100) /
-                          100,
-                      )}
+                      {formatCurrency(Math.round(grossTotal * (r.percentage / 100) * 100) / 100)}
                     </span>
                   </div>
                 ))}
@@ -295,12 +270,7 @@ export function PaymentTermsModal({
         </DialogBody>
 
         <DialogFooter>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleReset}
-            className="mr-auto"
-          >
+          <Button variant="ghost" size="sm" onClick={handleReset} className="mr-auto">
             <RotateCcw className="size-3.5 mr-1.5" />
             Reset to Defaults
           </Button>

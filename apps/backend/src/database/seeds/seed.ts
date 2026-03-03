@@ -11,17 +11,72 @@ const EMPLOYEE_PASSWORD = 'password@123';
 const ORG_ROLES = [
   { code: 'super_admin', name: 'Super Admin', description: 'Full organization access', level: 1 },
   { code: 'admin', name: 'Admin', description: 'Organization admin with broad access', level: 2 },
-  { code: 'sales_executive', name: 'Sales Executive', description: 'Sales and customer management', level: 3 },
-  { code: 'accounts_manager', name: 'Accounts Manager', description: 'Financial and payment management', level: 3 },
-  { code: 'project_manager', name: 'Project Manager', description: 'Project and team management', level: 3 },
-  { code: 'inventory_manager', name: 'Inventory Manager', description: 'Inventory and vendor management', level: 3 },
-  { code: 'compliance_officer', name: 'Compliance Officer', description: 'Regulatory compliance management', level: 3 },
-  { code: 'employee_basic', name: 'Employee Basic', description: 'Basic employee access', level: 4 },
-  { code: 'liaisoning', name: 'Liaisoning Officer', description: 'Net metering, permits, subsidy, and commissioning tasks', level: 3 },
-  { code: 'design_engineer', name: 'Design Engineer', description: 'DSS work, design confirmation tasks', level: 3 },
-  { code: 'store', name: 'Store Manager', description: 'Material dispatch and inventory tasks', level: 3 },
-  { code: 'execution', name: 'Execution Engineer', description: 'Installation, electrical, and QC tasks', level: 3 },
-  { code: 'loan', name: 'Loan Officer', description: 'Loan processing and disbursement tasks', level: 3 },
+  {
+    code: 'sales_executive',
+    name: 'Sales Executive',
+    description: 'Sales and customer management',
+    level: 3,
+  },
+  {
+    code: 'accounts_manager',
+    name: 'Accounts Manager',
+    description: 'Financial and payment management',
+    level: 3,
+  },
+  {
+    code: 'project_manager',
+    name: 'Project Manager',
+    description: 'Project and team management',
+    level: 3,
+  },
+  {
+    code: 'inventory_manager',
+    name: 'Inventory Manager',
+    description: 'Inventory and vendor management',
+    level: 3,
+  },
+  {
+    code: 'compliance_officer',
+    name: 'Compliance Officer',
+    description: 'Regulatory compliance management',
+    level: 3,
+  },
+  {
+    code: 'employee_basic',
+    name: 'Employee Basic',
+    description: 'Basic employee access',
+    level: 4,
+  },
+  {
+    code: 'liaisoning',
+    name: 'Liaisoning Officer',
+    description: 'Net metering, permits, subsidy, and commissioning tasks',
+    level: 3,
+  },
+  {
+    code: 'design_engineer',
+    name: 'Design Engineer',
+    description: 'DSS work, design confirmation tasks',
+    level: 3,
+  },
+  {
+    code: 'store',
+    name: 'Store Manager',
+    description: 'Material dispatch and inventory tasks',
+    level: 3,
+  },
+  {
+    code: 'execution',
+    name: 'Execution Engineer',
+    description: 'Installation, electrical, and QC tasks',
+    level: 3,
+  },
+  {
+    code: 'loan',
+    name: 'Loan Officer',
+    description: 'Loan processing and disbursement tasks',
+    level: 3,
+  },
   { code: 'customer', name: 'Customer', description: 'Customer portal access', level: 5 },
   { code: 'reseller', name: 'Reseller', description: 'Reseller portal access', level: 5 },
 ];
@@ -36,16 +91,106 @@ const EMPLOYEES: Array<{
   employeeId: string;
   roles: string[];
 }> = [
-  { firstName: 'Rahul', lastName: 'Sharma', email: 'rahul.sharma@oneohm.com', phone: '+919876500001', designation: 'Admin', department: 'Management', employeeId: 'EMP-001', roles: ['admin'] },
-  { firstName: 'Priya', lastName: 'Nair', email: 'priya.nair@oneohm.com', phone: '+919876500002', designation: 'Sales Executive', department: 'Sales', employeeId: 'EMP-002', roles: ['sales_executive'] },
-  { firstName: 'Vikram', lastName: 'Desai', email: 'vikram.desai@oneohm.com', phone: '+919876500003', designation: 'Accounts Manager', department: 'Finance', employeeId: 'EMP-003', roles: ['accounts_manager'] },
-  { firstName: 'Neha', lastName: 'Kulkarni', email: 'neha.kulkarni@oneohm.com', phone: '+919876500004', designation: 'Project Manager', department: 'Projects', employeeId: 'EMP-004', roles: ['project_manager'] },
-  { firstName: 'Sanjay', lastName: 'Verma', email: 'sanjay.verma@oneohm.com', phone: '+919876500005', designation: 'Inventory Manager', department: 'Inventory', employeeId: 'EMP-005', roles: ['inventory_manager'] },
-  { firstName: 'Deepa', lastName: 'Iyer', email: 'deepa.iyer@oneohm.com', phone: '+919876500006', designation: 'Compliance Officer', department: 'Compliance', employeeId: 'EMP-006', roles: ['compliance_officer'] },
-  { firstName: 'Ajay', lastName: 'Mehta', email: 'ajay.mehta@oneohm.com', phone: '+919876500007', designation: 'Liaisoning Officer', department: 'Liaisoning', employeeId: 'EMP-007', roles: ['liaisoning'] },
-  { firstName: 'Kavita', lastName: 'Rao', email: 'kavita.rao@oneohm.com', phone: '+919876500008', designation: 'Design Engineer', department: 'Engineering', employeeId: 'EMP-008', roles: ['design_engineer'] },
-  { firstName: 'Suresh', lastName: 'Joshi', email: 'suresh.joshi@oneohm.com', phone: '+919876500009', designation: 'Store & Execution Lead', department: 'Operations', employeeId: 'EMP-009', roles: ['store', 'execution'] },
-  { firstName: 'Anita', lastName: 'Gupta', email: 'anita.gupta@oneohm.com', phone: '+919876500010', designation: 'Loan Officer', department: 'Finance', employeeId: 'EMP-010', roles: ['loan', 'employee_basic'] },
+  {
+    firstName: 'Rahul',
+    lastName: 'Sharma',
+    email: 'rahul.sharma@oneohm.com',
+    phone: '+919876500001',
+    designation: 'Admin',
+    department: 'Management',
+    employeeId: 'EMP-001',
+    roles: ['admin'],
+  },
+  {
+    firstName: 'Priya',
+    lastName: 'Nair',
+    email: 'priya.nair@oneohm.com',
+    phone: '+919876500002',
+    designation: 'Sales Executive',
+    department: 'Sales',
+    employeeId: 'EMP-002',
+    roles: ['sales_executive'],
+  },
+  {
+    firstName: 'Vikram',
+    lastName: 'Desai',
+    email: 'vikram.desai@oneohm.com',
+    phone: '+919876500003',
+    designation: 'Accounts Manager',
+    department: 'Finance',
+    employeeId: 'EMP-003',
+    roles: ['accounts_manager'],
+  },
+  {
+    firstName: 'Neha',
+    lastName: 'Kulkarni',
+    email: 'neha.kulkarni@oneohm.com',
+    phone: '+919876500004',
+    designation: 'Project Manager',
+    department: 'Projects',
+    employeeId: 'EMP-004',
+    roles: ['project_manager'],
+  },
+  {
+    firstName: 'Sanjay',
+    lastName: 'Verma',
+    email: 'sanjay.verma@oneohm.com',
+    phone: '+919876500005',
+    designation: 'Inventory Manager',
+    department: 'Inventory',
+    employeeId: 'EMP-005',
+    roles: ['inventory_manager'],
+  },
+  {
+    firstName: 'Deepa',
+    lastName: 'Iyer',
+    email: 'deepa.iyer@oneohm.com',
+    phone: '+919876500006',
+    designation: 'Compliance Officer',
+    department: 'Compliance',
+    employeeId: 'EMP-006',
+    roles: ['compliance_officer'],
+  },
+  {
+    firstName: 'Ajay',
+    lastName: 'Mehta',
+    email: 'ajay.mehta@oneohm.com',
+    phone: '+919876500007',
+    designation: 'Liaisoning Officer',
+    department: 'Liaisoning',
+    employeeId: 'EMP-007',
+    roles: ['liaisoning'],
+  },
+  {
+    firstName: 'Kavita',
+    lastName: 'Rao',
+    email: 'kavita.rao@oneohm.com',
+    phone: '+919876500008',
+    designation: 'Design Engineer',
+    department: 'Engineering',
+    employeeId: 'EMP-008',
+    roles: ['design_engineer'],
+  },
+  {
+    firstName: 'Suresh',
+    lastName: 'Joshi',
+    email: 'suresh.joshi@oneohm.com',
+    phone: '+919876500009',
+    designation: 'Store & Execution Lead',
+    department: 'Operations',
+    employeeId: 'EMP-009',
+    roles: ['store', 'execution'],
+  },
+  {
+    firstName: 'Anita',
+    lastName: 'Gupta',
+    email: 'anita.gupta@oneohm.com',
+    phone: '+919876500010',
+    designation: 'Loan Officer',
+    department: 'Finance',
+    employeeId: 'EMP-010',
+    roles: ['loan', 'employee_basic'],
+  },
 ];
 
 async function seed(): Promise<void> {
@@ -63,7 +208,8 @@ async function seed(): Promise<void> {
     // ============================================
     console.error('📦 Seeding Organization...');
 
-    await queryRunner.query(`
+    await queryRunner.query(
+      `
       INSERT INTO organizations (
         name, code, email, phone, address, city, state, country, pincode,
         gstin, pan, timezone, currency, date_format,
@@ -88,7 +234,9 @@ async function seed(): Promise<void> {
         'active'
       )
       ON CONFLICT (code) DO NOTHING;
-    `, [ORG_CODE]);
+    `,
+      [ORG_CODE],
+    );
 
     console.error('  ✓ Organization created');
 
@@ -97,10 +245,9 @@ async function seed(): Promise<void> {
     // ============================================
     console.error('\n🔐 Seeding Roles...');
 
-    const [org] = await queryRunner.query(
-      `SELECT id FROM organizations WHERE code = $1`,
-      [ORG_CODE],
-    );
+    const [org] = await queryRunner.query(`SELECT id FROM organizations WHERE code = $1`, [
+      ORG_CODE,
+    ]);
 
     if (!org) {
       throw new Error(`Organization with code '${ORG_CODE}' not found after insert`);
@@ -135,10 +282,9 @@ async function seed(): Promise<void> {
 
     await upsertUser(queryRunner, 'Super', 'Admin', adminEmail, adminPhone, adminPasswordHash);
 
-    const [adminUser] = await queryRunner.query(
-      `SELECT id FROM users WHERE phone = $1`,
-      [adminPhone],
-    );
+    const [adminUser] = await queryRunner.query(`SELECT id FROM users WHERE phone = $1`, [
+      adminPhone,
+    ]);
 
     if (!adminUser) {
       throw new Error('Super Admin user not found after insert');
@@ -163,12 +309,16 @@ async function seed(): Promise<void> {
     const empPasswordHash = await bcrypt.hash(EMPLOYEE_PASSWORD, 10);
 
     for (const emp of EMPLOYEES) {
-      await upsertUser(queryRunner, emp.firstName, emp.lastName, emp.email, emp.phone, empPasswordHash);
-
-      const [user] = await queryRunner.query(
-        `SELECT id FROM users WHERE phone = $1`,
-        [emp.phone],
+      await upsertUser(
+        queryRunner,
+        emp.firstName,
+        emp.lastName,
+        emp.email,
+        emp.phone,
+        empPasswordHash,
       );
+
+      const [user] = await queryRunner.query(`SELECT id FROM users WHERE phone = $1`, [emp.phone]);
 
       if (!user) {
         console.error(`  ⚠ Could not find user for ${emp.email}, skipping`);
@@ -197,12 +347,19 @@ async function seed(): Promise<void> {
     const customerPhone = '+919876500100';
     const customerEmail = 'amit.patel@example.com';
 
-    await upsertUser(queryRunner, 'Amit', 'Patel', customerEmail, customerPhone, empPasswordHash, false);
-
-    const [customerUser] = await queryRunner.query(
-      `SELECT id FROM users WHERE phone = $1`,
-      [customerPhone],
+    await upsertUser(
+      queryRunner,
+      'Amit',
+      'Patel',
+      customerEmail,
+      customerPhone,
+      empPasswordHash,
+      false,
     );
+
+    const [customerUser] = await queryRunner.query(`SELECT id FROM users WHERE phone = $1`, [
+      customerPhone,
+    ]);
 
     if (!customerUser) {
       throw new Error('Customer user not found after insert');
@@ -312,7 +469,9 @@ async function seed(): Promise<void> {
     console.error(`  • ${ORG_ROLES.length} Org Roles`);
     console.error('\n📋 Employee Roster:');
     for (const emp of EMPLOYEES) {
-      console.error(`  ${emp.employeeId} ${emp.firstName} ${emp.lastName} — ${emp.roles.join(', ')}`);
+      console.error(
+        `  ${emp.employeeId} ${emp.firstName} ${emp.lastName} — ${emp.roles.join(', ')}`,
+      );
     }
     console.error(`\n${'='.repeat(50)}`);
   } catch (error) {
