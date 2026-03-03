@@ -21,7 +21,7 @@ import {
 } from '@/components/ui';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { cn, formatDate, getInitials } from '@/lib/utils';
+import { formatDate, getInitials } from '@/lib/utils';
 
 interface PropertyDetailHeaderProps {
   property: CustomerPropertyResponse;
@@ -71,26 +71,25 @@ export const PropertyDetailHeader = React.memo(
                 <h1 className="text-xl font-semibold text-foreground" title={propertyName}>
                   {propertyName}
                 </h1>
-                <span
-                  className={cn(
-                    'shrink-0 rounded px-1.5 py-0.5 text-[11px] font-medium',
-                    tempConfig.bg,
-                  )}
+                <Badge
+                  variant={property.leadTemperature as 'hot' | 'warm' | 'cold'}
+                  size="xs"
+                  className="shrink-0"
                 >
                   {tempConfig.label}
-                </span>
+                </Badge>
                 {property.wantsLoan && (
                   <Badge variant="info" size="xs" className="shrink-0">
                     Loan
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-foreground-tertiary mt-0.5">
                 {property.address || '-'}, {property.city || '-'}
                 {property.state ? `, ${property.state}` : ''}
                 {property.pincode ? ` - ${property.pincode}` : ''}
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-foreground-tertiary mt-0.5">
                 {propertyTypeName}
                 {' · '}
                 <Link

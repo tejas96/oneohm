@@ -1,11 +1,15 @@
 'use client';
 
-import { QuoteStatus } from '@oneohm-epc/shared-types';
 import { Building2, Edit, FileText, Mail, Phone, Plus, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import React, { type JSX, useCallback, useMemo, useState } from 'react';
+import { type JSX, type ReactNode, useCallback, useMemo, useState } from 'react';
 
+import {
+  CUSTOMER_DETAIL_TABS,
+  type CustomerDetailTab,
+  QUOTE_STATUS_BADGE_VARIANT,
+} from '../constants';
 import {
   useCustomer,
   useCustomerProperties,
@@ -22,6 +26,7 @@ import { UploadDocumentModal } from './upload-document-modal';
 
 import { EditableField, EmptyState } from '@/components/shared';
 import {
+  Badge,
   Button,
   Breadcrumb,
   BreadcrumbList,
@@ -40,8 +45,9 @@ import {
   WhatsAppIcon,
 } from '@/components/ui';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { cn, formatPhoneForWhatsApp } from '@/lib/utils';
+import { cn, formatCurrency, formatDate, formatPhoneForWhatsApp } from '@/lib/utils';
 
 // ============================================================================
 // Types
@@ -119,7 +125,7 @@ const getActivityDotVariant = (
 
 interface SimpleTimelineItem {
   id: string;
-  title: React.ReactNode;
+  title: ReactNode;
   timestamp: string;
   dotVariant?: 'primary' | 'secondary' | 'default';
 }
@@ -141,7 +147,7 @@ function SimpleTimeline({ items }: SimpleTimelineProps): JSX.Element {
             {/* Dot */}
             <div
               className={cn(
-                'absolute -left-6 top-1 size-4 rounded-full border-2',
+                'absolute -left-6 top-1 size-icon-sm rounded-full border-2',
                 item.dotVariant === 'primary'
                   ? 'border-primary bg-primary'
                   : item.dotVariant === 'secondary'
@@ -152,7 +158,7 @@ function SimpleTimeline({ items }: SimpleTimelineProps): JSX.Element {
             {/* Content */}
             <div>
               <p className="text-sm text-foreground">{item.title}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{item.timestamp}</p>
+              <p className="mt-1 text-xs text-foreground-tertiary">{item.timestamp}</p>
             </div>
           </div>
         ))}
@@ -161,19 +167,12 @@ function SimpleTimeline({ items }: SimpleTimelineProps): JSX.Element {
   );
 }
 
+const DEFAULT_TAB: CustomerDetailTab = 'quotes';
+
 const getInitials = (firstName?: string, lastName?: string): string => {
   const first = firstName?.charAt(0) || '';
   const last = lastName?.charAt(0) || '';
   return `${first}${last}`.toUpperCase() || 'NA';
-};
-
-const formatDate = (dateString?: string): string => {
-  if (!dateString) return '';
-  return new Date(dateString).toLocaleDateString('en-IN', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
 };
 
 const formatActivityTimestamp = (date: Date): string => {
@@ -187,15 +186,6 @@ const formatActivityTimestamp = (date: Date): string => {
     return `Yesterday at ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
   }
   return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
-};
-
-const QUOTE_STATUS_STYLES: Record<QuoteStatus, { bg: string; text: string; label: string }> = {
-  [QuoteStatus.DRAFT]: { bg: 'bg-muted', text: 'text-foreground-secondary', label: 'Draft' },
-  [QuoteStatus.SENT]: { bg: 'bg-warning/10', text: 'text-warning', label: 'Sent' },
-  [QuoteStatus.VIEWED]: { bg: 'bg-primary/10', text: 'text-primary', label: 'Viewed' },
-  [QuoteStatus.ACCEPTED]: { bg: 'bg-success/10', text: 'text-success', label: 'Accepted' },
-  [QuoteStatus.REJECTED]: { bg: 'bg-destructive/10', text: 'text-destructive', label: 'Rejected' },
-  [QuoteStatus.EXPIRED]: { bg: 'bg-muted', text: 'text-muted-foreground', label: 'Expired' },
 };
 
 // ============================================================================
@@ -255,7 +245,10 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
   const [docToDelete, setDocToDelete] = useState<AggregatedDocument | null>(null);
 
   // Get active tab and document filter from URL
-  const activeTab = searchParams.get('tab') || 'quotes';
+  const rawTab = searchParams.get('tab') || DEFAULT_TAB;
+  const activeTab: CustomerDetailTab = CUSTOMER_DETAIL_TABS.some((t) => t.value === rawTab)
+    ? (rawTab as CustomerDetailTab)
+    : DEFAULT_TAB;
   const propertyFilter = searchParams.get('docProperty') || 'all';
 
   // Data fetching
@@ -440,11 +433,11 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-semibold text-foreground">{customerFullName}</h1>
-              <span className="rounded bg-success/10 px-1.5 py-0.5 text-[11px] font-medium text-success">
+              <Badge variant="success" size="xs">
                 {customer.status}
-              </span>
+              </Badge>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-foreground-tertiary">
               Customer since {formatDate(customer.createdAt)}
             </p>
           </div>
@@ -459,7 +452,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
               className="flex size-9 items-center justify-center rounded-lg border border-border transition-colors hover:border-border-medium hover:bg-muted"
               title="Call Customer"
             >
-              <Phone className="size-4 text-foreground-secondary" />
+              <Phone className="size-icon-sm text-foreground-secondary" />
             </a>
           )}
           {phoneForWhatsApp && (
@@ -470,7 +463,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
               className="flex size-9 items-center justify-center rounded-lg border border-success/30 transition-colors hover:border-success/50 hover:bg-success/10"
               title="WhatsApp"
             >
-              <WhatsAppIcon className="size-4 text-success" />
+              <WhatsAppIcon className="size-icon-sm text-success" />
             </a>
           )}
           {customer.email && (
@@ -479,35 +472,26 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
               className="flex size-9 items-center justify-center rounded-lg border border-primary/30 transition-colors hover:border-primary/50 hover:bg-primary/10"
               title="Send Email"
             >
-              <Mail className="size-4 text-primary" />
+              <Mail className="size-icon-sm text-primary" />
             </a>
           )}
 
           {/* Divider */}
           <div className="mx-1 h-6 w-px bg-border" />
 
-          {/* Action Buttons - Compact styling matching UX */}
-          <button
-            onClick={handleEdit}
-            className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-[13px] font-medium hover:bg-muted"
-          >
-            <Edit className="size-3.5" />
+          {/* Action Buttons */}
+          <Button variant="outline" size="sm" onClick={handleEdit}>
+            <Edit className="size-icon-xs mr-1.5" />
             Edit
-          </button>
-          <button
-            onClick={handleAddProperty}
-            className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-[13px] font-medium hover:bg-muted"
-          >
-            <Building2 className="size-3.5" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleAddProperty}>
+            <Building2 className="size-icon-xs mr-1.5" />
             Add Property
-          </button>
-          <button
-            onClick={handleCreateQuote}
-            className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[13px] font-medium text-white hover:bg-primary-dark"
-          >
-            <FileText className="size-3.5" />
+          </Button>
+          <Button size="sm" onClick={handleCreateQuote}>
+            <FileText className="size-icon-xs mr-1.5" />
             Create Quote
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -554,7 +538,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
 
               {/* Billing Address */}
               <div>
-                <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <label className="text-2xs font-medium uppercase tracking-wider text-foreground-secondary">
                   Billing Address
                 </label>
                 <EditableField
@@ -564,7 +548,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                   isLoading={updateCustomerMutation.isPending}
                 />
                 {(customer.city || customer.state || customer.pincode) && (
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <p className="mt-1 text-sm text-foreground-tertiary">
                     {[customer.city, customer.state, customer.pincode].filter(Boolean).join(', ')}
                   </p>
                 )}
@@ -574,19 +558,19 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
 
               {/* Lead Source */}
               <div>
-                <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <label className="text-2xs font-medium uppercase tracking-wider text-foreground-secondary">
                   Lead Source
                 </label>
                 <div className="mt-1">
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-foreground-secondary">
+                  <Badge variant="secondary" size="xs">
                     {customer.leadSource || 'Not specified'}
-                  </span>
+                  </Badge>
                 </div>
               </div>
 
               {/* Created By */}
               <div>
-                <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <label className="text-2xs font-medium uppercase tracking-wider text-foreground-secondary">
                   Created By
                 </label>
                 <div className="mt-1 flex items-center gap-2">
@@ -643,13 +627,13 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                 ))
               ) : (
                 <div className="py-8 text-center">
-                  <Building2 className="mx-auto mb-3 size-12 text-muted-foreground" />
+                  <Building2 className="mx-auto mb-3 size-icon-xl text-foreground-muted" />
                   <p className="mb-1 font-medium text-foreground">No properties yet</p>
-                  <p className="mb-4 text-sm text-muted-foreground">
+                  <p className="mb-4 text-sm text-foreground-secondary">
                     Add your first property to get started
                   </p>
                   <Button size="sm" onClick={handleAddProperty}>
-                    <Plus className="mr-1.5 size-3.5" />
+                    <Plus className="mr-1.5 size-icon-xs" />
                     Add Property
                   </Button>
                 </div>
@@ -662,7 +646,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
         <div className="lg:col-span-4">
           <div className="rounded-lg border border-border bg-background">
             <div className="border-b border-border p-4">
-              <h3 className="font-semibold text-foreground">Recent Activity</h3>
+              <h3 className="text-sm font-medium text-foreground">Recent Activity</h3>
             </div>
             <div className="p-4">
               <SimpleTimeline
@@ -680,100 +664,91 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
 
       {/* Tabs Section */}
       <div className="rounded-lg border border-border bg-background">
-        {/* Tab Buttons */}
-        <div className="flex overflow-x-auto border-b border-border">
-          {(['quotes', 'documents', 'projects', 'activity'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => handleTabChange(tab)}
-              className={cn(
-                'px-3.5 py-2.5 text-[13px] font-medium border-b-2 transition-all',
-                activeTab === tab
-                  ? 'text-primary border-primary'
-                  : 'text-muted-foreground border-transparent hover:text-foreground',
-              )}
-            >
-              {tab === 'quotes' && 'Quotes'}
-              {tab === 'documents' && 'Documents'}
-              {tab === 'projects' && 'Projects'}
-              {tab === 'activity' && 'All Activity'}
-            </button>
-          ))}
-        </div>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <TabsList
+            variant="underline"
+            className="overflow-x-auto overflow-y-hidden"
+            aria-label="Customer detail tabs"
+          >
+            {CUSTOMER_DETAIL_TABS.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value} variant="underline">
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        {/* Quotes Tab */}
-        {activeTab === 'quotes' && (
-          <div className="p-4">
-            {isLoadingQuotes ? (
-              <div className="space-y-3">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-            ) : quotes.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
-                        Quote #
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
-                        Property
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
-                        System
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
-                        Value
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
-                        Status
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
-                        Date
-                      </th>
-                      <th className="w-16"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {quotes.map((quote) => {
-                      const statusStyle = QUOTE_STATUS_STYLES[quote.status];
-                      return (
-                        <tr key={quote.id} className="hover:bg-muted">
-                          <td className="whitespace-nowrap px-3 py-2.5">
+          {/* Quotes Tab */}
+          <TabsContent value="quotes">
+            <div className="p-4">
+              {isLoadingQuotes ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-10 rounded" />
+                  ))}
+                </div>
+              ) : quotes.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border-light">
+                        <th className="text-left py-2 px-3 text-2xs font-medium text-foreground-secondary uppercase">
+                          Quote #
+                        </th>
+                        <th className="text-left py-2 px-3 text-2xs font-medium text-foreground-secondary uppercase">
+                          Property
+                        </th>
+                        <th className="text-left py-2 px-3 text-2xs font-medium text-foreground-secondary uppercase">
+                          System
+                        </th>
+                        <th className="text-right py-2 px-3 text-2xs font-medium text-foreground-secondary uppercase">
+                          Value
+                        </th>
+                        <th className="text-left py-2 px-3 text-2xs font-medium text-foreground-secondary uppercase">
+                          Status
+                        </th>
+                        <th className="text-left py-2 px-3 text-2xs font-medium text-foreground-secondary uppercase">
+                          Date
+                        </th>
+                        <th className="text-right py-2 px-3 text-2xs font-medium text-foreground-secondary uppercase">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {quotes.map((quote) => (
+                        <tr
+                          key={quote.id}
+                          className="border-b border-border-light last:border-b-0 hover:bg-background-secondary transition-colors"
+                        >
+                          <td className="py-3 px-3 font-medium text-primary">
                             <Link
                               href={buildRoute(ROUTES.QUOTES.DETAIL, { id: quote.id })}
-                              className="font-medium text-primary hover:underline"
+                              className="hover:underline"
                             >
                               {quote.quoteNumber}
                             </Link>
                           </td>
-                          <td className="whitespace-nowrap px-3 py-2.5 text-sm">
+                          <td className="py-3 px-3 text-foreground-secondary">
                             {quote.propertyName || '—'}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-2.5 text-sm">
+                          <td className="py-3 px-3 text-foreground-secondary">
                             {quote.systemSizeKw} kW
                           </td>
-                          <td className="whitespace-nowrap px-3 py-2.5 text-sm font-medium text-foreground">
-                            {quote.finalPrice
-                              ? `₹${quote.finalPrice.toLocaleString('en-IN')}`
-                              : '—'}
+                          <td className="py-3 px-3 text-right font-medium">
+                            {quote.finalPrice ? formatCurrency(quote.finalPrice) : '—'}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-2.5">
-                            <span
-                              className={cn(
-                                'rounded px-1.5 py-0.5 text-[11px] font-medium',
-                                statusStyle.bg,
-                                statusStyle.text,
-                              )}
+                          <td className="py-3 px-3">
+                            <Badge
+                              variant={QUOTE_STATUS_BADGE_VARIANT[quote.status] ?? 'default'}
+                              size="xs"
                             >
-                              {statusStyle.label}
-                            </span>
+                              {quote.status}
+                            </Badge>
                           </td>
-                          <td className="whitespace-nowrap px-3 py-2.5 text-sm text-muted-foreground">
+                          <td className="py-3 px-3 text-foreground-secondary">
                             {formatDate(quote.quoteDate)}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-2.5 text-right">
+                          <td className="py-3 px-3 text-right">
                             <Link
                               href={buildRoute(ROUTES.QUOTES.DETAIL, { id: quote.id })}
                               className="text-sm text-primary hover:underline"
@@ -782,119 +757,118 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                             </Link>
                           </td>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="py-12 text-center">
-                <FileText className="mx-auto mb-3 size-12 text-muted-foreground" />
-                <p className="mb-1 font-medium text-foreground">No quotes yet</p>
-                <p className="mb-4 text-sm text-muted-foreground">
-                  Create a quote to start the sales process
-                </p>
-                <Button size="sm" onClick={handleCreateQuote}>
-                  <Plus className="mr-1.5 size-3.5" />
-                  Create Quote
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <EmptyState
+                  icon={<FileText className="w-full h-full" />}
+                  title="No quotes yet"
+                  description="Create a quote to start the sales process."
+                  action={{
+                    label: 'Create Quote',
+                    onClick: handleCreateQuote,
+                    icon: <FileText className="size-icon-sm" />,
+                  }}
+                />
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Documents Tab */}
+          <TabsContent value="documents">
+            <div className="p-4">
+              {/* Documents Tab Header */}
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Select value={propertyFilter} onValueChange={setPropertyFilterParam}>
+                    <SelectTrigger className="h-input-sm w-48">
+                      <SelectValue placeholder="All Properties" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Properties</SelectItem>
+                      {properties?.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.propertyName || p.address || 'Unnamed'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsUploadModalOpen(true)}
+                  disabled={!properties || properties.length === 0}
+                >
+                  <Upload className="mr-2 size-icon-sm" />
+                  Upload
                 </Button>
               </div>
-            )}
-          </div>
-        )}
 
-        {/* Documents Tab */}
-        {activeTab === 'documents' && (
-          <div className="p-4">
-            {/* Documents Tab Header */}
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Select value={propertyFilter} onValueChange={setPropertyFilterParam}>
-                  <SelectTrigger className="h-input-sm w-48">
-                    <SelectValue placeholder="All Properties" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Properties</SelectItem>
-                    {properties?.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.propertyName || p.address || 'Unnamed'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                size="sm"
-                onClick={() => setIsUploadModalOpen(true)}
-                disabled={!properties || properties.length === 0}
-              >
-                <Upload className="mr-1.5 size-icon-xs" />
-                Upload Document
-              </Button>
+              {/* Documents List */}
+              {filteredDocuments.length === 0 ? (
+                <EmptyState
+                  icon={<FileText className="w-full h-full" />}
+                  title="No documents yet"
+                  description={
+                    properties && properties.length > 0
+                      ? 'Upload documents for your properties.'
+                      : 'Add a property first to upload documents.'
+                  }
+                  action={
+                    properties && properties.length > 0
+                      ? {
+                          label: 'Upload Document',
+                          onClick: () => setIsUploadModalOpen(true),
+                          icon: <Upload className="size-icon-sm" />,
+                        }
+                      : undefined
+                  }
+                />
+              ) : (
+                <div className="space-y-2">
+                  {filteredDocuments.map((doc, idx) => (
+                    <DocumentRow
+                      key={`${doc.propertyId}-${doc.url}-${idx}`}
+                      document={doc}
+                      onPreview={openPreview}
+                      onDownload={(d) => {
+                        void downloadToSystem(d);
+                      }}
+                      onDelete={handleDeleteDocument}
+                      isDeleting={removeMutation.isPending}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
+          </TabsContent>
 
-            {/* Documents List */}
-            {filteredDocuments.length === 0 ? (
-              <div className="py-12 text-center">
-                <FileText className="mx-auto mb-3 size-icon-xl text-foreground-muted" />
-                <p className="mb-1 font-medium text-foreground">No documents yet</p>
-                <p className="mb-4 text-sm text-foreground-secondary">
-                  {properties && properties.length > 0
-                    ? 'Upload documents for your properties'
-                    : 'Add a property first to upload documents'}
-                </p>
-                {properties && properties.length > 0 && (
-                  <Button size="sm" onClick={() => setIsUploadModalOpen(true)}>
-                    <Upload className="mr-1.5 size-icon-xs" />
-                    Upload Document
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {filteredDocuments.map((doc, idx) => (
-                  <DocumentRow
-                    key={`${doc.propertyId}-${doc.url}-${idx}`}
-                    document={doc}
-                    onPreview={openPreview}
-                    onDownload={(doc) => {
-                      void downloadToSystem(doc);
-                    }}
-                    onDelete={handleDeleteDocument}
-                    isDeleting={removeMutation.isPending}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Projects Tab */}
-        {activeTab === 'projects' && (
-          <div className="p-8">
-            <div className="text-center">
-              <Building2 className="mx-auto mb-3 size-icon-xl text-foreground-muted" />
-              <h3 className="mb-1 font-medium text-foreground">No projects yet</h3>
-              <p className="text-sm text-foreground-secondary">
-                Projects will appear here once a quote is accepted
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Activity Tab */}
-        {activeTab === 'activity' && (
-          <div className="p-4">
-            <SimpleTimeline
-              items={mockActivityData.map((a) => ({
-                id: a.id,
-                title: <span>{a.description}</span>,
-                timestamp: `${a.timestamp.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })} at ${a.timestamp.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`,
-                dotVariant: getActivityDotVariant(a.type),
-              }))}
+          {/* Projects Tab */}
+          <TabsContent value="projects">
+            <EmptyState
+              icon={<Building2 className="w-full h-full" />}
+              title="No projects yet"
+              description="Projects will appear here once a quote is accepted."
             />
-          </div>
-        )}
+          </TabsContent>
+
+          {/* Activity Tab */}
+          <TabsContent value="activity">
+            <div className="p-4">
+              <SimpleTimeline
+                items={mockActivityData.map((a) => ({
+                  id: a.id,
+                  title: <span>{a.description}</span>,
+                  timestamp: `${a.timestamp.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })} at ${a.timestamp.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`,
+                  dotVariant: getActivityDotVariant(a.type),
+                }))}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Property Select Modal */}

@@ -71,7 +71,7 @@ const QUOTE_STATUS_STYLES: Record<QuoteStatus, { bg: string; text: string; label
   [QuoteStatus.VIEWED]: { bg: 'bg-primary/10', text: 'text-primary', label: 'Viewed' },
   [QuoteStatus.ACCEPTED]: { bg: 'bg-success/10', text: 'text-success', label: 'Accepted' },
   [QuoteStatus.REJECTED]: { bg: 'bg-destructive/10', text: 'text-destructive', label: 'Rejected' },
-  [QuoteStatus.EXPIRED]: { bg: 'bg-muted', text: 'text-muted-foreground', label: 'Expired' },
+  [QuoteStatus.EXPIRED]: { bg: 'bg-muted', text: 'text-foreground-tertiary', label: 'Expired' },
 };
 
 // ============================================================================
