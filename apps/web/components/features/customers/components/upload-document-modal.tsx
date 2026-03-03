@@ -13,7 +13,7 @@
  */
 
 import { Upload } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { DOCUMENT_TYPE_OPTIONS } from '../constants';
 import { type CustomerPropertyResponse , useDocumentUpload } from '../hooks';
@@ -45,6 +45,8 @@ interface UploadDocumentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   properties: CustomerPropertyResponse[];
+  /** When set, property is pre-selected and the selector is locked. */
+  defaultPropertyId?: string;
 }
 
 // ============================================================================
@@ -55,12 +57,21 @@ export function UploadDocumentModal({
   open,
   onOpenChange,
   properties,
+  defaultPropertyId,
 }: UploadDocumentModalProps): React.JSX.Element {
-  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>(defaultPropertyId ?? '');
   const [selectedDocType, setSelectedDocType] = useState<string>('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isPropertyLocked = !!defaultPropertyId;
+
+  useEffect(() => {
+    if (open && defaultPropertyId) {
+      setSelectedPropertyId(defaultPropertyId);
+    }
+  }, [open, defaultPropertyId]);
 
   const {
     uploadProgress,
@@ -71,12 +82,12 @@ export function UploadDocumentModal({
   } = useDocumentUpload();
 
   const resetForm = useCallback(() => {
-    setSelectedPropertyId('');
+    setSelectedPropertyId(defaultPropertyId ?? '');
     setSelectedDocType('');
     setSelectedFile(null);
     setIsDragOver(false);
     resetUploadState();
-  }, [resetUploadState]);
+  }, [resetUploadState, defaultPropertyId]);
 
   const handleClose = useCallback(
     (isOpen: boolean) => {
@@ -158,27 +169,38 @@ export function UploadDocumentModal({
 
         <DialogBody className="space-y-4">
           {/* Property Selector */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium">
-              Property <span className="text-error">*</span>
-            </Label>
-            <Select
-              value={selectedPropertyId}
-              onValueChange={setSelectedPropertyId}
-              disabled={isUploading}
-            >
-              <SelectTrigger className="h-input-md">
-                <SelectValue placeholder="Select property" />
-              </SelectTrigger>
-              <SelectContent className="z-popover">
-                {properties.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.propertyName || p.address || 'Unnamed Property'}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {isPropertyLocked ? (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Property</Label>
+              <div className="flex h-input-md items-center rounded-md border-1.5 border-border bg-muted px-3 text-sm text-foreground">
+                {properties.find((p) => p.id === defaultPropertyId)?.propertyName
+                  || properties.find((p) => p.id === defaultPropertyId)?.address
+                  || 'Unnamed Property'}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                Property <span className="text-error">*</span>
+              </Label>
+              <Select
+                value={selectedPropertyId}
+                onValueChange={setSelectedPropertyId}
+                disabled={isUploading}
+              >
+                <SelectTrigger className="h-input-md">
+                  <SelectValue placeholder="Select property" />
+                </SelectTrigger>
+                <SelectContent className="z-popover">
+                  {properties.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.propertyName || p.address || 'Unnamed Property'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Document Type Selector */}
           <div className="space-y-2">
