@@ -53,13 +53,17 @@ async function seed(): Promise<void> {
 
   console.error('🌱 Starting database seeding...\n');
 
+  const queryRunner = dataSource.createQueryRunner();
+  await queryRunner.connect();
+  await queryRunner.startTransaction();
+
   try {
     // ============================================
     // 1. CREATE ORGANIZATION
     // ============================================
     console.error('📦 Seeding Organization...');
 
-    await dataSource.query(`
+    await queryRunner.query(`
       INSERT INTO organizations (
         name, code, email, phone, address, city, state, country, pincode,
         gstin, pan, timezone, currency, date_format,
@@ -93,7 +97,7 @@ async function seed(): Promise<void> {
     // ============================================
     console.error('\n🔐 Seeding Roles...');
 
-    const [org] = await dataSource.query(
+    const [org] = await queryRunner.query(
       `SELECT id FROM organizations WHERE code = $1`,
       [ORG_CODE],
     );
@@ -105,12 +109,12 @@ async function seed(): Promise<void> {
     const orgId: string = org.id;
 
     for (const role of ORG_ROLES) {
-      const existing = await dataSource.query(
+      const existing = await queryRunner.query(
         `SELECT id FROM roles WHERE organization_id = $1 AND code = $2 AND deleted_at IS NULL LIMIT 1`,
         [orgId, role.code],
       );
       if (existing.length === 0) {
-        await dataSource.query(
+        await queryRunner.query(
           `INSERT INTO roles (id, organization_id, code, name, description, is_system_role, level, created_at, updated_at)
            VALUES (gen_random_uuid(), $1, $2, $3, $4, true, $5, NOW(), NOW())`,
           [orgId, role.code, role.name, role.description, role.level],
@@ -129,14 +133,9 @@ async function seed(): Promise<void> {
     const adminPhone = config.seed.platformAdminPhone;
     const adminPasswordHash = await bcrypt.hash(config.seed.platformAdminPassword, 10);
 
-    await dataSource.query(
-      `INSERT INTO users (first_name, last_name, email, phone, password_hash, status, profile_completed)
-       VALUES ('Super', 'Admin', $1, $2, $3, 'active', true)
-       ON CONFLICT (phone) DO NOTHING`,
-      [adminEmail, adminPhone, adminPasswordHash],
-    );
+    await upsertUser(queryRunner, 'Super', 'Admin', adminEmail, adminPhone, adminPasswordHash);
 
-    const [adminUser] = await dataSource.query(
+    const [adminUser] = await queryRunner.query(
       `SELECT id FROM users WHERE phone = $1`,
       [adminPhone],
     );
@@ -145,16 +144,14 @@ async function seed(): Promise<void> {
       throw new Error('Super Admin user not found after insert');
     }
 
-    // Employee profile for super admin
-    await dataSource.query(
+    await queryRunner.query(
       `INSERT INTO employee_profiles (user_id, organization_id, email, phone, designation, department, employee_id, status)
        VALUES ($1, $2, $3, $4, 'Super Admin', 'Management', 'EMP-000', 'active')
        ON CONFLICT (user_id, organization_id) DO NOTHING`,
       [adminUser.id, orgId, adminEmail, adminPhone],
     );
 
-    // Role assignment
-    await assignRole(adminUser.id, orgId, 'super_admin');
+    await assignRole(queryRunner, adminUser.id, orgId, 'super_admin');
 
     console.error(`  ✓ Super Admin created (${adminEmail})`);
 
@@ -166,14 +163,9 @@ async function seed(): Promise<void> {
     const empPasswordHash = await bcrypt.hash(EMPLOYEE_PASSWORD, 10);
 
     for (const emp of EMPLOYEES) {
-      await dataSource.query(
-        `INSERT INTO users (first_name, last_name, email, phone, password_hash, status, profile_completed)
-         VALUES ($1, $2, $3, $4, $5, 'active', true)
-         ON CONFLICT (phone) DO NOTHING`,
-        [emp.firstName, emp.lastName, emp.email, emp.phone, empPasswordHash],
-      );
+      await upsertUser(queryRunner, emp.firstName, emp.lastName, emp.email, emp.phone, empPasswordHash);
 
-      const [user] = await dataSource.query(
+      const [user] = await queryRunner.query(
         `SELECT id FROM users WHERE phone = $1`,
         [emp.phone],
       );
@@ -183,7 +175,7 @@ async function seed(): Promise<void> {
         continue;
       }
 
-      await dataSource.query(
+      await queryRunner.query(
         `INSERT INTO employee_profiles (user_id, organization_id, email, phone, designation, department, employee_id, status)
          VALUES ($1, $2, $3, $4, $5, $6, $7, 'active')
          ON CONFLICT (user_id, organization_id) DO NOTHING`,
@@ -191,7 +183,7 @@ async function seed(): Promise<void> {
       );
 
       for (const roleCode of emp.roles) {
-        await assignRole(user.id, orgId, roleCode);
+        await assignRole(queryRunner, user.id, orgId, roleCode);
       }
 
       console.error(`  ✓ ${emp.firstName} ${emp.lastName} → ${emp.roles.join(', ')}`);
@@ -205,14 +197,9 @@ async function seed(): Promise<void> {
     const customerPhone = '+919876500100';
     const customerEmail = 'amit.patel@example.com';
 
-    await dataSource.query(
-      `INSERT INTO users (first_name, last_name, email, phone, password_hash, status, profile_completed)
-       VALUES ('Amit', 'Patel', $1, $2, $3, 'active', false)
-       ON CONFLICT (phone) DO NOTHING`,
-      [customerEmail, customerPhone, empPasswordHash],
-    );
+    await upsertUser(queryRunner, 'Amit', 'Patel', customerEmail, customerPhone, empPasswordHash, false);
 
-    const [customerUser] = await dataSource.query(
+    const [customerUser] = await queryRunner.query(
       `SELECT id FROM users WHERE phone = $1`,
       [customerPhone],
     );
@@ -221,8 +208,7 @@ async function seed(): Promise<void> {
       throw new Error('Customer user not found after insert');
     }
 
-    // Customer profile
-    await dataSource.query(
+    await queryRunner.query(
       `INSERT INTO customer_profiles (
          user_id, organization_id, customer_code,
          first_name, last_name, email, phone,
@@ -239,7 +225,7 @@ async function seed(): Promise<void> {
       [customerUser.id, orgId, customerEmail, customerPhone, adminUser.id],
     );
 
-    const [customerProfile] = await dataSource.query(
+    const [customerProfile] = await queryRunner.query(
       `SELECT id FROM customer_profiles WHERE user_id = $1 AND organization_id = $2`,
       [customerUser.id, orgId],
     );
@@ -248,8 +234,7 @@ async function seed(): Promise<void> {
       throw new Error('Customer profile not found after insert');
     }
 
-    // Customer property
-    await dataSource.query(
+    await queryRunner.query(
       `INSERT INTO customer_properties (
          customer_id, organization_id, property_code, property_name,
          property_type, address, city, state, country, pincode,
@@ -264,12 +249,11 @@ async function seed(): Promise<void> {
          'single_phase', 5.00, 2500.00,
          'warm', true, 'active', $3
        )
-       ON CONFLICT DO NOTHING`,
+       ON CONFLICT (property_code) DO NOTHING`,
       [customerProfile.id, orgId, adminUser.id],
     );
 
-    // Assign customer role
-    await assignRole(customerUser.id, orgId, 'customer');
+    await assignRole(queryRunner, customerUser.id, orgId, 'customer');
 
     console.error('  ✓ Customer: Amit Patel + Property: Sunshine Apartments');
 
@@ -278,40 +262,51 @@ async function seed(): Promise<void> {
     // ============================================
     console.error('\n⚙️  Seeding Quote Configuration...');
 
-    await dataSource.query(
-      `INSERT INTO quote_configurations (
-         organization_id,
-         default_validity_days,
-         max_versions,
-         default_completion_weeks,
-         gst_config,
-         wattage_rounding,
-         payment_milestones,
-         show_inventory_stock,
-         is_active
-       ) VALUES (
-         $1, 30, 3, 4,
-         '{"rate1": 5, "rate1Percentage": 70, "rate2": 18, "rate2Percentage": 30}',
-         '{"roundTo": 10, "roundUpThreshold": 5}',
-         '[{"stage":"advance","name":"Advance","percentage":10,"order":1},{"stage":"installation_complete","name":"Installation Complete","percentage":85,"order":2},{"stage":"commissioning","name":"Commissioning","percentage":5,"order":3}]',
-         true,
-         true
-       )
-       ON CONFLICT DO NOTHING`,
+    const existingConfig = await queryRunner.query(
+      `SELECT id FROM quote_configurations WHERE organization_id = $1 LIMIT 1`,
       [orgId],
     );
+
+    if (existingConfig.length === 0) {
+      await queryRunner.query(
+        `INSERT INTO quote_configurations (
+           organization_id,
+           default_validity_days,
+           max_versions,
+           default_completion_weeks,
+           gst_config,
+           wattage_rounding,
+           payment_milestones,
+           show_inventory_stock,
+           is_active
+         ) VALUES (
+           $1, 30, 3, 4,
+           '{"rate1": 5, "rate1Percentage": 70, "rate2": 18, "rate2Percentage": 30}',
+           '{"roundTo": 10, "roundUpThreshold": 5}',
+           '[{"stage":"advance","name":"Advance","percentage":10,"order":1},{"stage":"installation_complete","name":"Installation Complete","percentage":85,"order":2},{"stage":"commissioning","name":"Commissioning","percentage":5,"order":3}]',
+           true,
+           true
+         )`,
+        [orgId],
+      );
+    }
 
     console.error('  ✓ Quote configuration created');
 
     // ============================================
+    // COMMIT TRANSACTION
+    // ============================================
+    await queryRunner.commitTransaction();
+
+    // ============================================
     // SUMMARY
     // ============================================
-    console.error(`\n${  '='.repeat(50)}`);
+    console.error(`\n${'='.repeat(50)}`);
     console.error('✅ Database seeding completed!\n');
     console.error('📊 Seeded Data:');
     console.error('  • 1 Organization (ONEOHM)');
-    console.error(`  • 1 Super Admin (${adminEmail} / ${config.seed.platformAdminPassword})`);
-    console.error(`  • 10 Employees (password: ${EMPLOYEE_PASSWORD})`);
+    console.error(`  • 1 Super Admin (${adminEmail})`);
+    console.error('  • 10 Employees');
     console.error('  • 1 Customer (Amit Patel) + 1 Property');
     console.error('  • 1 Quote Configuration');
     console.error(`  • ${ORG_ROLES.length} Org Roles`);
@@ -319,17 +314,46 @@ async function seed(): Promise<void> {
     for (const emp of EMPLOYEES) {
       console.error(`  ${emp.employeeId} ${emp.firstName} ${emp.lastName} — ${emp.roles.join(', ')}`);
     }
-    console.error(`\n${  '='.repeat(50)}`);
+    console.error(`\n${'='.repeat(50)}`);
   } catch (error) {
+    await queryRunner.rollbackTransaction();
     console.error('\n❌ Error during seeding:', error);
     throw error;
   } finally {
+    await queryRunner.release();
     await dataSource.destroy();
   }
 }
 
-async function assignRole(userId: string, orgId: string, roleCode: string): Promise<void> {
-  const existing = await dataSource.query(
+async function upsertUser(
+  queryRunner: import('typeorm').QueryRunner,
+  firstName: string,
+  lastName: string,
+  email: string,
+  phone: string,
+  passwordHash: string,
+  profileCompleted = true,
+): Promise<void> {
+  const existing = await queryRunner.query(
+    `SELECT id FROM users WHERE email = $1 OR phone = $2 LIMIT 1`,
+    [email, phone],
+  );
+  if (existing.length > 0) return;
+
+  await queryRunner.query(
+    `INSERT INTO users (first_name, last_name, email, phone, password_hash, status, profile_completed)
+     VALUES ($1, $2, $3, $4, $5, 'active', $6)`,
+    [firstName, lastName, email, phone, passwordHash, profileCompleted],
+  );
+}
+
+async function assignRole(
+  queryRunner: import('typeorm').QueryRunner,
+  userId: string,
+  orgId: string,
+  roleCode: string,
+): Promise<void> {
+  const existing = await queryRunner.query(
     `SELECT 1 FROM user_roles ur
      JOIN roles r ON r.id = ur.role_id
      WHERE ur.user_id = $1 AND r.code = $2 AND r.organization_id = $3
@@ -339,7 +363,7 @@ async function assignRole(userId: string, orgId: string, roleCode: string): Prom
 
   if (existing.length > 0) return;
 
-  await dataSource.query(
+  await queryRunner.query(
     `INSERT INTO user_roles (user_id, role, role_id, organization_id, created_by)
      SELECT $1, $2, r.id, $3, $1
      FROM roles r

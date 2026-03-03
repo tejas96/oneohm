@@ -1,11 +1,17 @@
 /**
  * Property Feature Constants
  *
- * Static configuration for the property creation form.
- * Contains alert messages, section metadata, and required field tracking.
+ * Static configuration for forms, detail page, label maps, and badge variants.
  */
 
-// Required fields tracked by the completion progress bar
+import type { LeadTemperature, PropertyType, QuoteStatus } from '@oneohm-epc/shared-types';
+
+import type { BadgeProps } from '@/components/ui/badge';
+
+// ---------------------------------------------------------------------------
+// Form: Required Fields
+// ---------------------------------------------------------------------------
+
 export const REQUIRED_FIELD_KEYS = [
   'customerId',
   'propertyName',
@@ -18,7 +24,10 @@ export const REQUIRED_FIELD_KEYS = [
 
 export const REQUIRED_FIELDS_TOTAL = REQUIRED_FIELD_KEYS.length;
 
-// Alert messages used across the property creation form
+// ---------------------------------------------------------------------------
+// Form: Alert Messages
+// ---------------------------------------------------------------------------
+
 export const PROPERTY_ALERTS = {
   propertyTip: {
     title: 'Quick Tip',
@@ -45,3 +54,74 @@ export const PROPERTY_ALERTS = {
       'Aadhaar card is required when loan financing is enabled. Other documents are optional but speed up the approval process.',
   },
 } as const;
+
+// ---------------------------------------------------------------------------
+// Detail Page: Tab Configuration
+// ---------------------------------------------------------------------------
+
+export const PROPERTY_DETAIL_TABS = [
+  { value: 'sitevisit', label: 'Site Visit' },
+  { value: 'quotes', label: 'Quotes' },
+  { value: 'followups', label: 'Followups' },
+  { value: 'documents', label: 'Documents' },
+  { value: 'activity', label: 'Activity' },
+] as const;
+
+export type PropertyDetailTab = (typeof PROPERTY_DETAIL_TABS)[number]['value'];
+
+// ---------------------------------------------------------------------------
+// Detail Page: Property Type Labels
+// ---------------------------------------------------------------------------
+
+export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
+  residential: 'Residential',
+  residential_apartment: 'Apartment',
+  commercial: 'Commercial',
+  industrial: 'Industrial',
+  agricultural: 'Agricultural',
+  institutional: 'Institutional',
+};
+
+// ---------------------------------------------------------------------------
+// Detail Page: Quote Status Badge Variants
+// ---------------------------------------------------------------------------
+
+export const QUOTE_STATUS_BADGE_VARIANT: Record<QuoteStatus, BadgeProps['variant']> = {
+  draft: 'default',
+  sent: 'info',
+  viewed: 'secondary',
+  accepted: 'success',
+  rejected: 'error',
+  expired: 'warning',
+};
+
+// ---------------------------------------------------------------------------
+// Detail Page: Lead Temperature Config
+// ---------------------------------------------------------------------------
+
+export const LEAD_TEMPERATURE_CONFIG: Record<
+  LeadTemperature,
+  { label: string; bg: string; bgActive: string; text: string; dot: string }
+> = {
+  hot: {
+    label: 'Hot',
+    bg: 'bg-error/10 text-error hover:bg-error/20',
+    bgActive: 'bg-error text-white shadow-sm',
+    text: 'text-error',
+    dot: 'bg-error',
+  },
+  warm: {
+    label: 'Warm',
+    bg: 'bg-warning/10 text-warning hover:bg-warning/20',
+    bgActive: 'bg-warning text-white shadow-sm',
+    text: 'text-warning',
+    dot: 'bg-warning',
+  },
+  cold: {
+    label: 'Cold',
+    bg: 'bg-info/10 text-info hover:bg-info/20',
+    bgActive: 'bg-info text-white shadow-sm',
+    text: 'text-info',
+    dot: 'bg-info',
+  },
+};

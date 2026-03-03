@@ -523,7 +523,7 @@ export function PropertyListPage(): JSX.Element {
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() =>
-                  router.push(`${ROUTES.QUOTES.NEW}?propertyId=${row.original.id}`)
+                  router.push(`${ROUTES.QUOTES.NEW}?propertyId=${row.original.id}&customerId=${row.original.customerId}`)
                 }
               >
                 <FileText className="mr-2 size-icon-sm" />
