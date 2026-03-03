@@ -74,8 +74,9 @@ export function useProjectPaymentSummary(
 }
 
 /**
- * Derived hook: joins milestones from project response with payments data.
- * Business logic stays in the hook, not in UI components.
+ * Derived hook: returns milestones from project response.
+ * Payment-milestone linking has been removed; payment totals are now
+ * fetched independently via useProjectPaymentSummary.
  */
 export function usePaymentMilestones(
   projectId: string,
@@ -87,42 +88,24 @@ export function usePaymentMilestones(
   error: Error | null;
 } {
   const projectQuery = useProject(projectId, options);
-  const paymentsQuery = useProjectPayments(projectId, options);
 
   const data = useMemo(() => {
     const milestones = projectQuery.data?.milestones;
-    const payments = paymentsQuery.data;
-
     if (!milestones) return undefined;
 
-    return milestones.map((milestone): MilestoneWithPayment => {
-      const milestonePayments = (payments ?? []).filter(
-        (p) => p.milestoneId === milestone.id,
-      );
-      const totalExpected = milestonePayments.reduce((sum, p) => sum + p.expectedAmount, 0);
-      const totalPaid = milestonePayments.reduce((sum, p) => sum + p.paidAmount, 0);
-
-      let paymentStatus: 'received' | 'due' | 'pending' = 'pending';
-      if (totalPaid >= totalExpected && totalExpected > 0) {
-        paymentStatus = 'received';
-      } else if (totalExpected > 0) {
-        paymentStatus = 'due';
-      }
-
-      return {
-        ...milestone,
-        payments: milestonePayments,
-        totalExpected,
-        totalPaid,
-        paymentStatus,
-      };
-    });
-  }, [projectQuery.data?.milestones, paymentsQuery.data]);
+    return milestones.map((milestone): MilestoneWithPayment => ({
+      ...milestone,
+      payments: [],
+      totalExpected: 0,
+      totalPaid: 0,
+      paymentStatus: 'pending',
+    }));
+  }, [projectQuery.data?.milestones]);
 
   return {
     data,
-    isLoading: projectQuery.isLoading || paymentsQuery.isLoading,
-    isError: projectQuery.isError || paymentsQuery.isError,
-    error: projectQuery.error || paymentsQuery.error || null,
+    isLoading: projectQuery.isLoading,
+    isError: projectQuery.isError,
+    error: projectQuery.error || null,
   };
 }

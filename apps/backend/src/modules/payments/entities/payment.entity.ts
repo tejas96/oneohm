@@ -7,21 +7,18 @@ import { Entity, Column, ManyToOne, JoinColumn, Index, DeleteDateColumn } from '
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
-import { ProjectMilestoneEntity } from '../../projects/entities/project-milestone.entity';
 import { ProjectEntity } from '../../projects/entities/project.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
  * PaymentEntity
- * Tracks payments for projects with milestone-based payment support
+ * Tracks payments for projects
  */
 @Entity('payments')
 @Index(['organizationId', 'deletedAt'])
 @Index(['projectId', 'deletedAt'])
-@Index(['milestoneId'])
 @Index(['customerId'])
 @Index(['status', 'deletedAt'])
-@Index(['paymentDate'])
 export class PaymentEntity extends BaseEntity {
   // ============================================
   // RELATIONS (Many-to-One)
@@ -33,10 +30,6 @@ export class PaymentEntity extends BaseEntity {
   @ManyToOne(() => ProjectEntity)
   @JoinColumn({ name: 'project_id' })
   project?: ProjectEntity;
-
-  @ManyToOne(() => ProjectMilestoneEntity, { nullable: true })
-  @JoinColumn({ name: 'milestone_id' })
-  milestone?: ProjectMilestoneEntity;
 
   @ManyToOne(() => CustomerProfileEntity)
   @JoinColumn({ name: 'customer_id' })
@@ -55,9 +48,6 @@ export class PaymentEntity extends BaseEntity {
   @Column({ name: 'project_id', type: 'uuid' })
   projectId!: string;
 
-  @Column({ name: 'milestone_id', type: 'uuid', nullable: true })
-  milestoneId?: string;
-
   @Column({ name: 'customer_id', type: 'uuid' })
   customerId!: string;
 
@@ -66,9 +56,6 @@ export class PaymentEntity extends BaseEntity {
   // ============================================
   @Column({ name: 'payment_number', type: 'varchar', length: 50, unique: true })
   paymentNumber!: string;
-
-  @Column({ name: 'payment_date', type: 'date', default: () => 'CURRENT_DATE' })
-  paymentDate!: Date;
 
   // ============================================
   // AMOUNT

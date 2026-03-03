@@ -36,7 +36,7 @@ export class PaymentRepository {
   async findById(id: string): Promise<PaymentEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['organization', 'project', 'milestone', 'customer', 'reconciledByUser'],
+      relations: ['organization', 'project', 'customer', 'reconciledByUser'],
     });
   }
 
@@ -44,7 +44,7 @@ export class PaymentRepository {
     return this.repository.find({
       where: { deletedAt: IsNull() },
       order: { createdAt: 'DESC' },
-      relations: ['organization', 'project', 'milestone', 'customer'],
+      relations: ['organization', 'project', 'customer'],
     });
   }
 
@@ -52,38 +52,30 @@ export class PaymentRepository {
     return this.repository.find({
       where: { organizationId, deletedAt: IsNull() },
       order: { createdAt: 'DESC' },
-      relations: ['project', 'milestone', 'customer'],
+      relations: ['project', 'customer'],
     });
   }
 
   async findByProject(projectId: string, organizationId: string): Promise<PaymentEntity[]> {
     return this.repository.find({
       where: { projectId, organizationId, deletedAt: IsNull() },
-      order: { paymentDate: 'DESC' },
-      relations: ['milestone', 'customer', 'reconciledByUser'],
-    });
-  }
-
-  async findByMilestone(milestoneId: string): Promise<PaymentEntity[]> {
-    return this.repository.find({
-      where: { milestoneId, deletedAt: IsNull() },
-      order: { paymentDate: 'DESC' },
-      relations: ['project', 'customer'],
+      order: { createdAt: 'DESC' },
+      relations: ['customer', 'reconciledByUser'],
     });
   }
 
   async findByCustomer(customerId: string): Promise<PaymentEntity[]> {
     return this.repository.find({
       where: { customerId, deletedAt: IsNull() },
-      order: { paymentDate: 'DESC' },
-      relations: ['project', 'milestone'],
+      order: { createdAt: 'DESC' },
+      relations: ['project'],
     });
   }
 
   async findByStatus(status: PaymentTransactionStatus): Promise<PaymentEntity[]> {
     return this.repository.find({
       where: { status, deletedAt: IsNull() },
-      order: { paymentDate: 'DESC' },
+      order: { createdAt: 'DESC' },
       relations: ['project', 'customer'],
     });
   }
@@ -91,7 +83,7 @@ export class PaymentRepository {
   async findByPaymentNumber(paymentNumber: string): Promise<PaymentEntity | null> {
     return this.repository.findOne({
       where: { paymentNumber, deletedAt: IsNull() },
-      relations: ['organization', 'project', 'milestone', 'customer'],
+      relations: ['organization', 'project', 'customer'],
     });
   }
 

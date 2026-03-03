@@ -231,6 +231,7 @@ export class QuoteCalculatorController {
       internalNotes: input.internalNotes,
       customerNotes: input.customerNotes,
       projectCompletionWeeks: calculation.completionWeeks,
+      paymentMilestones: input.paymentMilestones,
       lineItems,
     };
 

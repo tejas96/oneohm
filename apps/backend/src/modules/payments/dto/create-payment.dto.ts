@@ -6,7 +6,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaymentMethod, PaymentTransactionStatus } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
-  IsDate,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -79,27 +78,9 @@ export class CreatePaymentDto {
   @IsNotEmpty()
   paymentMethod!: PaymentMethod;
 
-  @ApiProperty({
-    description: 'Date of payment',
-    example: '2024-01-15',
-    type: Date,
-  })
-  @IsDate()
-  @IsNotEmpty()
-  @Type(() => Date)
-  paymentDate!: Date;
-
   // ============================================
   // OPTIONAL FIELDS
   // ============================================
-  @ApiPropertyOptional({
-    description: 'Milestone ID (if payment is for a specific milestone)',
-    example: '550e8400-e29b-41d4-a716-446655440000',
-  })
-  @IsUUID()
-  @IsOptional()
-  milestoneId?: string;
-
   @ApiPropertyOptional({
     description: 'Payment reference number',
     example: 'TXN123456789',

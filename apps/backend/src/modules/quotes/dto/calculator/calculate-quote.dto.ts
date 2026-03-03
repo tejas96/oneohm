@@ -22,6 +22,8 @@ import {
   ValidateNested,
 } from 'class-validator';
 
+import { PaymentMilestoneDto } from '../versions/payment-milestone.dto';
+
 /**
  * Panel override - user can specify exact panel product and quantity
  */
@@ -339,4 +341,14 @@ export class CreateQuoteFromCalculationDto extends CalculateQuoteDto {
   @IsUUID()
   @IsOptional()
   resellerId?: string;
+
+  @ApiPropertyOptional({
+    type: [PaymentMilestoneDto],
+    description: 'Custom payment milestones (auto-generated from config if not provided)',
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PaymentMilestoneDto)
+  @IsOptional()
+  paymentMilestones?: PaymentMilestoneDto[];
 }

@@ -71,10 +71,6 @@ export class PaymentService {
     return this.paymentRepository.findByProject(projectId, organizationId);
   }
 
-  async findByMilestone(milestoneId: string): Promise<PaymentEntity[]> {
-    return this.paymentRepository.findByMilestone(milestoneId);
-  }
-
   async findByCustomer(customerId: string): Promise<PaymentEntity[]> {
     return this.paymentRepository.findByCustomer(customerId);
   }
