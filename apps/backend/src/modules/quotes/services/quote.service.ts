@@ -7,7 +7,6 @@ import {
 import {
   type GstConfig,
   PaymentMilestone,
-  PaymentMilestoneStage,
   type PaymentMilestoneConfig,
   type PricingBreakdown,
   ProjectType,
@@ -103,7 +102,7 @@ export class QuoteService {
 
     const paymentMilestones =
       createDto.paymentMilestones ||
-      this.generatePaymentMilestones(finalPrice, quoteConfig.paymentMilestones);
+      this.generatePaymentMilestones(pricingBreakdown.totalPrice, quoteConfig.paymentMilestones);
 
     const quoteId = await this.dataSource.transaction(async (manager) => {
       const quoteRepo = manager.getRepository(QuoteEntity);
@@ -180,10 +179,11 @@ export class QuoteService {
 
   /**
    * Get payment milestones for a given org (fetches config from DB).
+   * @param grossTotal - Total price before discount and subsidy
    */
-  async getPaymentMilestones(organizationId: string, finalPrice: number): Promise<PaymentMilestone[]> {
+  async getPaymentMilestones(organizationId: string, grossTotal: number): Promise<PaymentMilestone[]> {
     const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
-    return this.generatePaymentMilestones(finalPrice, quoteConfig.paymentMilestones);
+    return this.generatePaymentMilestones(grossTotal, quoteConfig.paymentMilestones);
   }
 
   /**
@@ -366,7 +366,7 @@ export class QuoteService {
           paymentMilestones:
             updateDto.paymentMilestones ||
             currentVersion?.paymentMilestones ||
-            this.generatePaymentMilestones(finalPrice, quoteConfig.paymentMilestones),
+            this.generatePaymentMilestones(pricingBreakdown.totalPrice, quoteConfig.paymentMilestones),
           projectCompletionWeeks:
             updateDto.projectCompletionWeeks || currentVersion?.projectCompletionWeeks || quoteConfig.defaultCompletionWeeks,
           changeSummary: updateDto.changeSummary,
@@ -536,16 +536,17 @@ export class QuoteService {
 
   /**
    * Generate payment milestones from org-level config.
+   * @param grossTotal - Total price before discount and subsidy
    */
   private generatePaymentMilestones(
-    finalPrice: number,
+    grossTotal: number,
     milestoneConfigs: PaymentMilestoneConfig[],
   ): PaymentMilestone[] {
     return milestoneConfigs.map((config) => ({
-      stage: config.stage as PaymentMilestoneStage,
+      stage: config.stage,
       name: config.name,
       percentage: config.percentage,
-      amount: Math.round(finalPrice * (config.percentage / 100) * 100) / 100,
+      amount: Math.round(grossTotal * (config.percentage / 100) * 100) / 100,
       order: config.order,
     }));
   }

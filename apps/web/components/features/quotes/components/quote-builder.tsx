@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { DcrPreference, PhaseType, ProjectType } from '@oneohm-epc/shared-types';
+import { DcrPreference, PhaseType, ProjectType, type PaymentMilestone } from '@oneohm-epc/shared-types';
 import {
   AlertCircle,
   Calculator,
@@ -47,6 +47,7 @@ import type {
   CalculateQuoteResponse,
   CreateFromCalculationRequest,
 } from '../types';
+import { PaymentTermsModal } from './payment-terms-modal';
 import { QuotePreviewPanel } from './quote-preview-panel';
 
 import { NumberStepper } from '@/components/shared';
@@ -241,6 +242,8 @@ export function QuoteBuilder(): JSX.Element {
   // ── Save / Download state ──
   const saveMutation = useSaveQuote();
   const [savedQuoteNumber, setSavedQuoteNumber] = useState<string | null>(null);
+  const [savedMilestones, setSavedMilestones] = useState<PaymentMilestone[] | null>(null);
+  const [paymentTermsModalOpen, setPaymentTermsModalOpen] = useState(false);
   const { generatePdf, isGenerating: isDownloading } = useQuotePdf();
 
   // ── Handlers ──
@@ -335,24 +338,35 @@ export function QuoteBuilder(): JSX.Element {
 
   const handleSave = useCallback(() => {
     if (!calculation) return;
-    const values = form.getValues();
-    const request: CreateFromCalculationRequest = {
-      ...buildCalculateRequest(values),
-      discountAmount: values.discountAmount,
-      internalNotes: values.internalNotes || undefined,
-      customerNotes: values.customerNotes || undefined,
-    };
+    setPaymentTermsModalOpen(true);
+  }, [calculation]);
 
-    saveMutation.mutate(request, {
-      onSuccess: (data) => {
-        setSavedQuoteNumber(data.quoteNumber);
-        showToast.success(`Quote ${data.quoteNumber} saved`);
-      },
-      onError: (error) => {
-        showToast.error(getErrorMessage(error));
-      },
-    });
-  }, [calculation, form, buildCalculateRequest, saveMutation]);
+  const handlePaymentTermsConfirm = useCallback(
+    (milestones: PaymentMilestone[]) => {
+      setPaymentTermsModalOpen(false);
+      if (!calculation) return;
+      const values = form.getValues();
+      const request: CreateFromCalculationRequest = {
+        ...buildCalculateRequest(values),
+        discountAmount: values.discountAmount,
+        internalNotes: values.internalNotes || undefined,
+        customerNotes: values.customerNotes || undefined,
+        paymentMilestones: milestones,
+      };
+
+      saveMutation.mutate(request, {
+        onSuccess: (data) => {
+          setSavedQuoteNumber(data.quoteNumber);
+          setSavedMilestones(milestones);
+          showToast.success(`Quote ${data.quoteNumber} saved`);
+        },
+        onError: (error) => {
+          showToast.error(getErrorMessage(error));
+        },
+      });
+    },
+    [calculation, form, buildCalculateRequest, saveMutation],
+  );
 
   const handleDownload = useCallback(async () => {
     if (!calculation || !savedQuoteNumber) return;
@@ -377,7 +391,7 @@ export function QuoteBuilder(): JSX.Element {
         },
         quoteNumber: savedQuoteNumber,
         validityDays: config.quoteConfig?.defaultValidityDays ?? 30,
-        paymentMilestones: config.quoteConfig?.paymentMilestones?.map(
+        paymentMilestones: savedMilestones ?? config.quoteConfig?.paymentMilestones?.map(
           (m: {
             stage: string;
             name: string;
@@ -386,7 +400,7 @@ export function QuoteBuilder(): JSX.Element {
             color?: string;
           }) => ({
             ...m,
-            amount: Math.round((calculation.pricing.finalPrice - discount) * (m.percentage / 100)),
+            amount: Math.round(calculation.pricing.totalPrice * (m.percentage / 100)),
           }),
         ),
         discountAmount: discount,
@@ -398,6 +412,7 @@ export function QuoteBuilder(): JSX.Element {
   }, [
     calculation,
     savedQuoteNumber,
+    savedMilestones,
     selectedCustomer,
     propertiesRaw,
     propertyId,
@@ -1172,6 +1187,24 @@ export function QuoteBuilder(): JSX.Element {
           <div className="sticky top-6">{previewPanel}</div>
         </div>
       </div>
+
+      {/* ── Payment Terms Modal ── */}
+      <PaymentTermsModal
+        open={paymentTermsModalOpen}
+        onClose={() => setPaymentTermsModalOpen(false)}
+        defaultMilestones={
+          (config.quoteConfig?.paymentMilestones ?? []).map(
+            (m: { stage: string; name: string; percentage: number; order?: number }, i: number) => ({
+              stage: m.stage,
+              name: m.name,
+              percentage: m.percentage,
+              order: m.order ?? i + 1,
+            }),
+          )
+        }
+        grossTotal={calculation?.pricing.totalPrice ?? 0}
+        onConfirm={handlePaymentTermsConfirm}
+      />
 
       {/* ── Mobile preview: Sheet drawer ── */}
       <div className="fixed bottom-6 right-6 lg:hidden">

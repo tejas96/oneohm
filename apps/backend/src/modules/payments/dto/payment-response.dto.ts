@@ -27,10 +27,6 @@ export class PaymentResponseDto {
   @Expose()
   projectId!: string;
 
-  @ApiPropertyOptional({ description: 'Milestone ID' })
-  @Expose()
-  milestoneId?: string;
-
   @ApiProperty({ description: 'Customer ID' })
   @Expose()
   customerId!: string;
@@ -41,11 +37,6 @@ export class PaymentResponseDto {
   @ApiProperty({ description: 'Unique payment number', example: 'PAY-2024-001' })
   @Expose()
   paymentNumber!: string;
-
-  @ApiProperty({ description: 'Date of payment', type: Date })
-  @Expose()
-  @Type(() => Date)
-  paymentDate!: Date;
 
   // ============================================
   // AMOUNT

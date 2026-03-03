@@ -18,14 +18,12 @@ import {
   HEALTH_STATUS_LABELS,
   MAX_DISPLAYED_MILESTONES,
   MAX_DISPLAYED_TEAM_MEMBERS,
-  MILESTONE_PAYMENT_STATUS_BADGE,
-  MILESTONE_PAYMENT_STATUS_LABELS,
   MS_PER_DAY,
   PROJECT_TYPE_LABELS,
 } from '../../../constants';
 import type { ProjectDetail, ProjectTeamMember } from '../../../hooks/types';
 import { useProjectTeam, useProjectTaskStats } from '../../../hooks/use-project-detail';
-import { usePaymentMilestones } from '../../../hooks/use-project-payments';
+import { usePaymentMilestones, useProjectPaymentSummary } from '../../../hooks/use-project-payments';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -355,13 +353,14 @@ function TimelineCard({ project }: { project: ProjectDetail }) {
 
 function MilestonesCard({ projectId, isActive }: { projectId: string; isActive: boolean }) {
   const { data: milestones, isLoading, isError, error } = usePaymentMilestones(projectId, { enabled: isActive });
+  const { data: paymentSummary } = useProjectPaymentSummary(projectId, { enabled: isActive });
 
   if (isLoading) return <Skeleton className="h-32 rounded-lg lg:col-span-2" />;
 
   if (isError) {
     return (
       <div className="lg:col-span-2 rounded-lg border border-border-light bg-background-secondary p-4">
-        <CardTitle icon={Banknote} title="Payment Milestones" />
+        <CardTitle icon={Banknote} title="Project Milestones" />
         <p className="text-xs text-error">{getErrorMessage(error)}</p>
       </div>
     );
@@ -370,35 +369,27 @@ function MilestonesCard({ projectId, isActive }: { projectId: string; isActive: 
   if (!milestones || milestones.length === 0) {
     return (
       <div className="lg:col-span-2 rounded-lg border border-border-light bg-background-secondary p-4">
-        <CardTitle icon={Banknote} title="Payment Milestones" />
+        <CardTitle icon={Banknote} title="Project Milestones" />
         <p className="text-xs text-foreground-secondary">No milestones defined</p>
       </div>
     );
   }
 
   const displayed = milestones.slice(0, MAX_DISPLAYED_MILESTONES);
-  const totalExpected = milestones.reduce((sum, m) => sum + m.totalExpected, 0);
-  const totalPaid = milestones.reduce((sum, m) => sum + m.totalPaid, 0);
 
   return (
     <div className="lg:col-span-2 rounded-lg border border-border-light bg-background-secondary p-4">
-      <CardTitle icon={Banknote} title="Payment Milestones" />
+      <CardTitle icon={Banknote} title="Project Milestones" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {displayed.map((m) => (
           <div
             key={m.id}
-            className={`bg-background rounded-lg p-3 border ${m.paymentStatus === 'due' ? 'border-warning/40' : 'border-border-light'}`}
+            className="bg-background rounded-lg p-3 border border-border-light"
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-2xs font-medium text-foreground-secondary truncate">{m.name}</span>
-              <Badge variant={(MILESTONE_PAYMENT_STATUS_BADGE[m.paymentStatus] ?? 'secondary') as 'success'} size="xs">
-                {MILESTONE_PAYMENT_STATUS_LABELS[m.paymentStatus] ?? m.paymentStatus}
-              </Badge>
-            </div>
-            <p className="text-sm font-semibold text-foreground">{formatCurrency(m.totalExpected)}</p>
+            <span className="text-2xs font-medium text-foreground-secondary truncate block mb-1">{m.name}</span>
             {m.endDate && (
-              <p className={`text-2xs mt-0.5 ${m.paymentStatus === 'due' ? 'text-warning' : 'text-foreground-tertiary'}`}>
-                {m.paymentStatus === 'due' ? `Due ${formatDate(m.endDate, 'short')}` : formatDate(m.endDate, 'short')}
+              <p className="text-2xs text-foreground-tertiary">
+                {formatDate(m.endDate, 'short')}
               </p>
             )}
           </div>
@@ -409,17 +400,19 @@ function MilestonesCard({ projectId, isActive }: { projectId: string; isActive: 
           View all {milestones.length} milestones in Payments tab
         </p>
       )}
-      <div className="flex gap-4 mt-3 pt-3 border-t border-border-light text-xs">
-        <span className="text-foreground-secondary">
-          Total: <span className="font-medium text-foreground">{formatCurrency(totalExpected)}</span>
-        </span>
-        <span className="text-foreground-secondary">
-          Received: <span className="font-medium text-success">{formatCurrency(totalPaid)}</span>
-        </span>
-        <span className="text-foreground-secondary">
-          Pending: <span className="font-medium text-warning">{formatCurrency(totalExpected - totalPaid)}</span>
-        </span>
-      </div>
+      {paymentSummary && (
+        <div className="flex gap-4 mt-3 pt-3 border-t border-border-light text-xs">
+          <span className="text-foreground-secondary">
+            Total: <span className="font-medium text-foreground">{formatCurrency(paymentSummary.totalExpected)}</span>
+          </span>
+          <span className="text-foreground-secondary">
+            Received: <span className="font-medium text-success">{formatCurrency(paymentSummary.totalPaid)}</span>
+          </span>
+          <span className="text-foreground-secondary">
+            Pending: <span className="font-medium text-warning">{formatCurrency(paymentSummary.pendingAmount)}</span>
+          </span>
+        </div>
+      )}
     </div>
   );
 }

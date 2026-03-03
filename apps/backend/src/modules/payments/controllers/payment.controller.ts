@@ -107,18 +107,6 @@ export class PaymentController {
     return toDtoArray(PaymentResponseDto, payments);
   }
 
-  @Get('milestone/:milestoneId')
-  @ApiOperation({ summary: 'Get payments by milestone' })
-  @ApiParam({ name: 'milestoneId', type: String })
-  async findByMilestone(
-    @Param('milestoneId', ParseUUIDPipe) milestoneId: string,
-  ): Promise<PaymentResponseDto[]> {
-    const payments = await this.paymentService.findByMilestone(milestoneId);
-    return plainToInstance(PaymentResponseDto, payments, {
-      excludeExtraneousValues: true,
-    });
-  }
-
   @Get('customer/:customerId')
   @ApiOperation({ summary: 'Get payments by customer' })
   @ApiParam({ name: 'customerId', type: String })

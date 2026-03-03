@@ -1,7 +1,6 @@
 import type { PanelTechnology, PhaseType, StructureType } from '../enums/product.enum';
 import type {
   DcrPreference,
-  PaymentMilestoneStage,
   QuoteCalculationMode,
 } from '../enums/quote.enum';
 
@@ -10,8 +9,8 @@ import type {
  * Structure for payment_milestones JSONB field in quote_versions
  */
 export interface PaymentMilestone {
-  /** Milestone stage identifier */
-  stage: PaymentMilestoneStage;
+  /** Milestone stage identifier (free-form string to support custom milestones) */
+  stage: string;
 
   /** Milestone display name */
   name: string;

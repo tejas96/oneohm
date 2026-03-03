@@ -2,7 +2,6 @@ import type {
   CalculatorInputs,
   ItemCategory,
   PaymentMilestone,
-  PaymentMilestoneStage,
   PricingBreakdown,
   ProjectType,
   QuoteConfigSnapshot,
@@ -111,7 +110,7 @@ export interface QuoteLineItemDetail {
 // ============================================================================
 
 export interface QuotePaymentMilestone {
-  stage: PaymentMilestoneStage;
+  stage: string;
   name: string;
   percentage: number;
   amount: number;

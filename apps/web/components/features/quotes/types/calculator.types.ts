@@ -4,6 +4,7 @@ import type {
   DcrPreference,
   StructureType,
   PanelTechnology,
+  PaymentMilestone as SharedPaymentMilestone,
 } from '@oneohm-epc/shared-types';
 
 // ============================================================================
@@ -52,6 +53,7 @@ export interface CreateFromCalculationRequest extends CalculateQuoteRequest {
   customerNotes?: string;
   salesPersonId?: string;
   resellerId?: string;
+  paymentMilestones?: SharedPaymentMilestone[];
 }
 
 // ============================================================================

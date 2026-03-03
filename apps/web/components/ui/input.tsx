@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
 import { cn } from '@/lib/utils';
 
 const inputVariants = cva(
-  'flex w-full rounded-md border-1.5 bg-background px-3 text-sm text-foreground transition-all duration-fast outline-none file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-foreground-tertiary disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-70',
+  'flex w-full rounded-md border-1.5 bg-background px-3 text-sm text-foreground transition-all duration-fast outline-none file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-foreground-tertiary disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-70 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
   {
     variants: {
       size: {
@@ -154,14 +154,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <div className="relative flex-1">
         {/* Prefix */}
         {prefix && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center pl-3 text-foreground-tertiary text-sm pointer-events-none">
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center pl-2.5 text-foreground-tertiary text-sm pointer-events-none">
             {prefix}
           </div>
         )}
 
         {/* Left Icon */}
         {leftIcon && !prefix && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center text-foreground-tertiary [&_svg]:size-icon-sm pointer-events-none">
+          <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center text-foreground-tertiary [&_svg]:size-icon-sm pointer-events-none">
             {leftIcon}
           </div>
         )}
@@ -174,17 +174,17 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           disabled={disabled}
           className={cn(
             inputVariants({ size, variant: hasError ? 'error' : variant }),
-            leftIcon && !prefix && 'pl-10',
-            prefix && 'pl-12',
-            hasRightAddon && 'pr-10',
-            suffix && 'pr-12',
+            leftIcon && !prefix && 'pl-9',
+            prefix && 'pl-9',
+            hasRightAddon && 'pr-8',
+            suffix && 'pr-8',
             className,
           )}
           {...props}
         />
 
         {/* Right side addons */}
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
           {/* Loading */}
           {loading && <Loader2 className="size-icon-sm text-foreground-tertiary animate-spin" />}
 

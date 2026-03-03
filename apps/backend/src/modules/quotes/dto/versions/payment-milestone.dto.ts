@@ -1,8 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PaymentMilestoneStage } from '@oneohm-epc/shared-types';
 import {
   IsDateString,
-  IsEnum,
   IsInt,
   IsNotEmpty,
   IsNumber,
@@ -18,14 +16,13 @@ import {
  */
 export class PaymentMilestoneDto {
   @ApiProperty({
-    enum: Object.values(PaymentMilestoneStage),
-    enumName: 'PaymentMilestoneStage',
-    example: PaymentMilestoneStage.ADVANCE,
-    description: 'Milestone stage',
+    example: 'advance',
+    description: 'Milestone stage identifier (free-form string)',
   })
-  @IsEnum(PaymentMilestoneStage)
+  @IsString()
   @IsNotEmpty()
-  stage!: PaymentMilestoneStage;
+  @MaxLength(255)
+  stage!: string;
 
   @ApiProperty({
     example: 'Advance Payment',

@@ -112,19 +112,19 @@ export interface ProjectMaterial {
 export interface ProjectPayment {
   id: string;
   paymentNumber: string;
-  milestoneId?: string;
   expectedAmount: number;
   paidAmount: number;
-  paymentDate: string;
   paymentMethod: PaymentMethod;
   paymentReference?: string;
   bankName?: string;
   accountNumber?: string;
+  ifscCode?: string;
   transactionId?: string;
   status: PaymentTransactionStatus;
   reconciledAt?: string;
   reconciledBy?: string;
   notes?: string;
+  createdAt: string;
 }
 
 export interface ProjectDocument {

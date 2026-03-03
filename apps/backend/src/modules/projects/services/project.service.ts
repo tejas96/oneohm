@@ -3,7 +3,6 @@ import {
   type MilestoneType,
   MilestoneStatus,
   type PaymentMilestone,
-  PaymentMilestoneStage,
   ProjectPriority,
   ProjectStatus,
   PropertyStatus,
@@ -26,12 +25,12 @@ import {
 } from '../repositories';
 import { FALLBACK_TRANSITIONS } from './workflow-engine.service';
 
-const STAGE_TO_MILESTONE_TYPE: Partial<Record<PaymentMilestoneStage, MilestoneType>> = {
-  [PaymentMilestoneStage.MATERIAL_PROCUREMENT]: 'material_procurement' as MilestoneType,
-  [PaymentMilestoneStage.INSTALLATION_START]: 'installation' as MilestoneType,
-  [PaymentMilestoneStage.INSTALLATION_COMPLETE]: 'installation' as MilestoneType,
-  [PaymentMilestoneStage.COMMISSIONING]: 'commissioning' as MilestoneType,
-  [PaymentMilestoneStage.NET_METERING]: 'handover' as MilestoneType,
+const STAGE_TO_MILESTONE_TYPE: Record<string, MilestoneType> = {
+  material_procurement: 'material_procurement' as MilestoneType,
+  installation_start: 'installation' as MilestoneType,
+  installation_complete: 'installation' as MilestoneType,
+  commissioning: 'commissioning' as MilestoneType,
+  net_metering: 'handover' as MilestoneType,
 };
 
 const PROJECT_CONSTANTS = {
