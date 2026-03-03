@@ -45,7 +45,7 @@ jobs:
 
       - name: Cache node_modules
         id: cache-node-modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules
           key: ${{ steps.cache-keys.outputs.node-modules }}
@@ -61,7 +61,7 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
 
       - name: Cache NX
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .nx/cache
           key: ${{ runner.os }}-nx-${{ github.sha }}
@@ -96,14 +96,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Restore dependencies cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: node_modules
           key: ${{ needs.setup.outputs.cache-key }}
           fail-on-cache-miss: true
 
       - name: Restore NX cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: .nx/cache
           key: ${{ runner.os }}-nx-${{ github.sha }}
@@ -141,14 +141,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Restore dependencies cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: node_modules
           key: ${{ needs.setup.outputs.cache-key }}
           fail-on-cache-miss: true
 
       - name: Restore NX cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: .nx/cache
           key: ${{ runner.os }}-nx-${{ github.sha }}
@@ -186,14 +186,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Restore dependencies cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: node_modules
           key: ${{ needs.setup.outputs.cache-key }}
           fail-on-cache-miss: true
 
       - name: Restore NX cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: .nx/cache
           key: ${{ runner.os }}-nx-${{ github.sha }}
@@ -238,14 +238,14 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Restore dependencies cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: node_modules
           key: ${{ needs.setup.outputs.cache-key }}
           fail-on-cache-miss: true
 
       - name: Restore NX cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: .nx/cache
           key: ${{ runner.os }}-nx-${{ github.sha }}
@@ -294,7 +294,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Restore dependencies cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: node_modules
           key: ${{ needs.setup.outputs.cache-key }}
@@ -357,7 +357,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Restore dependencies cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: node_modules
           key: ${{ needs.setup.outputs.cache-key }}
