@@ -10,14 +10,15 @@
  * @module features/customers/components/document-row
  */
 
-import { Download, Eye, FileText, Trash2 } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { Download, Eye, FileText, Loader2, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { getDocumentTypeLabel } from '../constants';
 
 import { formatFileSize } from '@/components/shared/document-collector/constants';
 import { Badge, Button } from '@/components/ui';
-import { cn, isImageFile } from '@/lib/utils';
+import { getDownloadUrl } from '@/lib/api/storage';
+import { cn, extractFileKey, isImageFile } from '@/lib/utils';
 
 // ============================================================================
 // Types
@@ -62,17 +63,44 @@ function formatDocDate(dateString?: string): string {
 /** Thumbnail for image files, icon fallback for non-images */
 function DocumentThumbnail({ doc }: { doc: AggregatedDocument }): React.JSX.Element {
   const [imgError, setImgError] = useState(false);
+  const [viewUrl, setViewUrl] = useState<string | null>(null);
   const isImage = isImageFile(doc.fileName);
+
+  useEffect(() => {
+    if (!isImage) return;
+
+    setViewUrl(null);
+    setImgError(false);
+
+    let cancelled = false;
+    getDownloadUrl(extractFileKey(doc.url))
+      .then((url) => {
+        if (!cancelled) setViewUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setImgError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [doc.url, isImage]);
 
   const handleError = useCallback(() => {
     setImgError(true);
   }, []);
 
   if (isImage && !imgError) {
+    if (!viewUrl) {
+      return (
+        <div className="flex size-container-sm shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border-light bg-background-secondary">
+          <Loader2 className="size-icon-sm animate-spin text-foreground-muted" />
+        </div>
+      );
+    }
     return (
       <div className="flex size-container-sm shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border-light bg-background-secondary">
         <img
-          src={doc.url}
+          src={viewUrl}
           alt={doc.fileName}
           className="size-full object-cover"
           onError={handleError}

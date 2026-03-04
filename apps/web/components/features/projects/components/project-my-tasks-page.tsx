@@ -15,7 +15,6 @@ import {
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import {
-  QUICK_FILTER_CHIPS,
   TASK_GROUP_BY_OPTIONS,
   TASK_PRIORITY_FILTER_OPTIONS,
   TASK_STATUS_FILTER_OPTIONS,
@@ -387,56 +386,6 @@ export function ProjectMyTasksPage(): React.JSX.Element {
           </button>
         </div>
       )}
-
-      {/* Quick Filter Chips */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
-        {QUICK_FILTER_CHIPS.map((chip) => {
-          const isActive =
-            chip.key === 'all'
-              ? !statusFilter && !priorityFilter && !dueDateFilter
-              : (chip.filter.status && statusFilter === chip.filter.status) ||
-                (chip.filter.priority && priorityFilter === chip.filter.priority) ||
-                (chip.filter.dueDateFilter && dueDateFilter === chip.filter.dueDateFilter);
-
-          return (
-            <button
-              key={chip.key}
-              type="button"
-              onClick={() => {
-                if (chip.key === 'all') {
-                  setFilter({ status: '', priority: '', dueDateFilter: '' });
-                } else if (chip.filter.dueDateFilter) {
-                  setFilter({
-                    status: '',
-                    priority: '',
-                    dueDateFilter: isActive ? '' : chip.filter.dueDateFilter,
-                  });
-                } else if (chip.filter.status) {
-                  setFilter({
-                    dueDateFilter: '',
-                    status: isActive ? '' : chip.filter.status,
-                    priority: '',
-                  });
-                } else if (chip.filter.priority) {
-                  setFilter({
-                    dueDateFilter: '',
-                    priority: isActive ? '' : chip.filter.priority,
-                    status: '',
-                  });
-                }
-              }}
-              className={cn(
-                'shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors border',
-                isActive
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-background text-foreground-secondary border-border-light hover:bg-background-secondary',
-              )}
-            >
-              {chip.label}
-            </button>
-          );
-        })}
-      </div>
 
       {/* Filters row */}
       <div className="flex flex-wrap items-center gap-2">

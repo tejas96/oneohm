@@ -40,3 +40,19 @@ export function isPdfFile(fileName: string): boolean {
 export function isPreviewableFile(fileName: string): boolean {
   return isImageFile(fileName) || isPdfFile(fileName);
 }
+
+/**
+ * Extract the S3/Tigris file key from a full public URL.
+ * If the input is already a bare key (no protocol), returns it as-is.
+ */
+export function extractFileKey(documentUrl: string): string {
+  if (!documentUrl) return documentUrl;
+  if (documentUrl.includes('://')) {
+    try {
+      return new URL(documentUrl).pathname.slice(1);
+    } catch {
+      return documentUrl;
+    }
+  }
+  return documentUrl;
+}

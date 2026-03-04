@@ -1,7 +1,7 @@
 'use client';
 
 import type { FileAttachment } from '@oneohm-epc/shared-types';
-import { ClipboardCheck, Download, Eye, FileImage, FileText } from 'lucide-react';
+import { ClipboardCheck, Download, Eye, FileImage, FileText, X } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
 
 import { SURVEY_STATUS_BADGE_VARIANT, SURVEY_STATUS_LABELS } from '../../../constants';
@@ -11,7 +11,8 @@ import { EmptyState } from '@/components/shared/feedback/empty-state';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { showToast } from '@/components/ui/sonner';
-import { isImageFile, isPdfFile } from '@/lib/utils/file';
+import { getDownloadUrl } from '@/lib/api/storage';
+import { extractFileKey, isImageFile, isPdfFile } from '@/lib/utils/file';
 import { formatDate } from '@/lib/utils/format';
 
 interface ProjectSurveysTabProps {
@@ -38,14 +39,39 @@ function getDocIconStyle(filename: string): {
 function SurveyDocuments({ documents }: { documents: FileAttachment[] }) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewName, setPreviewName] = useState('');
+  const [loadingDocId, setLoadingDocId] = useState<string | null>(null);
 
   const openPreview = useCallback((doc: FileAttachment) => {
     if (isImageFile(doc.filename) || isPdfFile(doc.filename)) {
-      setPreviewUrl(doc.url);
-      setPreviewName(doc.filename);
-    } else {
-      window.open(doc.url, '_blank');
+      setLoadingDocId(doc.id);
+      getDownloadUrl(extractFileKey(doc.url))
+        .then((viewUrl) => {
+          setPreviewUrl(viewUrl);
+          setPreviewName(doc.filename);
+        })
+        .catch(() => {
+          showToast.error('Failed to load preview');
+        })
+        .finally(() => {
+          setLoadingDocId(null);
+        });
     }
+  }, []);
+
+  const handleDownload = useCallback((doc: FileAttachment) => {
+    getDownloadUrl(extractFileKey(doc.url), doc.filename)
+      .then((presignedUrl) => {
+        const link = document.createElement('a');
+        link.href = presignedUrl;
+        link.download = doc.filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      })
+      .catch(() => {
+        showToast.error('Failed to download file');
+      });
   }, []);
 
   const closePreview = useCallback(() => {
@@ -88,25 +114,29 @@ function SurveyDocuments({ documents }: { documents: FileAttachment[] }) {
                 {/* Hover overlay with gradient */}
                 <div className="absolute inset-0 rounded-lg bg-linear-to-t from-background via-background/90 to-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
                   {canPreview && (
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      pill
+                      loading={loadingDocId === doc.id}
+                      disabled={loadingDocId !== null}
                       onClick={() => openPreview(doc)}
-                      className="size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary/20 transition-colors cursor-pointer"
+                      className="bg-primary/10 text-primary hover:bg-primary/20"
                       aria-label={`Preview ${doc.filename}`}
                     >
                       <Eye className="size-3.5" />
-                    </button>
+                    </Button>
                   )}
-                  <a
-                    href={doc.url}
-                    download={doc.filename}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="size-8 rounded-full bg-success/10 text-success flex items-center justify-center hover:bg-success/20 transition-colors"
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    pill
+                    onClick={() => handleDownload(doc)}
+                    className="bg-success/10 text-success hover:bg-success/20"
                     aria-label={`Download ${doc.filename}`}
                   >
                     <Download className="size-3.5" />
-                  </a>
+                  </Button>
                 </div>
               </div>
             );
@@ -125,14 +155,16 @@ function SurveyDocuments({ documents }: { documents: FileAttachment[] }) {
             onClick={(e) => e.stopPropagation()}
             role="presentation"
           >
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="icon-sm"
+              pill
               onClick={closePreview}
-              className="absolute -top-3 -right-3 z-10 size-7 rounded-full bg-background border border-border-light flex items-center justify-center text-foreground-secondary hover:text-foreground cursor-pointer"
+              className="absolute -top-3 -right-3 z-10"
               aria-label="Close preview"
             >
-              ✕
-            </button>
+              <X className="size-3.5" />
+            </Button>
             {isImageFile(previewName) && (
               <img
                 src={previewUrl}
