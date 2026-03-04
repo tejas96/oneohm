@@ -2,18 +2,12 @@
 
 import { useMemo } from 'react';
 
-import {
-  useCustomers,
-  type Customer,
-} from '@/components/features/customers/hooks/use-customers';
+import { useCustomers, type Customer } from '@/components/features/customers/hooks/use-customers';
 import {
   useProjects,
   type ProjectListItem,
 } from '@/components/features/projects/hooks/use-projects';
-import {
-  useQuotes,
-  type QuoteListItem,
-} from '@/components/features/quotes/hooks/use-quotes';
+import { useQuotes, type QuoteListItem } from '@/components/features/quotes/hooks/use-quotes';
 import { useDebounce } from '@/lib/hooks/use-debounce';
 import { getErrorMessage } from '@/lib/utils';
 
@@ -40,7 +34,8 @@ export function useEntitySearch(query: string, open: boolean): UseEntitySearchRe
     enabled && (customersQuery.isLoading || quotesQuery.isLoading || projectsQuery.isLoading);
 
   const error = customersQuery.error ?? quotesQuery.error ?? projectsQuery.error;
-  const isError = enabled && !!(customersQuery.isError || quotesQuery.isError || projectsQuery.isError);
+  const isError =
+    enabled && !!(customersQuery.isError || quotesQuery.isError || projectsQuery.isError);
 
   return useMemo(
     () => ({
@@ -51,14 +46,6 @@ export function useEntitySearch(query: string, open: boolean): UseEntitySearchRe
       isError,
       errorMessage: isError && error ? getErrorMessage(error) : null,
     }),
-    [
-      enabled,
-      customersQuery.data,
-      quotesQuery.data,
-      projectsQuery.data,
-      isLoading,
-      isError,
-      error,
-    ],
+    [enabled, customersQuery.data, quotesQuery.data, projectsQuery.data, isLoading, isError, error],
   );
 }

@@ -47,7 +47,13 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { cn, formatCurrency, formatDate, formatPhoneForWhatsApp, recordRecentView } from '@/lib/utils';
+import {
+  cn,
+  formatCurrency,
+  formatDate,
+  formatPhoneForWhatsApp,
+  recordRecentView,
+} from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================

@@ -232,9 +232,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                     <span className="font-medium">{q.quoteNumber}</span>
                   </div>
                   {q.customerName && (
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {q.customerName}
-                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{q.customerName}</span>
                   )}
                 </CommandItem>
               ))}
@@ -249,9 +247,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
               {projects.map((p) => (
                 <CommandItem
                   key={`project-${p.id}`}
-                  onSelect={() =>
-                    handleEntitySelect('project', p.id, p.name || p.projectNumber)
-                  }
+                  onSelect={() => handleEntitySelect('project', p.id, p.name || p.projectNumber)}
                 >
                   <EntityIcon icon={Folder} type="project" />
                   <div className="flex-1 truncate">
