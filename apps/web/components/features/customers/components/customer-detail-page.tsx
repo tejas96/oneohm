@@ -3,7 +3,7 @@
 import { Building2, Edit, FileText, Mail, Phone, Plus, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { type JSX, type ReactNode, useCallback, useMemo, useState } from 'react';
+import { type JSX, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   CUSTOMER_DETAIL_TABS,
@@ -47,7 +47,8 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { cn, formatCurrency, formatDate, formatPhoneForWhatsApp } from '@/lib/utils';
+import { cn, formatCurrency, formatDate, formatPhoneForWhatsApp, recordRecentView } from '@/lib/utils';
+import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
 // Types
@@ -260,6 +261,19 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
   const { data: properties, isLoading: isLoadingProperties } = useCustomerProperties(customerId);
   const { data: quotesData, isLoading: isLoadingQuotes } = useCustomerQuotes(customerId);
   const updateCustomerMutation = useUpdateCustomer();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (customer && user?.id) {
+      const fullName = [customer.firstName, customer.lastName].filter(Boolean).join(' ');
+      recordRecentView(user.id, {
+        type: 'customer',
+        id: customer.id,
+        label: fullName,
+        href: buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: customer.id }),
+      });
+    }
+  }, [customer, user?.id]);
 
   // Document mutations & preview
   const removeMutation = useRemovePropertyDocument();

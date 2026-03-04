@@ -17,3 +17,5 @@ export {
   getInitials,
 } from './format';
 export { formatPhoneForWhatsApp, formatPhoneForDisplay, isValidPhone } from './phone';
+export { getRecentViews, recordRecentView } from './recent-views';
+export type { RecentViewItem, RecentViewType } from './recent-views';

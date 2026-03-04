@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, type ReactNode } from 'react';
+import React, { Suspense, useState, type ReactNode } from 'react';
 
 import {
   GlobalHeader,
@@ -10,6 +10,7 @@ import {
   Rail,
   useLayout,
 } from '@/components/layout';
+import { CommandPalette } from '@/components/shared/command-palette';
 import { AuthGuard } from '@/components/shared/guards';
 
 interface DashboardLayoutContentProps {
@@ -22,11 +23,15 @@ interface DashboardLayoutContentProps {
  */
 function DashboardLayoutContent({ children }: DashboardLayoutContentProps) {
   const { isPanelOpen, togglePanel } = useLayout();
+  const [commandOpen, setCommandOpen] = useState(false);
 
   return (
     <>
       {/* Global Header - 48px fixed */}
-      <GlobalHeader />
+      <GlobalHeader onCommandOpen={() => setCommandOpen((prev) => !prev)} />
+
+      {/* Command Palette */}
+      <CommandPalette open={commandOpen} onOpenChange={setCommandOpen} />
 
       {/* Rail - 48px icon navigation */}
       <Rail isPanelOpen={isPanelOpen} onTogglePanel={togglePanel} />
