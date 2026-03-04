@@ -1,8 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
-
 import type { LucideIcon } from 'lucide-react';
+import { useMemo } from 'react';
 
 import { useFilteredNavigation } from '@/lib/hooks/use-filtered-navigation';
 
@@ -62,7 +61,7 @@ const CONTEXTLESS_LABELS = new Set([
  * Builds a user-friendly label for the command palette.
  * Adds section/panel context for labels that are ambiguous in isolation.
  */
-function buildLabel(itemLabel: string, sectionTitle: string, panelTitle: string): string {
+function buildLabel(itemLabel: string, sectionTitle: string, _panelTitle: string): string {
   if (CONTEXTLESS_LABELS.has(itemLabel)) {
     return `${sectionTitle}: ${itemLabel}`;
   }
@@ -73,9 +72,7 @@ function buildLabel(itemLabel: string, sectionTitle: string, panelTitle: string)
  * Post-processes items to disambiguate duplicate labels
  * (e.g. "Dashboard" appearing for both Home and Projects panels).
  */
-function disambiguateLabels(
-  items: (CommandItem & { _panelTitle: string })[],
-): CommandItem[] {
+function disambiguateLabels(items: (CommandItem & { _panelTitle: string })[]): CommandItem[] {
   const labelCounts = new Map<string, number>();
   for (const item of items) {
     labelCounts.set(item.label, (labelCounts.get(item.label) ?? 0) + 1);
