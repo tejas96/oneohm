@@ -19,8 +19,10 @@ import { useProject } from '../../hooks/use-project-detail';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TabsContent } from '@/components/ui/tabs';
-import { ROUTES } from '@/lib/config/routes';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { getErrorMessage } from '@/lib/utils/error';
+import { recordRecentView } from '@/lib/utils/recent-views';
+import { useAuth } from '@/providers/auth-provider';
 
 interface ProjectDetailContentProps {
   projectId: string;
@@ -62,6 +64,18 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
   }, [searchParams]);
 
   const { data: project, isLoading, isError, error, refetch } = useProject(projectId);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (project && user?.id) {
+      recordRecentView(user.id, {
+        type: 'project',
+        id: project.id,
+        label: project.name || project.projectNumber,
+        href: buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id }),
+      });
+    }
+  }, [project, user?.id]);
 
   const handleTabChange = useCallback(
     (tab: ProjectDetailTab) => {

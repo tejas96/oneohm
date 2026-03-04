@@ -17,8 +17,10 @@ import { useQuoteDetail, useQuoteVersion } from '../../hooks/use-quote-detail';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TabsContent } from '@/components/ui/tabs';
-import { ROUTES } from '@/lib/config/routes';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { getErrorMessage } from '@/lib/utils/error';
+import { recordRecentView } from '@/lib/utils/recent-views';
+import { useAuth } from '@/providers/auth-provider';
 
 interface QuoteDetailContentProps {
   quoteId: string;
@@ -69,6 +71,18 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
   }, [searchParams]);
 
   const { data: quote, isLoading, isError, error, refetch } = useQuoteDetail(quoteId);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (quote && user?.id) {
+      recordRecentView(user.id, {
+        type: 'quote',
+        id: quote.id,
+        label: quote.quoteNumber,
+        href: buildRoute(ROUTES.QUOTES.DETAIL, { id: quote.id }),
+      });
+    }
+  }, [quote, user?.id]);
 
   const { data: selectedVersion, isError: isVersionError } = useQuoteVersion(
     quoteId,

@@ -4,6 +4,9 @@
 export { StatsCard } from '../ui';
 export type { StatsCardProps } from '../ui';
 
+// Command Palette
+export { CommandPalette } from './command-palette';
+
 // Guards
 export { AuthGuard, PermissionGuard } from './guards';
 
