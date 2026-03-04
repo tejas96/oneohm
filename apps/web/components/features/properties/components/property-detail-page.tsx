@@ -10,8 +10,8 @@ import {
   LEAD_TEMPERATURE_CONFIG,
   PROPERTY_DETAIL_TABS,
   type PropertyDetailTab,
-  QUOTE_STATUS_BADGE_VARIANT,
 } from '../constants';
+import { QUOTE_STATUS_BADGE_VARIANT } from '../../customers/constants';
 import { useProperty, useUpdateProperty, usePropertyQuotes } from '../hooks';
 import { FollowupMiniList } from './followup-mini-list';
 import { PropertyActivityTab } from './property-activity-tab';

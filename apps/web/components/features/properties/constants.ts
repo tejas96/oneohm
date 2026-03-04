@@ -4,9 +4,7 @@
  * Static configuration for forms, detail page, label maps, and badge variants.
  */
 
-import type { LeadTemperature, PropertyType, QuoteStatus } from '@oneohm-epc/shared-types';
-
-import type { BadgeProps } from '@/components/ui/badge';
+import type { LeadTemperature, PropertyType } from '@oneohm-epc/shared-types';
 
 // ---------------------------------------------------------------------------
 // Form: Required Fields
@@ -79,19 +77,6 @@ export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
   industrial: 'Industrial',
   agricultural: 'Agricultural',
   institutional: 'Institutional',
-};
-
-// ---------------------------------------------------------------------------
-// Detail Page: Quote Status Badge Variants
-// ---------------------------------------------------------------------------
-
-export const QUOTE_STATUS_BADGE_VARIANT: Record<QuoteStatus, BadgeProps['variant']> = {
-  draft: 'default',
-  sent: 'info',
-  viewed: 'secondary',
-  accepted: 'success',
-  rejected: 'error',
-  expired: 'warning',
 };
 
 // ---------------------------------------------------------------------------
