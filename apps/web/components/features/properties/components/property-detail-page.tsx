@@ -6,12 +6,12 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type JSX, useCallback, useMemo } from 'react';
 
+import { QUOTE_STATUS_BADGE_VARIANT } from '../../customers/constants';
 import {
   LEAD_TEMPERATURE_CONFIG,
   PROPERTY_DETAIL_TABS,
   type PropertyDetailTab,
 } from '../constants';
-import { QUOTE_STATUS_BADGE_VARIANT } from '../../customers/constants';
 import { useProperty, useUpdateProperty, usePropertyQuotes } from '../hooks';
 import { FollowupMiniList } from './followup-mini-list';
 import { PropertyActivityTab } from './property-activity-tab';
