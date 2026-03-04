@@ -3,18 +3,23 @@
 import { useCallback } from 'react';
 
 import { showToast } from '@/components/ui/sonner';
-import { apiClient } from '@/lib/api/client';
+import { getDownloadUrl } from '@/lib/api/storage';
 
 export function useDocumentDownload(): {
-  download: (filePath: string) => void;
+  download: (filePath: string, fileName?: string) => void;
 } {
-  const download = useCallback((filePath: string) => {
+  const download = useCallback((filePath: string, fileName?: string) => {
     void (async () => {
       try {
-        const { data } = await apiClient.get<{ url: string }>(
-          `/storage/download-url/${encodeURIComponent(filePath)}`,
-        );
-        window.open(data.url, '_blank');
+        const presignedUrl = await getDownloadUrl(filePath, fileName);
+
+        const link = document.createElement('a');
+        link.href = presignedUrl;
+        if (fileName) link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       } catch {
         showToast.error('Failed to download file');
       }

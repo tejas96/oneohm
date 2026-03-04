@@ -1,7 +1,15 @@
 // Customers Feature - Barrel Exports
 
 // Constants
-export { DOCUMENT_TYPE_LABELS, DOCUMENT_TYPE_OPTIONS, getDocumentTypeLabel } from './constants';
+export {
+  CUSTOMER_DETAIL_TABS,
+  QUOTE_STATUS_BADGE_VARIANT,
+  DOCUMENT_TYPE_LABELS,
+  DOCUMENT_TYPE_OPTIONS,
+  getDocumentTypeLabel,
+} from './constants';
+
+export type { CustomerDetailTab } from './constants';
 
 // Components
 export { CustomerListPage } from './components/customer-list-page';

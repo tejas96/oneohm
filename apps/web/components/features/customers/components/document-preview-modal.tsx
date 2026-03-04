@@ -24,7 +24,10 @@ import { cn, getFileExtension, isImageFile, isPdfFile, isPreviewableFile } from 
 // ============================================================================
 
 export interface PreviewDocument {
+  /** Presigned URL for inline viewing (or original public URL as fallback) */
   url: string;
+  /** Original storage URL used for file key extraction during download */
+  originalUrl: string;
   fileName: string;
   tag: string;
   propertyName: string;
@@ -50,6 +53,11 @@ export function DocumentPreviewModal({
   const [imageError, setImageError] = useState(false);
 
   useBodyScrollLock(open);
+
+  // Reset error state when document changes so a new preview starts clean
+  useEffect(() => {
+    setImageError(false);
+  }, [doc?.url]);
 
   const handleClose = useCallback(() => {
     onOpenChange(false);

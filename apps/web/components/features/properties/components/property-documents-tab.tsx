@@ -15,7 +15,7 @@ import {
   useRemovePropertyDocument,
 } from '@/components/features/customers/hooks';
 import { EmptyState } from '@/components/shared/feedback/empty-state';
-import { Button, showToast } from '@/components/ui';
+import { Button, ConfirmDialog, showToast } from '@/components/ui';
 
 interface PropertyDocumentsTabProps {
   property: CustomerPropertyResponse;
@@ -23,12 +23,12 @@ interface PropertyDocumentsTabProps {
 
 export function PropertyDocumentsTab({ property }: PropertyDocumentsTabProps): JSX.Element {
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [deletingUrl, setDeletingUrl] = useState<string | null>(null);
+  const [docToDelete, setDocToDelete] = useState<AggregatedDocument | null>(null);
 
   const { previewDocument, isPreviewOpen, openPreview, closePreview, downloadToSystem } =
     useDocumentPreview();
 
-  const { mutate: removeDocumentMutate } = useRemovePropertyDocument();
+  const removeMutation = useRemovePropertyDocument();
 
   const documents = useMemo<AggregatedDocument[]>(
     () =>
@@ -45,25 +45,24 @@ export function PropertyDocumentsTab({ property }: PropertyDocumentsTabProps): J
     [property.documents, property.id, property.propertyName],
   );
 
-  const handleDelete = useCallback(
-    (doc: AggregatedDocument) => {
-      setDeletingUrl(doc.url);
-      removeDocumentMutate(
-        { propertyId: property.id, documentUrl: doc.url },
-        {
-          onSuccess: () => {
-            showToast.success('Document deleted');
-            setDeletingUrl(null);
-          },
-          onError: () => {
-            showToast.error('Failed to delete document');
-            setDeletingUrl(null);
-          },
-        },
-      );
-    },
-    [property.id, removeDocumentMutate],
-  );
+  const handleDeleteRequest = useCallback((doc: AggregatedDocument) => {
+    setDocToDelete(doc);
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (!docToDelete) return;
+    try {
+      await removeMutation.mutateAsync({
+        propertyId: docToDelete.propertyId,
+        documentUrl: docToDelete.url,
+      });
+      showToast.success('Document deleted');
+    } catch {
+      showToast.error('Failed to delete document');
+    } finally {
+      setDocToDelete(null);
+    }
+  }, [docToDelete, removeMutation]);
 
   if (documents.length === 0) {
     return (
@@ -107,8 +106,8 @@ export function PropertyDocumentsTab({ property }: PropertyDocumentsTabProps): J
             document={doc}
             onPreview={openPreview}
             onDownload={downloadToSystem}
-            onDelete={handleDelete}
-            isDeleting={deletingUrl === doc.url}
+            onDelete={handleDeleteRequest}
+            isDeleting={removeMutation.isPending}
           />
         ))}
       </div>
@@ -125,6 +124,17 @@ export function PropertyDocumentsTab({ property }: PropertyDocumentsTabProps): J
         open={isPreviewOpen}
         onOpenChange={() => closePreview()}
         onDownload={downloadToSystem}
+      />
+
+      <ConfirmDialog
+        open={!!docToDelete}
+        onOpenChange={(open) => !open && setDocToDelete(null)}
+        title="Delete Document"
+        description={`Are you sure you want to delete "${docToDelete?.fileName}"? This action cannot be undone.`}
+        iconVariant="error"
+        confirmLabel="Delete"
+        confirmVariant="destructive"
+        onConfirm={confirmDelete}
       />
     </div>
   );

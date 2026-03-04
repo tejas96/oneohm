@@ -16,6 +16,7 @@ import { propertyKeys } from './use-customer-properties';
 
 import { apiClient } from '@/lib/api/client';
 import { getDownloadUrl } from '@/lib/api/storage';
+import { extractFileKey } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
@@ -107,10 +108,7 @@ export function useDocumentDownloadUrl(): UseMutationResult<
 > {
   return useMutation({
     mutationFn: async ({ documentUrl, fileName }: { documentUrl: string; fileName?: string }) => {
-      const fileKey = documentUrl.includes('://')
-        ? new URL(documentUrl).pathname.slice(1)
-        : documentUrl;
-      return getDownloadUrl(fileKey, fileName);
+      return getDownloadUrl(extractFileKey(documentUrl), fileName);
     },
   });
 }

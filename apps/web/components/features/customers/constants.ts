@@ -6,6 +6,36 @@
  * @module features/customers/constants
  */
 
+import type { QuoteStatus } from '@oneohm-epc/shared-types';
+
+import type { BadgeProps } from '@/components/ui/badge';
+
+// ============================================================================
+// Detail Page: Tab Configuration
+// ============================================================================
+
+export const CUSTOMER_DETAIL_TABS = [
+  { value: 'quotes', label: 'Quotes' },
+  { value: 'documents', label: 'Documents' },
+  { value: 'projects', label: 'Projects' },
+  { value: 'activity', label: 'All Activity' },
+] as const;
+
+export type CustomerDetailTab = (typeof CUSTOMER_DETAIL_TABS)[number]['value'];
+
+// ============================================================================
+// Detail Page: Quote Status Badge Variants
+// ============================================================================
+
+export const QUOTE_STATUS_BADGE_VARIANT: Record<QuoteStatus, BadgeProps['variant']> = {
+  draft: 'default',
+  sent: 'info',
+  viewed: 'secondary',
+  accepted: 'success',
+  rejected: 'error',
+  expired: 'warning',
+};
+
 // ============================================================================
 // Document Type Labels
 // ============================================================================

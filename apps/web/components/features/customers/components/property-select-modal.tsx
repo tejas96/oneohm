@@ -7,6 +7,7 @@ import { useState } from 'react';
 
 import type { CustomerPropertyResponse } from '../hooks';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -124,9 +125,9 @@ export function PropertySelectModal({
                       <div className="flex items-center gap-2">
                         <h4 className="truncate font-medium">{displayName}</h4>
                         {property.isPrimary && (
-                          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                          <Badge variant="default" size="xs">
                             Primary
-                          </span>
+                          </Badge>
                         )}
                       </div>
                       {property.address && (
