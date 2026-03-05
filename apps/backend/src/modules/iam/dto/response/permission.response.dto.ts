@@ -52,6 +52,13 @@ export class PermissionResponseDto {
 
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
   updatedAt: Date;
+
+  @ApiProperty({
+    example: 3,
+    required: false,
+    description: 'Number of roles using this permission',
+  })
+  rolesCount?: number;
 }
 
 /**

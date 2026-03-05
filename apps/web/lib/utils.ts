@@ -24,7 +24,9 @@ export {
   formatDate,
   getDueDateColor,
   formatRelativeDate,
+  formatRoleCode,
   formatSystemSize,
+  formatTimeAgo,
   getInitials,
 } from './utils/format';
 export { formatPhoneForWhatsApp, formatPhoneForDisplay, isValidPhone } from './utils/phone';

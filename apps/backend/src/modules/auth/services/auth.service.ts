@@ -58,10 +58,25 @@ export class AuthService {
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
     const { email, password } = loginDto;
 
-    // Find user with roles
+    // Find user with roles (excludes soft-deleted)
     const user = await this.userRepository.findByEmailWithRoles(email);
 
     if (!user) {
+      // Check if user was soft-deleted
+      const deletedUser = await this.userRepository.repository
+        .createQueryBuilder('user')
+        .withDeleted()
+        .where('user.email = :email', { email })
+        .andWhere('user.deleted_at IS NOT NULL')
+        .getOne();
+
+      if (deletedUser) {
+        this.logger.warn(`Deleted user login attempt: ${email}`);
+        throw new UnauthorizedException(
+          'Your account has been deactivated. Please contact the administrator.',
+        );
+      }
+
       this.logger.warn(`Failed login attempt for email: ${email}`);
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -76,7 +91,9 @@ export class AuthService {
     // Check if user is active
     if (user.status !== UserStatus.ACTIVE) {
       this.logger.warn(`Inactive user login attempt: ${email}`);
-      throw new UnauthorizedException('Account is not active');
+      throw new UnauthorizedException(
+        'Your account is inactive. Please contact the administrator.',
+      );
     }
 
     // Update last login
@@ -171,17 +188,31 @@ export class AuthService {
       throw new UnauthorizedException('OTP verification service not configured');
     }
 
-    // Find user with roles
+    // Find user with roles (excludes soft-deleted)
     const user = await this.userRepository.findByPhoneWithRoles(phone);
 
     if (!user) {
+      const deletedUser = await this.userRepository.repository
+        .createQueryBuilder('user')
+        .withDeleted()
+        .where('user.phone = :phone', { phone })
+        .andWhere('user.deleted_at IS NOT NULL')
+        .getOne();
+
+      if (deletedUser) {
+        throw new UnauthorizedException(
+          'Your account has been deactivated. Please contact the administrator.',
+        );
+      }
       throw new UnauthorizedException('User not found');
     }
 
     // Check if user is active
     if (user.status !== UserStatus.ACTIVE) {
       this.logger.warn(`Inactive user login attempt: ${phone}`);
-      throw new UnauthorizedException('Account is not active');
+      throw new UnauthorizedException(
+        'Your account is inactive. Please contact the administrator.',
+      );
     }
 
     // Verify phone if not already verified

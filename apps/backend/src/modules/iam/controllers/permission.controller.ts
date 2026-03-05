@@ -22,13 +22,17 @@ import { UpdatePermissionDto } from '../dto/permissions/update-permission.dto';
 import { PermissionResponseDto, PaginatedPermissionsDto } from '../dto/response';
 import { PermissionGuard } from '../guards/permission.guard';
 import { PermissionRepository } from '../repositories/permission.repository';
+import { RolePermissionRepository } from '../repositories/role-permission.repository';
 
 @ApiTags('IAM - Permissions')
 @ApiBearerAuth()
 @Controller('iam/permissions')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class PermissionController {
-  constructor(private readonly permissionRepository: PermissionRepository) {}
+  constructor(
+    private readonly permissionRepository: PermissionRepository,
+    private readonly rolePermissionRepository: RolePermissionRepository,
+  ) {}
 
   @Post()
   @RequirePermission('iam:permissions:create')
@@ -50,13 +54,27 @@ export class PermissionController {
   async findAll(
     @Query('page') page: number = 1,
     @Query('pageSize') pageSize: number = 50,
+    @Query('search') search?: string,
+    @Query('action') action?: string,
+    @Query('scope') scope?: string,
   ): Promise<PaginatedPermissionsDto> {
     const skip = (page - 1) * pageSize;
 
-    const [permissions, total] = await this.permissionRepository.findAllPaginated(skip, pageSize);
+    const [permissions, total] = await this.permissionRepository.findAllPaginated(skip, pageSize, {
+      search,
+      action,
+      scope,
+    });
+
+    const data = await Promise.all(
+      permissions.map(async (p) => {
+        const rolesCount = await this.rolePermissionRepository.countByPermissionId(p.id);
+        return { ...plainToInstance(PermissionResponseDto, p), rolesCount };
+      }),
+    );
 
     return {
-      data: permissions.map((p) => plainToInstance(PermissionResponseDto, p)),
+      data,
       total,
       page,
       pageSize,

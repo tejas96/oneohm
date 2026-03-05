@@ -222,7 +222,10 @@ export function ProjectCreatePage(): React.JSX.Element {
     return linkedQuote != null && linkedQuote.status !== QuoteStatus.ACCEPTED;
   }, [initialQuoteId, allQuotes]);
 
-  const { data: employeesData, isLoading: employeesLoading } = useEmployees({ limit: 100 });
+  const { data: employeesData, isLoading: employeesLoading } = useEmployees({
+    limit: 100,
+    status: 'active',
+  });
   const employees = employeesData?.items ?? [];
 
   const { data: workloadData } = useTeamWorkload();

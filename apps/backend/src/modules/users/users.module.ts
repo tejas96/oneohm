@@ -2,6 +2,7 @@ import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { UserController } from './controllers';
+import { InvitationController } from './controllers/invitation.controller';
 import { UserEntity, UserRoleEntity, InvitationEntity } from './entities';
 import { UserRepository, UserRoleRepository, InvitationRepository } from './repositories';
 import { UserService, ProfileService, InvitationService } from './services';
@@ -32,7 +33,7 @@ import { ResellersModule } from '../resellers/resellers.module';
     forwardRef(() => ResellersModule),
     forwardRef(() => EmployeesModule),
   ],
-  controllers: [UserController],
+  controllers: [UserController, InvitationController],
   providers: [
     UserRepository,
     UserRoleRepository,

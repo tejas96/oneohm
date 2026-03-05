@@ -31,6 +31,41 @@ export class InvitationRepository {
   }
 
   /**
+   * Find invitation by ID
+   */
+  async findById(id: string): Promise<InvitationEntity | null> {
+    return this.repository.findOne({
+      where: { id },
+      relations: ['organization', 'role'],
+    });
+  }
+
+  /**
+   * Paginated list of invitations with optional org/status filters
+   */
+  async findAllPaginated(
+    skip: number,
+    take: number,
+    filters?: { organizationId?: string; status?: InvitationStatus },
+  ): Promise<[InvitationEntity[], number]> {
+    const where: Record<string, unknown> = {};
+    if (filters?.organizationId) {
+      where.organizationId = filters.organizationId;
+    }
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+
+    return this.repository.findAndCount({
+      where,
+      relations: ['organization', 'role'],
+      order: { createdAt: 'DESC' },
+      skip,
+      take,
+    });
+  }
+
+  /**
    * Find invitation by token
    */
   async findByToken(token: string): Promise<InvitationEntity | null> {

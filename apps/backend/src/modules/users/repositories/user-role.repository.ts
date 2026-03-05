@@ -214,4 +214,11 @@ export class UserRoleRepository {
       relations: ['user', 'iamRole'],
     });
   }
+
+  /**
+   * Count how many users are assigned to a given role
+   */
+  async countByRoleId(roleId: string): Promise<number> {
+    return this.repository.count({ where: { roleId } });
+  }
 }

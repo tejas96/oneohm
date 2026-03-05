@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
 
+import { hasAdminBypassRole } from '../../iam/constants';
 import { ProjectTeamRepository } from '../repositories/project-team.repository';
 
 /**
@@ -20,21 +21,14 @@ export class ProjectTeamGuard implements CanActivate {
     }
 
     if (!projectId) {
-      // No project context, allow access
       return true;
     }
 
-    // Admin bypass - check if user has admin role
     const roles: string[] = user.roles || [];
-    if (
-      roles.includes('admin') ||
-      roles.includes('super_admin') ||
-      roles.includes('platform_admin')
-    ) {
+    if (hasAdminBypassRole(roles)) {
       return true;
     }
 
-    // Check if user is a team member of the project
     const isTeamMember = await this.teamRepository.isTeamMember(user.id, projectId);
 
     if (!isTeamMember) {

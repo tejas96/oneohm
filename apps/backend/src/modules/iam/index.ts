@@ -1,3 +1,4 @@
+export * from './constants';
 export * from './decorators/require-permission.decorator';
 export * from './entities';
 export * from './guards/permission.guard';

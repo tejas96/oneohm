@@ -151,11 +151,14 @@ export const ROUTES = {
   ADMIN: {
     HOME: '/admin',
     SETTINGS: '/admin/settings',
-    USERS: '/users',
-    USER_DETAIL: '/users/[id]',
-    WORKFLOWS: '/workflows',
-    INTEGRATIONS: '/integrations',
-    AUDIT: '/audit',
+    USERS: '/admin/users',
+    USER_DETAIL: '/admin/users/[id]',
+    ROLES: '/admin/roles',
+    ROLE_DETAIL: '/admin/roles/[id]',
+    PERMISSIONS: '/admin/permissions',
+    WORKFLOWS: '/admin/workflows',
+    INTEGRATIONS: '/admin/integrations',
+    AUDIT: '/admin/audit',
   },
 
   // Organization
@@ -217,7 +220,8 @@ export interface RouteParamTypes {
   '/site-visits/[id]': { id: string };
   '/vendors/[id]': { id: string };
   '/service/[id]': { id: string };
-  '/users/[id]': { id: string };
+  '/admin/users/[id]': { id: string };
+  '/admin/roles/[id]': { id: string };
   '/employees/[id]': { id: string };
 
   // Routes with query filters
@@ -274,7 +278,10 @@ export const AUTH_ROUTES = [
 
 /** Routes that require admin role */
 export const ADMIN_ROUTES = [
+  ROUTES.ADMIN.HOME,
   ROUTES.ADMIN.USERS,
+  ROUTES.ADMIN.ROLES,
+  ROUTES.ADMIN.PERMISSIONS,
   ROUTES.ADMIN.SETTINGS,
   ROUTES.ADMIN.WORKFLOWS,
   ROUTES.ADMIN.INTEGRATIONS,
@@ -425,6 +432,10 @@ export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
   [ROUTES.HELP.HOME]: 'help',
 
   // Admin routes
+  [ROUTES.ADMIN.USERS]: 'admin',
+  [ROUTES.ADMIN.ROLES]: 'admin',
+  [ROUTES.ADMIN.PERMISSIONS]: 'admin',
+  [ROUTES.ADMIN.SETTINGS]: 'admin',
   [ROUTES.ADMIN.HOME]: 'admin',
 
   // Dashboard (default)

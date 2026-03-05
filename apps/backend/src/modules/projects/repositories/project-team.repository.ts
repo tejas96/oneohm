@@ -75,19 +75,24 @@ export class ProjectTeamRepository {
   async findByProject(
     projectId: string,
     manager?: EntityManager,
+    options?: { includeInactive?: boolean },
   ): Promise<ProjectTeamMemberEntity[]> {
     const repo = this.getRepo(manager);
-    return repo.find({
-      where: {
-        projectId,
-        deletedAt: IsNull(),
-      },
-      relations: ['user'],
-      order: {
-        isProjectManager: 'DESC',
-        joinedAt: 'ASC',
-      },
-    });
+    const qb = repo
+      .createQueryBuilder('member')
+      .leftJoinAndSelect('member.user', 'user')
+      .where('member.projectId = :projectId', { projectId })
+      .andWhere('member.deletedAt IS NULL');
+
+    if (!options?.includeInactive) {
+      qb.andWhere('user.status = :status', { status: 'active' }).andWhere(
+        'user.deleted_at IS NULL',
+      );
+    }
+
+    qb.orderBy('member.isProjectManager', 'DESC').addOrderBy('member.joinedAt', 'ASC');
+
+    return qb.getMany();
   }
 
   /**

@@ -73,8 +73,10 @@ export class UserRoleController {
     // Resolve role
     const role = await this.resolveRole(dto.roleId, dto.roleCode, dto.organizationId);
 
-    // Validate user exists and has profile in organization
-    await this.validateUserInOrganization(dto.userId, dto.organizationId);
+    // Validate user exists and has profile in organization (skip for platform-level roles)
+    if (dto.organizationId) {
+      await this.validateUserInOrganization(dto.userId, dto.organizationId);
+    }
 
     // Check if user already has this role
     const existing = await this.userRoleRepository.findByUserAndRole(dto.userId, role.id);
@@ -95,7 +97,7 @@ export class UserRoleController {
     // Fetch with relations for response
     const created = await this.userRoleRepository.findById(userRole.id);
     if (!created) {
-      throw new Error('Failed to create user role');
+      throw new NotFoundException('User role assignment could not be retrieved after creation');
     }
 
     return this.mapToResponseDto(created);
