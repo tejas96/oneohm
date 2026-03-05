@@ -29,6 +29,7 @@ import {
   UpdateUserStatusDto,
   UserResponseDto,
 } from '../dto';
+import type { UserSortField, SortOrder } from '../repositories/user.repository';
 import { ProfileService } from '../services/profile.service';
 import { UserService } from '../services/user.service';
 
@@ -68,6 +69,23 @@ export class UserController {
   }
 
   @ApiReadAll({
+    path: 'check-availability',
+    summary: 'Check if email or phone is already registered',
+    description: 'Returns availability status for email and phone fields.',
+    responseType: Object,
+  })
+  @ApiQuery({ name: 'email', required: false })
+  @ApiQuery({ name: 'phone', required: false })
+  async checkAvailability(
+    @Query('email') email?: string,
+    @Query('phone') phone?: string,
+  ): Promise<{ emailExists: boolean; phoneExists: boolean }> {
+    const emailExists = email ? await this.userService.emailExists(email) : false;
+    const phoneExists = phone ? await this.userService.phoneExists(phone) : false;
+    return { emailExists, phoneExists };
+  }
+
+  @ApiReadAll({
     summary: 'Get all users',
     description:
       'Returns all users across all organizations. Use profile endpoints to filter by organization.',
@@ -81,19 +99,62 @@ export class UserController {
     enum: UserStatus,
     example: UserStatus.ACTIVE,
   })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'roleId', required: false })
+  @ApiQuery({
+    name: 'organizationId',
+    required: false,
+    description: 'Filter by organization (employees only)',
+  })
+  @ApiQuery({
+    name: 'showDeleted',
+    required: false,
+    description: 'Show only archived/deleted users',
+  })
+  @ApiQuery({ name: 'sortBy', required: false, example: 'createdAt' })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'] })
   async findAll(
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
     @Query('status') status?: UserStatus,
+    @Query('search') search?: string,
+    @Query('roleId') roleId?: string,
+    @Query('organizationId') organizationId?: string,
+    @Query('showDeleted') showDeleted?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
   ): Promise<{
     items: UserResponseDto[];
     total: number;
     page: number;
     limit: number;
   }> {
-    const result = await this.userService.findAll(page, limit, status);
+    const validSortFields: UserSortField[] = [
+      'firstName',
+      'lastName',
+      'email',
+      'phone',
+      'status',
+      'createdAt',
+      'lastLoginAt',
+    ];
+    const validatedSortBy = validSortFields.includes(sortBy as UserSortField)
+      ? (sortBy as UserSortField)
+      : undefined;
+    const validatedSortOrder: SortOrder | undefined =
+      sortOrder === 'ASC' || sortOrder === 'DESC' ? sortOrder : undefined;
 
-    return {
+    const result = await this.userService.findAll(page, limit, {
+      status,
+      search,
+      roleId,
+      organizationId,
+      showDeleted: showDeleted === 'true',
+      sortBy: validatedSortBy,
+      sortOrder: validatedSortOrder,
+    });
+
+    const response = {
       ...result,
       items: result.items.map((user) =>
         plainToInstance(UserResponseDto, user, {
@@ -101,6 +162,8 @@ export class UserController {
         }),
       ),
     };
+
+    return response;
   }
 
   @ApiReadOne({
@@ -141,7 +204,21 @@ export class UserController {
   }
 
   @ApiAction({
-    path: ':id/status',
+    path: 'restore',
+    summary: 'Restore deleted user',
+    description:
+      'Restores a soft-deleted user and their employee profiles, setting status to active.',
+    responseType: UserResponseDto,
+  })
+  async restore(@Param('id', ParseUUIDPipe) id: string): Promise<UserResponseDto> {
+    const user = await this.userService.restore(id);
+    return plainToInstance(UserResponseDto, user, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  @ApiAction({
+    path: 'status',
     summary: 'Update user status',
     description:
       'Update user status to active, inactive, or suspended. Generic endpoint for all status transitions.',

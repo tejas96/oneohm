@@ -19,6 +19,7 @@ export class RolePermissionRepository {
     permissionIds: string[],
     createdBy: string,
   ): Promise<RolePermissionEntity[]> {
+    if (!permissionIds?.length) return [];
     const rolePermissions = permissionIds.map((permissionId) =>
       this.repository.create({
         roleId,
@@ -34,6 +35,7 @@ export class RolePermissionRepository {
    * Remove permissions from role
    */
   async removePermissions(roleId: string, permissionIds: string[]): Promise<void> {
+    if (!permissionIds?.length) return;
     await this.repository.delete({
       roleId,
       permissionId: In(permissionIds),
@@ -88,6 +90,20 @@ export class RolePermissionRepository {
       },
     });
     return count > 0;
+  }
+
+  /**
+   * Count permissions assigned to a role
+   */
+  async countByRoleId(roleId: string): Promise<number> {
+    return this.repository.count({ where: { roleId } });
+  }
+
+  /**
+   * Count roles using a specific permission
+   */
+  async countByPermissionId(permissionId: string): Promise<number> {
+    return this.repository.count({ where: { permissionId } });
   }
 
   /**

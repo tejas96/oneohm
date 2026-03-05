@@ -3,10 +3,12 @@ import {
   type ExecutionContext,
   ForbiddenException,
   Injectable,
+  Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
 import type { CurrentUserType } from '../../auth/types';
+import { hasAdminBypassRole } from '../constants';
 import {
   PERMISSION_KEY,
   type PermissionMetadata,
@@ -16,30 +18,31 @@ import {
  * Permission Guard - JWT-Based (Fast & Stateless)
  * Checks permissions directly from JWT payload (no DB lookup)
  *
- * Replaces the hardcoded RolesGuard with dynamic permission checking
+ * Access is granted if EITHER condition is met:
+ * 1. User has an admin-level role (platform_admin, super_admin, admin) — bypass
+ * 2. User has the specific required permission in their JWT
  *
  * Usage:
  * @RequirePermission('customers:read')
- * @RequirePermission('customers:read:own') // For own-scope permissions
+ * @RequirePermission('customers:read:own')
  * @RequirePermission('customers:create')
  */
 @Injectable()
 export class PermissionGuard implements CanActivate {
+  private readonly logger = new Logger(PermissionGuard.name);
+
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    // Get permission metadata from decorator
     const permissionMetadata = this.reflector.getAllAndOverride<PermissionMetadata>(
       PERMISSION_KEY,
       [context.getHandler(), context.getClass()],
     );
 
-    // If no permission required, allow access
     if (!permissionMetadata) {
       return true;
     }
 
-    // Get user from request (set by JwtAuthGuard, includes permissions)
     const request = context.switchToHttp().getRequest<{ user: CurrentUserType }>();
     const user = request.user;
 
@@ -47,14 +50,14 @@ export class PermissionGuard implements CanActivate {
       throw new ForbiddenException('Access denied: User not authenticated');
     }
 
-    const { permissionCode, scope } = permissionMetadata;
+    const userRoles: string[] = user.roles ?? [];
+    if (hasAdminBypassRole(userRoles)) {
+      return true;
+    }
 
-    // JWT-BASED CHECK: Fast O(n) lookup in permissions array
-    // Permissions are embedded in JWT during login/refresh
+    const { permissionCode, scope } = permissionMetadata;
     const userPermissions: string[] = user.permissions ?? [];
 
-    // Check for exact permission match
-    // For scope-based permissions, format should be: 'customers:read:own' or 'customers:read:all'
     let requiredPermission = permissionCode;
     if (scope) {
       requiredPermission = `${permissionCode}:${scope}`;
@@ -62,17 +65,17 @@ export class PermissionGuard implements CanActivate {
 
     const hasPermission: boolean = userPermissions.includes(requiredPermission);
 
-    // Fallback: If scoped permission not found, check for 'all' permission
     if (!hasPermission && scope === 'own') {
       const allPermission = `${permissionCode}:all`;
-      const hasAllPermission: boolean = userPermissions.includes(allPermission);
-      if (hasAllPermission) {
-        // User has 'all' scope, which includes 'own'
+      if (userPermissions.includes(allPermission)) {
         return true;
       }
     }
 
     if (!hasPermission) {
+      this.logger.warn(
+        `Access denied for user ${user.id}: missing '${requiredPermission}' (roles: ${userRoles.join(', ')})`,
+      );
       throw new ForbiddenException(`Access denied: Missing permission '${requiredPermission}'`);
     }
 

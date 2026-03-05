@@ -126,8 +126,35 @@ export class InvitationService {
    * Cancel invitation
    */
   async cancelInvitation(id: string): Promise<void> {
+    const invitation = await this.invitationRepository.findById(id);
+    if (!invitation) {
+      throw new NotFoundException(`Invitation with ID '${id}' not found`);
+    }
     await this.invitationRepository.markAsCancelled(id);
     this.logger.log(`Invitation ${id} cancelled`);
+  }
+
+  /**
+   * Resend invitation: cancels the old one and creates a fresh invitation
+   */
+  async resendInvitation(id: string, invitedBy?: string): Promise<InvitationEntity> {
+    const existing = await this.invitationRepository.findById(id);
+    if (!existing) {
+      throw new NotFoundException(`Invitation with ID '${id}' not found`);
+    }
+
+    if (existing.status === InvitationStatus.ACCEPTED) {
+      throw new BadRequestException('Cannot resend an already accepted invitation');
+    }
+
+    await this.invitationRepository.markAsCancelled(id);
+
+    return this.createInvitation({
+      email: existing.email,
+      organizationId: existing.organizationId,
+      roleId: existing.roleId,
+      invitedBy: invitedBy ?? existing.invitedBy,
+    });
   }
 
   /**

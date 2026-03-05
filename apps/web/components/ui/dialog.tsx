@@ -12,6 +12,20 @@ import { cn } from '@/lib/utils';
 /**
  * Dialog Component - OneOhm Design System
  *
+ * Layout structure (must follow this order):
+ *   <DialogContent>
+ *     <DialogHeader>        ← px-6 py-4, border-b, includes close button
+ *       <DialogTitle />
+ *       <DialogDescription /> (optional)
+ *     </DialogHeader>
+ *     <DialogBody>           ← p-6, scrollable content area
+ *       ...
+ *     </DialogBody>
+ *     <DialogFooter>         ← px-6 py-4, border-t, bg-background-secondary
+ *       ...buttons...
+ *     </DialogFooter>
+ *   </DialogContent>
+ *
  * Sizes:
  * - sm: max-w-sm (small modals, confirmations)
  * - default: max-w-lg (standard modals)
@@ -48,7 +62,6 @@ const DialogOverlay = React.forwardRef<
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const dialogContentVariants = cva(
-  // Base styles
   [
     'fixed left-[50%] top-[50%] z-modal',
     'grid w-full translate-x-[-50%] translate-y-[-50%]',
@@ -79,14 +92,14 @@ const dialogContentVariants = cva(
 export interface DialogContentProps
   extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
     VariantProps<typeof dialogContentVariants> {
-  /** Hide the close button */
+  /** @deprecated Close button is now rendered inside DialogHeader. Use hideCloseButton on DialogHeader instead. */
   hideCloseButton?: boolean;
 }
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   DialogContentProps
->(({ className, size, hideCloseButton, children, ...props }, ref) => (
+>(({ className, size, hideCloseButton: _hideCloseButton, children, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -95,22 +108,31 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      {!hideCloseButton && (
-        <DialogPrimitive.Close className="absolute right-4 top-4 p-2 rounded-lg text-foreground-tertiary hover:text-foreground-secondary hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none cursor-pointer">
-          <X className="size-icon-md" />
-          <span className="sr-only">Close</span>
-        </DialogPrimitive.Close>
-      )}
     </DialogPrimitive.Content>
   </DialogPortal>
 ));
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
-const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+interface DialogHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+  hideCloseButton?: boolean;
+}
+
+const DialogHeader = ({ className, hideCloseButton, children, ...props }: DialogHeaderProps) => (
   <div
-    className={cn('flex flex-col gap-1 px-6 py-4 border-b border-border-light', className)}
+    className={cn(
+      'flex items-start justify-between gap-4 px-6 py-4 border-b border-border-light',
+      className,
+    )}
     {...props}
-  />
+  >
+    <div className="flex flex-col gap-1 flex-1 min-w-0">{children}</div>
+    {!hideCloseButton && (
+      <DialogPrimitive.Close className="shrink-0 p-1.5 -m-1.5 rounded-lg text-foreground-tertiary hover:text-foreground-secondary hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none cursor-pointer">
+        <X className="size-icon-md" />
+        <span className="sr-only">Close</span>
+      </DialogPrimitive.Close>
+    )}
+  </div>
 );
 DialogHeader.displayName = 'DialogHeader';
 
@@ -218,7 +240,7 @@ const ConfirmDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="sm" hideCloseButton className="text-center">
+      <DialogContent size="sm" className="text-center">
         <div className="p-6">
           <div
             className={cn(

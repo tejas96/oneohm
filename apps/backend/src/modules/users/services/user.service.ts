@@ -14,7 +14,7 @@ import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UserEntity } from '../entities/user.entity';
 import { UserRoleRepository } from '../repositories/user-role.repository';
-import { UserRepository } from '../repositories/user.repository';
+import { UserRepository, type UserListFilters } from '../repositories/user.repository';
 
 /**
  * User Service
@@ -135,21 +135,12 @@ export class UserService {
   async findAll(
     page = 1,
     limit = 20,
-    status?: UserStatus,
+    filters?: UserListFilters,
   ): Promise<{ items: UserEntity[]; total: number; page: number; limit: number }> {
-    const [items, total] = await this.userRepository.findAll(page, limit, status);
-
-    // Fetch roles for each user
-    const itemsWithRoles = await Promise.all(
-      items.map(async (user) => {
-        const userRoles = await this.userRoleRepository.findByUserId(user.id);
-        user.roles = userRoles.map((ur) => ur.role).filter((r): r is string => r != null);
-        return user;
-      }),
-    );
+    const [items, total] = await this.userRepository.findAll(page, limit, filters);
 
     return {
-      items: itemsWithRoles,
+      items,
       total,
       page,
       limit,
@@ -186,6 +177,16 @@ export class UserService {
     return user;
   }
 
+  async emailExists(email: string): Promise<boolean> {
+    const user = await this.userRepository.findByEmail(email);
+    return !!user;
+  }
+
+  async phoneExists(phone: string): Promise<boolean> {
+    const user = await this.userRepository.findByPhone(phone);
+    return !!user;
+  }
+
   async update(id: string, updateDto: UpdateUserDto): Promise<UserEntity> {
     const user = await this.findById(id);
 
@@ -219,14 +220,73 @@ export class UserService {
 
   async delete(id: string): Promise<void> {
     const user = await this.findById(id);
+    const manager = this.userRepository.repository.manager;
 
-    const success = await this.userRepository.softDelete(id);
+    const activeTaskCount = await manager
+      .createQueryBuilder()
+      .select('COUNT(*)', 'count')
+      .from('project_tasks', 'pt')
+      .innerJoin('projects', 'p', 'p.id = pt.project_id AND p.deleted_at IS NULL')
+      .where('pt.assigned_to_user_id = :userId', { userId: id })
+      .andWhere('pt.deleted_at IS NULL')
+      .andWhere("pt.status NOT IN ('done', 'cancelled')")
+      .getRawOne<{ count: string }>();
 
-    if (!success) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+    const pendingTasks = parseInt(activeTaskCount?.count ?? '0', 10);
+    if (pendingTasks > 0) {
+      throw new BadRequestException(
+        `Cannot delete user: ${pendingTasks} active task(s) are still assigned. Please reassign or complete them first.`,
+      );
     }
 
+    await manager.transaction(async (tx) => {
+      const result = await tx
+        .createQueryBuilder()
+        .update('users')
+        .set({ deleted_at: new Date() })
+        .where('id = :id AND deleted_at IS NULL', { id })
+        .execute();
+
+      if ((result.affected ?? 0) === 0) {
+        throw new NotFoundException(`User with ID ${id} not found`);
+      }
+
+      await tx
+        .createQueryBuilder()
+        .update('employee_profiles')
+        .set({ deleted_at: new Date() })
+        .where('user_id = :userId AND deleted_at IS NULL', { userId: id })
+        .execute();
+    });
+
     this.logger.log(`User deleted: ${user.phone}`);
+  }
+
+  async restore(id: string): Promise<UserEntity> {
+    const manager = this.userRepository.repository.manager;
+
+    await manager.transaction(async (tx) => {
+      const result = await tx
+        .createQueryBuilder()
+        .update('users')
+        .set({ deleted_at: null, status: UserStatus.ACTIVE })
+        .where('id = :id AND deleted_at IS NOT NULL', { id })
+        .execute();
+
+      if ((result.affected ?? 0) === 0) {
+        throw new NotFoundException(`User with ID ${id} not found or not deleted`);
+      }
+
+      await tx
+        .createQueryBuilder()
+        .update('employee_profiles')
+        .set({ deleted_at: null })
+        .where('user_id = :userId', { userId: id })
+        .execute();
+    });
+
+    this.logger.log(`User restored: ${id}`);
+    return this.findById(id);
   }
 
   /**
@@ -243,19 +303,25 @@ export class UserService {
       throw new BadRequestException(`User is already in '${newStatus}' status`);
     }
 
-    // Business rules based on status transition
-    if (newStatus === UserStatus.SUSPENDED) {
-      // TODO: Add suspension rules
-      // - Revoke active sessions
-      // - Notify user via email
-      // - Log security event
-    } else if (newStatus === UserStatus.INACTIVE) {
-      // TODO: Add deactivation rules
-      // - Complete pending tasks
-      // - Transfer ownership
-      // - Archive user data
+    // When deactivating or suspending, warn about active tasks
+    if (newStatus === UserStatus.INACTIVE || newStatus === UserStatus.SUSPENDED) {
+      const activeTaskCount = await this.userRepository.repository.manager
+        .createQueryBuilder()
+        .select('COUNT(*)', 'count')
+        .from('project_tasks', 'pt')
+        .innerJoin('projects', 'p', 'p.id = pt.project_id AND p.deleted_at IS NULL')
+        .where('pt.assigned_to_user_id = :userId', { userId: id })
+        .andWhere('pt.deleted_at IS NULL')
+        .andWhere("pt.status NOT IN ('done', 'cancelled')")
+        .getRawOne<{ count: string }>();
+
+      const pendingTasks = parseInt(activeTaskCount?.count ?? '0', 10);
+      if (pendingTasks > 0) {
+        this.logger.warn(
+          `User ${id} has ${pendingTasks} active tasks while being set to ${newStatus}`,
+        );
+      }
     }
-    // Note: No special handling needed for ACTIVE status
 
     const updatedUser = await this.userRepository.update(id, {
       status: newStatus,

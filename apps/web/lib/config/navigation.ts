@@ -12,6 +12,7 @@ import {
   GanttChart,
   HelpCircle,
   Home,
+  Key,
   LayoutGrid,
   List,
   MapPin,
@@ -19,6 +20,7 @@ import {
   Plus,
   Send,
   Settings,
+  Shield,
   TrendingUp,
   Users,
   Wallet,
@@ -571,6 +573,30 @@ export const navigationConfig: NavigationConfig = {
       title: 'Admin',
       sections: [
         {
+          title: 'Identity & Access',
+          roles: ['admin', 'super_admin', 'platform_admin'],
+          items: [
+            {
+              id: 'admin-users',
+              icon: Users,
+              label: 'Users',
+              href: ROUTES.ADMIN.USERS,
+            },
+            {
+              id: 'admin-roles',
+              icon: Shield,
+              label: 'Roles',
+              href: ROUTES.ADMIN.ROLES,
+            },
+            {
+              id: 'admin-permissions',
+              icon: Key,
+              label: 'Permissions',
+              href: ROUTES.ADMIN.PERMISSIONS,
+            },
+          ],
+        },
+        {
           title: 'Settings',
           roles: ['admin', 'super_admin', 'platform_admin'],
           items: [
@@ -579,12 +605,6 @@ export const navigationConfig: NavigationConfig = {
               icon: Settings,
               label: 'General Settings',
               href: ROUTES.ADMIN.SETTINGS,
-            },
-            {
-              id: 'user-management',
-              icon: Users,
-              label: 'User Management',
-              href: ROUTES.ADMIN.USERS,
             },
           ],
         },

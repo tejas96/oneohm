@@ -40,6 +40,20 @@ export class RoleResponseDto {
 
   @ApiProperty({ required: false })
   deletedAt?: Date;
+
+  @ApiProperty({
+    example: 12,
+    required: false,
+    description: 'Number of permissions assigned to this role',
+  })
+  permissionsCount?: number;
+
+  @ApiProperty({
+    example: 5,
+    required: false,
+    description: 'Number of users assigned to this role',
+  })
+  usersCount?: number;
 }
 
 /**
@@ -51,6 +65,12 @@ export class RoleWithPermissionsDto extends RoleResponseDto {
     example: ['customers:read', 'customers:create', 'customers:update'],
   })
   permissions: string[];
+
+  @ApiProperty({
+    type: [String],
+    description: 'Permission UUIDs for sync operations',
+  })
+  permissionIds: string[];
 }
 
 /**

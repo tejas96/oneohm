@@ -1,9 +1,13 @@
 import {
+  BadRequestException,
   Body,
+  ConflictException,
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
+  ParseIntPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -15,6 +19,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
+import { UserRoleRepository } from '../../users/repositories/user-role.repository';
 import { RequirePermission } from '../decorators/require-permission.decorator';
 import { RoleResponseDto, RoleWithPermissionsDto, PaginatedRolesDto } from '../dto/response';
 import { AssignPermissionsDto } from '../dto/roles/assign-permissions.dto';
@@ -38,6 +43,7 @@ export class RoleController {
   constructor(
     private readonly roleRepository: RoleRepository,
     private readonly rolePermissionRepository: RolePermissionRepository,
+    private readonly userRoleRepository: UserRoleRepository,
   ) {}
 
   /**
@@ -53,6 +59,14 @@ export class RoleController {
     @Body() createRoleDto: CreateRoleDto,
     @CurrentUser() user: CurrentUserType,
   ): Promise<RoleResponseDto> {
+    const exists = await this.roleRepository.existsByCodeAndOrganization(
+      createRoleDto.code,
+      createRoleDto.organizationId,
+    );
+    if (exists) {
+      throw new ConflictException('A role with this code already exists in this organization');
+    }
+
     const role = await this.roleRepository.create({
       ...createRoleDto,
       createdBy: user.id,
@@ -72,20 +86,29 @@ export class RoleController {
     description: 'Get paginated list of roles for the organization',
   })
   async findAll(
-    @Query('organizationId', ParseUUIDPipe) organizationId: string,
-    @Query('page') page: number = 1,
-    @Query('pageSize') pageSize: number = 10,
-    @CurrentUser() _user: CurrentUserType,
+    @Query('organizationId') organizationId?: string,
+    @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
+    @Query('pageSize', new ParseIntPipe({ optional: true })) pageSize: number = 10,
+    @Query('search') search?: string,
+    @Query('isSystemRole') isSystemRole?: string,
   ): Promise<PaginatedRolesDto> {
     const skip = (page - 1) * pageSize;
-    const [roles, total] = await this.roleRepository.findByOrganization(
+    const [roles, total] = await this.roleRepository.findAllPaginated(skip, pageSize, {
       organizationId,
-      skip,
-      pageSize,
+      search,
+      isSystemRole: isSystemRole !== undefined ? isSystemRole === 'true' : undefined,
+    });
+
+    const data = await Promise.all(
+      roles.map(async (role) => {
+        const permissionsCount = await this.rolePermissionRepository.countByRoleId(role.id);
+        const usersCount = await this.userRoleRepository.countByRoleId(role.id);
+        return { ...role, permissionsCount, usersCount };
+      }),
     );
 
     return {
-      data: roles,
+      data,
       total,
       page,
       pageSize,
@@ -105,16 +128,17 @@ export class RoleController {
     const role = await this.roleRepository.findWithPermissions(id);
 
     if (!role) {
-      throw new Error('Role not found');
+      throw new NotFoundException('Role not found');
     }
 
-    // Get permission codes
     const rolePermissions = await this.rolePermissionRepository.findByRoleId(id);
     const permissions = rolePermissions.map((rp) => rp.permission.code);
+    const permissionIds = rolePermissions.map((rp) => rp.permissionId);
 
     return {
       ...role,
       permissions,
+      permissionIds,
     };
   }
 
@@ -147,6 +171,22 @@ export class RoleController {
     description: 'Soft delete a role (system roles cannot be deleted)',
   })
   async remove(@Param('id', ParseUUIDPipe) id: string): Promise<{ message: string }> {
+    const role = await this.roleRepository.findWithPermissions(id);
+    if (!role) {
+      throw new NotFoundException('Role not found');
+    }
+
+    if (role.isSystemRole) {
+      throw new BadRequestException('System roles cannot be deleted');
+    }
+
+    const usersCount = await this.userRoleRepository.countByRoleId(id);
+    if (usersCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete role with ${usersCount} users assigned. Remove user assignments first.`,
+      );
+    }
+
     await this.roleRepository.softDelete(id);
     return { message: 'Role deleted successfully' };
   }
@@ -165,6 +205,11 @@ export class RoleController {
     @Body() assignPermissionsDto: AssignPermissionsDto,
     @CurrentUser() user: CurrentUserType,
   ): Promise<{ message: string; permissionsCount: number }> {
+    const role = await this.roleRepository.findWithPermissions(roleId);
+    if (!role) {
+      throw new NotFoundException('Role not found');
+    }
+
     await this.rolePermissionRepository.syncPermissions(
       roleId,
       assignPermissionsDto.permissionIds,
@@ -191,6 +236,11 @@ export class RoleController {
     @Body() assignPermissionsDto: AssignPermissionsDto,
     @CurrentUser() user: CurrentUserType,
   ): Promise<{ message: string; added: number }> {
+    const role = await this.roleRepository.findWithPermissions(roleId);
+    if (!role) {
+      throw new NotFoundException('Role not found');
+    }
+
     await this.rolePermissionRepository.assignPermissions(
       roleId,
       assignPermissionsDto.permissionIds,
@@ -214,13 +264,23 @@ export class RoleController {
   })
   async removePermissions(
     @Param('id', ParseUUIDPipe) roleId: string,
-    @Body('permissionIds') permissionIds: string[],
+    @Body() assignPermissionsDto: AssignPermissionsDto,
   ): Promise<{ message: string; removed: number }> {
-    await this.rolePermissionRepository.removePermissions(roleId, permissionIds);
+    const role = await this.roleRepository.findWithPermissions(roleId);
+    if (!role) {
+      throw new NotFoundException('Role not found');
+    }
+
+    if (assignPermissionsDto.permissionIds.length > 0) {
+      await this.rolePermissionRepository.removePermissions(
+        roleId,
+        assignPermissionsDto.permissionIds,
+      );
+    }
 
     return {
       message: 'Permissions removed successfully',
-      removed: permissionIds.length,
+      removed: assignPermissionsDto.permissionIds.length,
     };
   }
 }

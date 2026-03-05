@@ -18,3 +18,6 @@ export * from './pipeline';
 
 // Quotes
 export * from './quotes';
+
+// Admin
+export * from './admin';

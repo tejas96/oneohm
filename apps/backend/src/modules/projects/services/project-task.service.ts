@@ -374,6 +374,18 @@ export class ProjectTaskService {
           'Cannot assign task: user is not a team member of this project',
         );
       }
+
+      // Ensure assigned user is active
+      const assignee = await this.dataSource
+        .createQueryBuilder()
+        .select('u.status', 'status')
+        .from('users', 'u')
+        .where('u.id = :userId AND u.deleted_at IS NULL', { userId: assignedToUserId })
+        .getRawOne<{ status: string }>();
+
+      if (assignee?.status !== 'active') {
+        throw new BadRequestException('Cannot assign task: user is inactive or has been deleted');
+      }
     }
 
     const existingTask = await this.findById(id, projectId);

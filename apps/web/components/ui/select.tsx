@@ -85,7 +85,7 @@ const SelectContent = React.forwardRef<
       ref={ref}
       className={cn(
         // Base styling
-        'relative z-dropdown max-h-[--radix-select-content-available-height] min-w-dropdown-min',
+        'relative z-popover max-h-[min(var(--radix-select-content-available-height,300px),300px)] min-w-dropdown-min',
         'overflow-y-auto overflow-x-hidden rounded-md',
         // Border and background
         'border border-border-light bg-popover text-popover-foreground shadow-md',

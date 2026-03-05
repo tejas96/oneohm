@@ -58,6 +58,10 @@ export class UserResponseDto {
   fullName!: string;
 
   @Expose()
+  @ApiPropertyOptional()
+  deletedAt?: Date;
+
+  @Expose()
   @ApiProperty()
   createdAt!: Date;
 
