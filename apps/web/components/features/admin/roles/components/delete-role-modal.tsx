@@ -1,9 +1,7 @@
 'use client';
 
 import { AlertTriangle, Loader2 } from 'lucide-react';
-
-import { useDeleteRole } from '../hooks/use-role-mutations';
-import type { AdminRole } from '../hooks/use-roles';
+import { type JSX } from 'react';
 
 import {
   Button,
@@ -15,8 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui';
-import { showToast } from '@/components/ui/sonner';
-import { getErrorMessage } from '@/lib/utils';
+import { useRoleMutations, type AdminRole } from '@/lib/hooks/resources';
 
 interface DeleteRoleModalProps {
   open: boolean;
@@ -24,18 +21,17 @@ interface DeleteRoleModalProps {
   role: AdminRole;
 }
 
-export function DeleteRoleModal({ open, onOpenChange, role }: DeleteRoleModalProps) {
-  const deleteRole = useDeleteRole();
+export function DeleteRoleModal({ open, onOpenChange, role }: DeleteRoleModalProps): JSX.Element {
+  const { remove: deleteRole } = useRoleMutations();
   const hasUsers = (role.usersCount ?? 0) > 0;
   const isBlocked = role.isSystemRole || hasUsers;
 
-  const handleDelete = async () => {
+  const handleDelete = async (): Promise<void> => {
     try {
       await deleteRole.mutateAsync(role.id);
-      showToast.success('Role deleted successfully');
       onOpenChange(false);
-    } catch (err) {
-      showToast.error(getErrorMessage(err));
+    } catch {
+      // Toast handled by useRoleMutations toast config
     }
   };
 

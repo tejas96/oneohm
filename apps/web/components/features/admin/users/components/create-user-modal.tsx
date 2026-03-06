@@ -2,11 +2,9 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { useCreateUser } from '../hooks/use-admin-user-mutations';
-import { useCheckUserAvailability } from '../hooks/use-check-user-availability';
 import { createUserSchema, type CreateUserFormData } from '../schemas/create-user.schema';
 
 import {
@@ -27,7 +25,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui';
-import { showToast } from '@/components/ui/sonner';
+import {
+  useAdminUserMutations,
+  useCheckUserAvailability,
+  type AdminUser,
+} from '@/lib/hooks/resources';
+import { useDebounce } from '@/lib/hooks/use-debounce';
 import { getErrorMessage } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -36,9 +39,9 @@ interface CreateUserModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps) {
+export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps): JSX.Element {
   const { user: currentUser } = useAuth();
-  const createUser = useCreateUser();
+  const { create: createUser } = useAdminUserMutations();
   const availability = useCheckUserAvailability();
 
   const form = useForm<CreateUserFormData>({
@@ -58,16 +61,18 @@ export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps) {
 
   const watchedEmail = form.watch('email');
   const watchedPhone = form.watch('phone');
+  const debouncedEmail = useDebounce(watchedEmail, 500);
+  const debouncedPhone = useDebounce(watchedPhone, 500);
 
   useEffect(() => {
-    if (watchedEmail) availability.checkEmail(watchedEmail);
-  }, [watchedEmail, availability.checkEmail]);
+    if (debouncedEmail) availability.checkEmail(debouncedEmail);
+  }, [debouncedEmail, availability.checkEmail]);
 
   useEffect(() => {
-    if (watchedPhone) availability.checkPhone(watchedPhone);
-  }, [watchedPhone, availability.checkPhone]);
+    if (debouncedPhone) availability.checkPhone(debouncedPhone);
+  }, [debouncedPhone, availability.checkPhone]);
 
-  const handleClose = (isOpen: boolean) => {
+  const handleClose = (isOpen: boolean): void => {
     if (!isOpen) {
       form.reset();
       availability.clearErrors();
@@ -75,7 +80,7 @@ export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps) {
     onOpenChange(isOpen);
   };
 
-  const onSubmit = async (data: CreateUserFormData) => {
+  const onSubmit = async (data: CreateUserFormData): Promise<void> => {
     if (availability.hasErrors) return;
 
     try {
@@ -101,28 +106,27 @@ export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps) {
         }
       }
 
-      await createUser.mutateAsync(payload);
-      showToast.success('Employee created successfully');
+      await createUser.mutateAsync(payload as Partial<AdminUser>);
       handleClose(false);
     } catch (err) {
       const message = getErrorMessage(err);
-      if (message.toLowerCase().includes('email') && message.toLowerCase().includes('already')) {
+      const lowerMsg = message.toLowerCase();
+      if (lowerMsg.includes('email') && lowerMsg.includes('already')) {
         form.setError('email', { message: 'This email is already registered' });
-      } else if (
-        message.toLowerCase().includes('phone') &&
-        message.toLowerCase().includes('already')
-      ) {
+      } else if (lowerMsg.includes('phone') && lowerMsg.includes('already')) {
         form.setError('phone', { message: 'This phone number is already registered' });
-      } else {
-        showToast.error(message);
+      } else if (lowerMsg.includes('employee id') && lowerMsg.includes('already')) {
+        form.setError('employeeId', {
+          message: 'This Employee ID already exists in your organization',
+        });
       }
     }
   };
 
-  const emailError = form.formState.errors.email?.message || availability.state.emailError;
-  const phoneError = form.formState.errors.phone?.message || availability.state.phoneError;
+  const emailError = form.formState.errors.email?.message || availability.errors.email;
+  const phoneError = form.formState.errors.phone?.message || availability.errors.phone;
   const isSubmitDisabled =
-    createUser.isPending || availability.hasErrors || availability.isChecking;
+    createUser.isPending || availability.hasErrors || availability.isAnyChecking;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -156,12 +160,12 @@ export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps) {
                   placeholder="e.g., rahul@company.com"
                   {...form.register('email')}
                 />
-                {availability.state.isCheckingEmail && (
+                {availability.isChecking.email && (
                   <p className="text-xs text-foreground-tertiary flex items-center gap-1">
                     <Loader2 className="size-3 animate-spin" /> Checking...
                   </p>
                 )}
-                {emailError && !availability.state.isCheckingEmail && (
+                {emailError && !availability.isChecking.email && (
                   <p className="text-xs text-error">{emailError}</p>
                 )}
               </div>
@@ -180,12 +184,12 @@ export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps) {
                     },
                   })}
                 />
-                {availability.state.isCheckingPhone && (
+                {availability.isChecking.phone && (
                   <p className="text-xs text-foreground-tertiary flex items-center gap-1">
                     <Loader2 className="size-3 animate-spin" /> Checking...
                   </p>
                 )}
-                {phoneError && !availability.state.isCheckingPhone && (
+                {phoneError && !availability.isChecking.phone && (
                   <p className="text-xs text-error">{phoneError}</p>
                 )}
               </div>

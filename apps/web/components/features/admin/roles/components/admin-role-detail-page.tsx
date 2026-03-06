@@ -2,23 +2,27 @@
 
 import { AlertCircle, ArrowLeft, Edit, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState, type JSX } from 'react';
 
 import { EditRoleModal } from './edit-role-modal';
 import { RolePermissionsPanel } from './role-permissions-panel';
-import { useRole } from '../hooks/use-role';
 
 import { Badge, Button, Typography } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
+import { useRole } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils';
 
 interface AdminRoleDetailPageProps {
   roleId: string;
 }
 
-export function AdminRoleDetailPage({ roleId }: AdminRoleDetailPageProps) {
+export function AdminRoleDetailPage({ roleId }: AdminRoleDetailPageProps): JSX.Element {
   const { data: role, isLoading, isError, error, refetch } = useRole(roleId);
   const [editOpen, setEditOpen] = useState(false);
+  const stablePermissions = useMemo(
+    () => (role?.permissions ?? []) as string[],
+    [role?.permissions],
+  );
 
   if (isLoading) {
     return (
@@ -99,7 +103,7 @@ export function AdminRoleDetailPage({ roleId }: AdminRoleDetailPageProps) {
         </div>
       </div>
 
-      <RolePermissionsPanel roleId={roleId} currentPermissions={role.permissions} />
+      <RolePermissionsPanel roleId={roleId} currentPermissions={stablePermissions} />
 
       {editOpen && (
         <EditRoleModal
@@ -107,7 +111,7 @@ export function AdminRoleDetailPage({ roleId }: AdminRoleDetailPageProps) {
           onOpenChange={setEditOpen}
           role={{
             ...role,
-            permissionsCount: role.permissions.length,
+            permissionsCount: role.permissions?.length ?? 0,
             usersCount: 0,
           }}
         />

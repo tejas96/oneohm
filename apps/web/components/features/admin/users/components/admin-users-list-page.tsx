@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unsafe-return */
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
@@ -19,22 +20,14 @@ import {
   X,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { type JSX, useState, useCallback, useMemo } from 'react';
 
 import { CreateUserModal } from './create-user-modal';
-import { DeleteUserModal } from './delete-user-modal';
 // TODO: Re-enable InviteUserModal when email service is implemented
 // import { InviteUserModal } from './invite-user-modal';
 import { UserStatusBadge } from './user-status-badge';
 import { USER_STATUS_TABS } from '../../constants';
-import { useUpdateUserStatus, useRestoreUser } from '../hooks/use-admin-user-mutations';
-import {
-  useAdminUsers,
-  type AdminUser,
-  type UserSortField,
-  type SortOrder,
-} from '../hooks/use-admin-users';
 
 import { DataTable, EmptyState, FilterTabs, TablePagination } from '@/components/shared';
 import {
@@ -56,160 +49,115 @@ import {
   DropdownMenuSeparator,
   Typography,
 } from '@/components/ui';
-import { showToast } from '@/components/ui/sonner';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { useDebounce } from '@/lib/hooks';
-import { getErrorMessage, formatDate, formatRoleCode, formatTimeAgo } from '@/lib/utils';
+import { useDeleteConfirmation } from '@/lib/hooks/core';
+import { useAdminUsers, useAdminUserMutations, type AdminUserFilters } from '@/lib/hooks/resources';
+import type { AdminUser } from '@/lib/hooks/resources/users';
+import { formatDate, formatRoleCode, formatTimeAgo } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
-
-const DEFAULT_PAGE_SIZE = 10;
-const SEARCH_DEBOUNCE_MS = 550;
 
 function getInitials(firstName: string, lastName?: string): string {
   return `${firstName.charAt(0)}${lastName?.charAt(0) ?? ''}`.toUpperCase();
 }
 
-function getValidSortField(value: string | null): UserSortField {
-  const valid: UserSortField[] = ['firstName', 'lastName', 'createdAt', 'lastLoginAt', 'status'];
-  return valid.includes(value as UserSortField) ? (value as UserSortField) : 'createdAt';
-}
-
-function getValidSortOrder(value: string | null): SortOrder {
-  return value === 'ASC' ? 'ASC' : 'DESC';
-}
-
-export function AdminUsersListPage() {
+export function AdminUsersListPage(): JSX.Element {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user: currentUser } = useAuth();
 
-  const initialPage = Number(searchParams.get('page')) || 1;
-  const initialLimit = Number(searchParams.get('limit')) || DEFAULT_PAGE_SIZE;
-  const initialSearch = searchParams.get('search') || '';
-  const initialStatus = searchParams.get('status') || 'all';
-  const initialSortBy = getValidSortField(searchParams.get('sortBy'));
-  const initialSortOrder = getValidSortOrder(searchParams.get('sortOrder'));
+  const {
+    items: users,
+    meta,
+    search,
+    setSearch,
+    debouncedSearch,
+    clearSearch,
+    filters,
+    setFilters,
+    clearFilters,
+    hasActiveFilters,
+    pagination,
+    sorting,
+    isLoading,
+    isFetching,
+    isError,
+    error,
+    refetch,
+  } = useAdminUsers();
 
-  const [page, setPage] = useState(initialPage);
-  const [pageSize, setPageSize] = useState(initialLimit);
-  const [searchInput, setSearchInput] = useState(initialSearch);
-  const [statusFilter, setStatusFilter] = useState(initialStatus);
-  const [sortBy, setSortBy] = useState<UserSortField>(initialSortBy);
-  const [sortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder);
+  const mutations = useAdminUserMutations();
+
   const [createOpen, setCreateOpen] = useState(false);
   // TODO: Re-enable invite state when email service is implemented
   // const [inviteOpen, setInviteOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
   const [statusChangeTarget, setStatusChangeTarget] = useState<{
     user: AdminUser;
     newStatus: string;
   } | null>(null);
+  const [restoreTarget, setRestoreTarget] = useState<AdminUser | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
 
-  const debouncedSearch = useDebounce(searchInput, SEARCH_DEBOUNCE_MS);
-
-  const isArchivedView = statusFilter === 'archived';
-
-  const { data, isLoading, isError, error, isFetching, refetch } = useAdminUsers({
-    page,
-    limit: pageSize,
-    search: debouncedSearch.length >= 2 ? debouncedSearch : undefined,
-    status: !isArchivedView && statusFilter !== 'all' ? statusFilter : undefined,
-    showDeleted: isArchivedView,
-    sortBy,
-    sortOrder,
+  const deleteConfirmation = useDeleteConfirmation<AdminUser>({
+    mutation: mutations.remove,
+    getId: (user) => user.id,
+    entityName: 'user',
   });
 
-  const updateStatus = useUpdateUserStatus();
-  const restoreUser = useRestoreUser();
-  const [restoreTarget, setRestoreTarget] = useState<AdminUser | null>(null);
+  const statusTabValue = filters.showDeleted ? 'archived' : (filters.status as string) || 'all';
 
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
+  const handleStatusTabChange = useCallback(
+    (value: string): void => {
+      if (value === 'archived') {
+        setFilters({ status: 'all', showDeleted: true } as Partial<AdminUserFilters>);
+      } else {
+        setFilters({ status: value, showDeleted: undefined } as Partial<AdminUserFilters>);
+      }
+    },
+    [setFilters],
+  );
 
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (page > 1) params.set('page', String(page));
-    if (pageSize !== DEFAULT_PAGE_SIZE) params.set('limit', String(pageSize));
-    if (debouncedSearch) params.set('search', debouncedSearch);
-    if (statusFilter !== 'all') params.set('status', statusFilter);
-    if (sortBy !== 'createdAt') params.set('sortBy', sortBy);
-    if (sortOrder !== 'DESC') params.set('sortOrder', sortOrder);
-
-    const query = params.toString();
-    const newUrl = query ? `?${query}` : window.location.pathname;
-    window.history.replaceState({}, '', newUrl);
-  }, [page, pageSize, debouncedSearch, statusFilter, sortBy, sortOrder]);
+  const handleClearAll = useCallback(() => {
+    clearFilters();
+    sorting.clearSort();
+  }, [clearFilters, sorting]);
 
   const confirmStatusChange = useCallback(async () => {
     if (!statusChangeTarget) return;
     try {
-      await updateStatus.mutateAsync({
-        userId: statusChangeTarget.user.id,
+      await mutations.statusChange.mutateAsync({
+        id: statusChangeTarget.user.id,
         status: statusChangeTarget.newStatus,
       });
-      showToast.success(
-        `User ${statusChangeTarget.newStatus === 'active' ? 'activated' : statusChangeTarget.newStatus}`,
-      );
       setStatusChangeTarget(null);
-    } catch (err) {
-      showToast.error(getErrorMessage(err));
+    } catch {
+      // error toast handled by FDAL mutation config
     }
-  }, [updateStatus, statusChangeTarget]);
+  }, [mutations.statusChange, statusChangeTarget]);
 
   const confirmRestore = useCallback(async () => {
     if (!restoreTarget) return;
+    setIsRestoring(true);
     try {
-      await restoreUser.mutateAsync(restoreTarget.id);
-      showToast.success(`${restoreTarget.firstName} has been restored`);
+      await mutations.action('restore', restoreTarget.id);
       setRestoreTarget(null);
-    } catch (err) {
-      showToast.error(getErrorMessage(err));
+    } catch {
+      // error toast handled by FDAL action config
+    } finally {
+      setIsRestoring(false);
     }
-  }, [restoreUser, restoreTarget]);
-
-  const clearSearch = useCallback(() => {
-    setSearchInput('');
-    setPage(1);
-  }, []);
-  const clearAllFilters = useCallback(() => {
-    setSearchInput('');
-    setStatusFilter('all');
-    setSortBy('createdAt');
-    setSortOrder('DESC');
-    setPage(1);
-  }, []);
-
-  const handlePageSizeChange = (newSize: number): void => {
-    setPageSize(newSize);
-    setPage(1);
-  };
-
-  const handleSort = useCallback(
-    (field: UserSortField) => {
-      if (sortBy === field) {
-        setSortOrder((current) => (current === 'ASC' ? 'DESC' : 'ASC'));
-      } else {
-        setSortBy(field);
-        setSortOrder('ASC');
-      }
-      setPage(1);
-    },
-    [sortBy],
-  );
+  }, [mutations, restoreTarget]);
 
   const SortableHeader = useCallback(
-    ({ field, label }: { field: UserSortField; label: string }) => {
-      const isActive = sortBy === field;
+    ({ field, label }: { field: string; label: string }): JSX.Element => {
+      const isActive = sorting.sortBy === field;
       return (
         <button
           type="button"
-          onClick={() => handleSort(field)}
+          onClick={() => sorting.toggleSort(field)}
           className="flex items-center gap-1 font-semibold text-2xs uppercase tracking-wider hover:text-foreground transition-colors"
         >
           {label}
           {isActive ? (
-            sortOrder === 'ASC' ? (
+            sorting.sortOrder === 'ASC' ? (
               <ArrowUp className="size-3" />
             ) : (
               <ArrowDown className="size-3" />
@@ -220,13 +168,8 @@ export function AdminUsersListPage() {
         </button>
       );
     },
-    [sortBy, sortOrder, handleSort],
+    [sorting],
   );
-
-  const hasActiveFilters = statusFilter !== 'all' || debouncedSearch;
-  const users = data?.items ?? [];
-  const totalItems = data?.total ?? 0;
-  const totalPages = Math.ceil(totalItems / pageSize) || 1;
 
   const columns: ColumnDef<AdminUser>[] = useMemo(
     () => [
@@ -364,7 +307,7 @@ export function AdminUsersListPage() {
                     <DropdownMenuItem
                       disabled={isSelf}
                       className="text-error"
-                      onClick={() => setDeleteTarget(row.original)}
+                      onClick={() => !isSelf && deleteConfirmation.requestDelete(row.original)}
                     >
                       <Trash2 className="mr-2 size-icon-sm" />
                       {isSelf ? 'Cannot delete yourself' : 'Delete'}
@@ -377,7 +320,7 @@ export function AdminUsersListPage() {
         },
       },
     ],
-    [currentUser?.id, router, SortableHeader],
+    [currentUser?.id, router, SortableHeader, deleteConfirmation],
   );
 
   if (isLoading) {
@@ -422,9 +365,9 @@ export function AdminUsersListPage() {
             <AlertCircle className="size-5 shrink-0" />
             <div className="flex-1">
               <p className="font-medium">Failed to load users</p>
-              <p className="text-sm text-foreground-secondary mt-1">{getErrorMessage(error)}</p>
+              <p className="text-sm text-foreground-secondary mt-1">{error?.message}</p>
             </div>
-            <Button variant="outline" size="sm" onClick={() => void refetch()}>
+            <Button variant="outline" size="sm" onClick={refetch}>
               Retry
             </Button>
           </div>
@@ -456,12 +399,12 @@ export function AdminUsersListPage() {
           <Input
             type="text"
             placeholder="Search users..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             leftIcon={<Search className="size-icon-sm" />}
             className="h-8 text-sm"
           />
-          {searchInput && (
+          {search && (
             <button
               type="button"
               onClick={clearSearch}
@@ -477,18 +420,15 @@ export function AdminUsersListPage() {
         <div className="h-5 w-px bg-border-light" />
         <FilterTabs
           tabs={USER_STATUS_TABS}
-          value={statusFilter}
-          onChange={(value) => {
-            setStatusFilter(value);
-            setPage(1);
-          }}
+          value={statusTabValue}
+          onChange={handleStatusTabChange}
           size="xs"
         />
         {hasActiveFilters && (
           <Button
             variant="ghost"
             size="sm"
-            onClick={clearAllFilters}
+            onClick={handleClearAll}
             className="text-foreground-secondary h-8"
           >
             <X className="mr-1 size-3" /> Clear
@@ -501,21 +441,21 @@ export function AdminUsersListPage() {
           <>
             <DataTable
               columns={columns}
-              data={users}
+              data={users as AdminUser[]}
               enableSearch={false}
               enablePagination={false}
               isLoading={isFetching}
             />
             {users.length > 0 && (
               <TablePagination
-                currentPage={page}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                totalItems={totalItems}
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                pageSize={pagination.pageSize}
+                totalItems={meta?.total ?? 0}
                 itemLabel="users"
                 variant="full"
-                onPageChange={setPage}
-                onPageSizeChange={handlePageSizeChange}
+                onPageChange={pagination.setPage}
+                onPageSizeChange={pagination.setPageSize}
               />
             )}
           </>
@@ -529,7 +469,7 @@ export function AdminUsersListPage() {
                     ? 'No results match your search and filters. Try adjusting your criteria.'
                     : 'No users match the selected filters. Try different filter options.'
                 }
-                action={{ label: 'Clear Filters', onClick: clearAllFilters }}
+                action={{ label: 'Clear Filters', onClick: handleClearAll }}
               />
             ) : (
               <EmptyState
@@ -544,15 +484,52 @@ export function AdminUsersListPage() {
       </div>
 
       <CreateUserModal open={createOpen} onOpenChange={setCreateOpen} />
-      {/* TODO: Re-enable InviteUserModal when email service is implemented */}
-      <DeleteUserModal
-        open={!!deleteTarget}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-        user={deleteTarget}
-      />
 
+      {/* Delete confirmation (replaces DeleteUserModal) */}
+      <Dialog
+        open={deleteConfirmation.isOpen}
+        onOpenChange={(open) => {
+          if (!open) deleteConfirmation.cancel();
+        }}
+      >
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete{' '}
+              <span className="font-medium">
+                {deleteConfirmation.target?.firstName} {deleteConfirmation.target?.lastName}
+              </span>
+              ? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={deleteConfirmation.cancel}
+              disabled={deleteConfirmation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void deleteConfirmation.confirm()}
+              disabled={deleteConfirmation.isPending}
+            >
+              {deleteConfirmation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Status change confirmation */}
       <Dialog
         open={!!statusChangeTarget}
         onOpenChange={(open) => {
@@ -590,16 +567,16 @@ export function AdminUsersListPage() {
             <Button
               variant="outline"
               onClick={() => setStatusChangeTarget(null)}
-              disabled={updateStatus.isPending}
+              disabled={mutations.statusChange.isPending}
             >
               Cancel
             </Button>
             <Button
               variant={statusChangeTarget?.newStatus === 'active' ? 'default' : 'destructive'}
               onClick={() => void confirmStatusChange()}
-              disabled={updateStatus.isPending}
+              disabled={mutations.statusChange.isPending}
             >
-              {updateStatus.isPending ? (
+              {mutations.statusChange.isPending ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
                   Processing...
@@ -616,6 +593,7 @@ export function AdminUsersListPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Restore confirmation */}
       <Dialog
         open={!!restoreTarget}
         onOpenChange={(open) => {
@@ -634,15 +612,11 @@ export function AdminUsersListPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setRestoreTarget(null)}
-              disabled={restoreUser.isPending}
-            >
+            <Button variant="outline" onClick={() => setRestoreTarget(null)} disabled={isRestoring}>
               Cancel
             </Button>
-            <Button onClick={() => void confirmRestore()} disabled={restoreUser.isPending}>
-              {restoreUser.isPending ? (
+            <Button onClick={() => void confirmRestore()} disabled={isRestoring}>
+              {isRestoring ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
                   Restoring...

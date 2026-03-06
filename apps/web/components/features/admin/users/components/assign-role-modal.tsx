@@ -1,12 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 'use client';
 
 import { Loader2, Plus, Trash2 } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { useCallback, useState, type JSX } from 'react';
 
-import { useAssignRole } from '../hooks/use-assign-role';
-import { useUserRoles } from '../hooks/use-user-roles';
-
-import { useRoles } from '@/components/features/admin/roles';
 import {
   Badge,
   Button,
@@ -25,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui';
 import { showToast } from '@/components/ui/sonner';
-import { getErrorMessage } from '@/lib/utils';
+import { useUserRoles, useUserRoleMutations, useRoles } from '@/lib/hooks/resources';
 import { useAuth } from '@/providers/auth-provider';
 
 interface AssignRoleModalProps {
@@ -35,22 +32,26 @@ interface AssignRoleModalProps {
   userName: string;
 }
 
-export function AssignRoleModal({ open, onOpenChange, userId, userName }: AssignRoleModalProps) {
+export function AssignRoleModal({
+  open,
+  onOpenChange,
+  userId,
+  userName,
+}: AssignRoleModalProps): JSX.Element {
   const { user: currentUser } = useAuth();
-  const { data: userRoles, isLoading } = useUserRoles(userId);
-  const assignRole = useAssignRole();
+  const { items: userRoles, isLoading } = useUserRoles(userId);
+  const userRoleMutations = useUserRoleMutations();
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>(['']);
   const [isAssigning, setIsAssigning] = useState(false);
 
-  const orgId = currentUser?.organizationId;
-  const { data: rolesData } = useRoles({ page: 1, pageSize: 100, organizationId: orgId });
-  const availableRoles = (rolesData?.data ?? []).filter((r) => r.organizationId !== null);
+  const { items: allRoles } = useRoles({ syncToUrl: false, defaultPageSize: 100 });
+  const availableRoles = allRoles.filter((r) => r.organizationId !== null);
 
-  const assignedRoleIds = new Set(userRoles?.map((ur) => ur.roleId) ?? []);
+  const assignedRoleIds = new Set(userRoles.map((ur) => ur.roleId));
 
   const allSelectedIds = new Set(selectedRoleIds.filter(Boolean));
 
-  const getFilteredRoles = (currentIndex: number) => {
+  const getFilteredRoles = (currentIndex: number): typeof availableRoles => {
     return availableRoles.filter((r) => {
       if (assignedRoleIds.has(r.id)) return false;
       if (allSelectedIds.has(r.id) && selectedRoleIds[currentIndex] !== r.id) return false;
@@ -58,7 +59,7 @@ export function AssignRoleModal({ open, onOpenChange, userId, userName }: Assign
     });
   };
 
-  const handleRoleChange = (index: number, roleId: string) => {
+  const handleRoleChange = (index: number, roleId: string): void => {
     const updated = [...selectedRoleIds];
     updated[index] = roleId;
 
@@ -68,7 +69,7 @@ export function AssignRoleModal({ open, onOpenChange, userId, userName }: Assign
     setSelectedRoleIds(updated);
   };
 
-  const handleRemoveRow = (index: number) => {
+  const handleRemoveRow = (index: number): void => {
     if (selectedRoleIds.length <= 1) {
       setSelectedRoleIds(['']);
       return;
@@ -78,7 +79,7 @@ export function AssignRoleModal({ open, onOpenChange, userId, userName }: Assign
 
   const rolesToAssign = selectedRoleIds.filter(Boolean);
 
-  const handleAssignAll = useCallback(async () => {
+  const handleAssignAll = useCallback(async (): Promise<void> => {
     if (rolesToAssign.length === 0) return;
     setIsAssigning(true);
     let successCount = 0;
@@ -86,15 +87,14 @@ export function AssignRoleModal({ open, onOpenChange, userId, userName }: Assign
 
     for (const roleId of rolesToAssign) {
       try {
-        await assignRole.mutateAsync({
+        await userRoleMutations.create.mutateAsync({
           userId,
           roleId,
           organizationId: currentUser?.organizationId || undefined,
-        });
+        } as unknown as Record<string, unknown> & { id: string });
         successCount++;
-      } catch (err) {
+      } catch {
         failCount++;
-        showToast.error(getErrorMessage(err));
       }
     }
 
@@ -107,9 +107,9 @@ export function AssignRoleModal({ open, onOpenChange, userId, userName }: Assign
     if (failCount > 0 && successCount === 0) {
       showToast.error('Failed to assign roles');
     }
-  }, [rolesToAssign, assignRole, userId, currentUser?.organizationId, onOpenChange]);
+  }, [rolesToAssign, userRoleMutations, userId, currentUser?.organizationId, onOpenChange]);
 
-  const handleClose = (isOpen: boolean) => {
+  const handleClose = (isOpen: boolean): void => {
     if (!isOpen) {
       setSelectedRoleIds(['']);
     }

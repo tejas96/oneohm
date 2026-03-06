@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 import { Typography } from '@/components/ui';
 
 interface AdminPageHeaderProps {
@@ -8,7 +10,11 @@ interface AdminPageHeaderProps {
   actions?: React.ReactNode;
 }
 
-export function AdminPageHeader({ title, description, actions }: AdminPageHeaderProps) {
+export function AdminPageHeader({
+  title,
+  description,
+  actions,
+}: AdminPageHeaderProps): React.JSX.Element {
   return (
     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
       <div>

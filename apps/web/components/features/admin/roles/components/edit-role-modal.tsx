@@ -2,14 +2,10 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { type JSX, useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { PermissionSelector } from './permission-selector';
-import { useRole } from '../hooks/use-role';
-import { useUpdateRole } from '../hooks/use-role-mutations';
-import { useSyncRolePermissions } from '../hooks/use-role-permissions';
-import type { AdminRole } from '../hooks/use-roles';
 import { roleSchema, type RoleFormData } from '../schemas/role.schema';
 
 import {
@@ -25,7 +21,7 @@ import {
   Label,
   Textarea,
 } from '@/components/ui';
-import { showToast } from '@/components/ui/sonner';
+import { useRole, useRoleMutations, type AdminRole } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils';
 
 interface EditRoleModalProps {
@@ -34,9 +30,8 @@ interface EditRoleModalProps {
   role: AdminRole;
 }
 
-export function EditRoleModal({ open, onOpenChange, role }: EditRoleModalProps) {
-  const updateRole = useUpdateRole();
-  const syncPermissions = useSyncRolePermissions();
+export function EditRoleModal({ open, onOpenChange, role }: EditRoleModalProps): JSX.Element {
+  const mutations = useRoleMutations();
   const { data: roleDetail, isLoading: isLoadingDetail } = useRole(role.id);
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
   const [permissionsInitialized, setPermissionsInitialized] = useState(false);
@@ -59,14 +54,14 @@ export function EditRoleModal({ open, onOpenChange, role }: EditRoleModalProps) 
     }
   }, [roleDetail, permissionsInitialized]);
 
-  const isSubmitting = updateRole.isPending || syncPermissions.isPending;
+  const isSubmitting = mutations.update.isPending;
 
-  const onSubmit = async (data: RoleFormData) => {
+  const onSubmit = async (data: RoleFormData): Promise<void> => {
     try {
       const payload: Record<string, unknown> = { ...data };
       if (!payload.parentRoleId) delete payload.parentRoleId;
       if (!payload.description) delete payload.description;
-      await updateRole.mutateAsync({ roleId: role.id, data: payload });
+      await mutations.update.mutateAsync({ id: role.id, data: payload as Partial<AdminRole> });
 
       const original = roleDetail?.permissionIds ?? [];
       const hasPermissionChanges =
@@ -74,20 +69,16 @@ export function EditRoleModal({ open, onOpenChange, role }: EditRoleModalProps) 
         [...original].sort().join(',') !== [...selectedPermissionIds].sort().join(',');
 
       if (hasPermissionChanges) {
-        await syncPermissions.mutateAsync({
-          roleId: role.id,
+        await mutations.action('syncPermissions', role.id, {
           permissionIds: selectedPermissionIds,
         });
       }
 
-      showToast.success('Role updated successfully');
       onOpenChange(false);
     } catch (err) {
       const message = getErrorMessage(err);
       if (message.toLowerCase().includes('already exists')) {
         form.setError('code', { message: 'A role with this code already exists' });
-      } else {
-        showToast.error(message);
       }
     }
   };

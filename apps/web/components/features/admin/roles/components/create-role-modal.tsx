@@ -2,12 +2,10 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { type JSX, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { PermissionSelector } from './permission-selector';
-import { useCreateRole } from '../hooks/use-role-mutations';
-import { useSyncRolePermissions } from '../hooks/use-role-permissions';
 import { roleSchema, type RoleFormData } from '../schemas/role.schema';
 
 import {
@@ -24,6 +22,7 @@ import {
   Textarea,
 } from '@/components/ui';
 import { showToast } from '@/components/ui/sonner';
+import { useRoleMutations } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -32,17 +31,16 @@ interface CreateRoleModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateRoleModal({ open, onOpenChange }: CreateRoleModalProps) {
+export function CreateRoleModal({ open, onOpenChange }: CreateRoleModalProps): JSX.Element {
   const { user: currentUser } = useAuth();
-  const createRole = useCreateRole();
-  const syncPermissions = useSyncRolePermissions();
+  const mutations = useRoleMutations();
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
   const form = useForm<RoleFormData>({
     resolver: zodResolver(roleSchema),
     defaultValues: { name: '', code: '', description: '', parentRoleId: '', level: 0 },
   });
 
-  const handleClose = (isOpen: boolean) => {
+  const handleClose = (isOpen: boolean): void => {
     if (!isOpen) {
       form.reset();
       setSelectedPermissionIds([]);
@@ -50,9 +48,9 @@ export function CreateRoleModal({ open, onOpenChange }: CreateRoleModalProps) {
     onOpenChange(isOpen);
   };
 
-  const isSubmitting = createRole.isPending || syncPermissions.isPending;
+  const isSubmitting = mutations.create.isPending;
 
-  const onSubmit = async (data: RoleFormData) => {
+  const onSubmit = async (data: RoleFormData): Promise<void> => {
     try {
       const payload: Record<string, unknown> = {
         ...data,
@@ -60,12 +58,13 @@ export function CreateRoleModal({ open, onOpenChange }: CreateRoleModalProps) {
       };
       if (!payload.parentRoleId) delete payload.parentRoleId;
       if (!payload.description) delete payload.description;
-      const result = await createRole.mutateAsync(payload);
+      const result = await mutations.create.mutateAsync(
+        payload as Record<string, unknown> & { id: string },
+      );
 
       if (selectedPermissionIds.length > 0 && result?.id) {
         try {
-          await syncPermissions.mutateAsync({
-            roleId: result.id,
+          await mutations.action('syncPermissions', result.id, {
             permissionIds: selectedPermissionIds,
           });
         } catch {
@@ -75,14 +74,11 @@ export function CreateRoleModal({ open, onOpenChange }: CreateRoleModalProps) {
         }
       }
 
-      showToast.success('Role created successfully');
       handleClose(false);
     } catch (err) {
       const message = getErrorMessage(err);
       if (message.toLowerCase().includes('already exists')) {
         form.setError('code', { message: 'A role with this code already exists' });
-      } else {
-        showToast.error(message);
       }
     }
   };

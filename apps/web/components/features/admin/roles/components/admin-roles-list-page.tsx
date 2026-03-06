@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unsafe-return */
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
@@ -12,14 +13,13 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useMemo, useState, type JSX } from 'react';
 
 import { CreateRoleModal } from './create-role-modal';
 import { DeleteRoleModal } from './delete-role-modal';
 import { EditRoleModal } from './edit-role-modal';
 import { ROLE_TYPE_TABS } from '../../constants';
-import { useRoles, type AdminRole } from '../hooks/use-roles';
 
 import { DataTable, EmptyState, FilterTabs, TablePagination } from '@/components/shared';
 import {
@@ -34,78 +34,49 @@ import {
   Typography,
 } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { useDebounce } from '@/lib/hooks';
-import { getErrorMessage } from '@/lib/utils';
-import { useAuth } from '@/providers/auth-provider';
+import { useRoles, type RoleFilters } from '@/lib/hooks/resources';
+import type { AdminRole } from '@/lib/hooks/resources/roles';
 
-const DEFAULT_PAGE_SIZE = 10;
-const SEARCH_DEBOUNCE_MS = 550;
-
-export function AdminRolesListPage() {
+export function AdminRolesListPage(): JSX.Element {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const { user: currentUser } = useAuth();
 
-  const initialPage = Number(searchParams.get('page')) || 1;
-  const initialLimit = Number(searchParams.get('limit')) || DEFAULT_PAGE_SIZE;
-  const initialSearch = searchParams.get('search') || '';
-  const initialType = searchParams.get('type') || 'all';
+  const {
+    items: roles,
+    meta,
+    search,
+    setSearch,
+    debouncedSearch,
+    clearSearch,
+    filters,
+    setFilter,
+    clearFilters,
+    hasActiveFilters,
+    pagination,
+    isLoading,
+    isFetching,
+    isError,
+    error,
+    refetch,
+  } = useRoles();
 
-  const [page, setPage] = useState(initialPage);
-  const [pageSize, setPageSize] = useState(initialLimit);
-  const [searchInput, setSearchInput] = useState(initialSearch);
-  const [typeFilter, setTypeFilter] = useState(initialType);
   const [createOpen, setCreateOpen] = useState(false);
   const [editRole, setEditRole] = useState<AdminRole | null>(null);
   const [deleteRole, setDeleteRole] = useState<AdminRole | null>(null);
 
-  const debouncedSearch = useDebounce(searchInput, SEARCH_DEBOUNCE_MS);
+  const typeTabValue =
+    filters.isSystemRole === true ? 'system' : filters.isSystemRole === false ? 'custom' : 'all';
 
-  const isSystemRole = typeFilter === 'system' ? true : typeFilter === 'custom' ? false : undefined;
+  const handleTypeTabChange = useCallback(
+    (value: string) => {
+      const isSystemRole = value === 'system' ? true : value === 'custom' ? false : undefined;
+      setFilter('isSystemRole', isSystemRole as RoleFilters['isSystemRole']);
+    },
+    [setFilter],
+  );
 
-  const { data, isLoading, isError, error, isFetching, refetch } = useRoles({
-    page,
-    pageSize,
-    search: debouncedSearch.length >= 2 ? debouncedSearch : undefined,
-    isSystemRole,
-    organizationId: currentUser?.organizationId,
-  });
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, typeFilter]);
-
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (page > 1) params.set('page', String(page));
-    if (pageSize !== DEFAULT_PAGE_SIZE) params.set('limit', String(pageSize));
-    if (debouncedSearch) params.set('search', debouncedSearch);
-    if (typeFilter !== 'all') params.set('type', typeFilter);
-
-    const query = params.toString();
-    const newUrl = query ? `?${query}` : window.location.pathname;
-    window.history.replaceState({}, '', newUrl);
-  }, [page, pageSize, debouncedSearch, typeFilter]);
-
-  const clearSearch = useCallback(() => {
-    setSearchInput('');
-    setPage(1);
-  }, []);
-  const clearAllFilters = useCallback(() => {
-    setSearchInput('');
-    setTypeFilter('all');
-    setPage(1);
-  }, []);
-
-  const handlePageSizeChange = (newSize: number): void => {
-    setPageSize(newSize);
-    setPage(1);
-  };
-
-  const hasActiveFilters = searchInput || typeFilter !== 'all';
-  const roles = data?.data ?? [];
-  const totalItems = data?.total ?? 0;
-  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const handleClearAll = useCallback(() => {
+    clearFilters();
+  }, [clearFilters]);
 
   const columns: ColumnDef<AdminRole>[] = useMemo(
     () => [
@@ -235,9 +206,9 @@ export function AdminRolesListPage() {
             <AlertCircle className="size-5 shrink-0" />
             <div className="flex-1">
               <p className="font-medium">Failed to load roles</p>
-              <p className="text-sm text-foreground-secondary mt-1">{getErrorMessage(error)}</p>
+              <p className="text-sm text-foreground-secondary mt-1">{error?.message}</p>
             </div>
-            <Button variant="outline" size="sm" onClick={() => void refetch()}>
+            <Button variant="outline" size="sm" onClick={refetch}>
               Retry
             </Button>
           </div>
@@ -265,12 +236,12 @@ export function AdminRolesListPage() {
           <Input
             type="text"
             placeholder="Search roles..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             leftIcon={<Search className="size-icon-sm" />}
             className="h-8 text-sm"
           />
-          {searchInput && (
+          {search && (
             <button
               type="button"
               onClick={clearSearch}
@@ -286,18 +257,15 @@ export function AdminRolesListPage() {
         <div className="h-5 w-px bg-border-light" />
         <FilterTabs
           tabs={ROLE_TYPE_TABS}
-          value={typeFilter}
-          onChange={(value) => {
-            setTypeFilter(value);
-            setPage(1);
-          }}
+          value={typeTabValue}
+          onChange={handleTypeTabChange}
           size="xs"
         />
         {hasActiveFilters && (
           <Button
             variant="ghost"
             size="sm"
-            onClick={clearAllFilters}
+            onClick={handleClearAll}
             className="text-foreground-secondary h-8"
           >
             <X className="mr-1 size-3" /> Clear
@@ -310,21 +278,21 @@ export function AdminRolesListPage() {
           <>
             <DataTable
               columns={columns}
-              data={roles}
+              data={roles as AdminRole[]}
               enableSearch={false}
               enablePagination={false}
               isLoading={isFetching}
             />
             {roles.length > 0 && (
               <TablePagination
-                currentPage={page}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                totalItems={totalItems}
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                pageSize={pagination.pageSize}
+                totalItems={meta?.total ?? 0}
                 itemLabel="roles"
                 variant="full"
-                onPageChange={setPage}
-                onPageSizeChange={handlePageSizeChange}
+                onPageChange={pagination.setPage}
+                onPageSizeChange={pagination.setPageSize}
               />
             )}
           </>
@@ -334,7 +302,7 @@ export function AdminRolesListPage() {
               <EmptyState
                 title="No roles found"
                 description="Try adjusting your filters."
-                action={{ label: 'Clear Filters', onClick: clearAllFilters }}
+                action={{ label: 'Clear Filters', onClick: handleClearAll }}
               />
             ) : (
               <EmptyState

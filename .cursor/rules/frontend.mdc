@@ -134,6 +134,7 @@ Layout:
 - Inline SVGs - use lucide-react
 - Redefine backend types - import from shared-types
 - useQuery/useMutation in components - extract to `hooks/use-*.ts` files
+- Raw useQuery/useMutation in new feature hooks - use FDAL core hooks (`useResourceList`, `useResourceMutations`, etc.)
 - Zustand for server data - use TanStack Query
 - font-bold - use font-semibold
 - rounded-xl/2xl - use rounded-lg
@@ -164,6 +165,7 @@ Layout:
 - Forms: react-hook-form + Zod schema
 - Auth: useAuth from AuthProvider, AuthGuard for routes
 - State: TanStack Query (server) | Zustand (global UI) | useState (local)
+- Data hooks: compose from FDAL core (`lib/hooks/core/`) — never rewrite fetch/cache/pagination/filter logic per feature
 - Files: kebab-case.tsx, hooks as use-*.ts, schemas as *.schema.ts
 - Icons: from lucide-react
 - Navigation: use lib/config/navigation.ts with ROUTES constants
@@ -178,10 +180,6 @@ Layout:
 - Feature constants: label maps, badge variant maps, filter options in `features/[name]/constants.ts`
 - StatusDot: navigation items can use `statusDot` prop for colored indicators (hot, warm, cold, active, planning, on_hold, completed_project)
 - React hooks: import directly (`useState`, `useEffect`) not `React.useState` - use `React.` prefix only for naming conflicts
-- Query keys: include `organizationId` → `['projects', orgId]` not `['projects']`
-- Filter changes: use `placeholderData: keepPreviousData` to prevent UI flicker
-- URL filters: use `useUrlFilters(defaults)` from `@/lib/hooks` — don't rewrite URL sync logic
-- Prefix unused params with `_` (e.g., `_data`) to avoid lint warnings in placeholder code
 
 ---
 
@@ -192,6 +190,28 @@ Layout:
 | `useUrlFilters(defaults)` | `lib/hooks` | URL-synced filters — any filterable list page |
 | `useDebounce(value, ms)` | `lib/hooks` | Debounce search input (300ms recommended) |
 | `useAuth()` | `providers/auth-provider` | Current user, org, permissions |
+
+### FDAL — Core Resource Hooks (`lib/hooks/core/`)
+
+All new data-fetching hooks MUST use the FDAL (Frontend Data Access Layer) system. Do not write raw `useQuery`/`useMutation` in feature hooks — compose from core hooks instead.
+
+| Hook | Purpose |
+|------|---------|
+| `useResourceList` | Paginated list with filters, sort, search, debounce, prefetch |
+| `useResourceDetail` | Single entity fetch with cache + abort |
+| `useResourceMutations` | CRUD + bulk + status change + optimistic updates + toast |
+| `useResourceSubList` | Nested/child resource lists |
+| `useResourceStats` | Aggregation/count endpoints |
+| `useInfiniteResourceList` | Infinite scroll via `useInfiniteQuery` |
+| `useResourcePermissions` | RBAC flags per resource |
+| `useFieldAvailability` | Debounced uniqueness checks |
+| `useQueryState` | Client-side filter/sort/pagination state with URL sync |
+
+Companion hooks: `useDeleteConfirmation`, `useMutationWithToast`, `useModalForm` (`lib/hooks/core/companions/`).
+
+Resource config: define once via `defineResource()` in `resource-registry.ts` — endpoint, permissions, defaults.
+
+Import everything from `@/lib/hooks/core` barrel.
 
 ### Patterns
 

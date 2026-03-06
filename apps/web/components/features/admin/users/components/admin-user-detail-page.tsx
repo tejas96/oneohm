@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
@@ -16,15 +17,10 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useCallback, useMemo } from 'react';
+import { type JSX, useState, useCallback, useMemo } from 'react';
 
 import { AssignRoleModal } from './assign-role-modal';
-import { DeleteUserModal } from './delete-user-modal';
 import { UserStatusBadge } from './user-status-badge';
-import { useAdminUser } from '../hooks/use-admin-user';
-import { useUpdateUserStatus } from '../hooks/use-admin-user-mutations';
-import { useRemoveRole } from '../hooks/use-assign-role';
-import { useUserRoles, type UserRoleAssignment } from '../hooks/use-user-roles';
 
 import { DataTable } from '@/components/shared';
 import {
@@ -40,8 +36,16 @@ import {
   DialogTitle,
   Typography,
 } from '@/components/ui';
-import { showToast } from '@/components/ui/sonner';
 import { ROUTES } from '@/lib/config/routes';
+import { useDeleteConfirmation } from '@/lib/hooks/core';
+import {
+  useAdminUser,
+  useAdminUserMutations,
+  useUserRoles,
+  useUserRoleMutations,
+  type AdminUser,
+  type UserRoleAssignment,
+} from '@/lib/hooks/resources';
 import { getErrorMessage, formatDate, formatTimeAgo } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -49,54 +53,56 @@ interface AdminUserDetailPageProps {
   userId: string;
 }
 
-export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
+export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.Element {
   const router = useRouter();
   const { user: currentUser } = useAuth();
   const { data: user, isLoading, isError, error, refetch } = useAdminUser(userId);
   const {
-    data: userRoles,
+    items: userRoles,
     isError: isUserRolesError,
     error: userRolesError,
   } = useUserRoles(userId);
-  const updateStatus = useUpdateUserStatus();
-  const removeRole = useRemoveRole();
+  const mutations = useAdminUserMutations();
+  const userRoleMutations = useUserRoleMutations();
   const [assignRoleOpen, setAssignRoleOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
   const [statusChangeTarget, setStatusChangeTarget] = useState<string | null>(null);
   const [removeRoleTarget, setRemoveRoleTarget] = useState<string | null>(null);
 
+  const deleteConfirmation = useDeleteConfirmation<AdminUser>({
+    mutation: mutations.remove,
+    getId: (u) => u.id,
+    entityName: 'user',
+    onSuccess: () => router.push(ROUTES.ADMIN.USERS),
+  });
+
   const isSelf = currentUser?.id === userId;
 
-  const confirmStatusChange = useCallback(async () => {
+  const confirmStatusChange = useCallback(async (): Promise<void> => {
     if (!statusChangeTarget) return;
     try {
-      await updateStatus.mutateAsync({ userId, status: statusChangeTarget });
-      showToast.success(
-        `User ${statusChangeTarget === 'active' ? 'activated' : statusChangeTarget}`,
-      );
+      await mutations.statusChange.mutateAsync({ id: userId, status: statusChangeTarget });
       setStatusChangeTarget(null);
-    } catch (err) {
-      showToast.error(getErrorMessage(err));
+    } catch {
+      // error toast handled by FDAL mutation config
     }
-  }, [updateStatus, userId, statusChangeTarget]);
+  }, [mutations.statusChange, userId, statusChangeTarget]);
 
   const confirmRemoveRole = useCallback(async () => {
     if (!removeRoleTarget) return;
     try {
-      await removeRole.mutateAsync({ assignmentId: removeRoleTarget, userId });
-      showToast.success('Role removed successfully');
+      await userRoleMutations.remove.mutateAsync(removeRoleTarget);
       setRemoveRoleTarget(null);
-    } catch (err) {
-      showToast.error(getErrorMessage(err));
+    } catch {
+      // error toast handled by FDAL mutation config
     }
-  }, [removeRole, userId, removeRoleTarget]);
+  }, [userRoleMutations.remove, removeRoleTarget]);
 
   const roleColumns: ColumnDef<UserRoleAssignment>[] = useMemo(
     () => [
       {
         accessorKey: 'roleName',
         header: 'Role',
-        cell: ({ row }) => row.original.roleName ?? row.original.roleCode,
+        cell: ({ row }) => (row.original.roleName ?? row.original.roleCode) as string,
       },
       {
         accessorKey: 'roleCode',
@@ -130,7 +136,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
               variant="ghost"
               size="sm"
               className="size-7 p-0"
-              disabled={!canRemove || removeRole.isPending}
+              disabled={!canRemove || userRoleMutations.remove.isPending}
               onClick={() => setRemoveRoleTarget(row.original.id)}
             >
               <X className="size-3.5" />
@@ -139,7 +145,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
         },
       },
     ],
-    [isSelf, removeRole.isPending],
+    [isSelf, userRoleMutations.remove.isPending],
   );
 
   if (isLoading) {
@@ -277,7 +283,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
             size="sm"
             className="text-error"
             disabled={isSelf}
-            onClick={() => setDeleteOpen(true)}
+            onClick={() => user && !isSelf && deleteConfirmation.requestDelete(user)}
           >
             <Trash2 className="mr-2 size-4" /> {isSelf ? 'Cannot delete yourself' : 'Delete'}
           </Button>
@@ -297,17 +303,17 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
               <div className="flex items-center gap-3 text-foreground-secondary">
                 <AlertCircle className="size-5 shrink-0" />
                 <p className="text-sm">
-                  {getErrorMessage(userRolesError).includes('403') ||
-                  getErrorMessage(userRolesError).includes('Forbidden')
+                  {userRolesError?.message?.includes('403') ||
+                  userRolesError?.message?.includes('Forbidden')
                     ? 'You do not have permission to view role assignments.'
-                    : getErrorMessage(userRolesError)}
+                    : (userRolesError?.message ?? 'Failed to load roles')}
                 </p>
               </div>
             </div>
           ) : (
             <DataTable
               columns={roleColumns}
-              data={userRoles ?? []}
+              data={userRoles as UserRoleAssignment[]}
               enableSearch={false}
               enablePagination={false}
             />
@@ -321,12 +327,41 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
         userId={userId}
         userName={`${user.firstName} ${user.lastName ?? ''}`.trim()}
       />
-      <DeleteUserModal
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        user={user}
-        onDeleted={() => router.push(ROUTES.ADMIN.USERS)}
-      />
+      <Dialog
+        open={deleteConfirmation.isOpen}
+        onOpenChange={(open) => {
+          if (!open) deleteConfirmation.cancel();
+        }}
+      >
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete{' '}
+              <span className="font-medium">
+                {deleteConfirmation.target?.firstName} {deleteConfirmation.target?.lastName}
+              </span>
+              ? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={deleteConfirmation.cancel}
+              disabled={deleteConfirmation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void deleteConfirmation.confirm()}
+              disabled={deleteConfirmation.isPending}
+            >
+              {deleteConfirmation.isPending ? 'Deleting...' : 'Delete User'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={!!statusChangeTarget}
@@ -363,16 +398,16 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
             <Button
               variant="outline"
               onClick={() => setStatusChangeTarget(null)}
-              disabled={updateStatus.isPending}
+              disabled={mutations.statusChange.isPending}
             >
               Cancel
             </Button>
             <Button
               variant={statusChangeTarget === 'active' ? 'default' : 'destructive'}
               onClick={() => void confirmStatusChange()}
-              disabled={updateStatus.isPending}
+              disabled={mutations.statusChange.isPending}
             >
-              {updateStatus.isPending
+              {mutations.statusChange.isPending
                 ? 'Processing...'
                 : statusChangeTarget === 'active'
                   ? 'Activate'
@@ -405,16 +440,16 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
             <Button
               variant="outline"
               onClick={() => setRemoveRoleTarget(null)}
-              disabled={removeRole.isPending}
+              disabled={userRoleMutations.remove.isPending}
             >
               Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={() => void confirmRemoveRole()}
-              disabled={removeRole.isPending}
+              disabled={userRoleMutations.remove.isPending}
             >
-              {removeRole.isPending ? 'Removing...' : 'Remove Role'}
+              {userRoleMutations.remove.isPending ? 'Removing...' : 'Remove Role'}
             </Button>
           </DialogFooter>
         </DialogContent>

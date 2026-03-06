@@ -1,24 +1,27 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 'use client';
 
 import { Search, X } from 'lucide-react';
-import { useState, useMemo, useCallback } from 'react';
-
-import { useAllPermissions, type Permission } from '../../permissions/hooks/use-all-permissions';
+import { useCallback, useMemo, useState, type JSX } from 'react';
 
 import { Badge, Input, Label } from '@/components/ui';
+import { useAllPermissions, type Permission } from '@/lib/hooks/resources';
 
 interface PermissionSelectorProps {
   selectedIds: string[];
   onChange: (ids: string[]) => void;
 }
 
-export function PermissionSelector({ selectedIds, onChange }: PermissionSelectorProps) {
-  const { data: allPermissions = [], isLoading } = useAllPermissions();
+export function PermissionSelector({
+  selectedIds,
+  onChange,
+}: PermissionSelectorProps): JSX.Element {
+  const { items: allPermissions, isLoading } = useAllPermissions();
   const [search, setSearch] = useState('');
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
-  const grouped = useMemo(() => {
+  const grouped = useMemo((): Record<string, Permission[]> => {
     const lowerSearch = search.toLowerCase();
     const filtered = allPermissions.filter((p) => {
       if (selectedSet.has(p.id)) return false;
@@ -30,14 +33,15 @@ export function PermissionSelector({ selectedIds, onChange }: PermissionSelector
 
     const groups: Record<string, Permission[]> = {};
     for (const p of filtered) {
-      const feature = p.code.split(':')[0] ?? 'other';
-      (groups[feature] ??= []).push(p);
+      const feature = p.code.split(':')[0] || 'other';
+      if (!groups[feature]) groups[feature] = [];
+      groups[feature].push(p);
     }
     return groups;
   }, [allPermissions, search, selectedSet]);
 
   const selectedPermissions = useMemo(
-    () => allPermissions.filter((p) => selectedSet.has(p.id)),
+    (): Permission[] => allPermissions.filter((p) => selectedSet.has(p.id)),
     [allPermissions, selectedSet],
   );
 
@@ -54,8 +58,9 @@ export function PermissionSelector({ selectedIds, onChange }: PermissionSelector
   const groupedSelected = useMemo(() => {
     const groups: Record<string, Permission[]> = {};
     for (const p of selectedPermissions) {
-      const feature = p.code.split(':')[0] ?? 'other';
-      (groups[feature] ??= []).push(p);
+      const feature = p.code.split(':')[0] || 'other';
+      if (!groups[feature]) groups[feature] = [];
+      groups[feature].push(p);
     }
     return groups;
   }, [selectedPermissions]);

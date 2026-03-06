@@ -107,12 +107,21 @@ export class UserService {
           }`,
         );
       } catch (error) {
-        // Log error but don't fail user creation
         const errorMessage = error instanceof Error ? error.message : String(error);
         this.logger.error(
           `Failed to create ${profileType} profile for user ${user.id}: ${errorMessage}`,
         );
-        // Re-throw for now - we want the caller to know profile creation failed
+
+        // Clean up the orphaned user since profile creation failed
+        try {
+          await this.userRepository.repository.delete(user.id);
+          this.logger.log(`Cleaned up orphaned user ${user.id} after profile creation failure`);
+        } catch (cleanupError) {
+          this.logger.error(
+            `Failed to cleanup orphaned user ${user.id}: ${cleanupError instanceof Error ? cleanupError.message : String(cleanupError)}`,
+          );
+        }
+
         throw error;
       }
     } else if (roles && roles.length > 0) {
@@ -243,7 +252,7 @@ export class UserService {
       const result = await tx
         .createQueryBuilder()
         .update('users')
-        .set({ deleted_at: new Date() })
+        .set({ deletedAt: new Date() })
         .where('id = :id AND deleted_at IS NULL', { id })
         .execute();
 
@@ -254,7 +263,7 @@ export class UserService {
       await tx
         .createQueryBuilder()
         .update('employee_profiles')
-        .set({ deleted_at: new Date() })
+        .set({ deletedAt: new Date() })
         .where('user_id = :userId AND deleted_at IS NULL', { userId: id })
         .execute();
     });
@@ -269,7 +278,7 @@ export class UserService {
       const result = await tx
         .createQueryBuilder()
         .update('users')
-        .set({ deleted_at: null, status: UserStatus.ACTIVE })
+        .set({ deletedAt: null as unknown as Date, status: UserStatus.ACTIVE })
         .where('id = :id AND deleted_at IS NOT NULL', { id })
         .execute();
 
@@ -280,7 +289,7 @@ export class UserService {
       await tx
         .createQueryBuilder()
         .update('employee_profiles')
-        .set({ deleted_at: null })
+        .set({ deletedAt: null as unknown as Date })
         .where('user_id = :userId', { userId: id })
         .execute();
     });

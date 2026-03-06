@@ -1,6 +1,6 @@
 'use client';
 
-import type { AdminPermission } from '../hooks/use-permissions';
+import React from 'react';
 
 import {
   Badge,
@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui';
+import type { AdminPermission } from '@/lib/hooks/resources';
 
 interface PermissionDetailModalProps {
   open: boolean;
@@ -24,7 +25,7 @@ export function PermissionDetailModal({
   open,
   onOpenChange,
   permission,
-}: PermissionDetailModalProps) {
+}: PermissionDetailModalProps): React.JSX.Element {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[480px]">

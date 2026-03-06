@@ -1,0 +1,58 @@
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
+
+import { STALE_TIMES } from './query-defaults';
+import { createResourceKeys } from './query-keys';
+import type { StatsConfig } from './types';
+import { useOrgContext } from './use-org-context';
+
+import { apiClient } from '@/lib/api/client';
+
+interface UseResourceStatsReturn<TStats> {
+  stats: TStats | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  refetch: () => void;
+}
+
+export function useResourceStats<TStats = Record<string, number>>(
+  config: StatsConfig<TStats>,
+): UseResourceStatsReturn<TStats> {
+  const { organizationId, orgHeaders, isReady } = useOrgContext();
+  const keys = useMemo(() => createResourceKeys(config.resource), [config.resource]);
+
+  const query = useQuery({
+    queryKey: keys.stats(organizationId),
+    queryFn: async ({ signal }) => {
+      const { data } = await apiClient.get(config.endpoint, {
+        headers: config.requiresOrg !== false ? orgHeaders : {},
+        signal,
+      });
+      return config.transform ? config.transform(data) : (data as TStats);
+    },
+    enabled: config.requiresOrg !== false ? isReady : true,
+    staleTime: config.staleTime ?? STALE_TIMES.standard,
+  });
+
+  return {
+    stats: query.data,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    refetch: () => {
+      void query.refetch();
+    },
+  };
+}
+
+export function mapStatsToFilterTabs<TStats extends Record<string, number>>(
+  stats: TStats | undefined,
+  tabs: Array<{ key: string; label: string; value: string }>,
+): Array<{ label: string; value: string; count?: number }> {
+  return tabs.map((tab) => ({
+    label: tab.label,
+    value: tab.value,
+    count: stats?.[tab.key],
+  }));
+}
