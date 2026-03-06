@@ -1,13 +1,10 @@
 'use client';
 
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 
-import { useSyncRolePermissions } from '../hooks/use-role-permissions';
-
-import { useAllPermissions, type Permission } from '@/components/features/admin/permissions';
 import { Button, Checkbox, Typography } from '@/components/ui';
-import { showToast } from '@/components/ui/sonner';
+import { useRoleMutations, useAllPermissions, type Permission } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils';
 
 interface PermissionGroup {
@@ -37,16 +34,22 @@ interface RolePermissionsPanelProps {
 }
 
 export function RolePermissionsPanel({ roleId, currentPermissions }: RolePermissionsPanelProps) {
-  const { data: allPermissions, isLoading, isError, error, refetch } = useAllPermissions();
+  const { items: allPermissions, isLoading, isError, error, refetch } = useAllPermissions();
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const syncPermissions = useSyncRolePermissions();
+  const [isSaving, setIsSaving] = useState(false);
+  const mutations = useRoleMutations();
 
+  const prevPermsKey = useRef('');
   useEffect(() => {
     if (allPermissions && allPermissions.length > 0) {
-      const selectedIds = allPermissions
-        .filter((p) => currentPermissions.includes(p.code))
-        .map((p) => p.id);
-      setSelected(new Set(selectedIds));
+      const permsKey = currentPermissions.slice().sort().join(',');
+      if (permsKey !== prevPermsKey.current) {
+        prevPermsKey.current = permsKey;
+        const selectedIds = allPermissions
+          .filter((p) => currentPermissions.includes(p.code))
+          .map((p) => p.id);
+        setSelected(new Set(selectedIds));
+      }
     }
   }, [allPermissions, currentPermissions]);
 
@@ -62,13 +65,15 @@ export function RolePermissionsPanel({ roleId, currentPermissions }: RolePermiss
   }, []);
 
   const handleSave = useCallback(async () => {
+    setIsSaving(true);
     try {
-      await syncPermissions.mutateAsync({ roleId, permissionIds: Array.from(selected) });
-      showToast.success('Permissions updated successfully');
-    } catch (err) {
-      showToast.error(getErrorMessage(err));
+      await mutations.action('syncPermissions', roleId, { permissionIds: Array.from(selected) });
+    } catch {
+      // Toast handled by useRoleMutations toast config
+    } finally {
+      setIsSaving(false);
     }
-  }, [syncPermissions, roleId, selected]);
+  }, [mutations, roleId, selected]);
 
   if (isLoading) {
     return (
@@ -109,8 +114,8 @@ export function RolePermissionsPanel({ roleId, currentPermissions }: RolePermiss
     <div>
       <div className="flex items-center justify-between mb-4">
         <Typography variant="h4">Permissions</Typography>
-        <Button size="sm" onClick={() => void handleSave()} disabled={syncPermissions.isPending}>
-          {syncPermissions.isPending ? (
+        <Button size="sm" onClick={() => void handleSave()} disabled={isSaving}>
+          {isSaving ? (
             <>
               <Loader2 className="mr-2 size-4 animate-spin" />
               Saving...

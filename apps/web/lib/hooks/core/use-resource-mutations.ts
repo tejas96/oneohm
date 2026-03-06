@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 
 import { normalizeApiError } from './error-adapter';
 import { RESOURCE_MUTATION_DEFAULTS } from './query-defaults';
@@ -17,16 +17,22 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
   const queryClient = useQueryClient();
   const { organizationId, orgHeaders } = useOrgContext();
   const keys = useMemo(() => createResourceKeys(config.resource), [config.resource]);
-  const headers = config.requiresOrg !== false ? orgHeaders : {};
+  const headers = useMemo(
+    () => (config.requiresOrg !== false ? orgHeaders : {}),
+    [config.requiresOrg, orgHeaders],
+  );
+
+  const configRef = useRef(config);
+  configRef.current = config;
 
   const invalidateResource = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: keys.lists(organizationId) });
     void queryClient.invalidateQueries({ queryKey: keys.stats(organizationId) });
-    config.invalidateRelated?.forEach((related) => {
+    configRef.current.invalidateRelated?.forEach((related) => {
       const relatedKeys = createResourceKeys(related);
       void queryClient.invalidateQueries({ queryKey: relatedKeys.all(organizationId) });
     });
-  }, [queryClient, keys, organizationId, config.invalidateRelated]);
+  }, [queryClient, keys, organizationId]);
 
   // ── CREATE ────────────────────────────────────────────────
   const create = useMutation({
@@ -54,12 +60,14 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
       }
       return { snapshots };
     },
-    onError: (_err, _vars, context) => {
+    onError: (err, _vars, context) => {
       const ctx = context as { snapshots?: Array<{ key: unknown; data: unknown }> };
       ctx?.snapshots?.forEach(({ key, data }) => {
         queryClient.setQueryData(key as readonly unknown[], data);
       });
-      if (config.toast?.create?.error) showToast.error(config.toast.create.error);
+      if (configRef.current.toast?.create) {
+        showToast.error(normalizeApiError(err).message);
+      }
     },
     onSuccess: (data) => {
       invalidateResource();
@@ -105,7 +113,7 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
 
       return { previousDetail, snapshots };
     },
-    onError: (_err, { id }, context) => {
+    onError: (err, { id }, context) => {
       const ctx = context as {
         previousDetail?: T;
         snapshots?: Array<{ key: unknown; data: unknown }>;
@@ -116,10 +124,15 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
       ctx?.snapshots?.forEach(({ key, data }) => {
         queryClient.setQueryData(key as readonly unknown[], data);
       });
-      if (config.toast?.update?.error) showToast.error(config.toast.update.error);
+      if (configRef.current.toast?.update) {
+        showToast.error(normalizeApiError(err).message);
+      }
     },
     onSuccess: (updated, { id }) => {
-      queryClient.setQueryData(keys.detail(organizationId, id), updated);
+      queryClient.setQueryData<T>(keys.detail(organizationId, id), (prev) =>
+        prev ? { ...prev, ...updated } : updated,
+      );
+      void queryClient.invalidateQueries({ queryKey: keys.detail(organizationId, id) });
       invalidateResource();
       resourceEvents.emit(config.resource, 'updated', { data: updated, id });
       if (config.toast?.update?.success) showToast.success(config.toast.update.success);
@@ -154,15 +167,17 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
 
       return { snapshots };
     },
-    onError: (_err, _id, context) => {
+    onError: (err, _id, context) => {
       const ctx = context as { snapshots?: Array<{ key: unknown; data: unknown }> };
       ctx?.snapshots?.forEach(({ key, data }) => {
         queryClient.setQueryData(key as readonly unknown[], data);
       });
-      if (config.toast?.delete?.error) showToast.error(config.toast.delete.error);
+      if (configRef.current.toast?.delete) {
+        showToast.error(normalizeApiError(err).message);
+      }
     },
     onSuccess: (_, id) => {
-      queryClient.removeQueries({ queryKey: keys.detail(organizationId, id) });
+      void queryClient.cancelQueries({ queryKey: keys.detail(organizationId, id) });
       invalidateResource();
       resourceEvents.emit(config.resource, 'deleted', { id });
       if (config.toast?.delete?.success) showToast.success(config.toast.delete.success);
@@ -177,8 +192,10 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
       const { data } = await apiClient.post<T>(ep, {}, { headers });
       return data;
     },
-    onError: () => {
-      if (config.toast?.archive?.error) showToast.error(config.toast.archive.error);
+    onError: (err: unknown) => {
+      if (configRef.current.toast?.archive) {
+        showToast.error(normalizeApiError(err).message);
+      }
     },
     onSuccess: (_, id) => {
       invalidateResource();
@@ -196,7 +213,7 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
     },
     onSuccess: (_, ids) => {
       ids.forEach((id) => {
-        queryClient.removeQueries({ queryKey: keys.detail(organizationId, id) });
+        void queryClient.cancelQueries({ queryKey: keys.detail(organizationId, id) });
       });
       invalidateResource();
       resourceEvents.emit(config.resource, 'bulkDeleted', { ids });
@@ -211,11 +228,18 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
       const { data } = await apiClient.post<T>(ep, { status }, { headers });
       return data;
     },
-    onError: () => {
-      if (config.toast?.statusChange?.error) showToast.error(config.toast.statusChange.error);
+    onError: (err: unknown) => {
+      if (configRef.current.toast?.statusChange) {
+        showToast.error(normalizeApiError(err).message);
+      }
     },
     onSuccess: (updated, { id }) => {
-      if (updated) queryClient.setQueryData(keys.detail(organizationId, id), updated);
+      if (updated) {
+        queryClient.setQueryData<T>(keys.detail(organizationId, id), (prev) =>
+          prev ? { ...prev, ...updated } : updated,
+        );
+      }
+      void queryClient.invalidateQueries({ queryKey: keys.detail(organizationId, id) });
       invalidateResource();
       resourceEvents.emit(config.resource, 'updated', { data: updated, id });
       if (config.toast?.statusChange?.success) {
@@ -227,9 +251,10 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
   // ── CUSTOM ACTIONS ────────────────────────────────────────
   const action = useCallback(
     (actionName: string, id: string, payload?: unknown) => {
-      const actionConfig = config.customActions?.[actionName];
+      const cfg = configRef.current;
+      const actionConfig = cfg.customActions?.[actionName];
       if (!actionConfig) {
-        throw new Error(`Unknown action "${actionName}" for resource "${config.resource}"`);
+        throw new Error(`Unknown action "${actionName}" for resource "${cfg.resource}"`);
       }
       return apiClient
         .request<T>({
@@ -240,19 +265,20 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
         })
         .then(({ data }) => {
           invalidateResource();
-          resourceEvents.emit(config.resource, 'updated', { data, id });
-          const toastMsg = config.toast?.[actionName]?.success;
+          void queryClient.invalidateQueries({ queryKey: keys.detail(organizationId, id) });
+          resourceEvents.emit(cfg.resource, 'updated', { data, id });
+          const toastMsg = cfg.toast?.[actionName]?.success;
           if (toastMsg) showToast.success(toastMsg);
           return data;
         })
         .catch((error: unknown) => {
-          const errToast = config.toast?.[actionName]?.error;
-          if (errToast) showToast.error(errToast);
-          else showToast.error(normalizeApiError(error).message);
+          if (cfg.toast?.[actionName]) {
+            showToast.error(normalizeApiError(error).message);
+          }
           throw error;
         });
     },
-    [config, headers, invalidateResource],
+    [headers, invalidateResource, queryClient, keys, organizationId],
   );
 
   return {

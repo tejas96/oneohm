@@ -1,4 +1,10 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { UserProfileType } from '@oneohm-epc/shared-types';
 
 import { CustomerProfileEntity } from '../../customers/entities/customer-profile.entity';
@@ -127,42 +133,63 @@ export class ProfileService {
     let profile: CustomerProfileEntity | ResellerProfileEntity | EmployeeProfileEntity;
     let defaultRoleCode: string;
 
-    switch (profileType) {
-      case UserProfileType.CUSTOMER:
-        profile = await this.customerProfileRepository.create({
-          userId,
-          organizationId,
-          ...profileData,
-          createdBy,
-        });
-        defaultRoleCode = 'customer';
-        this.logger.log(`Created customer profile for user ${userId} in org ${organizationId}`);
-        break;
+    try {
+      switch (profileType) {
+        case UserProfileType.CUSTOMER:
+          profile = await this.customerProfileRepository.create({
+            userId,
+            organizationId,
+            ...profileData,
+            createdBy,
+          });
+          defaultRoleCode = 'customer';
+          this.logger.log(`Created customer profile for user ${userId} in org ${organizationId}`);
+          break;
 
-      case UserProfileType.RESELLER:
-        profile = await this.resellerProfileRepository.create({
-          userId,
-          organizationId,
-          ...profileData,
-          createdBy,
-        });
-        defaultRoleCode = 'reseller';
-        this.logger.log(`Created reseller profile for user ${userId} in org ${organizationId}`);
-        break;
+        case UserProfileType.RESELLER:
+          profile = await this.resellerProfileRepository.create({
+            userId,
+            organizationId,
+            ...profileData,
+            createdBy,
+          });
+          defaultRoleCode = 'reseller';
+          this.logger.log(`Created reseller profile for user ${userId} in org ${organizationId}`);
+          break;
 
-      case UserProfileType.EMPLOYEE:
-        profile = await this.employeeProfileRepository.create({
-          userId,
-          organizationId,
-          ...profileData,
-          createdBy,
-        });
-        defaultRoleCode = 'employee_basic';
-        this.logger.log(`Created employee profile for user ${userId} in org ${organizationId}`);
-        break;
+        case UserProfileType.EMPLOYEE:
+          profile = await this.employeeProfileRepository.create({
+            userId,
+            organizationId,
+            ...profileData,
+            createdBy,
+          });
+          defaultRoleCode = 'employee_basic';
+          this.logger.log(`Created employee profile for user ${userId} in org ${organizationId}`);
+          break;
 
-      default:
-        throw new BadRequestException(`Invalid profile type: ${String(profileType)}`);
+        default:
+          throw new BadRequestException(`Invalid profile type: ${String(profileType)}`);
+      }
+    } catch (error: unknown) {
+      const dbError = error as { code?: string; constraint?: string };
+      if (dbError.code === '23505') {
+        const constraint = dbError.constraint ?? '';
+        if (constraint.includes('emp_id') || constraint.includes('employee_id')) {
+          throw new ConflictException(
+            `Employee ID "${(profileData as Record<string, unknown>).employeeId ?? ''}" already exists in this organization`,
+          );
+        }
+        if (constraint.includes('company_code')) {
+          throw new ConflictException(
+            `Company code "${(profileData as Record<string, unknown>).companyCode ?? ''}" already exists in this organization`,
+          );
+        }
+        throw new ConflictException(
+          `A ${profileType} profile with this data already exists in the organization`,
+        );
+      }
+      throw error;
     }
 
     // ✅ AUTO-ASSIGN ROLE (use custom roleCode if provided, otherwise use default)

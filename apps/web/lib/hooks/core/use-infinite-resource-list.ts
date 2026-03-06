@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 
 import { normalizeApiError } from './error-adapter';
 import { buildQueryParams } from './query-builder';
-import { RESOURCE_QUERY_DEFAULTS } from './query-defaults';
+import { RESOURCE_QUERY_DEFAULTS, RESOURCE_QUERY_RETRY } from './query-defaults';
 import { createResourceKeys } from './query-keys';
 import { defaultResponseAdapter } from './response-adapter';
 import type { BaseFilters, ResourceConfig, ResourceListResponse } from './types';
@@ -39,6 +39,7 @@ export function useInfiniteResourceList<T, F extends BaseFilters = BaseFilters>(
       return page < totalPages ? page + 1 : undefined;
     },
     enabled: config.requiresOrg !== false ? isReady : true,
+    retry: RESOURCE_QUERY_RETRY,
     staleTime: config.staleTime ?? RESOURCE_QUERY_DEFAULTS.staleTime,
   });
 

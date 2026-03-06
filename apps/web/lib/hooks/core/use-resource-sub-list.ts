@@ -4,7 +4,7 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query';
 
 import { normalizeApiError } from './error-adapter';
 import { buildQueryParams } from './query-builder';
-import { RESOURCE_QUERY_DEFAULTS } from './query-defaults';
+import { RESOURCE_QUERY_DEFAULTS, RESOURCE_QUERY_RETRY } from './query-defaults';
 import { stableHash } from './query-keys';
 import { defaultResponseAdapter } from './response-adapter';
 import type { SubResourceConfig, BaseFilters, ResourceListResponse } from './types';
@@ -51,6 +51,7 @@ export function useResourceSubList<T, F extends BaseFilters = BaseFilters>(
       return (config.responseAdapter ?? defaultResponseAdapter<T>)(data);
     },
     enabled: !!parentId && (config.requiresOrg !== false ? isReady : true),
+    retry: RESOURCE_QUERY_RETRY,
     staleTime: config.staleTime ?? RESOURCE_QUERY_DEFAULTS.staleTime,
     placeholderData: keepPreviousData,
   });

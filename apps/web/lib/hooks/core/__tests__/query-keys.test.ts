@@ -20,12 +20,12 @@ describe('stableHash', () => {
 
   it('strips undefined, null, and empty string values', () => {
     const hash = stableHash({ a: 1, b: undefined, c: null, d: '' });
-    expect(hash).toBe(JSON.stringify({ a: 1 }));
+    expect(hash).toBe('{a:1}');
   });
 
   it('preserves zero and false values', () => {
     const hash = stableHash({ a: 0, b: false });
-    expect(hash).toBe(JSON.stringify({ a: 0, b: false }));
+    expect(hash).toBe('{a:0,b:false}');
   });
 
   it('produces deterministic output for nested objects', () => {
@@ -42,7 +42,7 @@ describe('stableHash', () => {
 
   it('handles arrays', () => {
     const hash = stableHash([1, 'two', null]);
-    expect(hash).toBe(JSON.stringify(['1', 'two', '']));
+    expect(hash).toBe('[1,two,]');
   });
 });
 

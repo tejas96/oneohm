@@ -6,6 +6,12 @@ export const RESOURCE_QUERY_DEFAULTS = {
   refetchOnReconnect: true,
 } as const;
 
+export const RESOURCE_QUERY_RETRY = (failureCount: number, error: unknown): boolean => {
+  const status = (error as { response?: { status?: number } })?.response?.status;
+  if (status && status >= 400 && status < 500) return false;
+  return failureCount < 1;
+};
+
 export const RESOURCE_MUTATION_DEFAULTS = {
   retry: (failureCount: number, error: unknown) => {
     const status = (error as { response?: { status?: number } })?.response?.status;

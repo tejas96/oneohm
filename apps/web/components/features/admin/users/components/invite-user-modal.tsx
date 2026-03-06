@@ -4,10 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Info } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 
-import { useCreateInvitation } from '../hooks/use-invitations';
 import { inviteUserSchema, type InviteUserFormData } from '../schemas/invite-user.schema';
 
-import { useRoles } from '@/components/features/admin/roles';
 import {
   Button,
   Dialog,
@@ -25,8 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui';
-import { showToast } from '@/components/ui/sonner';
-import { getErrorMessage } from '@/lib/utils';
+import { useModalForm } from '@/lib/hooks/core';
+import { useInvitationMutations, useRoles, type Invitation } from '@/lib/hooks/resources';
 import { useAuth } from '@/providers/auth-provider';
 
 interface InviteUserModalProps {
@@ -36,37 +34,28 @@ interface InviteUserModalProps {
 
 export function InviteUserModal({ open, onOpenChange }: InviteUserModalProps) {
   const { user: currentUser } = useAuth();
-  const createInvitation = useCreateInvitation();
-  const { data: rolesData } = useRoles({
-    page: 1,
-    pageSize: 100,
-    organizationId: currentUser?.organizationId,
-  });
-  const availableRoles = (rolesData?.data ?? []).filter((r) => r.organizationId !== null);
+  const invitationMutations = useInvitationMutations();
+  const { items: allRoles } = useRoles({ syncToUrl: false, defaultPageSize: 100 });
+  const availableRoles = allRoles.filter((r) => r.organizationId !== null);
 
   const form = useForm<InviteUserFormData>({
     resolver: zodResolver(inviteUserSchema),
     defaultValues: { email: '', roleId: '' },
   });
 
-  const handleClose = (isOpen: boolean) => {
-    if (!isOpen) form.reset();
-    onOpenChange(isOpen);
-  };
-
-  const onSubmit = async (data: InviteUserFormData) => {
-    try {
-      await createInvitation.mutateAsync({
-        email: data.email,
-        roleId: data.roleId,
-        organizationId: currentUser?.organizationId || '',
-      });
-      showToast.success(`Invitation sent to ${data.email}`);
-      handleClose(false);
-    } catch (err) {
-      showToast.error(getErrorMessage(err));
-    }
-  };
+  const { handleSubmit, handleClose, isSubmitting } = useModalForm<
+    InviteUserFormData,
+    Partial<Invitation>
+  >({
+    form,
+    mutation: invitationMutations.create,
+    onOpenChange,
+    transformPayload: (data) => ({
+      email: data.email,
+      roleId: data.roleId,
+      organizationId: currentUser?.organizationId || '',
+    }),
+  });
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -75,7 +64,7 @@ export function InviteUserModal({ open, onOpenChange }: InviteUserModalProps) {
           <DialogTitle>Invite Employee</DialogTitle>
           <DialogDescription>Send an email invitation to onboard a new employee.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}>
+        <form onSubmit={(e) => void handleSubmit(e)}>
           <DialogBody className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="invite-email">Email *</Label>
@@ -126,12 +115,12 @@ export function InviteUserModal({ open, onOpenChange }: InviteUserModalProps) {
               type="button"
               variant="outline"
               onClick={() => handleClose(false)}
-              disabled={createInvitation.isPending}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={createInvitation.isPending}>
-              {createInvitation.isPending ? (
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
                   Sending...

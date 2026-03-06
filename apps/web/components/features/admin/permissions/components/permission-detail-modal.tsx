@@ -1,7 +1,5 @@
 'use client';
 
-import type { AdminPermission } from '../hooks/use-permissions';
-
 import {
   Badge,
   Button,
@@ -13,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui';
+import type { AdminPermission } from '@/lib/hooks/resources';
 
 interface PermissionDetailModalProps {
   open: boolean;

@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 import { normalizeApiError } from './error-adapter';
-import { RESOURCE_QUERY_DEFAULTS } from './query-defaults';
+import { RESOURCE_QUERY_DEFAULTS, RESOURCE_QUERY_RETRY } from './query-defaults';
 import { createResourceKeys } from './query-keys';
 import type { NormalizedError } from './types';
 import { useOrgContext } from './use-org-context';
@@ -37,6 +37,7 @@ export function useResourceDetail<T>(config: UseResourceDetailConfig<T>) {
     },
     enabled:
       !!config.id && (config.requiresOrg !== false ? isReady : true) && (config.enabled ?? true),
+    retry: RESOURCE_QUERY_RETRY,
     staleTime: config.staleTime ?? RESOURCE_QUERY_DEFAULTS.staleTime,
     gcTime: config.gcTime ?? RESOURCE_QUERY_DEFAULTS.gcTime,
     select: config.select,

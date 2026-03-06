@@ -1,6 +1,14 @@
 import type { ResourceListResponse } from './types';
 
 export function defaultResponseAdapter<T>(raw: unknown): ResourceListResponse<T> {
+  // Format 0: Raw array response
+  if (Array.isArray(raw)) {
+    return {
+      data: raw as T[],
+      meta: { page: 1, limit: raw.length, total: raw.length, totalPages: 1 },
+    };
+  }
+
   const response = raw as Record<string, unknown>;
 
   // Format A: { data: T[], meta: PaginationMeta }

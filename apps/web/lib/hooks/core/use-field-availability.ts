@@ -43,8 +43,13 @@ export function useFieldAvailability(
             signal: controller.signal,
           },
         )
-        .then(() => {
-          setErrors((prev) => ({ ...prev, [field]: null }));
+        .then((response) => {
+          if (config.validateResponse) {
+            const errorMsg = config.validateResponse(field, response.data);
+            setErrors((prev) => ({ ...prev, [field]: errorMsg }));
+          } else {
+            setErrors((prev) => ({ ...prev, [field]: null }));
+          }
         })
         .catch((err: unknown) => {
           if ((err as { name?: string }).name === 'CanceledError') return;
@@ -58,7 +63,7 @@ export function useFieldAvailability(
           setIsChecking((prev) => ({ ...prev, [field]: false }));
         });
     },
-    [config.endpoint, excludeId, config.excludeIdParam],
+    [config.endpoint, excludeId, config.excludeIdParam, config.validateResponse],
   );
 
   const clearErrors = useCallback(() => setErrors({}), []);

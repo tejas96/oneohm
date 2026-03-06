@@ -3,9 +3,8 @@
 import { Search, X } from 'lucide-react';
 import { useState, useMemo, useCallback } from 'react';
 
-import { useAllPermissions, type Permission } from '../../permissions/hooks/use-all-permissions';
-
 import { Badge, Input, Label } from '@/components/ui';
+import { useAllPermissions, type Permission } from '@/lib/hooks/resources';
 
 interface PermissionSelectorProps {
   selectedIds: string[];
@@ -13,7 +12,7 @@ interface PermissionSelectorProps {
 }
 
 export function PermissionSelector({ selectedIds, onChange }: PermissionSelectorProps) {
-  const { data: allPermissions = [], isLoading } = useAllPermissions();
+  const { items: allPermissions, isLoading } = useAllPermissions();
   const [search, setSearch] = useState('');
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);

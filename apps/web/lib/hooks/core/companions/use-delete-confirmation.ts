@@ -3,20 +3,17 @@
 import type { UseMutationResult } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 
-import { showToast } from '@/components/ui/sonner';
-import { getErrorMessage } from '@/lib/utils/error';
-
 interface UseDeleteConfirmationOptions<T> {
   mutation: UseMutationResult<unknown, unknown, string>;
   getId: (item: T) => string;
-  entityName: string;
+  /** @deprecated No longer used — kept for backward compatibility */
+  entityName?: string;
   onSuccess?: () => void;
 }
 
 export function useDeleteConfirmation<T>({
   mutation,
   getId,
-  entityName,
   onSuccess,
 }: UseDeleteConfirmationOptions<T>) {
   const [target, setTarget] = useState<T | null>(null);
@@ -25,13 +22,12 @@ export function useDeleteConfirmation<T>({
     if (!target) return;
     try {
       await mutation.mutateAsync(getId(target));
-      showToast.success(`${entityName} deleted successfully`);
       setTarget(null);
       onSuccess?.();
-    } catch (err) {
-      showToast.error(getErrorMessage(err));
+    } catch {
+      // Toast handled by useResourceMutations toast config
     }
-  }, [target, mutation, getId, entityName, onSuccess]);
+  }, [target, mutation, getId, onSuccess]);
 
   const cancel = useCallback(() => setTarget(null), []);
 

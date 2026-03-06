@@ -1,11 +1,11 @@
 'use client';
 
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { useEffect, useCallback, useMemo } from 'react';
+import { useEffect, useCallback, useMemo, useRef } from 'react';
 
 import { normalizeApiError } from './error-adapter';
 import { buildQueryParams } from './query-builder';
-import { RESOURCE_QUERY_DEFAULTS } from './query-defaults';
+import { RESOURCE_QUERY_DEFAULTS, RESOURCE_QUERY_RETRY } from './query-defaults';
 import { createResourceKeys } from './query-keys';
 import { defaultResponseAdapter } from './response-adapter';
 import type {
@@ -52,6 +52,9 @@ export function useResourceList<
   const queryClient = useQueryClient();
   const keys = useMemo(() => createResourceKeys(config.resource), [config.resource]);
 
+  const configRef = useRef(config);
+  configRef.current = config;
+
   const queryState = useQueryState<F>({
     defaults: config.defaultFilters,
     defaultSort: config.defaultSort,
@@ -66,6 +69,7 @@ export function useResourceList<
     queryFn: async ({ signal }) => {
       const params = buildQueryParams(queryState.activeFilters, {
         minSearchLength: config.minSearchLength,
+        paramMapping: config.paramMapping,
       });
       const { data } = await apiClient.get(`${config.endpoint}?${params.toString()}`, {
         headers: config.requiresOrg !== false ? orgHeaders : {},
@@ -75,6 +79,7 @@ export function useResourceList<
       return adapter(data);
     },
     enabled: (config.requiresOrg !== false ? isReady : true) && (options?.enabled ?? true),
+    retry: RESOURCE_QUERY_RETRY,
     placeholderData: keepPreviousData,
     staleTime: config.staleTime ?? RESOURCE_QUERY_DEFAULTS.staleTime,
     gcTime: config.gcTime ?? RESOURCE_QUERY_DEFAULTS.gcTime,
@@ -87,14 +92,16 @@ export function useResourceList<
   // Inject server-side pagination meta into queryState
   const rawData = query.data as ResourceListResponse<T> | undefined;
   const meta = rawData?.meta;
+  const { setMeta } = queryState;
   useEffect(() => {
     if (meta) {
-      queryState.setMeta({ total: meta.total, totalPages: meta.totalPages });
+      setMeta({ total: meta.total, totalPages: meta.totalPages });
     }
-  }, [meta?.total, meta?.totalPages, queryState]);
+  }, [meta?.total, meta?.totalPages, setMeta]);
 
   const prefetchPage = useCallback(
     (page: number) => {
+      const cfg = configRef.current;
       const prefetchFilters = { ...queryState.activeFilters, page } as unknown as Record<
         string,
         unknown
@@ -103,18 +110,19 @@ export function useResourceList<
         queryKey: keys.list(organizationId, prefetchFilters),
         queryFn: async ({ signal }) => {
           const params = buildQueryParams({ ...queryState.activeFilters, page } as F, {
-            minSearchLength: config.minSearchLength,
+            minSearchLength: cfg.minSearchLength,
+            paramMapping: cfg.paramMapping,
           });
-          const { data } = await apiClient.get(`${config.endpoint}?${params.toString()}`, {
-            headers: config.requiresOrg !== false ? orgHeaders : {},
+          const { data } = await apiClient.get(`${cfg.endpoint}?${params.toString()}`, {
+            headers: cfg.requiresOrg !== false ? orgHeaders : {},
             signal,
           });
-          return (config.responseAdapter ?? defaultResponseAdapter<T>)(data);
+          return (cfg.responseAdapter ?? defaultResponseAdapter<T>)(data);
         },
-        staleTime: config.staleTime ?? RESOURCE_QUERY_DEFAULTS.staleTime,
+        staleTime: cfg.staleTime ?? RESOURCE_QUERY_DEFAULTS.staleTime,
       });
     },
-    [organizationId, queryState.activeFilters, config, orgHeaders, keys, queryClient],
+    [organizationId, queryState.activeFilters, orgHeaders, keys, queryClient],
   );
 
   const fullData = query.data as ResourceListResponse<T> | undefined;

@@ -53,6 +53,12 @@ function persistState<F>(persistKey: string, filters: Partial<F>): void {
   }
 }
 
+function parseUrlValue(value: string): string | boolean {
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  return value;
+}
+
 export function useQueryState<F extends BaseFilters>(
   options?: UseQueryStateOptions<F>,
 ): UseQueryStateReturn<F> {
@@ -61,8 +67,8 @@ export function useQueryState<F extends BaseFilters>(
   const defaultPageSize = options?.defaultPageSize ?? 10;
   const searchDebounceMs = options?.searchDebounceMs ?? 550;
 
-  const defaultsRef = useRef(options?.defaults);
-  defaultsRef.current = options?.defaults;
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
 
   // Resolve initial state: URL > localStorage > defaults
   const initialState = useMemo(() => {
@@ -73,12 +79,26 @@ export function useQueryState<F extends BaseFilters>(
     const urlSortOrder = searchParams.get('sortOrder');
 
     const initialFilters: Record<string, unknown> = {};
+
+    // Start with defaults
     if (options?.defaults) {
       for (const [key, value] of Object.entries(options.defaults)) {
         if (PAGINATION_KEYS.has(key)) continue;
-        const urlVal = syncToUrl ? searchParams.get(key) : null;
+        const rawUrlVal = syncToUrl ? searchParams.get(key) : null;
+        const urlVal = rawUrlVal !== null ? parseUrlValue(rawUrlVal) : null;
         const persistedVal = persisted ? (persisted as Record<string, unknown>)[key] : undefined;
         initialFilters[key] = urlVal ?? persistedVal ?? value;
+      }
+    }
+
+    // Pick up any additional URL params not covered by defaults
+    if (syncToUrl) {
+      const reservedKeys = new Set([...PAGINATION_KEYS, 'page', 'search', 'sortBy', 'sortOrder']);
+      for (const [key, value] of searchParams.entries()) {
+        if (reservedKeys.has(key)) continue;
+        if (!(key in initialFilters)) {
+          initialFilters[key] = parseUrlValue(value);
+        }
       }
     }
 
@@ -104,9 +124,14 @@ export function useQueryState<F extends BaseFilters>(
 
   // Auto-reset page to 1 when filters, search, or pageSize change
   const isFirstRender = useRef(true);
+  const isRestoringFromUrl = useRef(false);
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
+      return;
+    }
+    if (isRestoringFromUrl.current) {
+      isRestoringFromUrl.current = false;
       return;
     }
     setPageRaw(1);
@@ -132,6 +157,12 @@ export function useQueryState<F extends BaseFilters>(
     if (sortOrder !== (options?.defaultSort?.order ?? 'DESC')) params.set('sortOrder', sortOrder);
     else params.delete('sortOrder');
 
+    // Remove all existing custom filter params before re-setting active ones
+    const reservedKeys = new Set([...PAGINATION_KEYS, 'page', 'search', 'sortBy', 'sortOrder']);
+    for (const key of [...params.keys()]) {
+      if (!reservedKeys.has(key)) params.delete(key);
+    }
+
     const defaults = options?.defaults ?? {};
     for (const [key, value] of Object.entries(filters)) {
       if (PAGINATION_KEYS.has(key)) continue;
@@ -144,8 +175,6 @@ export function useQueryState<F extends BaseFilters>(
         value !== 'all'
       ) {
         params.set(key, String(value));
-      } else {
-        params.delete(key);
       }
     }
 
@@ -161,15 +190,33 @@ export function useQueryState<F extends BaseFilters>(
     }
   }, [filters, options?.persistKey]);
 
-  // Popstate handler for browser back/forward
+  // Popstate handler for browser back/forward — restore full state
   useEffect(() => {
     if (!syncToUrl) return;
     const handler = () => {
       const params = new URLSearchParams(window.location.search);
+      const opts = optionsRef.current;
+
       const urlPage = params.get('page');
-      if (urlPage) setPageRaw(Number(urlPage));
+      setPageRaw(urlPage ? Number(urlPage) : 1);
+
       const urlSearch = params.get('search');
-      if (urlSearch !== null) setSearchRaw(urlSearch);
+      setSearchRaw(urlSearch ?? '');
+
+      const urlSortBy = params.get('sortBy');
+      const urlSortOrder = params.get('sortOrder') as 'ASC' | 'DESC' | null;
+      setSortBy(urlSortBy ?? opts?.defaultSort?.field);
+      setSortOrder(urlSortOrder ?? opts?.defaultSort?.order ?? 'DESC');
+
+      const reservedKeys = new Set([...PAGINATION_KEYS, 'page', 'search', 'sortBy', 'sortOrder']);
+      const restoredFilters: Record<string, unknown> = { ...(opts?.defaults ?? {}) };
+      for (const [key, value] of params.entries()) {
+        if (reservedKeys.has(key)) continue;
+        restoredFilters[key] = parseUrlValue(value);
+      }
+
+      isRestoringFromUrl.current = true;
+      setFiltersRaw(restoredFilters as Partial<F>);
     };
     window.addEventListener('popstate', handler);
     return () => window.removeEventListener('popstate', handler);

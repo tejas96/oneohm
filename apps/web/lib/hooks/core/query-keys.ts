@@ -1,23 +1,34 @@
+export type ResourceKeys = ReturnType<typeof createResourceKeys>;
+
 export function stableHash(obj: unknown): string {
   if (obj === undefined || obj === null) return '';
   if (typeof obj !== 'object') return `${obj as string | number | boolean}`;
-  if (Array.isArray(obj)) return JSON.stringify(obj.map(stableHash));
+  if (Array.isArray(obj)) return `[${obj.map(stableHash).join(',')}]`;
 
   const sorted = Object.keys(obj as Record<string, unknown>)
     .sort()
-    .reduce<Record<string, unknown>>((acc, key) => {
+    .reduce<Record<string, string>>((acc, key) => {
       const value = (obj as Record<string, unknown>)[key];
-      if (value !== undefined && value !== null && value !== '') {
-        acc[key] =
-          typeof value === 'object' && value !== null ? JSON.parse(stableHash(value)) : value;
+      if (value !== undefined && value !== '') {
+        acc[key] = stableHash(value);
       }
       return acc;
     }, {});
 
-  return JSON.stringify(sorted);
+  return `{${Object.entries(sorted)
+    .map(([k, v]) => `${k}:${v}`)
+    .join(',')}}`;
 }
 
-export function createResourceKeys(resource: string) {
+export function createResourceKeys(resource: string): {
+  all: (orgId?: string) => readonly [string, string | undefined];
+  lists: (orgId?: string) => readonly [string, string | undefined, 'list'];
+  list: (orgId: string | undefined, filters: Record<string, unknown>) => readonly [string, string | undefined, 'list', string];
+  details: (orgId?: string) => readonly [string, string | undefined, 'detail'];
+  detail: (orgId: string | undefined, id: string) => readonly [string, string | undefined, 'detail', string];
+  stats: (orgId?: string) => readonly [string, string | undefined, 'stats'];
+  infinite: (orgId: string | undefined, filters: Record<string, unknown>) => readonly [string, string | undefined, 'infinite', string];
+} {
   return {
     all: (orgId?: string) => [resource, orgId] as const,
     lists: (orgId?: string) => [resource, orgId, 'list'] as const,

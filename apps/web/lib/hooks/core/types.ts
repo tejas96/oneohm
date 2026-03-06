@@ -45,6 +45,7 @@ export interface ResourceConfig<T = unknown, F extends BaseFilters = BaseFilters
   gcTime?: number;
   refetchInterval?: number | false;
   refetchOnWindowFocus?: boolean;
+  paramMapping?: Record<string, string>;
   responseAdapter?: (raw: unknown) => ResourceListResponse<T>;
   permissions?: ResourcePermissionConfig;
 }
@@ -128,6 +129,7 @@ export interface StatsConfig<TStats = Record<string, number>> {
 export interface FieldAvailabilityConfig {
   endpoint: string;
   excludeIdParam?: string;
+  validateResponse?: (field: string, data: unknown) => string | null;
 }
 
 // ── Companion Hook Types ──────────────────────────────────────
@@ -135,14 +137,14 @@ export interface FieldAvailabilityConfig {
 export interface DeleteConfirmationOptions<T> {
   mutation: UseMutationResult<unknown, unknown, string>;
   getId: (item: T) => string;
-  entityName: string;
+  /** @deprecated No longer used — kept for backward compatibility */
+  entityName?: string;
   onSuccess?: () => void;
 }
 
 export interface ModalFormOptions<TForm extends Record<string, unknown>, TPayload = TForm> {
   mutation: UseMutationResult<unknown, unknown, TPayload>;
   transformPayload?: (data: TForm) => TPayload;
-  successMessage?: string;
   onSuccess?: () => void;
 }
 

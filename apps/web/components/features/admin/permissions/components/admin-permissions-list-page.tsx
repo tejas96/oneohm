@@ -2,12 +2,10 @@
 
 import { ColumnDef } from '@tanstack/react-table';
 import { AlertCircle, Loader2, Search, X } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 import { PermissionDetailModal } from './permission-detail-modal';
 import { PERMISSION_ACTION_OPTIONS, PERMISSION_SCOPE_OPTIONS } from '../../constants';
-import { usePermissions, type AdminPermission } from '../hooks/use-permissions';
 
 import { DataTable, EmptyState, TablePagination } from '@/components/shared';
 import {
@@ -21,76 +19,37 @@ import {
   SelectValue,
   Typography,
 } from '@/components/ui';
-import { useDebounce } from '@/lib/hooks';
-import { getErrorMessage } from '@/lib/utils';
-
-const DEFAULT_PAGE_SIZE = 10;
-const SEARCH_DEBOUNCE_MS = 550;
+import {
+  usePermissions,
+  type AdminPermission,
+  type PermissionFilters,
+} from '@/lib/hooks/resources';
 
 export function AdminPermissionsListPage() {
-  const searchParams = useSearchParams();
+  const {
+    items: permissions,
+    meta,
+    search,
+    setSearch,
+    debouncedSearch,
+    clearSearch,
+    filters,
+    setFilter,
+    clearFilters,
+    hasActiveFilters,
+    pagination,
+    isLoading,
+    isFetching,
+    isError,
+    error,
+    refetch,
+  } = usePermissions();
 
-  const initialPage = Number(searchParams.get('page')) || 1;
-  const initialLimit = Number(searchParams.get('limit')) || DEFAULT_PAGE_SIZE;
-  const initialSearch = searchParams.get('search') || '';
-  const initialAction = searchParams.get('action') || 'all_actions';
-  const initialScope = searchParams.get('scope') || 'all_scopes';
-
-  const [page, setPage] = useState(initialPage);
-  const [pageSize, setPageSize] = useState(initialLimit);
-  const [searchInput, setSearchInput] = useState(initialSearch);
-  const [actionFilter, setActionFilter] = useState(initialAction);
-  const [scopeFilter, setScopeFilter] = useState(initialScope);
   const [selectedPermission, setSelectedPermission] = useState<AdminPermission | null>(null);
 
-  const debouncedSearch = useDebounce(searchInput, SEARCH_DEBOUNCE_MS);
-
-  const { data, isLoading, isError, error, isFetching, refetch } = usePermissions({
-    page,
-    pageSize,
-    search: debouncedSearch.length >= 2 ? debouncedSearch : undefined,
-    action: actionFilter !== 'all_actions' ? actionFilter : undefined,
-    scope: scopeFilter !== 'all_scopes' ? scopeFilter : undefined,
-  });
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, actionFilter, scopeFilter]);
-
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (page > 1) params.set('page', String(page));
-    if (pageSize !== DEFAULT_PAGE_SIZE) params.set('limit', String(pageSize));
-    if (debouncedSearch) params.set('search', debouncedSearch);
-    if (actionFilter !== 'all_actions') params.set('action', actionFilter);
-    if (scopeFilter !== 'all_scopes') params.set('scope', scopeFilter);
-
-    const query = params.toString();
-    const newUrl = query ? `?${query}` : window.location.pathname;
-    window.history.replaceState({}, '', newUrl);
-  }, [page, pageSize, debouncedSearch, actionFilter, scopeFilter]);
-
-  const clearSearch = useCallback(() => {
-    setSearchInput('');
-    setPage(1);
-  }, []);
-  const clearAllFilters = useCallback(() => {
-    setSearchInput('');
-    setActionFilter('all_actions');
-    setScopeFilter('all_scopes');
-    setPage(1);
-  }, []);
-
-  const handlePageSizeChange = (newSize: number): void => {
-    setPageSize(newSize);
-    setPage(1);
-  };
-
-  const hasActiveFilters =
-    searchInput || actionFilter !== 'all_actions' || scopeFilter !== 'all_scopes';
-  const permissions = data?.data ?? [];
-  const totalItems = data?.total ?? 0;
-  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const handleClearAll = useCallback(() => {
+    clearFilters();
+  }, [clearFilters]);
 
   const columns: ColumnDef<AdminPermission>[] = useMemo(
     () => [
@@ -198,9 +157,9 @@ export function AdminPermissionsListPage() {
             <AlertCircle className="size-5 shrink-0" />
             <div className="flex-1">
               <p className="font-medium">Failed to load permissions</p>
-              <p className="text-sm text-foreground-secondary mt-1">{getErrorMessage(error)}</p>
+              <p className="text-sm text-foreground-secondary mt-1">{error?.message}</p>
             </div>
-            <Button variant="outline" size="sm" onClick={() => void refetch()}>
+            <Button variant="outline" size="sm" onClick={refetch}>
               Retry
             </Button>
           </div>
@@ -223,12 +182,12 @@ export function AdminPermissionsListPage() {
           <Input
             type="text"
             placeholder="Search permissions..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             leftIcon={<Search className="size-icon-sm" />}
             className="h-8 text-sm"
           />
-          {searchInput && (
+          {search && (
             <button
               type="button"
               onClick={clearSearch}
@@ -243,10 +202,12 @@ export function AdminPermissionsListPage() {
         </div>
         <div className="h-5 w-px bg-border-light" />
         <Select
-          value={actionFilter}
+          value={(filters.action as string) || 'all_actions'}
           onValueChange={(value) => {
-            setActionFilter(value);
-            setPage(1);
+            setFilter(
+              'action',
+              (value === 'all_actions' ? undefined : value) as PermissionFilters['action'],
+            );
           }}
         >
           <SelectTrigger className="w-[140px] h-8 text-sm">
@@ -261,10 +222,12 @@ export function AdminPermissionsListPage() {
           </SelectContent>
         </Select>
         <Select
-          value={scopeFilter}
+          value={(filters.scope as string) || 'all_scopes'}
           onValueChange={(value) => {
-            setScopeFilter(value);
-            setPage(1);
+            setFilter(
+              'scope',
+              (value === 'all_scopes' ? undefined : value) as PermissionFilters['scope'],
+            );
           }}
         >
           <SelectTrigger className="w-[140px] h-8 text-sm">
@@ -282,7 +245,7 @@ export function AdminPermissionsListPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={clearAllFilters}
+            onClick={handleClearAll}
             className="text-foreground-secondary h-8"
           >
             <X className="mr-1 size-3" /> Clear
@@ -302,14 +265,14 @@ export function AdminPermissionsListPage() {
             />
             {permissions.length > 0 && (
               <TablePagination
-                currentPage={page}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                totalItems={totalItems}
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                pageSize={pagination.pageSize}
+                totalItems={meta?.total ?? 0}
                 itemLabel="permissions"
                 variant="full"
-                onPageChange={setPage}
-                onPageSizeChange={handlePageSizeChange}
+                onPageChange={pagination.setPage}
+                onPageSizeChange={pagination.setPageSize}
               />
             )}
           </>
@@ -319,7 +282,7 @@ export function AdminPermissionsListPage() {
               <EmptyState
                 title="No permissions found"
                 description="Try adjusting your filters."
-                action={{ label: 'Clear Filters', onClick: clearAllFilters }}
+                action={{ label: 'Clear Filters', onClick: handleClearAll }}
               />
             ) : (
               <EmptyState
