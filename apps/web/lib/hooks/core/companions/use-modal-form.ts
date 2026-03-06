@@ -12,13 +12,20 @@ interface UseModalFormOptions<TForm extends Record<string, unknown>, TPayload = 
   onOpenChange: (open: boolean) => void;
 }
 
+interface UseModalFormReturn<TForm extends Record<string, unknown>> {
+  handleSubmit: ReturnType<UseFormReturn<TForm>['handleSubmit']>;
+  handleClose: (open: boolean) => void;
+  isSubmitting: boolean;
+  isError: boolean;
+}
+
 export function useModalForm<TForm extends Record<string, unknown>, TPayload = TForm>({
   form,
   mutation,
   transformPayload,
   onSuccess,
   onOpenChange,
-}: UseModalFormOptions<TForm, TPayload>) {
+}: UseModalFormOptions<TForm, TPayload>): UseModalFormReturn<TForm> {
   const handleClose = useCallback(
     (open: boolean) => {
       if (!open) form.reset();

@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { type JSX, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { PermissionSelector } from './permission-selector';
@@ -31,7 +31,7 @@ interface CreateRoleModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateRoleModal({ open, onOpenChange }: CreateRoleModalProps) {
+export function CreateRoleModal({ open, onOpenChange }: CreateRoleModalProps): JSX.Element {
   const { user: currentUser } = useAuth();
   const mutations = useRoleMutations();
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
@@ -40,7 +40,7 @@ export function CreateRoleModal({ open, onOpenChange }: CreateRoleModalProps) {
     defaultValues: { name: '', code: '', description: '', parentRoleId: '', level: 0 },
   });
 
-  const handleClose = (isOpen: boolean) => {
+  const handleClose = (isOpen: boolean): void => {
     if (!isOpen) {
       form.reset();
       setSelectedPermissionIds([]);
@@ -50,7 +50,7 @@ export function CreateRoleModal({ open, onOpenChange }: CreateRoleModalProps) {
 
   const isSubmitting = mutations.create.isPending;
 
-  const onSubmit = async (data: RoleFormData) => {
+  const onSubmit = async (data: RoleFormData): Promise<void> => {
     try {
       const payload: Record<string, unknown> = {
         ...data,

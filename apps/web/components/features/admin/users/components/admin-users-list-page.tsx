@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unsafe-return */
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
@@ -20,7 +21,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useCallback, useMemo } from 'react';
+import { type JSX, useState, useCallback, useMemo } from 'react';
 
 import { CreateUserModal } from './create-user-modal';
 // TODO: Re-enable InviteUserModal when email service is implemented
@@ -50,12 +51,8 @@ import {
 } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
-import {
-  useAdminUsers,
-  useAdminUserMutations,
-  type AdminUser,
-  type AdminUserFilters,
-} from '@/lib/hooks/resources';
+import { useAdminUsers, useAdminUserMutations, type AdminUserFilters } from '@/lib/hooks/resources';
+import type { AdminUser } from '@/lib/hooks/resources/users';
 import { formatDate, formatRoleCode, formatTimeAgo } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -63,7 +60,7 @@ function getInitials(firstName: string, lastName?: string): string {
   return `${firstName.charAt(0)}${lastName?.charAt(0) ?? ''}`.toUpperCase();
 }
 
-export function AdminUsersListPage() {
+export function AdminUsersListPage(): JSX.Element {
   const router = useRouter();
   const { user: currentUser } = useAuth();
 
@@ -108,7 +105,7 @@ export function AdminUsersListPage() {
   const statusTabValue = filters.showDeleted ? 'archived' : (filters.status as string) || 'all';
 
   const handleStatusTabChange = useCallback(
-    (value: string) => {
+    (value: string): void => {
       if (value === 'archived') {
         setFilters({ status: 'all', showDeleted: true } as Partial<AdminUserFilters>);
       } else {
@@ -150,7 +147,7 @@ export function AdminUsersListPage() {
   }, [mutations, restoreTarget]);
 
   const SortableHeader = useCallback(
-    ({ field, label }: { field: string; label: string }) => {
+    ({ field, label }: { field: string; label: string }): JSX.Element => {
       const isActive = sorting.sortBy === field;
       return (
         <button
@@ -444,7 +441,7 @@ export function AdminUsersListPage() {
           <>
             <DataTable
               columns={columns}
-              data={users}
+              data={users as AdminUser[]}
               enableSearch={false}
               enablePagination={false}
               isLoading={isFetching}

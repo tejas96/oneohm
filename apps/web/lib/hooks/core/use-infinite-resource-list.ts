@@ -11,12 +11,26 @@ import { defaultResponseAdapter } from './response-adapter';
 import type { BaseFilters, ResourceConfig, ResourceListResponse } from './types';
 import { useOrgContext } from './use-org-context';
 
+interface UseInfiniteResourceListReturn<T> {
+  items: T[];
+  meta: ResourceListResponse<T>['meta'] | undefined;
+  totalLoaded: number;
+  isLoading: boolean;
+  isFetchingNextPage: boolean;
+  hasNextPage: boolean;
+  fetchNextPage: () => void;
+  isError: boolean;
+  error: ReturnType<typeof normalizeApiError> | null;
+  refetch: () => void;
+  queryKeys: ReturnType<typeof createResourceKeys>;
+}
+
 import { apiClient } from '@/lib/api/client';
 
 export function useInfiniteResourceList<T, F extends BaseFilters = BaseFilters>(
   config: ResourceConfig<T, F>,
   filters?: Partial<F>,
-) {
+): UseInfiniteResourceListReturn<T> {
   const { organizationId, orgHeaders, isReady } = useOrgContext();
   const keys = useMemo(() => createResourceKeys(config.resource), [config.resource]);
   const baseFilters = { ...config.defaultFilters, ...filters } as F;
@@ -53,8 +67,10 @@ export function useInfiniteResourceList<T, F extends BaseFilters = BaseFilters>(
 
     isLoading: query.isLoading,
     isFetchingNextPage: query.isFetchingNextPage,
-    hasNextPage: query.hasNextPage ?? false,
-    fetchNextPage: query.fetchNextPage,
+    hasNextPage: query.hasNextPage === true,
+    fetchNextPage: () => {
+      void query.fetchNextPage();
+    },
     isError: query.isError,
     error: query.error ? normalizeApiError(query.error) : null,
     refetch: () => {

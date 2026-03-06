@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { createUserSchema, type CreateUserFormData } from '../schemas/create-user.schema';
@@ -39,7 +39,7 @@ interface CreateUserModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps) {
+export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps): JSX.Element {
   const { user: currentUser } = useAuth();
   const { create: createUser } = useAdminUserMutations();
   const availability = useCheckUserAvailability();
@@ -72,7 +72,7 @@ export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps) {
     if (debouncedPhone) availability.checkPhone(debouncedPhone);
   }, [debouncedPhone, availability.checkPhone]);
 
-  const handleClose = (isOpen: boolean) => {
+  const handleClose = (isOpen: boolean): void => {
     if (!isOpen) {
       form.reset();
       availability.clearErrors();
@@ -80,7 +80,7 @@ export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps) {
     onOpenChange(isOpen);
   };
 
-  const onSubmit = async (data: CreateUserFormData) => {
+  const onSubmit = async (data: CreateUserFormData): Promise<void> => {
     if (availability.hasErrors) return;
 
     try {

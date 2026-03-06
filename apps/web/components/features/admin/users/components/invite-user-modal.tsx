@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Info } from 'lucide-react';
+import { type JSX } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 
 import { inviteUserSchema, type InviteUserFormData } from '../schemas/invite-user.schema';
@@ -32,7 +34,7 @@ interface InviteUserModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function InviteUserModal({ open, onOpenChange }: InviteUserModalProps) {
+export function InviteUserModal({ open, onOpenChange }: InviteUserModalProps): JSX.Element {
   const { user: currentUser } = useAuth();
   const invitationMutations = useInvitationMutations();
   const { items: allRoles } = useRoles({ syncToUrl: false, defaultPageSize: 100 });

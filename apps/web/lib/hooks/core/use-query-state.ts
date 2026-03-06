@@ -106,7 +106,8 @@ export function useQueryState<F extends BaseFilters>(
       page: urlPage ? Number(urlPage) : 1,
       search: urlSearch ?? '',
       sortBy: urlSortBy ?? options?.defaultSort?.field,
-      sortOrder: (urlSortOrder as 'ASC' | 'DESC') ?? options?.defaultSort?.order ?? 'DESC',
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- searchParams.get() returns null for missing params
+      sortOrder: (urlSortOrder as 'ASC' | 'DESC') || options?.defaultSort?.order || 'DESC',
       filters: initialFilters as Partial<F>,
     };
   }, []);
@@ -193,7 +194,7 @@ export function useQueryState<F extends BaseFilters>(
   // Popstate handler for browser back/forward — restore full state
   useEffect(() => {
     if (!syncToUrl) return;
-    const handler = () => {
+    const handler = (): void => {
       const params = new URLSearchParams(window.location.search);
       const opts = optionsRef.current;
 

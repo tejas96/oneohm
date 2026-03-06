@@ -14,13 +14,20 @@ interface MutationWithToastOptions<TData, TVariables> {
   onError?: (error: unknown) => void;
 }
 
+interface UseMutationWithToastReturn<TData, TVariables> {
+  execute: (variables: TVariables) => Promise<TData>;
+  isPending: boolean;
+  isError: boolean;
+  error: unknown;
+}
+
 export function useMutationWithToast<TData, TVariables>({
   mutation,
   successMessage,
   errorMessage,
   onSuccess,
   onError,
-}: MutationWithToastOptions<TData, TVariables>) {
+}: MutationWithToastOptions<TData, TVariables>): UseMutationWithToastReturn<TData, TVariables> {
   const execute = useCallback(
     async (variables: TVariables) => {
       try {

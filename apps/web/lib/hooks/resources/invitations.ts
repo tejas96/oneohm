@@ -24,7 +24,9 @@ export interface InvitationFilters extends BaseFilters {
 
 // ── Hooks ──────────────────────────────────────────────────────
 
-export function useInvitations() {
+export function useInvitations(): ReturnType<
+  typeof useResourceList<Invitation, InvitationFilters>
+> {
   return useResourceList<Invitation, InvitationFilters>({
     resource: 'invitations',
     endpoint: '/invitations',
@@ -35,7 +37,7 @@ export function useInvitations() {
   });
 }
 
-export function useInvitationMutations() {
+export function useInvitationMutations(): ReturnType<typeof useResourceMutations<Invitation>> {
   return useResourceMutations<Invitation>({
     resource: 'invitations',
     endpoint: '/invitations',

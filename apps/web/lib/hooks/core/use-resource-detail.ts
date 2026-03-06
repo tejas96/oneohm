@@ -22,18 +22,19 @@ interface UseResourceDetailConfig<T> {
   select?: (data: T) => T;
 }
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/explicit-module-boundary-types
 export function useResourceDetail<T>(config: UseResourceDetailConfig<T>) {
   const { organizationId, orgHeaders, isReady } = useOrgContext();
   const keys = useMemo(() => createResourceKeys(config.resource), [config.resource]);
 
   const query = useQuery({
     queryKey: keys.detail(organizationId, config.id),
-    queryFn: async ({ signal }) => {
+    queryFn: async ({ signal }): Promise<T> => {
       const { data } = await apiClient.get<T>(`${config.endpoint}/${config.id}`, {
         headers: config.requiresOrg !== false ? orgHeaders : {},
         signal,
       });
-      return data;
+      return data as T;
     },
     enabled:
       !!config.id && (config.requiresOrg !== false ? isReady : true) && (config.enabled ?? true),
@@ -58,16 +59,16 @@ export function prefetchResourceDetail<T>(
     organizationId?: string;
     orgHeaders?: Record<string, string>;
   },
-) {
+): void {
   const keys = createResourceKeys(config.resource);
   void queryClient.prefetchQuery({
     queryKey: keys.detail(config.organizationId, config.id),
-    queryFn: async ({ signal }) => {
+    queryFn: async ({ signal }): Promise<T> => {
       const { data } = await apiClient.get<T>(`${config.endpoint}/${config.id}`, {
         headers: config.orgHeaders ?? {},
         signal,
       });
-      return data;
+      return data as T;
     },
     staleTime: RESOURCE_QUERY_DEFAULTS.staleTime,
   });

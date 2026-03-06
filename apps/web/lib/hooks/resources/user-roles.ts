@@ -18,7 +18,9 @@ export interface UserRoleAssignment {
 
 // ── Hooks ──────────────────────────────────────────────────────
 
-export function useUserRoles(userId: string) {
+export function useUserRoles(
+  userId: string,
+): ReturnType<typeof useResourceSubList<UserRoleAssignment>> {
   return useResourceSubList<UserRoleAssignment>(
     {
       resource: 'user-roles',
@@ -30,7 +32,9 @@ export function useUserRoles(userId: string) {
   );
 }
 
-export function useUserRoleMutations() {
+export function useUserRoleMutations(): ReturnType<
+  typeof useResourceMutations<UserRoleAssignment>
+> {
   return useResourceMutations<UserRoleAssignment>({
     resource: 'user-roles',
     endpoint: '/iam/user-roles',

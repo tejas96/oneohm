@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 import {
   Badge,
   Button,
@@ -23,7 +25,7 @@ export function PermissionDetailModal({
   open,
   onOpenChange,
   permission,
-}: PermissionDetailModalProps) {
+}: PermissionDetailModalProps): React.JSX.Element {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[480px]">

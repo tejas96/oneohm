@@ -10,7 +10,16 @@ import { useOrgContext } from './use-org-context';
 
 import { apiClient } from '@/lib/api/client';
 
-export function useResourceStats<TStats = Record<string, number>>(config: StatsConfig<TStats>) {
+interface UseResourceStatsReturn<TStats> {
+  stats: TStats | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  refetch: () => void;
+}
+
+export function useResourceStats<TStats = Record<string, number>>(
+  config: StatsConfig<TStats>,
+): UseResourceStatsReturn<TStats> {
   const { organizationId, orgHeaders, isReady } = useOrgContext();
   const keys = useMemo(() => createResourceKeys(config.resource), [config.resource]);
 

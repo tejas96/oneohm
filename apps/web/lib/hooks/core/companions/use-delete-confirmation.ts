@@ -11,11 +11,20 @@ interface UseDeleteConfirmationOptions<T> {
   onSuccess?: () => void;
 }
 
+interface UseDeleteConfirmationReturn<T> {
+  target: T | null;
+  isOpen: boolean;
+  isPending: boolean;
+  requestDelete: (item: T | null) => void;
+  confirm: () => Promise<void>;
+  cancel: () => void;
+}
+
 export function useDeleteConfirmation<T>({
   mutation,
   getId,
   onSuccess,
-}: UseDeleteConfirmationOptions<T>) {
+}: UseDeleteConfirmationOptions<T>): UseDeleteConfirmationReturn<T> {
   const [target, setTarget] = useState<T | null>(null);
 
   const confirm = useCallback(async () => {

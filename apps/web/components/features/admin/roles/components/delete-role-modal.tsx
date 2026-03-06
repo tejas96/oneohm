@@ -1,6 +1,7 @@
 'use client';
 
 import { AlertTriangle, Loader2 } from 'lucide-react';
+import { type JSX } from 'react';
 
 import {
   Button,
@@ -20,12 +21,12 @@ interface DeleteRoleModalProps {
   role: AdminRole;
 }
 
-export function DeleteRoleModal({ open, onOpenChange, role }: DeleteRoleModalProps) {
+export function DeleteRoleModal({ open, onOpenChange, role }: DeleteRoleModalProps): JSX.Element {
   const { remove: deleteRole } = useRoleMutations();
   const hasUsers = (role.usersCount ?? 0) > 0;
   const isBlocked = role.isSystemRole || hasUsers;
 
-  const handleDelete = async () => {
+  const handleDelete = async (): Promise<void> => {
     try {
       await deleteRole.mutateAsync(role.id);
       onOpenChange(false);

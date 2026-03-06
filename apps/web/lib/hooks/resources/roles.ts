@@ -70,12 +70,14 @@ defineResource<AdminRole>(
 
 // ── Hooks ──────────────────────────────────────────────────────
 
-export function useRoles(overrides?: Partial<ResourceConfig<AdminRole, RoleFilters>>) {
+export function useRoles(
+  overrides?: Partial<ResourceConfig<AdminRole, RoleFilters>>,
+): ReturnType<typeof useResourceList<AdminRole, RoleFilters>> {
   const config = getResourceConfig('roles') as ResourceConfig<AdminRole, RoleFilters>;
   return useResourceList<AdminRole, RoleFilters>({ ...config, ...overrides });
 }
 
-export function useRole(roleId: string) {
+export function useRole(roleId: string): ReturnType<typeof useResourceDetail<RoleWithPermissions>> {
   return useResourceDetail<RoleWithPermissions>({
     resource: 'roles',
     endpoint: '/iam/roles',
@@ -83,7 +85,7 @@ export function useRole(roleId: string) {
   });
 }
 
-export function useRoleMutations() {
+export function useRoleMutations(): ReturnType<typeof useResourceMutations<AdminRole>> {
   return useResourceMutations<AdminRole>({
     resource: 'roles',
     endpoint: '/iam/roles',
@@ -106,6 +108,6 @@ export function useRoleMutations() {
   });
 }
 
-export function useRolePermissions() {
+export function useRolePermissions(): ReturnType<typeof useResourcePermissions> {
   return useResourcePermissions(getResourcePermissions('roles'));
 }

@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { type JSX, useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { PermissionSelector } from './permission-selector';
@@ -30,7 +30,7 @@ interface EditRoleModalProps {
   role: AdminRole;
 }
 
-export function EditRoleModal({ open, onOpenChange, role }: EditRoleModalProps) {
+export function EditRoleModal({ open, onOpenChange, role }: EditRoleModalProps): JSX.Element {
   const mutations = useRoleMutations();
   const { data: roleDetail, isLoading: isLoadingDetail } = useRole(role.id);
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
@@ -56,7 +56,7 @@ export function EditRoleModal({ open, onOpenChange, role }: EditRoleModalProps) 
 
   const isSubmitting = mutations.update.isPending;
 
-  const onSubmit = async (data: RoleFormData) => {
+  const onSubmit = async (data: RoleFormData): Promise<void> => {
     try {
       const payload: Record<string, unknown> = { ...data };
       if (!payload.parentRoleId) delete payload.parentRoleId;

@@ -53,7 +53,7 @@ export function useFieldAvailability(
         })
         .catch((err: unknown) => {
           if ((err as { name?: string }).name === 'CanceledError') return;
-          const data = (err as { response?: { data?: { message?: string } } })?.response?.data;
+          const data = (err as { response?: { data?: { message?: string } } }).response?.data;
           setErrors((prev) => ({
             ...prev,
             [field]: data?.message || `${field} is already in use`,

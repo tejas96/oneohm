@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
 import { AlertCircle, Loader2, Search, X } from 'lucide-react';
-import { useState, useCallback, useMemo } from 'react';
+import { type JSX, useState, useCallback, useMemo } from 'react';
 
 import { PermissionDetailModal } from './permission-detail-modal';
 import { PERMISSION_ACTION_OPTIONS, PERMISSION_SCOPE_OPTIONS } from '../../constants';
@@ -19,13 +20,10 @@ import {
   SelectValue,
   Typography,
 } from '@/components/ui';
-import {
-  usePermissions,
-  type AdminPermission,
-  type PermissionFilters,
-} from '@/lib/hooks/resources';
+import { usePermissions, type PermissionFilters } from '@/lib/hooks/resources';
+import type { AdminPermission } from '@/lib/hooks/resources/permissions';
 
-export function AdminPermissionsListPage() {
+export function AdminPermissionsListPage(): JSX.Element {
   const {
     items: permissions,
     meta,
@@ -45,6 +43,7 @@ export function AdminPermissionsListPage() {
     refetch,
   } = usePermissions();
 
+  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- AdminPermission from permissions module
   const [selectedPermission, setSelectedPermission] = useState<AdminPermission | null>(null);
 
   const handleClearAll = useCallback(() => {

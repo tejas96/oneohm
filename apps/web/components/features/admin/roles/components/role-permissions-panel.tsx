@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 'use client';
 
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { type JSX, useState, useMemo, useCallback, useEffect, useRef } from 'react';
 
 import { Button, Checkbox, Typography } from '@/components/ui';
 import { useRoleMutations, useAllPermissions, type Permission } from '@/lib/hooks/resources';
@@ -33,7 +34,10 @@ interface RolePermissionsPanelProps {
   currentPermissions: string[];
 }
 
-export function RolePermissionsPanel({ roleId, currentPermissions }: RolePermissionsPanelProps) {
+export function RolePermissionsPanel({
+  roleId,
+  currentPermissions,
+}: RolePermissionsPanelProps): JSX.Element {
   const { items: allPermissions, isLoading, isError, error, refetch } = useAllPermissions();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
@@ -45,7 +49,7 @@ export function RolePermissionsPanel({ roleId, currentPermissions }: RolePermiss
       const permsKey = currentPermissions.slice().sort().join(',');
       if (permsKey !== prevPermsKey.current) {
         prevPermsKey.current = permsKey;
-        const selectedIds = allPermissions
+        const selectedIds: string[] = allPermissions
           .filter((p) => currentPermissions.includes(p.code))
           .map((p) => p.id);
         setSelected(new Set(selectedIds));
@@ -108,7 +112,7 @@ export function RolePermissionsPanel({ roleId, currentPermissions }: RolePermiss
     );
   }
 
-  const actions = [...new Set(allPermissions.map((p) => p.action))].sort();
+  const actions: string[] = [...new Set(allPermissions.map((p) => p.action))].sort();
 
   return (
     <div>

@@ -176,13 +176,15 @@ export class ProfileService {
       if (dbError.code === '23505') {
         const constraint = dbError.constraint ?? '';
         if (constraint.includes('emp_id') || constraint.includes('employee_id')) {
+          const pd = profileData as Record<string, string | undefined>;
           throw new ConflictException(
-            `Employee ID "${(profileData as Record<string, unknown>).employeeId ?? ''}" already exists in this organization`,
+            `Employee ID "${pd.employeeId ?? ''}" already exists in this organization`,
           );
         }
         if (constraint.includes('company_code')) {
+          const pd = profileData as Record<string, string | undefined>;
           throw new ConflictException(
-            `Company code "${(profileData as Record<string, unknown>).companyCode ?? ''}" already exists in this organization`,
+            `Company code "${pd.companyCode ?? ''}" already exists in this organization`,
           );
         }
         throw new ConflictException(

@@ -59,7 +59,9 @@ defineResource<AdminPermission>(
 
 // ── Hooks ──────────────────────────────────────────────────────
 
-export function usePermissions() {
+export function usePermissions(): ReturnType<
+  typeof useResourceList<AdminPermission, PermissionFilters>
+> {
   const config = getResourceConfig('permissions') as ResourceConfig<
     AdminPermission,
     PermissionFilters
@@ -67,7 +69,7 @@ export function usePermissions() {
   return useResourceList<AdminPermission, PermissionFilters>(config);
 }
 
-export function useAllPermissions() {
+export function useAllPermissions(): ReturnType<typeof useResourceList<AdminPermission>> {
   return useResourceList<AdminPermission>({
     resource: 'permissions',
     endpoint: '/iam/permissions',
@@ -77,6 +79,6 @@ export function useAllPermissions() {
   });
 }
 
-export function usePermissionPermissions() {
+export function usePermissionPermissions(): ReturnType<typeof useResourcePermissions> {
   return useResourcePermissions(getResourcePermissions('permissions'));
 }

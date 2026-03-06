@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 import { useCallback, useMemo, useRef } from 'react';
 
 import { normalizeApiError } from './error-adapter';
@@ -13,7 +13,20 @@ import { useOrgContext } from './use-org-context';
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
 
-export function useResourceMutations<T extends { id: string }>(config: MutationConfig<T>) {
+interface UseResourceMutationsReturn<T extends { id: string }> {
+  create: UseMutationResult<T, unknown, Partial<T>>;
+  update: UseMutationResult<T, unknown, { id: string; data: Partial<T> }>;
+  remove: UseMutationResult<void, unknown, string>;
+  archive: UseMutationResult<T, unknown, string>;
+  bulkDelete: UseMutationResult<void, unknown, string[]>;
+  statusChange: UseMutationResult<T, unknown, { id: string; status: string }>;
+  action: (actionName: string, id: string, payload?: unknown) => Promise<T>;
+  getError: (mutation: UseMutationResult<unknown, unknown>) => NormalizedError | null;
+}
+
+export function useResourceMutations<T extends { id: string }>(
+  config: MutationConfig<T>,
+): UseResourceMutationsReturn<T> {
   const queryClient = useQueryClient();
   const { organizationId, orgHeaders } = useOrgContext();
   const keys = useMemo(() => createResourceKeys(config.resource), [config.resource]);
@@ -37,10 +50,10 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
   // ── CREATE ────────────────────────────────────────────────
   const create = useMutation({
     retry: RESOURCE_MUTATION_DEFAULTS.retry,
-    mutationFn: async (payload: Partial<T>) => {
+    mutationFn: async (payload: Partial<T>): Promise<T> => {
       const ep = config.endpoints?.create ?? config.endpoint;
       const { data } = await apiClient.post<T>(ep, payload, { headers });
-      return data;
+      return data as T;
     },
     onMutate: async (payload) => {
       if (!config.optimistic?.create) return {};
@@ -62,7 +75,7 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
     },
     onError: (err, _vars, context) => {
       const ctx = context as { snapshots?: Array<{ key: unknown; data: unknown }> };
-      ctx?.snapshots?.forEach(({ key, data }) => {
+      ctx.snapshots?.forEach(({ key, data }) => {
         queryClient.setQueryData(key as readonly unknown[], data);
       });
       if (configRef.current.toast?.create) {
@@ -79,10 +92,10 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
   // ── UPDATE ────────────────────────────────────────────────
   const update = useMutation({
     retry: RESOURCE_MUTATION_DEFAULTS.retry,
-    mutationFn: async ({ id, data: payload }: { id: string; data: Partial<T> }) => {
+    mutationFn: async ({ id, data: payload }: { id: string; data: Partial<T> }): Promise<T> => {
       const ep = config.endpoints?.update ?? config.endpoint;
       const { data } = await apiClient.patch<T>(`${ep}/${id}`, payload, { headers });
-      return data;
+      return data as T;
     },
     onMutate: async ({ id, data: payload }) => {
       if (!config.optimistic?.update) return {};
@@ -118,10 +131,10 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
         previousDetail?: T;
         snapshots?: Array<{ key: unknown; data: unknown }>;
       };
-      if (ctx?.previousDetail) {
+      if (ctx.previousDetail !== undefined) {
         queryClient.setQueryData(keys.detail(organizationId, id), ctx.previousDetail);
       }
-      ctx?.snapshots?.forEach(({ key, data }) => {
+      ctx.snapshots?.forEach(({ key, data }) => {
         queryClient.setQueryData(key as readonly unknown[], data);
       });
       if (configRef.current.toast?.update) {
@@ -169,7 +182,7 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
     },
     onError: (err, _id, context) => {
       const ctx = context as { snapshots?: Array<{ key: unknown; data: unknown }> };
-      ctx?.snapshots?.forEach(({ key, data }) => {
+      ctx.snapshots?.forEach(({ key, data }) => {
         queryClient.setQueryData(key as readonly unknown[], data);
       });
       if (configRef.current.toast?.delete) {
@@ -187,10 +200,10 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
   // ── ARCHIVE (soft delete) ─────────────────────────────────
   const archive = useMutation({
     retry: RESOURCE_MUTATION_DEFAULTS.retry,
-    mutationFn: async (id: string) => {
+    mutationFn: async (id: string): Promise<T> => {
       const ep = config.endpoints?.archive ?? `${config.endpoint}/${id}/archive`;
       const { data } = await apiClient.post<T>(ep, {}, { headers });
-      return data;
+      return data as T;
     },
     onError: (err: unknown) => {
       if (configRef.current.toast?.archive) {
@@ -223,10 +236,10 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
   // ── STATUS CHANGE ──────────────────────────────────────────
   const statusChange = useMutation({
     retry: RESOURCE_MUTATION_DEFAULTS.retry,
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status }: { id: string; status: string }): Promise<T> => {
       const ep = config.endpoints?.statusChange ?? `${config.endpoint}/${id}/status`;
       const { data } = await apiClient.post<T>(ep, { status }, { headers });
-      return data;
+      return data as T;
     },
     onError: (err: unknown) => {
       if (configRef.current.toast?.statusChange) {
@@ -234,11 +247,9 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
       }
     },
     onSuccess: (updated, { id }) => {
-      if (updated) {
-        queryClient.setQueryData<T>(keys.detail(organizationId, id), (prev) =>
-          prev ? { ...prev, ...updated } : updated,
-        );
-      }
+      queryClient.setQueryData<T>(keys.detail(organizationId, id), (prev) =>
+        prev ? { ...prev, ...updated } : updated,
+      );
       void queryClient.invalidateQueries({ queryKey: keys.detail(organizationId, id) });
       invalidateResource();
       resourceEvents.emit(config.resource, 'updated', { data: updated, id });
@@ -256,6 +267,7 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
       if (!actionConfig) {
         throw new Error(`Unknown action "${actionName}" for resource "${cfg.resource}"`);
       }
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- axios response.data typed as error in strict mode
       return apiClient
         .request<T>({
           method: actionConfig.method,
@@ -263,7 +275,8 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
           data: payload,
           headers,
         })
-        .then(({ data }) => {
+        .then((res) => {
+          const data = res.data as T;
           invalidateResource();
           void queryClient.invalidateQueries({ queryKey: keys.detail(organizationId, id) });
           resourceEvents.emit(cfg.resource, 'updated', { data, id });
@@ -275,7 +288,7 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
           if (cfg.toast?.[actionName]) {
             showToast.error(normalizeApiError(error).message);
           }
-          throw error;
+          throw error as Error;
         });
     },
     [headers, invalidateResource, queryClient, keys, organizationId],
@@ -289,7 +302,7 @@ export function useResourceMutations<T extends { id: string }>(config: MutationC
     bulkDelete,
     statusChange,
     action,
-    getError: (mutation: typeof create | typeof update | typeof remove): NormalizedError | null =>
+    getError: (mutation: UseMutationResult<unknown, unknown>): NormalizedError | null =>
       mutation.error ? normalizeApiError(mutation.error) : null,
   };
 }

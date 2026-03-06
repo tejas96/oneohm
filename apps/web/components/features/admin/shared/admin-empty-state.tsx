@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 import { EmptyState } from '@/components/shared';
 
 interface AdminEmptyStateProps {
@@ -14,7 +16,7 @@ export function AdminEmptyState({
   description,
   action,
   secondaryAction,
-}: AdminEmptyStateProps) {
+}: AdminEmptyStateProps): React.JSX.Element {
   return (
     <div className="p-8">
       <EmptyState

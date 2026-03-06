@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
@@ -16,7 +17,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useCallback, useMemo } from 'react';
+import { type JSX, useState, useCallback, useMemo } from 'react';
 
 import { AssignRoleModal } from './assign-role-modal';
 import { UserStatusBadge } from './user-status-badge';
@@ -52,7 +53,7 @@ interface AdminUserDetailPageProps {
   userId: string;
 }
 
-export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
+export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.Element {
   const router = useRouter();
   const { user: currentUser } = useAuth();
   const { data: user, isLoading, isError, error, refetch } = useAdminUser(userId);
@@ -76,7 +77,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
 
   const isSelf = currentUser?.id === userId;
 
-  const confirmStatusChange = useCallback(async () => {
+  const confirmStatusChange = useCallback(async (): Promise<void> => {
     if (!statusChangeTarget) return;
     try {
       await mutations.statusChange.mutateAsync({ id: userId, status: statusChangeTarget });
@@ -101,7 +102,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
       {
         accessorKey: 'roleName',
         header: 'Role',
-        cell: ({ row }) => row.original.roleName ?? row.original.roleCode,
+        cell: ({ row }) => (row.original.roleName ?? row.original.roleCode) as string,
       },
       {
         accessorKey: 'roleCode',
@@ -312,7 +313,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
           ) : (
             <DataTable
               columns={roleColumns}
-              data={userRoles}
+              data={userRoles as UserRoleAssignment[]}
               enableSearch={false}
               enablePagination={false}
             />

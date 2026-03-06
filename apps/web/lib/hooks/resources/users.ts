@@ -63,12 +63,12 @@ defineResource<AdminUser>(
 
 // ── Hooks ──────────────────────────────────────────────────────
 
-export function useAdminUsers() {
+export function useAdminUsers(): ReturnType<typeof useResourceList<AdminUser, AdminUserFilters>> {
   const config = getResourceConfig('users') as ResourceConfig<AdminUser, AdminUserFilters>;
   return useResourceList<AdminUser, AdminUserFilters>(config);
 }
 
-export function useAdminUser(userId: string) {
+export function useAdminUser(userId: string): ReturnType<typeof useResourceDetail<AdminUser>> {
   return useResourceDetail<AdminUser>({
     resource: 'users',
     endpoint: '/users',
@@ -76,7 +76,7 @@ export function useAdminUser(userId: string) {
   });
 }
 
-export function useAdminUserMutations() {
+export function useAdminUserMutations(): ReturnType<typeof useResourceMutations<AdminUser>> {
   return useResourceMutations<AdminUser>({
     resource: 'users',
     endpoint: '/users',
@@ -97,11 +97,14 @@ export function useAdminUserMutations() {
   });
 }
 
-export function useAdminUserPermissions() {
+export function useAdminUserPermissions(): ReturnType<typeof useResourcePermissions> {
   return useResourcePermissions(getResourcePermissions('users'));
 }
 
-export function useCheckUserAvailability() {
+export function useCheckUserAvailability(): ReturnType<typeof useFieldAvailability> & {
+  checkPhone: (phone: string) => void;
+  checkEmail: (email: string) => void;
+} {
   const fieldConfig = useMemo(
     () => ({
       endpoint: '/users/check-availability',

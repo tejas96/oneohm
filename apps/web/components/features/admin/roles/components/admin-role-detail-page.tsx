@@ -2,7 +2,7 @@
 
 import { AlertCircle, ArrowLeft, Edit, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type JSX } from 'react';
 
 import { EditRoleModal } from './edit-role-modal';
 import { RolePermissionsPanel } from './role-permissions-panel';
@@ -16,10 +16,13 @@ interface AdminRoleDetailPageProps {
   roleId: string;
 }
 
-export function AdminRoleDetailPage({ roleId }: AdminRoleDetailPageProps) {
+export function AdminRoleDetailPage({ roleId }: AdminRoleDetailPageProps): JSX.Element {
   const { data: role, isLoading, isError, error, refetch } = useRole(roleId);
   const [editOpen, setEditOpen] = useState(false);
-  const stablePermissions = useMemo(() => role?.permissions ?? [], [role?.permissions]);
+  const stablePermissions = useMemo(
+    () => (role?.permissions ?? []) as string[],
+    [role?.permissions],
+  );
 
   if (isLoading) {
     return (

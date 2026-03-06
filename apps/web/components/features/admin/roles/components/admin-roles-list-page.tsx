@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unsafe-return */
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
@@ -13,7 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState, type JSX } from 'react';
 
 import { CreateRoleModal } from './create-role-modal';
 import { DeleteRoleModal } from './delete-role-modal';
@@ -33,9 +34,10 @@ import {
   Typography,
 } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { useRoles, type AdminRole, type RoleFilters } from '@/lib/hooks/resources';
+import { useRoles, type RoleFilters } from '@/lib/hooks/resources';
+import type { AdminRole } from '@/lib/hooks/resources/roles';
 
-export function AdminRolesListPage() {
+export function AdminRolesListPage(): JSX.Element {
   const router = useRouter();
 
   const {
@@ -276,7 +278,7 @@ export function AdminRolesListPage() {
           <>
             <DataTable
               columns={columns}
-              data={roles}
+              data={roles as AdminRole[]}
               enableSearch={false}
               enablePagination={false}
               isLoading={isFetching}

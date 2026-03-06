@@ -10,13 +10,23 @@ import { defaultResponseAdapter } from './response-adapter';
 import type { SubResourceConfig, BaseFilters, ResourceListResponse } from './types';
 import { useOrgContext } from './use-org-context';
 
+interface UseResourceSubListReturn<T> {
+  items: T[];
+  meta: ResourceListResponse<T>['meta'] | undefined;
+  isLoading: boolean;
+  isFetching: boolean;
+  isError: boolean;
+  error: ReturnType<typeof normalizeApiError> | null;
+  refetch: () => void;
+}
+
 import { apiClient } from '@/lib/api/client';
 
 export function useResourceSubList<T, F extends BaseFilters = BaseFilters>(
   config: SubResourceConfig<T, F>,
   parentId: string,
   filters?: Partial<F>,
-) {
+): UseResourceSubListReturn<T> {
   const { organizationId, orgHeaders, isReady } = useOrgContext();
   const mergedFilters = { ...config.defaultFilters, ...filters } as F;
 

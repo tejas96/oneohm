@@ -23,11 +23,20 @@ export function stableHash(obj: unknown): string {
 export function createResourceKeys(resource: string): {
   all: (orgId?: string) => readonly [string, string | undefined];
   lists: (orgId?: string) => readonly [string, string | undefined, 'list'];
-  list: (orgId: string | undefined, filters: Record<string, unknown>) => readonly [string, string | undefined, 'list', string];
+  list: (
+    orgId: string | undefined,
+    filters: Record<string, unknown>,
+  ) => readonly [string, string | undefined, 'list', string];
   details: (orgId?: string) => readonly [string, string | undefined, 'detail'];
-  detail: (orgId: string | undefined, id: string) => readonly [string, string | undefined, 'detail', string];
+  detail: (
+    orgId: string | undefined,
+    id: string,
+  ) => readonly [string, string | undefined, 'detail', string];
   stats: (orgId?: string) => readonly [string, string | undefined, 'stats'];
-  infinite: (orgId: string | undefined, filters: Record<string, unknown>) => readonly [string, string | undefined, 'infinite', string];
+  infinite: (
+    orgId: string | undefined,
+    filters: Record<string, unknown>,
+  ) => readonly [string, string | undefined, 'infinite', string];
 } {
   return {
     all: (orgId?: string) => [resource, orgId] as const,

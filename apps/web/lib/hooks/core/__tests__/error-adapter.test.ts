@@ -1,6 +1,10 @@
 import { normalizeApiError } from '../error-adapter';
 
-function makeAxiosError(overrides: { message?: string; status?: number; data?: unknown }) {
+function makeAxiosError(overrides: { message?: string; status?: number; data?: unknown }): {
+  isAxiosError: boolean;
+  message: string;
+  response: { status: number; data: unknown };
+} {
   return {
     isAxiosError: true,
     message: overrides.message ?? 'Request failed',
