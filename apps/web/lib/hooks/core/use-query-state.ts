@@ -74,6 +74,7 @@ export function useQueryState<F extends BaseFilters>(
   const initialState = useMemo(() => {
     const persisted = options?.persistKey ? readPersistedState<F>(options.persistKey) : null;
     const urlPage = searchParams.get('page');
+    const urlLimit = searchParams.get('limit');
     const urlSearch = searchParams.get('search');
     const urlSortBy = searchParams.get('sortBy');
     const urlSortOrder = searchParams.get('sortOrder');
@@ -104,6 +105,7 @@ export function useQueryState<F extends BaseFilters>(
 
     return {
       page: urlPage ? Number(urlPage) : 1,
+      pageSize: urlLimit ? Number(urlLimit) : undefined,
       search: urlSearch ?? '',
       sortBy: urlSortBy ?? options?.defaultSort?.field,
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- searchParams.get() returns null for missing params
@@ -113,7 +115,7 @@ export function useQueryState<F extends BaseFilters>(
   }, []);
 
   const [page, setPageRaw] = useState(initialState.page);
-  const [pageSize, setPageSizeRaw] = useState(defaultPageSize);
+  const [pageSize, setPageSizeRaw] = useState(initialState.pageSize ?? defaultPageSize);
   const [search, setSearchRaw] = useState(initialState.search);
   const [sortBy, setSortBy] = useState<string | undefined>(initialState.sortBy);
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>(initialState.sortOrder);
@@ -149,6 +151,9 @@ export function useQueryState<F extends BaseFilters>(
     if (page > 1) params.set('page', String(page));
     else params.delete('page');
 
+    if (pageSize !== defaultPageSize) params.set('limit', String(pageSize));
+    else params.delete('limit');
+
     if (search) params.set('search', search);
     else params.delete('search');
 
@@ -182,7 +187,7 @@ export function useQueryState<F extends BaseFilters>(
     const qs = params.toString();
     const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
     window.history.replaceState(null, '', url);
-  }, [page, search, sortBy, sortOrder, filters, syncToUrl]);
+  }, [page, pageSize, defaultPageSize, search, sortBy, sortOrder, filters, syncToUrl]);
 
   // localStorage persistence
   useEffect(() => {
@@ -200,6 +205,9 @@ export function useQueryState<F extends BaseFilters>(
 
       const urlPage = params.get('page');
       setPageRaw(urlPage ? Number(urlPage) : 1);
+
+      const urlLimit = params.get('limit');
+      setPageSizeRaw(urlLimit ? Number(urlLimit) : defaultPageSize);
 
       const urlSearch = params.get('search');
       setSearchRaw(urlSearch ?? '');
@@ -221,7 +229,7 @@ export function useQueryState<F extends BaseFilters>(
     };
     window.addEventListener('popstate', handler);
     return () => window.removeEventListener('popstate', handler);
-  }, [syncToUrl]);
+  }, [syncToUrl, defaultPageSize]);
 
   const markUserChange = useCallback(() => {
     userChangedRef.current = true;

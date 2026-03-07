@@ -52,10 +52,8 @@ import {
 import {
   useConvertFromQuote,
   useEmployees,
-  useWorkflowSteps,
   useTeamWorkload,
   type EmployeeListItem,
-  type WorkflowStep,
   type TeamWorkloadItem,
 } from '../../hooks';
 import {
@@ -102,6 +100,7 @@ import {
 } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
 import { useDebounce } from '@/lib/hooks';
+import { useAllActiveWorkflowSteps, type WorkflowStep } from '@/lib/hooks/resources';
 import { cn, formatCurrency, formatDate, formatSystemSize, getErrorMessage } from '@/lib/utils';
 
 // ============================================================================
@@ -235,7 +234,7 @@ export function ProjectCreatePage(): React.JSX.Element {
     return map;
   }, [workloadData]);
 
-  const { data: templates, isLoading: stepsLoading } = useWorkflowSteps({ isActive: true });
+  const { items: templates, isLoading: stepsLoading } = useAllActiveWorkflowSteps();
 
   // ---- Derived state ----
   const propertyConverted = selectedProperty?.status === PropertyStatus.CONVERTED;
