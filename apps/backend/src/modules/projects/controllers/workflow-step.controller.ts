@@ -44,7 +44,10 @@ export class WorkflowStepController {
     @Body() createDto: CreateWorkflowStepDto,
   ): Promise<WorkflowStepResponseDto> {
     createDto.organizationId = organizationId;
-    const step = await this.stepService.create(createDto, currentUser.id);
+    const step = await this.stepService.create(
+      createDto as CreateWorkflowStepDto & { organizationId: string },
+      currentUser.id,
+    );
     return plainToInstance(WorkflowStepResponseDto, step, {
       excludeExtraneousValues: true,
     });
