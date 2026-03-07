@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { type TaskChecklist } from '@oneohm-epc/shared-types';
+import { type MilestoneType, type TaskChecklist } from '@oneohm-epc/shared-types';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -15,10 +15,10 @@ import {
 } from 'class-validator';
 
 export class CreateWorkflowStepDto {
-  @ApiProperty({ description: 'Organization ID' })
+  @ApiPropertyOptional({ description: 'Organization ID (injected by controller from header)' })
   @IsUUID()
-  @IsNotEmpty()
-  organizationId!: string;
+  @IsOptional()
+  organizationId?: string;
 
   @ApiProperty({ description: 'Step name', maxLength: 255 })
   @IsString()
@@ -51,6 +51,11 @@ export class CreateWorkflowStepDto {
   @IsString()
   @IsOptional()
   defaultRoleCode?: string;
+
+  @ApiPropertyOptional({ description: 'Default milestone type' })
+  @IsString()
+  @IsOptional()
+  defaultMilestoneType?: MilestoneType;
 
   @ApiProperty({ description: 'Sequence order', minimum: 1 })
   @IsInt()
