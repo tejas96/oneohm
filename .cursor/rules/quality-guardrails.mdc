@@ -1,0 +1,97 @@
+---
+description: AI mistake tracking and pre-implementation edge case analysis. Ensures continuous quality improvement and thorough scenario coverage across web and backend.
+alwaysApply: true
+---
+
+# Quality Guardrails — Feedback Loop & Edge Case Discipline
+
+## Rule 1: AI Mistakes Log
+
+A file exists at `.cursor/ai-mistakes.md` that tracks mistakes made by AI during development.
+
+### Before Starting Any Task
+
+1. **Read `.cursor/ai-mistakes.md`** before writing any code.
+2. Scan for patterns relevant to your current task.
+3. Actively avoid repeating any listed mistake.
+
+### When a Mistake Happens
+
+A "mistake" is any of:
+- Code that causes a runtime error, crash, or lint failure.
+- Code that breaks an existing feature.
+- A wrong assumption about the codebase (wrong file, wrong service, wrong type, wrong pattern).
+- Missing an obvious edge case that the user has to point out.
+- Violating a rule from `frontend.mdc`, `backend.mdc`, `testing.mdc`, or `shared-libs.mdc`.
+- Using raw `useQuery`/`useMutation` instead of FDAL core hooks in frontend.
+- Using `apiClient` directly instead of service layer patterns.
+- Forgetting org isolation, auth guards, or soft delete filters in backend.
+- Suggesting a pattern the user corrects.
+- Generating duplicate code that already exists in the codebase.
+
+### How to Log
+
+Append to `.cursor/ai-mistakes.md` using this format (max 2 lines):
+
+```
+- **YYYY-MM-DD — <title>**: <What went wrong> → <Correct approach>. Max 2 lines.
+```
+
+### Rules
+
+- **Max 2 lines per entry** — be concise and impactful. No filler words.
+- Focus on root cause + correct approach, not symptoms.
+- Do NOT delete or modify past entries — append-only.
+- Review the full log at the start of every new task.
+
+---
+
+## Rule 2: Pre-Implementation Scenario Analysis
+
+Before writing ANY implementation, think through all scenarios. The existing `frontend.mdc` and `backend.mdc` rules require this — this rule defines the full checklist.
+
+### Scenarios to Cover (Every Feature)
+
+**Happy path** — The ideal flow works end to end.
+
+**Empty states** — No data, no results, no permissions, null/undefined values.
+
+**Error states**
+- 400 — Field-level validation errors shown to user.
+- 401 — Token refresh and retry (interceptors handle, but UI must not break).
+- 403 — "No permission" message, not a blank screen.
+- 404 — User informed, navigation graceful.
+- 500 — Generic error with retry option.
+- Network offline — Offline message, retry when back online.
+- Timeout — Loading cleared, retry available.
+
+**Boundary cases**
+- Very long text — Truncation or wrapping handled.
+- Special characters — No injection, no breakage.
+- Large numbers — Formatting holds.
+- Rapid actions — Debounced or disabled after first action.
+- Concurrent mutations — Idempotent or queued.
+
+**Auth & multi-tenancy** (critical for this project)
+- Organization isolation — Every query filtered by org.
+- Role permissions — Feature gated by role.
+- Token expiry mid-action — Handled without data loss.
+- Cross-org data leak — Impossible by design.
+
+**Frontend-specific**
+- Mobile responsive — Works on small viewports.
+- Keyboard navigation — Accessible.
+- URL state — Filters/tabs survive refresh.
+- Back/forward — Browser history intact.
+
+**Backend-specific**
+- Transaction safety — Multi-entity writes atomic.
+- Soft delete — `deletedAt: IsNull()` on all queries.
+- Audit trail — `createdBy`/`updatedBy` tracked.
+- Pagination — Uses `parsePaginationParams()`, not manual parsing.
+
+### Before Writing Code
+
+State which scenarios you will handle and which you are deferring. If deferring, add a `// TODO:` comment.
+
+Do NOT ship code with unhandled scenarios unless explicitly agreed with the user.
