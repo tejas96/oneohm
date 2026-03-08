@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Headers,
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
@@ -119,10 +120,11 @@ export class UserController {
     @Query('status') status?: UserStatus,
     @Query('search') search?: string,
     @Query('roleId') roleId?: string,
-    @Query('organizationId') organizationId?: string,
+    @Query('organizationId') queryOrgId?: string,
     @Query('showDeleted') showDeleted?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
+    @Headers('x-organization-id') headerOrgId?: string,
   ): Promise<{
     items: UserResponseDto[];
     total: number;
@@ -144,6 +146,7 @@ export class UserController {
     const validatedSortOrder: SortOrder | undefined =
       sortOrder === 'ASC' || sortOrder === 'DESC' ? sortOrder : undefined;
 
+    const organizationId = queryOrgId || headerOrgId;
     const result = await this.userService.findAll(page, limit, {
       status,
       search,
