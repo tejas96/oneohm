@@ -86,7 +86,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/zod-form-adapter": "^0.42.1",
     "@types/passport-local": "^1.0.38",
-    "axios": "^1.13.2",
+    "axios": "^1.13.6",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
