@@ -58,7 +58,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
-    "@nestjs/core": "^11.0.1",
+    "@nestjs/core": "^11.1.16",
     "@nestjs/jwt": "^11.0.1",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
