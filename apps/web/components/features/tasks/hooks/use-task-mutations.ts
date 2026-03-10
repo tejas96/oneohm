@@ -4,7 +4,7 @@ import type { MyTask, TaskChecklist, TaskPriority, TaskStatus } from '@oneohm-ep
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { taskDetailKeys } from './use-task-detail';
-import { myTaskKeys } from '../../projects/hooks/use-my-tasks';
+import { myTaskKeys } from '../../projects/hooks';
 
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';

@@ -4,7 +4,7 @@ import { TaskStatus, type MyTask } from '@oneohm-epc/shared-types';
 import { Link2, Lock, Search, X } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
-import { useProjectTasks } from '../../projects/hooks/use-project-detail';
+import { useProjectTasks } from '../../projects/hooks';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';

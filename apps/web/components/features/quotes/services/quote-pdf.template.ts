@@ -7,6 +7,7 @@
 
 import { PhaseType, StructureType } from '@oneohm-epc/shared-types';
 
+import { applyPreGstDiscount } from '../pricing-utils';
 import type { QuotePdfData } from '../types';
 
 // ============================================================================
@@ -65,13 +66,12 @@ export function generateQuoteHtml(data: QuotePdfData): string {
   const dcrPanels = calculation.panels.filter((p) => p.isDcr);
   const nonDcrPanels = calculation.panels.filter((p) => !p.isDcr);
 
-  const displayGst5Amount = calculation.pricing.gst5Amount;
-  const displayGst18Amount = calculation.pricing.gst18Amount;
-  const totalTax = calculation.pricing.totalGst;
-  const projectPriceExcludingTax = calculation.pricing.totalPrice - totalTax;
-
-  const adjustedFinalPrice = calculation.pricing.finalPrice - discountAmount;
-  const adjustedEffectivePrice = adjustedFinalPrice - calculation.subsidy.amount;
+  const discounted = applyPreGstDiscount(calculation.pricing.basePrice, discountAmount);
+  const displayGst5Amount = discounted.gst5;
+  const displayGst18Amount = discounted.gst18;
+  const totalTax = discounted.totalGst;
+  const adjustedFinalPrice = discounted.grossTotal;
+  const adjustedEffectivePrice = Math.max(0, adjustedFinalPrice - calculation.subsidy.amount);
 
   const validUntil = new Date();
   validUntil.setDate(validUntil.getDate() + validityDays);
@@ -244,9 +244,17 @@ ${getQuoteStyles()}
           </thead>
           <tbody>
             <tr>
-              <td>Project Price (excluding taxes)</td>
-              <td>${formatCurrency(projectPriceExcludingTax)}</td>
+              <td>Base Price (excl. taxes)</td>
+              <td>${formatCurrency(calculation.pricing.basePrice)}</td>
             </tr>
+            ${
+              discountAmount > 0
+                ? `<tr class="discount-row">
+              <td>Discount</td>
+              <td style="color: #16a34a; font-weight: 600;">-${formatCurrency(discountAmount)}</td>
+            </tr>`
+                : ''
+            }
             <tr>
               <td>GST @ 5% (Equipment)</td>
               <td>${formatCurrency(displayGst5Amount)}</td>
@@ -259,14 +267,6 @@ ${getQuoteStyles()}
               <td>Total Tax</td>
               <td>${formatCurrency(totalTax)}</td>
             </tr>
-            ${
-              discountAmount > 0
-                ? `<tr class="discount-row">
-              <td>Discount Applied</td>
-              <td style="color: #16a34a; font-weight: 600;">-${formatCurrency(discountAmount)}</td>
-            </tr>`
-                : ''
-            }
             <tr class="total">
               <td>Total Project Cost (incl. GST)</td>
               <td>${formatCurrency(adjustedFinalPrice)}</td>

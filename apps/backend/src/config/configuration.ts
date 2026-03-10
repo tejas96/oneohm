@@ -5,7 +5,7 @@ import type { Configuration } from './config.interface';
  * Loads and structures environment variables
  * Note: Non-null assertions are required for TypeORM CLI compatibility
  */
-/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion, import/no-default-export */
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion, import/no-default-export -- env vars required for TypeORM CLI; Nest config requires default export */
 export default (): Configuration => ({
   app: {
     nodeEnv: process.env.NODE_ENV! as 'development' | 'production',

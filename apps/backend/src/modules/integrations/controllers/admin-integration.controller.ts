@@ -28,7 +28,7 @@ import { IntegrationService } from '../services';
  * Access: Only org_super_admin role (per-org basis)
  */
 @ApiTags('Admin - Integrations')
-@ApiBearerAuth('JWT-auth')
+@ApiBearerAuth()
 @Controller('admin/integrations')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class AdminIntegrationController {

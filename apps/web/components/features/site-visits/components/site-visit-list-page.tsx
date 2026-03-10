@@ -26,7 +26,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui';
-import { ROUTES } from '@/lib/config/routes';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 
 // ============================================================================
 // Types
@@ -154,7 +154,7 @@ export function SiteVisitListPage(): React.JSX.Element {
       cell: ({ row }) => (
         <div>
           <Link
-            href={ROUTES.SITE_VISITS.DETAIL.replace('[id]', row.original.id)}
+            href={buildRoute(ROUTES.SITE_VISITS.DETAIL, { id: row.original.id })}
             className="font-medium text-foreground hover:text-primary"
           >
             {row.original.propertyName}
@@ -227,7 +227,7 @@ export function SiteVisitListPage(): React.JSX.Element {
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               onClick={() =>
-                router.push(ROUTES.SITE_VISITS.DETAIL.replace('[id]', row.original.id))
+                router.push(buildRoute(ROUTES.SITE_VISITS.DETAIL, { id: row.original.id }))
               }
             >
               <Eye className="mr-2 size-icon-sm" />

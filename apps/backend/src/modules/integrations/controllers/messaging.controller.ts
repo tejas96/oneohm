@@ -1,4 +1,12 @@
-import { Body, Controller, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  HttpStatus,
+  NotImplementedException,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { MessageType } from '@oneohm-epc/shared-types';
 import { OrganizationContext } from '@oneohm-epc/shared-utils';
@@ -18,7 +26,7 @@ import { IntegrationService } from '../services';
  * Access: Users with 'messaging:send' permission
  */
 @ApiTags('Messaging')
-@ApiBearerAuth('JWT-auth')
+@ApiBearerAuth()
 @Controller('messaging')
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class MessagingController {
@@ -105,10 +113,10 @@ export class MessagingController {
       case MessageType.LOCATION:
       case MessageType.CONTACT:
       case MessageType.NOTIFICATION:
-        throw new Error(`Message type ${messageType} is not yet implemented`);
+        throw new NotImplementedException(`Message type ${messageType} is not yet implemented`);
 
       default:
-        throw new Error(`Unsupported message type: ${String(messageType)}`);
+        throw new BadRequestException(`Unsupported message type: ${String(messageType)}`);
     }
   }
 }

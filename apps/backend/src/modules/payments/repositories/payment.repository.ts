@@ -160,6 +160,7 @@ export class PaymentRepository {
 
     const lastPayment = await this.repository
       .createQueryBuilder('payment')
+      .withDeleted()
       .where('payment.organization_id = :organizationId', { organizationId })
       .andWhere('payment.payment_number LIKE :prefix', { prefix: `${prefix}%` })
       .orderBy('payment.payment_number', 'DESC')

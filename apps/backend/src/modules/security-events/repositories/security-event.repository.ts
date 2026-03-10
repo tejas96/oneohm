@@ -144,7 +144,7 @@ export class SecurityEventRepository {
         createdAt: MoreThanOrEqual(since),
         metadata: {
           identifier,
-        } as any,
+        } as Record<string, unknown>,
       },
     });
   }

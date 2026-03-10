@@ -132,7 +132,9 @@ export function PropertyCard({
 
   const handleConvertToProject = (): void => {
     // Navigate to project creation with property context
-    router.push(`/projects/new?propertyId=${property.id}&customerId=${customerId}`);
+    router.push(
+      buildRoute(ROUTES.PROJECTS.NEW, undefined, { propertyId: property.id, customerId }),
+    );
   };
 
   return (

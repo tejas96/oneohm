@@ -301,6 +301,15 @@ export class CalculateQuoteDto {
  */
 export class CreateQuoteFromCalculationDto extends CalculateQuoteDto {
   @ApiPropertyOptional({
+    description:
+      'Existing quote ID. When provided, creates a new version of the existing quote instead of a new quote.',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @IsUUID()
+  @IsOptional()
+  quoteId?: string;
+
+  @ApiPropertyOptional({
     description: 'Discount amount in INR',
     example: 5000,
     minimum: 0,

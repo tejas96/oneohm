@@ -5,7 +5,7 @@ import 'reflect-metadata';
  */
 export interface InjectConfigOptions {
   required?: boolean;
-  default?: any;
+  default?: unknown;
 }
 
 /**
@@ -14,7 +14,7 @@ export interface InjectConfigOptions {
 export interface ConfigMetadata {
   key: string;
   required: boolean;
-  default?: any;
+  default?: unknown;
 }
 
 /**
@@ -37,7 +37,7 @@ export interface ConfigMetadata {
  * 4. Inject into the property
  */
 export function InjectConfig(configKey: string, options: InjectConfigOptions = {}) {
-  return function (target: any, propertyKey: string) {
+  return function (target: object, propertyKey: string) {
     // Get existing metadata or create new
     const existingMetadata: Record<string, ConfigMetadata> =
       Reflect.getMetadata('integration:config', target.constructor) || {};
@@ -57,6 +57,6 @@ export function InjectConfig(configKey: string, options: InjectConfigOptions = {
 /**
  * Get configuration metadata from a class
  */
-export function getConfigMetadata(target: any): Record<string, ConfigMetadata> {
+export function getConfigMetadata(target: object): Record<string, ConfigMetadata> {
   return Reflect.getMetadata('integration:config', target) || {};
 }

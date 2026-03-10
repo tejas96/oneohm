@@ -4,7 +4,7 @@ import type { ProjectPriority, ProjectStatus } from '@oneohm-epc/shared-types';
 import { Inbox, LayoutGrid, List, Plus, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { PRIORITY_FILTER_OPTIONS, STATUS_FILTER_OPTIONS, TYPE_FILTER_OPTIONS } from '../constants';
 import { useProjects, type ProjectFilters } from '../hooks';
@@ -47,7 +47,7 @@ function useUrlState() {
     window.history.replaceState(null, '', url);
   }, []);
 
-  return { get, set };
+  return { get, set, searchParams };
 }
 
 export function ProjectListPage() {
@@ -65,6 +65,14 @@ export function ProjectListPage() {
   const [pageSize, setPageSize] = useState(
     parseInt(url.get('pageSize') || String(DEFAULT_PAGE_SIZE), 10),
   );
+
+  useEffect(() => {
+    setStatusFilter(url.searchParams.get('status') ?? '');
+    setPriorityFilter(url.searchParams.get('priority') ?? '');
+    setTypeFilter(url.searchParams.get('projectType') ?? '');
+    setSearchInput(url.searchParams.get('search') ?? '');
+    setCurrentPage(parseInt(url.searchParams.get('page') || '1', 10));
+  }, [url.searchParams]);
 
   const debouncedSearch = useDebounce(searchInput, 550);
 

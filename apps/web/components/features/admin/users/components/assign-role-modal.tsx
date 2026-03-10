@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-return -- role assignment from API response */
 'use client';
 
 import { Loader2, Plus, Trash2 } from 'lucide-react';

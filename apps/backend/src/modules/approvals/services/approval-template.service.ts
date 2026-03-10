@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { type ExtendedStatisticsResponse, ApprovalWorkflowType } from '@oneohm-epc/shared-types';
 
 import type { CreateApprovalTemplateDto, UpdateApprovalTemplateDto } from '../dto';
-import type { ApprovalTemplateEntity } from '../entities';
+import type { ApprovalStageEntity, ApprovalTemplateEntity } from '../entities';
 import { ApprovalTemplateRepository } from '../repositories';
 
 /**
@@ -43,7 +43,7 @@ export class ApprovalTemplateService {
       organizationId,
       createdBy,
       updatedBy: createdBy,
-      stages: stages as any, // TypeORM handles cascade creation
+      stages: stages as ApprovalStageEntity[], // TypeORM cascade creation - DTO shape differs from entity
     });
   }
 

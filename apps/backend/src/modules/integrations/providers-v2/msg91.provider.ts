@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   IntegrationProvider,
   IntegrationCategory,
@@ -99,7 +99,7 @@ export class Msg91Provider extends BaseMessagingProvider {
         });
       }
 
-      throw new Error(response.data.message || 'Failed to send OTP');
+      throw new BadRequestException(response.data.message || 'Failed to send OTP');
     } catch (error) {
       return this.createFailedResponse(error, 'sendOtp');
     }
@@ -151,11 +151,12 @@ export class Msg91Provider extends BaseMessagingProvider {
       }
 
       return { valid: false, error: 'Invalid response from MSG91' };
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logger.error('MSG91 credential validation failed', error);
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
       return {
         valid: false,
-        error: error.response?.data?.message || error.message || 'Validation failed',
+        error: err.response?.data?.message || err.message || 'Validation failed',
       };
     }
   }
@@ -192,7 +193,7 @@ export class Msg91Provider extends BaseMessagingProvider {
         );
       }
 
-      throw new Error(response.data?.message || 'Failed to resend OTP');
+      throw new BadRequestException(response.data?.message || 'Failed to resend OTP');
     } catch (error) {
       return this.createFailedResponse(error, 'resendOtp');
     }
@@ -201,7 +202,7 @@ export class Msg91Provider extends BaseMessagingProvider {
   /**
    * Get delivery report
    */
-  async getDeliveryReport(requestId: string): Promise<any> {
+  async getDeliveryReport(requestId: string): Promise<Record<string, unknown> | null> {
     try {
       const response = await this.http.get(`/report/${requestId}`);
       return response.data;

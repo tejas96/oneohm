@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-return -- invite API response handling */
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';

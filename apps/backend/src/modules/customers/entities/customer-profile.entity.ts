@@ -17,6 +17,9 @@ import { UserEntity } from '../../users/entities/user.entity';
 @Index(['organizationId', 'status', 'deletedAt'])
 @Index(['phone'], { where: 'deleted_at IS NULL' })
 @Index(['email'], { where: 'deleted_at IS NULL' })
+// Composite unique constraints managed by migration 1788000000000:
+//   uq_customer_profiles_org_phone  — UNIQUE (organization_id, phone)       WHERE deleted_at IS NULL
+//   uq_customer_profiles_org_email  — UNIQUE (organization_id, LOWER(email)) WHERE deleted_at IS NULL
 export class CustomerProfileEntity extends BaseEntity {
   // ==================== RELATIONSHIPS ====================
   @Column({ name: 'user_id', type: 'uuid' })

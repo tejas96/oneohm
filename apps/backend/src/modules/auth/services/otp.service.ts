@@ -278,7 +278,7 @@ export class OtpService {
     phone?: string;
     email?: string;
     otp: string;
-  }): Promise<{ accessToken: string; refreshToken: string; user: any }> {
+  }): Promise<{ accessToken: string; refreshToken: string; user: Record<string, unknown> }> {
     const { phone, otp } = data;
 
     // DTO validation already ensures:

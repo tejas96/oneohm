@@ -5,7 +5,7 @@ import 'reflect-metadata';
  */
 export interface InjectCredentialOptions {
   required?: boolean;
-  default?: any;
+  default?: unknown;
 }
 
 /**
@@ -14,7 +14,7 @@ export interface InjectCredentialOptions {
 export interface CredentialMetadata {
   key: string;
   required: boolean;
-  default?: any;
+  default?: unknown;
 }
 
 /**
@@ -36,7 +36,7 @@ export interface CredentialMetadata {
  * 3. Inject into the property
  */
 export function InjectCredential(credentialKey: string, options: InjectCredentialOptions = {}) {
-  return function (target: any, propertyKey: string) {
+  return function (target: object, propertyKey: string) {
     // Get existing metadata or create new
     const existingMetadata: Record<string, CredentialMetadata> =
       Reflect.getMetadata('integration:credentials', target.constructor) || {};
@@ -56,6 +56,6 @@ export function InjectCredential(credentialKey: string, options: InjectCredentia
 /**
  * Get credential metadata from a class
  */
-export function getCredentialMetadata(target: any): Record<string, CredentialMetadata> {
+export function getCredentialMetadata(target: object): Record<string, CredentialMetadata> {
   return Reflect.getMetadata('integration:credentials', target) || {};
 }

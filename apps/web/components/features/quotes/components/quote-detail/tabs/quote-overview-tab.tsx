@@ -9,7 +9,7 @@ import type { QuoteDetail, QuoteVersionDetail } from '../../../hooks/types';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ROUTES } from '@/lib/config/routes';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { formatCurrency } from '@/lib/utils/format';
 
 interface QuoteOverviewTabProps {
@@ -29,7 +29,6 @@ export function QuoteOverviewTab({
   const totalWattageWp = version?.totalWattageWp ?? quote.totalWattageWp;
   const projectType = version?.projectType ?? quote.projectType;
   const breakdown = version?.pricingBreakdown ?? quote.pricingBreakdown;
-  const finalPrice = version?.finalPrice ?? quote.finalPrice;
   const effectivePrice = version?.effectivePrice ?? quote.effectivePrice;
 
   return (
@@ -45,7 +44,7 @@ export function QuoteOverviewTab({
                 </p>
                 {quote.customerId ? (
                   <Link
-                    href={ROUTES.CUSTOMERS.DETAIL.replace('[id]', quote.customerId)}
+                    href={buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: quote.customerId })}
                     className="text-sm font-medium hover:text-primary"
                   >
                     {quote.customerName ?? 'Unknown Customer'}
@@ -73,7 +72,7 @@ export function QuoteOverviewTab({
                   </p>
                   {quote.propertyId ? (
                     <Link
-                      href={ROUTES.PROPERTIES.DETAIL.replace('[id]', quote.propertyId)}
+                      href={buildRoute(ROUTES.PROPERTIES.DETAIL, { id: quote.propertyId })}
                       className="text-sm font-medium hover:text-primary"
                     >
                       {quote.propertyName ?? 'Unnamed Property'}
@@ -141,15 +140,33 @@ export function QuoteOverviewTab({
                   <span className="text-sm">{formatCurrency(breakdown.basePrice)}</span>
                 </div>
               )}
+              {breakdown?.discountAmount != null && breakdown.discountAmount > 0 && (
+                <div className="flex justify-between text-success">
+                  <span className="text-sm">Discount</span>
+                  <span className="text-sm">-{formatCurrency(breakdown.discountAmount)}</span>
+                </div>
+              )}
+              {breakdown?.gst5OnEquipment != null && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-foreground-secondary">GST on Equipment (5%)</span>
+                  <span className="text-sm">{formatCurrency(breakdown.gst5OnEquipment)}</span>
+                </div>
+              )}
+              {breakdown?.gst18OnServices != null && (
+                <div className="flex justify-between">
+                  <span className="text-sm text-foreground-secondary">GST on Services (18%)</span>
+                  <span className="text-sm">{formatCurrency(breakdown.gst18OnServices)}</span>
+                </div>
+              )}
               {breakdown?.totalGst != null && (
                 <div className="flex justify-between">
-                  <span className="text-sm text-foreground-secondary">GST</span>
+                  <span className="text-sm text-foreground-secondary">Total GST</span>
                   <span className="text-sm">{formatCurrency(breakdown.totalGst)}</span>
                 </div>
               )}
               {breakdown?.totalPrice != null && (
                 <div className="flex justify-between border-t border-border-light pt-2">
-                  <span className="text-sm font-medium">Total Price</span>
+                  <span className="text-sm font-medium">Gross Total</span>
                   <span className="text-sm font-medium">
                     {formatCurrency(breakdown.totalPrice)}
                   </span>
@@ -161,21 +178,9 @@ export function QuoteOverviewTab({
                   <span className="text-sm">-{formatCurrency(breakdown.subsidyAmount)}</span>
                 </div>
               )}
-              {breakdown?.discountAmount != null && breakdown.discountAmount > 0 && (
-                <div className="flex justify-between text-success">
-                  <span className="text-sm">Discount</span>
-                  <span className="text-sm">-{formatCurrency(breakdown.discountAmount)}</span>
-                </div>
-              )}
-              {finalPrice != null && (
-                <div className="flex justify-between border-t border-border-light pt-2">
-                  <span className="text-sm font-medium">Final Price</span>
-                  <span className="text-sm font-medium">{formatCurrency(finalPrice)}</span>
-                </div>
-              )}
               {effectivePrice != null && (
                 <div className="flex justify-between border-t border-border-light pt-2">
-                  <span className="text-sm font-semibold">Effective Price</span>
+                  <span className="text-sm font-semibold">You Pay</span>
                   <span className="text-lg font-semibold text-primary">
                     {formatCurrency(effectivePrice)}
                   </span>

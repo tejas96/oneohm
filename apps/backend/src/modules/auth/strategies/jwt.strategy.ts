@@ -14,7 +14,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(@Inject(ConfigService) configService: ConfigService) {
     const secret = configService.jwt.secret;
     if (!secret) {
-      throw new Error('JWT_SECRET is not configured');
+      throw new UnauthorizedException('JWT_SECRET is not configured');
     }
 
     super({

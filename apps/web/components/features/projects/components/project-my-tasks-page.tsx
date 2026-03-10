@@ -364,7 +364,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
                   </div>
                   <span className="text-xs text-foreground-secondary">{card.label}</span>
                 </div>
-                <span className={cn('text-2xl font-bold tabular-nums', card.text)}>
+                <span className={cn('text-2xl font-semibold tabular-nums', card.text)}>
                   {card.getValue(summary)}
                 </span>
               </div>

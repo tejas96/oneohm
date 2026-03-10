@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { ROUTES } from '@/lib/config/routes';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { formatRelativeDate, getDueDateColor } from '@/lib/utils';
 
 interface TaskDetailDrawerProps {
@@ -45,7 +45,7 @@ export function TaskDetailDrawer({
     );
   }
 
-  const projectHref = ROUTES.PROJECTS.DETAIL.replace('[id]', task.projectId);
+  const projectHref = buildRoute(ROUTES.PROJECTS.DETAIL, { id: task.projectId });
   const canComplete = (TASK_STATUS_TRANSITIONS[task.status] ?? []).includes(TaskStatus.DONE);
 
   return (

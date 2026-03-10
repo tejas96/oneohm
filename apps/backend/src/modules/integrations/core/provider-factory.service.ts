@@ -48,7 +48,7 @@ export class ProviderFactory {
     this.logger.debug(`Creating provider instance: ${providerName}`);
 
     // 2. Create empty instance
-    const instance = new ProviderClass() as any;
+    const instance = new ProviderClass() as unknown as Record<string, unknown>;
 
     // 3. Decrypt credentials
     const decryptedCredentials = this.credentialService.decrypt(
@@ -66,16 +66,16 @@ export class ProviderFactory {
 
     this.logger.debug(`✅ Provider instance created: ${providerName}`);
 
-    return instance as IBaseIntegration;
+    return instance as unknown as IBaseIntegration;
   }
 
   /**
    * Inject credentials into provider instance
    */
   private injectCredentials(
-    instance: any,
-    ProviderClass: any,
-    credentials: Record<string, any>,
+    instance: Record<string, unknown>,
+    ProviderClass: new (...args: unknown[]) => object,
+    credentials: Record<string, unknown>,
   ): void {
     const metadata = getCredentialMetadata(ProviderClass);
 
@@ -103,9 +103,9 @@ export class ProviderFactory {
    * Inject configuration into provider instance
    */
   private injectConfiguration(
-    instance: any,
-    ProviderClass: any,
-    configuration: Record<string, any>,
+    instance: Record<string, unknown>,
+    ProviderClass: new (...args: unknown[]) => object,
+    configuration: Record<string, unknown>,
   ): void {
     const metadata = getConfigMetadata(ProviderClass);
 
@@ -133,9 +133,9 @@ export class ProviderFactory {
    * Setup and inject HTTP client into provider instance
    */
   private injectHttpClient(
-    instance: any,
-    ProviderClass: any,
-    credentials: Record<string, any>,
+    instance: Record<string, unknown>,
+    ProviderClass: new (...args: unknown[]) => object,
+    credentials: Record<string, unknown>,
   ): void {
     const httpMetadata = getHttpClientMetadata(ProviderClass);
 
@@ -164,8 +164,12 @@ export class ProviderFactory {
     // Add auth header if specified
     if (options.authHeader) {
       const authValue = credentials[options.authHeader];
-      if (authValue) {
+      if (typeof authValue === 'string' && authValue) {
         headers[options.authHeader] = authValue;
+      } else if (authValue) {
+        this.logger.warn(
+          `Auth credential '${options.authHeader}' is not a string for ${ProviderClass.name}`,
+        );
       } else {
         this.logger.warn(
           `Auth credential '${options.authHeader}' not found for HTTP client in ${ProviderClass.name}`,

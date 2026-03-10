@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProjectPriority, ProjectStatus } from '@oneohm-epc/shared-types';
-import { type EntityManager, Repository } from 'typeorm';
+import { type EntityManager, IsNull, Repository } from 'typeorm';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { ProjectEntity } from '../entities/project.entity';
@@ -60,7 +60,7 @@ export class ProjectRepository {
    * Find project by ID only (no org check — use when project ownership is already validated via context)
    */
   async findOneById(id: string): Promise<ProjectEntity | null> {
-    return this.repository.findOneBy({ id });
+    return this.repository.findOneBy({ id, deletedAt: IsNull() });
   }
 
   /**

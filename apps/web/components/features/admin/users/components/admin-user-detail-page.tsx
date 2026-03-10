@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-return -- user detail from API */
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';

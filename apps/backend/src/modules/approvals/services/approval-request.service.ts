@@ -183,7 +183,7 @@ export class ApprovalRequestService {
       decision: actionDto.decision,
       comment: actionDto.comment,
       actedBy,
-      actedByRole: actedByRole as any, // Cast to Role type
+      actedByRole,
     });
 
     // Handle rejection
@@ -406,7 +406,11 @@ export class ApprovalRequestService {
   /**
    * Check if user is authorized to approve a stage
    */
-  private isUserAuthorizedForStage(userId: string, userRole: string, stage: any): boolean {
+  private isUserAuthorizedForStage(
+    userId: string,
+    userRole: string,
+    stage: { approverRoles?: string[]; approverUserIds?: string[] },
+  ): boolean {
     // Role-based authorization
     if (stage.approverRoles?.includes(userRole)) {
       return true;

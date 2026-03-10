@@ -20,6 +20,25 @@ import { UpdateCustomerDto } from '../dto/update-customer.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
 
+const COUNTRY_CODE = '+91';
+
+/** Normalize phone to E.164: strip non-digits, prepend +91 if needed. Returns trimmed raw for unrecognized formats. */
+function normalizePhone(raw: string): string {
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return trimmed;
+  const digits = trimmed.replace(/[^\d]/g, '');
+  if (digits.length === 10) return `${COUNTRY_CODE}${digits}`;
+  if (digits.length === 12 && digits.startsWith('91')) return `+${digits}`;
+  if (trimmed.startsWith('+91') && digits.length === 12) return trimmed.replace(/[^\d+]/g, '');
+  return trimmed;
+}
+
+/** Normalize email to lowercase, trimmed. Returns undefined for empty/whitespace-only input. */
+function normalizeEmail(raw: string): string | undefined {
+  const trimmed = raw.trim().toLowerCase();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 /**
  * Customer Service
  * Business logic for customer profile management
@@ -39,61 +58,42 @@ export class CustomerService {
 
   /**
    * Create a new customer profile
-   * Automatically creates or finds user and assigns customer role
+   * Normalizes phone/email, finds-or-creates a users row, then creates the customer_profile.
    */
   async create(
     organizationId: string,
     createDto: CreateCustomerDto,
     createdBy?: string,
   ): Promise<CustomerProfileEntity> {
-    this.logger.log(`Creating customer profile: ${createDto.phone}`);
+    const phone = normalizePhone(createDto.phone);
+    const email = createDto.email ? normalizeEmail(createDto.email) : undefined;
 
-    // Step 1: Find or create user by phone
-    let user = await this.userRepository.findByPhone(createDto.phone);
+    this.logger.log(`Creating customer profile: phone=${phone}, email=${email ?? 'N/A'}`);
 
-    if (!user) {
-      // Guard against duplicate email before attempting user creation
-      if (createDto.email) {
-        const existingEmailUser = await this.userRepository.findByEmail(createDto.email);
-        if (existingEmailUser) {
-          throw new ConflictException(
-            `A customer with email '${createDto.email}' is already registered`,
-          );
-        }
-      }
+    // Step 1: Check for duplicates within this organization
+    await this.guardOrgDuplicates(organizationId, phone, email);
 
-      this.logger.log(`Creating new user for phone: ${createDto.phone}`);
-      user = await this.userRepository.create({
-        phone: createDto.phone,
-        email: createDto.email,
-        firstName: createDto.firstName || '',
-        lastName: createDto.lastName,
-        profileCompleted: false,
-        status: UserStatus.ACTIVE,
-      });
-      this.logger.log(`User created: ${user.id}`);
-    } else {
-      this.logger.log(`Found existing user: ${user.id}`);
-    }
+    // Step 2: Find or create user by phone (for login capability)
+    const user = await this.findOrCreateUser(phone, email, createDto);
 
-    // Step 2: Check if profile already exists for this user in this org
+    // Step 3: Guard against duplicate profile for same user+org
     const existingProfile = await this.customerRepository.findByUserAndOrganization(
       user.id,
       organizationId,
     );
-
     if (existingProfile) {
-      throw new ConflictException(`Customer profile already exists for this user in organization`);
+      throw new ConflictException('Customer profile already exists for this user in organization');
     }
 
-    // Step 3: Create customer profile using ProfileService (handles role assignment)
-    // Include firstName and lastName in profileData (required by customer_profiles table)
+    // Step 4: Create customer profile using ProfileService (handles role assignment)
     const customer = (await this.profileService.createProfile({
       userId: user.id,
       organizationId,
       profileType: UserProfileType.CUSTOMER,
       profileData: {
         ...createDto,
+        phone,
+        email,
         firstName: createDto.firstName || user.firstName || 'Unknown',
         lastName: createDto.lastName || user.lastName,
         status: createDto.status || CustomerStatus.ACTIVE,
@@ -101,25 +101,10 @@ export class CustomerService {
       createdBy,
     })) as CustomerProfileEntity;
 
-    // Step 4: Generate human-readable code (e.g. CUST-ONEOHM_EPC-2026-0001)
-    try {
-      const org = await this.organizationRepository.findOneById(organizationId);
-      if (org) {
-        const customerCode = await generateEntityCode(
-          this.customerRepository.repository,
-          'customerCode',
-          'CUST',
-          org.code,
-          'customer_code',
-        );
-        await this.customerRepository.update(customer.id, { customerCode });
-        customer.customerCode = customerCode;
-      }
-    } catch (err) {
-      this.logger.warn(`Failed to generate customer code for ${customer.id}: ${String(err)}`);
-    }
+    // Step 5: Generate human-readable code
+    await this.assignCustomerCode(customer, organizationId);
 
-    this.logger.log(`✅ Customer profile created with auto-assigned role: ${customer.id}`);
+    this.logger.log(`Customer profile created: ${customer.id}`);
     return customer;
   }
 
@@ -198,6 +183,7 @@ export class CustomerService {
 
   /**
    * Update customer
+   * Normalizes phone/email and checks for org-scoped conflicts before saving.
    */
   async update(
     id: string,
@@ -207,22 +193,43 @@ export class CustomerService {
   ): Promise<CustomerProfileEntity> {
     this.logger.log(`Updating customer: ${id}`);
 
-    // Verify customer exists and belongs to organization
     await this.findById(id, organizationId);
 
-    // Check for email conflicts (if email is being updated)
+    // Normalize incoming values (whitespace-only email treated as empty)
+    if (updateDto.email !== undefined) {
+      const normalized = normalizeEmail(updateDto.email);
+      updateDto.email = normalized ?? undefined;
+    }
+    if (updateDto.phone !== undefined) {
+      const normalizedPhone = normalizePhone(updateDto.phone);
+      updateDto.phone = normalizedPhone.length > 0 ? normalizedPhone : undefined;
+    }
+
+    // Check for email conflicts within this org (exclude self)
     if (updateDto.email) {
       const existingByEmail = await this.customerRepository.findByEmail(
         organizationId,
         updateDto.email,
       );
       if (existingByEmail && existingByEmail.id !== id) {
-        throw new ConflictException(`Customer with email '${updateDto.email}' already exists`);
+        throw new ConflictException(
+          `Customer with email '${updateDto.email}' already exists in this organization`,
+        );
       }
     }
 
-    // Note: Consumer number is now on CustomerPropertyEntity
-    // Use CustomerPropertyRepository for consumer number operations
+    // Check for phone conflicts within this org (exclude self)
+    if (updateDto.phone) {
+      const existingByPhone = await this.customerRepository.findOneByPhone(
+        organizationId,
+        updateDto.phone,
+      );
+      if (existingByPhone && existingByPhone.id !== id) {
+        throw new ConflictException(
+          `Customer with phone '${updateDto.phone}' already exists in this organization`,
+        );
+      }
+    }
 
     const updated = await this.customerRepository.update(id, {
       ...updateDto,
@@ -340,14 +347,8 @@ export class CustomerService {
   }
 
   /**
-   * Check if phone/email is already registered for a customer in this organization
-   * Used to prevent duplicate customer creation in the lead wizard
-   *
-   * @param organizationId - Organization to check in
-   * @param phone - Phone number to check (optional, with country code e.g. +919876543210)
-   * @param email - Email to check (optional)
-   * @param excludeCustomerId - Customer ID to exclude from check (for edit mode)
-   * @throws BadRequestException if neither phone nor email is provided
+   * Check if phone/email is already registered for a customer in this organization.
+   * Queries customer_profiles (org-scoped). Normalizes phone (E.164) and email (lowercase).
    */
   async checkAvailability(
     organizationId: string,
@@ -355,13 +356,15 @@ export class CustomerService {
     email?: string,
     excludeCustomerId?: string,
   ): Promise<AvailabilityResponseDto> {
-    // Validate that at least one of phone or email is provided
     if (!phone && !email) {
       throw new BadRequestException('At least one of phone or email is required');
     }
 
+    const normalizedPhone = phone ? normalizePhone(phone) : undefined;
+    const normalizedEmail = email ? normalizeEmail(email) : undefined;
+
     this.logger.log(
-      `Checking availability: phone=${phone || 'N/A'}, email=${email || 'N/A'}, org=${organizationId}`,
+      `Checking availability: phone=${normalizedPhone ?? 'N/A'}, email=${normalizedEmail ?? 'N/A'}, org=${organizationId}`,
     );
 
     const result: AvailabilityResponseDto = {
@@ -369,39 +372,114 @@ export class CustomerService {
       emailExists: false,
     };
 
-    // Check phone availability
-    if (phone) {
-      // Step 1: Find user by phone in the users table
-      const user = await this.userRepository.findByPhone(phone);
-
-      if (user) {
-        // Step 2: Check if this user has a customer profile in this organization
-        const existingProfile = await this.customerRepository.findByUserAndOrganization(
-          user.id,
-          organizationId,
-        );
-
-        // Phone exists if profile found AND it's not the excluded customer (edit mode)
-        if (existingProfile && existingProfile.id !== excludeCustomerId) {
-          result.phoneExists = true;
-          result.phoneError = 'This phone number is already registered';
-          this.logger.log(`Phone ${phone} already exists for customer ${existingProfile.id}`);
-        }
+    if (normalizedPhone) {
+      const existingByPhone = await this.customerRepository.findOneByPhone(
+        organizationId,
+        normalizedPhone,
+      );
+      if (existingByPhone && existingByPhone.id !== excludeCustomerId) {
+        result.phoneExists = true;
+        result.phoneError = 'This phone number is already registered';
       }
     }
 
-    // Check email availability
-    if (email) {
-      const existingByEmail = await this.customerRepository.findByEmail(organizationId, email);
-
-      // Email exists if found AND it's not the excluded customer (edit mode)
+    if (normalizedEmail) {
+      const existingByEmail = await this.customerRepository.findByEmail(
+        organizationId,
+        normalizedEmail,
+      );
       if (existingByEmail && existingByEmail.id !== excludeCustomerId) {
         result.emailExists = true;
         result.emailError = 'This email is already registered';
-        this.logger.log(`Email ${email} already exists for customer ${existingByEmail.id}`);
       }
     }
 
     return result;
+  }
+
+  // ==================== PRIVATE HELPERS ====================
+
+  /** Guard against duplicate phone/email within an org's customer_profiles */
+  private async guardOrgDuplicates(
+    organizationId: string,
+    phone: string,
+    email?: string,
+  ): Promise<void> {
+    const existingByPhone = await this.customerRepository.findOneByPhone(organizationId, phone);
+    if (existingByPhone) {
+      throw new ConflictException(
+        `A customer with phone '${phone}' already exists in this organization`,
+      );
+    }
+
+    if (email) {
+      const existingByEmail = await this.customerRepository.findByEmail(organizationId, email);
+      if (existingByEmail) {
+        throw new ConflictException(
+          `A customer with email '${email}' already exists in this organization`,
+        );
+      }
+    }
+  }
+
+  /** Find existing user by phone or create a new one. Handles email uniqueness in users table. */
+  private async findOrCreateUser(
+    phone: string,
+    email: string | undefined,
+    dto: CreateCustomerDto,
+  ): Promise<{ id: string; firstName: string; lastName?: string }> {
+    const existing = await this.userRepository.findByPhone(phone);
+    if (existing) {
+      this.logger.log(`Found existing user: ${existing.id}`);
+      return existing;
+    }
+
+    // Determine if we can attach email to the new user entry
+    let userEmail: string | undefined;
+    if (email) {
+      const emailTaken = await this.userRepository.findByEmail(email);
+      if (emailTaken) {
+        this.logger.warn(
+          `Email '${email}' already taken in users table by user ${emailTaken.id}. Creating user with phone only.`,
+        );
+      } else {
+        userEmail = email;
+      }
+    }
+
+    const user = await this.userRepository.create({
+      phone,
+      email: userEmail,
+      firstName: dto.firstName || '',
+      lastName: dto.lastName,
+      profileCompleted: false,
+      status: UserStatus.ACTIVE,
+    });
+
+    this.logger.log(`User created: ${user.id}`);
+    return user;
+  }
+
+  /** Generate and assign a human-readable customer code (non-fatal on failure) */
+  private async assignCustomerCode(
+    customer: CustomerProfileEntity,
+    organizationId: string,
+  ): Promise<void> {
+    try {
+      const org = await this.organizationRepository.findOneById(organizationId);
+      if (!org) return;
+
+      const customerCode = await generateEntityCode(
+        this.customerRepository.repository,
+        'customerCode',
+        'CUST',
+        org.code,
+        'customer_code',
+      );
+      await this.customerRepository.update(customer.id, { customerCode });
+      customer.customerCode = customerCode;
+    } catch (err: unknown) {
+      this.logger.warn(`Failed to generate customer code for ${customer.id}: ${String(err)}`);
+    }
   }
 }

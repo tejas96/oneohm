@@ -51,7 +51,6 @@ const mockFunnelStages: FunnelStage[] = [
     label: 'New Leads',
     count: 150,
     value: 22500000,
-    color: '#6366F1',
     conversionRate: 100,
   },
   {
@@ -59,7 +58,6 @@ const mockFunnelStages: FunnelStage[] = [
     label: 'Qualified',
     count: 95,
     value: 14250000,
-    color: '#8B5CF6',
     conversionRate: 63.3,
   },
   {
@@ -67,7 +65,6 @@ const mockFunnelStages: FunnelStage[] = [
     label: 'Quote Sent',
     count: 60,
     value: 9000000,
-    color: '#A855F7',
     conversionRate: 63.2,
   },
   {
@@ -75,10 +72,9 @@ const mockFunnelStages: FunnelStage[] = [
     label: 'Negotiation',
     count: 35,
     value: 5250000,
-    color: '#D946EF',
     conversionRate: 58.3,
   },
-  { id: 'won', label: 'Won', count: 25, value: 3750000, color: '#22C55E', conversionRate: 71.4 },
+  { id: 'won', label: 'Won', count: 25, value: 3750000, conversionRate: 71.4 },
 ];
 
 const mockStats = {

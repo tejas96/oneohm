@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Progress } from '@/components/ui/progress';
-import { ROUTES } from '@/lib/config/routes';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { cn, formatRelativeDate, getDueDateColor } from '@/lib/utils';
 
 interface TaskDrawerDetailsProps {
@@ -28,7 +28,7 @@ export function TaskDrawerDetails({
   onAssigneeChange,
   onDescriptionChange,
 }: TaskDrawerDetailsProps): React.JSX.Element {
-  const projectHref = ROUTES.PROJECTS.DETAIL.replace('[id]', task.projectId);
+  const projectHref = buildRoute(ROUTES.PROJECTS.DETAIL, { id: task.projectId });
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [draftDescription, setDraftDescription] = useState(task.description ?? '');
 

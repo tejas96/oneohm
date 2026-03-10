@@ -19,10 +19,10 @@ const configService: ConfigService<ConfigInterface> = {
   get: <K extends keyof ConfigInterface>(key: K): ConfigInterface[K] => {
     const keys = key.split('.');
 
-    let value: any = configObj; // Need 'any' for dynamic property access
+    let value: unknown = configObj;
 
     for (const k of keys) {
-      value = value?.[k];
+      value = (value as Record<string, unknown>)?.[k];
     }
 
     return value as ConfigInterface[K];

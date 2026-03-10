@@ -17,7 +17,7 @@ import type { ProjectListItem } from '../hooks';
 import { TeamAvatarGroup } from './team-avatar-group';
 
 import { Badge } from '@/components/ui/badge';
-import { ROUTES } from '@/lib/config/routes';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { formatCurrency, formatDate, formatRelativeDate, formatSystemSize } from '@/lib/utils';
 
 interface ProjectCardProps {
@@ -70,7 +70,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
 
   return (
     <Link
-      href={ROUTES.PROJECTS.DETAIL.replace('[id]', project.id)}
+      href={buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id })}
       className="block bg-background rounded-lg border border-border-light p-4 cursor-pointer transition-all duration-150 hover:shadow-sm hover:-translate-y-px"
     >
       {/* Row 1: Project number + type | Status + health */}

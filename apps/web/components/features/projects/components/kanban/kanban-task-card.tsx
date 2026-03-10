@@ -59,9 +59,9 @@ export function KanbanTaskCard({ task, onTaskClick, isDragOverlay }: KanbanTaskC
       style={style}
       className={cn(
         'group relative rounded-lg border border-border bg-background p-3 shadow-sm',
-        'border-l-4 transition-shadow hover:shadow-md',
+        'border-l-4 transition-shadow hover:shadow-sm',
         PRIORITY_COLORS[task.priority] ?? 'border-l-gray-400',
-        isDragOverlay && 'shadow-lg ring-2 ring-primary/30',
+        isDragOverlay && 'shadow-sm ring-2 ring-primary/30',
         isBlocked && 'bg-error/5',
         isDone && 'opacity-70',
       )}

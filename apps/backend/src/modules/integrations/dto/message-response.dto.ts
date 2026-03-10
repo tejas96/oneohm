@@ -38,7 +38,7 @@ export class MessageResponseDto {
       contactId: '919876543210',
     },
   })
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 
   @ApiPropertyOptional({
     description: 'Error details if the message failed',
@@ -51,6 +51,6 @@ export class MessageResponseDto {
   error?: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
   };
 }

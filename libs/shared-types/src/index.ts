@@ -13,5 +13,8 @@ export * from './interfaces/task.interface';
 export * from './interfaces/inventory.interface';
 export * from './interfaces/integration.interface';
 
+// Utils
+export * from './utils/pricing.utils';
+
 // IAM Types
 export * from './iam.types';

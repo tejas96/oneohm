@@ -14,7 +14,13 @@ import { QuoteLineItemResponseDto } from './quote-line-item-response.dto';
 import { QuoteVersionResponseDto } from './quote-version-response.dto';
 import { toNum } from '../../../../common/utils';
 
-const cv = (obj: any) => obj.versions?.find((v: any) => v.isCurrent);
+const cv = (obj: Record<string, unknown>) => {
+  const versions = obj.versions as Array<Record<string, unknown>> | undefined;
+  return versions?.find((v) => v.isCurrent);
+};
+
+const pb = (obj: Record<string, unknown>) =>
+  cv(obj)?.pricingBreakdown as Record<string, unknown> | undefined;
 
 /**
  * Quote Response DTO
@@ -133,22 +139,22 @@ export class QuoteResponseDto {
 
   @ApiPropertyOptional({ example: 500000.0 })
   @Expose()
-  @Transform(({ obj }) => toNum(cv(obj)?.pricingBreakdown?.basePrice))
+  @Transform(({ obj }) => toNum(pb(obj)?.basePrice))
   basePrice?: number;
 
   @ApiPropertyOptional({ example: 60000.0 })
   @Expose()
-  @Transform(({ obj }) => toNum(cv(obj)?.pricingBreakdown?.totalGst))
+  @Transform(({ obj }) => toNum(pb(obj)?.totalGst))
   gstAmount?: number;
 
   @ApiPropertyOptional({ example: 560000.0 })
   @Expose()
-  @Transform(({ obj }) => toNum(cv(obj)?.pricingBreakdown?.totalPrice))
+  @Transform(({ obj }) => toNum(pb(obj)?.totalPrice))
   totalPrice?: number;
 
   @ApiPropertyOptional({ example: 10000.0 })
   @Expose()
-  @Transform(({ obj }) => toNum(cv(obj)?.pricingBreakdown?.discountAmount))
+  @Transform(({ obj }) => toNum(pb(obj)?.discountAmount))
   discountAmount?: number;
 
   @ApiPropertyOptional({ example: 550000.0 })
@@ -158,12 +164,12 @@ export class QuoteResponseDto {
 
   @ApiPropertyOptional({ example: true })
   @Expose()
-  @Transform(({ obj }) => cv(obj)?.pricingBreakdown?.isSubsidyApplicable)
+  @Transform(({ obj }) => pb(obj)?.isSubsidyApplicable)
   isSubsidyApplicable?: boolean;
 
   @ApiPropertyOptional({ example: 30000.0 })
   @Expose()
-  @Transform(({ obj }) => toNum(cv(obj)?.pricingBreakdown?.subsidyAmount))
+  @Transform(({ obj }) => toNum(pb(obj)?.subsidyAmount))
   subsidyAmount?: number;
 
   @ApiPropertyOptional({ example: 520000.0 })
@@ -245,8 +251,11 @@ export class QuoteResponseDto {
   @Expose()
   @Transform(({ obj }) => {
     if (!obj.versions) return undefined;
-    const sorted = [...obj.versions].sort((a: any, b: any) => b.versionNumber - a.versionNumber);
-    return sorted.map((v: any) => ({
+    const sorted = [...obj.versions].sort(
+      (a: { versionNumber?: number }, b: { versionNumber?: number }) =>
+        (b.versionNumber ?? 0) - (a.versionNumber ?? 0),
+    );
+    return sorted.map((v: Record<string, unknown>) => ({
       id: v.id,
       quoteId: v.quoteId,
       versionNumber: v.versionNumber,
@@ -266,9 +275,9 @@ export class QuoteResponseDto {
       createdAt: v.createdAt,
       lineItems:
         v.isCurrent && v.lineItems
-          ? v.lineItems
-              .sort((a: any, b: any) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
-              .map((li: any) => ({
+          ? (v.lineItems as Array<Record<string, unknown>>)
+              .sort((a, b) => ((a.displayOrder as number) ?? 0) - ((b.displayOrder as number) ?? 0))
+              .map((li) => ({
                 id: li.id,
                 quoteVersionId: li.quoteVersionId,
                 productId: li.productId,
@@ -297,9 +306,9 @@ export class QuoteResponseDto {
   @Transform(({ obj }) => {
     const current = cv(obj);
     if (!current?.lineItems) return undefined;
-    return current.lineItems
-      .sort((a: any, b: any) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
-      .map((li: any) => ({
+    return (current.lineItems as Array<Record<string, unknown>>)
+      .sort((a, b) => ((a.displayOrder as number) ?? 0) - ((b.displayOrder as number) ?? 0))
+      .map((li: Record<string, unknown>) => ({
         id: li.id,
         quoteVersionId: li.quoteVersionId,
         productId: li.productId,
