@@ -82,12 +82,17 @@ export class ProjectListItemDto {
 
   @ApiProperty({ example: 10, description: 'Derived from quote current version' })
   @Expose()
-  @Transform(({ obj }) => toNum(obj.quote?.versions?.find((v: any) => v.isCurrent)?.systemSizeKw))
+  @Transform(({ obj }) =>
+    toNum(obj.quote?.versions?.find((v: { isCurrent?: boolean }) => v.isCurrent)?.systemSizeKw),
+  )
   systemSizeKw!: number;
 
   @ApiProperty({ example: 'residential', description: 'Derived from quote current version' })
   @Expose()
-  @Transform(({ obj }) => obj.quote?.versions?.find((v: any) => v.isCurrent)?.projectType)
+  @Transform(
+    ({ obj }) =>
+      obj.quote?.versions?.find((v: { isCurrent?: boolean }) => v.isCurrent)?.projectType,
+  )
   projectType!: string;
 
   @ApiProperty({ enum: Object.values(ProjectStatus), example: ProjectStatus.IN_PROGRESS })
@@ -113,7 +118,9 @@ export class ProjectListItemDto {
   @ApiPropertyOptional({ example: 450000, description: 'Derived from quote current version' })
   @Expose()
   @Transform(
-    ({ obj }) => toNum(obj.quote?.versions?.find((v: any) => v.isCurrent)?.finalPrice) ?? null,
+    ({ obj }) =>
+      toNum(obj.quote?.versions?.find((v: { isCurrent?: boolean }) => v.isCurrent)?.finalPrice) ??
+      null,
   )
   estimatedCost?: number;
 

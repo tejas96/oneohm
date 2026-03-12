@@ -98,7 +98,7 @@ export async function migrateUsersToIAM(dataSource: DataSource): Promise<void> {
 
     // Create a lookup map: organizationId → roleCode → roleId
     const roleMap: Record<string, Record<string, string>> = {};
-    iamRoles.forEach((role: any) => {
+    iamRoles.forEach((role: { organization_id: string; code: string; id: string }) => {
       if (!roleMap[role.organization_id]) {
         roleMap[role.organization_id] = {};
       }

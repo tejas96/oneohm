@@ -15,7 +15,7 @@ import { TaskStatusDropdown } from './task-status-dropdown';
 
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ROUTES } from '@/lib/config/routes';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { cn, formatRelativeDate, getDueDateColor } from '@/lib/utils';
 
 interface TaskRowProps {
@@ -35,7 +35,7 @@ export function TaskRow({
   onStartTask,
   isFocused,
 }: TaskRowProps): React.JSX.Element {
-  const projectDetailHref = ROUTES.PROJECTS.DETAIL.replace('[id]', task.projectId);
+  const projectDetailHref = buildRoute(ROUTES.PROJECTS.DETAIL, { id: task.projectId });
   const canMarkDone = (TASK_STATUS_TRANSITIONS[task.status] ?? []).includes(TaskStatus.DONE);
   const canStart = (TASK_STATUS_TRANSITIONS[task.status] ?? []).includes(TaskStatus.IN_PROGRESS);
   const isOverdue = task.isOverdue ?? false;

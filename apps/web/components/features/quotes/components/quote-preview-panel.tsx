@@ -2,6 +2,7 @@
 
 import { AlertTriangle, Calendar, Calculator, Download, Save, Shield, Zap } from 'lucide-react';
 
+import { applyPreGstDiscount } from '../pricing-utils';
 import type { CalculateQuoteResponse } from '../types';
 
 import { Badge, Button, Card, CardContent, Skeleton, Spinner } from '@/components/ui';
@@ -26,6 +27,7 @@ export interface QuotePreviewPanelProps {
   onRecalculate: () => void;
   isSaving: boolean;
   savedQuoteNumber: string | null;
+  savedVersionInfo: { current: number; max: number | null } | null;
   onSave: () => void;
   isDownloading: boolean;
   onDownload: () => void;
@@ -50,6 +52,7 @@ export function QuotePreviewPanel({
   onRecalculate,
   isSaving,
   savedQuoteNumber,
+  savedVersionInfo,
   onSave,
   isDownloading,
   onDownload,
@@ -107,7 +110,8 @@ export function QuotePreviewPanel({
   const totalPanels = calculation.panels.reduce((sum, p) => sum + p.quantity, 0);
   const dcrPanels = calculation.panels.filter((p) => p.isDcr);
   const nonDcrPanels = calculation.panels.filter((p) => !p.isDcr);
-  const adjustedFinalPrice = Math.max(0, calculation.pricing.finalPrice - discountAmount);
+  const discounted = applyPreGstDiscount(calculation.pricing.basePrice, discountAmount);
+  const adjustedFinalPrice = discounted.grossTotal;
   const adjustedEffectivePrice = Math.max(0, adjustedFinalPrice - calculation.subsidy.amount);
   const pricePerWatt =
     calculation.actualTotalWattage > 0
@@ -126,7 +130,7 @@ export function QuotePreviewPanel({
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-lg bg-primary/5 p-3 text-center">
             <p className="text-xl font-semibold text-primary">
-              {Math.round(calculation.actualSystemSizeKw)} kW
+              {calculation.actualSystemSizeKw.toFixed(2)} kW
             </p>
             <p className="text-xs text-foreground-secondary">System Size</p>
           </div>
@@ -521,38 +525,45 @@ export function QuotePreviewPanel({
           </p>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-foreground-secondary">
-                Base Price
-                {calculation.profitabilityPercent > 0 && (
-                  <span className="ml-1 text-xs text-foreground-tertiary">
-                    + Margin ({calculation.profitabilityPercent}%)
-                  </span>
-                )}
+              <span className="text-foreground-secondary">Base Price</span>
+              <span>
+                {formatCurrency(calculation.pricing.basePrice - calculation.profitabilityAmount)}
               </span>
-              <span>{formatCurrency(calculation.pricing.basePrice)}</span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-foreground-secondary">GST on Equipment (5%)</span>
-              <span>{formatCurrency(calculation.pricing.gst5Amount)}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-foreground-secondary">GST on Services (18%)</span>
-              <span>{formatCurrency(calculation.pricing.gst18Amount)}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-foreground-secondary">Total GST</span>
-              <span>{formatCurrency(calculation.pricing.totalGst)}</span>
-            </div>
+            {calculation.profitabilityPercent > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-foreground-secondary">
+                  Margin ({calculation.profitabilityPercent}%)
+                </span>
+                <span>{formatCurrency(calculation.profitabilityAmount)}</span>
+              </div>
+            )}
             <div className="flex items-center justify-between border-t border-border-light pt-1.5 text-sm font-medium">
-              <span>Gross Total</span>
-              <span>{formatCurrency(calculation.pricing.totalPrice)}</span>
+              <span>Subtotal</span>
+              <span>{formatCurrency(calculation.pricing.basePrice)}</span>
             </div>
             {discountAmount > 0 && (
               <div className="flex items-center justify-between text-sm text-success">
-                <span>Discount Applied</span>
+                <span>Discount</span>
                 <span>-{formatCurrency(discountAmount)}</span>
               </div>
             )}
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-foreground-secondary">GST on Equipment (5%)</span>
+              <span>{formatCurrency(discounted.gst5)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-foreground-secondary">GST on Services (18%)</span>
+              <span>{formatCurrency(discounted.gst18)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-foreground-secondary">Total GST</span>
+              <span>{formatCurrency(discounted.totalGst)}</span>
+            </div>
+            <div className="flex items-center justify-between border-t border-border-light pt-1.5 text-sm font-medium">
+              <span>Gross Total</span>
+              <span>{formatCurrency(adjustedFinalPrice)}</span>
+            </div>
             {calculation.subsidy.isApplicable && calculation.subsidy.amount > 0 && (
               <div className="flex items-center justify-between text-sm text-success">
                 <span>Subsidy</span>
@@ -626,11 +637,19 @@ export function QuotePreviewPanel({
             </Button>
           ) : (
             <div className="space-y-2">
-              <div className="flex items-center justify-center gap-2 rounded-lg bg-success/10 p-2">
-                <Badge variant="success" size="sm">
-                  Saved
-                </Badge>
-                <span className="text-sm font-medium">{savedQuoteNumber}</span>
+              <div className="flex flex-col items-center gap-1 rounded-lg bg-success/10 p-2">
+                <div className="flex items-center gap-2">
+                  <Badge variant="success" size="sm">
+                    Saved
+                  </Badge>
+                  <span className="text-sm font-medium">{savedQuoteNumber}</span>
+                </div>
+                {savedVersionInfo && (
+                  <span className="text-xs text-text-secondary">
+                    Version {savedVersionInfo.current}
+                    {savedVersionInfo.max ? ` of ${savedVersionInfo.max}` : ''}
+                  </span>
+                )}
               </div>
               <Button
                 type="button"

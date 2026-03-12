@@ -3,6 +3,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 
+import { ROUTES } from '@/lib/config/routes';
 import { useFilteredNavigation } from '@/lib/hooks/use-filtered-navigation';
 
 export interface CommandItem {
@@ -18,27 +19,27 @@ export interface CommandItem {
  * Items referencing routes outside this set are excluded from the palette
  * to avoid surfacing links to unimplemented pages.
  */
-const IMPLEMENTED_ROUTES = new Set([
-  '/',
-  '/dashboard',
-  '/customers',
-  '/customers/new',
-  '/properties',
-  '/properties/new',
-  '/quotes',
-  '/quotes/new',
-  '/projects',
-  '/projects/list',
-  '/projects/new',
-  '/projects/board',
-  '/projects/my-tasks',
-  '/projects/timeline',
-  '/projects/workflow-steps',
-  '/site-visits',
-  '/site-visits/new',
-  '/pipeline',
-  '/followups',
-  '/followups/new',
+const IMPLEMENTED_ROUTES = new Set<string>([
+  ROUTES.HOME,
+  ROUTES.DASHBOARD.HOME,
+  ROUTES.CUSTOMERS.LIST,
+  ROUTES.CUSTOMERS.NEW,
+  ROUTES.PROPERTIES.LIST,
+  ROUTES.PROPERTIES.NEW,
+  ROUTES.QUOTES.LIST,
+  ROUTES.QUOTES.NEW,
+  ROUTES.PROJECTS.DASHBOARD,
+  ROUTES.PROJECTS.LIST,
+  ROUTES.PROJECTS.NEW,
+  ROUTES.PROJECTS.BOARD,
+  ROUTES.PROJECTS.MY_TASKS,
+  ROUTES.PROJECTS.TIMELINE,
+  ROUTES.PROJECTS.WORKFLOW_STEPS,
+  ROUTES.SITE_VISITS.LIST,
+  ROUTES.SITE_VISITS.NEW,
+  ROUTES.PIPELINE.HOME,
+  ROUTES.FOLLOWUPS.LIST,
+  ROUTES.FOLLOWUPS.NEW,
 ]);
 
 function isImplementedRoute(href: string): boolean {

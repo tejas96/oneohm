@@ -34,7 +34,7 @@ export interface IntegrationProviderMetadata {
  * ```
  */
 export function IntegrationProvider(metadata: IntegrationProviderMetadata) {
-  return function <T extends new (...args: any[]) => any>(target: T) {
+  return function <T extends new (...args: unknown[]) => object>(target: T) {
     // Store metadata on the class
     Reflect.defineMetadata('integration:provider', metadata, target);
 
@@ -48,13 +48,13 @@ export function IntegrationProvider(metadata: IntegrationProviderMetadata) {
 /**
  * Get provider metadata from a class
  */
-export function getProviderMetadata(target: any): IntegrationProviderMetadata | undefined {
+export function getProviderMetadata(target: object): IntegrationProviderMetadata | undefined {
   return Reflect.getMetadata('integration:provider', target);
 }
 
 /**
  * Get provider name from a class
  */
-export function getProviderName(target: any): IntegrationProviderEnum | undefined {
+export function getProviderName(target: object): IntegrationProviderEnum | undefined {
   return Reflect.getMetadata('integration:provider:name', target);
 }

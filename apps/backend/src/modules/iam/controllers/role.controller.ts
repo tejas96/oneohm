@@ -15,6 +15,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
@@ -73,7 +74,7 @@ export class RoleController {
       updatedBy: user.id,
     });
 
-    return role;
+    return plainToInstance(RoleResponseDto, role);
   }
 
   /**
@@ -103,7 +104,11 @@ export class RoleController {
       roles.map(async (role) => {
         const permissionsCount = await this.rolePermissionRepository.countByRoleId(role.id);
         const usersCount = await this.userRoleRepository.countByRoleId(role.id);
-        return { ...role, permissionsCount, usersCount };
+        return plainToInstance(RoleResponseDto, {
+          ...role,
+          permissionsCount,
+          usersCount,
+        });
       }),
     );
 
@@ -135,11 +140,11 @@ export class RoleController {
     const permissions = rolePermissions.map((rp) => rp.permission.code);
     const permissionIds = rolePermissions.map((rp) => rp.permissionId);
 
-    return {
+    return plainToInstance(RoleWithPermissionsDto, {
       ...role,
       permissions,
       permissionIds,
-    };
+    });
   }
 
   /**

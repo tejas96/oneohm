@@ -83,8 +83,9 @@ export class QuoteConfigurationRepository {
           ],
           showInventoryStock: true,
         });
-      } catch (error: any) {
-        if (error?.code === '23503') {
+      } catch (error: unknown) {
+        const err = error as { code?: string };
+        if (err?.code === '23503') {
           throw new BadRequestException(
             `Invalid organization ID: ${organizationId}. Organization does not exist.`,
           );

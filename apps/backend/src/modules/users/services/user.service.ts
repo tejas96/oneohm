@@ -96,7 +96,7 @@ export class UserService {
           userId: user.id,
           organizationId,
           profileType,
-          profileData: profileData || {},
+          profileData: (profileData || {}) as Record<string, unknown>,
           createdBy: createdBy || user.id,
           roleCode: customRoleCode, // Pass custom role if provided
         });

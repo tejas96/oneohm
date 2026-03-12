@@ -210,7 +210,7 @@ export function CustomerListPage(): JSX.Element {
   }, [page, pageSize, debouncedSearch, statusFilter, leadSourceFilter, sortBy, sortOrder]);
 
   // Modal state
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer] = useState<Customer | null>(null);
   const [selectedRows, setSelectedRows] = useState<Customer[]>([]);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -332,7 +332,7 @@ export function CustomerListPage(): JSX.Element {
 
           return (
             <Link
-              href={ROUTES.CUSTOMERS.DETAIL.replace('[id]', customer.id)}
+              href={buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: customer.id })}
               className="flex items-center gap-2.5 hover:text-primary transition-colors"
             >
               {/* Avatar */}
@@ -499,7 +499,7 @@ export function CustomerListPage(): JSX.Element {
             <DropdownMenuContent align="end">
               <DropdownMenuItem
                 onClick={() =>
-                  router.push(ROUTES.CUSTOMERS.DETAIL.replace('[id]', row.original.id))
+                  router.push(buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: row.original.id }))
                 }
               >
                 <Eye className="mr-2 size-icon-sm" />
@@ -515,20 +515,14 @@ export function CustomerListPage(): JSX.Element {
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() =>
-                  router.push(ROUTES.CUSTOMERS.ADD_PROPERTY.replace('[id]', row.original.id))
+                  router.push(buildRoute(ROUTES.CUSTOMERS.ADD_PROPERTY, { id: row.original.id }))
                 }
               >
                 <Plus className="mr-2 size-icon-sm" />
                 Add Property
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => {
-                  setSelectedCustomer(row.original);
-                  setDeleteModalOpen(true);
-                }}
-                className="text-error"
-              >
+              <DropdownMenuItem disabled className="text-error">
                 <Trash2 className="mr-2 size-icon-sm" />
                 Delete
               </DropdownMenuItem>
@@ -734,7 +728,7 @@ export function CustomerListPage(): JSX.Element {
             <Button variant="ghost" size="sm" className="text-foreground-secondary">
               Export Selected
             </Button>
-            <Button variant="ghost" size="sm" className="text-error">
+            <Button variant="ghost" size="sm" className="text-error" disabled>
               Delete
             </Button>
             <Button

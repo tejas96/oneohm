@@ -37,7 +37,7 @@ export interface HttpClientMetadata {
  * 4. Inject into the property
  */
 export function InjectHttpClient(options: InjectHttpClientOptions = {}) {
-  return function (target: any, propertyKey: string) {
+  return function (target: object, propertyKey: string) {
     // Store metadata
     const metadata: HttpClientMetadata = {
       propertyKey,
@@ -51,6 +51,6 @@ export function InjectHttpClient(options: InjectHttpClientOptions = {}) {
 /**
  * Get HTTP client metadata from a class
  */
-export function getHttpClientMetadata(target: any): HttpClientMetadata | undefined {
+export function getHttpClientMetadata(target: object): HttpClientMetadata | undefined {
   return Reflect.getMetadata('integration:http', target);
 }

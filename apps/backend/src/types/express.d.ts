@@ -13,7 +13,7 @@
 declare global {
   namespace Express {
     // Base User interface - use typed requests for specific types
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- Express augmentation; use typed request interfaces
     interface User {}
   }
 }

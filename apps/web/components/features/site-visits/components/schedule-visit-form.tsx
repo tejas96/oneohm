@@ -127,7 +127,7 @@ export function ScheduleVisitForm(): React.JSX.Element {
   const [properties, setProperties] = React.useState<Property[]>([]);
 
   const form = useForm<ScheduleSiteVisitFormData>({
-    resolver: zodResolver(scheduleSiteVisitSchema) as any,
+    resolver: zodResolver(scheduleSiteVisitSchema) as never,
     defaultValues: {
       customerId: '',
       propertyId: preselectedPropertyId || '',

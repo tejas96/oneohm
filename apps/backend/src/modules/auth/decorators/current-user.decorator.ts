@@ -1,4 +1,4 @@
-import { type ExecutionContext, createParamDecorator } from '@nestjs/common';
+import { type ExecutionContext, UnauthorizedException, createParamDecorator } from '@nestjs/common';
 
 import type { CurrentUserType } from '../types';
 
@@ -14,7 +14,7 @@ export const CurrentUser = createParamDecorator(
     const user = request.user;
 
     if (!user) {
-      throw new Error('User not found in request');
+      throw new UnauthorizedException('User not found in request');
     }
 
     return user;

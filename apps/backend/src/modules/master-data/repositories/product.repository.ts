@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PhaseType, ProductStatus, ProductType, StructureType } from '@oneohm-epc/shared-types';
-import { IsNull, Repository } from 'typeorm';
+import { IsNull, Repository, type FindOptionsWhere } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { ProductEntity } from '../entities/product.entity';
@@ -331,7 +331,7 @@ export class ProductRepository {
     productType: ProductType,
     activeOnly = true,
   ): Promise<ProductEntity[]> {
-    const where: any = {
+    const where: FindOptionsWhere<ProductEntity> = {
       organizationId,
       type: productType,
       deletedAt: IsNull(),

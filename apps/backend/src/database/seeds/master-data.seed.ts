@@ -1,4 +1,4 @@
-import { DataSource } from 'typeorm';
+import { DataSource, type QueryRunner } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 
 import loadConfig from '../../config/configuration';
@@ -215,7 +215,7 @@ export async function seedMasterData(dataSource: DataSource): Promise<void> {
 // =====================================================
 // PRODUCT CATEGORIES
 // =====================================================
-async function insertProductCategories(queryRunner: any): Promise<void> {
+async function insertProductCategories(queryRunner: QueryRunner): Promise<void> {
   const categories = [
     {
       id: CATEGORY_IDS.SOLAR,
@@ -319,7 +319,7 @@ async function insertProductCategories(queryRunner: any): Promise<void> {
 // =====================================================
 // PRODUCTS
 // =====================================================
-async function insertProducts(queryRunner: any): Promise<void> {
+async function insertProducts(queryRunner: QueryRunner): Promise<void> {
   // DCR Panels
   const dcrPanels = [
     {
@@ -1181,7 +1181,7 @@ async function insertProducts(queryRunner: any): Promise<void> {
 // =====================================================
 // PRICING RULES
 // =====================================================
-async function insertPricingRules(queryRunner: any): Promise<void> {
+async function insertPricingRules(queryRunner: QueryRunner): Promise<void> {
   // Panel Pricing Rules (DCR - Residential)
   const panelPricing = [
     {
@@ -1586,7 +1586,7 @@ async function insertPricingRules(queryRunner: any): Promise<void> {
  * - Super Elevated: 3.2
  * - Ground Mount: 3.5
  */
-async function insertStructurePricingRules(queryRunner: any): Promise<void> {
+async function insertStructurePricingRules(queryRunner: QueryRunner): Promise<void> {
   // Map product CODE to pricing rule config
   // Product codes are stable identifiers in the database
   // Formula: basePrice × multiplier × systemSizeKw
@@ -1704,7 +1704,7 @@ function getProfitabilityPercent(kw: number): number {
   return 13; // Default for > 100 KW
 }
 
-async function insertInstallationPricing(queryRunner: any): Promise<void> {
+async function insertInstallationPricing(queryRunner: QueryRunner): Promise<void> {
   // Installation pricing data - structure costs are now calculated separately via pricing rules
   // Structure pricing uses formula: basePrice × multiplier × systemSizeKw (see insertStructurePricingRules)
   const installationData = [
@@ -2656,7 +2656,7 @@ async function insertInstallationPricing(queryRunner: any): Promise<void> {
 // =====================================================
 // SUBSIDY CONFIGURATIONS
 // =====================================================
-async function insertSubsidyConfigurations(queryRunner: any): Promise<void> {
+async function insertSubsidyConfigurations(queryRunner: QueryRunner): Promise<void> {
   // PM Surya Ghar - Residential (Tiered)
   const residentialTiers = JSON.stringify([
     { fromKw: 0, toKw: 2, ratePerKw: 30000 },
@@ -2747,7 +2747,7 @@ async function insertSubsidyConfigurations(queryRunner: any): Promise<void> {
 // =====================================================
 // QUOTE CONFIGURATION
 // =====================================================
-async function insertQuoteConfiguration(queryRunner: any): Promise<void> {
+async function insertQuoteConfiguration(queryRunner: QueryRunner): Promise<void> {
   const gstConfig = JSON.stringify({
     rate1: 12,
     rate1Percentage: 70,

@@ -13,7 +13,7 @@
 import { Download, Eye, FileText, Loader2, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { getDocumentTypeLabel } from '../constants';
+import { getDocumentTypeLabel } from '../utils';
 
 import { formatFileSize } from '@/components/shared/document-collector/constants';
 import { Badge, Button } from '@/components/ui';

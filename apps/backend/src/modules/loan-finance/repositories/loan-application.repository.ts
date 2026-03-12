@@ -25,9 +25,16 @@ export class LoanApplicationRepository {
     return this.repository.save(entity);
   }
 
-  async findAll(page = 1, limit = 20): Promise<[LoanApplicationEntity[], number]> {
+  async findAll(
+    organizationId: string,
+    page = 1,
+    limit = 20,
+  ): Promise<[LoanApplicationEntity[], number]> {
     return this.repository.findAndCount({
-      where: { deletedAt: IsNull() },
+      where: {
+        deletedAt: IsNull(),
+        property: { organizationId },
+      },
       relations: ['property', 'customer', 'createdByUser', 'updatedByUser'],
       skip: (page - 1) * limit,
       take: limit,
@@ -35,9 +42,13 @@ export class LoanApplicationRepository {
     });
   }
 
-  async findById(id: string): Promise<LoanApplicationEntity | null> {
+  async findById(id: string, organizationId?: string): Promise<LoanApplicationEntity | null> {
     return this.repository.findOne({
-      where: { id, deletedAt: IsNull() },
+      where: {
+        id,
+        deletedAt: IsNull(),
+        ...(organizationId ? { property: { organizationId } } : {}),
+      },
       relations: ['property', 'customer', 'createdByUser', 'updatedByUser'],
     });
   }
@@ -59,16 +70,30 @@ export class LoanApplicationRepository {
   // QUERY METHODS
   // ============================================
 
-  async findByProperty(propertyId: string): Promise<LoanApplicationEntity | null> {
+  async findByProperty(
+    propertyId: string,
+    organizationId?: string,
+  ): Promise<LoanApplicationEntity | null> {
     return this.repository.findOne({
-      where: { propertyId, deletedAt: IsNull() },
+      where: {
+        propertyId,
+        deletedAt: IsNull(),
+        ...(organizationId ? { property: { organizationId } } : {}),
+      },
       relations: ['property', 'customer'],
     });
   }
 
-  async findByCustomer(customerId: string): Promise<LoanApplicationEntity[]> {
+  async findByCustomer(
+    customerId: string,
+    organizationId?: string,
+  ): Promise<LoanApplicationEntity[]> {
     return this.repository.find({
-      where: { customerId, deletedAt: IsNull() },
+      where: {
+        customerId,
+        deletedAt: IsNull(),
+        ...(organizationId ? { property: { organizationId } } : {}),
+      },
       relations: ['property'],
       order: { createdAt: 'DESC' },
     });

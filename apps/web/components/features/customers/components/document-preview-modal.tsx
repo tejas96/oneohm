@@ -13,7 +13,7 @@
 import { Download, FileText, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { getDocumentTypeLabel } from '../constants';
+import { getDocumentTypeLabel } from '../utils';
 
 import { Badge, Button } from '@/components/ui';
 import { useBodyScrollLock } from '@/lib/hooks';

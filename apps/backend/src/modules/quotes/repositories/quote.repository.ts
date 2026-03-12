@@ -282,6 +282,7 @@ export class QuoteRepository {
 
     const latestQuote = await repo
       .createQueryBuilder('quote')
+      .withDeleted()
       .where('quote.quoteNumber LIKE :prefix', { prefix: `${prefix}%` })
       .orderBy('quote.quoteNumber', 'DESC')
       .setLock('pessimistic_write')
@@ -323,6 +324,79 @@ export class QuoteRepository {
       .set({ status, updatedAt: new Date() })
       .where('id IN (:...quoteIds)', { quoteIds })
       .execute();
+  }
+
+  /**
+   * Find the most recent revisable (DRAFT or SENT) quote for a customer+property.
+   * When maxVersions is provided, prefers quotes that still have version capacity.
+   * Falls back to any revisable quote if all are at the limit.
+   */
+  async findRevisableQuote(
+    organizationId: string,
+    customerId: string,
+    propertyId?: string,
+    maxVersions?: number | null,
+  ): Promise<QuoteEntity | null> {
+    const baseConditions = (qb: import('typeorm').SelectQueryBuilder<QuoteEntity>) => {
+      qb.where('quote.organizationId = :organizationId', { organizationId })
+        .andWhere('quote.customerId = :customerId', { customerId })
+        .andWhere('quote.status IN (:...statuses)', {
+          statuses: [QuoteStatus.DRAFT, QuoteStatus.SENT],
+        })
+        .andWhere('quote.deletedAt IS NULL');
+
+      if (propertyId) {
+        qb.andWhere('quote.propertyId = :propertyId', { propertyId });
+      } else {
+        qb.andWhere('quote.propertyId IS NULL');
+      }
+    };
+
+    // When maxVersions is set, only return quotes with remaining capacity.
+    // If all quotes are maxed out, return null so a brand-new quote is created.
+    if (maxVersions != null && maxVersions > 0) {
+      const qb = this.repository.createQueryBuilder('quote');
+      baseConditions(qb);
+      qb.andWhere('quote.currentVersion < :maxVersions', { maxVersions });
+      qb.orderBy('quote.createdAt', 'DESC');
+      const withCapacity = await qb.getOne();
+      return withCapacity;
+    }
+
+    // No maxVersions configured: return the most recent revisable quote
+    const qb = this.repository.createQueryBuilder('quote');
+    baseConditions(qb);
+    qb.orderBy('quote.createdAt', 'DESC');
+    return qb.getOne();
+  }
+
+  /**
+   * Find ALL revisable (DRAFT or SENT) quotes for a customer+property.
+   * Used to present the user with a choice of which quote to archive.
+   */
+  async findAllRevisableQuotes(
+    organizationId: string,
+    customerId: string,
+    propertyId?: string,
+  ): Promise<QuoteEntity[]> {
+    const qb = this.repository
+      .createQueryBuilder('quote')
+      .where('quote.organizationId = :organizationId', { organizationId })
+      .andWhere('quote.customerId = :customerId', { customerId })
+      .andWhere('quote.status IN (:...statuses)', {
+        statuses: [QuoteStatus.DRAFT, QuoteStatus.SENT],
+      })
+      .andWhere('quote.deletedAt IS NULL');
+
+    if (propertyId) {
+      qb.andWhere('quote.propertyId = :propertyId', { propertyId });
+    } else {
+      qb.andWhere('quote.propertyId IS NULL');
+    }
+
+    qb.orderBy('quote.createdAt', 'DESC');
+
+    return qb.getMany();
   }
 
   /**

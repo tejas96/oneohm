@@ -78,11 +78,11 @@ export function useCreateCustomer(): UseMutationResult<
 
   return useMutation({
     mutationFn: async (data: CreateCustomerProfileFormData): Promise<CustomerResponse> => {
-      // Prepend +91 to phone numbers for backend
       const payload = {
         ...data,
         phone: `+91${data.phone}`,
         alternatePhone: data.alternatePhone ? `+91${data.alternatePhone}` : undefined,
+        email: data.email ? data.email.trim().toLowerCase() : undefined,
         country: 'India',
       };
 
@@ -145,7 +145,7 @@ export function useCheckAvailability(): {
         queryParams.append('phone', `+91${params.phone}`);
       }
       if (params.email) {
-        queryParams.append('email', params.email);
+        queryParams.append('email', params.email.trim().toLowerCase());
       }
       if (params.excludeCustomerId) {
         queryParams.append('excludeCustomerId', params.excludeCustomerId);

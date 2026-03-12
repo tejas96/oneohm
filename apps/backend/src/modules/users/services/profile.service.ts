@@ -22,7 +22,7 @@ interface CreateProfileDto {
   organizationId: string;
   profileType: UserProfileType;
 
-  profileData: any;
+  profileData: Record<string, unknown>;
   createdBy?: string;
   roleCode?: string;
 }

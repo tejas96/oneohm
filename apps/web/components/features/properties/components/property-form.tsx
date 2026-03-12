@@ -283,7 +283,7 @@ export function PropertyForm({
   const backLink = isEditMode
     ? buildRoute(ROUTES.PROPERTIES.DETAIL, { id: propertyId! })
     : isContextAware
-      ? ROUTES.CUSTOMERS.DETAIL.replace('[id]', initialCustomerId)
+      ? buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: initialCustomerId })
       : ROUTES.PROPERTIES.LIST;
 
   const backLabel = isEditMode
@@ -980,7 +980,7 @@ export function PropertyForm({
         });
 
         showToast.success('Property created successfully');
-        router.push(ROUTES.CUSTOMERS.DETAIL.replace('[id]', createData.customerId));
+        router.push(buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: createData.customerId }));
       }
     } catch (error) {
       setIsUploadingDocs(false);

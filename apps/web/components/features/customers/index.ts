@@ -6,8 +6,8 @@ export {
   QUOTE_STATUS_BADGE_VARIANT,
   DOCUMENT_TYPE_LABELS,
   DOCUMENT_TYPE_OPTIONS,
-  getDocumentTypeLabel,
 } from './constants';
+export { getDocumentTypeLabel } from './utils';
 
 export type { CustomerDetailTab } from './constants';
 

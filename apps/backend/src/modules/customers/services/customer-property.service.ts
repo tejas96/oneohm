@@ -290,7 +290,7 @@ export class CustomerPropertyService {
     }
 
     // Prepare update data (exclude isPrimary since handled above, normalize documents)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructured to exclude from rest spread
     const { isPrimary: unusedIsPrimary, documents, ...restDto } = updateDto;
 
     const updated = await this.propertyRepository.update(id, {

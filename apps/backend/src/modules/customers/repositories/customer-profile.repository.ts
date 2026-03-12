@@ -113,10 +113,22 @@ export class CustomerProfileRepository {
     });
   }
 
-  async findByEmail(organizationId: string, email: string): Promise<CustomerProfileEntity | null> {
+  async findOneByPhone(
+    organizationId: string,
+    phone: string,
+  ): Promise<CustomerProfileEntity | null> {
     return this.repository.findOne({
-      where: { organizationId, email, deletedAt: IsNull() },
+      where: { organizationId, phone, deletedAt: IsNull() },
     });
+  }
+
+  async findByEmail(organizationId: string, email: string): Promise<CustomerProfileEntity | null> {
+    return this.repository
+      .createQueryBuilder('cp')
+      .where('cp.organization_id = :organizationId', { organizationId })
+      .andWhere('LOWER(cp.email) = LOWER(:email)', { email })
+      .andWhere('cp.deleted_at IS NULL')
+      .getOne();
   }
 
   /**

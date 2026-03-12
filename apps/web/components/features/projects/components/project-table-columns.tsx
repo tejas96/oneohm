@@ -23,7 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ROUTES } from '@/lib/config/routes';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 import {
   formatCurrency,
   formatCurrencyCompact,
@@ -42,7 +42,7 @@ export const projectColumns: ColumnDef<ProjectListItem>[] = [
       return (
         <div>
           <Link
-            href={ROUTES.PROJECTS.DETAIL.replace('[id]', project.id)}
+            href={buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id })}
             className="text-sm font-medium text-primary hover:underline"
           >
             {project.projectNumber}
@@ -185,7 +185,9 @@ export const projectColumns: ColumnDef<ProjectListItem>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
-              <Link href={ROUTES.PROJECTS.DETAIL.replace('[id]', project.id)}>View Details</Link>
+              <Link href={buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id })}>
+                View Details
+              </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

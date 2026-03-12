@@ -1,9 +1,9 @@
 'use client';
 
-import { Building2, Edit, FileText, Mail, Phone, Plus, Upload } from 'lucide-react';
+import { Building2, Clock, Edit, FileText, Mail, Phone, Plus, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { type JSX, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { type JSX, useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   CUSTOMER_DETAIL_TABS,
@@ -48,10 +48,10 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import {
-  cn,
   formatCurrency,
   formatDate,
   formatPhoneForWhatsApp,
+  getErrorMessage,
   recordRecentView,
 } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
@@ -64,135 +64,12 @@ interface CustomerDetailPageProps {
   customerId: string;
 }
 
-// ============================================================================
-// Mock Activity Data (Phase 2 - will be replaced with API)
-// ============================================================================
-
-const mockActivityData = [
-  {
-    id: '1',
-    type: 'quote' as const,
-    title: 'Quote sent',
-    description: 'Quote #QT-2026-0042 sent to customer',
-    timestamp: new Date('2026-01-28T10:30:00Z'),
-  },
-  {
-    id: '2',
-    type: 'visit' as const,
-    title: 'Site visit completed',
-    description: 'Technical assessment at Koramangala Residence',
-    timestamp: new Date('2026-01-27T14:30:00Z'),
-  },
-  {
-    id: '3',
-    type: 'property' as const,
-    title: 'Property added',
-    description: 'HSR Layout Office property added',
-    timestamp: new Date('2026-01-20T11:00:00Z'),
-  },
-  {
-    id: '4',
-    type: 'update' as const,
-    title: 'Lead temperature changed',
-    description: 'Temperature changed to Hot',
-    timestamp: new Date('2026-01-18T09:00:00Z'),
-  },
-  {
-    id: '5',
-    type: 'created' as const,
-    title: 'Customer created',
-    description: 'Customer profile created by Arun Kumar',
-    timestamp: new Date('2026-01-15T10:00:00Z'),
-  },
-];
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-// Get dot variant for timeline based on activity type
-const getActivityDotVariant = (
-  type: 'quote' | 'visit' | 'property' | 'update' | 'created',
-): 'primary' | 'secondary' | 'default' => {
-  switch (type) {
-    case 'quote':
-      return 'primary';
-    case 'visit':
-      return 'secondary';
-    case 'property':
-    case 'update':
-    case 'created':
-      return 'default';
-  }
-};
-
-// ============================================================================
-// Simple Timeline Component (matches UX design exactly)
-// ============================================================================
-
-interface SimpleTimelineItem {
-  id: string;
-  title: ReactNode;
-  timestamp: string;
-  dotVariant?: 'primary' | 'secondary' | 'default';
-}
-
-interface SimpleTimelineProps {
-  items: SimpleTimelineItem[];
-}
-
-function SimpleTimeline({ items }: SimpleTimelineProps): JSX.Element {
-  return (
-    <div className="relative pl-6">
-      {/* Vertical line */}
-      <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-border" />
-
-      {/* Items */}
-      <div className="space-y-4">
-        {items.map((item) => (
-          <div key={item.id} className="relative">
-            {/* Dot */}
-            <div
-              className={cn(
-                'absolute -left-6 top-1 size-icon-sm rounded-full border-2',
-                item.dotVariant === 'primary'
-                  ? 'border-primary bg-primary'
-                  : item.dotVariant === 'secondary'
-                    ? 'border-secondary bg-secondary'
-                    : 'border-border bg-background',
-              )}
-            />
-            {/* Content */}
-            <div>
-              <p className="text-sm text-foreground">{item.title}</p>
-              <p className="mt-1 text-xs text-foreground-tertiary">{item.timestamp}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 const DEFAULT_TAB: CustomerDetailTab = 'quotes';
 
 const getInitials = (firstName?: string, lastName?: string): string => {
   const first = firstName?.charAt(0) || '';
   const last = lastName?.charAt(0) || '';
   return `${first}${last}`.toUpperCase() || 'NA';
-};
-
-const formatActivityTimestamp = (date: Date): string => {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-  if (diffDays === 1) {
-    return `Yesterday at ${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
-  }
-  return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
 // ============================================================================
@@ -323,8 +200,8 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
           onSuccess: () => {
             showToast.success(`${field} updated successfully`);
           },
-          onError: () => {
-            showToast.error(`Failed to update ${field}`);
+          onError: (error) => {
+            showToast.error(getErrorMessage(error));
           },
         },
       );
@@ -669,13 +546,10 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
               <h3 className="text-sm font-medium text-foreground">Recent Activity</h3>
             </div>
             <div className="p-4">
-              <SimpleTimeline
-                items={mockActivityData.map((a) => ({
-                  id: a.id,
-                  title: <span>{a.description}</span>,
-                  timestamp: formatActivityTimestamp(a.timestamp),
-                  dotVariant: getActivityDotVariant(a.type),
-                }))}
+              <EmptyState
+                icon={<Clock className="w-full h-full" />}
+                title="Coming Soon"
+                description="Activity timeline is under development and will be available soon."
               />
             </div>
           </div>
@@ -877,16 +751,11 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
 
           {/* Activity Tab */}
           <TabsContent value="activity">
-            <div className="p-4">
-              <SimpleTimeline
-                items={mockActivityData.map((a) => ({
-                  id: a.id,
-                  title: <span>{a.description}</span>,
-                  timestamp: `${a.timestamp.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })} at ${a.timestamp.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`,
-                  dotVariant: getActivityDotVariant(a.type),
-                }))}
-              />
-            </div>
+            <EmptyState
+              icon={<Clock className="w-full h-full" />}
+              title="Activity Coming Soon"
+              description="The activity tab is under development and will be available soon."
+            />
           </TabsContent>
         </Tabs>
       </div>

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Body,
+  ConflictException,
   Controller,
   Get,
   HttpStatus,
@@ -10,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
+  applyPreGstDiscount,
   type CalculatorInputs,
   DcrPreference,
   ItemCategory,
@@ -20,10 +22,16 @@ import {
   SystemType,
 } from '@oneohm-epc/shared-types';
 import { OrganizationContext } from '@oneohm-epc/shared-utils';
+import { plainToInstance } from 'class-transformer';
 
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
+import {
+  InstallationPricingResponseDto,
+  QuoteConfigurationResponseDto,
+  SubsidyConfigurationResponseDto,
+} from '../../master-data/dto';
 import {
   SubsidyConfigurationRepository,
   InstallationPricingRepository,
@@ -34,7 +42,9 @@ import {
   CalculateQuoteResponseDto,
   CreateQuoteDto,
   CreateQuoteFromCalculationDto,
+  UpdateQuoteDto,
 } from '../dto';
+import { QuoteRepository } from '../repositories';
 import { QuoteCalculatorService } from '../services/quote-calculator.service';
 import { QuoteService } from '../services/quote.service';
 
@@ -57,6 +67,7 @@ export class QuoteCalculatorController {
   constructor(
     private readonly calculatorService: QuoteCalculatorService,
     private readonly quoteService: QuoteService,
+    private readonly quoteRepository: QuoteRepository,
     private readonly subsidyConfigRepo: SubsidyConfigurationRepository,
     private readonly installationPricingRepo: InstallationPricingRepository,
     private readonly quoteConfigRepo: QuoteConfigurationRepository,
@@ -100,21 +111,22 @@ export class QuoteCalculatorController {
   }
 
   /**
-   * Create quote from calculated result
-   * Saves the quote with all line items
+   * Create or revise a quote from calculated result.
+   * When `quoteId` is omitted a brand-new quote (version 1) is created.
+   * When `quoteId` is provided the existing quote gets a new version.
    */
   @Post('create-from-calculation')
   @ApiOperation({
-    summary: 'Create quote from calculation',
+    summary: 'Create or revise quote from calculation',
     description: `
-      Creates a new quote from the calculation input.
-      Calculates the quote and saves it with all line items.
-      Returns the created quote.
+      Calculates a quote and saves it.
+      - Without quoteId: creates a new quote (version 1).
+      - With quoteId: creates a new version of the existing quote.
     `,
   })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Quote created successfully',
+    description: 'Quote created / revised successfully',
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
@@ -127,31 +139,39 @@ export class QuoteCalculatorController {
   ): Promise<{
     quoteId: string;
     quoteNumber: string;
+    currentVersion: number;
+    maxVersions: number | null;
     finalPrice: number;
     effectivePrice: number;
     discountAmount: number;
     subsidyAmount: number;
     calculation: CalculateQuoteResponseDto;
   }> {
-    // First calculate the quote
     const calculation = await this.calculatorService.calculateQuote(organizationId, input);
 
-    // Get quote config for validity days
     const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
     const validUntil = new Date();
     validUntil.setDate(validUntil.getDate() + quoteConfig.defaultValidityDays);
 
-    // Build line items from calculation
     const lineItems = this.buildLineItemsFromCalculation(calculation);
 
-    // Validate required fields for saving
     if (!input.customerId) {
       throw new BadRequestException('Customer ID is required to save a quote');
     }
 
+    if (input.paymentMilestones && input.paymentMilestones.length > 0) {
+      const totalPercent = input.paymentMilestones.reduce((sum, m) => sum + m.percentage, 0);
+      if (Math.abs(totalPercent - 100) > 0.01) {
+        throw new BadRequestException(
+          `Payment milestone percentages must total 100% (currently ${totalPercent}%)`,
+        );
+      }
+    }
+
     const discountAmount = input.discountAmount || 0;
-    const finalPrice = calculation.pricing.finalPrice - discountAmount;
-    const effectivePrice = finalPrice - calculation.subsidy.amount;
+    const discounted = applyPreGstDiscount(calculation.pricing.basePrice, discountAmount);
+    const finalPrice = discounted.grossTotal;
+    const effectivePrice = Math.max(0, finalPrice - calculation.subsidy.amount);
 
     const calculatorInputs: CalculatorInputs = {
       phaseType: input.phaseType,
@@ -171,10 +191,11 @@ export class QuoteCalculatorController {
 
     const pricingBreakdown: PricingBreakdown = {
       basePrice: calculation.pricing.basePrice,
-      gst5OnEquipment: calculation.pricing.gst5Amount,
-      gst18OnServices: calculation.pricing.gst18Amount,
-      totalGst: calculation.pricing.totalGst,
-      totalPrice: calculation.pricing.totalPrice,
+      discountedBasePrice: discounted.discountedBase,
+      gst5OnEquipment: discounted.gst5,
+      gst18OnServices: discounted.gst18,
+      totalGst: discounted.totalGst,
+      totalPrice: discounted.grossTotal,
       discountAmount,
       subsidyAmount: calculation.subsidy.amount,
       isSubsidyApplicable: calculation.subsidy.isApplicable,
@@ -206,12 +227,125 @@ export class QuoteCalculatorController {
         gstRate: calculation.structure.gstRate,
         structureType: calculation.structure.structureType,
       },
-      installationPricing: calculation.installation as any,
+      installationPricing:
+        calculation.installation as unknown as QuoteConfigSnapshot['installationPricing'],
       subsidyConfig: null,
-      quoteConfig: quoteConfig as any,
+      quoteConfig: quoteConfig as QuoteConfigSnapshot['quoteConfig'],
       snapshotAt: new Date().toISOString(),
     };
 
+    // ── Determine if this is a revision or a new quote ──
+    // If quoteId is explicitly provided, verify it still has version capacity.
+    // If maxed out, throw MAX_VERSIONS_REACHED so the user can choose to archive.
+    let existingQuoteId: string | null = null;
+
+    if (input.quoteId) {
+      const explicit = await this.quoteRepository.findById(input.quoteId, organizationId);
+      const hasCapacity =
+        !quoteConfig.maxVersions || explicit.currentVersion < quoteConfig.maxVersions;
+      if (!hasCapacity) {
+        const allRevisable = await this.quoteRepository.findAllRevisableQuotes(
+          organizationId,
+          input.customerId,
+          input.propertyId,
+        );
+        throw new ConflictException({
+          error: 'MAX_VERSIONS_REACHED',
+          message: `The revision limit (${quoteConfig.maxVersions}) has been reached. Archive a quote to create a new one.`,
+          maxVersions: quoteConfig.maxVersions,
+          quotes: allRevisable.map((q) => ({
+            quoteId: q.id,
+            quoteNumber: q.quoteNumber,
+            currentVersion: q.currentVersion,
+            status: q.status,
+            createdAt: q.createdAt,
+            updatedAt: q.updatedAt,
+          })),
+        });
+      }
+      existingQuoteId = explicit.id;
+    }
+
+    if (!existingQuoteId) {
+      existingQuoteId =
+        (
+          await this.quoteRepository.findRevisableQuote(
+            organizationId,
+            input.customerId,
+            input.propertyId,
+            quoteConfig.maxVersions,
+          )
+        )?.id ?? null;
+    }
+
+    if (existingQuoteId) {
+      try {
+        const updateDto: UpdateQuoteDto = {
+          salesPersonId: input.salesPersonId,
+          resellerId: input.resellerId,
+          validUntil: validUntil.toISOString().split('T')[0],
+          systemType: SystemType.ON_GRID,
+          systemSizeKw: calculation.systemConfig.totalSystemSizeKw,
+          totalWattageWp: calculation.actualTotalWattage,
+          projectType: input.projectType,
+          calculatorInputs,
+          pricingBreakdown,
+          internalNotes: input.internalNotes,
+          customerNotes: input.customerNotes,
+          projectCompletionWeeks: calculation.completionWeeks,
+          paymentMilestones: input.paymentMilestones,
+          lineItems,
+          changeSummary: 'Revised via calculator',
+        };
+
+        const quote = await this.quoteService.update(
+          existingQuoteId,
+          organizationId,
+          updateDto,
+          currentUser.id,
+        );
+
+        return {
+          quoteId: quote.id,
+          quoteNumber: quote.quoteNumber,
+          currentVersion: quote.currentVersion,
+          maxVersions: quoteConfig.maxVersions ?? null,
+          finalPrice,
+          effectivePrice,
+          discountAmount,
+          subsidyAmount: calculation.subsidy.amount,
+          calculation,
+        };
+      } catch (err) {
+        if (
+          err instanceof BadRequestException &&
+          String(err.message).includes('Maximum number of versions')
+        ) {
+          // Only happens when input.quoteId was explicitly provided for a maxed quote
+          const allRevisable = await this.quoteRepository.findAllRevisableQuotes(
+            organizationId,
+            input.customerId,
+            input.propertyId,
+          );
+          throw new ConflictException({
+            error: 'MAX_VERSIONS_REACHED',
+            message: `The revision limit (${quoteConfig.maxVersions}) has been reached. Archive a quote to create a new one.`,
+            maxVersions: quoteConfig.maxVersions ?? null,
+            quotes: allRevisable.map((q) => ({
+              quoteId: q.id,
+              quoteNumber: q.quoteNumber,
+              currentVersion: q.currentVersion,
+              status: q.status,
+              createdAt: q.createdAt,
+              updatedAt: q.updatedAt,
+            })),
+          });
+        }
+        throw err;
+      }
+    }
+
+    // ── Create brand-new quote (version 1) ──
     const createDto: CreateQuoteDto = {
       customerId: input.customerId,
       propertyId: input.propertyId,
@@ -235,12 +369,13 @@ export class QuoteCalculatorController {
       lineItems,
     };
 
-    // Save the quote
     const quote = await this.quoteService.create(organizationId, createDto, currentUser.id);
 
     return {
       quoteId: quote.id,
       quoteNumber: quote.quoteNumber,
+      currentVersion: quote.currentVersion,
+      maxVersions: quoteConfig.maxVersions ?? null,
       finalPrice,
       effectivePrice,
       discountAmount,
@@ -270,7 +405,10 @@ export class QuoteCalculatorController {
     description: 'Quote configuration',
   })
   async getConfig(@OrganizationContext() organizationId: string) {
-    return this.quoteConfigRepo.getOrCreateDefault(organizationId);
+    const config = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
+    return plainToInstance(QuoteConfigurationResponseDto, config, {
+      excludeExtraneousValues: true,
+    });
   }
 
   /**
@@ -302,7 +440,14 @@ export class QuoteCalculatorController {
     @OrganizationContext() organizationId: string,
     @Query('projectType') projectType: ProjectType,
   ) {
-    return this.subsidyConfigRepo.findActiveByProjectType(organizationId, projectType);
+    const config = await this.subsidyConfigRepo.findActiveByProjectType(
+      organizationId,
+      projectType,
+    );
+    if (!config) return null;
+    return plainToInstance(SubsidyConfigurationResponseDto, config, {
+      excludeExtraneousValues: true,
+    });
   }
 
   /**
@@ -318,7 +463,10 @@ export class QuoteCalculatorController {
     description: 'List of subsidy configurations',
   })
   async getAllSubsidyRules(@OrganizationContext() organizationId: string) {
-    return this.subsidyConfigRepo.findAll(organizationId);
+    const configs = await this.subsidyConfigRepo.findAll(organizationId);
+    return plainToInstance(SubsidyConfigurationResponseDto, configs, {
+      excludeExtraneousValues: true,
+    });
   }
 
   /**
@@ -358,7 +506,15 @@ export class QuoteCalculatorController {
     @Query('systemSizeKw') systemSizeKw: number,
     @Query('projectType') projectType: ProjectType,
   ) {
-    return this.installationPricingRepo.findBySystemSize(organizationId, systemSizeKw, projectType);
+    const pricing = await this.installationPricingRepo.findBySystemSize(
+      organizationId,
+      systemSizeKw,
+      projectType,
+    );
+    if (!pricing) return null;
+    return plainToInstance(InstallationPricingResponseDto, pricing, {
+      excludeExtraneousValues: true,
+    });
   }
 
   /**
@@ -374,7 +530,10 @@ export class QuoteCalculatorController {
     description: 'List of installation pricing tiers',
   })
   async getAllInstallationPricing(@OrganizationContext() organizationId: string) {
-    return this.installationPricingRepo.findAll(organizationId);
+    const pricingList = await this.installationPricingRepo.findAll(organizationId);
+    return plainToInstance(InstallationPricingResponseDto, pricingList, {
+      excludeExtraneousValues: true,
+    });
   }
 
   /**

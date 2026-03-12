@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
   showToast,
 } from '@/components/ui';
-import { ROUTES } from '@/lib/config/routes';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 
 // ============================================================================
 // Types
@@ -215,7 +215,7 @@ export function FollowupListPage(): React.JSX.Element {
       cell: ({ row }) => (
         <div>
           <Link
-            href={ROUTES.PROPERTIES.DETAIL.replace('[id]', row.original.propertyId)}
+            href={buildRoute(ROUTES.PROPERTIES.DETAIL, { id: row.original.propertyId })}
             className="text-sm font-medium text-foreground hover:text-primary"
           >
             {row.original.propertyName}
@@ -267,7 +267,9 @@ export function FollowupListPage(): React.JSX.Element {
               </DropdownMenuItem>
             )}
             <DropdownMenuItem
-              onClick={() => router.push(ROUTES.FOLLOWUPS.EDIT.replace('[id]', row.original.id))}
+              onClick={() =>
+                router.push(buildRoute(ROUTES.FOLLOWUPS.EDIT, { id: row.original.id }))
+              }
             >
               <Calendar className="mr-2 size-icon-sm" />
               Reschedule

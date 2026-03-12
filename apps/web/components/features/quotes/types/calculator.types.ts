@@ -48,6 +48,8 @@ export interface CalculateQuoteRequest {
  * Mirrors backend CreateQuoteFromCalculationDto
  */
 export interface CreateFromCalculationRequest extends CalculateQuoteRequest {
+  /** Existing quote ID — when provided, creates a new version instead of a new quote */
+  quoteId?: string;
   discountAmount?: number;
   internalNotes?: string;
   customerNotes?: string;
@@ -197,6 +199,8 @@ export interface CalculateQuoteResponse {
 export interface SaveQuoteResponse {
   quoteId: string;
   quoteNumber: string;
+  currentVersion: number;
+  maxVersions: number | null;
   finalPrice: number;
   effectivePrice: number;
   discountAmount: number;

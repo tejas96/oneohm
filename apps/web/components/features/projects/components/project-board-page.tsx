@@ -13,7 +13,7 @@ import {
 import { useProjects } from '../hooks/use-projects';
 import { KanbanBoard } from './kanban/kanban-board';
 import { KanbanFilters } from './kanban/kanban-filters';
-import { TaskDrawer } from '../../tasks/components/task-drawer';
+import { TaskDrawer } from '../../tasks';
 
 import { Button } from '@/components/ui/button';
 import {

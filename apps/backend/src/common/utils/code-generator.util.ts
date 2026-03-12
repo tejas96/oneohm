@@ -15,8 +15,8 @@ import { type EntityManager, type Repository } from 'typeorm';
  * @param dbColumnName - The actual database column name (snake_case), if different from TypeORM entity property
  * @param manager - Optional EntityManager for transaction-aware queries
  */
-export async function generateEntityCode(
-  repo: Repository<any>,
+export async function generateEntityCode<T extends object>(
+  repo: Repository<T>,
   columnName: string,
   prefix: string,
   orgCode: string,

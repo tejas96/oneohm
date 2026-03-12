@@ -22,7 +22,7 @@ import { UserRepository } from '../../modules/users/repositories/user.repository
  *   npm run seed:platform-admin
  */
 async function seedPlatformAdmin() {
-  // eslint-disable-next-line no-console
+  // eslint-disable-next-line no-console -- seed script progress output
   console.log('🚀 Starting Platform Admin Seed...\n');
 
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -38,7 +38,7 @@ async function seedPlatformAdmin() {
     // ============================================
     // 1. Create Platform Admin Role (org_id = NULL)
     // ============================================
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log('📝 Creating platform_admin role...');
 
     // Use findPlatformRoleByCode for platform-level roles (org_id IS NULL)
@@ -46,7 +46,7 @@ async function seedPlatformAdmin() {
 
     let platformAdminRole;
     if (existingRole) {
-      // eslint-disable-next-line no-console
+      // eslint-disable-next-line no-console -- seed script progress output
       console.log('✅ platform_admin role already exists');
       platformAdminRole = existingRole;
     } else {
@@ -58,18 +58,18 @@ async function seedPlatformAdmin() {
         isSystemRole: true,
         level: 0,
       });
-      // eslint-disable-next-line no-console
+      // eslint-disable-next-line no-console -- seed script progress output
       console.log('✅ platform_admin role created');
     }
 
     // ============================================
     // 2. Assign ALL permissions to platform_admin
     // ============================================
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log('\n📝 Assigning permissions to platform_admin...');
 
     const allPermissions = await permissionRepository.findAll();
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log(`Found ${allPermissions.length} permissions`);
 
     // Batch-fetch existing permissions for this role (avoids N+1)
@@ -92,20 +92,20 @@ async function seedPlatformAdmin() {
         }),
       );
       await rolePermissionRepository.repository.save(rolePermissions);
-      // eslint-disable-next-line no-console
+      // eslint-disable-next-line no-console -- seed script progress output
       console.log(`✅ Assigned ${permissionIdsToAssign.length} new permissions to platform_admin`);
     } else {
-      // eslint-disable-next-line no-console
+      // eslint-disable-next-line no-console -- seed script progress output
       console.log('✅ All permissions already assigned to platform_admin');
     }
 
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log(`📊 Total permissions: ${allPermissions.length}`);
 
     // ============================================
     // 3. Create Platform Admin User
     // ============================================
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log('\n📝 Creating platform admin user...');
 
     const {
@@ -137,23 +137,23 @@ async function seedPlatformAdmin() {
         lastName: 'Patil',
       });
 
-      // eslint-disable-next-line no-console
+      // eslint-disable-next-line no-console -- seed script progress output
       console.log('✅ Platform admin user created');
-      // eslint-disable-next-line no-console
+      // eslint-disable-next-line no-console -- seed script progress output
       console.log(`   Email: ${email}`);
-      // eslint-disable-next-line no-console
+      // eslint-disable-next-line no-console -- seed script progress output
       console.log(`   Password: ${password}`);
-      // eslint-disable-next-line no-console
+      // eslint-disable-next-line no-console -- seed script progress output
       console.log('   ⚠️  IMPORTANT: Change password in production!');
     } else {
-      // eslint-disable-next-line no-console
+      // eslint-disable-next-line no-console -- seed script progress output
       console.log('✅ Platform admin user already exists');
     }
 
     // ============================================
     // 4. Assign platform_admin role to user
     // ============================================
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log('\n📝 Assigning platform_admin role to user...');
 
     const existingUserRole = await userRoleRepository.findByUserAndRole(
@@ -170,43 +170,43 @@ async function seedPlatformAdmin() {
         organizationId: null, // Platform level assignment
       });
       await userRoleRepository.repository.save(userRole);
-      // eslint-disable-next-line no-console
+      // eslint-disable-next-line no-console -- seed script progress output
       console.log('✅ platform_admin role assigned to user');
     } else {
-      // eslint-disable-next-line no-console
+      // eslint-disable-next-line no-console -- seed script progress output
       console.log('✅ User already has platform_admin role');
     }
 
     // ============================================
     // Summary
     // ============================================
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log(`\n${'='.repeat(50)}`);
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log('🎉 Platform Admin Setup Complete!');
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log('='.repeat(50));
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log('\n📋 Summary:');
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log(`   Role: ${platformAdminRole.name} (${platformAdminRole.code})`);
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log(`   User: ${platformUser.email}`);
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log(`   Permissions: ${allPermissions.length}`);
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log('\n🔐 Login Credentials:');
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log(`   Email: ${email}`);
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log(`   Password: ${password}`);
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log('\n⚠️  Security Warning:');
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log('   Change the default password immediately in production!');
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log('   Store credentials securely.');
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log('\n');
   } catch (error) {
     console.error('❌ Error seeding platform admin:', error);
@@ -219,7 +219,7 @@ async function seedPlatformAdmin() {
 // Run the seed
 seedPlatformAdmin()
   .then(() => {
-    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console -- seed script progress output
     console.log('✅ Seed completed successfully');
     process.exit(0);
   })

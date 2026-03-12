@@ -1,6 +1,6 @@
 import * as crypto from 'crypto';
 
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 
 import { ConfigService } from '../../../config';
 
@@ -21,7 +21,9 @@ export class IntegrationCredentialService {
     const key = this.configService.integrations.encryptionKey;
 
     if (!key) {
-      throw new Error('INTEGRATION_ENCRYPTION_KEY is not configured in environment variables');
+      throw new BadRequestException(
+        'INTEGRATION_ENCRYPTION_KEY is not configured in environment variables',
+      );
     }
 
     // Ensure key is 32 bytes (256 bits) for AES-256
@@ -47,7 +49,7 @@ export class IntegrationCredentialService {
       return `${iv.toString('base64')}:${authTag.toString('base64')}:${encrypted.toString('base64')}`;
     } catch (error) {
       this.logger.error('Failed to encrypt credentials', error);
-      throw new Error('Failed to encrypt credentials');
+      throw new BadRequestException('Failed to encrypt credentials');
     }
   }
 
@@ -60,13 +62,13 @@ export class IntegrationCredentialService {
     try {
       const parts = encryptedCredentials.split(':');
       if (parts.length !== 3) {
-        throw new Error('Invalid encrypted credential format');
+        throw new BadRequestException('Invalid encrypted credential format');
       }
 
       const [ivBase64, authTagBase64, encryptedBase64] = parts;
 
       if (!ivBase64 || !authTagBase64 || !encryptedBase64) {
-        throw new Error('Invalid encrypted credential format: missing parts');
+        throw new BadRequestException('Invalid encrypted credential format: missing parts');
       }
 
       const iv = Buffer.from(ivBase64, 'base64');
@@ -81,7 +83,7 @@ export class IntegrationCredentialService {
       return JSON.parse(decrypted.toString('utf8')) as Record<string, unknown>;
     } catch (error) {
       this.logger.error('Failed to decrypt credentials', error);
-      throw new Error('Failed to decrypt credentials');
+      throw new BadRequestException('Failed to decrypt credentials');
     }
   }
 
