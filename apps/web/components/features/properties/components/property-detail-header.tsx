@@ -54,6 +54,12 @@ export const PropertyDetailHeader = React.memo(
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href={ROUTES.PROPERTIES.LIST}>Properties</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
               <BreadcrumbPage className="truncate max-w-[200px]">{propertyName}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>

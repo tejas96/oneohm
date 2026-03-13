@@ -29,6 +29,8 @@ export interface LatestQuoteInfo {
   quoteNumber: string;
   status: QuoteStatus;
   quoteDate: Date;
+  finalPrice?: number;
+  systemSizeKw?: number;
 }
 
 /**
@@ -418,9 +420,19 @@ export class QuoteRepository {
 
     // PostgreSQL DISTINCT ON gives us the first row per property_id
     // Combined with ORDER BY quoteDate DESC, we get the latest quote per property
+    // Join current version to get finalPrice and systemSizeKw
     const quotes = await this.repository
       .createQueryBuilder('quote')
-      .select(['quote.propertyId', 'quote.quoteNumber', 'quote.status', 'quote.quoteDate'])
+      .leftJoinAndSelect('quote.versions', 'cv', 'cv.versionNumber = quote.currentVersion')
+      .select([
+        'quote.propertyId',
+        'quote.quoteNumber',
+        'quote.status',
+        'quote.quoteDate',
+        'cv.id',
+        'cv.finalPrice',
+        'cv.systemSizeKw',
+      ])
       .distinctOn(['quote.propertyId'])
       .where('quote.propertyId IN (:...propertyIds)', { propertyIds })
       .andWhere('quote.organizationId = :organizationId', { organizationId })
@@ -433,10 +445,13 @@ export class QuoteRepository {
     const result = new Map<string, LatestQuoteInfo>();
     for (const quote of quotes) {
       if (quote.propertyId) {
+        const cv = quote.versions?.[0];
         result.set(quote.propertyId, {
           quoteNumber: quote.quoteNumber,
           status: quote.status,
           quoteDate: quote.quoteDate,
+          finalPrice: cv?.finalPrice != null ? Number(cv.finalPrice) : undefined,
+          systemSizeKw: cv?.systemSizeKw != null ? Number(cv.systemSizeKw) : undefined,
         });
       }
     }

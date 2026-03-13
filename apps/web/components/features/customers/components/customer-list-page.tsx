@@ -649,7 +649,7 @@ export function CustomerListPage(): JSX.Element {
         <div className="relative w-72">
           <Input
             type="text"
-            placeholder="Search customers..."
+            placeholder="Search by name, phone, email, or city..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             leftIcon={<Search className="size-icon-sm" />}

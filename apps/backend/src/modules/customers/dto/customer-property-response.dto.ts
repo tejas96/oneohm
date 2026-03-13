@@ -221,4 +221,20 @@ export class CustomerPropertyResponseDto {
   })
   @Expose()
   latestQuoteDate?: Date;
+
+  @ApiPropertyOptional({
+    description: 'Final price from the current version of the latest quote (before subsidy)',
+    example: 450000,
+  })
+  @Expose()
+  @Transform(({ value }) => toNum(value))
+  latestQuoteFinalPrice?: number;
+
+  @ApiPropertyOptional({
+    description: 'System size in kW from the current version of the latest quote',
+    example: 4.08,
+  })
+  @Expose()
+  @Transform(({ value }) => toNum(value))
+  latestQuoteSystemSizeKw?: number;
 }

@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  ConnectionType,
-  LeadTemperature,
-  PropertySortField,
-  PropertyType,
-  SortOrder,
-} from '@oneohm-epc/shared-types';
+import { LeadTemperature, PropertySortField, PropertyType } from '@oneohm-epc/shared-types';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   AlertCircle,
@@ -19,7 +13,6 @@ import {
   FileText,
   Loader2,
   MoreHorizontal,
-  Phone,
   Plus,
   Search,
   X,
@@ -29,7 +22,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, useCallback, useMemo, type JSX } from 'react';
 
 import { MarkAsLostModal } from './mark-as-lost-modal';
-import { useProperties, usePropertyStats, type Property } from '../hooks';
 
 import {
   DataTable,
@@ -52,21 +44,17 @@ import {
   SelectTrigger,
   SelectValue,
   Typography,
-  WhatsAppIcon,
 } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { useDebounce } from '@/lib/hooks';
-import { cn, getErrorMessage } from '@/lib/utils';
+import {
+  usePropertyList,
+  usePropertyTemperatureStats,
+  type PropertyItem,
+} from '@/lib/hooks/resources';
+import { cn, formatCurrency } from '@/lib/utils';
 
 // ============================================================================
 // Constants
-// ============================================================================
-
-const DEFAULT_PAGE_SIZE = 10;
-const SEARCH_DEBOUNCE_MS = 550;
-
-// ============================================================================
-// Badge / Label Mappings
 // ============================================================================
 
 const TEMPERATURE_LABELS: Record<LeadTemperature, string> = {
@@ -84,11 +72,6 @@ const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
   [PropertyType.INSTITUTIONAL]: 'Institutional',
 };
 
-const CONNECTION_TYPE_LABELS: Record<ConnectionType, string> = {
-  [ConnectionType.SINGLE_PHASE]: '1-Phase',
-  [ConnectionType.THREE_PHASE]: '3-Phase',
-};
-
 const PROPERTY_TYPE_OPTIONS = [
   { value: 'all', label: 'All Types' },
   ...Object.entries(PROPERTY_TYPE_LABELS).map(([value, label]) => ({ value, label })),
@@ -102,35 +85,12 @@ const QUOTE_STATUS_COLORS: Record<string, string> = {
   rejected: 'bg-error/10 text-error',
 };
 
-// ============================================================================
-// Filter Configuration
-// ============================================================================
-
 const TEMPERATURE_TABS: FilterTab<string>[] = [
   { id: 'all', label: 'All' },
   { id: LeadTemperature.HOT, label: 'Hot' },
   { id: LeadTemperature.WARM, label: 'Warm' },
   { id: LeadTemperature.COLD, label: 'Cold' },
 ];
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-function getValidSortField(value: string | null): PropertySortField {
-  const validFields = Object.values(PropertySortField);
-  return validFields.includes(value as PropertySortField)
-    ? (value as PropertySortField)
-    : PropertySortField.CREATED_AT;
-}
-
-function getValidSortOrder(value: string | null): SortOrder {
-  return value === SortOrder.ASC ? SortOrder.ASC : SortOrder.DESC;
-}
-
-function formatPhoneForWhatsApp(phone: string): string {
-  return phone.replace(/[^0-9]/g, '');
-}
 
 // ============================================================================
 // Component
@@ -140,132 +100,58 @@ export function PropertyListPage(): JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Read URL params for initial state
-  const initialPage = Number(searchParams.get('page')) || 1;
-  const initialLimit = Number(searchParams.get('limit')) || DEFAULT_PAGE_SIZE;
-  const initialSearch = searchParams.get('search') || '';
-  const initialTemperature = searchParams.get('leadTemperature') || 'all';
-  const initialPropertyType = searchParams.get('propertyType') || 'all';
-  const initialSortBy = getValidSortField(searchParams.get('sortBy'));
-  const initialSortOrder = getValidSortOrder(searchParams.get('sortOrder'));
-
-  // Local state for pagination and search
-  const [page, setPage] = useState(initialPage);
-  const [pageSize, setPageSize] = useState(initialLimit);
-  const [searchInput, setSearchInput] = useState(initialSearch);
-
-  // Filter state
-  const [temperatureFilter, setTemperatureFilter] = useState(initialTemperature);
-  const [propertyTypeFilter, setPropertyTypeFilter] = useState(initialPropertyType);
-  const [sortBy, setSortBy] = useState<PropertySortField>(initialSortBy);
-  const [sortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder);
-
-  // Debounce values
-  const debouncedSearch = useDebounce(searchInput, SEARCH_DEBOUNCE_MS);
-  const debouncedTemperatureFilter = useDebounce(temperatureFilter, SEARCH_DEBOUNCE_MS);
-  const debouncedPropertyTypeFilter = useDebounce(propertyTypeFilter, SEARCH_DEBOUNCE_MS);
-  const debouncedSortBy = useDebounce(sortBy, SEARCH_DEBOUNCE_MS);
-  const debouncedSortOrder = useDebounce(sortOrder, SEARCH_DEBOUNCE_MS);
-
-  // Sync state from URL when external navigation occurs (e.g. sidebar link clicks).
-  // window.history.replaceState (used internally) does NOT update searchParams,
-  // so this only fires on actual Next.js navigations, avoiding infinite loops.
-  const searchParamsString = searchParams.toString();
-  useEffect(() => {
-    const urlTemperature = searchParams.get('leadTemperature') || 'all';
-    const urlSearch = searchParams.get('search') || '';
-    const urlPage = Number(searchParams.get('page')) || 1;
-    const urlLimit = Number(searchParams.get('limit')) || DEFAULT_PAGE_SIZE;
-    const urlPropertyType = searchParams.get('propertyType') || 'all';
-    const urlSortBy = getValidSortField(searchParams.get('sortBy'));
-    const urlSortOrder = getValidSortOrder(searchParams.get('sortOrder'));
-
-    setTemperatureFilter(urlTemperature);
-    setSearchInput(urlSearch);
-    setPage(urlPage);
-    setPageSize(urlLimit);
-    setPropertyTypeFilter(urlPropertyType);
-    setSortBy(urlSortBy);
-    setSortOrder(urlSortOrder);
-  }, [searchParamsString]);
-
-  // Reset to page 1 when search changes
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
-
-  // Sync state to URL
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (page > 1) params.set('page', String(page));
-    if (pageSize !== DEFAULT_PAGE_SIZE) params.set('limit', String(pageSize));
-    if (debouncedSearch) params.set('search', debouncedSearch);
-    if (temperatureFilter !== 'all') params.set('leadTemperature', temperatureFilter);
-    if (propertyTypeFilter !== 'all') params.set('propertyType', propertyTypeFilter);
-    if (sortBy !== PropertySortField.CREATED_AT) params.set('sortBy', sortBy);
-    if (sortOrder !== SortOrder.DESC) params.set('sortOrder', sortOrder);
-
-    const query = params.toString();
-    const newUrl = query ? `?${query}` : window.location.pathname;
-    window.history.replaceState({}, '', newUrl);
-  }, [page, pageSize, debouncedSearch, temperatureFilter, propertyTypeFilter, sortBy, sortOrder]);
-
-  // Modal state
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [lostModalOpen, setLostModalOpen] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<Property[]>([]);
-
-  // Fetch properties with filters
+  // FDAL hooks — handles pagination, filters, sorting, search, URL sync
   const {
-    data: propertyData,
+    items: properties,
+    meta,
+    search,
+    setSearch,
+    clearSearch,
+    filters,
+    setFilter,
+    clearFilters,
+    hasActiveFilters,
+    pagination,
+    sorting,
     isLoading,
     isFetching,
     isError,
     error,
     refetch,
-  } = useProperties({
-    page,
-    limit: pageSize,
-    search: debouncedSearch.length >= 2 ? debouncedSearch : undefined,
-    leadTemperature:
-      debouncedTemperatureFilter !== 'all'
-        ? (debouncedTemperatureFilter as LeadTemperature)
-        : undefined,
-    propertyType:
-      debouncedPropertyTypeFilter !== 'all'
-        ? (debouncedPropertyTypeFilter as PropertyType)
-        : undefined,
-    sortBy: debouncedSortBy,
-    sortOrder: debouncedSortOrder,
-  });
+  } = usePropertyList();
 
-  // Fetch temperature stats for FilterTabs counts
-  const { data: stats } = usePropertyStats();
+  const { stats } = usePropertyTemperatureStats();
+
+  // Sync sidebar navigation: Next.js <Link> with ?leadTemperature=hot
+  // does NOT trigger popstate, so FDAL's useQueryState won't pick it up.
+  // IMPORTANT: Only depend on searchParamsString — NOT filters.leadTemperature.
+  // FDAL writes URL via replaceState which doesn't update searchParams,
+  // so this only fires on actual Next.js navigations (sidebar <Link> clicks).
+  const searchParamsString = searchParams.toString();
+  useEffect(() => {
+    const urlTemp = searchParams.get('leadTemperature') ?? 'all';
+    setFilter('leadTemperature', urlTemp);
+  }, [searchParamsString]); // intentionally omit filters/setFilter to avoid reset loop
+
+  // Local UI state (not part of FDAL)
+  const [selectedProperty, setSelectedProperty] = useState<PropertyItem | null>(null);
+  const [lostModalOpen, setLostModalOpen] = useState(false);
+  const [selectedRows, setSelectedRows] = useState<PropertyItem[]>([]);
 
   // Build tabs with counts
   const temperatureTabsWithCounts: FilterTab<string>[] = useMemo(() => {
     if (!stats) return TEMPERATURE_TABS;
-    const total = stats.hot + stats.warm + stats.cold;
+    const s = stats as Record<string, number>;
+    const total = (s.hot ?? 0) + (s.warm ?? 0) + (s.cold ?? 0);
     return [
       { id: 'all', label: 'All', count: total },
-      { id: LeadTemperature.HOT, label: 'Hot', count: stats.hot },
-      { id: LeadTemperature.WARM, label: 'Warm', count: stats.warm },
-      { id: LeadTemperature.COLD, label: 'Cold', count: stats.cold },
+      { id: LeadTemperature.HOT, label: 'Hot', count: s.hot ?? 0 },
+      { id: LeadTemperature.WARM, label: 'Warm', count: s.warm ?? 0 },
+      { id: LeadTemperature.COLD, label: 'Cold', count: s.cold ?? 0 },
     ];
   }, [stats]);
 
-  // Derived values
-  const properties = propertyData?.data ?? [];
-  const totalItems = propertyData?.meta.total ?? 0;
-  const totalPages = propertyData?.meta.totalPages ?? 1;
-
-  // Handlers
-  const handlePageSizeChange = (newSize: number): void => {
-    setPageSize(newSize);
-    setPage(1);
-  };
-
-  const handleRowSelectionChange = useCallback((rows: Property[]) => {
+  const handleRowSelectionChange = useCallback((rows: PropertyItem[]) => {
     setSelectedRows(rows);
   }, []);
 
@@ -273,50 +159,19 @@ export function PropertyListPage(): JSX.Element {
     setSelectedRows([]);
   };
 
-  const clearSearch = (): void => {
-    setSearchInput('');
-    setPage(1);
-  };
-
-  const hasActiveFilters =
-    temperatureFilter !== 'all' || propertyTypeFilter !== 'all' || debouncedSearch.length >= 2;
-
-  const clearAllFilters = (): void => {
-    setTemperatureFilter('all');
-    setPropertyTypeFilter('all');
-    setSearchInput('');
-    setSortBy(PropertySortField.CREATED_AT);
-    setSortOrder(SortOrder.DESC);
-    setPage(1);
-  };
-
-  // Sort handler for column headers
-  const handleSort = useCallback(
-    (field: PropertySortField) => {
-      if (sortBy === field) {
-        setSortOrder((current) => (current === SortOrder.ASC ? SortOrder.DESC : SortOrder.ASC));
-      } else {
-        setSortBy(field);
-        setSortOrder(SortOrder.ASC);
-      }
-      setPage(1);
-    },
-    [sortBy],
-  );
-
   // Sortable column header component
   const SortableHeader = useCallback(
-    ({ field, label }: { field: PropertySortField; label: string }) => {
-      const isActive = sortBy === field;
+    ({ field, label }: { field: string; label: string }) => {
+      const isActive = sorting.sortBy === field;
       return (
         <button
           type="button"
-          onClick={() => handleSort(field)}
+          onClick={() => sorting.toggleSort(field)}
           className="flex items-center gap-1 font-semibold text-2xs uppercase tracking-wider hover:text-foreground transition-colors"
         >
           {label}
           {isActive ? (
-            sortOrder === SortOrder.ASC ? (
+            sorting.sortOrder === 'ASC' ? (
               <ArrowUp className="size-3" />
             ) : (
               <ArrowDown className="size-3" />
@@ -327,28 +182,27 @@ export function PropertyListPage(): JSX.Element {
         </button>
       );
     },
-    [sortBy, sortOrder, handleSort],
+    [sorting],
   );
 
   // Table columns
-  const columns: ColumnDef<Property>[] = useMemo(
+  const columns: ColumnDef<PropertyItem>[] = useMemo(
     () => [
-      // Property column: name + temp dot, address + customerName + type
       {
-        accessorKey: 'propertyName',
+        accessorKey: 'propertyCode',
         header: () => <SortableHeader field={PropertySortField.PROPERTY_NAME} label="Property" />,
         enableSorting: false,
         cell: ({ row }) => {
           const property = row.original;
           return (
-            <Link
-              href={buildRoute(ROUTES.PROPERTIES.DETAIL, { id: property.id })}
-              className="block hover:text-primary transition-colors"
-            >
-              <div className="flex items-center gap-2 leading-tight">
-                <span className="font-medium text-foreground">
-                  {property.propertyName || 'Unnamed Property'}
-                </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={buildRoute(ROUTES.PROPERTIES.DETAIL, { id: property.id })}
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  {property.propertyCode || property.propertyName || 'Unnamed Property'}
+                </Link>
                 <span
                   className={cn(
                     'w-2 h-2 rounded-full shrink-0',
@@ -372,81 +226,45 @@ export function PropertyListPage(): JSX.Element {
                 {property.customerName ? `• ${property.customerName}` : ''} •{' '}
                 {PROPERTY_TYPE_LABELS[property.propertyType]}
               </div>
-            </Link>
-          );
-        },
-      },
-
-      // Contact column with phone/WhatsApp icons
-      {
-        accessorKey: 'customerPhone',
-        header: 'Contact',
-        enableSorting: false,
-        cell: ({ row }) => {
-          const phone = row.original.customerPhone;
-          if (!phone) {
-            return <span className="text-foreground-tertiary">-</span>;
-          }
-          const whatsappNumber = formatPhoneForWhatsApp(phone);
-          return (
-            <div className="flex items-center gap-1">
-              <span className="text-foreground-secondary text-sm">{phone}</span>
-              <div className="flex items-center gap-0.5">
-                <a
-                  href={`tel:${phone}`}
-                  className="p-1 hover:bg-muted rounded transition-colors"
-                  title="Call"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Phone className="size-3.5 text-foreground-tertiary" />
-                </a>
-                <a
-                  href={`https://wa.me/${whatsappNumber}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1 hover:bg-success/10 rounded transition-colors"
-                  title="WhatsApp"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <WhatsAppIcon className="size-3.5 text-success" />
-                </a>
-              </div>
             </div>
           );
         },
       },
 
-      // Consumer No.
       {
-        accessorKey: 'consumerNumber',
-        header: 'Consumer No.',
-        enableSorting: false,
-        cell: ({ row }) => (
-          <span className="text-2xs font-mono text-foreground-secondary">
-            {row.original.consumerNumber || '-'}
-          </span>
-        ),
-      },
-
-      // Connection Type
-      {
-        accessorKey: 'connectionType',
-        header: 'Connection',
+        accessorKey: 'latestQuoteSystemSizeKw',
+        header: () => <SortableHeader field={PropertySortField.SYSTEM_SIZE} label="System Size" />,
         enableSorting: false,
         cell: ({ row }) => {
-          const type = row.original.connectionType;
-          if (!type) {
+          const size = row.original.latestQuoteSystemSizeKw;
+          if (size == null) {
             return <span className="text-foreground-tertiary">-</span>;
           }
           return (
-            <span className="text-sm text-foreground-secondary">
-              {CONNECTION_TYPE_LABELS[type] ?? type}
+            <span className="text-sm text-foreground-secondary font-medium">
+              {Number(size).toFixed(2)} kW
             </span>
           );
         },
       },
 
-      // Quote Status
+      {
+        accessorKey: 'latestQuoteFinalPrice',
+        header: () => <SortableHeader field={PropertySortField.QUOTE_COST} label="Quote Cost" />,
+        enableSorting: false,
+        cell: ({ row }) => {
+          const price = row.original.latestQuoteFinalPrice;
+          if (price == null) {
+            return <span className="text-foreground-tertiary">-</span>;
+          }
+          return (
+            <span className="text-sm text-foreground-secondary font-medium">
+              {formatCurrency(price)}
+            </span>
+          );
+        },
+      },
+
       {
         accessorKey: 'latestQuoteStatus',
         header: 'Quote Status',
@@ -469,7 +287,6 @@ export function PropertyListPage(): JSX.Element {
         },
       },
 
-      // Created date (sortable)
       {
         accessorKey: 'createdAt',
         header: () => <SortableHeader field={PropertySortField.CREATED_AT} label="Added" />,
@@ -488,7 +305,6 @@ export function PropertyListPage(): JSX.Element {
         },
       },
 
-      // Created By
       {
         accessorKey: 'creatorName',
         header: 'Created By',
@@ -500,7 +316,6 @@ export function PropertyListPage(): JSX.Element {
         ),
       },
 
-      // Actions
       {
         id: 'actions',
         header: '',
@@ -613,7 +428,7 @@ export function PropertyListPage(): JSX.Element {
             <AlertCircle className="size-5 shrink-0" />
             <div className="flex-1">
               <p className="font-medium">Failed to load properties</p>
-              <p className="text-sm text-foreground-secondary mt-1">{getErrorMessage(error)}</p>
+              <p className="text-sm text-foreground-secondary mt-1">{error?.message}</p>
             </div>
             <Button variant="outline" size="sm" onClick={() => void refetch()}>
               Retry
@@ -650,13 +465,13 @@ export function PropertyListPage(): JSX.Element {
         <div className="relative w-72">
           <Input
             type="text"
-            placeholder="Search properties..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Search by name, address, city, or consumer no..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             leftIcon={<Search className="size-icon-sm" />}
             className="h-8 text-sm"
           />
-          {searchInput && (
+          {search && (
             <button
               type="button"
               onClick={clearSearch}
@@ -665,7 +480,7 @@ export function PropertyListPage(): JSX.Element {
               <X className="size-3.5 text-foreground-tertiary" />
             </button>
           )}
-          {isFetching && debouncedSearch && (
+          {isFetching && search && (
             <Loader2 className="absolute right-8 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-foreground-tertiary" />
           )}
         </div>
@@ -676,21 +491,15 @@ export function PropertyListPage(): JSX.Element {
         {/* Temperature Tabs */}
         <FilterTabs
           tabs={temperatureTabsWithCounts}
-          value={temperatureFilter}
-          onChange={(value) => {
-            setTemperatureFilter(value);
-            setPage(1);
-          }}
+          value={filters.leadTemperature ?? 'all'}
+          onChange={(value) => setFilter('leadTemperature', value)}
           size="xs"
         />
 
         {/* Property Type Dropdown */}
         <Select
-          value={propertyTypeFilter}
-          onValueChange={(value) => {
-            setPropertyTypeFilter(value);
-            setPage(1);
-          }}
+          value={filters.propertyType ?? 'all'}
+          onValueChange={(value) => setFilter('propertyType', value)}
         >
           <SelectTrigger className="w-[130px] h-8 text-sm">
             <SelectValue placeholder="All Types" />
@@ -709,7 +518,7 @@ export function PropertyListPage(): JSX.Element {
           <Button
             variant="ghost"
             size="sm"
-            onClick={clearAllFilters}
+            onClick={clearFilters}
             className="text-foreground-secondary h-8"
           >
             <X className="mr-1 size-3" />
@@ -763,14 +572,14 @@ export function PropertyListPage(): JSX.Element {
 
             {properties.length > 0 && (
               <TablePagination
-                currentPage={page}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                totalItems={totalItems}
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                pageSize={pagination.pageSize}
+                totalItems={meta?.total ?? 0}
                 itemLabel="properties"
                 variant="full"
-                onPageChange={setPage}
-                onPageSizeChange={handlePageSizeChange}
+                onPageChange={pagination.setPage}
+                onPageSizeChange={pagination.setPageSize}
               />
             )}
           </>
@@ -780,13 +589,13 @@ export function PropertyListPage(): JSX.Element {
               <EmptyState
                 title="No properties found"
                 description={
-                  debouncedSearch
+                  search
                     ? 'No results match your search and filters. Try adjusting your criteria.'
                     : 'No properties match the selected filters. Try different filter options.'
                 }
                 action={{
                   label: 'Clear Filters',
-                  onClick: clearAllFilters,
+                  onClick: clearFilters,
                 }}
               />
             ) : (

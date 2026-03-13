@@ -13,7 +13,8 @@ import { CustomerPropertyEntity } from '../entities/customer-property.entity';
 
 /**
  * Field mapping for safe sorting (prevents SQL injection via sortBy)
- * Maps enum values to entity property paths (camelCase) - TypeORM resolves these to DB columns
+ * Maps enum values to entity property paths (camelCase) — TypeORM resolves these to DB columns.
+ * Quote fields (cv.*) require conditional LEFT JOINs added in findWithFilters.
  */
 const SORT_FIELD_MAP: Record<PropertySortField, string> = {
   [PropertySortField.CREATED_AT]: 'property.createdAt',
@@ -23,7 +24,14 @@ const SORT_FIELD_MAP: Record<PropertySortField, string> = {
   [PropertySortField.LEAD_TEMPERATURE]: 'property.leadTemperature',
   [PropertySortField.PROPERTY_TYPE]: 'property.propertyType',
   [PropertySortField.STATUS]: 'property.status',
+  [PropertySortField.SYSTEM_SIZE]: 'cv.systemSizeKw',
+  [PropertySortField.QUOTE_COST]: 'cv.finalPrice',
 };
+
+const QUOTE_SORT_FIELDS = new Set<PropertySortField>([
+  PropertySortField.SYSTEM_SIZE,
+  PropertySortField.QUOTE_COST,
+]);
 
 @Injectable()
 export class CustomerPropertyRepository {
@@ -168,12 +176,32 @@ export class CustomerPropertyRepository {
     organizationId: string,
     query: PropertyQueryDto,
   ): Promise<[CustomerPropertyEntity[], number]> {
+    const needsQuoteJoin = QUOTE_SORT_FIELDS.has(query.sortBy);
+
     const qb = this.repository
       .createQueryBuilder('property')
       .leftJoinAndSelect('property.customer', 'customer')
-      .leftJoinAndSelect('property.creator', 'creator')
-      .where('property.organizationId = :organizationId', { organizationId })
-      .andWhere('property.deletedAt IS NULL');
+      .leftJoinAndSelect('property.creator', 'creator');
+
+    if (needsQuoteJoin) {
+      qb.leftJoin(
+        'property.quotes',
+        'latestQuote',
+        'latestQuote.id = ' +
+          '(SELECT q2.id FROM quotes q2 WHERE q2.property_id = property.id ' +
+          'AND q2.organization_id = :sortOrgId AND q2.deleted_at IS NULL ' +
+          'ORDER BY q2.quote_date DESC LIMIT 1)',
+        { sortOrgId: organizationId },
+      );
+      qb.leftJoin('latestQuote.versions', 'cv', 'cv.isCurrent = :cvIsCurrent', {
+        cvIsCurrent: true,
+      });
+      qb.addSelect(['cv.systemSizeKw', 'cv.finalPrice']);
+    }
+
+    qb.where('property.organizationId = :organizationId', { organizationId }).andWhere(
+      'property.deletedAt IS NULL',
+    );
 
     // ===== Search (case-insensitive, multiple fields including customer name) =====
     if (query.search && query.search.length >= 2) {
@@ -234,7 +262,7 @@ export class CustomerPropertyRepository {
     // ===== Sorting (using safe field mapping) =====
     const sortColumn = SORT_FIELD_MAP[query.sortBy] ?? SORT_FIELD_MAP[PropertySortField.CREATED_AT];
     const sortDirection = query.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
-    qb.orderBy(sortColumn, sortDirection);
+    qb.orderBy(sortColumn, sortDirection, needsQuoteJoin ? 'NULLS LAST' : undefined);
 
     // ===== Pagination =====
     qb.skip((query.page - 1) * query.limit).take(query.limit);

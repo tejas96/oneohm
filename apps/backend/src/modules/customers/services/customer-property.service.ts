@@ -33,6 +33,8 @@ type PropertyWithQuoteInfo = CustomerPropertyEntity & {
   latestQuoteNumber?: string;
   latestQuoteStatus?: QuoteStatus;
   latestQuoteDate?: Date;
+  latestQuoteFinalPrice?: number;
+  latestQuoteSystemSizeKw?: number;
 };
 
 /**
@@ -174,6 +176,8 @@ export class CustomerPropertyService {
         latestQuoteNumber: quoteInfo?.quoteNumber,
         latestQuoteStatus: quoteInfo?.status,
         latestQuoteDate: quoteInfo?.quoteDate,
+        latestQuoteFinalPrice: quoteInfo?.finalPrice,
+        latestQuoteSystemSizeKw: quoteInfo?.systemSizeKw,
       };
     });
 
@@ -222,6 +226,8 @@ export class CustomerPropertyService {
         latestQuoteNumber: quoteInfo?.quoteNumber,
         latestQuoteStatus: quoteInfo?.status,
         latestQuoteDate: quoteInfo?.quoteDate,
+        latestQuoteFinalPrice: quoteInfo?.finalPrice,
+        latestQuoteSystemSizeKw: quoteInfo?.systemSizeKw,
       };
     });
   }

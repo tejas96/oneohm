@@ -1,5 +1,14 @@
 // Properties Feature - Hooks
 
+// FDAL resource hooks (list, stats, mutations)
+export {
+  usePropertyList,
+  usePropertyTemperatureStats,
+  usePropertyMutations,
+  type PropertyItem,
+  type PropertyListFilters,
+} from '@/lib/hooks/resources';
+
 // Create property & related helpers
 export {
   useCreateProperty,
@@ -14,13 +23,8 @@ export type {
   CreatePropertyWithDocsData,
 } from './use-create-property';
 
-// Property list, stats, update, and delete
-export {
-  useProperties,
-  usePropertyStats,
-  useUpdateProperty,
-  useDeleteProperty,
-} from './use-properties';
+// Update and delete (kept for detail/form pages — will migrate to usePropertyMutations later)
+export { useUpdateProperty, useDeleteProperty } from './use-properties';
 
 export type {
   Property,
