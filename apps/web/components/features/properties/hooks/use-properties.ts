@@ -1,45 +1,31 @@
 'use client';
 
-import {
+import type {
+  ConnectionType,
   LeadTemperature,
+  PropertyDocument,
   PropertySortField,
   PropertyStatus,
   PropertyType,
+  QuoteStatus,
   SortOrder,
-  type ConnectionType,
-  type PropertyDocument,
-  type QuoteStatus,
 } from '@oneohm-epc/shared-types';
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  keepPreviousData,
-  type UseQueryResult,
-  type UseMutationResult,
-} from '@tanstack/react-query';
+import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
-import { propertyKeys } from './use-create-property';
+import { customerKeys, propertyKeys } from './use-create-property';
 
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================
-// Types
+// Types (kept for backward compatibility with detail/form pages)
 // ============================================================================
 
-/**
- * Property filters for the list API
- * Supports pagination, search, filtering, and sorting
- */
 export interface PropertyFilters {
-  // Pagination
   page?: number;
   limit?: number;
-  // Search
   search?: string;
-  // Filters
   leadTemperature?: LeadTemperature;
   propertyType?: PropertyType;
   status?: PropertyStatus;
@@ -48,29 +34,22 @@ export interface PropertyFilters {
   createdBy?: string;
   fromDate?: string;
   toDate?: string;
-  // Sorting
   sortBy?: PropertySortField;
   sortOrder?: SortOrder;
 }
 
-/**
- * Property list item type
- * Matches backend CustomerPropertyResponseDto with enriched fields
- */
 export interface Property {
   id: string;
   customerId: string;
   organizationId: string;
-  // Property Details
+  propertyCode?: string;
   propertyName?: string;
   propertyType: PropertyType;
-  // Address
   address?: string;
   city?: string;
   state?: string;
   country?: string;
   pincode?: string;
-  // Electricity/Consumer Details
   consumerNumber?: string;
   consumerName?: string;
   currentLoad?: string;
@@ -78,31 +57,24 @@ export interface Property {
   connectionType?: ConnectionType;
   sanctionedLoad?: number;
   meterNumber?: string;
-  // Site Details
   monthlyBill?: number;
-  // Lead Tracking
   leadTemperature: LeadTemperature;
-  // Flags
   isPrimary: boolean;
   wantsLoan: boolean;
-  // Status
   status: PropertyStatus;
-  // Notes
   notes?: string;
-  // Audit Fields
   createdAt: string;
   updatedAt: string;
   createdBy?: string;
   updatedBy?: string;
-  // Enriched: customer info
   customerName?: string;
   customerPhone?: string;
-  // Enriched: creator info
   creatorName?: string;
-  // Enriched: quote info
   latestQuoteNumber?: string;
   latestQuoteStatus?: QuoteStatus;
   latestQuoteDate?: string;
+  latestQuoteFinalPrice?: number;
+  latestQuoteSystemSizeKw?: number;
 }
 
 export interface PaginationMeta {
@@ -145,78 +117,8 @@ export interface UpdatePropertyData {
 }
 
 // ============================================================================
-// Hooks
+// Hooks (update & delete kept for detail/form pages)
 // ============================================================================
-
-/**
- * Hook to fetch paginated properties with filters, sorting, and search
- * Supports all query parameters from PropertyQueryDto
- */
-export function useProperties(
-  filters: PropertyFilters = {},
-): UseQueryResult<PropertyListResponse, AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-
-  return useQuery({
-    queryKey: propertyKeys.list(organizationId, filters as Record<string, unknown>),
-    queryFn: async (): Promise<PropertyListResponse> => {
-      const params = new URLSearchParams();
-
-      // Pagination
-      if (filters.page) params.append('page', String(filters.page));
-      if (filters.limit) params.append('limit', String(filters.limit));
-
-      // Search (min 2 chars)
-      if (filters.search && filters.search.length >= 2) {
-        params.append('search', filters.search);
-      }
-
-      // Filters
-      if (filters.leadTemperature) params.append('leadTemperature', filters.leadTemperature);
-      if (filters.propertyType) params.append('propertyType', filters.propertyType);
-      if (filters.status) params.append('status', filters.status);
-      if (filters.city) params.append('city', filters.city);
-      if (filters.state) params.append('state', filters.state);
-      if (filters.createdBy) params.append('createdBy', filters.createdBy);
-      if (filters.fromDate) params.append('fromDate', filters.fromDate);
-      if (filters.toDate) params.append('toDate', filters.toDate);
-
-      // Sorting
-      if (filters.sortBy) params.append('sortBy', filters.sortBy);
-      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
-
-      const { data } = await apiClient.get<PropertyListResponse>(
-        `/customer-properties?${params.toString()}`,
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
-      return data;
-    },
-    enabled: !!organizationId,
-    placeholderData: keepPreviousData,
-  });
-}
-
-/**
- * Hook to fetch property temperature statistics
- * Used for FilterTabs counts (All | Hot | Warm | Cold)
- */
-export function usePropertyStats(): UseQueryResult<PropertyStatsResponse, AxiosError> {
-  const { user } = useAuth();
-  const organizationId = user?.organizationId;
-
-  return useQuery({
-    queryKey: [...propertyKeys.all(organizationId), 'stats', 'temperature'],
-    queryFn: async (): Promise<PropertyStatsResponse> => {
-      const { data } = await apiClient.get<PropertyStatsResponse>(
-        '/customer-properties/statistics/temperature',
-        { headers: { 'X-Organization-Id': organizationId } },
-      );
-      return data;
-    },
-    enabled: !!organizationId,
-  });
-}
 
 /**
  * Hook to update a property
@@ -246,13 +148,10 @@ export function useUpdateProperty(): UseMutationResult<
       );
       return response;
     },
-    onSuccess: (_, variables) => {
-      void queryClient.invalidateQueries({ queryKey: propertyKeys.lists(organizationId) });
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: propertyKeys.all(organizationId) });
       void queryClient.invalidateQueries({
-        queryKey: propertyKeys.detail(organizationId, variables.id),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: [...propertyKeys.all(organizationId), 'stats'],
+        queryKey: customerKeys.lists(organizationId),
       });
     },
   });
@@ -273,9 +172,9 @@ export function useDeleteProperty(): UseMutationResult<void, AxiosError, string>
       });
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: propertyKeys.lists(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: propertyKeys.all(organizationId) });
       void queryClient.invalidateQueries({
-        queryKey: [...propertyKeys.all(organizationId), 'stats'],
+        queryKey: customerKeys.lists(organizationId),
       });
     },
   });

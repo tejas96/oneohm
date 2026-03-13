@@ -269,8 +269,7 @@ export function useDeleteQuote(): UseMutationResult<void, AxiosError, string> {
     },
     onSuccess: (_, quoteId) => {
       queryClient.removeQueries({ queryKey: quoteKeys.detail(organizationId, quoteId) });
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.lists(organizationId) });
-      void queryClient.invalidateQueries({ queryKey: quoteKeys.statusCounts(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: quoteKeys.all(organizationId) });
     },
   });
 }

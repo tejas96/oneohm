@@ -129,4 +129,6 @@ export enum PropertySortField {
   LEAD_TEMPERATURE = 'leadTemperature',
   PROPERTY_TYPE = 'propertyType',
   STATUS = 'status',
+  SYSTEM_SIZE = 'systemSize',
+  QUOTE_COST = 'quoteCost',
 }

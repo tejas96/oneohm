@@ -132,7 +132,7 @@ export function useCreateProperty(): UseMutationResult<
       return response;
     },
     onSuccess: (_, variables) => {
-      void queryClient.invalidateQueries({ queryKey: propertyKeys.lists(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: propertyKeys.all(organizationId) });
       void queryClient.invalidateQueries({
         queryKey: customerKeys.detail(organizationId, variables.customerId),
       });
