@@ -263,9 +263,7 @@ export function useQueryState<F extends BaseFilters>(
     (updates: Partial<F>) => {
       markUserChange();
       setFiltersRaw((prev) => {
-        const changed = Object.entries(updates).some(
-          ([k, v]) => prev[k as keyof F] !== v,
-        );
+        const changed = Object.entries(updates).some(([k, v]) => prev[k as keyof F] !== v);
         if (!changed) return prev;
         return { ...prev, ...updates };
       });
