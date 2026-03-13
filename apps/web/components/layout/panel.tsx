@@ -126,6 +126,7 @@ export function Panel({ isOpen, onClose, className }: PanelProps) {
       <Link
         key={item.id}
         href={item.href}
+        prefetch={false}
         className={cn(
           'panel-item',
           isActive && 'active',

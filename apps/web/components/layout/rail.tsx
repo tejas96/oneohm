@@ -51,6 +51,7 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
                 <TooltipTrigger asChild>
                   <Link
                     href={item.href}
+                    prefetch={false}
                     className={cn(
                       'rail-icon',
                       isActive && 'active',
@@ -110,6 +111,7 @@ export function Rail({ isPanelOpen, onTogglePanel, className }: RailProps) {
                 <TooltipTrigger asChild>
                   <Link
                     href={item.href}
+                    prefetch={false}
                     className={cn(
                       'rail-icon',
                       isActive && 'active',

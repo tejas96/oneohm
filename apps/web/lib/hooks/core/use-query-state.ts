@@ -251,7 +251,10 @@ export function useQueryState<F extends BaseFilters>(
   const setFilter = useCallback(
     <K extends keyof F>(key: K, value: F[K]) => {
       markUserChange();
-      setFiltersRaw((prev) => ({ ...prev, [key]: value }));
+      setFiltersRaw((prev) => {
+        if (prev[key] === value) return prev;
+        return { ...prev, [key]: value };
+      });
     },
     [markUserChange],
   );
@@ -259,7 +262,13 @@ export function useQueryState<F extends BaseFilters>(
   const setFiltersCallback = useCallback(
     (updates: Partial<F>) => {
       markUserChange();
-      setFiltersRaw((prev) => ({ ...prev, ...updates }));
+      setFiltersRaw((prev) => {
+        const changed = Object.entries(updates).some(
+          ([k, v]) => prev[k as keyof F] !== v,
+        );
+        if (!changed) return prev;
+        return { ...prev, ...updates };
+      });
     },
     [markUserChange],
   );
