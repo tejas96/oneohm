@@ -52,6 +52,7 @@ export interface QuoteListItem {
   organizationId: string;
   customerId: string;
   customerName?: string;
+  customerPhone?: string;
   propertyId?: string;
   propertyName?: string;
   salesPersonId?: string;

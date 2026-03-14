@@ -16,12 +16,14 @@ import { MoreThan } from 'typeorm';
 import { ConfigService } from '../../../config/config.service';
 import { SecurityEventRepository } from '../../security-events/repositories/security-event.repository';
 import { SecurityEventService } from '../../security-events/services/security-event.service';
+import { Msg91OtpClient } from './msg91-otp.client';
+
 /**
  * OTP Service
- * Handles OTP generation, storage, and verification
- * Uses security_events table for persistent storage (no Redis required)
+ * Handles OTP generation, storage, verification, and sending via MSG91.
+ * Uses security_events table for persistent storage (no Redis required).
  *
- * Note: Rate limiting is now handled by SecurityRateLimitGuard at the controller level
+ * Note: Rate limiting is now handled by SecurityRateLimitGuard at the controller level.
  */
 @Injectable()
 export class OtpService {
@@ -38,6 +40,7 @@ export class OtpService {
     private readonly securityEventService: SecurityEventService,
     private readonly securityEventRepository: SecurityEventRepository,
     private readonly configService: ConfigService,
+    private readonly msg91OtpClient: Msg91OtpClient,
   ) {
     this.isDevelopment = this.configService.isDevelopment;
     if (this.isDevelopment) {
@@ -228,12 +231,12 @@ export class OtpService {
 
   /**
    * Request OTP - Public endpoint
-   * Creates user if doesn't exist (Firebase-like)
+   * Generates OTP, stores it, and sends via MSG91. Creates user on verify if doesn't exist (Firebase-like).
    */
-  async requestOtp(data: {
-    phone?: string;
-    email?: string;
-  }): Promise<{ message: string; retryAfter?: number }> {
+  async requestOtp(
+    data: { phone?: string; email?: string },
+    context?: { ipAddress?: string; userAgent?: string },
+  ): Promise<{ message: string; retryAfter?: number }> {
     const { phone } = data;
 
     // DTO validation already ensures:
@@ -246,15 +249,15 @@ export class OtpService {
       throw new BadRequestException('Email OTP not yet implemented. Please use phone OTP.');
     }
 
-    // Generate and store OTP
     try {
-      await this.generateAndStoreOtp({
+      const { otp } = await this.generateAndStoreOtp({
         phone,
-        ipAddress: undefined, // TODO: Extract from request context
-        userAgent: undefined, // TODO: Extract from request context
+        ipAddress: context?.ipAddress,
+        userAgent: context?.userAgent,
       });
 
-      // OTP is sent via MSG91 inside generateAndStoreOtp
+      await this.msg91OtpClient.sendOtp(phone, otp);
+
       return {
         message: 'OTP sent successfully',
       };

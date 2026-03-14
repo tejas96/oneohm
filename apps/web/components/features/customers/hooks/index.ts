@@ -42,3 +42,7 @@ export { useDocumentUpload } from './use-document-upload';
 
 // Document preview
 export { useDocumentPreview } from './use-document-preview';
+
+// Address autocomplete (Google Places)
+export { useAddressAutocomplete } from './use-address-autocomplete';
+export type { PlaceSuggestion, PlaceDetails } from './use-address-autocomplete';

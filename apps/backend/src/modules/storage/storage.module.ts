@@ -22,6 +22,6 @@ import { ConfigModule } from '../../config/config.module';
   imports: [ConfigModule],
   controllers: [StorageController],
   providers: [StorageService, S3StorageService],
-  exports: [StorageService],
+  exports: [StorageService, S3StorageService],
 })
 export class StorageModule {}

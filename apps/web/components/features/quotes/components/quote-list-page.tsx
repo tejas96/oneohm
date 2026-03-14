@@ -12,6 +12,7 @@ import {
   Eye,
   FileText,
   Loader2,
+  MessageSquare,
   MoreHorizontal,
   Plus,
   Search,
@@ -32,6 +33,7 @@ import {
   useQuotes,
   useQuoteStatusCounts,
   useDeleteQuote,
+  useSendWhatsApp,
   type QuoteListItem,
 } from '../hooks';
 import { QuoteStatusDropdown } from './quote-status-dropdown';
@@ -163,6 +165,7 @@ export function QuoteListPage(): JSX.Element {
   const { data: statusCounts } = useQuoteStatusCounts();
 
   const deleteQuoteMutation = useDeleteQuote();
+  const sendWhatsAppMutation = useSendWhatsApp();
 
   // Derived values
   const quotes = quoteData?.data ?? [];
@@ -232,6 +235,25 @@ export function QuoteListPage(): JSX.Element {
       });
     },
     [deleteQuoteMutation],
+  );
+
+  const handleSendWhatsApp = useCallback(
+    (quote: QuoteListItem) => {
+      if (!quote.customerPhone) {
+        showToast.error('Customer phone number is not available for this quote');
+        return;
+      }
+      const phone = quote.customerPhone.replace(/\D/g, '');
+      sendWhatsAppMutation.mutate(
+        { quoteId: quote.id, phone },
+        {
+          onSuccess: () =>
+            showToast.success(`Quotation sent to ${quote.customerName ?? 'customer'} on WhatsApp`),
+          onError: (err) => showToast.error(getErrorMessage(err)),
+        },
+      );
+    },
+    [sendWhatsAppMutation],
   );
 
   // ---------------------------------------------------------------------------
@@ -433,6 +455,17 @@ export function QuoteListPage(): JSX.Element {
                   <Download className="mr-2 size-icon-sm" />
                   Download PDF
                 </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleSendWhatsApp(quote)}
+                  disabled={sendWhatsAppMutation.isPending}
+                >
+                  {sendWhatsAppMutation.isPending ? (
+                    <Loader2 className="mr-2 size-icon-sm animate-spin" />
+                  ) : (
+                    <MessageSquare className="mr-2 size-icon-sm text-success" />
+                  )}
+                  {sendWhatsAppMutation.isPending ? 'Sending…' : 'Send WhatsApp'}
+                </DropdownMenuItem>
                 {!isAccepted && (
                   <>
                     <DropdownMenuSeparator />
@@ -451,7 +484,7 @@ export function QuoteListPage(): JSX.Element {
         },
       },
     ],
-    [router, handleDeleteQuote, SortableHeader],
+    [router, handleDeleteQuote, handleSendWhatsApp, sendWhatsAppMutation.isPending, SortableHeader],
   );
 
   // ---------------------------------------------------------------------------

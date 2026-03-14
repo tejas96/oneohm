@@ -110,6 +110,8 @@ export default (): Configuration => ({
     msg91AuthKey: process.env.MSG91_AUTH_KEY,
     msg91SenderId: process.env.MSG91_SENDER_ID,
     msg91DltTemplateId: process.env.MSG91_DLT_TEMPLATE_ID,
+    whatsappAccessToken: process.env.WHATSAPP_ACCESS_TOKEN,
+    whatsappPhoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
   },
 
   seed: {

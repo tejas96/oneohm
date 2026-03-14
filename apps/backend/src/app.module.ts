@@ -29,6 +29,8 @@ import { SecurityEventsModule } from './modules/security-events/security-events.
 import { ServiceMaintenanceModule } from './modules/service-maintenance/service-maintenance.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { UsersModule } from './modules/users/users.module';
+import { LocationModule } from './modules/location/location.module';
+import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -66,6 +68,8 @@ import { UsersModule } from './modules/users/users.module';
     ComplianceModule,
     AuditModule,
     StorageModule,
+    WhatsAppModule,
+    LocationModule,
   ],
   controllers: [AppController],
   providers: [

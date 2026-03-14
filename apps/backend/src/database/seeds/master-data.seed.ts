@@ -1,8 +1,6 @@
 import { DataSource } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 
-import loadConfig from '../../config/configuration';
-
 /**
  * Master Data Seed for Organization: OneOhm EPC
  *
@@ -20,7 +18,7 @@ import loadConfig from '../../config/configuration';
  * 6. Quote Configuration (1)
  */
 
-const ORG_ID = loadConfig().seed.organizationId;
+const ORG_ID = '6c5e700a-a79a-4bf8-a6f9-0d4e2512b6ab'; //loadConfig().seed.organizationId;
 
 // =====================================================
 // Category IDs (Pre-generated for reference)

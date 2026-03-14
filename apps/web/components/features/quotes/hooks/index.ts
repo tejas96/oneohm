@@ -34,6 +34,7 @@ export { useSaveQuote } from './use-save-quote';
 export { useQuoteFormLogic } from './use-quote-form-logic';
 export type { UseQuoteFormLogicOptions, UseQuoteFormLogicReturn } from './use-quote-form-logic';
 export { useQuotePdf } from './use-quote-pdf';
+export { useSendWhatsApp } from './use-send-whatsapp';
 
 // ============================================================================
 // Types

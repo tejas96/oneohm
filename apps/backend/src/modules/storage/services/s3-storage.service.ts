@@ -197,6 +197,33 @@ export class S3StorageService implements StorageProvider, OnModuleInit {
   }
 
   /**
+   * Directly upload a buffer to S3 (server-side upload, no presigned URL needed)
+   */
+  async uploadBuffer(
+    fileKey: string,
+    body: Buffer,
+    contentType: string,
+    acl: 'public-read' | 'private' = 'public-read',
+  ): Promise<{ fileKey: string; publicUrl: string }> {
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: fileKey,
+      Body: body,
+      ContentType: contentType,
+      ContentLength: body.length,
+      ACL: acl,
+    });
+
+    await this.s3Client.send(command);
+    this.logger.debug(`Uploaded buffer to: ${fileKey} (${body.length} bytes)`);
+
+    return {
+      fileKey,
+      publicUrl: `${this.publicUrlBase}/${fileKey}`,
+    };
+  }
+
+  /**
    * Copy a file to a new location
    */
   async copyFile(sourceKey: string, destinationKey: string): Promise<void> {

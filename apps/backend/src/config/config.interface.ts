@@ -110,6 +110,8 @@ export interface IntegrationsConfig {
   msg91AuthKey?: string;
   msg91SenderId?: string;
   msg91DltTemplateId?: string;
+  whatsappAccessToken?: string;
+  whatsappPhoneNumberId?: string;
 }
 
 export interface SeedConfig {

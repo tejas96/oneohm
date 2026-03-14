@@ -10,6 +10,7 @@ export {
 // Components
 export { CustomerListPage } from './components/customer-list-page';
 export { CustomerDetailPage } from './components/customer-detail-page';
+export { AddressAutocomplete } from './components/address-autocomplete';
 export { CustomerForm } from './components/customer-form';
 export { DeleteCustomerModal } from './components/delete-customer-modal';
 export { ImportCustomersModal } from './components/import-customers-modal';
@@ -47,6 +48,7 @@ export {
   useDocumentDownloadUrl,
   useDocumentUpload,
   useDocumentPreview,
+  useAddressAutocomplete,
 } from './hooks';
 export type {
   CustomerResponse,
@@ -56,4 +58,6 @@ export type {
   PropertyDocument,
   CustomerQuote,
   CustomerQuotesResponse,
+  PlaceSuggestion,
+  PlaceDetails,
 } from './hooks';

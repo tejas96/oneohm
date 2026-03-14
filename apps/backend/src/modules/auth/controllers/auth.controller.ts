@@ -142,7 +142,7 @@ export class AuthController {
         message: 'Please wait 60 seconds before requesting another OTP',
       },
       {
-        count: 5,
+        count: process.env.NODE_ENV === 'development' ? 50 : 5,
         windowSeconds: 86400,
         message: 'Maximum 5 OTP requests per day. Try again after 24 hours',
       },
@@ -163,8 +163,14 @@ export class AuthController {
       { status: HttpStatus.TOO_MANY_REQUESTS, description: 'Rate limit exceeded' },
     ],
   })
-  async requestOtp(@Body() dto: RequestOtpDto): Promise<OtpRequestResponseDto> {
-    return this.otpService.requestOtp(dto);
+  async requestOtp(
+    @Body() dto: RequestOtpDto,
+    @Req() req: ExpressRequest,
+  ): Promise<OtpRequestResponseDto> {
+    return this.otpService.requestOtp(dto, {
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
   }
 
   /**

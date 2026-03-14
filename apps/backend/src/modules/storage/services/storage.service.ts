@@ -129,6 +129,18 @@ export class StorageService {
   }
 
   /**
+   * Directly upload a buffer to storage (server-side, no presigned URL)
+   * Returns the public URL of the uploaded file.
+   */
+  async uploadBuffer(
+    fileKey: string,
+    buffer: Buffer,
+    contentType: string,
+  ): Promise<{ fileKey: string; publicUrl: string }> {
+    return this.s3Storage.uploadBuffer(fileKey, buffer, contentType, 'public-read');
+  }
+
+  /**
    * Check if a file exists
    */
   async fileExists(fileKey: string): Promise<boolean> {
