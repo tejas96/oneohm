@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
+import { AddressAutocomplete } from './address-autocomplete';
 import { useCreateCustomer, useCheckAvailability } from '../hooks/use-create-customer';
 import {
   useCustomer,
@@ -56,7 +57,44 @@ interface CustomerFormContentProps {
 // Constants
 // ============================================================================
 
-const INDIAN_STATES_AND_UTS = ['Karnataka', 'Maharashtra'];
+const INDIAN_STATES_AND_UTS = [
+  'Andhra Pradesh',
+  'Arunachal Pradesh',
+  'Assam',
+  'Bihar',
+  'Chhattisgarh',
+  'Goa',
+  'Gujarat',
+  'Haryana',
+  'Himachal Pradesh',
+  'Jharkhand',
+  'Karnataka',
+  'Kerala',
+  'Madhya Pradesh',
+  'Maharashtra',
+  'Manipur',
+  'Meghalaya',
+  'Mizoram',
+  'Nagaland',
+  'Odisha',
+  'Punjab',
+  'Rajasthan',
+  'Sikkim',
+  'Tamil Nadu',
+  'Telangana',
+  'Tripura',
+  'Uttar Pradesh',
+  'Uttarakhand',
+  'West Bengal',
+  'Andaman and Nicobar Islands',
+  'Chandigarh',
+  'Dadra and Nagar Haveli and Daman and Diu',
+  'Delhi',
+  'Jammu and Kashmir',
+  'Ladakh',
+  'Lakshadweep',
+  'Puducherry',
+];
 
 const LEAD_SOURCE_OPTIONS = [
   { value: LeadSource.REFERRAL, label: 'Referral' },
@@ -394,17 +432,38 @@ function CustomerFormContent({
                 Address
               </h3>
 
-              {/* Street Address */}
-              <div className="space-y-2">
-                <Label htmlFor="address">Street Address</Label>
-                <Input
-                  id="address"
-                  placeholder="Enter street address"
-                  {...form.register('address')}
-                  error={!!form.formState.errors.address}
-                  errorMessage={form.formState.errors.address?.message}
-                />
-              </div>
+              {/* Street Address with Google Places autocomplete */}
+              <AddressAutocomplete
+                value={form.watch('address') ?? ''}
+                onChange={(val) =>
+                  form.setValue('address', val, { shouldValidate: true })
+                }
+                onPlaceSelect={(details) => {
+                  form.setValue('address', details.address, {
+                    shouldValidate: true,
+                  });
+                  if (details.city)
+                    form.setValue('city', details.city, {
+                      shouldValidate: true,
+                    });
+                  if (details.pincode)
+                    form.setValue('pincode', details.pincode, {
+                      shouldValidate: true,
+                    });
+                  if (details.state) {
+                    const matched = INDIAN_STATES_AND_UTS.find(
+                      (s) =>
+                        s.toLowerCase() === details.state.toLowerCase(),
+                    );
+                    if (matched)
+                      form.setValue('state', matched, {
+                        shouldValidate: true,
+                      });
+                  }
+                }}
+                error={!!form.formState.errors.address}
+                errorMessage={form.formState.errors.address?.message}
+              />
 
               {/* City & State */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

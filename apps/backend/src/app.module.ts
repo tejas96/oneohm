@@ -16,6 +16,7 @@ import { CustomersModule } from './modules/customers/customers.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { EmployeesModule } from './modules/employees/employees.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
+import { LocationModule } from './modules/location/location.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { LoanFinanceModule } from './modules/loan-finance/loan-finance.module';
 import { MasterDataModule } from './modules/master-data/master-data.module';
@@ -66,6 +67,7 @@ import { UsersModule } from './modules/users/users.module';
     ComplianceModule,
     AuditModule,
     StorageModule,
+    LocationModule,
   ],
   controllers: [AppController],
   providers: [
