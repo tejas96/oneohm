@@ -1,6 +1,6 @@
 export const PHONE_REGEX = /^\+?[0-9]{10,15}$/;
 export const INDIAN_MOBILE_REGEX = /^[6-9]\d{9}$/;
-export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@.]+(?:\.[^\s@.]+)+$/;
 export const PINCODE_REGEX = /^\d{6}$/;
 
 /**
