@@ -56,14 +56,14 @@ jobs:
             echo "Publishing version ${PACKAGE_VERSION}"
           fi
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
 
       - name: Publish to GitHub Packages
         if: steps.version-check.outputs.changed == 'true'
         working-directory: libs/shared
         run: npm publish
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
 
       - name: Generate Summary
         if: always()
