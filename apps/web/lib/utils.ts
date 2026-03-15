@@ -21,7 +21,9 @@ export {
 export {
   formatCurrency,
   formatCurrencyCompact,
+  formatCurrencyDecimal,
   formatDate,
+  formatNumber,
   getDueDateColor,
   formatRelativeDate,
   formatRoleCode,

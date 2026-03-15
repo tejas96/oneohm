@@ -53,12 +53,8 @@ import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
 import { useAdminUsers, useAdminUserMutations, type AdminUserFilters } from '@/lib/hooks/resources';
 import type { AdminUser } from '@/lib/hooks/resources/users';
-import { formatDate, formatRoleCode, formatTimeAgo } from '@/lib/utils';
+import { formatDate, formatRoleCode, formatTimeAgo, getInitials } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
-
-function getInitials(firstName: string, lastName?: string): string {
-  return `${firstName.charAt(0)}${lastName?.charAt(0) ?? ''}`.toUpperCase();
-}
 
 export function AdminUsersListPage(): JSX.Element {
   const router = useRouter();
@@ -184,7 +180,7 @@ export function AdminUsersListPage(): JSX.Element {
           >
             <Avatar className="size-8 shrink-0">
               <AvatarFallback>
-                {getInitials(row.original.firstName, row.original.lastName)}
+                {getInitials(`${row.original.firstName} ${row.original.lastName ?? ''}`.trim())}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0">

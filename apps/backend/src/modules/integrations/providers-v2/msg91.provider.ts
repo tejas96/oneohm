@@ -13,7 +13,6 @@ import {
   IntegrationProvider as IntegrationProviderDecorator,
   InjectCredential,
   InjectConfig,
-  InjectHttpClient,
 } from '../decorators';
 
 /**
@@ -38,6 +37,9 @@ import {
   icon: 'message-circle',
 })
 export class Msg91Provider extends BaseMessagingProvider {
+  // Injected at runtime by ProviderFactory via @IntegrationProviderDecorator baseUrl
+  protected readonly http!: AxiosInstance;
+
   // ============================================
   // 🎯 Auto-Injected Credentials
   // ============================================
@@ -63,16 +65,6 @@ export class Msg91Provider extends BaseMessagingProvider {
 
   @InjectConfig('invisible', { default: false })
   private readonly invisible!: boolean;
-
-  // ============================================
-  // 🎯 Auto-Configured HTTP Client
-  // ============================================
-
-  @InjectHttpClient({
-    authHeader: 'authkey', // Uses this.authKey automatically
-    timeout: 30000,
-  })
-  protected readonly http!: AxiosInstance;
 
   // ============================================
   // ✨ Business Logic (Clean & Simple!)
@@ -166,49 +158,5 @@ export class Msg91Provider extends BaseMessagingProvider {
    */
   protected getProviderName(): IntegrationProvider {
     return IntegrationProvider.MSG91;
-  }
-
-  // ============================================
-  // 🎁 Bonus Features (Optional)
-  // ============================================
-
-  /**
-   * Resend OTP
-   */
-  async resendOtp(mobile: string): Promise<IMessageResponse> {
-    try {
-      const response = await this.http.post('/otp/retry', {
-        authkey: this.authKey,
-        mobile: this.cleanPhone(mobile),
-        retrytype: 'text',
-      });
-
-      if (response.data?.type === 'success') {
-        return this.createSuccessResponse(
-          response.data.request_id || `msg91-resend-${Date.now()}`,
-          {
-            mobile,
-            type: 'resend',
-          },
-        );
-      }
-
-      throw new BadRequestException(response.data?.message || 'Failed to resend OTP');
-    } catch (error) {
-      return this.createFailedResponse(error, 'resendOtp');
-    }
-  }
-
-  /**
-   * Get delivery report
-   */
-  async getDeliveryReport(requestId: string): Promise<Record<string, unknown> | null> {
-    try {
-      const response = await this.http.get(`/report/${requestId}`);
-      return response.data;
-    } catch (error) {
-      this.logger.error('Failed to get delivery report', error);
-      return null;
-    }
   }
 }

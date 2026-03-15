@@ -77,19 +77,6 @@ export class ApprovalTemplateService {
   }
 
   /**
-   * Find template by code
-   */
-  async findByCode(code: string, organizationId: string): Promise<ApprovalTemplateEntity> {
-    const template = await this.templateRepository.findByCode(code, organizationId);
-
-    if (!template) {
-      throw new NotFoundException('Template not found');
-    }
-
-    return template;
-  }
-
-  /**
    * Find templates by workflow type
    */
   async findByWorkflowType(

@@ -1,3 +1,4 @@
+import { InvitationStatus } from '@oneohm-epc/shared/types';
 import {
   Column,
   CreateDateColumn,
@@ -12,15 +13,7 @@ import {
 import { RoleEntity } from '../../iam/entities/role.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 
-/**
- * Invitation Status
- */
-export enum InvitationStatus {
-  PENDING = 'pending',
-  ACCEPTED = 'accepted',
-  EXPIRED = 'expired',
-  CANCELLED = 'cancelled',
-}
+export { InvitationStatus };
 
 /**
  * Invitation Entity

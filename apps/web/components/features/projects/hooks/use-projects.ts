@@ -1,6 +1,11 @@
 'use client';
 
-import type { ProjectMetadata, ProjectPriority, ProjectStatus } from '@oneohm-epc/shared/types';
+import type {
+  PaginationMeta,
+  ProjectMetadata,
+  ProjectPriority,
+  ProjectStatus,
+} from '@oneohm-epc/shared/types';
 import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
@@ -65,12 +70,7 @@ export interface ProjectListItem {
   updatedAt: string;
 }
 
-export interface PaginationMeta {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
+export type { PaginationMeta };
 
 export interface ProjectListResponse {
   data: ProjectListItem[];

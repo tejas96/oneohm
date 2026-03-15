@@ -28,19 +28,7 @@ import type {
 
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
-
-// ============================================================================
-// Shared Utilities
-// ============================================================================
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(value);
-}
+import { cn, formatCurrency } from '@/lib/utils';
 
 // ============================================================================
 // Shading Level Config

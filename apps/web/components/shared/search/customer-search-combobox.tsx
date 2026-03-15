@@ -5,6 +5,8 @@ import * as React from 'react';
 
 import { SearchInput, type SearchResult, type SearchResultGroup } from './search-input';
 
+import { getInitials } from '@/lib/utils';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -37,12 +39,6 @@ export interface CustomerSearchComboboxProps {
 // ============================================================================
 // Helper Functions
 // ============================================================================
-
-function getInitials(firstName: string, lastName?: string): string {
-  const first = firstName.charAt(0).toUpperCase();
-  const last = lastName?.charAt(0).toUpperCase() || '';
-  return `${first}${last}`;
-}
 
 function searchCustomers(customers: Customer[], query: string): Customer[] {
   if (!query.trim()) return [];
@@ -97,7 +93,7 @@ export function CustomerSearchCombobox({
       title: `${customer.firstName} ${customer.lastName}`,
       subtitle: `${customer.phone}${customer.email ? ` • ${customer.email}` : ''}`,
       avatar: {
-        initials: getInitials(customer.firstName, customer.lastName),
+        initials: getInitials(`${customer.firstName} ${customer.lastName ?? ''}`.trim()),
         color: 'primary',
       },
     }));

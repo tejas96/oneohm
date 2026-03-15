@@ -5,31 +5,12 @@
  * Uses web-side types and local formatting helpers for PDF-specific control.
  */
 
-import { PhaseType } from '@oneohm-epc/shared/types';
+import { PHASE_TYPE_LABELS } from '@oneohm-epc/shared/constants';
 
 import { applyPreGstDiscount } from '../pricing-utils';
 import type { QuotePdfData } from '../types';
 
-// ============================================================================
-// Local PDF formatting helpers (exact format control for PDF output)
-// ============================================================================
-
-const PHASE_TYPE_LABELS: Record<string, string> = {
-  [PhaseType.SINGLE_PHASE]: 'Single Phase',
-  [PhaseType.THREE_PHASE]: 'Three Phase',
-};
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-function formatNumber(num: number): string {
-  return new Intl.NumberFormat('en-IN').format(num);
-}
+import { formatCurrency, formatNumber } from '@/lib/utils';
 
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString('en-IN', {

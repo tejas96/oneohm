@@ -18,18 +18,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
-import { cn } from '@/lib/utils';
+import { cn, getInitials } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
-
-/**
- * Get user initials from name
- */
-function getInitials(firstName: string, lastName?: string): string {
-  if (lastName) {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-  }
-  return firstName.slice(0, 2).toUpperCase();
-}
 
 /**
  * Get primary role display name
@@ -105,7 +95,7 @@ export function UserMenu({ className }: UserMenuProps) {
         >
           {/* Avatar */}
           <Avatar size="sm">
-            <AvatarFallback>{getInitials(user.firstName, user.lastName)}</AvatarFallback>
+            <AvatarFallback>{getInitials(`${user.firstName} ${user.lastName ?? ''}`.trim())}</AvatarFallback>
           </Avatar>
           {/* Chevron - Desktop only */}
           <ChevronDown className="size-icon-xs text-foreground-tertiary hidden lg:block" />
@@ -118,7 +108,7 @@ export function UserMenu({ className }: UserMenuProps) {
           <div className="flex items-center gap-3 py-1">
             {/* Avatar */}
             <Avatar size="default">
-              <AvatarFallback>{getInitials(user.firstName, user.lastName)}</AvatarFallback>
+              <AvatarFallback>{getInitials(`${user.firstName} ${user.lastName ?? ''}`.trim())}</AvatarFallback>
             </Avatar>
             {/* Name & Email */}
             <div className="flex flex-col space-y-0.5">

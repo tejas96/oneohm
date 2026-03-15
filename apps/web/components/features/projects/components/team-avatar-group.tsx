@@ -6,13 +6,7 @@ import type { TeamMemberSummary } from '../hooks';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-
-function getInitials(firstName: string, lastName?: string): string {
-  const first = firstName.charAt(0) || '';
-  const last = lastName?.charAt(0) || '';
-  return `${first}${last}`.toUpperCase() || '?';
-}
+import { cn, getInitials } from '@/lib/utils';
 
 function getFullName(member: TeamMemberSummary): string {
   return `${member.firstName}${member.lastName ? ` ${member.lastName}` : ''}`.trim() || 'Unknown';
@@ -66,7 +60,7 @@ export function TeamAvatarGroup({
               >
                 <Avatar size={size}>
                   <AvatarFallback size={size} name={fullName}>
-                    {getInitials(member.firstName, member.lastName)}
+                    {getInitials(getFullName(member))}
                   </AvatarFallback>
                 </Avatar>
                 {isSelected && (
@@ -81,7 +75,7 @@ export function TeamAvatarGroup({
           return (
             <Avatar key={member.id} size={size} className="border-2 border-white">
               <AvatarFallback size={size} name={fullName}>
-                {getInitials(member.firstName, member.lastName)}
+                {getInitials(getFullName(member))}
               </AvatarFallback>
             </Avatar>
           );
@@ -180,7 +174,7 @@ function OverflowPopover({
               >
                 <Avatar size="xs" className="size-6 shrink-0">
                   <AvatarFallback size="xs" name={fullName} className="text-[10px]">
-                    {getInitials(member.firstName, member.lastName)}
+                    {getInitials(fullName)}
                   </AvatarFallback>
                 </Avatar>
                 <span className="text-sm text-foreground truncate flex-1">{fullName}</span>

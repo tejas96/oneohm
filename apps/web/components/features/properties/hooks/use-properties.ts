@@ -3,6 +3,7 @@
 import type {
   ConnectionType,
   LeadTemperature,
+  PaginationMeta,
   PropertyDocument,
   PropertySortField,
   PropertyStatus,
@@ -77,12 +78,7 @@ export interface Property {
   latestQuoteSystemSizeKw?: number;
 }
 
-export interface PaginationMeta {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
+export type { PaginationMeta };
 
 export interface PropertyListResponse {
   data: Property[];

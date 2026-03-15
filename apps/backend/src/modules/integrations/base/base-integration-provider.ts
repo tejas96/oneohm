@@ -71,17 +71,4 @@ export abstract class BaseIntegrationProvider implements IBaseIntegration {
     return phone.replace(/^\+/, '');
   }
 
-  /**
-   * Format phone to E.164 (add + prefix)
-   */
-  protected formatPhoneE164(phone: string): string {
-    return phone.startsWith('+') ? phone : `+${phone}`;
-  }
-
-  /**
-   * Sleep utility for retries
-   */
-  protected async sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
 }

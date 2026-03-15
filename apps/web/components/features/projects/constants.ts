@@ -1,3 +1,4 @@
+import { PROJECT_TYPE_LABELS as _PROJECT_TYPE_LABELS } from '@oneohm-epc/shared/constants';
 import {
   MaterialStatus,
   MilestoneType,
@@ -57,13 +58,7 @@ export const PROJECT_PRIORITY_BADGE_VARIANT: Record<string, string> = {
   [ProjectPriority.URGENT]: 'error',
 };
 
-export const PROJECT_TYPE_LABELS: Record<string, string> = {
-  [ProjectType.RESIDENTIAL]: 'Residential',
-  [ProjectType.RESIDENTIAL_APARTMENT]: 'Residential Apt',
-  [ProjectType.COMMERCIAL]: 'Commercial',
-  [ProjectType.INDUSTRIAL]: 'Industrial',
-  [ProjectType.AGRICULTURAL]: 'Agricultural',
-};
+export const PROJECT_TYPE_LABELS: Record<string, string> = _PROJECT_TYPE_LABELS;
 
 export const PROJECT_TYPE_BADGE_VARIANT: Record<string, string> = {
   [ProjectType.RESIDENTIAL]: 'teal',

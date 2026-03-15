@@ -151,6 +151,14 @@ export function formatRoleCode(code: string): string {
     .join(' ');
 }
 
+/**
+ * Format a number with Indian grouping (e.g., 1,50,000)
+ */
+export function formatNumber(num: number | null | undefined): string {
+  if (num == null || Number.isNaN(Number(num))) return '0';
+  return new Intl.NumberFormat('en-IN').format(Number(num));
+}
+
 /** Format system size: strips trailing zeros (e.g. "7.00" → "7", "7.50" → "7.5") */
 export function formatSystemSize(kw: number | string): string {
   const n = typeof kw === 'string' ? parseFloat(kw) : kw;

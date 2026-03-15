@@ -13,7 +13,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Progress } from '@/components/ui/progress';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { cn, formatRelativeDate, getDueDateColor } from '@/lib/utils';
+import { cn, formatRelativeDate, getDueDateColor, getInitials } from '@/lib/utils';
 
 interface TaskDrawerDetailsProps {
   task: MyTask;
@@ -282,11 +282,4 @@ export function TaskDrawerDetails({
       )}
     </div>
   );
-}
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  const first = parts[0]?.charAt(0) ?? '';
-  const last = parts.length > 1 ? (parts[parts.length - 1]?.charAt(0) ?? '') : '';
-  return `${first}${last}`.toUpperCase() || '?';
 }
