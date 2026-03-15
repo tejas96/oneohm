@@ -3,7 +3,7 @@ import {
   type FileAttachment,
   type GpsCoordinates,
   type ShadingAnalysis,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import { IsArray, IsNumber, IsObject, IsOptional, IsString, Min } from 'class-validator';
 

@@ -15,7 +15,9 @@ import {
   type ExtendedStatisticsResponse,
   VendorStatus,
   VendorType,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
+import { plainToInstance } from 'class-transformer';
+
 import {
   ApiCreate,
   ApiDelete,
@@ -23,9 +25,7 @@ import {
   ApiReadOne,
   ApiUpdate,
   OrganizationContext,
-} from '@oneohm-epc/shared-utils';
-import { plainToInstance } from 'class-transformer';
-
+} from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';

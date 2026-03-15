@@ -1,4 +1,4 @@
-import { CustomerStatus, LeadSource } from '@oneohm-epc/shared-types';
+import { CustomerStatus, LeadSource } from '@oneohm-epc/shared/types';
 import { z } from 'zod';
 
 // ============================================================================

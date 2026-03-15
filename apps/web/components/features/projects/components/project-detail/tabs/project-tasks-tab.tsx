@@ -1,6 +1,6 @@
 'use client';
 
-import { TaskStatus } from '@oneohm-epc/shared-types';
+import { TaskStatus } from '@oneohm-epc/shared/types';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 

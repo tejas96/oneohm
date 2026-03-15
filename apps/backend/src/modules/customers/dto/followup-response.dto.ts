@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { FollowupPriority, FollowupStatus, FollowupType } from '@oneohm-epc/shared-types';
+import { FollowupPriority, FollowupStatus, FollowupType } from '@oneohm-epc/shared/types';
 import { Exclude, Expose, Type } from 'class-transformer';
 
 /**

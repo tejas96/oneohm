@@ -1,6 +1,6 @@
 'use client';
 
-import { LeadTemperature, PropertyType } from '@oneohm-epc/shared-types';
+import { LeadTemperature, PropertyType } from '@oneohm-epc/shared/types';
 import { Building2, MapPin, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';

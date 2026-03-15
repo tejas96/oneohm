@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ApprovalWorkflowType } from '@oneohm-epc/shared-types';
+import { ApprovalWorkflowType } from '@oneohm-epc/shared/types';
 import { Expose, Type } from 'class-transformer';
 
 import { ApprovalStageResponseDto } from '../approval-stages/approval-stage-response.dto';

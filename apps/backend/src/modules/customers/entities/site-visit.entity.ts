@@ -3,7 +3,7 @@ import {
   type FileAttachment,
   type GpsCoordinates,
   type ShadingAnalysis,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 
 import { CustomerPropertyEntity } from './customer-property.entity';

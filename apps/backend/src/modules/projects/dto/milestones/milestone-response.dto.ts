@@ -3,7 +3,7 @@ import {
   MilestoneStatus,
   MilestoneType,
   type MilestoneDeliverable,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { Expose } from 'class-transformer';
 
 /**

@@ -1,6 +1,6 @@
 'use client';
 
-import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@oneohm-epc/shared-types';
+import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@oneohm-epc/shared/types';
 import {
   useQuery,
   useMutation,

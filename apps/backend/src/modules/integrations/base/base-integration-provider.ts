@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { IntegrationProvider } from '@oneohm-epc/shared-types';
+import { IntegrationProvider } from '@oneohm-epc/shared/types';
 
 import type { IBaseIntegration } from '../interfaces';
 

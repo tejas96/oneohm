@@ -9,7 +9,7 @@ import {
   SecurityEventType,
   SecurityEventCategory,
   SecurityEventStatus,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import * as bcrypt from 'bcrypt';
 import { MoreThan } from 'typeorm';
 

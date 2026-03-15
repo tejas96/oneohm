@@ -6,7 +6,7 @@ import {
   type TaskChecklist,
   type TaskStatus,
   type WorkflowStep,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import {
   ArrowRight,
   CheckCircle2,

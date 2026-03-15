@@ -1,7 +1,14 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "dist"
+    "outDir": "dist",
+    "paths": {
+      "@oneohm-epc/shared": ["libs/shared/dist/index.d.ts"],
+      "@oneohm-epc/shared/types": ["libs/shared/dist/types/index.d.ts"],
+      "@oneohm-epc/shared/utils": ["libs/shared/dist/utils/index.d.ts"],
+      "@oneohm-epc/shared/schemas": ["libs/shared/dist/schemas/index.d.ts"],
+      "@oneohm-epc/shared/constants": ["libs/shared/dist/constants/index.d.ts"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "test", "dist", "**/*spec.ts", "**/*.spec.ts"]

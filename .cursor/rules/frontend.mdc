@@ -132,7 +132,7 @@ Layout:
 - Deep imports - use barrel (`@/lib/hooks`, `@/components/ui`, `../hooks`)
 - Dead code - delete immediately
 - Inline SVGs - use lucide-react
-- Redefine backend types - import from shared-types
+- Redefine backend types - import from `@oneohm-epc/shared/types`
 - useQuery/useMutation in components - extract to `hooks/use-*.ts` files
 - Raw useQuery/useMutation in new feature hooks - use FDAL core hooks (`useResourceList`, `useResourceMutations`, etc.)
 - Zustand for server data - use TanStack Query
@@ -150,7 +150,7 @@ Layout:
 - Helper/utility functions in constants - move to `lib/utils/*.ts` and re-export from `lib/utils.ts` barrel
 - Inline currency/date formatting - use `formatCurrency`, `formatDate` from lib/utils
 - Query keys without `organizationId` - prevents cross-org cache leaks
-- `z.string()` for backend enums - use `z.nativeEnum(EnumType)` from shared-types
+- `z.string()` for backend enums - use `z.nativeEnum(EnumType)` from `@oneohm-epc/shared/types`
 - shadow-md/shadow-lg in feature components - use shadow-sm or none (only ui/ primitives may use shadow-md)
 
 ---

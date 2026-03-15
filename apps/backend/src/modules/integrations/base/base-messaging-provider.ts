@@ -1,4 +1,4 @@
-import { IntegrationStatus, type IMessageResponse } from '@oneohm-epc/shared-types';
+import { IntegrationStatus, type IMessageResponse } from '@oneohm-epc/shared/types';
 
 import { BaseIntegrationProvider } from './base-integration-provider';
 

@@ -1,7 +1,7 @@
 // ============================================
 // IMPORTS
 // ============================================
-import { PaymentMethod, PaymentTransactionStatus } from '@oneohm-epc/shared-types';
+import { PaymentMethod, PaymentTransactionStatus } from '@oneohm-epc/shared/types';
 import { Entity, Column, ManyToOne, JoinColumn, Index, DeleteDateColumn } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';

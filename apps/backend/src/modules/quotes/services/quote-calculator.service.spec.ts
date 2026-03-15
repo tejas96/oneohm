@@ -8,7 +8,7 @@ import {
   ProductType,
   ProductStatus,
   SubsidySchemeType,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 
 import { QuoteCalculatorService } from './quote-calculator.service';
 import { ProductEntity } from '../../master-data/entities/product.entity';

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProjectPriority, ProjectStatus, type ProjectMetadata } from '@oneohm-epc/shared-types';
+import { ProjectPriority, ProjectStatus, type ProjectMetadata } from '@oneohm-epc/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../../common/utils';

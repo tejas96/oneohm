@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PhaseType, PanelTechnology, StructureType } from '@oneohm-epc/shared-types';
+import { PhaseType, PanelTechnology, StructureType } from '@oneohm-epc/shared/types';
 
 /**
  * System configuration in the calculated quote

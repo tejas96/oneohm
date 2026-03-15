@@ -11,7 +11,7 @@ import {
   deriveInverterBrands,
   deriveStructureTypes,
   getInverterCapacities as getInverterCapacitiesUtil,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/utils';
 import { useCallback, useMemo } from 'react';
 
 import { useResourceList, STALE_TIMES, type BaseFilters } from '../core';

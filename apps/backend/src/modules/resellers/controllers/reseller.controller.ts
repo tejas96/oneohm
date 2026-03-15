@@ -1,6 +1,7 @@
 import { Body, Controller, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ResellerStatus } from '@oneohm-epc/shared-types';
+import { ResellerStatus } from '@oneohm-epc/shared/types';
+
 import {
   ApiAction,
   ApiCreate,
@@ -9,8 +10,7 @@ import {
   ApiReadOne,
   ApiUpdate,
   OrganizationContext,
-} from '@oneohm-epc/shared-utils';
-
+} from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';

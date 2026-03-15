@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { ServiceRequestStatus } from '@oneohm-epc/shared-types';
+import { ServiceRequestStatus } from '@oneohm-epc/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import {

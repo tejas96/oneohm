@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FollowupType, FollowupPriority, PropertyType } from '@oneohm-epc/shared-types';
+import { FollowupType, FollowupPriority, PropertyType } from '@oneohm-epc/shared/types';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { type JSX, useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';

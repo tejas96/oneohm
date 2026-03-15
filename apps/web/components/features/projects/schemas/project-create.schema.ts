@@ -1,4 +1,4 @@
-import { MilestoneType, ProjectPriority } from '@oneohm-epc/shared-types';
+import { MilestoneType, ProjectPriority } from '@oneohm-epc/shared/types';
 import { z } from 'zod';
 
 const isoDateOrEmpty = z

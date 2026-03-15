@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ProjectType } from '@oneohm-epc/shared-types';
+import { ProjectType } from '@oneohm-epc/shared/types';
 import { Repository } from 'typeorm';
 
 import { SubsidyConfiguration } from '../entities/subsidy-configuration.entity';

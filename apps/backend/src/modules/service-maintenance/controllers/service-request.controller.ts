@@ -11,7 +11,7 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { ServiceRequestStatus } from '@oneohm-epc/shared-types';
+import { ServiceRequestStatus } from '@oneohm-epc/shared/types';
 
 import { JwtAuthGuard } from '../../auth/guards';
 import {

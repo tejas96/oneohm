@@ -1,4 +1,4 @@
-import { ProjectPriority, ProjectStatus, type ProjectMetadata } from '@oneohm-epc/shared-types';
+import { ProjectPriority, ProjectStatus, type ProjectMetadata } from '@oneohm-epc/shared/types';
 import {
   Column,
   DeleteDateColumn,

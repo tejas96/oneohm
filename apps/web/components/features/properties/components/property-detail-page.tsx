@@ -1,6 +1,6 @@
 'use client';
 
-import { LeadTemperature, QuoteStatus } from '@oneohm-epc/shared-types';
+import { LeadTemperature, QuoteStatus } from '@oneohm-epc/shared/types';
 import { Calendar, Edit, FileText, MapPin, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';

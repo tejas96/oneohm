@@ -5,7 +5,7 @@
  */
 'use client';
 
-import { TASK_STATUS_TRANSITIONS, TaskStatus } from '@oneohm-epc/shared-types';
+import { TASK_STATUS_TRANSITIONS, TaskStatus } from '@oneohm-epc/shared/types';
 import { Calendar, FolderKanban, User } from 'lucide-react';
 import Link from 'next/link';
 

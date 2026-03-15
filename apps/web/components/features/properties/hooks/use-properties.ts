@@ -9,7 +9,7 @@ import type {
   PropertyType,
   QuoteStatus,
   SortOrder,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 

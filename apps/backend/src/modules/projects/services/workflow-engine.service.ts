@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { TASK_STATUS_TRANSITIONS, TaskStatus } from '@oneohm-epc/shared-types';
+import { TASK_STATUS_TRANSITIONS, TaskStatus } from '@oneohm-epc/shared/types';
 
 import { type ProjectTaskEntity } from '../entities/project-task.entity';
 import { type ProjectEntity } from '../entities/project.entity';

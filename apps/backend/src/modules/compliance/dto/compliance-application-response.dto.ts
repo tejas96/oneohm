@@ -1,4 +1,4 @@
-import { ComplianceStatus } from '@oneohm-epc/shared-types';
+import { ComplianceStatus } from '@oneohm-epc/shared/types';
 import { Expose, Type } from 'class-transformer';
 
 import { OrganizationResponseDto } from '../../organizations/dto/organization-response.dto';

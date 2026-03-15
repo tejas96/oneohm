@@ -1,4 +1,4 @@
-import { FollowupType, FollowupPriority } from '@oneohm-epc/shared-types';
+import { FollowupType, FollowupPriority } from '@oneohm-epc/shared/types';
 import { z } from 'zod';
 
 // ============================================================================

@@ -1,6 +1,6 @@
 'use client';
 
-import { SiteVisitStatus, VisitType } from '@oneohm-epc/shared-types';
+import { SiteVisitStatus, VisitType } from '@oneohm-epc/shared/types';
 import {
   Calendar,
   Camera,

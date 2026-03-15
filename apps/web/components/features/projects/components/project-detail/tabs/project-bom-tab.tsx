@@ -1,6 +1,6 @@
 'use client';
 
-import { MaterialStatus } from '@oneohm-epc/shared-types';
+import { MaterialStatus } from '@oneohm-epc/shared/types';
 import { Package } from 'lucide-react';
 import React from 'react';
 

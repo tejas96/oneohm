@@ -5,7 +5,7 @@ import {
   PhaseType,
   DcrPreference,
   ItemCategory,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { type LucideIcon, Building2, Factory, Home, Landmark, Warehouse } from 'lucide-react';
 
 import type { FilterTab } from '@/components/shared';
@@ -288,5 +288,6 @@ export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
   [ProjectType.RESIDENTIAL_APARTMENT]: 'Residential Apartment',
   [ProjectType.COMMERCIAL]: 'Commercial',
   [ProjectType.INDUSTRIAL]: 'Industrial',
+  [ProjectType.INSTITUTIONAL]: 'Institutional',
   [ProjectType.AGRICULTURAL]: 'Agricultural',
 };

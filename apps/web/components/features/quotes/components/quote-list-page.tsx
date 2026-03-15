@@ -1,6 +1,6 @@
 'use client';
 
-import { QuoteSortField, QuoteStatus, SortOrder } from '@oneohm-epc/shared-types';
+import { QuoteSortField, QuoteStatus, SortOrder } from '@oneohm-epc/shared/types';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   AlertCircle,

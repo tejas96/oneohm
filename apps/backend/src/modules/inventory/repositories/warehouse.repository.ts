@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { WarehouseStatus, WarehouseType } from '@oneohm-epc/shared-types';
+import { WarehouseStatus, WarehouseType } from '@oneohm-epc/shared/types';
 import { IsNull, Repository } from 'typeorm';
 
 import { WarehouseEntity } from '../entities/warehouse.entity';

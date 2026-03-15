@@ -10,8 +10,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { ApiCreate, ApiDelete, ApiUpdate, OrganizationContext } from '@oneohm-epc/shared-utils';
 
+import { ApiCreate, ApiDelete, ApiUpdate, OrganizationContext } from '../../../common/decorators';
 import { toDto } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';

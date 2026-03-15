@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MaterialDispatchStatus } from '@oneohm-epc/shared-types';
+import { MaterialDispatchStatus } from '@oneohm-epc/shared/types';
 import { Expose, Type } from 'class-transformer';
 
 import { MaterialDispatchItemResponseDto } from './material-dispatch-item-response.dto';

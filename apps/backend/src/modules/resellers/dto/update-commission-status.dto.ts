@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CommissionStatus } from '@oneohm-epc/shared-types';
+import { CommissionStatus } from '@oneohm-epc/shared/types';
 import { IsEnum } from 'class-validator';
 
 /**

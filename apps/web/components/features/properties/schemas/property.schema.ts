@@ -1,4 +1,4 @@
-import { ConnectionType, LeadTemperature, PropertyType } from '@oneohm-epc/shared-types';
+import { ConnectionType, LeadTemperature, PropertyType } from '@oneohm-epc/shared/types';
 import { z } from 'zod';
 
 // ============================================================================

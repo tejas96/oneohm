@@ -4,7 +4,7 @@ import {
   type FileAttachment,
   type TaskActivityEntry,
   type TaskChecklist,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { ProjectMilestoneEntity } from './project-milestone.entity';

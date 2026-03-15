@@ -1,6 +1,6 @@
 'use client';
 
-import type { TaskChecklist } from '@oneohm-epc/shared-types';
+import type { TaskChecklist } from '@oneohm-epc/shared/types';
 import { CheckSquare, Square } from 'lucide-react';
 import { useCallback } from 'react';
 

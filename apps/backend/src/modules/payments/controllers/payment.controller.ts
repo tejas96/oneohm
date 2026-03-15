@@ -13,7 +13,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
-import { PaymentTransactionStatus } from '@oneohm-epc/shared-types';
+import { PaymentTransactionStatus } from '@oneohm-epc/shared/types';
+import { plainToInstance } from 'class-transformer';
+
 import {
   ApiCreate,
   ApiDelete,
@@ -21,9 +23,7 @@ import {
   ApiReadOne,
   ApiUpdate,
   OrganizationContext,
-} from '@oneohm-epc/shared-utils';
-import { plainToInstance } from 'class-transformer';
-
+} from '../../../common/decorators';
 import { toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';

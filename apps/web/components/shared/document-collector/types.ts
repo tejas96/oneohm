@@ -6,7 +6,7 @@
  * @module shared/document-collector/types
  */
 
-import type { PropertyDocument } from '@oneohm-epc/shared-types';
+import type { PropertyDocument } from '@oneohm-epc/shared/types';
 
 // ============================================================================
 // Document Types (matching backend enums)

@@ -1,6 +1,6 @@
 'use client';
 
-import type { ProjectPriority, ProjectStatus } from '@oneohm-epc/shared-types';
+import type { ProjectPriority, ProjectStatus } from '@oneohm-epc/shared/types';
 import { Inbox, LayoutGrid, List, Plus, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';

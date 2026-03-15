@@ -7,7 +7,7 @@ import {
   NotFoundException,
   forwardRef,
 } from '@nestjs/common';
-import { CustomerStatus, UserProfileType, UserStatus } from '@oneohm-epc/shared-types';
+import { CustomerStatus, UserProfileType, UserStatus } from '@oneohm-epc/shared/types';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { type TaskActivityEntry, TaskStatus, ProjectStatus } from '@oneohm-epc/shared-types';
+import { type TaskActivityEntry, TaskStatus, ProjectStatus } from '@oneohm-epc/shared/types';
 import {
   DataSource,
   type EntityManager,

@@ -1,6 +1,6 @@
 'use client';
 
-import type { PaymentMilestone } from '@oneohm-epc/shared-types';
+import type { PaymentMilestone } from '@oneohm-epc/shared/types';
 import { Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 

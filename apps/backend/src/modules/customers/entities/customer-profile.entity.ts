@@ -1,4 +1,4 @@
-import { CustomerStatus } from '@oneohm-epc/shared-types';
+import { CustomerStatus } from '@oneohm-epc/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 import { CustomerPropertyEntity } from './customer-property.entity';

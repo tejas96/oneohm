@@ -1,6 +1,6 @@
 'use client';
 
-import type { MyTask } from '@oneohm-epc/shared-types';
+import type { MyTask } from '@oneohm-epc/shared/types';
 import { Calendar, Check, Crown, FolderKanban, Pencil, User, X } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useMemo, useState } from 'react';

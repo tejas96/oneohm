@@ -7,7 +7,7 @@
  * @module lib/config/constants
  */
 
-import { ConnectionType, LeadTemperature, PropertyType } from '@oneohm-epc/shared-types';
+import { ConnectionType, LeadTemperature, PropertyType } from '@oneohm-epc/shared/types';
 
 // ============================================================================
 // Indian States

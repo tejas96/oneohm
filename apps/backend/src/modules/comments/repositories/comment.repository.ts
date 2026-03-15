@@ -3,7 +3,7 @@
 // ============================================
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CommentEntityType } from '@oneohm-epc/shared-types';
+import { CommentEntityType } from '@oneohm-epc/shared/types';
 import { IsNull, Repository } from 'typeorm';
 
 import { CommentEntity } from '../entities/comment.entity';

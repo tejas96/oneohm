@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TaskStatus } from '@oneohm-epc/shared-types';
+import { TaskStatus } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import { IsEnum, IsInt, IsNotEmpty, Min } from 'class-validator';
 

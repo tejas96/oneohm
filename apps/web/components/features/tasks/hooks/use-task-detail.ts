@@ -1,6 +1,6 @@
 'use client';
 
-import type { MyTask } from '@oneohm-epc/shared-types';
+import type { MyTask } from '@oneohm-epc/shared/types';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 
 import { apiClient } from '@/lib/api/client';

@@ -19,9 +19,9 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import type { PaginatedResponse } from '@oneohm-epc/shared-types';
-import { OrganizationContext } from '@oneohm-epc/shared-utils';
+import type { PaginatedResponse } from '@oneohm-epc/shared/types';
 
+import { OrganizationContext } from '../../../common/decorators';
 import { toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';

@@ -4,7 +4,7 @@ import {
   TASK_STATUS_TRANSITIONS,
   type TaskPriority,
   type TaskStatus,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { useMemo } from 'react';
 
 import {

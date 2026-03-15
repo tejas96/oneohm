@@ -1,5 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { IntegrationCategory, IntegrationProvider } from '@oneohm-epc/shared-types';
+import { IntegrationCategory, IntegrationProvider } from '@oneohm-epc/shared/types';
 
 import type { IBaseIntegration } from '../interfaces';
 import { IntegrationRepository } from '../repositories';

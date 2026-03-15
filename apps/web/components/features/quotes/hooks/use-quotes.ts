@@ -5,7 +5,7 @@ import {
   type QuoteSortField,
   type SortOrder,
   type SystemType,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import {
   useQuery,
   useMutation,

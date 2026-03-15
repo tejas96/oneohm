@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { InventoryTransactionType } from '@oneohm-epc/shared-types';
+import { InventoryTransactionType } from '@oneohm-epc/shared/types';
 
 import { ProductRepository } from '../../master-data/repositories/product.repository';
 import { UpdateStockDto } from '../dto';

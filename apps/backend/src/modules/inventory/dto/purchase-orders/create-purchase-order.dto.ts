@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PaymentStatus, PurchaseOrderStatus, PurchaseOrderType } from '@oneohm-epc/shared-types';
+import { PaymentStatus, PurchaseOrderStatus, PurchaseOrderType } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,

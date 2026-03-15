@@ -1,4 +1,4 @@
-import { ProjectType, PhaseType, DcrPreference, PanelTechnology } from '@oneohm-epc/shared-types';
+import { ProjectType, PhaseType, DcrPreference, PanelTechnology } from '@oneohm-epc/shared/types';
 import { z } from 'zod';
 
 // ============================================================================

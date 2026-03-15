@@ -882,7 +882,7 @@ enum MilestoneType {
 - [CI/CD with NX](./CI-CD-WITH-NX.md)
 - [Docker Documentation](./DOCKER.md)
 - [Backend README](../apps/backend/README.md)
-- [Shared Types README](../libs/shared-types/README.md)
+- [Shared Package README](../libs/shared/README.md)
 
 ---
 

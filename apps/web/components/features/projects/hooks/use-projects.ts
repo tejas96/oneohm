@@ -1,6 +1,6 @@
 'use client';
 
-import type { ProjectMetadata, ProjectPriority, ProjectStatus } from '@oneohm-epc/shared-types';
+import type { ProjectMetadata, ProjectPriority, ProjectStatus } from '@oneohm-epc/shared/types';
 import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 

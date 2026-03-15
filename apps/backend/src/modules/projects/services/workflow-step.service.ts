@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { type PaginatedResponse, type StatisticsResponse } from '@oneohm-epc/shared-types';
+import { type PaginatedResponse, type StatisticsResponse } from '@oneohm-epc/shared/types';
 
 import { type WorkflowStepEntity } from '../entities';
 import { ProjectTaskRepository, WorkflowStepRepository } from '../repositories';

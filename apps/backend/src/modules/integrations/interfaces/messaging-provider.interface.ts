@@ -6,7 +6,7 @@ import {
   type IMediaMessage,
   type IOtpMessage,
   type IAlertMessage,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 
 import { type IBaseIntegration } from './base-integration.interface';
 

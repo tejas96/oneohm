@@ -3,7 +3,7 @@ import {
   ProductType,
   UnitOfMeasure,
   ProductSpecifications,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { ProductCategoryEntity } from './product-category.entity';
@@ -12,7 +12,7 @@ import { OrganizationEntity } from '../../organizations/entities/organization.en
 import { UserEntity } from '../../users/entities/user.entity';
 
 // Re-export for backward compatibility
-export type { ProductSpecifications } from '@oneohm-epc/shared-types';
+export type { ProductSpecifications } from '@oneohm-epc/shared/types';
 
 /**
  * Product Entity

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ProjectVendorStatus } from '@oneohm-epc/shared-types';
+import { ProjectVendorStatus } from '@oneohm-epc/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../../common/utils';

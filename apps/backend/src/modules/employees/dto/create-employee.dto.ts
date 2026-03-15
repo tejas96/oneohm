@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserGender, UserStatus } from '@oneohm-epc/shared-types';
+import { UserGender, UserStatus } from '@oneohm-epc/shared/types';
 import {
   IsDateString,
   IsEmail,

@@ -12,7 +12,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { MaintenanceTaskStatus } from '@oneohm-epc/shared-types';
+import { MaintenanceTaskStatus } from '@oneohm-epc/shared/types';
 
 import { JwtAuthGuard } from '../../auth/guards';
 import {

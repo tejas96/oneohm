@@ -20,9 +20,9 @@ Complete documentation for the OneOhm EPC NX monorepo.
 - [Web Documentation](../apps/web/README.md) - Next.js web app documentation
 - [UX Documentation](../apps/ux/README.md) - Design assets documentation
 
-### Shared Libraries
+### Shared Package
 
-- [Shared Types](../libs/shared-types/README.md) - TypeScript types and interfaces
+- [Shared Package](../libs/shared/README.md) - Types, utilities, schemas, and constants
 
 ## 🚀 Quick Links
 

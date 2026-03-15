@@ -1,6 +1,6 @@
 'use client';
 
-import { CustomerStatus, CustomerSortField, LeadSource, SortOrder } from '@oneohm-epc/shared-types';
+import { CustomerStatus, CustomerSortField, LeadSource, SortOrder } from '@oneohm-epc/shared/types';
 import { ColumnDef } from '@tanstack/react-table';
 import {
   ArrowDown,

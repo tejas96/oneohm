@@ -1,7 +1,7 @@
 // ============================================
 // IMPORTS
 // ============================================
-import { CommentEntityType } from '@oneohm-epc/shared-types';
+import { CommentEntityType } from '@oneohm-epc/shared/types';
 import {
   Column,
   CreateDateColumn,

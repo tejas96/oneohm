@@ -8,7 +8,7 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { PaymentTransactionStatus } from '@oneohm-epc/shared-types';
+import { PaymentTransactionStatus } from '@oneohm-epc/shared/types';
 
 // Third-party imports
 

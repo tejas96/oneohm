@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PaymentStatus, PurchaseOrderStatus } from '@oneohm-epc/shared-types';
+import { PaymentStatus, PurchaseOrderStatus } from '@oneohm-epc/shared/types';
 
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { CreatePurchaseOrderDto, ReceivePurchaseOrderDto, UpdatePurchaseOrderDto } from '../dto';

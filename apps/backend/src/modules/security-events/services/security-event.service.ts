@@ -4,7 +4,7 @@ import {
   SecurityEventCategory,
   SecurityEventSeverity,
   SecurityEventStatus,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 
 import { SecurityEventEntity } from '../entities';
 import { SecurityEventRepository } from '../repositories';

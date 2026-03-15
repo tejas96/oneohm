@@ -9,7 +9,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { CustomerStatus, type PaginatedResponse } from '@oneohm-epc/shared-types';
+import { CustomerStatus, type PaginatedResponse } from '@oneohm-epc/shared/types';
+
 import {
   ApiAction,
   ApiCreate,
@@ -18,8 +19,7 @@ import {
   ApiReadOne,
   ApiUpdate,
   OrganizationContext,
-} from '@oneohm-epc/shared-utils';
-
+} from '../../../common/decorators';
 import { toDto, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';

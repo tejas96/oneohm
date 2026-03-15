@@ -5,7 +5,7 @@ import {
   TaskStatus,
   type TaskChecklist,
   type TaskPriority,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { AlertCircle } from 'lucide-react';
 import { useCallback, useState } from 'react';
 

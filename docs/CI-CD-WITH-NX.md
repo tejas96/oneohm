@@ -138,21 +138,21 @@ CI runs:
 Total: ~4.5 minutes
 ```
 
-#### Scenario 2: Change Shared Types
+#### Scenario 2: Change Shared Package
 
 ```yaml
 Files changed:
-- libs/shared-types/src/index.ts
+- libs/shared/src/types/enums/index.ts
 
 NX detects:
-- shared-types (affected)
-- backend (depends on shared-types)
-- web (depends on shared-types)
+- shared (affected)
+- backend (depends on shared)
+- web (depends on shared)
 
 CI runs:
-✓ Lint shared-types, backend, web (1m)
-✓ Test shared-types, backend, web (2m)
-✓ Build shared-types, backend, web (5m)
+✓ Lint shared, backend, web (1m)
+✓ Test shared, backend, web (2m)
+✓ Build shared, backend, web (5m)
 ✓ Deploy backend + web (4m)
 
 Total: ~12 minutes
@@ -523,7 +523,7 @@ In any PR, add a comment or check logs:
 NX   Affected projects:
 
 - backend
-- shared-types
+- shared
 
 # Or view locally:
 git checkout your-branch

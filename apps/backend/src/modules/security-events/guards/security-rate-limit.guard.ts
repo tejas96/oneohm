@@ -6,10 +6,10 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { SecurityEventType } from '@oneohm-epc/shared-types';
-import { SECURITY_RATE_LIMIT_KEY, type SecurityRateLimitConfig } from '@oneohm-epc/shared-utils';
+import { SecurityEventType } from '@oneohm-epc/shared/types';
 import type { Request } from 'express';
 
+import { SECURITY_RATE_LIMIT_KEY, type SecurityRateLimitConfig } from '../../../common/decorators';
 import { SecurityEventRepository } from '../repositories/security-event.repository';
 import { SecurityEventService } from '../services/security-event.service';
 

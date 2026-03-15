@@ -2,7 +2,7 @@
 // IMPORTS
 // ============================================
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { DocumentStatus, DocumentType, WcrType } from '@oneohm-epc/shared-types';
+import { DocumentStatus, DocumentType, WcrType } from '@oneohm-epc/shared/types';
 import { Expose, Type } from 'class-transformer';
 
 /**

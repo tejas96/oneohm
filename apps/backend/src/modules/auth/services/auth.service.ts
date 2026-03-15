@@ -7,7 +7,7 @@ import {
   SecurityEventStatus,
   SecurityEventType,
   UserStatus,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import type ms from 'ms';
 import { MoreThan } from 'typeorm';
 

@@ -2,7 +2,7 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { TaskStatus } from '@oneohm-epc/shared-types';
+import { TaskStatus } from '@oneohm-epc/shared/types';
 import { AlertTriangle, Calendar, CheckCircle2, GripVertical, Lock, User } from 'lucide-react';
 import React from 'react';
 

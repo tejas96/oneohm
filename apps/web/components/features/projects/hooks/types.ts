@@ -12,7 +12,7 @@ import type {
   SurveyData,
   TaskPriority,
   TaskStatus,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 
 // ============================================================================
 // Project Detail Types

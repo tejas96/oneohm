@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { UserProfileType } from '@oneohm-epc/shared-types';
+import { UserProfileType } from '@oneohm-epc/shared/types';
 import { IsNotEmpty, IsString, IsEnum, IsOptional, IsObject } from 'class-validator';
 
 /**

@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { type ExtendedStatisticsResponse, ApprovalWorkflowType } from '@oneohm-epc/shared-types';
+import { type ExtendedStatisticsResponse, ApprovalWorkflowType } from '@oneohm-epc/shared/types';
 
 import type { CreateApprovalTemplateDto, UpdateApprovalTemplateDto } from '../dto';
 import type { ApprovalStageEntity, ApprovalTemplateEntity } from '../entities';

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SettingDataType } from '@oneohm-epc/shared-types';
+import { SettingDataType } from '@oneohm-epc/shared/types';
 import { IsEnum, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 /**

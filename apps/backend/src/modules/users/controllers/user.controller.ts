@@ -9,7 +9,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { UserStatus } from '@oneohm-epc/shared-types';
+import { UserStatus } from '@oneohm-epc/shared/types';
+import { plainToInstance } from 'class-transformer';
+
 import {
   ApiAction,
   ApiCreate,
@@ -17,9 +19,7 @@ import {
   ApiReadAll,
   ApiReadOne,
   ApiUpdate,
-} from '@oneohm-epc/shared-utils';
-import { plainToInstance } from 'class-transformer';
-
+} from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';

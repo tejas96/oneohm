@@ -4,7 +4,7 @@ import {
   type FileAttachment,
   type GpsCoordinates,
   type ShadingAnalysis,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../common/utils';

@@ -7,7 +7,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { UserStatus } from '@oneohm-epc/shared-types';
+import { UserStatus } from '@oneohm-epc/shared/types';
 
 import { ProfileService } from './profile.service';
 import { CreateUserDto } from '../dto/create-user.dto';

@@ -1,6 +1,6 @@
 'use client';
 
-import { DcrPreference, PhaseType } from '@oneohm-epc/shared-types';
+import { DcrPreference, PhaseType } from '@oneohm-epc/shared/types';
 import { useCallback, useRef } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 

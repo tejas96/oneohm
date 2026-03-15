@@ -1,4 +1,4 @@
-import { SubsidySchemeType, ProjectType, type SubsidyTier } from '@oneohm-epc/shared-types';
+import { SubsidySchemeType, ProjectType, type SubsidyTier } from '@oneohm-epc/shared/types';
 import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';

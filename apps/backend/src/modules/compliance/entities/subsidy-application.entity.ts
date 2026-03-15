@@ -1,4 +1,4 @@
-import { SubsidyStatus } from '@oneohm-epc/shared-types';
+import { SubsidyStatus } from '@oneohm-epc/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';

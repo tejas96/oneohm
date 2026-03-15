@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ConnectionType, LeadTemperature, PropertyType } from '@oneohm-epc/shared-types';
+import { ConnectionType, LeadTemperature, PropertyType } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import {
   IsArray,

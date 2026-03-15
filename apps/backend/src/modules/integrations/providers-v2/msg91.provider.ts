@@ -5,7 +5,7 @@ import {
   type IMessageResponse,
   type IOtpMessage,
   type ITextMessage,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import type { AxiosInstance } from 'axios';
 
 import { BaseMessagingProvider } from '../base';

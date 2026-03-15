@@ -11,7 +11,7 @@ import {
   type PropertyDocument,
   PropertyStatus,
   QuoteStatus,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { LoanApplicationRepository } from '../../loan-finance/repositories/loan-application.repository';

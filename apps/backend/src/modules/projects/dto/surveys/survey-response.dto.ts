@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SiteSurveyStatus, type FileAttachment, type SurveyData } from '@oneohm-epc/shared-types';
+import { SiteSurveyStatus, type FileAttachment, type SurveyData } from '@oneohm-epc/shared/types';
 import { Exclude, Expose, Transform } from 'class-transformer';
 
 /**

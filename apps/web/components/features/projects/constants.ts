@@ -10,7 +10,7 @@ import {
   TASK_STATUS_LABELS,
   TaskPriority,
   TaskStatus,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 
 export const DEFAULT_MILESTONES = [
   { name: 'Site Survey & Design', type: MilestoneType.SITE_SURVEY },
@@ -142,7 +142,7 @@ export const TYPE_FILTER_OPTIONS = [
 
 // ---------------------------------------------------------------------------
 // Task constants (for My Tasks)
-// Labels imported from @oneohm-epc/shared-types and re-exported for convenience
+// Labels imported from @oneohm-epc/shared/types and re-exported for convenience
 // ---------------------------------------------------------------------------
 
 export { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS };

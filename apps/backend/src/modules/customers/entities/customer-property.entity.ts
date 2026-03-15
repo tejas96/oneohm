@@ -4,7 +4,7 @@ import {
   type PropertyDocument,
   PropertyStatus,
   PropertyType,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import {
   Column,
   DeleteDateColumn,

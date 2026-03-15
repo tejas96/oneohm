@@ -1,4 +1,4 @@
-import { MaintenanceTaskStatus } from '@oneohm-epc/shared-types';
+import { MaintenanceTaskStatus } from '@oneohm-epc/shared/types';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 import { ProjectMaintenanceConfigEntity } from './project-maintenance-config.entity';

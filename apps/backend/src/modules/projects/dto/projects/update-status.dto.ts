@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ProjectStatus } from '@oneohm-epc/shared-types';
+import { ProjectStatus } from '@oneohm-epc/shared/types';
 import { IsEnum } from 'class-validator';
 
 export class UpdateProjectStatusDto {

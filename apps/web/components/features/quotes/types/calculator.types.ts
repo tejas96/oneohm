@@ -5,7 +5,7 @@ import type {
   StructureType,
   PanelTechnology,
   PaymentMilestone as SharedPaymentMilestone,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 
 // ============================================================================
 // Request Types (mirrors backend CalculateQuoteDto)

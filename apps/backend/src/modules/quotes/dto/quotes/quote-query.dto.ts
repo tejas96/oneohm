@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { QuoteSortField, QuoteStatus, SortOrder } from '@oneohm-epc/shared-types';
+import { QuoteSortField, QuoteStatus, SortOrder } from '@oneohm-epc/shared/types';
 import { Transform, Type } from 'class-transformer';
 import {
   IsDateString,

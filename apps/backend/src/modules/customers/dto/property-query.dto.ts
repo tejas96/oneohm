@@ -5,7 +5,7 @@ import {
   PropertyStatus,
   PropertyType,
   SortOrder,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { Transform, Type } from 'class-transformer';
 import {
   IsDateString,

@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { SiteSurveyStatus } from '@oneohm-epc/shared-types';
+import { SiteSurveyStatus } from '@oneohm-epc/shared/types';
 import { DataSource, IsNull, QueryFailedError } from 'typeorm';
 
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';

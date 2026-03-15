@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ApprovalRequestPriority } from '@oneohm-epc/shared-types';
+import { ApprovalRequestPriority } from '@oneohm-epc/shared/types';
 import { IsEnum, IsObject, IsOptional, IsString, MaxLength } from 'class-validator';
 
 /**

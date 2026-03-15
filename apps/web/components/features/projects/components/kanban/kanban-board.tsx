@@ -12,7 +12,7 @@ import {
   type DragStartEvent,
   type DragOverEvent,
 } from '@dnd-kit/core';
-import { TASK_STATUS_TRANSITIONS, TaskStatus } from '@oneohm-epc/shared-types';
+import { TASK_STATUS_TRANSITIONS, TaskStatus } from '@oneohm-epc/shared/types';
 import React, { useCallback, useMemo, useState } from 'react';
 
 import { KanbanColumn } from './kanban-column';

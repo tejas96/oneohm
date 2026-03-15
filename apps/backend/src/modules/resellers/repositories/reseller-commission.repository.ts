@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CommissionStatus } from '@oneohm-epc/shared-types';
+import { CommissionStatus } from '@oneohm-epc/shared/types';
 import { Repository } from 'typeorm';
 
 import { ResellerCommissionEntity } from '../entities/reseller-commission.entity';

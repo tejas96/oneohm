@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ApprovalAction } from '@oneohm-epc/shared-types';
+import { ApprovalAction } from '@oneohm-epc/shared/types';
 import { Repository } from 'typeorm';
 
 import { ApprovalHistoryEntity } from '../entities';

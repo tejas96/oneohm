@@ -7,7 +7,7 @@ import {
   ProjectType,
   SubsidySchemeType,
   PricingRuleType,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { DataSource } from 'typeorm';
 
 /**

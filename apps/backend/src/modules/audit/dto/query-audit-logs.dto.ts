@@ -1,4 +1,4 @@
-import { AuditAction, AuditEntityType } from '@oneohm-epc/shared-types';
+import { AuditAction, AuditEntityType } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import { IsDate, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 

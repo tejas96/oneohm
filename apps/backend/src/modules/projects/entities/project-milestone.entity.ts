@@ -2,7 +2,7 @@ import {
   MilestoneStatus,
   MilestoneType,
   type MilestoneDeliverable,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 import { ProjectEntity } from './project.entity';

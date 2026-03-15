@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CustomerStatus } from '@oneohm-epc/shared-types';
+import { CustomerStatus } from '@oneohm-epc/shared/types';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
 import { CustomerPropertyResponseDto } from './customer-property-response.dto';

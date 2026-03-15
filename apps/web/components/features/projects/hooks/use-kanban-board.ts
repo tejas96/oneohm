@@ -1,6 +1,6 @@
 'use client';
 
-import { TaskStatus, TASK_STATUS_TRANSITIONS } from '@oneohm-epc/shared-types';
+import { TaskStatus, TASK_STATUS_TRANSITIONS } from '@oneohm-epc/shared/types';
 import {
   useQuery,
   useMutation,

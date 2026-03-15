@@ -8,11 +8,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { SecurityEventType } from '@oneohm-epc/shared-types';
-import { ApiCreate, ApiGet, SecurityRateLimit } from '@oneohm-epc/shared-utils';
+import { SecurityEventType } from '@oneohm-epc/shared/types';
 import { plainToInstance } from 'class-transformer';
 import { Request as ExpressRequest } from 'express';
 
+import { ApiCreate, ApiGet, SecurityRateLimit } from '../../../common/decorators';
 import { SecurityRateLimitGuard } from '../../security-events/guards';
 import { UserResponseDto } from '../../users/dto/user-response.dto';
 import { UserService } from '../../users/services/user.service';
