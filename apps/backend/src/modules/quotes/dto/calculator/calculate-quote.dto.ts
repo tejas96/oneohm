@@ -177,7 +177,8 @@ export class CalculateQuoteDto {
   preferredInverterBrand?: string;
 
   @ApiPropertyOptional({
-    description: 'Preferred inverter capacity in kW. When set, only inverters with this exact capacity are considered.',
+    description:
+      'Preferred inverter capacity in kW. When set, only inverters with this exact capacity are considered.',
     example: 20,
     minimum: 1,
   })

@@ -295,10 +295,9 @@ export class ProductRepository {
     }
 
     if (preferredCapacityKw !== undefined) {
-      query.andWhere(
-        "(product.specifications->'inverter'->>'capacityKw')::float = :capacityKw",
-        { capacityKw: preferredCapacityKw },
-      );
+      query.andWhere("(product.specifications->'inverter'->>'capacityKw')::float = :capacityKw", {
+        capacityKw: preferredCapacityKw,
+      });
     }
 
     // Order by capacity descending for greedy algorithm

@@ -1025,7 +1025,12 @@ export class QuoteCalculatorService {
     }
 
     // Auto-calculate inverters
-    const availableInverters = await this.findInverters(organizationId, phaseType, preferredBrand, preferredCapacityKw);
+    const availableInverters = await this.findInverters(
+      organizationId,
+      phaseType,
+      preferredBrand,
+      preferredCapacityKw,
+    );
 
     if (availableInverters.length === 0) {
       throw new BadRequestException(
@@ -1410,7 +1415,12 @@ export class QuoteCalculatorService {
     preferredBrand?: string,
     preferredCapacityKw?: number,
   ): Promise<ProductEntity[]> {
-    return this.productRepo.findInvertersByPhase(organizationId, phaseType, preferredBrand, preferredCapacityKw);
+    return this.productRepo.findInvertersByPhase(
+      organizationId,
+      phaseType,
+      preferredBrand,
+      preferredCapacityKw,
+    );
   }
 
   /**

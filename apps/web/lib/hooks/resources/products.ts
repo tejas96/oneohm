@@ -74,20 +74,11 @@ export function useProductOptions() {
   const inverters = useAllInverterProducts();
   const structures = useAllStructureProducts();
 
-  const panelBrands = useMemo(
-    () => derivePanelBrands(panels.items),
-    [panels.items],
-  );
+  const panelBrands = useMemo(() => derivePanelBrands(panels.items), [panels.items]);
 
-  const inverterBrands = useMemo(
-    () => deriveInverterBrands(inverters.items),
-    [inverters.items],
-  );
+  const inverterBrands = useMemo(() => deriveInverterBrands(inverters.items), [inverters.items]);
 
-  const structureTypes = useMemo(
-    () => deriveStructureTypes(structures.items),
-    [structures.items],
-  );
+  const structureTypes = useMemo(() => deriveStructureTypes(structures.items), [structures.items]);
 
   const getTechnologyVariantsForBrand = useCallback(
     (brandValue: string): PanelTechnologyVariant[] => {

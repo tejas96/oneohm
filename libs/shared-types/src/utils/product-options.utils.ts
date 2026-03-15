@@ -206,14 +206,10 @@ export function getInverterCapacities(
   let filtered = products;
 
   if (phaseType) {
-    filtered = filtered.filter(
-      (p) => p.specifications?.inverter?.phaseType === phaseType,
-    );
+    filtered = filtered.filter((p) => p.specifications?.inverter?.phaseType === phaseType);
   }
   if (brand) {
-    filtered = filtered.filter(
-      (p) => p.brand?.toLowerCase() === brand.toLowerCase(),
-    );
+    filtered = filtered.filter((p) => p.brand?.toLowerCase() === brand.toLowerCase());
   }
 
   const capacities = new Set<number>();

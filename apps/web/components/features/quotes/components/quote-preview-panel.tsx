@@ -3,7 +3,6 @@
 import { PANEL_TECHNOLOGY_LABELS } from '@oneohm-epc/shared-types';
 import { AlertTriangle, Calendar, Calculator, Download, Save, Shield, Zap } from 'lucide-react';
 
-
 import { applyPreGstDiscount } from '../pricing-utils';
 import type { CalculateQuoteResponse, QuoteConfigResponse } from '../types';
 

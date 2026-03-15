@@ -184,7 +184,11 @@ export function PropertyCard({
       </div>
 
       {/* Card Content - Clickable to View Details */}
-      <Link href={buildRoute(ROUTES.PROPERTIES.DETAIL, { id: property.id })} prefetch={false} className="block">
+      <Link
+        href={buildRoute(ROUTES.PROPERTIES.DETAIL, { id: property.id })}
+        prefetch={false}
+        className="block"
+      >
         {/* Header Row: Property Name + Temperature */}
         <div className="mb-2 flex items-start justify-between pr-8">
           <div className="min-w-0 flex-1">
