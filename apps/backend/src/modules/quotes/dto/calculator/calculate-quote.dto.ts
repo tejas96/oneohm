@@ -176,6 +176,16 @@ export class CalculateQuoteDto {
   @IsOptional()
   preferredInverterBrand?: string;
 
+  @ApiPropertyOptional({
+    description: 'Preferred inverter capacity in kW. When set, only inverters with this exact capacity are considered.',
+    example: 20,
+    minimum: 1,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  preferredInverterCapacityKw?: number;
+
   @ApiProperty({
     enum: StructureType,
     description: 'Type of mounting structure',

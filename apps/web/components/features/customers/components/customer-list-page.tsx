@@ -333,6 +333,7 @@ export function CustomerListPage(): JSX.Element {
           return (
             <Link
               href={buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: customer.id })}
+              prefetch={false}
               className="flex items-center gap-2.5 hover:text-primary transition-colors"
             >
               {/* Avatar */}

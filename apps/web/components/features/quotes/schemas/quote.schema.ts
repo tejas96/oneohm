@@ -2,7 +2,6 @@ import {
   ProjectType,
   PhaseType,
   DcrPreference,
-  StructureType,
   PanelTechnology,
 } from '@oneohm-epc/shared-types';
 import { z } from 'zod';
@@ -35,9 +34,8 @@ export const quoteBuilderSchema = z.object({
   preferredPanelTechnology: z.nativeEnum(PanelTechnology).optional(),
   preferredPanelWattage: z.number().min(100).max(1000).optional(),
   preferredInverterBrand: z.string().optional(),
-  structureType: z.nativeEnum(StructureType, {
-    errorMap: () => ({ message: 'Please select structure type' }),
-  }),
+  preferredInverterCapacityKw: z.number().min(1).optional(),
+  structureType: z.string().min(1, 'Please select structure type'),
 
   // Section 4: Installation Details
   floorNumber: z

@@ -16,6 +16,8 @@ export interface UseQuoteFormLogicReturn {
   handleSystemSizeChange: (value: number) => void;
   handleSubsidyChange: (value: boolean) => void;
   handleBrandChange: (value: string) => void;
+  handleInverterBrandChange: (value: string) => void;
+  handlePhaseChange: (value: PhaseType) => void;
   handleTechnologyVariantSelect: (technology: string, wattage: number) => void;
   handlePropertySelect: (propertyType?: string) => void;
   handleFieldChange: (fieldName: string, value: unknown) => void;
@@ -54,6 +56,7 @@ export function useQuoteFormLogic({
       setValue('systemSizeKw', value, { shouldValidate: true });
       if (value > 7) {
         setValue('phaseType', PhaseType.THREE_PHASE);
+        setValue('preferredInverterCapacityKw', undefined);
       }
       clearCalculationIfNeeded('systemSizeKw');
     },
@@ -102,10 +105,31 @@ export function useQuoteFormLogic({
         const mapped = PROPERTY_TYPE_TO_PROJECT_TYPE[propertyType.toLowerCase()];
         if (mapped) {
           setValue('projectType', mapped);
+          clearCalculationIfNeeded('projectType');
         }
       }
     },
-    [setValue],
+    [setValue, clearCalculationIfNeeded],
+  );
+
+  // Inverter brand change -> reset capacity
+  const handleInverterBrandChange = useCallback(
+    (value: string) => {
+      setValue('preferredInverterBrand', value);
+      setValue('preferredInverterCapacityKw', undefined);
+      clearCalculationIfNeeded('preferredInverterBrand');
+    },
+    [setValue, clearCalculationIfNeeded],
+  );
+
+  // Phase change -> reset inverter capacity
+  const handlePhaseChange = useCallback(
+    (value: PhaseType) => {
+      setValue('phaseType', value);
+      setValue('preferredInverterCapacityKw', undefined);
+      clearCalculationIfNeeded('phaseType');
+    },
+    [setValue, clearCalculationIfNeeded],
   );
 
   // Generic field change that checks if calculation should be cleared
@@ -121,6 +145,8 @@ export function useQuoteFormLogic({
     handleSystemSizeChange,
     handleSubsidyChange,
     handleBrandChange,
+    handleInverterBrandChange,
+    handlePhaseChange,
     handleTechnologyVariantSelect,
     handlePropertySelect,
     handleFieldChange,

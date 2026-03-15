@@ -169,7 +169,7 @@ export class QuoteCalculatorController {
     }
 
     const discountAmount = input.discountAmount || 0;
-    const discounted = applyPreGstDiscount(calculation.pricing.basePrice, discountAmount);
+    const discounted = applyPreGstDiscount(calculation.pricing.basePrice, discountAmount, quoteConfig.gstConfig);
     const finalPrice = discounted.grossTotal;
     const effectivePrice = Math.max(0, finalPrice - calculation.subsidy.amount);
 
@@ -186,6 +186,7 @@ export class QuoteCalculatorController {
       preferredPanelTechnology: input.preferredPanelTechnology,
       preferredPanelWattage: input.preferredPanelWattage,
       preferredInverterBrand: input.preferredInverterBrand,
+      preferredInverterCapacityKw: input.preferredInverterCapacityKw,
       subsidyApplicable: input.subsidyApplicable,
     };
 

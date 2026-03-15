@@ -617,6 +617,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                           <td className="py-3 px-3 font-medium text-primary">
                             <Link
                               href={buildRoute(ROUTES.QUOTES.DETAIL, { id: quote.id })}
+                              prefetch={false}
                               className="hover:underline"
                             >
                               {quote.quoteNumber}
@@ -645,6 +646,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                           <td className="py-3 px-3 text-right">
                             <Link
                               href={buildRoute(ROUTES.QUOTES.DETAIL, { id: quote.id })}
+                              prefetch={false}
                               className="text-sm text-primary hover:underline"
                             >
                               View

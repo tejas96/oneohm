@@ -84,6 +84,14 @@ export enum PanelTechnology {
   BIFACIAL = 'bifacial',
 }
 
+export const PANEL_TECHNOLOGY_LABELS: Record<PanelTechnology, string> = {
+  [PanelTechnology.PERC]: 'PERC',
+  [PanelTechnology.TOPCON]: 'TOPCon',
+  [PanelTechnology.MONO_PERC]: 'Mono PERC',
+  [PanelTechnology.POLY]: 'Poly',
+  [PanelTechnology.BIFACIAL]: 'Bifacial',
+};
+
 /**
  * Structure Type Enum
  * Defines mounting structure types

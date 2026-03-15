@@ -46,6 +46,7 @@ export interface CalculatorInputs {
   preferredPanelTechnology?: PanelTechnology;
   preferredPanelWattage?: number;
   preferredInverterBrand?: string;
+  preferredInverterCapacityKw?: number;
   subsidyApplicable: boolean;
 }
 

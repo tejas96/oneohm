@@ -26,11 +26,6 @@ export type {
 
 // Quote builder hooks
 export { useQuoteConfig } from './use-quote-config';
-export type {
-  PanelBrandOption,
-  InverterBrandOption,
-  PanelTechnologyVariant,
-} from './use-quote-config';
 
 export { useCalculateQuote } from './use-calculate-quote';
 export { useInstallationPricing } from './use-installation-pricing';
