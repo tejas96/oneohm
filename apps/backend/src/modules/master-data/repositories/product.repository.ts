@@ -280,6 +280,7 @@ export class ProductRepository {
     organizationId: string,
     phaseType: PhaseType,
     preferredBrand?: string,
+    preferredCapacityKw?: number,
   ): Promise<ProductEntity[]> {
     const query = this.repository
       .createQueryBuilder('product')
@@ -291,6 +292,12 @@ export class ProductRepository {
 
     if (preferredBrand) {
       query.andWhere('LOWER(product.brand) = LOWER(:brand)', { brand: preferredBrand });
+    }
+
+    if (preferredCapacityKw !== undefined) {
+      query.andWhere("(product.specifications->'inverter'->>'capacityKw')::float = :capacityKw", {
+        capacityKw: preferredCapacityKw,
+      });
     }
 
     // Order by capacity descending for greedy algorithm

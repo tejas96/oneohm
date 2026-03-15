@@ -68,20 +68,16 @@ export class QuoteConfiguration extends BaseEntity {
   /**
    * GST Configuration (JSONB)
    *
-   * Default: 70% at 12% GST (civil/installation), 30% at 18% GST (electrical)
-   *
-   * Example:
-   * {
-   *   rate1: 12,
-   *   rate1Percentage: 70,
-   *   rate2: 18,
-   *   rate2Percentage: 30
-   * }
+   * Composite GST for solar EPC:
+   * - rate1 (5%): Solar equipment portion (panels + inverters)
+   * - rate2 (18%): Services portion (structure + installation)
+   * - rate1Percentage (70%): % of base price taxed at rate1
+   * - rate2Percentage (30%): % of base price taxed at rate2
    */
   @Column({
     type: 'jsonb',
     name: 'gst_config',
-    default: '{"rate1": 12, "rate1Percentage": 70, "rate2": 18, "rate2Percentage": 30}',
+    default: '{"rate1": 5, "rate1Percentage": 70, "rate2": 18, "rate2Percentage": 30}',
   })
   gstConfig!: GstConfig;
 

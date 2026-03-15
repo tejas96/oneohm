@@ -119,6 +119,7 @@ export class QuoteCalculatorService {
         input.projectType,
         quoteConfig,
         warnings,
+        input.subsidyApplicable,
       );
 
       // Check if error was returned
@@ -195,6 +196,7 @@ export class QuoteCalculatorService {
         input.projectType,
         input.inverterOverrides,
         warnings,
+        input.preferredInverterCapacityKw,
       );
     }
 
@@ -619,6 +621,7 @@ export class QuoteCalculatorService {
     projectType: ProjectType,
     quoteConfig: QuoteConfiguration,
     warnings: ValidationWarning[],
+    subsidyApplicable: boolean,
   ): Promise<
     | {
         panels: CalculatedPanelConfig[];
@@ -631,6 +634,19 @@ export class QuoteCalculatorService {
     let actualDcrSizeKw = 0;
     let actualNonDcrSizeKw = 0;
 
+    // Compute DCR floor: min(maxSubsidyKw, originalDcrSizeKw) when subsidy applies
+    let minDcrCapacityKw = 0;
+    if (subsidyApplicable && originalDcrSizeKw > 0) {
+      const subsidyConfig = await this.subsidyConfigRepo.findActiveByProjectType(
+        organizationId,
+        projectType,
+      );
+      if (subsidyConfig) {
+        const maxSubsidyKw = Number(subsidyConfig.maxSubsidyKw);
+        minDcrCapacityKw = Math.min(maxSubsidyKw, originalDcrSizeKw);
+      }
+    }
+
     // Handle DCR panels
     if (originalDcrSizeKw > 0 && targetDcrCount !== undefined) {
       const dcrResult = await this.findPanelForCount(
@@ -638,6 +654,7 @@ export class QuoteCalculatorService {
         true,
         targetDcrCount,
         originalDcrSizeKw,
+        minDcrCapacityKw,
         preferredBrand,
         preferredTechnology,
         projectType,
@@ -679,13 +696,14 @@ export class QuoteCalculatorService {
       actualDcrSizeKw = dcrConfig.totalWattage / 1000;
     }
 
-    // Handle Non-DCR panels
+    // Handle Non-DCR panels (floor is always 0 — no subsidy constraint)
     if (originalNonDcrSizeKw > 0 && targetNonDcrCount !== undefined) {
       const nonDcrResult = await this.findPanelForCount(
         organizationId,
         false,
         targetNonDcrCount,
         originalNonDcrSizeKw,
+        0,
         preferredBrand,
         preferredTechnology,
         projectType,
@@ -737,13 +755,16 @@ export class QuoteCalculatorService {
    * 1. Calculate required wattage per panel: requiredKw * 1000 / targetCount
    * 2. Find panels with wattage >= required wattage per panel
    * 3. Pick the one with minimum overage (smallest wattage that still works)
-   * 4. If no panel can meet the requirement, suggest the minimum count needed
+   * 4. If no panel can meet the requirement:
+   *    a. If capacity < minCapacityKw (subsidy floor) -> hard error with suggestion
+   *    b. If capacity >= minCapacityKw -> allow undersized with warning
    */
   private async findPanelForCount(
     organizationId: string,
     isDcr: boolean,
     targetCount: number,
     requiredSizeKw: number,
+    minCapacityKw: number,
     preferredBrand: string | undefined,
     preferredTechnology: string | undefined,
     projectType: ProjectType,
@@ -766,7 +787,6 @@ export class QuoteCalculatorService {
     );
 
     if (suitablePanels.length === 0) {
-      // No panel can meet requirement - suggest minimum count with highest wattage panel
       const bestPanel = await this.productRepo.findSolarPanel(
         organizationId,
         isDcr,
@@ -784,15 +804,56 @@ export class QuoteCalculatorService {
       const bestWattage =
         specs?.wattage || ((specs?.minWattage || 0) + (specs?.maxWattage || 0)) / 2;
       const roundedWattage = this.roundWattage(bestWattage, quoteConfig.wattageRounding);
-      const suggestedCount = Math.ceil((requiredSizeKw * 1000) / roundedWattage);
+      const actualCapacityKw = (targetCount * roundedWattage) / 1000;
 
-      return {
-        error:
-          `Cannot achieve ${requiredSizeKw}kW ${isDcr ? 'DCR' : 'Non-DCR'} capacity with ${targetCount} panels. ` +
-          `Available panels have maximum ${roundedWattage}W, which would provide ${((targetCount * roundedWattage) / 1000).toFixed(2)}kW. ` +
-          `Minimum ${suggestedCount} panels needed.`,
-        suggestion: suggestedCount,
+      if (minCapacityKw > 0 && actualCapacityKw < minCapacityKw) {
+        const suggestedCount = Math.ceil((minCapacityKw * 1000) / roundedWattage);
+        return {
+          error:
+            `Cannot reduce ${isDcr ? 'DCR' : 'Non-DCR'} panels below subsidy limit. ` +
+            `${targetCount} panels at ${roundedWattage}W would provide ${actualCapacityKw.toFixed(2)}kW, ` +
+            `but minimum ${minCapacityKw}kW is required for subsidy eligibility. ` +
+            `Minimum ${suggestedCount} panels needed.`,
+          suggestion: suggestedCount,
+        };
+      }
+
+      if (!specs) {
+        throw new BadRequestException(`Panel ${bestPanel.name} missing specifications`);
+      }
+
+      const pricingRule = await this.getPricingRule(organizationId, bestPanel.id, projectType);
+      const { pricePerWatt, gstRate } = this.validatePanelPricing(pricingRule, bestPanel.name);
+      const totalWattage = targetCount * roundedWattage;
+      const lineTotal = totalWattage * pricePerWatt;
+      const gstAmount = (lineTotal * gstRate) / 100;
+
+      warnings.push({
+        code: 'PANEL_CAPACITY_UNDERSIZED',
+        message:
+          `${isDcr ? 'DCR' : 'Non-DCR'} panel capacity (${actualCapacityKw.toFixed(2)}kW) is less than ` +
+          `the required ${requiredSizeKw}kW. The system will be undersized.`,
+        severity: 'warning',
+      });
+
+      const panelConfig: CalculatedPanelConfig = {
+        productId: bestPanel.id,
+        name: bestPanel.name,
+        brand: bestPanel.brand || 'Unknown',
+        isDcr: specs.isDcr ?? false,
+        technology: specs.technology,
+        wattagePerPanel: roundedWattage,
+        quantity: targetCount,
+        totalWattage,
+        pricePerWatt,
+        lineTotal,
+        gstAmount,
+        gstRate,
+        productWarrantyYears: bestPanel.productWarrantyYears,
+        performanceWarrantyYears: bestPanel.performanceWarrantyYears,
       };
+
+      return { panel: panelConfig, actualSizeKw: actualCapacityKw };
     }
 
     // Pick panel with minimum wattage (least overage) - sorted ascending by findAllSolarPanels
@@ -950,8 +1011,9 @@ export class QuoteCalculatorService {
     projectType: ProjectType,
     overrides: InverterOverrideDto[] | undefined,
     warnings: ValidationWarning[],
+    preferredCapacityKw?: number,
   ): Promise<CalculatedInverterConfig> {
-    // If overrides provided, validate and use them
+    // If overrides provided, validate and use them (capacity filter is NOT applied -- overrides specify exact products)
     if (overrides && overrides.length > 0) {
       return this.calculateInvertersWithOverrides(
         organizationId,
@@ -963,11 +1025,16 @@ export class QuoteCalculatorService {
     }
 
     // Auto-calculate inverters
-    const availableInverters = await this.findInverters(organizationId, phaseType, preferredBrand);
+    const availableInverters = await this.findInverters(
+      organizationId,
+      phaseType,
+      preferredBrand,
+      preferredCapacityKw,
+    );
 
     if (availableInverters.length === 0) {
       throw new BadRequestException(
-        `No ${phaseType} inverters found${preferredBrand ? ` for brand ${preferredBrand}` : ''}. Please try a different brand or contact administrator.`,
+        `No ${phaseType} inverters found${preferredBrand ? ` for brand ${preferredBrand}` : ''}${preferredCapacityKw ? ` with ${preferredCapacityKw}kW capacity` : ''}. Please try different options or contact administrator.`,
       );
     }
 
@@ -1120,12 +1187,14 @@ export class QuoteCalculatorService {
   ): Promise<
     CalculatedInverterConfig | { error: string; errorCode: string; suggestion: number[] }
   > {
-    // Get available inverters
+    // Get available inverters — capacity filter is intentionally dropped so the
+    // algorithm can search ALL sizes and find the combination with minimum overage
+    // (mirrors how findPanelForCount already works for panels).
     const availableInverters = await this.findInverters(organizationId, phaseType, preferredBrand);
 
     if (availableInverters.length === 0) {
       throw new BadRequestException(
-        `No ${phaseType} inverters found${preferredBrand ? ` for brand ${preferredBrand}` : ''}. Please try a different brand or contact administrator.`,
+        `No ${phaseType} inverters found${preferredBrand ? ` for brand ${preferredBrand}` : ''}. Please try different options or contact administrator.`,
       );
     }
 
@@ -1344,8 +1413,14 @@ export class QuoteCalculatorService {
     organizationId: string,
     phaseType: PhaseType,
     preferredBrand?: string,
+    preferredCapacityKw?: number,
   ): Promise<ProductEntity[]> {
-    return this.productRepo.findInvertersByPhase(organizationId, phaseType, preferredBrand);
+    return this.productRepo.findInvertersByPhase(
+      organizationId,
+      phaseType,
+      preferredBrand,
+      preferredCapacityKw,
+    );
   }
 
   /**
@@ -2006,7 +2081,7 @@ export class QuoteCalculatorService {
     inverters: CalculatedInverterConfig,
     structure: { lineTotal: number; gstAmount: number },
     installation: CalculatedInstallationCost,
-    _quoteConfig: QuoteConfiguration, // Kept for future use, using composite GST calculation
+    quoteConfig: QuoteConfiguration,
     profitabilityPercent: number,
   ): {
     basePrice: number;
@@ -2018,29 +2093,25 @@ export class QuoteCalculatorService {
     finalPrice: number;
     profitabilityAmount: number;
   } {
-    // Sum all component costs (before margin and tax)
     const panelsTotal = panels.reduce((sum, p) => sum + p.lineTotal, 0);
     const rawBasePrice =
       panelsTotal + inverters.totalCost + structure.lineTotal + installation.totalBeforeTax;
 
-    // Apply margin to raw base BEFORE tax so GST is computed on the full pre-tax value
     const profitabilityAmount = Math.round((rawBasePrice * profitabilityPercent) / 100);
     const basePrice = rawBasePrice + profitabilityAmount;
 
-    // Composite GST on the margin-inclusive base:
-    // - 5% GST on 70% of base price (solar equipment portion)
-    // - 18% GST on 30% of base price (services portion)
-    const equipmentPortion = (basePrice * 70) / 100;
-    const servicesPortion = (basePrice * 30) / 100;
+    const { rate1, rate1Percentage, rate2, rate2Percentage } = quoteConfig.gstConfig;
+    const portion1 = (basePrice * rate1Percentage) / 100;
+    const portion2 = (basePrice * rate2Percentage) / 100;
 
-    const gst5Amount = (equipmentPortion * 5) / 100;
-    const gst18Amount = (servicesPortion * 18) / 100;
+    const gst5Amount = (portion1 * rate1) / 100;
+    const gst18Amount = (portion2 * rate2) / 100;
 
     const totalGst = gst5Amount + gst18Amount;
     const totalPrice = basePrice + totalGst;
 
     return {
-      basePrice: Math.round(basePrice * 100) / 100, // raw components + margin (taxable base)
+      basePrice: Math.round(basePrice * 100) / 100,
       gst5Amount: Math.round(gst5Amount * 100) / 100,
       gst18Amount: Math.round(gst18Amount * 100) / 100,
       totalGst: Math.round(totalGst * 100) / 100,

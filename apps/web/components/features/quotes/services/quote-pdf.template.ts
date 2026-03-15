@@ -5,7 +5,7 @@
  * Uses web-side types and local formatting helpers for PDF-specific control.
  */
 
-import { PhaseType, StructureType } from '@oneohm-epc/shared-types';
+import { PhaseType } from '@oneohm-epc/shared-types';
 
 import { applyPreGstDiscount } from '../pricing-utils';
 import type { QuotePdfData } from '../types';
@@ -17,14 +17,6 @@ import type { QuotePdfData } from '../types';
 const PHASE_TYPE_LABELS: Record<string, string> = {
   [PhaseType.SINGLE_PHASE]: 'Single Phase',
   [PhaseType.THREE_PHASE]: 'Three Phase',
-};
-
-const STRUCTURE_TYPE_LABELS: Record<string, string> = {
-  [StructureType.ALUMINUM_RAIL]: 'Aluminum Rail',
-  [StructureType.RCC_3X6]: 'RCC 3x6',
-  [StructureType.ELEVATED_6X9]: 'Elevated 6x9',
-  [StructureType.SUPER_ELEVATED]: 'Super Elevated',
-  [StructureType.GROUND_MOUNT]: 'Ground Mount',
 };
 
 function formatCurrency(amount: number): string {
@@ -60,13 +52,14 @@ export function generateQuoteHtml(data: QuotePdfData): string {
     validityDays,
     paymentMilestones,
     discountAmount = 0,
+    gstConfig,
   } = data;
 
   const totalPanels = calculation.panels.reduce((sum, p) => sum + p.quantity, 0);
   const dcrPanels = calculation.panels.filter((p) => p.isDcr);
   const nonDcrPanels = calculation.panels.filter((p) => !p.isDcr);
 
-  const discounted = applyPreGstDiscount(calculation.pricing.basePrice, discountAmount);
+  const discounted = applyPreGstDiscount(calculation.pricing.basePrice, discountAmount, gstConfig);
   const displayGst5Amount = discounted.gst5;
   const displayGst18Amount = discounted.gst18;
   const totalTax = discounted.totalGst;
@@ -215,7 +208,7 @@ ${getQuoteStyles()}
         <h2 class="section-title">System Configuration</h2>
         <div class="system-overview">
           <div class="system-stat highlight">
-            <div class="stat-value">${Math.round(calculation.actualSystemSizeKw)} <span class="stat-unit">kWp</span></div>
+            <div class="stat-value">${calculation.actualSystemSizeKw.toFixed(2)} <span class="stat-unit">kWp</span></div>
             <div class="stat-label">System Size</div>
           </div>
           <div class="system-stat">
@@ -256,11 +249,11 @@ ${getQuoteStyles()}
                 : ''
             }
             <tr>
-              <td>GST @ 5% (Equipment)</td>
+              <td>GST @ ${gstConfig.rate1}% (Equipment)</td>
               <td>${formatCurrency(displayGst5Amount)}</td>
             </tr>
             <tr>
-              <td>GST @ 18% (Services)</td>
+              <td>GST @ ${gstConfig.rate2}% (Services)</td>
               <td>${formatCurrency(displayGst18Amount)}</td>
             </tr>
             <tr class="subtotal">
@@ -332,7 +325,7 @@ ${getQuoteStyles()}
               <td><span class="bom-item-name">Mounting Structure</span></td>
               <td>
                 <div class="bom-item-specs">
-                  ${STRUCTURE_TYPE_LABELS[calculation.structure.structureType] || calculation.structure.name} | Hot-Dip Galvanized MS<br>
+                  ${calculation.structure.name || calculation.structure.structureType} | Hot-Dip Galvanized MS<br>
                   SS304 Fasteners | A-Raymond Clamps | IS 875 Certified
                 </div>
               </td>

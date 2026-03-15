@@ -33,7 +33,8 @@ export interface CalculateQuoteRequest {
   preferredPanelTechnology?: PanelTechnology;
   preferredPanelWattage?: number;
   preferredInverterBrand?: string;
-  structureType: StructureType;
+  preferredInverterCapacityKw?: number;
+  structureType: StructureType | string;
   floorNumber?: number;
   distanceKm?: number;
   panelOverrides?: PanelOverride[];
@@ -225,10 +226,10 @@ export interface QuoteConfigResponse {
   defaultValidityDays: number;
   maxVersions: number;
   gstConfig: {
-    equipmentGstPercent: number;
-    serviceGstPercent: number;
-    equipmentRatio: number;
-    serviceRatio: number;
+    rate1: number;
+    rate1Percentage: number;
+    rate2: number;
+    rate2Percentage: number;
   };
   wattageRounding: string;
   paymentMilestones: PaymentMilestone[];
@@ -284,4 +285,5 @@ export interface QuotePdfData {
   paymentMilestones?: PaymentMilestone[];
   showPriceBreakdown?: boolean;
   discountAmount?: number;
+  gstConfig: QuoteConfigResponse['gstConfig'];
 }

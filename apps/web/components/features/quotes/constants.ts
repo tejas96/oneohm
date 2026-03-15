@@ -4,7 +4,6 @@ import {
   ProjectType,
   PhaseType,
   DcrPreference,
-  StructureType,
   ItemCategory,
 } from '@oneohm-epc/shared-types';
 import { type LucideIcon, Building2, Factory, Home, Landmark, Warehouse } from 'lucide-react';
@@ -144,44 +143,6 @@ export const PHASE_TYPE_OPTIONS: PhaseTypeOption[] = [
 ];
 
 // ============================================================================
-// Structure Type Options
-// ============================================================================
-
-export interface StructureTypeOption {
-  value: StructureType;
-  label: string;
-  description: string;
-}
-
-export const STRUCTURE_TYPE_OPTIONS: StructureTypeOption[] = [
-  {
-    value: StructureType.ALUMINUM_RAIL,
-    label: 'Aluminum Rail',
-    description: 'Standard roof mounting',
-  },
-  {
-    value: StructureType.RCC_3X6,
-    label: 'RCC 3x6',
-    description: 'Metal sheet rooftop',
-  },
-  {
-    value: StructureType.ELEVATED_6X9,
-    label: 'Elevated 6x9',
-    description: 'Elevated 6x9 feet',
-  },
-  {
-    value: StructureType.SUPER_ELEVATED,
-    label: 'Super Elevated',
-    description: 'Super elevated 10x14 feet',
-  },
-  {
-    value: StructureType.GROUND_MOUNT,
-    label: 'Ground Mount',
-    description: 'Ground installation',
-  },
-];
-
-// ============================================================================
 // DCR Preference Options
 // ============================================================================
 
@@ -279,6 +240,7 @@ export const PRICING_AFFECTING_FIELDS = [
   'preferredPanelTechnology',
   'preferredPanelWattage',
   'preferredInverterBrand',
+  'preferredInverterCapacityKw',
   'structureType',
   'floorNumber',
   'distanceKm',

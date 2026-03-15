@@ -61,3 +61,16 @@ export {
   type PropertyItem,
   type PropertyListFilters,
 } from './properties';
+
+// Products
+export {
+  useProductOptions,
+  useAllPanelProducts,
+  useAllInverterProducts,
+  useAllStructureProducts,
+  type PanelBrandOption,
+  type InverterBrandOption,
+  type StructureTypeOption,
+  type PanelTechnologyVariant,
+  type InverterCapacityOption,
+} from './products';

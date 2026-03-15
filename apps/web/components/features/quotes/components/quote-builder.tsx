@@ -33,7 +33,6 @@ import { useCustomer, useCustomers } from '../../customers/hooks';
 import {
   PROJECT_TYPE_OPTIONS,
   PHASE_TYPE_OPTIONS,
-  STRUCTURE_TYPE_OPTIONS,
   DCR_PREFERENCE_OPTIONS,
   QUICK_SIZE_OPTIONS,
   DISCOUNT_PRESETS,
@@ -184,6 +183,7 @@ export function QuoteBuilder(): JSX.Element {
       phaseType: PhaseType.SINGLE_PHASE,
       subsidyApplicable: true,
       dcrPreference: DcrPreference.DCR_ONLY,
+      structureType: '',
       floorNumber: 0,
       distanceKm: DISTANCE_CONFIG.default,
       discountAmount: 0,
@@ -245,6 +245,14 @@ export function QuoteBuilder(): JSX.Element {
     form: form as never,
     onCalculationCleared,
   });
+
+  // Set default structure type from API once loaded
+  useEffect(() => {
+    const firstStructure = config.structureTypes[0];
+    if (firstStructure && !form.getValues('structureType')) {
+      form.setValue('structureType', firstStructure.value);
+    }
+  }, [config.structureTypes, form]);
 
   // Auto-map project type when pre-selected property loads
   useEffect(() => {
@@ -324,6 +332,7 @@ export function QuoteBuilder(): JSX.Element {
       preferredPanelTechnology: values.preferredPanelTechnology,
       preferredPanelWattage: values.preferredPanelWattage,
       preferredInverterBrand: values.preferredInverterBrand || undefined,
+      preferredInverterCapacityKw: values.preferredInverterCapacityKw || undefined,
       structureType: values.structureType,
       floorNumber: values.floorNumber,
       distanceKm: values.distanceKm,
@@ -334,34 +343,67 @@ export function QuoteBuilder(): JSX.Element {
     [manualDcrPanelCount, manualNonDcrPanelCount, manualInverterCount],
   );
 
-  const handleCalculate = useCallback(async () => {
-    const valid = await form.trigger([
-      'customerId',
-      'projectType',
-      'systemSizeKw',
-      'phaseType',
-      'subsidyApplicable',
-      'structureType',
-    ]);
-    if (!valid) {
-      showToast.error('Please fill all required fields before calculating');
-      return;
-    }
+  const handleCalculate = useCallback(
+    async (options?: { resetManualCounts?: boolean }) => {
+      if (!config.quoteConfig?.gstConfig) {
+        showToast.error('GST configuration not loaded. Please refresh the page.');
+        return;
+      }
 
-    const values = form.getValues();
-    const request = buildCalculateRequest(values);
+      const valid = await form.trigger([
+        'customerId',
+        'projectType',
+        'systemSizeKw',
+        'phaseType',
+        'subsidyApplicable',
+        'structureType',
+      ]);
+      if (!valid) {
+        showToast.error('Please fill all required fields before calculating');
+        return;
+      }
 
-    calculateMutation.mutate(request, {
-      onSuccess: (data) => {
-        setCalculation(data);
+      const values = form.getValues();
+      let request = buildCalculateRequest(values);
+
+      if (options?.resetManualCounts) {
+        request = {
+          ...request,
+          manualDcrPanelCount: undefined,
+          manualNonDcrPanelCount: undefined,
+          manualInverterCount: undefined,
+        };
+        setManualDcrPanelCount(undefined);
+        setManualNonDcrPanelCount(undefined);
+        setManualInverterCount(undefined);
         setHasQuantityChanges(false);
-        setSavedQuoteNumber(null);
-      },
-      onError: (error) => {
-        showToast.error(getErrorMessage(error));
-      },
-    });
-  }, [form, buildCalculateRequest, calculateMutation]);
+      }
+
+      calculateMutation.mutate(request, {
+        onSuccess: (data) => {
+          setCalculation(data);
+          setHasQuantityChanges(false);
+          setSavedQuoteNumber(null);
+        },
+        onError: (error) => {
+          const message = getErrorMessage(error);
+          let suggestion = '';
+          if (isAxiosError(error)) {
+            const suggestionData = error.response?.data?.suggestion;
+            if (Array.isArray(suggestionData)) {
+              suggestion = `Try: ${suggestionData.join(', ')} units`;
+            } else if (suggestionData && typeof suggestionData === 'object') {
+              const sug = suggestionData as { dcr?: number; nonDcr?: number };
+              if (sug.dcr) suggestion = `Try ${sug.dcr} DCR panels`;
+              else if (sug.nonDcr) suggestion = `Try ${sug.nonDcr} Non-DCR panels`;
+            }
+          }
+          showToast.error(suggestion ? `${message} ${suggestion}` : message);
+        },
+      });
+    },
+    [form, buildCalculateRequest, calculateMutation, config.quoteConfig?.gstConfig],
+  );
 
   const handleRecalculate = useCallback(() => {
     void handleCalculate();
@@ -447,6 +489,12 @@ export function QuoteBuilder(): JSX.Element {
 
   const handleDownload = useCallback(async () => {
     if (!calculation || !savedQuoteNumber) return;
+    const gstCfg = config.quoteConfig?.gstConfig;
+    if (!gstCfg) {
+      showToast.error('GST configuration not loaded. Please refresh the page.');
+      return;
+    }
+
     const cust = selectedCustomer;
     const prop = propertiesRaw?.find((p: CustomerPropertyResponse) => p.id === propertyId);
     const discount = discountAmount;
@@ -481,6 +529,7 @@ export function QuoteBuilder(): JSX.Element {
               const postDiscountTotal = applyPreGstDiscount(
                 calculation.pricing.basePrice,
                 discount,
+                gstCfg,
               ).grossTotal;
               return {
                 ...m,
@@ -489,6 +538,7 @@ export function QuoteBuilder(): JSX.Element {
             },
           ),
         discountAmount: discount,
+        gstConfig: gstCfg,
       });
       showToast.success('PDF downloaded');
     } catch {
@@ -514,6 +564,7 @@ export function QuoteBuilder(): JSX.Element {
       isCalculating={calculateMutation.isPending}
       calculationError={calculateMutation.error ? getErrorMessage(calculateMutation.error) : null}
       discountAmount={discountAmount}
+      gstConfig={config.quoteConfig?.gstConfig ?? null}
       manualDcrPanelCount={manualDcrPanelCount}
       manualNonDcrPanelCount={manualNonDcrPanelCount}
       manualInverterCount={manualInverterCount}
@@ -835,7 +886,7 @@ export function QuoteBuilder(): JSX.Element {
                         key={opt.value}
                         type="button"
                         disabled={isDisabled}
-                        onClick={() => formLogic.handleFieldChange('phaseType', opt.value)}
+                        onClick={() => formLogic.handlePhaseChange(opt.value)}
                         className={cn(
                           'flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-fast',
                           isSelected
@@ -954,13 +1005,16 @@ export function QuoteBuilder(): JSX.Element {
                   </p>
                 ) : (
                   <Select
-                    value={form.watch('preferredPanelBrand') ?? ''}
-                    onValueChange={formLogic.handleBrandChange}
+                    value={form.watch('preferredPanelBrand') || 'auto'}
+                    onValueChange={(v) => formLogic.handleBrandChange(v === 'auto' ? '' : v)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Auto-select best available" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="auto">
+                        <span className="text-foreground-tertiary">Auto-select best available</span>
+                      </SelectItem>
                       {config.panelBrands.map((brand) => (
                         <SelectItem key={brand.value} value={brand.value}>
                           {brand.label}
@@ -977,48 +1031,50 @@ export function QuoteBuilder(): JSX.Element {
               </div>
 
               {/* Technology Variant */}
-              {form.watch('preferredPanelBrand') && (
-                <div className="space-y-2">
-                  <Label>Panel Technology & Wattage</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {config
-                      .getTechnologyVariantsForBrand(form.watch('preferredPanelBrand')!)
-                      .map((variant) => {
-                        const isSelected =
-                          form.watch('preferredPanelTechnology') === variant.technology &&
-                          form.watch('preferredPanelWattage') === variant.minWattage;
-                        return (
-                          <button
-                            key={`${variant.technology}-${variant.minWattage}`}
-                            type="button"
-                            onClick={() =>
-                              formLogic.handleTechnologyVariantSelect(
-                                variant.technology,
-                                variant.minWattage,
-                              )
-                            }
-                            className={cn(
-                              'flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-fast',
-                              isSelected
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border-light bg-background hover:border-primary/50 hover:bg-primary/5',
-                            )}
-                          >
-                            <div
+              {form.watch('preferredPanelBrand') &&
+                config.getTechnologyVariantsForBrand(form.watch('preferredPanelBrand')!).length >
+                  0 && (
+                  <div className="space-y-2">
+                    <Label>Panel Technology & Wattage</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {config
+                        .getTechnologyVariantsForBrand(form.watch('preferredPanelBrand')!)
+                        .map((variant) => {
+                          const isSelected =
+                            form.watch('preferredPanelTechnology') === variant.technology &&
+                            form.watch('preferredPanelWattage') === variant.minWattage;
+                          return (
+                            <button
+                              key={`${variant.technology}-${variant.minWattage}`}
+                              type="button"
+                              onClick={() =>
+                                formLogic.handleTechnologyVariantSelect(
+                                  variant.technology,
+                                  variant.minWattage,
+                                )
+                              }
                               className={cn(
-                                'flex size-3.5 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-fast',
-                                isSelected ? 'border-primary' : 'border-border-medium',
+                                'flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-fast',
+                                isSelected
+                                  ? 'border-primary bg-primary/5'
+                                  : 'border-border-light bg-background hover:border-primary/50 hover:bg-primary/5',
                               )}
                             >
-                              {isSelected && <div className="size-1.5 rounded-full bg-primary" />}
-                            </div>
-                            {variant.label}
-                          </button>
-                        );
-                      })}
+                              <div
+                                className={cn(
+                                  'flex size-3.5 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-fast',
+                                  isSelected ? 'border-primary' : 'border-border-medium',
+                                )}
+                              >
+                                {isSelected && <div className="size-1.5 rounded-full bg-primary" />}
+                              </div>
+                              {variant.label}
+                            </button>
+                          );
+                        })}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Inverter Brand */}
               <div className="space-y-2">
@@ -1031,13 +1087,18 @@ export function QuoteBuilder(): JSX.Element {
                   </p>
                 ) : (
                   <Select
-                    value={form.watch('preferredInverterBrand') ?? ''}
-                    onValueChange={(v) => formLogic.handleFieldChange('preferredInverterBrand', v)}
+                    value={form.watch('preferredInverterBrand') || 'auto'}
+                    onValueChange={(v) =>
+                      formLogic.handleInverterBrandChange(v === 'auto' ? '' : v)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Auto-select best available" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="auto">
+                        <span className="text-foreground-tertiary">Auto-select best available</span>
+                      </SelectItem>
                       {config.inverterBrands.map((brand) => (
                         <SelectItem key={brand.value} value={brand.value}>
                           {brand.label}
@@ -1053,29 +1114,81 @@ export function QuoteBuilder(): JSX.Element {
                 )}
               </div>
 
+              {/* Inverter Capacity */}
+              <div className="space-y-2">
+                <Label>Inverter Capacity</Label>
+                {(() => {
+                  const capacityOptions = config.getInverterCapacities(
+                    form.watch('phaseType'),
+                    form.watch('preferredInverterBrand'),
+                  );
+                  return capacityOptions.length === 0 ? (
+                    <p className="text-xs text-foreground-tertiary">
+                      No capacity options available for the selected configuration.
+                    </p>
+                  ) : (
+                    <Select
+                      value={form.watch('preferredInverterCapacityKw')?.toString() ?? 'auto'}
+                      onValueChange={(v) =>
+                        formLogic.handleFieldChange(
+                          'preferredInverterCapacityKw',
+                          v === 'auto' ? undefined : Number(v),
+                        )
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Auto-select optimal" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="auto">
+                          <span className="text-foreground-tertiary">Auto-select optimal</span>
+                        </SelectItem>
+                        {capacityOptions.map((cap) => (
+                          <SelectItem key={cap.value} value={cap.value.toString()}>
+                            {cap.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  );
+                })()}
+              </div>
+
               {/* Structure Type */}
               <div className="space-y-2">
                 <Label>Structure Type *</Label>
-                <div className="flex flex-wrap gap-2">
-                  {STRUCTURE_TYPE_OPTIONS.map((opt) => {
-                    const isSelected = form.watch('structureType') === opt.value;
-                    return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => formLogic.handleFieldChange('structureType', opt.value)}
-                        className={cn(
-                          'rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-fast',
-                          isSelected
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'border-border-light bg-background text-foreground-secondary hover:border-primary/50 hover:bg-primary/5',
-                        )}
-                      >
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
+                {config.isLoading ? (
+                  <div className="flex flex-wrap gap-2">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} className="h-9 w-28 rounded-lg" />
+                    ))}
+                  </div>
+                ) : config.structureTypes.length === 0 ? (
+                  <p className="text-xs text-foreground-tertiary">
+                    No structure types available. Check product configuration.
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {config.structureTypes.map((opt) => {
+                      const isSelected = form.watch('structureType') === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => formLogic.handleFieldChange('structureType', opt.value)}
+                          className={cn(
+                            'rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-fast',
+                            isSelected
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-border-light bg-background text-foreground-secondary hover:border-primary/50 hover:bg-primary/5',
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
                 {form.formState.errors.structureType && (
                   <p className="text-xs text-error">
                     {form.formState.errors.structureType.message}
@@ -1250,7 +1363,9 @@ export function QuoteBuilder(): JSX.Element {
             </Button>
             <Button
               type="button"
-              onClick={() => void handleCalculate()}
+              onClick={() => {
+                void handleCalculate({ resetManualCounts: true });
+              }}
               disabled={calculateMutation.isPending || config.isLoading}
             >
               {calculateMutation.isPending ? (
@@ -1287,8 +1402,12 @@ export function QuoteBuilder(): JSX.Element {
           }),
         )}
         grossTotal={
-          calculation
-            ? applyPreGstDiscount(calculation.pricing.basePrice, discountAmount).grossTotal
+          calculation && config.quoteConfig?.gstConfig
+            ? applyPreGstDiscount(
+                calculation.pricing.basePrice,
+                discountAmount,
+                config.quoteConfig.gstConfig,
+              ).grossTotal
             : 0
         }
         onConfirm={handlePaymentTermsConfirm}

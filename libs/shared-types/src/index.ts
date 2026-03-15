@@ -15,6 +15,7 @@ export * from './interfaces/integration.interface';
 
 // Utils
 export * from './utils/pricing.utils';
+export * from './utils/product-options.utils';
 
 // IAM Types
 export * from './iam.types';

@@ -199,6 +199,7 @@ export function PropertyListPage(): JSX.Element {
               <div className="flex items-center gap-2">
                 <Link
                   href={buildRoute(ROUTES.PROPERTIES.DETAIL, { id: property.id })}
+                  prefetch={false}
                   className="text-sm font-medium text-primary hover:underline"
                 >
                   {property.propertyCode || property.propertyName || 'Unnamed Property'}

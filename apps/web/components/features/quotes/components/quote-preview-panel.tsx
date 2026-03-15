@@ -1,9 +1,10 @@
 'use client';
 
+import { PANEL_TECHNOLOGY_LABELS } from '@oneohm-epc/shared-types';
 import { AlertTriangle, Calendar, Calculator, Download, Save, Shield, Zap } from 'lucide-react';
 
 import { applyPreGstDiscount } from '../pricing-utils';
-import type { CalculateQuoteResponse } from '../types';
+import type { CalculateQuoteResponse, QuoteConfigResponse } from '../types';
 
 import { Badge, Button, Card, CardContent, Skeleton, Spinner } from '@/components/ui';
 import { formatCurrency, formatCurrencyDecimal } from '@/lib/utils/format';
@@ -17,6 +18,7 @@ export interface QuotePreviewPanelProps {
   isCalculating: boolean;
   calculationError: string | null;
   discountAmount: number;
+  gstConfig: QuoteConfigResponse['gstConfig'] | null;
   manualDcrPanelCount: number | undefined;
   manualNonDcrPanelCount: number | undefined;
   manualInverterCount: number | undefined;
@@ -42,6 +44,7 @@ export function QuotePreviewPanel({
   isCalculating,
   calculationError,
   discountAmount,
+  gstConfig,
   manualDcrPanelCount,
   manualNonDcrPanelCount,
   manualInverterCount,
@@ -107,10 +110,26 @@ export function QuotePreviewPanel({
 
   if (!calculation) return null;
 
+  if (!gstConfig) {
+    return (
+      <Card className="border-error/30">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="size-4 text-error" />
+            <p className="text-sm font-medium text-error">GST Configuration Missing</p>
+          </div>
+          <p className="mt-1 text-xs text-foreground-secondary">
+            Quote configuration could not be loaded. Please refresh the page or contact support.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const totalPanels = calculation.panels.reduce((sum, p) => sum + p.quantity, 0);
   const dcrPanels = calculation.panels.filter((p) => p.isDcr);
   const nonDcrPanels = calculation.panels.filter((p) => !p.isDcr);
-  const discounted = applyPreGstDiscount(calculation.pricing.basePrice, discountAmount);
+  const discounted = applyPreGstDiscount(calculation.pricing.basePrice, discountAmount, gstConfig);
   const adjustedFinalPrice = discounted.grossTotal;
   const adjustedEffectivePrice = Math.max(0, adjustedFinalPrice - calculation.subsidy.amount);
   const pricePerWatt =
@@ -155,6 +174,12 @@ export function QuotePreviewPanel({
                     </Badge>
                     <span className="text-sm font-medium">
                       {panel.brand} {panel.wattagePerPanel}W
+                      {panel.technology && (
+                        <span className="font-normal text-foreground-secondary">
+                          {' '}
+                          ({PANEL_TECHNOLOGY_LABELS[panel.technology] ?? panel.technology})
+                        </span>
+                      )}
                     </span>
                   </div>
                   <p className="text-xs text-foreground-secondary">
@@ -549,11 +574,15 @@ export function QuotePreviewPanel({
               </div>
             )}
             <div className="flex items-center justify-between text-sm">
-              <span className="text-foreground-secondary">GST on Equipment (5%)</span>
+              <span className="text-foreground-secondary">
+                GST on Equipment ({gstConfig.rate1}%)
+              </span>
               <span>{formatCurrency(discounted.gst5)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-foreground-secondary">GST on Services (18%)</span>
+              <span className="text-foreground-secondary">
+                GST on Services ({gstConfig.rate2}%)
+              </span>
               <span>{formatCurrency(discounted.gst18)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
