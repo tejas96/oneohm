@@ -15,7 +15,6 @@ export {
 } from './constants';
 export {
   LoanDocumentType,
-  toPropertyDocument,
   toPropertyDocuments,
   type DocumentSlot as DocumentSlotConfig,
   type CapturedDocument,

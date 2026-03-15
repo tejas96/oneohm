@@ -7,7 +7,7 @@ import {
   type QuoteConfigSnapshot,
   QuoteStatus,
   SystemType,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { Expose, Transform } from 'class-transformer';
 
 import { QuoteLineItemResponseDto } from './quote-line-item-response.dto';

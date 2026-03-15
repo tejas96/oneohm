@@ -8,7 +8,7 @@ import {
   PropertyStatus,
   QuoteStatus,
   TaskStatus,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { DataSource, type EntityManager } from 'typeorm';
 
 import { CustomerPropertyRepository } from '../../customers/repositories/customer-property.repository';

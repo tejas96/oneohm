@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { InventoryTransactionType } from '@oneohm-epc/shared-types';
+import { InventoryTransactionType } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 

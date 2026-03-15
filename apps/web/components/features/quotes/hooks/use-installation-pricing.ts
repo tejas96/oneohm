@@ -1,6 +1,6 @@
 'use client';
 
-import { type ProjectType } from '@oneohm-epc/shared-types';
+import { type ProjectType } from '@oneohm-epc/shared/types';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 

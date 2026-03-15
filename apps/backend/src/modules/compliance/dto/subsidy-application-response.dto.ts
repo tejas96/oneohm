@@ -1,4 +1,4 @@
-import { SubsidyStatus } from '@oneohm-epc/shared-types';
+import { SubsidyStatus } from '@oneohm-epc/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum, toNumNullable } from '../../../common/utils';

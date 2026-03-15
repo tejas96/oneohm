@@ -2,13 +2,15 @@
 globs: libs/**/*.ts
 ---
 
-# ⚠️ DEPRECATED — See core.mdc
-
-Types location rules are now in [core.mdc](mdc:core.mdc) under "Types Location" section.
+# Shared Package — Import Guide
 
 **Quick Reference:**
 | Scope | Path |
 |-------|------|
-| Shared (both apps) | `@oneohm-epc/shared-types` |
+| Shared types/enums | `@oneohm-epc/shared/types` |
+| Shared utilities | `@oneohm-epc/shared/utils` |
+| Shared schemas (Zod) | `@oneohm-epc/shared/schemas` |
+| Shared constants | `@oneohm-epc/shared/constants` |
 | Backend only | `modules/[feature]/types/` |
+| Backend decorators | `common/decorators/` |
 | Frontend only | `lib/types/` |

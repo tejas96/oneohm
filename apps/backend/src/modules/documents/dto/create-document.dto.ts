@@ -2,7 +2,7 @@
 // IMPORTS
 // ============================================
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { DocumentStatus, DocumentType, WcrType } from '@oneohm-epc/shared-types';
+import { DocumentStatus, DocumentType, WcrType } from '@oneohm-epc/shared/types';
 import {
   IsEnum,
   IsNotEmpty,

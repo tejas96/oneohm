@@ -4,7 +4,7 @@ import {
   ProductType,
   ProjectType,
   PricingRuleFormula,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { Expose, Type } from 'class-transformer';
 
 /**

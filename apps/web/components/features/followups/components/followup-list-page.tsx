@@ -1,6 +1,6 @@
 'use client';
 
-import { FollowupType, FollowupStatus, FollowupPriority } from '@oneohm-epc/shared-types';
+import { FollowupType, FollowupStatus, FollowupPriority } from '@oneohm-epc/shared/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { Calendar, Plus, MoreHorizontal, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';

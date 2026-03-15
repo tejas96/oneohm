@@ -1,4 +1,4 @@
-import { InventoryTransactionType } from '@oneohm-epc/shared-types';
+import { InventoryTransactionType } from '@oneohm-epc/shared/types';
 import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { WarehouseEntity } from './warehouse.entity';

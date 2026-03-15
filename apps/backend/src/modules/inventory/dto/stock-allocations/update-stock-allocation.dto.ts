@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { StockAllocationSourceType } from '@oneohm-epc/shared-types';
+import { StockAllocationSourceType } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import { IsDateString, IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 

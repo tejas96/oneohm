@@ -1,4 +1,4 @@
-import { ProjectType, InstallationCostComponents } from '@oneohm-epc/shared-types';
+import { ProjectType, InstallationCostComponents } from '@oneohm-epc/shared/types';
 import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';

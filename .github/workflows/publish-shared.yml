@@ -1,0 +1,77 @@
+name: Publish Shared Package
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'libs/shared/src/**'
+      - 'libs/shared/package.json'
+      - 'libs/shared/tsup.config.ts'
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  publish:
+    name: Build & Publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@tejas96'
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build shared package
+        run: npx nx build shared
+
+      - name: Check if version changed
+        id: version-check
+        working-directory: libs/shared
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          PUBLISHED=$(npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version 2>/dev/null || echo "")
+          if [ "$PUBLISHED" = "$PACKAGE_VERSION" ]; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "Version ${PACKAGE_VERSION} already published, skipping"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Publishing version ${PACKAGE_VERSION}"
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to GitHub Packages
+        if: steps.version-check.outputs.changed == 'true'
+        working-directory: libs/shared
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate Summary
+        if: always()
+        run: |
+          VERSION=$(node -p "require('./libs/shared/package.json').version")
+          echo "## Shared Package" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.version-check.outputs.changed }}" == "true" ]; then
+            echo "Published @tejas96/shared@${VERSION}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "v${VERSION} already published, skipped" >> $GITHUB_STEP_SUMMARY
+          fi

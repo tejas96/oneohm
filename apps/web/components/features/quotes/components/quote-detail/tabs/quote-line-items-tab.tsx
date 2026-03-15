@@ -1,6 +1,6 @@
 'use client';
 
-import type { ItemCategory } from '@oneohm-epc/shared-types';
+import type { ItemCategory } from '@oneohm-epc/shared/types';
 import { Package } from 'lucide-react';
 import React, { useMemo } from 'react';
 

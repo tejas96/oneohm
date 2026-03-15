@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { VendorStatus, VendorType } from '@oneohm-epc/shared-types';
+import { VendorStatus, VendorType } from '@oneohm-epc/shared/types';
 
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { CreateVendorDto, UpdateVendorDto } from '../dto';

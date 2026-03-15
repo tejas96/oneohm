@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SiteSurveyStatus } from '@oneohm-epc/shared-types';
+import { SiteSurveyStatus } from '@oneohm-epc/shared/types';
 import { IsEnum, IsNotEmpty } from 'class-validator';
 
 /**

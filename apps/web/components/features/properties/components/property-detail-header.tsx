@@ -1,6 +1,6 @@
 'use client';
 
-import { PropertyStatus } from '@oneohm-epc/shared-types';
+import { PropertyStatus } from '@oneohm-epc/shared/types';
 import { Calendar, Edit, FileText, FolderOpen } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

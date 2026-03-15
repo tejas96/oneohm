@@ -6,7 +6,7 @@ import {
   type ITextMessage,
   type ITemplateMessage,
   type IMediaMessage,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import type { AxiosInstance } from 'axios';
 
 import { BaseMessagingProvider } from '../base';

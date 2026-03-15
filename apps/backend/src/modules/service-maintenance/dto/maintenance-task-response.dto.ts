@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { MaintenanceTaskStatus } from '@oneohm-epc/shared-types';
+import { MaintenanceTaskStatus } from '@oneohm-epc/shared/types';
 import { Expose, Type } from 'class-transformer';
 
 import { MaintenanceConfigResponseDto } from './maintenance-config-response.dto';

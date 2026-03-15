@@ -1,6 +1,6 @@
 'use client';
 
-import { FollowupStatus, FollowupType, FollowupPriority } from '@oneohm-epc/shared-types';
+import { FollowupStatus, FollowupType, FollowupPriority } from '@oneohm-epc/shared/types';
 import { Check, Clock } from 'lucide-react';
 import { type JSX } from 'react';
 

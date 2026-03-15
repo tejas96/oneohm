@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ApprovalWorkflowType } from '@oneohm-epc/shared-types';
+import { ApprovalWorkflowType } from '@oneohm-epc/shared/types';
 import { IsNull, Repository } from 'typeorm';
 
 import { ApprovalTemplateEntity } from '../entities';

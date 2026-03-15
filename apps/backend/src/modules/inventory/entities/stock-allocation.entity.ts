@@ -1,4 +1,4 @@
-import { StockAllocationSourceType, StockAllocationStatus } from '@oneohm-epc/shared-types';
+import { StockAllocationSourceType, StockAllocationStatus } from '@oneohm-epc/shared/types';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { WarehouseEntity } from './warehouse.entity';

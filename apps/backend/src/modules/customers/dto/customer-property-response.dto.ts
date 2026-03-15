@@ -5,7 +5,7 @@ import {
   PropertyStatus,
   PropertyType,
   QuoteStatus,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
 import { PropertyDocumentDto } from './property-document.dto';

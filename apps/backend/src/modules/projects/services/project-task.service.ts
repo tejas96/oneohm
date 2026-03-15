@@ -15,7 +15,7 @@ import {
   type TaskActivityType,
   TaskPriority,
   TaskStatus,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { DataSource, type EntityManager, IsNull } from 'typeorm';
 
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';

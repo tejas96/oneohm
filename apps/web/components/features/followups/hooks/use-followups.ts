@@ -1,6 +1,6 @@
 'use client';
 
-import { FollowupPriority, FollowupStatus, FollowupType } from '@oneohm-epc/shared-types';
+import { FollowupPriority, FollowupStatus, FollowupType } from '@oneohm-epc/shared/types';
 import {
   useQuery,
   useMutation,

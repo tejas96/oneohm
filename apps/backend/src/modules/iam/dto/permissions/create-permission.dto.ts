@@ -1,4 +1,4 @@
-import { PermissionScope, PermissionLevel } from '@oneohm-epc/shared-types';
+import { PermissionScope, PermissionLevel } from '@oneohm-epc/shared/types';
 import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreatePermissionDto {

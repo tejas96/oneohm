@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { StockAllocationStatus } from '@oneohm-epc/shared-types';
+import { StockAllocationStatus } from '@oneohm-epc/shared/types';
 import { Repository } from 'typeorm';
 
 import { StockAllocationEntity } from '../entities/stock-allocation.entity';

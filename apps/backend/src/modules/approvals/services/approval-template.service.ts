@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { type ExtendedStatisticsResponse, ApprovalWorkflowType } from '@oneohm-epc/shared-types';
+import { type ExtendedStatisticsResponse, ApprovalWorkflowType } from '@oneohm-epc/shared/types';
 
 import type { CreateApprovalTemplateDto, UpdateApprovalTemplateDto } from '../dto';
 import type { ApprovalStageEntity, ApprovalTemplateEntity } from '../entities';
@@ -68,19 +68,6 @@ export class ApprovalTemplateService {
    */
   async findById(id: string, organizationId: string): Promise<ApprovalTemplateEntity> {
     const template = await this.templateRepository.findById(id, organizationId);
-
-    if (!template) {
-      throw new NotFoundException('Template not found');
-    }
-
-    return template;
-  }
-
-  /**
-   * Find template by code
-   */
-  async findByCode(code: string, organizationId: string): Promise<ApprovalTemplateEntity> {
-    const template = await this.templateRepository.findByCode(code, organizationId);
 
     if (!template) {
       throw new NotFoundException('Template not found');

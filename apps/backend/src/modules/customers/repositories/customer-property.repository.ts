@@ -5,7 +5,7 @@ import {
   type PropertyStatus,
   PropertySortField,
   SortOrder,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { type EntityManager, IsNull, Repository } from 'typeorm';
 
 import { PropertyQueryDto } from '../dto/property-query.dto';

@@ -7,20 +7,11 @@
  * @module lib/api/storage
  */
 
+import { FileCategory } from '@oneohm-epc/shared/types';
+
 import { apiClient } from './client';
 
-// ============================================================================
-// Types
-// ============================================================================
-
-export enum FileCategory {
-  SITE_VISIT = 'site-visit',
-  DOCUMENT = 'document',
-  PROFILE = 'profile',
-  QUOTE = 'quote',
-  PROJECT = 'project',
-  OTHER = 'other',
-}
+export { FileCategory };
 
 export interface RequestUploadUrlDto {
   fileName: string;

@@ -1,3 +1,4 @@
+import { PROJECT_TYPE_LABELS as _PROJECT_TYPE_LABELS } from '@oneohm-epc/shared/constants';
 import {
   MaterialStatus,
   MilestoneType,
@@ -10,7 +11,7 @@ import {
   TASK_STATUS_LABELS,
   TaskPriority,
   TaskStatus,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 
 export const DEFAULT_MILESTONES = [
   { name: 'Site Survey & Design', type: MilestoneType.SITE_SURVEY },
@@ -57,13 +58,7 @@ export const PROJECT_PRIORITY_BADGE_VARIANT: Record<string, string> = {
   [ProjectPriority.URGENT]: 'error',
 };
 
-export const PROJECT_TYPE_LABELS: Record<string, string> = {
-  [ProjectType.RESIDENTIAL]: 'Residential',
-  [ProjectType.RESIDENTIAL_APARTMENT]: 'Residential Apt',
-  [ProjectType.COMMERCIAL]: 'Commercial',
-  [ProjectType.INDUSTRIAL]: 'Industrial',
-  [ProjectType.AGRICULTURAL]: 'Agricultural',
-};
+export const PROJECT_TYPE_LABELS: Record<string, string> = _PROJECT_TYPE_LABELS;
 
 export const PROJECT_TYPE_BADGE_VARIANT: Record<string, string> = {
   [ProjectType.RESIDENTIAL]: 'teal',
@@ -142,7 +137,7 @@ export const TYPE_FILTER_OPTIONS = [
 
 // ---------------------------------------------------------------------------
 // Task constants (for My Tasks)
-// Labels imported from @oneohm-epc/shared-types and re-exported for convenience
+// Labels imported from @oneohm-epc/shared/types and re-exported for convenience
 // ---------------------------------------------------------------------------
 
 export { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS };

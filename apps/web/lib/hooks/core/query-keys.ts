@@ -9,7 +9,7 @@ export function stableHash(obj: unknown): string {
     .sort()
     .reduce<Record<string, string>>((acc, key) => {
       const value = (obj as Record<string, unknown>)[key];
-      if (value !== undefined && value !== '') {
+      if (value !== undefined && value !== null && value !== '') {
         acc[key] = stableHash(value);
       }
       return acc;

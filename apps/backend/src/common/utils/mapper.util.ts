@@ -1,4 +1,4 @@
-import { type PaginatedResponse } from '@oneohm-epc/shared-types';
+import { type PaginatedResponse } from '@oneohm-epc/shared/types';
 import { ClassConstructor, plainToInstance } from 'class-transformer';
 
 /**
@@ -75,22 +75,5 @@ export function toPaginatedResponse<T, V>(
       total,
       totalPages: Math.ceil(total / limit) || 1,
     },
-  };
-}
-
-/**
- * @deprecated Use toPaginatedResponse instead for proper PaginatedResponse format
- * Convert paginated result to DTO format (legacy format without meta)
- * @param DtoClass The DTO class constructor
- * @param result Object with data array and total count
- * @returns Object with transformed data array and total count
- */
-export function toDtoPaginated<T, V>(
-  DtoClass: ClassConstructor<T>,
-  result: { data: V[]; total: number },
-): { data: T[]; total: number } {
-  return {
-    data: toDtoArray(DtoClass, result.data),
-    total: result.total,
   };
 }

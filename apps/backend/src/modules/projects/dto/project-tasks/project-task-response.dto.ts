@@ -5,7 +5,7 @@ import {
   type FileAttachment,
   type TaskActivityEntry,
   type TaskChecklist,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { Expose, Transform } from 'class-transformer';
 
 export class ProjectTaskResponseDto {

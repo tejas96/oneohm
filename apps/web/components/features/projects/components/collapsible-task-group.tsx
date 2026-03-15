@@ -1,6 +1,6 @@
 'use client';
 
-import type { TaskStatus } from '@oneohm-epc/shared-types';
+import type { TaskStatus } from '@oneohm-epc/shared/types';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 

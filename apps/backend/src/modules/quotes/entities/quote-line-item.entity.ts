@@ -1,4 +1,4 @@
-import { ItemCategory } from '@oneohm-epc/shared-types';
+import { ItemCategory } from '@oneohm-epc/shared/types';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 import { QuoteVersionEntity } from './quote-version.entity';

@@ -9,10 +9,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { type PaginatedResponse } from '@oneohm-epc/shared-types';
-import { ApiReadAll, OrganizationContext } from '@oneohm-epc/shared-utils';
+import { type PaginatedResponse } from '@oneohm-epc/shared/types';
 import { plainToInstance } from 'class-transformer';
 
+import { ApiReadAll, OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';

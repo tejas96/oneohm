@@ -11,7 +11,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { type PaginatedResponse } from '@oneohm-epc/shared-types';
+import { type PaginatedResponse } from '@oneohm-epc/shared/types';
+import { plainToInstance } from 'class-transformer';
+
 import {
   ApiCreate,
   ApiDelete,
@@ -19,9 +21,7 @@ import {
   ApiReadOne,
   ApiUpdate,
   OrganizationContext,
-} from '@oneohm-epc/shared-utils';
-import { plainToInstance } from 'class-transformer';
-
+} from '../../../common/decorators';
 import { toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';

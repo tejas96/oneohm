@@ -15,10 +15,11 @@ import {
   type PaginatedResponse,
   TaskPriority,
   TaskStatus,
-} from '@oneohm-epc/shared-types';
-import { OrganizationContext, parsePaginationParams } from '@oneohm-epc/shared-utils';
+} from '@oneohm-epc/shared/types';
+import { parsePaginationParams } from '@oneohm-epc/shared/utils';
 import { plainToInstance } from 'class-transformer';
 
+import { OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';

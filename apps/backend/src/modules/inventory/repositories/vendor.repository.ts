@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { VendorStatus, VendorType } from '@oneohm-epc/shared-types';
+import { VendorStatus, VendorType } from '@oneohm-epc/shared/types';
 import { IsNull, Repository } from 'typeorm';
 
 import { VendorEntity } from '../entities/vendor.entity';

@@ -1,6 +1,6 @@
 'use client';
 
-import { TaskPriority } from '@oneohm-epc/shared-types';
+import { TaskPriority } from '@oneohm-epc/shared/types';
 import { SlidersHorizontal, Flag, Milestone, Tag, User, X } from 'lucide-react';
 import React, { useCallback, useMemo } from 'react';
 

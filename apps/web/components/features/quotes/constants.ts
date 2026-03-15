@@ -1,3 +1,5 @@
+import { PROJECT_TYPE_LABELS as _PROJECT_TYPE_LABELS } from '@oneohm-epc/shared/constants';
+import { SYSTEM_SIZE_CONFIG, DISCOUNT_PRESETS, DISTANCE_CONFIG } from '@oneohm-epc/shared/schemas';
 import {
   QuoteStatus,
   SystemType,
@@ -5,7 +7,7 @@ import {
   PhaseType,
   DcrPreference,
   ItemCategory,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { type LucideIcon, Building2, Factory, Home, Landmark, Warehouse } from 'lucide-react';
 
 import type { FilterTab } from '@/components/shared';
@@ -172,47 +174,15 @@ export const DCR_PREFERENCE_OPTIONS: DcrPreferenceOption[] = [
   },
 ];
 
-// ============================================================================
-// System Size Configuration
-// ============================================================================
-
-export const SYSTEM_SIZE_CONFIG = {
-  min: 1,
-  max: 100,
-  maxApi: 1000,
-  step: 1,
-  defaultResidential: 3,
-  defaultCommercial: 10,
-  defaultIndustrial: 50,
-} as const;
+export { SYSTEM_SIZE_CONFIG, DISCOUNT_PRESETS, DISTANCE_CONFIG };
+export const PROJECT_TYPE_LABELS: Record<string, string> = _PROJECT_TYPE_LABELS;
 
 export const QUICK_SIZE_OPTIONS = [3, 5, 7, 10, 15, 20] as const;
-
-// ============================================================================
-// Floor Options
-// ============================================================================
 
 export const FLOOR_OPTIONS = Array.from({ length: 11 }, (_, i) => ({
   value: i,
   label: i === 0 ? 'Ground Floor' : `Floor ${i}`,
 }));
-
-// ============================================================================
-// Distance Configuration
-// ============================================================================
-
-export const DISTANCE_CONFIG = {
-  min: 0,
-  max: 500,
-  default: 50,
-  step: 5,
-} as const;
-
-// ============================================================================
-// Discount Presets
-// ============================================================================
-
-export const DISCOUNT_PRESETS = [1000, 2000, 5000, 10000] as const;
 
 // ============================================================================
 // Property Type to Project Type Mapping
@@ -277,16 +247,4 @@ export const ITEM_CATEGORY_LABELS: Record<ItemCategory, string> = {
   [ItemCategory.COMMISSIONING]: 'Commissioning',
   [ItemCategory.TRANSPORTATION]: 'Transportation',
   [ItemCategory.OTHER]: 'Other',
-};
-
-// ============================================================================
-// Project Type Labels (for detail view)
-// ============================================================================
-
-export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
-  [ProjectType.RESIDENTIAL]: 'Residential',
-  [ProjectType.RESIDENTIAL_APARTMENT]: 'Residential Apartment',
-  [ProjectType.COMMERCIAL]: 'Commercial',
-  [ProjectType.INDUSTRIAL]: 'Industrial',
-  [ProjectType.AGRICULTURAL]: 'Agricultural',
 };

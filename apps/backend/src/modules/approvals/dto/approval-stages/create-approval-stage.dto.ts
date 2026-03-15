@@ -3,7 +3,7 @@ import {
   ApprovalRequirementType,
   ApproverType,
   AutoActionOnTimeout,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import {
   IsArray,

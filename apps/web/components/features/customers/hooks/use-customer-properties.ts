@@ -3,10 +3,11 @@
 import {
   ConnectionType,
   LeadTemperature,
+  type PropertyDocument,
   PropertyStatus,
   PropertyType,
   QuoteStatus,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
@@ -17,20 +18,7 @@ import { useAuth } from '@/providers/auth-provider';
 // Types
 // ============================================================================
 
-/**
- * Property Document stored in the documents JSONB field
- */
-export interface PropertyDocument {
-  url: string;
-  tag: string;
-  fileName: string;
-  isLoanDoc: boolean;
-  isVerified: boolean;
-  verifiedAt?: string;
-  verifiedBy?: string;
-  fileSize?: number;
-  uploadedAt?: string;
-}
+export type { PropertyDocument };
 
 /**
  * Customer Property - Installation site belonging to a customer

@@ -1,6 +1,6 @@
 import { Injectable, Logger, Type, OnModuleInit } from '@nestjs/common';
 import { DiscoveryService, MetadataScanner, Reflector } from '@nestjs/core';
-import { IntegrationProvider } from '@oneohm-epc/shared-types';
+import { IntegrationProvider } from '@oneohm-epc/shared/types';
 
 import { getProviderName } from '../decorators';
 import type { IBaseIntegration } from '../interfaces';

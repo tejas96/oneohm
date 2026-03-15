@@ -1,6 +1,6 @@
 'use client';
 
-import { SiteVisitStatus, VisitType, VisitPriority } from '@oneohm-epc/shared-types';
+import { SiteVisitStatus, VisitType, VisitPriority } from '@oneohm-epc/shared/types';
 import { ColumnDef } from '@tanstack/react-table';
 import {
   Calendar,

@@ -6,19 +6,9 @@
  * @module shared/document-collector/types
  */
 
-import type { PropertyDocument } from '@oneohm-epc/shared-types';
+import { LoanDocumentType, type PropertyDocument } from '@oneohm-epc/shared/types';
 
-// ============================================================================
-// Document Types (matching backend enums)
-// ============================================================================
-
-export enum LoanDocumentType {
-  AADHAAR_CARD = 'aadhaar_card',
-  PAN_CARD = 'pan_card',
-  ELECTRICITY_BILL = 'electricity_bill',
-  BANK_STATEMENT = 'bank_statement',
-  OTHER = 'other',
-}
+export { LoanDocumentType };
 
 // ============================================================================
 // Document Slot
@@ -71,20 +61,6 @@ export interface CapturedDocument {
 // ============================================================================
 // Conversion Helpers
 // ============================================================================
-
-/**
- * Convert CapturedDocument to PropertyDocument format for API
- */
-export function toPropertyDocument(doc: CapturedDocument, isLoanDoc: boolean): PropertyDocument {
-  return {
-    url: doc.uploadedUrl ?? '',
-    tag: doc.slotId,
-    fileName: doc.fileName,
-    fileSize: doc.fileSize,
-    isLoanDoc,
-    isVerified: false,
-  };
-}
 
 /**
  * Convert multiple captured documents to PropertyDocument array

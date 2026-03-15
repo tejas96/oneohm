@@ -1,6 +1,6 @@
 'use client';
 
-import { LeadTemperature, PropertySortField, PropertyType } from '@oneohm-epc/shared-types';
+import { LeadTemperature, PropertySortField, PropertyType } from '@oneohm-epc/shared/types';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   AlertCircle,

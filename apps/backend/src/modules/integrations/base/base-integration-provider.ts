@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { IntegrationProvider } from '@oneohm-epc/shared-types';
+import { IntegrationProvider } from '@oneohm-epc/shared/types';
 
 import type { IBaseIntegration } from '../interfaces';
 
@@ -69,19 +69,5 @@ export abstract class BaseIntegrationProvider implements IBaseIntegration {
    */
   protected cleanPhone(phone: string): string {
     return phone.replace(/^\+/, '');
-  }
-
-  /**
-   * Format phone to E.164 (add + prefix)
-   */
-  protected formatPhoneE164(phone: string): string {
-    return phone.startsWith('+') ? phone : `+${phone}`;
-  }
-
-  /**
-   * Sleep utility for retries
-   */
-  protected async sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

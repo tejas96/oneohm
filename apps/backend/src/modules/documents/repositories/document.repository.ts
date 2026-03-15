@@ -3,7 +3,7 @@
 // ============================================
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DocumentStatus, DocumentType } from '@oneohm-epc/shared-types';
+import { DocumentStatus, DocumentType } from '@oneohm-epc/shared/types';
 import { IsNull, Repository } from 'typeorm';
 
 import { DocumentEntity } from '../entities/document.entity';

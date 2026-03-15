@@ -3,7 +3,7 @@ import {
   ProductType,
   ProjectType,
   PricingRuleFormula,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { Column, DeleteDateColumn, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 import { ProductEntity } from './product.entity';
@@ -107,7 +107,7 @@ export class PricingRuleEntity extends BaseEntity {
    * - Structures: { pricePerKw, gstRate, structureType }
    * - General: { marginPercentage, volumeDiscounts, customerTypeMultipliers }
    *
-   * @see PricingRuleFormula in @oneohm-epc/shared-types
+   * @see PricingRuleFormula in @oneohm-epc/shared/types
    */
   @Column({ type: 'jsonb' })
   formula!: PricingRuleFormula;

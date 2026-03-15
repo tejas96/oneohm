@@ -6,7 +6,7 @@ import {
   PhaseType,
   ProjectType,
   type PaymentMilestone,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { isAxiosError } from 'axios';
 import {
   AlertCircle,

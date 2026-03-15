@@ -73,11 +73,10 @@ RUN npm ci --omit=dev --ignore-scripts && \
 # Copy built backend application
 COPY --from=builder /app/apps/backend/dist ./dist
 
-# Copy built shared libraries to node_modules for proper resolution
-# This creates the @oneohm-epc scope in node_modules
-RUN mkdir -p node_modules/@oneohm-epc
-COPY --from=builder /app/dist/libs/shared-types ./node_modules/@oneohm-epc/shared-types
-COPY --from=builder /app/dist/libs/shared-utils ./node_modules/@oneohm-epc/shared-utils
+# Copy shared package to node_modules for proper resolution
+RUN mkdir -p node_modules/@oneohm-epc/shared
+COPY --from=builder /app/libs/shared/package.json ./node_modules/@oneohm-epc/shared/
+COPY --from=builder /app/libs/shared/dist ./node_modules/@oneohm-epc/shared/dist
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \

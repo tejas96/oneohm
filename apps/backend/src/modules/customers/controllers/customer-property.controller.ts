@@ -22,9 +22,9 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { LeadTemperature, type PaginatedResponse } from '@oneohm-epc/shared-types';
-import { OrganizationContext } from '@oneohm-epc/shared-utils';
+import { LeadTemperature, type PaginatedResponse } from '@oneohm-epc/shared/types';
 
+import { OrganizationContext } from '../../../common/decorators';
 import { toDto, toDtoArray, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';

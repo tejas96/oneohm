@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { type FileAttachment } from '@oneohm-epc/shared-types';
+import { type FileAttachment } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import { IsArray, IsObject, IsOptional, IsUUID, ValidateNested } from 'class-validator';
 

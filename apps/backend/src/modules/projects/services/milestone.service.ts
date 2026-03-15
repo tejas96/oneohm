@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { MilestoneStatus, MilestoneType } from '@oneohm-epc/shared-types';
+import { MilestoneStatus, MilestoneType } from '@oneohm-epc/shared/types';
 
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { CreateMilestoneDto, UpdateMilestoneDto } from '../dto';

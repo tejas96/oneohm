@@ -1,4 +1,4 @@
-import { TaskStatus } from '@oneohm-epc/shared-types';
+import { TaskStatus } from '@oneohm-epc/shared/types';
 
 export const DRAWER_TABS = [
   { value: 'details', label: 'Details' },

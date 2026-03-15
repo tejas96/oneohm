@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { SiteVisitStatus } from '@oneohm-epc/shared-types';
+import { SiteVisitStatus } from '@oneohm-epc/shared/types';
 
 import { CreateSiteVisitDto } from '../dto/create-site-visit.dto';
 import { UpdateSiteVisitDto } from '../dto/update-site-visit.dto';

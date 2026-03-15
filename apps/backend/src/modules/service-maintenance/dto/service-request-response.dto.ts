@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ServiceRequestPriority, ServiceRequestStatus } from '@oneohm-epc/shared-types';
+import { ServiceRequestPriority, ServiceRequestStatus } from '@oneohm-epc/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../common/utils';

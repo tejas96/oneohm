@@ -76,13 +76,16 @@ modules/[feature]/
 
 | Location | Use For |
 |----------|---------|
-| `@oneohm-epc/shared-types` | Interfaces, enums, state transitions — anything frontend also needs |
+| `@oneohm-epc/shared/types` | Interfaces, enums, state transitions — anything frontend/mobile also needs |
+| `@oneohm-epc/shared/utils` | Platform-agnostic helpers (pagination, formatting, validation) |
+| `@oneohm-epc/shared/constants` | Shared label maps, config constants |
 | `modules/[feature]/types/` | Internal service types, repository-specific types |
+| `common/decorators/` | NestJS-specific decorators (ApiCreate, OrganizationContext, etc.) |
 | `common/utils/` | toDto, toPaginatedResponse |
-| `@oneohm-epc/shared-utils` | Decorators, guards, helpers (pagination, rate limiting, etc.) |
 
-**Rule:** If frontend needs it → shared-types. Always.
-**Rule:** State machine transitions → shared-types. Single source of truth for both ends.
+**Rule:** If frontend needs it → `@oneohm-epc/shared/types`. Always.
+**Rule:** State machine transitions → `@oneohm-epc/shared/types`. Single source of truth for all apps.
+**Rule:** NestJS decorators stay in `common/decorators/`, NOT in shared package.
 
 ---
 
@@ -176,7 +179,7 @@ await this.dataSource.transaction(async (manager) => {
 | Trust client input | Validate everything |
 | Duplicate code | Import and extend |
 | Trust client `organizationId` | Override from `@OrganizationContext()`: `dto.organizationId = orgId` |
-| Manual `parseInt` for pagination | Use `parsePaginationParams()` from shared-utils |
+| Manual `parseInt` for pagination | Use `parsePaginationParams()` from `@oneohm-epc/shared/utils` |
 | Raw SQL status literals | Use parameterized queries with enum values (`TaskStatus.DONE`) |
 | Dev-only bypasses without gate | Guard with `process.env.NODE_ENV === 'development'` |
 | Hardcode seed credentials | Use env vars + throw in production if unset |

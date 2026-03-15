@@ -82,10 +82,7 @@ oneohm-epc/
 │   └── ux/                 # Design assets
 │
 ├── libs/                    # Shared libraries
-│   ├── shared-types/       # TypeScript types
-│   ├── shared-utils/       # Utility functions
-│   ├── shared-theme/       # Design tokens
-│   └── shared-assets/      # Constants & config
+│   └── shared/             # Unified shared package (@oneohm-epc/shared)
 │
 ├── nx.json                  # NX configuration
 ├── tsconfig.base.json       # Shared TypeScript config
@@ -100,14 +97,14 @@ oneohm-epc/
 | `web`     | Next.js 16   | Web application      | 3001 |
 | `ux`      | Static HTML  | Design documentation | -    |
 
-### Shared Libraries
+### Shared Package
 
-| Library         | Purpose                       | Used By     |
-| --------------- | ----------------------------- | ----------- |
-| `shared-types`  | TypeScript interfaces & types | All apps    |
-| `shared-utils`  | Utility functions             | All apps    |
-| `shared-theme`  | Design system & theme         | Web, Mobile |
-| `shared-assets` | Constants & static assets     | All apps    |
+| Sub-path                        | Purpose                    | Used By     |
+| ------------------------------- | -------------------------- | ----------- |
+| `@oneohm-epc/shared/types`     | Enums, interfaces & types  | All apps    |
+| `@oneohm-epc/shared/utils`     | Utility functions          | All apps    |
+| `@oneohm-epc/shared/schemas`   | Zod validation schemas     | Web, Mobile |
+| `@oneohm-epc/shared/constants` | Label maps & config values | All apps    |
 
 ---
 
@@ -144,7 +141,7 @@ npx nx build backend
 #### Scenario 2: Working on Shared Library
 
 ```bash
-# Make changes in libs/shared-types/
+# Make changes in libs/shared/
 
 # See what's affected
 npm run affected:graph
@@ -188,73 +185,39 @@ npm run format:check
 
 ---
 
-## Working with Shared Libraries
+## Working with the Shared Package
 
-### Importing from Shared Libraries
+### Importing from the Shared Package
 
 ```typescript
-// In any app (backend, web)
+// In any app (backend, web, mobile)
 
-// Import types
-import { User, ApiResponse, UserRole } from '@oneohm-epc/shared-types';
+// Import types & enums
+import { UserRole, QuoteStatus, ProjectStatus } from '@oneohm-epc/shared/types';
 
 // Import utilities
-import { formatDate, debounce, isValidEmail } from '@oneohm-epc/shared-utils';
+import { formatDate, formatCurrency, debounce } from '@oneohm-epc/shared/utils';
 
-// Import theme
-import { theme, colors, spacing } from '@oneohm-epc/shared-theme';
+// Import Zod schemas
+import { loginSchema, customerSchema } from '@oneohm-epc/shared/schemas';
 
 // Import constants
-import { API_CONFIG, ROUTES, STORAGE_KEYS } from '@oneohm-epc/shared-assets';
+import { PROJECT_TYPE_LABELS, DISCOUNT_PRESETS } from '@oneohm-epc/shared/constants';
 ```
 
 ### Example: Using Shared Types in Backend
 
 ```typescript
-// apps/backend/src/users/users.service.ts
-import { User, ApiResponse, UserRole } from '@oneohm-epc/shared-types';
-import { formatDate } from '@oneohm-epc/shared-utils';
-
-export class UsersService {
-  async getUser(id: string): Promise<ApiResponse<User>> {
-    const user: User = {
-      id,
-      email: 'user@example.com',
-      name: 'John Doe',
-      role: UserRole.USER,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    return {
-      success: true,
-      data: user,
-      message: `User retrieved at ${formatDate(new Date())}`,
-    };
-  }
-}
+// apps/backend/src/modules/users/controllers/users.controller.ts
+import { UserRole, UserStatus } from '@oneohm-epc/shared/types';
+import { parsePaginationParams } from '@oneohm-epc/shared/utils';
 ```
 
-### Example: Using Shared Theme in Web
+### Example: Using Shared Schema in Web
 
 ```typescript
-// apps/web/components/Button.tsx
-import { colors, spacing, borderRadius } from '@oneohm-epc/shared-theme';
-
-export const Button = () => {
-  return (
-    <button
-      style={{
-        backgroundColor: colors.primary.main,
-        color: colors.primary.contrastText,
-        padding: `${spacing.sm}px ${spacing.md}px`,
-        borderRadius: borderRadius.md,
-      }}
-    >
-      Click Me
-    </button>
-  );
-};
+// apps/web/components/features/auth/LoginForm.tsx
+import { loginSchema, type LoginFormData } from '@oneohm-epc/shared/schemas';
 ```
 
 ### Adding New Shared Code
@@ -262,52 +225,33 @@ export const Button = () => {
 #### To Add a New Type:
 
 ```typescript
-// libs/shared-types/src/index.ts
+// libs/shared/src/types/interfaces/my-feature.interface.ts
 export interface Product {
   id: string;
   name: string;
   price: number;
-  category: string;
 }
+// Then re-export from libs/shared/src/types/interfaces/index.ts
 ```
 
 #### To Add a New Utility:
 
 ```typescript
-// libs/shared-utils/src/index.ts
-export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount);
-};
+// libs/shared/src/utils/my-util.ts
+export const myHelper = () => { /* ... */ };
+// Then re-export from libs/shared/src/utils/index.ts
 ```
 
-#### To Add Theme Colors:
-
-```typescript
-// libs/shared-theme/src/index.ts
-export const colors = {
-  // ... existing colors
-  custom: {
-    brand: '#667eea',
-    accent: '#764ba2',
-  },
-};
-```
-
-### Building Shared Libraries
+### Building the Shared Package
 
 ```bash
-# Build specific library
-npx nx build shared-types
-npx nx build shared-utils
+# Build the shared package
+npx nx build shared
 
-# Build all libraries
-npx nx run-many --target=build --projects=shared-*
-
-# Test libraries
-npx nx test shared-types
+# Build, lint, and typecheck
+npx nx build shared
+npx nx lint shared
+npx nx typecheck shared
 ```
 
 ---
@@ -441,22 +385,14 @@ npx nx graph --focus=backend
 ### Example Graph Relationships
 
 ```
-web ──────► shared-types
-     └────► shared-utils
-     └────► shared-theme
-     └────► shared-assets
+web ──────► shared
 
-backend ──► shared-types
-        └─► shared-utils
-        └─► shared-assets
-
-       └───► shared-utils
-       └───► shared-theme
-       └───► shared-assets
+backend ──► shared
 ```
 
 **What this means:**
 
+- If you change `shared`, both `backend` and `web` are affected
 - If you change `backend`, only `backend` is affected
 
 ---
@@ -536,15 +472,15 @@ $ npm run affected:build
 #### Example 2: Change Shared Types
 
 ```bash
-# You modified: libs/shared-types/src/index.ts
+# You modified: libs/shared/src/types/enums/index.ts
 
 $ npx nx affected:apps
 > backend
 > web
 
-# All apps that depend on shared-types
+# All apps that depend on shared
 $ npm run affected:build
-✔ nx run shared-types:build (2s)
+✔ nx run shared:build (2s)
 ✔ nx run backend:build (4s)
 ✔ nx run web:build (7s)
 
@@ -663,15 +599,15 @@ CI runs:
 Total: 2.5 minutes
 ```
 
-#### Scenario 2: Shared Types PR
+#### Scenario 2: Shared Package PR
 
 ```
-Changes: libs/shared-types/src/index.ts
+Changes: libs/shared/src/types/enums/index.ts
 
 CI runs:
-✓ Lint shared-types, backend, web (1m)
-✓ Test shared-types, backend, web (2m)
-✓ Build shared-types, backend, web (4m)
+✓ Lint shared, backend, web (1m)
+✓ Test shared, backend, web (2m)
+✓ Build shared, backend, web (4m)
 Total: 7 minutes
 ```
 
@@ -706,48 +642,37 @@ npm run affected:graph  # Show reviewer what's affected
 
 ```
 libs/
-├── shared-types/        # Only TypeScript types
-├── shared-utils/        # Only pure functions
-└── shared-ui/           # Only UI components
+└── shared/              # Unified shared package with sub-path exports
+    └── src/
+        ├── types/       # Only TypeScript types & enums
+        ├── utils/       # Only pure functions
+        ├── schemas/     # Zod validation schemas
+        └── constants/   # Label maps & config values
 ```
 
-**Bad:**
+### 3. Design Internal Dependencies Carefully
+
+Within `libs/shared/src/`, the dependency flow is one-directional:
 
 ```
-libs/
-└── shared/              # Everything mixed together ❌
+types  (no internal dependencies)
+  ↑
+utils, constants, schemas  (depend on types only)
 ```
 
-### 3. Design Library Dependencies Carefully
-
-**Good:**
-
-```
-shared-utils  (no dependencies)
-     ↑
-shared-types  (depends on utils)
-     ↑
-shared-ui     (depends on types & utils)
-```
-
-**Bad:**
-
-```
-shared-utils ←→ shared-types  (circular dependency ❌)
-```
-
-### 4. Use TypeScript Path Mapping
+### 4. Use Sub-path Imports
 
 **Good:**
 
 ```typescript
-import { User } from '@oneohm-epc/shared-types';
+import { UserRole } from '@oneohm-epc/shared/types';
+import { formatCurrency } from '@oneohm-epc/shared/utils';
 ```
 
 **Bad:**
 
 ```typescript
-import { User } from '../../../libs/shared-types/src/index';
+import { UserRole } from '../../../libs/shared/src/types/index';
 ```
 
 ### 5. Cache-Friendly Code
@@ -813,7 +738,7 @@ cat tsconfig.base.json
 
 # Rebuild TypeScript project references
 npx nx reset
-npx nx build shared-types
+npx nx build shared
 ```
 
 ### Affected Detection Not Working
@@ -861,13 +786,13 @@ npm install -D @swc-node/register @swc/core
 
 ### Import Errors
 
-**Problem**: Cannot find module '@oneohm-epc/shared-\*'
+**Problem**: Cannot find module '@oneohm-epc/shared/\*'
 
 **Solution**:
 
 ```bash
-# 1. Build the library first
-npx nx build shared-types
+# 1. Build the shared package first
+npx nx build shared
 
 # 2. Check tsconfig.base.json paths
 # 3. Restart TypeScript server in IDE

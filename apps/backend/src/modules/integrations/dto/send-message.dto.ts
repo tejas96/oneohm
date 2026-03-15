@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { MessageType } from '@oneohm-epc/shared-types';
+import { MessageType } from '@oneohm-epc/shared/types';
 import {
   IsString,
   IsNotEmpty,

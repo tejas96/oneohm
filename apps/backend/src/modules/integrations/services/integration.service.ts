@@ -14,7 +14,7 @@ import {
   type IOtpMessage,
   type IAlertMessage,
   type IMessageResponse,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 
 import { ProviderResolver, ProviderFactory } from '../core';
 import type { CreateIntegrationDto, UpdateIntegrationDto } from '../dto';

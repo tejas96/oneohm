@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { StockAllocationStatus } from '@oneohm-epc/shared-types';
+import { StockAllocationStatus } from '@oneohm-epc/shared/types';
 
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { ProjectRepository } from '../../projects/repositories/project.repository';

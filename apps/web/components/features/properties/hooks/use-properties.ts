@@ -3,13 +3,14 @@
 import type {
   ConnectionType,
   LeadTemperature,
+  PaginationMeta,
   PropertyDocument,
   PropertySortField,
   PropertyStatus,
   PropertyType,
   QuoteStatus,
   SortOrder,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
@@ -77,12 +78,7 @@ export interface Property {
   latestQuoteSystemSizeKw?: number;
 }
 
-export interface PaginationMeta {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
+export type { PaginationMeta };
 
 export interface PropertyListResponse {
   data: Property[];

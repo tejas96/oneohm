@@ -1,4 +1,4 @@
-import { SiteSurveyStatus, type FileAttachment, type SurveyData } from '@oneohm-epc/shared-types';
+import { SiteSurveyStatus, type FileAttachment, type SurveyData } from '@oneohm-epc/shared/types';
 import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 
 import { ProjectEntity } from './project.entity';

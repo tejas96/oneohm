@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PricingRuleType, ProductType, ProjectType } from '@oneohm-epc/shared-types';
+import { PricingRuleType, ProductType, ProjectType } from '@oneohm-epc/shared/types';
 import {
   IsBoolean,
   IsDateString,

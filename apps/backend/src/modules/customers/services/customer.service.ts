@@ -7,7 +7,8 @@ import {
   NotFoundException,
   forwardRef,
 } from '@nestjs/common';
-import { CustomerStatus, UserProfileType, UserStatus } from '@oneohm-epc/shared-types';
+import { CustomerStatus, UserProfileType, UserStatus } from '@oneohm-epc/shared/types';
+import { normalizePhoneToE164 } from '@oneohm-epc/shared/utils';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
@@ -19,19 +20,6 @@ import { CustomerQueryDto } from '../dto/customer-query.dto';
 import { UpdateCustomerDto } from '../dto/update-customer.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
 import { CustomerProfileRepository } from '../repositories/customer-profile.repository';
-
-const COUNTRY_CODE = '+91';
-
-/** Normalize phone to E.164: strip non-digits, prepend +91 if needed. Returns trimmed raw for unrecognized formats. */
-function normalizePhone(raw: string): string {
-  const trimmed = raw.trim();
-  if (trimmed.length === 0) return trimmed;
-  const digits = trimmed.replace(/[^\d]/g, '');
-  if (digits.length === 10) return `${COUNTRY_CODE}${digits}`;
-  if (digits.length === 12 && digits.startsWith('91')) return `+${digits}`;
-  if (trimmed.startsWith('+91') && digits.length === 12) return trimmed.replace(/[^\d+]/g, '');
-  return trimmed;
-}
 
 /** Normalize email to lowercase, trimmed. Returns undefined for empty/whitespace-only input. */
 function normalizeEmail(raw: string): string | undefined {
@@ -65,7 +53,7 @@ export class CustomerService {
     createDto: CreateCustomerDto,
     createdBy?: string,
   ): Promise<CustomerProfileEntity> {
-    const phone = normalizePhone(createDto.phone);
+    const phone = normalizePhoneToE164(createDto.phone);
     const email = createDto.email ? normalizeEmail(createDto.email) : undefined;
 
     this.logger.log(`Creating customer profile: phone=${phone}, email=${email ?? 'N/A'}`);
@@ -201,7 +189,7 @@ export class CustomerService {
       updateDto.email = normalized ?? undefined;
     }
     if (updateDto.phone !== undefined) {
-      const normalizedPhone = normalizePhone(updateDto.phone);
+      const normalizedPhone = normalizePhoneToE164(updateDto.phone);
       updateDto.phone = normalizedPhone.length > 0 ? normalizedPhone : undefined;
     }
 
@@ -360,7 +348,7 @@ export class CustomerService {
       throw new BadRequestException('At least one of phone or email is required');
     }
 
-    const normalizedPhone = phone ? normalizePhone(phone) : undefined;
+    const normalizedPhone = phone ? normalizePhoneToE164(phone) : undefined;
     const normalizedEmail = email ? normalizeEmail(email) : undefined;
 
     this.logger.log(

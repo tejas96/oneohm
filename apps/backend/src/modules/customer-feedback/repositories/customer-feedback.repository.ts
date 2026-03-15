@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { NPSCategory } from '@oneohm-epc/shared-types';
+import { NPSCategory } from '@oneohm-epc/shared/types';
 import { Between, IsNull, Repository } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 

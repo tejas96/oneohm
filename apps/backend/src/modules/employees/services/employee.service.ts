@@ -6,7 +6,7 @@ import {
   NotFoundException,
   forwardRef,
 } from '@nestjs/common';
-import { UserStatus } from '@oneohm-epc/shared-types';
+import { UserStatus } from '@oneohm-epc/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';

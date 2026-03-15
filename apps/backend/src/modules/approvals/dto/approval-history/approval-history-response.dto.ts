@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ApprovalAction, ApprovalDecision } from '@oneohm-epc/shared-types';
+import { ApprovalAction, ApprovalDecision } from '@oneohm-epc/shared/types';
 import { Expose } from 'class-transformer';
 
 /**

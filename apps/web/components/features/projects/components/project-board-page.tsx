@@ -1,6 +1,6 @@
 'use client';
 
-import { ProjectStatus } from '@oneohm-epc/shared-types';
+import { ProjectStatus } from '@oneohm-epc/shared/types';
 import { AlertCircle, LayoutGrid } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { CustomerStatus, CustomerSortField, LeadSource, SortOrder } from '@oneohm-epc/shared-types';
+import { CustomerStatus, CustomerSortField, LeadSource, SortOrder } from '@oneohm-epc/shared/types';
 import { ColumnDef } from '@tanstack/react-table';
 import {
   ArrowDown,
@@ -57,7 +57,7 @@ import {
 } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDebounce } from '@/lib/hooks';
-import { cn, getErrorMessage } from '@/lib/utils';
+import { cn, formatPhoneForWhatsApp, getErrorMessage, getInitials } from '@/lib/utils';
 
 // ============================================================================
 // Constants
@@ -139,16 +139,6 @@ function getValidSortField(value: string | null): CustomerSortField {
 
 function getValidSortOrder(value: string | null): SortOrder {
   return value === SortOrder.ASC ? SortOrder.ASC : SortOrder.DESC;
-}
-
-function getInitials(firstName: string, lastName?: string | null): string {
-  const first = firstName.charAt(0) || '';
-  const last = lastName?.charAt(0) || '';
-  return `${first}${last}`.toUpperCase() || '?';
-}
-
-function formatPhoneForWhatsApp(phone: string): string {
-  return phone.replace(/\D/g, '');
 }
 
 // ============================================================================
@@ -328,7 +318,7 @@ export function CustomerListPage(): JSX.Element {
         accessorFn: (row) => `${row.firstName} ${row.lastName || ''}`,
         cell: ({ row }) => {
           const customer = row.original;
-          const initials = getInitials(customer.firstName, customer.lastName);
+          const initials = getInitials(`${customer.firstName} ${customer.lastName ?? ''}`.trim());
 
           return (
             <Link

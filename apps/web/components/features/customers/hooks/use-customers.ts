@@ -1,6 +1,12 @@
 'use client';
 
-import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@oneohm-epc/shared-types';
+import {
+  CustomerSortField,
+  CustomerStatus,
+  LeadSource,
+  type PaginationMeta,
+  SortOrder,
+} from '@oneohm-epc/shared/types';
 import {
   useQuery,
   useMutation,
@@ -67,12 +73,7 @@ export interface Customer {
   creatorName?: string;
 }
 
-export interface PaginationMeta {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
+export type { PaginationMeta };
 
 export interface CustomerListResponse {
   data: Customer[];

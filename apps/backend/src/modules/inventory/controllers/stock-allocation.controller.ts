@@ -10,16 +10,16 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { type StatisticsResponse, StockAllocationStatus } from '@oneohm-epc/shared-types';
+import { type StatisticsResponse, StockAllocationStatus } from '@oneohm-epc/shared/types';
+import { plainToInstance } from 'class-transformer';
+
 import {
   ApiCreate,
   ApiReadAll,
   ApiReadOne,
   ApiUpdate,
   OrganizationContext,
-} from '@oneohm-epc/shared-utils';
-import { plainToInstance } from 'class-transformer';
-
+} from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';

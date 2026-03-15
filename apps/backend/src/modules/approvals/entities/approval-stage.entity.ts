@@ -2,7 +2,7 @@ import {
   ApprovalRequirementType,
   ApproverType,
   AutoActionOnTimeout,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import {
   Column,
   CreateDateColumn,

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { SiteVisitStatus } from '@oneohm-epc/shared-types';
+import { SiteVisitStatus } from '@oneohm-epc/shared/types';
 import { IsNull, Repository } from 'typeorm';
 
 import { SiteVisitEntity } from '../entities/site-visit.entity';

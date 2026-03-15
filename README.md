@@ -136,19 +136,12 @@ oneohm-epc/
 │       └── data/               # Mock data for prototypes
 │
 ├── libs/
-│   ├── shared-types/           # Shared TypeScript types & enums
-│   │   └── src/
-│   │       ├── enums/          # Status enums for all entities
-│   │       └── interfaces/     # Common interfaces
-│   │
-│   ├── shared-utils/           # Shared utility functions
-│   │   └── src/
-│   │       ├── decorators/     # Custom decorators (API, Rate Limit)
-│   │       └── helpers/        # Helper functions (pagination)
-│   │
-│   ├── shared-theme/           # Shared theme configuration
-│   ├── shared-assets/          # Shared constants & assets
-│   └── shared-ui/              # Shared UI components (planned)
+│   └── shared/                 # Unified shared package (@oneohm-epc/shared)
+│       └── src/
+│           ├── types/          # Enums & interfaces
+│           ├── utils/          # Pure utility functions
+│           ├── schemas/        # Zod validation schemas
+│           └── constants/      # Label maps & config values
 │
 ├── docs/                       # Additional documentation
 │   ├── NX-USAGE-GUIDE.md       # Complete NX guide
@@ -250,73 +243,25 @@ HTML/CSS mockups and interactive prototypes for both mobile and web applications
 
 ---
 
-## 📦 Shared Libraries
+## 📦 Shared Package
 
-All libraries are available via TypeScript path mappings:
-
-### `@oneohm-epc/shared-types`
-
-Common TypeScript types, interfaces, and enums used across all apps.
+A single unified package `@oneohm-epc/shared` (published to GitHub Packages as `@tejas96/shared`) provides types, utilities, schemas, and constants across all apps. Import via sub-path exports:
 
 ```typescript
-import { 
-  QuoteStatus, 
-  ProjectStatus, 
-  UserRole,
-  LeadTemperature 
-} from '@oneohm-epc/shared-types';
+import { QuoteStatus, ProjectStatus, UserRole } from '@oneohm-epc/shared/types';
+import { formatCurrency, parsePaginationParams } from '@oneohm-epc/shared/utils';
+import { loginSchema, customerSchema } from '@oneohm-epc/shared/schemas';
+import { PROJECT_TYPE_LABELS, DISCOUNT_PRESETS } from '@oneohm-epc/shared/constants';
 ```
 
-**Available Enums:**
-| Category | Enums |
-|----------|-------|
-| User | `UserRole`, `UserStatus`, `EmployeeType` |
-| Customer | `CustomerType`, `LeadTemperature`, `LeadSource` |
-| Quote | `QuoteStatus`, `QuoteApprovalStatus` |
-| Project | `ProjectStatus`, `ProjectPhase`, `TaskStatus` |
-| Inventory | `ItemStatus`, `MovementType`, `WarehouseType` |
-| Payment | `PaymentStatus`, `PaymentMethod`, `InvoiceStatus` |
-| Document | `DocumentType`, `DocumentStatus` |
-| Compliance | `SubsidyStatus`, `ApplicationStatus` |
+| Sub-path | Contents |
+|----------|----------|
+| `@oneohm-epc/shared/types` | Enums, interfaces, and type definitions |
+| `@oneohm-epc/shared/utils` | Pure utility functions (formatters, validators, pricing, pagination) |
+| `@oneohm-epc/shared/schemas` | Zod validation schemas |
+| `@oneohm-epc/shared/constants` | Label maps and configuration constants |
 
----
-
-### `@oneohm-epc/shared-utils`
-
-Utility functions and decorators shared between apps.
-
-```typescript
-import { 
-  Paginated,
-  ApiCreate, 
-  ApiReadAll,
-  OrganizationContext 
-} from '@oneohm-epc/shared-utils';
-```
-
-**Available Utilities:**
-- **Decorators** - `@ApiCreate()`, `@ApiReadAll()`, `@ApiUpdate()`, `@ApiDelete()`, `@SecurityRateLimit()`
-- **Helpers** - `PaginationHelper`, common pagination utilities
-
----
-
-### `@oneohm-epc/shared-theme`
-
-Shared theme configuration for consistent styling.
-
-```typescript
-import { colors, spacing, typography } from '@oneohm-epc/shared-theme';
-```
-
----
-
-### `@oneohm-epc/shared-assets`
-
-Shared constants, configurations, and static assets.
-
-```typescript
-import { API_CONFIG, ROUTES } from '@oneohm-epc/shared-assets';
-```
+> See [`libs/shared/README.md`](./libs/shared/README.md) for full developer setup and publishing docs.
 
 ---
 
@@ -394,7 +339,7 @@ The backend is organized into feature modules following NestJS best practices:
 git clone <repository-url>
 cd oneohm-epc
 
-# Install dependencies
+# Install dependencies (no GitHub token needed — shared package resolves locally)
 npm install
 
 # Set up environment variables
@@ -415,6 +360,19 @@ cd ../..
 npm run backend:dev   # Terminal 1 - Backend on :8085
 npm run web:dev       # Terminal 2 - Web on :3001
 ```
+
+### Mobile App Setup
+
+The mobile app (`oneohm-epc-mobile`) is in a separate repository and installs the shared package from GitHub Packages:
+
+```bash
+cd oneohm-epc-mobile
+cp .env.example .env
+# Edit .env → set GITHUB_PACKAGES_TOKEN=ghp_your_token
+npm run setup
+```
+
+Generate a token with `read:packages` scope at https://github.com/settings/tokens/new?scopes=read:packages
 
 ---
 

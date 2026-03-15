@@ -4,7 +4,7 @@
  * Static configuration for forms, detail page, label maps, and badge variants.
  */
 
-import type { LeadTemperature, PropertyType } from '@oneohm-epc/shared-types';
+import type { LeadTemperature, PropertyType } from '@oneohm-epc/shared/types';
 
 // ---------------------------------------------------------------------------
 // Form: Required Fields

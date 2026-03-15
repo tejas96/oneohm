@@ -1,6 +1,6 @@
 'use client';
 
-import { TASK_STATUS_TRANSITIONS, TaskStatus } from '@oneohm-epc/shared-types';
+import { TASK_STATUS_TRANSITIONS, TaskStatus } from '@oneohm-epc/shared/types';
 import { AlertTriangle, Check, Clock, Lock, Play } from 'lucide-react';
 import Link from 'next/link';
 

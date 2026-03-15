@@ -1,4 +1,4 @@
-import { IntegrationStatus, type IMessageResponse } from '@oneohm-epc/shared-types';
+import { IntegrationStatus, type IMessageResponse } from '@oneohm-epc/shared/types';
 
 import { BaseIntegrationProvider } from './base-integration-provider';
 
@@ -44,35 +44,5 @@ export abstract class BaseMessagingProvider extends BaseIntegrationProvider {
       timestamp: new Date(),
       ...errorData,
     };
-  }
-
-  /**
-   * Wrap async operations with error handling
-   */
-  protected async executeWithErrorHandling<T>(
-    operation: () => Promise<T>,
-    operationName: string,
-  ): Promise<T> {
-    try {
-      return await operation();
-    } catch (error) {
-      this.logger.error(`${operationName} failed`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Validate phone number format
-   */
-  protected validatePhone(phone: string): boolean {
-    // Basic E.164 validation
-    return /^\+?[1-9]\d{1,14}$/.test(phone);
-  }
-
-  /**
-   * Validate message content
-   */
-  protected validateMessage(message: string, maxLength = 1600): boolean {
-    return Boolean(message && message.length > 0 && message.length <= maxLength);
   }
 }

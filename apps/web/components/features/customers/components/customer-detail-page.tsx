@@ -52,6 +52,7 @@ import {
   formatDate,
   formatPhoneForWhatsApp,
   getErrorMessage,
+  getInitials,
   recordRecentView,
 } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
@@ -65,12 +66,6 @@ interface CustomerDetailPageProps {
 }
 
 const DEFAULT_TAB: CustomerDetailTab = 'quotes';
-
-const getInitials = (firstName?: string, lastName?: string): string => {
-  const first = firstName?.charAt(0) || '';
-  const last = lastName?.charAt(0) || '';
-  return `${first}${last}`.toUpperCase() || 'NA';
-};
 
 // ============================================================================
 // Skeleton Components
@@ -324,7 +319,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
         <div className="flex items-center gap-4">
           <Avatar size="xl">
             <AvatarFallback size="xl" name={customerFullName}>
-              {getInitials(customer.firstName, customer.lastName)}
+              {getInitials(`${customer.firstName} ${customer.lastName ?? ''}`.trim())}
             </AvatarFallback>
           </Avatar>
           <div>
@@ -473,10 +468,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                 <div className="mt-1 flex items-center gap-2">
                   <Avatar size="xs" className="size-6">
                     <AvatarFallback size="xs" name={customer.creatorName || 'Self'}>
-                      {getInitials(
-                        customer.creatorName?.split(' ')[0],
-                        customer.creatorName?.split(' ')[1],
-                      )}
+                      {getInitials(customer.creatorName || 'Self')}
                     </AvatarFallback>
                   </Avatar>
                   <span className="text-sm text-foreground">{customer.creatorName || 'Self'}</span>

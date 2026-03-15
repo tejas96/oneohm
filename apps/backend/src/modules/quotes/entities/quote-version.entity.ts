@@ -5,7 +5,7 @@ import {
   ProjectType,
   QuoteConfigSnapshot,
   SystemType,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
 import { QuoteLineItemEntity } from './quote-line-item.entity';

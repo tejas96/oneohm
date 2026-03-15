@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { ProjectVendorStatus } from '@oneohm-epc/shared-types';
+import { ProjectVendorStatus } from '@oneohm-epc/shared/types';
 
 import { ProjectRepository } from '../../projects/repositories/project.repository';
 import { CreateProjectVendorDto, UpdateProjectVendorDto } from '../dto';

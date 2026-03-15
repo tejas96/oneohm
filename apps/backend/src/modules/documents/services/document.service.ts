@@ -2,7 +2,7 @@
 // IMPORTS
 // ============================================
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { DocumentStatus, DocumentType } from '@oneohm-epc/shared-types';
+import { DocumentStatus, DocumentType } from '@oneohm-epc/shared/types';
 import { DataSource } from 'typeorm';
 
 import {

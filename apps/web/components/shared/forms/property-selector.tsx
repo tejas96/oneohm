@@ -1,6 +1,6 @@
 'use client';
 
-import { PropertyType, LeadTemperature } from '@oneohm-epc/shared-types';
+import { PropertyType, LeadTemperature } from '@oneohm-epc/shared/types';
 import { Building2, Home, Factory, Sprout, GraduationCap } from 'lucide-react';
 import * as React from 'react';
 

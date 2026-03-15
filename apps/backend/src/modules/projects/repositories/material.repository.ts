@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { MaterialStatus } from '@oneohm-epc/shared-types';
+import { MaterialStatus } from '@oneohm-epc/shared/types';
 import { IsNull, Repository } from 'typeorm';
 
 import { ProjectMaterialEntity } from '../entities/project-material.entity';

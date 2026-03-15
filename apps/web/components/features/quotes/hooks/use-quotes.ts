@@ -1,11 +1,12 @@
 'use client';
 
 import {
+  type PaginationMeta,
   QuoteStatus,
   type QuoteSortField,
   type SortOrder,
   type SystemType,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import {
   useQuery,
   useMutation,
@@ -79,12 +80,7 @@ export interface QuoteListItem {
   createdBy: string;
 }
 
-export interface PaginationMeta {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
+export type { PaginationMeta };
 
 export interface QuoteListResponse {
   data: QuoteListItem[];

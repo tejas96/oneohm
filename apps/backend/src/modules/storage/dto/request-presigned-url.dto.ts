@@ -7,6 +7,7 @@
  */
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { FileCategory } from '@oneohm-epc/shared/types';
 import {
   IsEnum,
   IsNotEmpty,
@@ -19,17 +20,7 @@ import {
   Min,
 } from 'class-validator';
 
-/**
- * Supported file categories for organization
- */
-export enum FileCategory {
-  SITE_VISIT = 'site-visit',
-  DOCUMENT = 'document',
-  PROFILE = 'profile',
-  QUOTE = 'quote',
-  PROJECT = 'project',
-  OTHER = 'other',
-}
+export { FileCategory };
 
 /**
  * Request DTO for getting a presigned upload URL
@@ -124,28 +115,6 @@ export class PresignedUploadUrlResponseDto {
     example: '2024-01-10T12:00:00Z',
   })
   expiresAt!: Date;
-}
-
-/**
- * Request DTO for getting a presigned download URL
- */
-export class RequestDownloadUrlDto {
-  @ApiProperty({
-    description: 'File key in storage',
-    example: 'site-visit/550e8400.../abc123.jpg',
-  })
-  @IsString()
-  @IsNotEmpty()
-  fileKey!: string;
-
-  @ApiPropertyOptional({
-    description: 'Custom filename for download',
-    example: 'site_visit_photo.jpg',
-  })
-  @IsString()
-  @IsOptional()
-  @MaxLength(255)
-  downloadFilename?: string;
 }
 
 /**

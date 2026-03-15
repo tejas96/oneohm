@@ -174,6 +174,7 @@
     "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
     "tslib": "^2.8.1",
+    "tsup": "^8.5.1",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.46.4",
     "webpack-cli": "^5.1.4"

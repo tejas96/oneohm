@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SubsidySchemeType, ProjectType, SubsidyTier } from '@oneohm-epc/shared-types';
+import { SubsidySchemeType, ProjectType, SubsidyTier } from '@oneohm-epc/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../../common/utils';

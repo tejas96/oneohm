@@ -1,6 +1,6 @@
 'use client';
 
-import { QuoteStatus } from '@oneohm-epc/shared-types';
+import { QuoteStatus } from '@oneohm-epc/shared/types';
 import { ChevronDown } from 'lucide-react';
 import React, { useState } from 'react';
 

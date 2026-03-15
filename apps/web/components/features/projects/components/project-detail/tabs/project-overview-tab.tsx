@@ -1,6 +1,6 @@
 'use client';
 
-import { ProjectStatus } from '@oneohm-epc/shared-types';
+import { ProjectStatus } from '@oneohm-epc/shared/types';
 import { Banknote, Calendar, Crown, MapPin, UserPlus, Users, Zap } from 'lucide-react';
 import Link from 'next/link';
 import React, { useCallback, useMemo, useState } from 'react';

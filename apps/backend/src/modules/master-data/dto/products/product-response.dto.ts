@@ -4,7 +4,7 @@ import {
   ProductType,
   UnitOfMeasure,
   ProductSpecifications,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { Expose, Type } from 'class-transformer';
 
 /**

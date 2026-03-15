@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { TaskStatus } from '@oneohm-epc/shared-types';
+import { TaskStatus } from '@oneohm-epc/shared/types';
 
 import { type AddTeamMemberDto, type UpdateTeamMemberDto } from '../dto/project-team';
 import { type ProjectTeamMemberEntity } from '../entities';

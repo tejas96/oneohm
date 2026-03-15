@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ApprovalRequestPriority, ApprovalRequestStatus } from '@oneohm-epc/shared-types';
+import { ApprovalRequestPriority, ApprovalRequestStatus } from '@oneohm-epc/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../../common/utils';

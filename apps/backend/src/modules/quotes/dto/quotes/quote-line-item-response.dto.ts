@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ItemCategory } from '@oneohm-epc/shared-types';
+import { ItemCategory } from '@oneohm-epc/shared/types';
 import { Expose, Transform } from 'class-transformer';
 
 import { toNum } from '../../../../common/utils';

@@ -10,9 +10,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { IntegrationProvider, IntegrationCategory } from '@oneohm-epc/shared-types';
-import { OrganizationContext } from '@oneohm-epc/shared-utils';
+import { IntegrationProvider, IntegrationCategory } from '@oneohm-epc/shared/types';
 
+import { OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';

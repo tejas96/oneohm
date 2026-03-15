@@ -9,7 +9,7 @@ import {
   type MyTasksGroup,
   type MyTasksProject,
   type MyTasksSummary,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import {
   useQuery,
   useMutation,

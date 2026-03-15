@@ -1,6 +1,6 @@
 'use client';
 
-import type { FileAttachment } from '@oneohm-epc/shared-types';
+import type { FileAttachment } from '@oneohm-epc/shared/types';
 import { ClipboardCheck, Download, Eye, FileImage, FileText, X } from 'lucide-react';
 import React, { useCallback, useState } from 'react';
 

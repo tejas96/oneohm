@@ -1,6 +1,6 @@
 'use client';
 
-import type { TaskActivityEntry } from '@oneohm-epc/shared-types';
+import type { TaskActivityEntry } from '@oneohm-epc/shared/types';
 import { MessageSquare } from 'lucide-react';
 import { useCallback, useState } from 'react';
 

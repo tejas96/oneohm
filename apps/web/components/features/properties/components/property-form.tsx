@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ConnectionType, PropertyType, type PropertyDocument } from '@oneohm-epc/shared-types';
+import { ConnectionType, PropertyType, type PropertyDocument } from '@oneohm-epc/shared/types';
 import { ArrowLeft, Banknote, FileText, Home, MapPin, Thermometer, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

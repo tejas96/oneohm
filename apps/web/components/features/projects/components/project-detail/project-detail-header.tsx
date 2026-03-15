@@ -1,6 +1,6 @@
 'use client';
 
-import { ProjectStatus } from '@oneohm-epc/shared-types';
+import { ProjectStatus } from '@oneohm-epc/shared/types';
 import { Pencil, KanbanSquare } from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';

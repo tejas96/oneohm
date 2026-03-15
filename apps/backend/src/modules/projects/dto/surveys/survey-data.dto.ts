@@ -4,7 +4,7 @@ import {
   RoofOrientation,
   type ElectricalDetails,
   type ShadingAnalysis,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import { IsEnum, IsNumber, IsObject, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 

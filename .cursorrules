@@ -12,11 +12,11 @@
 **Tech Stack:**
 - Backend: NestJS + TypeORM + PostgreSQL
 - Frontend: Next.js 15 + React 19 + TanStack Query
-- Shared: `@oneohm-epc/shared-types` + `@oneohm-epc/shared-utils`
+- Shared: `@oneohm-epc/shared` (sub-paths: `/types`, `/utils`, `/schemas`, `/constants`)
 
 **Core Rules:**
 - Repository pattern — no TypeORM in services
-- Shared types go in `@shared-types`, app-specific types stay in app
+- Shared types go in `@oneohm-epc/shared/types`, app-specific types stay in app
 - Multi-org support — always filter by organizationId
 - Pagination required — never fetch all data
 - Soft delete — always check `deletedAt IS NULL`

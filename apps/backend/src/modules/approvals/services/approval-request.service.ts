@@ -5,7 +5,7 @@ import {
   ApprovalDecision,
   ApprovalRequestStatus,
   ApprovalRequirementType,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 
 import type { ApprovalActionDto, CreateApprovalRequestDto, UpdateApprovalRequestDto } from '../dto';
 import type { ApprovalRequestEntity, ApprovalStageEntity } from '../entities';

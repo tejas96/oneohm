@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CommissionStatus } from '@oneohm-epc/shared-types';
+import { CommissionStatus } from '@oneohm-epc/shared/types';
 import { Exclude, Expose, Transform } from 'class-transformer';
 
 import { toNum } from '../../../common/utils';

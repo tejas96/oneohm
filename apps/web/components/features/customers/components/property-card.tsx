@@ -5,7 +5,7 @@ import {
   PropertyStatus,
   PropertyType,
   QuoteStatus,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { CircleDollarSign, Eye, FileText, Folder, MoreVertical, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

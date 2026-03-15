@@ -11,7 +11,7 @@ import {
   type PricingBreakdown,
   ProjectType,
   QuoteStatus,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import { DataSource } from 'typeorm';
 
 import {

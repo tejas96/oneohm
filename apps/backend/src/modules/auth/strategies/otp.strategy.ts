@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { UserStatus } from '@oneohm-epc/shared-types';
+import { UserStatus } from '@oneohm-epc/shared/types';
 import { Request } from 'express';
 import { Strategy } from 'passport-custom';
 

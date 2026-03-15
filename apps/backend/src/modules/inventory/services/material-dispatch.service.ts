@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { MaterialDispatchStatus } from '@oneohm-epc/shared-types';
+import { MaterialDispatchStatus } from '@oneohm-epc/shared/types';
 
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { ProjectRepository } from '../../projects/repositories/project.repository';

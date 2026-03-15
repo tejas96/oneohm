@@ -1,35 +1,5 @@
-import { MilestoneType } from '@oneohm-epc/shared-types';
-import { z } from 'zod';
-
-const checklistItemSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  isCompleted: z.boolean(),
-  order: z.number(),
-});
-
-export type ChecklistItem = z.infer<typeof checklistItemSchema>;
-
-export const workflowStepSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(255, 'Name must be at most 255 characters'),
-  code: z.string().min(1, 'Code is required').max(100, 'Code must be at most 100 characters'),
-  description: z.string().optional(),
-  type: z.string().optional(),
-  defaultRoleCode: z.string().optional(),
-  defaultDepartment: z.string().optional(),
-  defaultMilestoneType: z.nativeEnum(MilestoneType).nullable().optional(),
-  sequenceOrder: z.coerce.number().int().min(1, 'Sequence order must be at least 1'),
-  estimatedDurationHours: z.coerce
-    .number()
-    .int()
-    .min(0, 'Duration must be at least 0')
-    .optional()
-    .or(z.literal('')),
-  isMandatory: z.boolean().default(true),
-  canRunParallel: z.boolean().default(false),
-  dependsOnTaskCodes: z.array(z.string()).optional().default([]),
-  checklistTemplate: z.array(checklistItemSchema).optional().default([]),
-  allowedTransitions: z.record(z.string(), z.array(z.string())).optional().default({}),
-});
-
-export type WorkflowStepFormValues = z.input<typeof workflowStepSchema>;
+export {
+  workflowStepSchema,
+  type WorkflowStepFormValues,
+  type ChecklistItem,
+} from '@oneohm-epc/shared/schemas';

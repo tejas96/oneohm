@@ -10,7 +10,7 @@ import {
   CalculatedSubsidy,
   QuoteConfigSnapshot,
   ValidationWarning,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 
 import { InstallationPricing } from '../../master-data/entities/installation-pricing.entity';
 import { ProductEntity } from '../../master-data/entities/product.entity';

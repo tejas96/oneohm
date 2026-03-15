@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { UserStatus } from '@oneohm-epc/shared-types';
+import { UserStatus } from '@oneohm-epc/shared/types';
 import * as bcrypt from 'bcrypt';
 
 import { AppModule } from '../../app.module';

@@ -1,6 +1,6 @@
 'use client';
 
-import { QuoteStatus } from '@oneohm-epc/shared-types';
+import { QuoteStatus } from '@oneohm-epc/shared/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 

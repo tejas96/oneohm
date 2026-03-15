@@ -6,7 +6,7 @@ import {
   PropertyStatus,
   QuoteStatus,
   MilestoneType,
-} from '@oneohm-epc/shared-types';
+} from '@oneohm-epc/shared/types';
 import {
   AlertCircle,
   AlertTriangle,
