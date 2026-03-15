@@ -95,7 +95,9 @@ export function UserMenu({ className }: UserMenuProps) {
         >
           {/* Avatar */}
           <Avatar size="sm">
-            <AvatarFallback>{getInitials(`${user.firstName} ${user.lastName ?? ''}`.trim())}</AvatarFallback>
+            <AvatarFallback>
+              {getInitials(`${user.firstName} ${user.lastName ?? ''}`.trim())}
+            </AvatarFallback>
           </Avatar>
           {/* Chevron - Desktop only */}
           <ChevronDown className="size-icon-xs text-foreground-tertiary hidden lg:block" />
@@ -108,7 +110,9 @@ export function UserMenu({ className }: UserMenuProps) {
           <div className="flex items-center gap-3 py-1">
             {/* Avatar */}
             <Avatar size="default">
-              <AvatarFallback>{getInitials(`${user.firstName} ${user.lastName ?? ''}`.trim())}</AvatarFallback>
+              <AvatarFallback>
+                {getInitials(`${user.firstName} ${user.lastName ?? ''}`.trim())}
+              </AvatarFallback>
             </Avatar>
             {/* Name & Email */}
             <div className="flex flex-col space-y-0.5">

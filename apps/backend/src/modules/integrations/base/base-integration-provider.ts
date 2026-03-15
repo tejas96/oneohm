@@ -70,5 +70,4 @@ export abstract class BaseIntegrationProvider implements IBaseIntegration {
   protected cleanPhone(phone: string): string {
     return phone.replace(/^\+/, '');
   }
-
 }

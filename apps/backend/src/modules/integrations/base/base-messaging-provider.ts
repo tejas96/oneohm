@@ -45,5 +45,4 @@ export abstract class BaseMessagingProvider extends BaseIntegrationProvider {
       ...errorData,
     };
   }
-
 }
