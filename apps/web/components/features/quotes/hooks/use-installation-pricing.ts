@@ -1,6 +1,5 @@
 'use client';
 
-import { type ProjectType } from '@oneohm-epc/shared/types';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
@@ -25,14 +24,14 @@ export interface InstallationPricingData {
 }
 
 /**
- * Fetches installation pricing from the backend for the given system size
- * and project type, debounced by 1 second to avoid excessive API calls
- * while the user adjusts the system size slider/stepper.
+ * Fetches installation pricing from the backend for the given system size,
+ * debounced by 1 second to avoid excessive API calls while the user
+ * adjusts the system size slider/stepper.
  *
  * The backend returns raw entity data where decimal columns are strings
  * (PostgreSQL/TypeORM behavior), so we coerce to number here.
  */
-export function useInstallationPricing(systemSizeKw: number, projectType: ProjectType) {
+export function useInstallationPricing(systemSizeKw: number, _projectType?: string) {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
 
@@ -44,12 +43,12 @@ export function useInstallationPricing(systemSizeKw: number, projectType: Projec
   }, [systemSizeKw]);
 
   const query = useQuery<InstallationPricingData | null>({
-    queryKey: ['installation-pricing', organizationId, debouncedSize, projectType],
+    queryKey: ['installation-pricing', organizationId, debouncedSize],
     queryFn: async () => {
       const { data } = await apiClient.get<InstallationPricingRaw | null>(
         '/quote-calculator/installation-pricing',
         {
-          params: { systemSizeKw: debouncedSize, projectType },
+          params: { systemSizeKw: debouncedSize },
           headers: { 'X-Organization-Id': organizationId },
         },
       );

@@ -3,23 +3,21 @@ import type { PanelTechnology } from '../types/enums/product.enum';
 export interface ProductOptionInput {
   id: string;
   name: string;
-  brand?: string;
+  brandId?: string;
+  brand?: { id: string; name: string } | string;
   specifications?: {
-    panel?: {
-      wattage?: number;
-      technology?: string;
-      minWattage?: number;
-      maxWattage?: number;
-    };
-    inverter?: {
-      capacityKw?: number;
-      phaseType?: string;
-    };
-    structure?: {
-      structureType?: string;
-      material?: string;
-      costMultiplier?: number;
-    };
+    wattage?: number;
+    technology?: string;
+    min_wattage?: number;
+    max_wattage?: number;
+    is_dcr?: boolean;
+    efficiency?: number;
+    capacity_kw?: number;
+    phase_type?: string;
+    voltage?: string;
+    structure_type?: string;
+    material?: string;
+    weight_kg?: number;
   };
 }
 
@@ -56,6 +54,12 @@ export interface InverterCapacityOption {
   label: string;
 }
 
+function getBrandName(product: ProductOptionInput): string {
+  if (typeof product.brand === 'string') return product.brand || 'Unknown';
+  if (product.brand && typeof product.brand === 'object') return product.brand.name || 'Unknown';
+  return 'Unknown';
+}
+
 export function derivePanelBrands(products: ProductOptionInput[]): PanelBrandOption[] {
   const brandMap = new Map<
     string,
@@ -69,11 +73,11 @@ export function derivePanelBrands(products: ProductOptionInput[]): PanelBrandOpt
   >();
 
   for (const product of products) {
-    const brand = product.brand || 'Unknown';
-    const wattage = product.specifications?.panel?.wattage || 0;
-    const technology = product.specifications?.panel?.technology;
-    const minWattage = product.specifications?.panel?.minWattage || wattage;
-    const maxWattage = product.specifications?.panel?.maxWattage || wattage;
+    const brand = getBrandName(product);
+    const wattage = product.specifications?.wattage || 0;
+    const technology = product.specifications?.technology;
+    const minWattage = product.specifications?.min_wattage || wattage;
+    const maxWattage = product.specifications?.max_wattage || wattage;
 
     if (!brandMap.has(brand)) {
       brandMap.set(brand, { wattages: [], variants: new Map() });
@@ -130,8 +134,8 @@ export function deriveInverterBrands(products: ProductOptionInput[]): InverterBr
   const brandMap = new Map<string, number[]>();
 
   for (const product of products) {
-    const brand = product.brand || 'Unknown';
-    const capacity = product.specifications?.inverter?.capacityKw || 0;
+    const brand = getBrandName(product);
+    const capacity = product.specifications?.capacity_kw || 0;
 
     if (!brandMap.has(brand)) brandMap.set(brand, []);
     if (capacity > 0) brandMap.get(brand)!.push(capacity);
@@ -157,12 +161,12 @@ export function deriveStructureTypes(products: ProductOptionInput[]): StructureT
   const structureMap = new Map<string, StructureTypeOption>();
 
   for (const product of products) {
-    const st = product.specifications?.structure?.structureType;
+    const st = product.specifications?.structure_type;
     if (st && !structureMap.has(st)) {
       structureMap.set(st, {
         value: st,
         label: product.name,
-        material: product.specifications?.structure?.material,
+        material: product.specifications?.material,
       });
     }
   }
@@ -178,15 +182,18 @@ export function getInverterCapacities(
   let filtered = products;
 
   if (phaseType) {
-    filtered = filtered.filter((p) => p.specifications?.inverter?.phaseType === phaseType);
+    filtered = filtered.filter((p) => p.specifications?.phase_type === phaseType);
   }
   if (brand) {
-    filtered = filtered.filter((p) => p.brand?.toLowerCase() === brand.toLowerCase());
+    filtered = filtered.filter((p) => {
+      const bName = getBrandName(p);
+      return bName.toLowerCase() === brand.toLowerCase();
+    });
   }
 
   const capacities = new Set<number>();
   for (const p of filtered) {
-    const cap = p.specifications?.inverter?.capacityKw;
+    const cap = p.specifications?.capacity_kw;
     if (cap && cap > 0) capacities.add(cap);
   }
 

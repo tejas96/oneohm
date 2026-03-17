@@ -13,7 +13,7 @@ import { useOrgContext } from './use-org-context';
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
 
-interface UseResourceMutationsReturn<T extends { id: string }> {
+export interface UseResourceMutationsReturn<T extends { id: string }> {
   create: UseMutationResult<T, unknown, Partial<T>>;
   update: UseMutationResult<T, unknown, { id: string; data: Partial<T> }>;
   remove: UseMutationResult<void, unknown, string>;

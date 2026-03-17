@@ -7,6 +7,7 @@ import { AuthProvider } from './auth-provider';
 import { QueryProvider } from './query-provider';
 
 import { ErrorBoundary } from '@/components/shared/feedback/error-boundary';
+import { TooltipProvider } from '@/components/ui';
 
 interface ProvidersProps {
   children: ReactNode;
@@ -19,22 +20,24 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <ErrorBoundary>
-      <QueryProvider>
-        <AuthProvider>
-          {children}
-          <Toaster
-            position="top-right"
-            richColors
-            closeButton
-            toastOptions={{
-              duration: 4000,
-              style: {
-                fontFamily: 'Inter, system-ui, sans-serif',
-              },
-            }}
-          />
-        </AuthProvider>
-      </QueryProvider>
+      <TooltipProvider delayDuration={200}>
+        <QueryProvider>
+          <AuthProvider>
+            {children}
+            <Toaster
+              position="top-right"
+              richColors
+              closeButton
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                },
+              }}
+            />
+          </AuthProvider>
+        </QueryProvider>
+      </TooltipProvider>
     </ErrorBoundary>
   );
 }

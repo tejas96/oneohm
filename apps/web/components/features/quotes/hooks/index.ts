@@ -17,12 +17,7 @@ export * from './use-quotes';
 export { quoteDetailKeys, useQuoteDetail, useQuoteVersion } from './use-quote-detail';
 
 // Types
-export type {
-  QuoteDetail,
-  QuoteVersionDetail,
-  QuoteLineItemDetail,
-  QuotePaymentMilestone,
-} from './types';
+export type { QuoteDetail, QuoteVersionDetail, QuotePaymentMilestone } from './types';
 
 // Quote builder hooks
 export { useQuoteConfig } from './use-quote-config';

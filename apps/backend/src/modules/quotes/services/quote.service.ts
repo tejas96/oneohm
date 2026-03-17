@@ -5,7 +5,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  type GstConfig,
   PaymentMilestone,
   type PaymentMilestoneConfig,
   type PricingBreakdown,
@@ -20,10 +19,9 @@ import {
 } from '../../master-data/repositories';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { CreateQuoteDto, QuoteQueryDto, UpdateQuoteDto, UpdateQuoteStatusDto } from '../dto';
-import { QuoteLineItemEntity } from '../entities/quote-line-item.entity';
 import { QuoteVersionEntity } from '../entities/quote-version.entity';
 import { QuoteEntity } from '../entities/quote.entity';
-import { QuoteLineItemRepository, QuoteRepository, QuoteVersionRepository } from '../repositories';
+import { QuoteRepository, QuoteVersionRepository } from '../repositories';
 
 /**
  * Quote Service
@@ -34,7 +32,6 @@ export class QuoteService {
   constructor(
     private readonly quoteRepository: QuoteRepository,
     private readonly quoteVersionRepository: QuoteVersionRepository,
-    private readonly lineItemRepository: QuoteLineItemRepository,
     private readonly organizationRepository: OrganizationRepository,
     private readonly quoteConfigRepo: QuoteConfigurationRepository,
     private readonly subsidyConfigRepo: SubsidyConfigurationRepository,
@@ -70,7 +67,6 @@ export class QuoteService {
 
     const discount = createDto.discountAmount || 0;
 
-    // Use pre-calculated pricing if provided, otherwise recalculate from line items
     let pricingBreakdown: PricingBreakdown;
     let finalPrice: number;
 
@@ -78,13 +74,7 @@ export class QuoteService {
       pricingBreakdown = createDto.pricingBreakdown;
       finalPrice = createDto.finalPrice ?? pricingBreakdown.totalPrice - discount;
     } else {
-      const calculated = this.calculatePricing(
-        createDto.lineItems,
-        discount,
-        quoteConfig.gstConfig,
-      );
-      pricingBreakdown = calculated.pricingBreakdown;
-      finalPrice = calculated.finalPrice;
+      throw new BadRequestException('pricingBreakdown is required');
     }
 
     // Subsidy
@@ -111,7 +101,6 @@ export class QuoteService {
     const quoteId = await this.dataSource.transaction(async (manager) => {
       const quoteRepo = manager.getRepository(QuoteEntity);
       const versionRepo = manager.getRepository(QuoteVersionEntity);
-      const lineItemRepo = manager.getRepository(QuoteLineItemEntity);
 
       const quoteNumber = await this.quoteRepository.generateQuoteNumber(org.code, manager);
 
@@ -133,7 +122,7 @@ export class QuoteService {
         }),
       );
 
-      const version = await versionRepo.save(
+      await versionRepo.save(
         versionRepo.create({
           quoteId: quote.id,
           versionNumber: 1,
@@ -153,28 +142,6 @@ export class QuoteService {
           createdBy,
         }),
       );
-
-      const lineItemsData = createDto.lineItems.map((item, index) =>
-        lineItemRepo.create({
-          quoteVersionId: version.id,
-          productId: item.productId,
-          itemCategory: item.itemCategory,
-          itemName: item.itemName,
-          itemDescription: item.itemDescription,
-          specifications: item.specifications,
-          quantity: item.quantity,
-          unitOfMeasure: item.unitOfMeasure,
-          unitPrice: item.unitPrice,
-          lineTotal: Math.round(item.quantity * item.unitPrice * 100) / 100,
-          taxRate: item.taxRate,
-          taxAmount: item.taxRate
-            ? Math.round(((item.quantity * item.unitPrice * item.taxRate) / 100) * 100) / 100
-            : 0,
-          displayOrder: item.displayOrder !== undefined ? item.displayOrder : index,
-        }),
-      );
-
-      await lineItemRepo.save(lineItemsData);
 
       return quote.id;
     });
@@ -307,15 +274,6 @@ export class QuoteService {
     if (updateDto.pricingBreakdown) {
       pricingBreakdown = updateDto.pricingBreakdown;
       finalPrice = pricingBreakdown.totalPrice - (pricingBreakdown.discountAmount ?? 0);
-    } else if (updateDto.lineItems) {
-      const discountAmount = currentVersion.pricingBreakdown?.discountAmount ?? 0;
-      const calculated = this.calculatePricing(
-        updateDto.lineItems,
-        discountAmount,
-        quoteConfig.gstConfig,
-      );
-      pricingBreakdown = calculated.pricingBreakdown;
-      finalPrice = calculated.finalPrice;
     } else {
       pricingBreakdown = currentVersion.pricingBreakdown;
       finalPrice = currentVersion.finalPrice;
@@ -346,7 +304,6 @@ export class QuoteService {
     await this.dataSource.transaction(async (manager) => {
       const quoteRepo = manager.getRepository(QuoteEntity);
       const versionRepo = manager.getRepository(QuoteVersionEntity);
-      const lineItemRepo = manager.getRepository(QuoteLineItemEntity);
 
       // Only update identity/lifecycle fields on the quotes table
       await quoteRepo.update(
@@ -366,7 +323,7 @@ export class QuoteService {
       await versionRepo.update({ quoteId: quote.id, isCurrent: true }, { isCurrent: false });
 
       // Create new version with all calculation data
-      const newVersion = await versionRepo.save(
+      await versionRepo.save(
         versionRepo.create({
           quoteId: quote.id,
           versionNumber: newVersionNumber,
@@ -395,52 +352,6 @@ export class QuoteService {
           createdBy: updatedBy,
         }),
       );
-
-      // Create line items for new version
-      if (updateDto.lineItems) {
-        const lineItemsData = updateDto.lineItems.map((item, index) =>
-          lineItemRepo.create({
-            quoteVersionId: newVersion.id,
-            productId: item.productId,
-            itemCategory: item.itemCategory,
-            itemName: item.itemName,
-            itemDescription: item.itemDescription,
-            specifications: item.specifications,
-            quantity: item.quantity,
-            unitOfMeasure: item.unitOfMeasure,
-            unitPrice: item.unitPrice,
-            lineTotal: Math.round(item.quantity * item.unitPrice * 100) / 100,
-            taxRate: item.taxRate,
-            taxAmount: item.taxRate
-              ? Math.round(((item.quantity * item.unitPrice * item.taxRate) / 100) * 100) / 100
-              : 0,
-            displayOrder: item.displayOrder !== undefined ? item.displayOrder : index,
-          }),
-        );
-        await lineItemRepo.save(lineItemsData);
-      } else if (currentVersion) {
-        const oldLineItems = await lineItemRepo.find({
-          where: { quoteVersionId: currentVersion.id },
-        });
-        const newLineItemsData = oldLineItems.map((item) =>
-          lineItemRepo.create({
-            quoteVersionId: newVersion.id,
-            productId: item.productId,
-            itemCategory: item.itemCategory,
-            itemName: item.itemName,
-            itemDescription: item.itemDescription,
-            specifications: item.specifications,
-            quantity: item.quantity,
-            unitOfMeasure: item.unitOfMeasure,
-            unitPrice: item.unitPrice,
-            lineTotal: item.lineTotal,
-            taxRate: item.taxRate,
-            taxAmount: item.taxAmount,
-            displayOrder: item.displayOrder,
-          }),
-        );
-        await lineItemRepo.save(newLineItemsData);
-      }
     });
 
     return this.quoteRepository.findById(id, organizationId);
@@ -603,41 +514,5 @@ export class QuoteService {
 
     const maxAmount = Number(subsidyConfig.maxSubsidyAmount) || Infinity;
     return Math.min(totalAmount, maxAmount);
-  }
-
-  /**
-   * Calculate pricing from line items using org-level GST config.
-   */
-  private calculatePricing(
-    lineItems: Array<{ quantity: number; unitPrice: number }>,
-    discountAmount: number,
-    gstConfig: GstConfig,
-  ): { pricingBreakdown: PricingBreakdown; finalPrice: number } {
-    const basePrice = lineItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-
-    const portion1 = (basePrice * gstConfig.rate1Percentage) / 100;
-    const portion2 = (basePrice * gstConfig.rate2Percentage) / 100;
-
-    const gstOnEquipment = (portion1 * gstConfig.rate1) / 100;
-    const gstOnServices = (portion2 * gstConfig.rate2) / 100;
-    const totalGst = gstOnEquipment + gstOnServices;
-
-    const totalPrice = basePrice + totalGst;
-    const finalPrice = totalPrice - discountAmount;
-
-    const result = {
-      pricingBreakdown: {
-        basePrice: Math.round(basePrice * 100) / 100,
-        gst5OnEquipment: Math.round(gstOnEquipment * 100) / 100,
-        gst18OnServices: Math.round(gstOnServices * 100) / 100,
-        totalGst: Math.round(totalGst * 100) / 100,
-        totalPrice: Math.round(totalPrice * 100) / 100,
-        discountAmount: Math.round(discountAmount * 100) / 100,
-        subsidyAmount: 0,
-        isSubsidyApplicable: false,
-      },
-      finalPrice: Math.round(finalPrice * 100) / 100,
-    };
-    return result;
   }
 }

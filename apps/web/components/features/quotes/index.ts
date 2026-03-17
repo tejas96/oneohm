@@ -37,7 +37,6 @@ export type {
   UseQuoteFormLogicReturn,
   QuoteDetail,
   QuoteVersionDetail,
-  QuoteLineItemDetail,
   QuotePaymentMilestone,
 } from './hooks';
 

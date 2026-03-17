@@ -14,6 +14,9 @@ export { AuthGuard, PermissionGuard } from './guards';
 export { Alert, alertVariants } from './alerts';
 export type { AlertProps } from './alerts';
 
+// Forms
+export { FieldLabel } from './forms';
+
 // Data Table
 export {
   Pagination,

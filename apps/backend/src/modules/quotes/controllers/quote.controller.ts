@@ -53,7 +53,7 @@ export class QuoteController {
   @Post()
   @ApiCreate({
     summary: 'Create a new quote',
-    description: 'Creates a new quote with initial version and line items',
+    description: 'Creates a new quote with initial version',
     responseType: QuoteResponseDto,
   })
   async create(
@@ -102,7 +102,7 @@ export class QuoteController {
   @Get(':id')
   @ApiReadOne({
     summary: 'Get quote by ID',
-    description: 'Retrieve a specific quote with all versions and line items',
+    description: 'Retrieve a specific quote with all versions',
     responseType: QuoteResponseDto,
   })
   async findOne(
@@ -123,7 +123,7 @@ export class QuoteController {
   @Get(':id/versions/:versionId')
   @ApiReadOne({
     summary: 'Get quote version by ID',
-    description: 'Retrieve a specific version of a quote with all its line items',
+    description: 'Retrieve a specific version of a quote',
     responseType: QuoteVersionResponseDto,
   })
   async findVersion(

@@ -1,0 +1,57 @@
+'use client';
+
+import { ProjectType } from '@oneohm-epc/shared/types';
+
+import { useResourceMutations, useResourceSubList } from '../core';
+
+export interface ProductPrice {
+  id: string;
+  organizationId: string;
+  productId: string;
+  projectType?: ProjectType;
+  unitPrice: number;
+  costMultiplier: number;
+  gstRate: number;
+  currency: string;
+  effectiveFrom: string;
+  effectiveTo?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function useProductPrices(productId: string) {
+  return useResourceSubList<ProductPrice>(
+    {
+      resource: 'product-prices',
+      endpoint: '/products/{parentId}/prices',
+      parentResource: 'products',
+      parentIdInPath: true,
+    },
+    productId,
+  );
+}
+
+export function useProductPriceMutations(productId: string) {
+  return useResourceMutations<ProductPrice>({
+    resource: 'product-prices',
+    endpoint: `/products/${productId}/prices`,
+    invalidateRelated: [
+      'products-admin',
+      'products-panels',
+      'products-inverters',
+      'products-structures',
+    ],
+    toast: {
+      create: { success: 'Price added', error: 'Failed to add price' },
+      update: { success: 'Price updated', error: 'Failed to update price' },
+      delete: { success: 'Price deactivated', error: 'Failed to deactivate price' },
+    },
+    customActions: {
+      deactivate: {
+        method: 'PATCH',
+        path: (id) => `/products/${productId}/prices/${id}/deactivate`,
+      },
+    },
+  });
+}

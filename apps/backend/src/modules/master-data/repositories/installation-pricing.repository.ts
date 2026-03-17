@@ -1,14 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ProjectType } from '@oneohm-epc/shared/types';
 import { Repository } from 'typeorm';
 
 import { InstallationPricing } from '../entities/installation-pricing.entity';
 
-/**
- * Installation Pricing Repository
- * Handles database operations for installation pricing configurations
- */
 @Injectable()
 export class InstallationPricingRepository {
   constructor(
@@ -16,9 +11,6 @@ export class InstallationPricingRepository {
     private readonly repository: Repository<InstallationPricing>,
   ) {}
 
-  /**
-   * Create a new installation pricing configuration
-   */
   async create(
     organizationId: string,
     data: Partial<InstallationPricing>,
@@ -31,67 +23,26 @@ export class InstallationPricingRepository {
   }
 
   /**
-   * Find installation pricing for a specific system size
-   * This is the main method used by the quote calculator
-   *
-   * Fallback Logic:
-   * - First tries to find pricing for the exact project type
-   * - If not found, falls back to 'residential' pricing (same for all project types)
-   *
-   * Note: System size is rounded UP to the nearest integer to match pricing tiers.
-   * This ensures 3.5 KW uses 4 KW pricing tier (not falling between gaps).
+   * Find installation pricing for a specific system size.
+   * System size is rounded UP to the nearest integer to match pricing tiers.
    */
   async findBySystemSize(
     organizationId: string,
     systemSizeKw: number,
-    projectType: ProjectType,
+    _projectType?: string,
     asOfDate?: Date,
   ): Promise<InstallationPricing | null> {
     const date = asOfDate || new Date();
     const dateStr: string = date.toISOString().split('T')[0] || '';
-
-    // Round UP to ensure we get pricing for the capacity needed
-    // This handles fractional system sizes: 3.5 KW → 4 KW tier, 1.2 KW → 2 KW tier
     const roundedSizeKw = Math.ceil(systemSizeKw);
 
-    // Try exact project type match first
-    let pricing = await this.findBySystemSizeAndProjectType(
-      organizationId,
-      roundedSizeKw,
-      projectType,
-      dateStr,
-    );
-
-    // Fallback to residential if not found (installation pricing is same for all project types)
-    if (!pricing && projectType !== ProjectType.RESIDENTIAL) {
-      pricing = await this.findBySystemSizeAndProjectType(
-        organizationId,
-        roundedSizeKw,
-        ProjectType.RESIDENTIAL,
-        dateStr,
-      );
-    }
-
-    return pricing;
-  }
-
-  /**
-   * Internal helper to find pricing by system size and project type
-   */
-  private async findBySystemSizeAndProjectType(
-    organizationId: string,
-    systemSizeKw: number,
-    projectType: ProjectType,
-    dateStr: string,
-  ): Promise<InstallationPricing | null> {
     return this.repository
       .createQueryBuilder('pricing')
       .where('pricing.organization_id = :organizationId', { organizationId })
-      .andWhere('pricing.project_type = :projectType', { projectType })
       .andWhere('pricing.is_active = true')
-      .andWhere('pricing.min_system_size_kw <= :size', { size: systemSizeKw })
+      .andWhere('pricing.min_system_size_kw <= :size', { size: roundedSizeKw })
       .andWhere('(pricing.max_system_size_kw IS NULL OR pricing.max_system_size_kw >= :size)', {
-        size: systemSizeKw,
+        size: roundedSizeKw,
       })
       .andWhere('(pricing.effective_from IS NULL OR pricing.effective_from <= :date)', {
         date: dateStr,
@@ -103,51 +54,52 @@ export class InstallationPricingRepository {
       .getOne();
   }
 
-  /**
-   * Find all installation pricing configurations for an organization
-   */
   async findAll(
     organizationId: string,
     filters?: {
-      projectType?: ProjectType;
       isActive?: boolean;
+      search?: string;
     },
   ): Promise<InstallationPricing[]> {
     const query = this.repository
       .createQueryBuilder('pricing')
       .where('pricing.organization_id = :organizationId', { organizationId });
 
-    if (filters?.projectType) {
-      query.andWhere('pricing.project_type = :projectType', {
-        projectType: filters.projectType,
-      });
-    }
-
     if (filters?.isActive !== undefined) {
       query.andWhere('pricing.is_active = :isActive', { isActive: filters.isActive });
+    }
+
+    if (filters?.search) {
+      const parsed = Number(filters.search);
+      if (!Number.isNaN(parsed)) {
+        query
+          .andWhere('pricing.min_system_size_kw <= :size', { size: parsed })
+          .andWhere('(pricing.max_system_size_kw IS NULL OR pricing.max_system_size_kw >= :size)', {
+            size: parsed,
+          });
+      } else {
+        query.andWhere(
+          '(CAST(pricing.min_system_size_kw AS TEXT) ILIKE :search OR CAST(pricing.max_system_size_kw AS TEXT) ILIKE :search)',
+          { search: `%${filters.search}%` },
+        );
+      }
     }
 
     return query.orderBy('pricing.min_system_size_kw', 'ASC').getMany();
   }
 
-  /**
-   * Find by ID
-   */
   async findById(id: string, organizationId: string): Promise<InstallationPricing | null> {
     return this.repository.findOne({
       where: { id, organizationId },
     });
   }
 
-  /**
-   * Update installation pricing
-   */
   async update(
     id: string,
     organizationId: string,
     data: Partial<InstallationPricing>,
   ): Promise<InstallationPricing> {
-    await this.repository.update({ id, organizationId }, data);
+    await this.repository.update({ id, organizationId }, data as any);
     const updated = await this.findById(id, organizationId);
     if (!updated) {
       throw new Error('Installation pricing not found after update');
@@ -155,16 +107,10 @@ export class InstallationPricingRepository {
     return updated;
   }
 
-  /**
-   * Delete installation pricing
-   */
   async delete(id: string, organizationId: string): Promise<void> {
     await this.repository.delete({ id, organizationId });
   }
 
-  /**
-   * Bulk create installation pricing (for initial setup)
-   */
   async bulkCreate(
     organizationId: string,
     pricingList: Partial<InstallationPricing>[],

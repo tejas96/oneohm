@@ -7,7 +7,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { QuoteDetailHeader } from './quote-detail-header';
 import { QuoteDetailTabs } from './quote-detail-tabs';
 import { QuoteComingSoonTab } from './tabs/quote-coming-soon-tab';
-import { QuoteLineItemsTab } from './tabs/quote-line-items-tab';
 import { QuoteOverviewTab } from './tabs/quote-overview-tab';
 import { QuotePaymentsTab } from './tabs/quote-payments-tab';
 import { QuoteVersionsTab } from './tabs/quote-versions-tab';
@@ -164,14 +163,6 @@ export function QuoteDetailContent({ quoteId }: QuoteDetailContentProps): React.
             quote={quote}
             viewingVersion={viewingVersion}
             isActive={activeTab === 'overview'}
-          />
-        </TabsContent>
-
-        <TabsContent value="line-items">
-          <QuoteLineItemsTab
-            quote={quote}
-            viewingVersion={viewingVersion}
-            isActive={activeTab === 'line-items'}
           />
         </TabsContent>
 

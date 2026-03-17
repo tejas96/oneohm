@@ -13,7 +13,6 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@ne
 import {
   type CalculatorInputs,
   DcrPreference,
-  ItemCategory,
   type PricingBreakdown,
   ProjectType,
   type QuoteConfigSnapshot,
@@ -43,6 +42,7 @@ import {
   CreateQuoteDto,
   CreateQuoteFromCalculationDto,
   UpdateQuoteDto,
+  InstallationPricingQueryDto,
 } from '../dto';
 import { QuoteRepository } from '../repositories';
 import { QuoteCalculatorService } from '../services/quote-calculator.service';
@@ -152,8 +152,6 @@ export class QuoteCalculatorController {
     const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
     const validUntil = new Date();
     validUntil.setDate(validUntil.getDate() + quoteConfig.defaultValidityDays);
-
-    const lineItems = this.buildLineItemsFromCalculation(calculation);
 
     if (!input.customerId) {
       throw new BadRequestException('Customer ID is required to save a quote');
@@ -299,7 +297,6 @@ export class QuoteCalculatorController {
           customerNotes: input.customerNotes,
           projectCompletionWeeks: calculation.completionWeeks,
           paymentMilestones: input.paymentMilestones,
-          lineItems,
           changeSummary: 'Revised via calculator',
         };
 
@@ -371,7 +368,6 @@ export class QuoteCalculatorController {
       customerNotes: input.customerNotes,
       projectCompletionWeeks: calculation.completionWeeks,
       paymentMilestones: input.paymentMilestones,
-      lineItems,
     };
 
     const quote = await this.quoteService.create(organizationId, createDto, currentUser.id);
@@ -482,25 +478,8 @@ export class QuoteCalculatorController {
     summary: 'Get installation pricing',
     description: `
       Returns installation pricing for a specific system size.
-      Includes:
-      - Electrical work cost
-      - Fixed material cost
-      - Floor variable cost
-      - MSEDCL charges
-      - Transport cost
+      Includes all cost components, transport rate, floor increment, and GST rate.
     `,
-  })
-  @ApiQuery({
-    name: 'systemSizeKw',
-    type: Number,
-    required: true,
-    description: 'System size in kW',
-  })
-  @ApiQuery({
-    name: 'projectType',
-    enum: ProjectType,
-    required: true,
-    description: 'Project type',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -508,13 +487,11 @@ export class QuoteCalculatorController {
   })
   async getInstallationPricing(
     @OrganizationContext() organizationId: string,
-    @Query('systemSizeKw') systemSizeKw: number,
-    @Query('projectType') projectType: ProjectType,
+    @Query() query: InstallationPricingQueryDto,
   ) {
     const pricing = await this.installationPricingRepo.findBySystemSize(
       organizationId,
-      systemSizeKw,
-      projectType,
+      query.systemSizeKw,
     );
     if (!pricing) return null;
     return plainToInstance(InstallationPricingResponseDto, pricing, {
@@ -539,66 +516,5 @@ export class QuoteCalculatorController {
     return plainToInstance(InstallationPricingResponseDto, pricingList, {
       excludeExtraneousValues: true,
     });
-  }
-
-  /**
-   * Build line items from calculation response
-   */
-  private buildLineItemsFromCalculation(calculation: CalculateQuoteResponseDto) {
-    const lineItems = [];
-    let displayOrder = 1;
-
-    // Add panel line items
-    for (const panel of calculation.panels) {
-      lineItems.push({
-        productId: panel.productId,
-        itemCategory: ItemCategory.SOLAR_PANELS,
-        itemName: panel.name,
-        itemDescription: `${panel.brand} ${panel.wattagePerPanel}W ${panel.isDcr ? 'DCR' : 'Non-DCR'}`,
-        quantity: panel.quantity,
-        unitPrice: panel.pricePerWatt * panel.wattagePerPanel,
-        taxRate: panel.gstRate,
-        displayOrder: displayOrder++,
-      });
-    }
-
-    // Add inverter line items
-    for (const inverter of calculation.inverters.inverters) {
-      lineItems.push({
-        productId: inverter.productId,
-        itemCategory: ItemCategory.INVERTERS,
-        itemName: inverter.name,
-        itemDescription: `${inverter.brand} ${inverter.capacityKw}kW Inverter`,
-        quantity: inverter.quantity,
-        unitPrice: inverter.unitPrice,
-        taxRate: inverter.gstRate,
-        displayOrder: displayOrder++,
-      });
-    }
-
-    // Add structure line item
-    lineItems.push({
-      productId: calculation.structure.productId,
-      itemCategory: ItemCategory.MOUNTING,
-      itemName: calculation.structure.name,
-      itemDescription: `${calculation.structure.structureType} mounting structure`,
-      quantity: calculation.structure.quantity,
-      unitPrice: calculation.structure.unitPrice,
-      taxRate: calculation.structure.gstRate,
-      displayOrder: displayOrder++,
-    });
-
-    // Add installation line item (as a service)
-    lineItems.push({
-      itemCategory: ItemCategory.INSTALLATION,
-      itemName: 'Installation & Services',
-      itemDescription: 'Electrical work, MSEDCL charges, transport, supervision',
-      quantity: 1,
-      unitPrice: calculation.installation.totalBeforeTax,
-      taxRate: calculation.installation.gstRate,
-      displayOrder: displayOrder++,
-    });
-
-    return lineItems;
   }
 }

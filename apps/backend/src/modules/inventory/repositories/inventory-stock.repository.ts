@@ -156,13 +156,27 @@ export class InventoryStockRepository {
 
   /**
    * Get total stock value for organization
+   * Uses product_prices for unit price (ProductEntity no longer has unitPrice)
    */
   async getTotalStockValue(organizationId: string): Promise<number> {
     const result = await this.repository
       .createQueryBuilder('stock')
-      .innerJoin('stock.product', 'product')
-      .select('SUM(stock.availableQuantity * product.unitPrice)', 'totalValue')
-      .where('stock.organizationId = :organizationId', { organizationId })
+      .select(
+        `SUM(stock.available_quantity * COALESCE((
+          SELECT pp.unit_price::numeric
+          FROM product_prices pp
+          WHERE pp.product_id = stock.product_id
+            AND pp.organization_id = stock.organization_id
+            AND pp.is_active = true
+            AND pp.effective_from <= CURRENT_DATE
+            AND (pp.effective_to IS NULL OR pp.effective_to >= CURRENT_DATE)
+            AND pp.project_type IS NULL
+          ORDER BY pp.effective_from DESC
+          LIMIT 1
+        ), 0))`,
+        'totalValue',
+      )
+      .where('stock.organization_id = :organizationId', { organizationId })
       .getRawOne<{ totalValue: string }>();
 
     return result?.totalValue ? parseFloat(result.totalValue) : 0;
@@ -170,25 +184,51 @@ export class InventoryStockRepository {
 
   /**
    * Get stock summary by warehouse
+   * Uses product_prices for unit price (ProductEntity no longer has unitPrice)
    */
   async getStockSummaryByWarehouse(
     organizationId: string,
   ): Promise<
     Array<{ warehouseId: string; warehouseName: string; totalItems: number; totalValue: number }>
   > {
-    return this.repository
+    const rows = await this.repository
       .createQueryBuilder('stock')
       .innerJoin('stock.warehouse', 'warehouse')
-      .innerJoin('stock.product', 'product')
       .select('warehouse.id', 'warehouseId')
       .addSelect('warehouse.name', 'warehouseName')
-      .addSelect('COUNT(DISTINCT stock.productId)', 'totalItems')
-      .addSelect('SUM(stock.availableQuantity * product.unitPrice)', 'totalValue')
-      .where('stock.organizationId = :organizationId', { organizationId })
-      .andWhere('warehouse.deletedAt IS NULL')
+      .addSelect('COUNT(DISTINCT stock.product_id)', 'totalItems')
+      .addSelect(
+        `SUM(stock.available_quantity * COALESCE((
+          SELECT pp.unit_price::numeric
+          FROM product_prices pp
+          WHERE pp.product_id = stock.product_id
+            AND pp.organization_id = stock.organization_id
+            AND pp.is_active = true
+            AND pp.effective_from <= CURRENT_DATE
+            AND (pp.effective_to IS NULL OR pp.effective_to >= CURRENT_DATE)
+            AND pp.project_type IS NULL
+          ORDER BY pp.effective_from DESC
+          LIMIT 1
+        ), 0))`,
+        'totalValue',
+      )
+      .where('stock.organization_id = :organizationId', { organizationId })
+      .andWhere('warehouse.deleted_at IS NULL')
       .groupBy('warehouse.id')
       .addGroupBy('warehouse.name')
       .orderBy('warehouse.name', 'ASC')
-      .getRawMany();
+      .getRawMany<{
+        warehouseId: string;
+        warehouseName: string;
+        totalItems: string;
+        totalValue: string;
+      }>();
+
+    return rows.map((r) => ({
+      warehouseId: r.warehouseId,
+      warehouseName: r.warehouseName,
+      totalItems: parseInt(r.totalItems, 10),
+      totalValue: r.totalValue ? parseFloat(r.totalValue) : 0,
+    }));
   }
 }

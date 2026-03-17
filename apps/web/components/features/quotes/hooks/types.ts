@@ -1,6 +1,5 @@
 import type {
   CalculatorInputs,
-  ItemCategory,
   PaymentMilestone,
   PricingBreakdown,
   ProjectType,
@@ -56,7 +55,6 @@ export interface QuoteDetail {
   projectCompletionWeeks?: number;
   configSnapshot?: QuoteConfigSnapshot;
   versions?: QuoteVersionDetail[];
-  lineItems?: QuoteLineItemDetail[];
 }
 
 // ============================================================================
@@ -81,28 +79,6 @@ export interface QuoteVersionDetail {
   configSnapshot?: QuoteConfigSnapshot;
   createdBy: string;
   createdAt: string;
-  lineItems?: QuoteLineItemDetail[];
-}
-
-// ============================================================================
-// Quote Line Item Types
-// ============================================================================
-
-export interface QuoteLineItemDetail {
-  id: string;
-  quoteVersionId: string;
-  productId?: string;
-  itemCategory: ItemCategory;
-  itemName: string;
-  itemDescription?: string;
-  specifications?: Record<string, unknown>;
-  quantity: number;
-  unitOfMeasure?: string;
-  unitPrice: number;
-  lineTotal: number;
-  taxRate?: number;
-  taxAmount?: number;
-  displayOrder: number;
 }
 
 // ============================================================================

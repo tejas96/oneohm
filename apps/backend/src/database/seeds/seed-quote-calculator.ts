@@ -1,26 +1,19 @@
-import {
-  ProductType,
-  ProductStatus,
-  PhaseType,
-  PanelTechnology,
-  StructureType,
-  ProjectType,
-  SubsidySchemeType,
-  PricingRuleType,
-} from '@oneohm-epc/shared/types';
+import { ProductStatus, ProjectType, SubsidySchemeType } from '@oneohm-epc/shared/types';
 import { DataSource } from 'typeorm';
 
 /**
  * Seed Quote Calculator Data
  *
  * This seed creates:
- * 1. Sample solar panels (DCR and Non-DCR, different brands)
- * 2. Sample inverters (1-phase and 3-phase, different capacities)
- * 3. Sample mounting structures
- * 4. Pricing rules for all products
- * 5. Subsidy configurations
- * 6. Installation pricing tiers
- * 7. Quote configuration
+ * 1. Product types (solar_panel, inverter, mounting_structure)
+ * 2. Brands (Adani, Waaree, Navitas, Sungrow, Goodwe, Generic)
+ * 3. Sample solar panels (DCR and Non-DCR, different brands)
+ * 4. Sample inverters (1-phase and 3-phase, different capacities)
+ * 5. Sample mounting structures
+ * 6. Product prices for all products
+ * 7. Subsidy configurations
+ * 8. Installation pricing tiers
+ * 9. Quote configuration
  */
 export async function seedQuoteCalculatorData(
   dataSource: DataSource,
@@ -34,20 +27,126 @@ export async function seedQuoteCalculatorData(
 
   try {
     // =====================================================
-    // 1. SEED SOLAR PANELS
+    // 1. SEED PRODUCT TYPES
+    // =====================================================
+    console.log('📁 Creating product types...');
+
+    const productTypeRows = [
+      {
+        code: 'solar_panel',
+        name: 'Solar Panel',
+        description: 'Solar photovoltaic panels',
+        pricingBasis: 'per_watt',
+        gstRate: 5.0,
+        uom: 'pcs',
+        sort: 1,
+      },
+      {
+        code: 'inverter',
+        name: 'Inverter',
+        description: 'Solar inverters for power conversion',
+        pricingBasis: 'per_unit',
+        gstRate: 5.0,
+        uom: 'pcs',
+        sort: 2,
+      },
+      {
+        code: 'mounting_structure',
+        name: 'Mounting Structure',
+        description: 'Panel mounting structures',
+        pricingBasis: 'per_kw',
+        gstRate: 18.0,
+        uom: 'set',
+        sort: 3,
+      },
+    ];
+
+    const productTypeIds: Record<string, string> = {};
+    for (const pt of productTypeRows) {
+      const result = await queryRunner.query(
+        `INSERT INTO product_types (organization_id, name, code, description, default_pricing_basis, default_gst_rate, unit_of_measure, is_active, sort_order, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, $8, NOW(), NOW())
+        ON CONFLICT (organization_id, code) DO UPDATE SET
+          name = EXCLUDED.name,
+          description = EXCLUDED.description
+        RETURNING id`,
+        [
+          organizationId,
+          pt.name,
+          pt.code,
+          pt.description,
+          pt.pricingBasis,
+          pt.gstRate,
+          pt.uom,
+          pt.sort,
+        ],
+      );
+      productTypeIds[pt.code] = result[0].id;
+    }
+    console.log(`✅ Created ${productTypeRows.length} product types`);
+
+    // =====================================================
+    // 2. SEED BRANDS
+    // =====================================================
+    console.log('🏷️ Creating brands...');
+
+    const brandRows = [
+      { name: 'Adani', manufacturer: 'Adani Solar' },
+      { name: 'Waaree', manufacturer: 'Waaree Energies' },
+      { name: 'Navitas', manufacturer: 'Navitas Solar' },
+      { name: 'Sungrow', manufacturer: 'Sungrow Power' },
+      { name: 'Goodwe', manufacturer: 'Goodwe Power' },
+      { name: 'Generic', manufacturer: 'OneOhm' },
+    ];
+
+    const brandIds: Record<string, string> = {};
+    for (const brand of brandRows) {
+      const result = await queryRunner.query(
+        `INSERT INTO brands (organization_id, name, manufacturer_name, is_active, created_at, updated_at)
+        VALUES ($1, $2, $3, TRUE, NOW(), NOW())
+        ON CONFLICT (organization_id, name) DO UPDATE SET
+          manufacturer_name = EXCLUDED.manufacturer_name
+        RETURNING id`,
+        [organizationId, brand.name, brand.manufacturer],
+      );
+      brandIds[brand.name] = result[0].id;
+    }
+
+    // Brand-Product Type mappings
+    const brandProductTypeMappings = [
+      { brand: 'Adani', type: 'solar_panel' },
+      { brand: 'Waaree', type: 'solar_panel' },
+      { brand: 'Navitas', type: 'solar_panel' },
+      { brand: 'Sungrow', type: 'inverter' },
+      { brand: 'Goodwe', type: 'inverter' },
+      { brand: 'Generic', type: 'mounting_structure' },
+    ];
+
+    for (const m of brandProductTypeMappings) {
+      await queryRunner.query(
+        `INSERT INTO brand_product_types (brand_id, product_type_id, is_active, created_at)
+        VALUES ($1, $2, TRUE, NOW())
+        ON CONFLICT (brand_id, product_type_id) DO NOTHING`,
+        [brandIds[m.brand], productTypeIds[m.type]],
+      );
+    }
+    console.log(`✅ Created ${brandRows.length} brands`);
+
+    // =====================================================
+    // 3. SEED SOLAR PANELS
     // =====================================================
     console.log('📦 Creating solar panels...');
     const panelData = [
-      // DCR Panels
       {
         name: 'Adani PERC DCR 540W',
         code: 'ADANI-DCR-540',
         brand: 'Adani',
         isDcr: true,
-        technology: PanelTechnology.PERC,
+        technology: 'perc',
         wattage: 540,
         minWattage: 530,
         maxWattage: 550,
+        efficiency: 21.5,
         pricePerWatt: 24,
       },
       {
@@ -55,10 +154,11 @@ export async function seedQuoteCalculatorData(
         code: 'WAAREE-DCR-545',
         brand: 'Waaree',
         isDcr: true,
-        technology: PanelTechnology.PERC,
+        technology: 'perc',
         wattage: 545,
         minWattage: 535,
         maxWattage: 555,
+        efficiency: 21.3,
         pricePerWatt: 23.5,
       },
       {
@@ -66,22 +166,23 @@ export async function seedQuoteCalculatorData(
         code: 'NAVITAS-DCR-580',
         brand: 'Navitas',
         isDcr: true,
-        technology: PanelTechnology.TOPCON,
+        technology: 'topcon',
         wattage: 580,
         minWattage: 570,
         maxWattage: 590,
+        efficiency: 22.4,
         pricePerWatt: 26,
       },
-      // Non-DCR Panels
       {
         name: 'Adani PERC Non-DCR 540W',
         code: 'ADANI-NONDCR-540',
         brand: 'Adani',
         isDcr: false,
-        technology: PanelTechnology.PERC,
+        technology: 'perc',
         wattage: 540,
         minWattage: 530,
         maxWattage: 550,
+        efficiency: 21.5,
         pricePerWatt: 20,
       },
       {
@@ -89,10 +190,11 @@ export async function seedQuoteCalculatorData(
         code: 'WAAREE-NONDCR-580',
         brand: 'Waaree',
         isDcr: false,
-        technology: PanelTechnology.TOPCON,
+        technology: 'topcon',
         wattage: 580,
         minWattage: 570,
         maxWattage: 590,
+        efficiency: 22.3,
         pricePerWatt: 22,
       },
     ];
@@ -101,7 +203,7 @@ export async function seedQuoteCalculatorData(
     for (const panel of panelData) {
       const result = await queryRunner.query(
         `INSERT INTO products (
-          organization_id, name, code, type, brand, status,
+          organization_id, product_type_id, brand_id, name, code, status,
           specifications
         ) VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT (organization_id, code) DO UPDATE SET
@@ -110,63 +212,57 @@ export async function seedQuoteCalculatorData(
         RETURNING id`,
         [
           organizationId,
+          productTypeIds['solar_panel'],
+          brandIds[panel.brand],
           panel.name,
           panel.code,
-          ProductType.SOLAR_PANEL,
-          panel.brand,
           ProductStatus.ACTIVE,
           JSON.stringify({
-            panel: {
-              isDcr: panel.isDcr,
-              technology: panel.technology,
-              wattage: panel.wattage,
-              minWattage: panel.minWattage,
-              maxWattage: panel.maxWattage,
-            },
+            wattage: panel.wattage,
+            technology: panel.technology,
+            is_dcr: panel.isDcr,
+            min_wattage: panel.minWattage,
+            max_wattage: panel.maxWattage,
+            efficiency: panel.efficiency,
           }),
         ],
       );
       panelIds.push(result[0].id);
 
-      // Create pricing rule for panel
+      // Create product price for panel
       await queryRunner.query(
-        `INSERT INTO pricing_rules (
-          organization_id, name, code, rule_type, product_id, is_active,
-          formula, effective_from, priority
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        ON CONFLICT (organization_id, code) DO UPDATE SET
-          formula = EXCLUDED.formula`,
+        `INSERT INTO product_prices (
+          organization_id, product_id, project_type, unit_price, cost_multiplier,
+          gst_rate, currency, effective_from, is_active, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+        ON CONFLICT DO NOTHING`,
         [
           organizationId,
-          `${panel.name} Price`,
-          `PRICE-${panel.code}`,
-          PricingRuleType.BASE_PRICE,
           result[0].id,
-          true,
-          JSON.stringify({
-            pricePerWatt: panel.pricePerWatt,
-            gstRate: 12,
-            isDcr: panel.isDcr,
-          }),
+          panel.isDcr ? 'residential' : 'commercial',
+          panel.pricePerWatt,
+          1.0,
+          5.0,
+          'INR',
           new Date().toISOString().split('T')[0],
-          10,
+          true,
         ],
       );
     }
     console.log(`✅ Created ${panelData.length} solar panels`);
 
     // =====================================================
-    // 2. SEED INVERTERS
+    // 4. SEED INVERTERS
     // =====================================================
     console.log('🔌 Creating inverters...');
     const inverterData = [
-      // 1-Phase Inverters (Sungrow)
       {
         name: 'Sungrow 3KW 1-Phase',
         code: 'SG-3K-1P',
         brand: 'Sungrow',
         capacity: 3,
-        phase: PhaseType.SINGLE_PHASE,
+        phase: 'single_phase',
+        voltage: '230V',
         price: 35000,
       },
       {
@@ -174,7 +270,8 @@ export async function seedQuoteCalculatorData(
         code: 'SG-5K-1P',
         brand: 'Sungrow',
         capacity: 5,
-        phase: PhaseType.SINGLE_PHASE,
+        phase: 'single_phase',
+        voltage: '230V',
         price: 45000,
       },
       {
@@ -182,7 +279,8 @@ export async function seedQuoteCalculatorData(
         code: 'SG-6K-1P',
         brand: 'Sungrow',
         capacity: 6,
-        phase: PhaseType.SINGLE_PHASE,
+        phase: 'single_phase',
+        voltage: '230V',
         price: 52000,
       },
       {
@@ -190,7 +288,8 @@ export async function seedQuoteCalculatorData(
         code: 'SG-8K-1P',
         brand: 'Sungrow',
         capacity: 8,
-        phase: PhaseType.SINGLE_PHASE,
+        phase: 'single_phase',
+        voltage: '230V',
         price: 65000,
       },
       {
@@ -198,16 +297,17 @@ export async function seedQuoteCalculatorData(
         code: 'SG-10K-1P',
         brand: 'Sungrow',
         capacity: 10,
-        phase: PhaseType.SINGLE_PHASE,
+        phase: 'single_phase',
+        voltage: '230V',
         price: 75000,
       },
-      // 3-Phase Inverters (Sungrow)
       {
         name: 'Sungrow 10KW 3-Phase',
         code: 'SG-10K-3P',
         brand: 'Sungrow',
         capacity: 10,
-        phase: PhaseType.THREE_PHASE,
+        phase: 'three_phase',
+        voltage: '415V',
         price: 85000,
       },
       {
@@ -215,7 +315,8 @@ export async function seedQuoteCalculatorData(
         code: 'SG-15K-3P',
         brand: 'Sungrow',
         capacity: 15,
-        phase: PhaseType.THREE_PHASE,
+        phase: 'three_phase',
+        voltage: '415V',
         price: 110000,
       },
       {
@@ -223,7 +324,8 @@ export async function seedQuoteCalculatorData(
         code: 'SG-20K-3P',
         brand: 'Sungrow',
         capacity: 20,
-        phase: PhaseType.THREE_PHASE,
+        phase: 'three_phase',
+        voltage: '415V',
         price: 140000,
       },
       {
@@ -231,7 +333,8 @@ export async function seedQuoteCalculatorData(
         code: 'SG-25K-3P',
         brand: 'Sungrow',
         capacity: 25,
-        phase: PhaseType.THREE_PHASE,
+        phase: 'three_phase',
+        voltage: '415V',
         price: 170000,
       },
       {
@@ -239,7 +342,8 @@ export async function seedQuoteCalculatorData(
         code: 'SG-30K-3P',
         brand: 'Sungrow',
         capacity: 30,
-        phase: PhaseType.THREE_PHASE,
+        phase: 'three_phase',
+        voltage: '415V',
         price: 200000,
       },
       {
@@ -247,16 +351,17 @@ export async function seedQuoteCalculatorData(
         code: 'SG-50K-3P',
         brand: 'Sungrow',
         capacity: 50,
-        phase: PhaseType.THREE_PHASE,
+        phase: 'three_phase',
+        voltage: '415V',
         price: 320000,
       },
-      // Goodwe Inverters
       {
         name: 'Goodwe 5KW 1-Phase',
         code: 'GW-5K-1P',
         brand: 'Goodwe',
         capacity: 5,
-        phase: PhaseType.SINGLE_PHASE,
+        phase: 'single_phase',
+        voltage: '230V',
         price: 42000,
       },
       {
@@ -264,7 +369,8 @@ export async function seedQuoteCalculatorData(
         code: 'GW-10K-3P',
         brand: 'Goodwe',
         capacity: 10,
-        phase: PhaseType.THREE_PHASE,
+        phase: 'three_phase',
+        voltage: '415V',
         price: 80000,
       },
     ];
@@ -272,7 +378,7 @@ export async function seedQuoteCalculatorData(
     for (const inverter of inverterData) {
       const result = await queryRunner.query(
         `INSERT INTO products (
-          organization_id, name, code, type, brand, status,
+          organization_id, product_type_id, brand_id, name, code, status,
           specifications
         ) VALUES ($1, $2, $3, $4, $5, $6, $7)
         ON CONFLICT (organization_id, code) DO UPDATE SET
@@ -281,56 +387,50 @@ export async function seedQuoteCalculatorData(
         RETURNING id`,
         [
           organizationId,
+          productTypeIds['inverter'],
+          brandIds[inverter.brand],
           inverter.name,
           inverter.code,
-          ProductType.INVERTER,
-          inverter.brand,
           ProductStatus.ACTIVE,
           JSON.stringify({
-            inverter: {
-              capacityKw: inverter.capacity,
-              phaseType: inverter.phase,
-              minSystemSizeKw: inverter.capacity - 1,
-              maxSystemSizeKw: inverter.capacity + 2,
-            },
+            capacity_kw: inverter.capacity,
+            phase_type: inverter.phase,
+            min_system_size_kw: inverter.capacity - 1,
+            max_system_size_kw: inverter.capacity + 2,
+            voltage: inverter.voltage,
           }),
         ],
       );
 
-      // Create pricing rule for inverter
+      // Create product price for inverter
       await queryRunner.query(
-        `INSERT INTO pricing_rules (
-          organization_id, name, code, rule_type, product_id, is_active,
-          formula, effective_from, priority
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        ON CONFLICT (organization_id, code) DO UPDATE SET
-          formula = EXCLUDED.formula`,
+        `INSERT INTO product_prices (
+          organization_id, product_id, project_type, unit_price, cost_multiplier,
+          gst_rate, currency, effective_from, is_active, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+        ON CONFLICT DO NOTHING`,
         [
           organizationId,
-          `${inverter.name} Price`,
-          `PRICE-${inverter.code}`,
-          PricingRuleType.BASE_PRICE,
           result[0].id,
-          true,
-          JSON.stringify({
-            basePrice: inverter.price,
-            gstRate: 18,
-            phaseType: inverter.phase,
-          }),
+          null,
+          inverter.price,
+          1.0,
+          5.0,
+          'INR',
           new Date().toISOString().split('T')[0],
-          10,
+          true,
         ],
       );
     }
     console.log(`✅ Created ${inverterData.length} inverters`);
 
     // =====================================================
-    // 3. SEED MOUNTING STRUCTURES
+    // 5. SEED MOUNTING STRUCTURES
     // =====================================================
     console.log('🏗️ Creating mounting structures...');
     const structureResult = await queryRunner.query(
       `INSERT INTO products (
-        organization_id, name, code, type, brand, status,
+        organization_id, product_type_id, brand_id, name, code, status,
         specifications
       ) VALUES ($1, $2, $3, $4, $5, $6, $7)
       ON CONFLICT (organization_id, code) DO UPDATE SET
@@ -339,49 +439,42 @@ export async function seedQuoteCalculatorData(
       RETURNING id`,
       [
         organizationId,
+        productTypeIds['mounting_structure'],
+        brandIds['Generic'],
         'Aluminum Rail Mount',
         'STRUCT-ALUM-RAIL',
-        ProductType.MOUNTING_STRUCTURE,
-        'Generic',
         ProductStatus.ACTIVE,
         JSON.stringify({
-          structure: {
-            structureType: StructureType.ALUMINUM_RAIL,
-            material: 'Aluminum',
-            maxWindSpeedKmh: 150,
-          },
+          structure_type: 'aluminum_rail',
+          material: 'Aluminum',
+          weight_kg: 15,
         }),
       ],
     );
 
-    // Create pricing rule for structure
+    // Create product price for structure
     await queryRunner.query(
-      `INSERT INTO pricing_rules (
-        organization_id, name, code, rule_type, product_id, is_active,
-        formula, effective_from, priority
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      ON CONFLICT (organization_id, code) DO UPDATE SET
-        formula = EXCLUDED.formula`,
+      `INSERT INTO product_prices (
+        organization_id, product_id, project_type, unit_price, cost_multiplier,
+        gst_rate, currency, effective_from, is_active, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+      ON CONFLICT DO NOTHING`,
       [
         organizationId,
-        'Aluminum Rail Mount Price',
-        'PRICE-STRUCT-ALUM-RAIL',
-        PricingRuleType.BASE_PRICE,
         structureResult[0].id,
-        true,
-        JSON.stringify({
-          pricePerKw: 3500,
-          gstRate: 18,
-          structureType: StructureType.ALUMINUM_RAIL,
-        }),
+        null,
+        3500,
+        1.0,
+        18.0,
+        'INR',
         new Date().toISOString().split('T')[0],
-        10,
+        true,
       ],
     );
     console.log('✅ Created mounting structure');
 
     // =====================================================
-    // 4. SEED SUBSIDY CONFIGURATION
+    // 6. SEED SUBSIDY CONFIGURATION
     // =====================================================
     console.log('💰 Creating subsidy configurations...');
     await queryRunner.query(
@@ -431,7 +524,7 @@ export async function seedQuoteCalculatorData(
     console.log('✅ Created subsidy configurations');
 
     // =====================================================
-    // 5. SEED INSTALLATION PRICING
+    // 7. SEED INSTALLATION PRICING
     // =====================================================
     console.log('🔧 Creating installation pricing...');
     const installationPricing = [
@@ -441,8 +534,10 @@ export async function seedQuoteCalculatorData(
         electrical: 12000,
         fixed: 6000,
         floor: 1500,
+        structure: 13336,
+        labor: 3000,
         msedcl: 4000,
-        supervision: 2000,
+        loading: 1500,
         transport: 25,
       },
       {
@@ -451,8 +546,10 @@ export async function seedQuoteCalculatorData(
         electrical: 15000,
         fixed: 8000,
         floor: 2000,
+        structure: 16670,
+        labor: 5000,
         msedcl: 5000,
-        supervision: 3000,
+        loading: 2000,
         transport: 30,
       },
       {
@@ -461,8 +558,10 @@ export async function seedQuoteCalculatorData(
         electrical: 20000,
         fixed: 10000,
         floor: 2500,
+        structure: 22000,
+        labor: 8000,
         msedcl: 6000,
-        supervision: 4000,
+        loading: 2500,
         transport: 35,
       },
       {
@@ -471,8 +570,10 @@ export async function seedQuoteCalculatorData(
         electrical: 30000,
         fixed: 15000,
         floor: 3000,
+        structure: 33000,
+        labor: 12000,
         msedcl: 8000,
-        supervision: 5000,
+        loading: 3000,
         transport: 40,
       },
       {
@@ -481,8 +582,10 @@ export async function seedQuoteCalculatorData(
         electrical: 50000,
         fixed: 25000,
         floor: 4000,
+        structure: 55000,
+        labor: 20000,
         msedcl: 12000,
-        supervision: 8000,
+        loading: 5000,
         transport: 50,
       },
       {
@@ -491,34 +594,48 @@ export async function seedQuoteCalculatorData(
         electrical: 80000,
         fixed: 40000,
         floor: 5000,
+        structure: 88000,
+        labor: 35000,
         msedcl: 20000,
-        supervision: 12000,
+        loading: 8000,
         transport: 60,
       },
     ];
 
     for (const pricing of installationPricing) {
+      const costComponents = JSON.stringify({
+        electrical_work: pricing.electrical,
+        fixed_material: pricing.fixed,
+        variable_floor: pricing.floor,
+        structure_cost: pricing.structure,
+        installation_labor: pricing.labor,
+        msedcl_charges: pricing.msedcl,
+        loading_unloading: pricing.loading,
+      });
+
       await queryRunner.query(
         `INSERT INTO installation_pricing (
           organization_id, min_system_size_kw, max_system_size_kw,
-          project_type, electrical_work_cost, fixed_material_cost,
-          variable_floor_cost, floor_increment_percent, msedcl_charges,
-          supervision_charges, transport_cost_per_km, gst_rate, is_active
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-        ON CONFLICT DO NOTHING`,
+          transport_rate_per_km, floor_increment_percent, gst_rate,
+          cost_components, effective_from, is_active, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, NOW(), NOW())
+        ON CONFLICT (organization_id, min_system_size_kw, max_system_size_kw) DO UPDATE SET
+          transport_rate_per_km = EXCLUDED.transport_rate_per_km,
+          floor_increment_percent = EXCLUDED.floor_increment_percent,
+          gst_rate = EXCLUDED.gst_rate,
+          cost_components = EXCLUDED.cost_components,
+          effective_from = EXCLUDED.effective_from,
+          is_active = EXCLUDED.is_active,
+          updated_at = NOW()`,
         [
           organizationId,
           pricing.min,
           pricing.max,
-          ProjectType.RESIDENTIAL,
-          pricing.electrical,
-          pricing.fixed,
-          pricing.floor,
-          5, // 5% floor increment
-          pricing.msedcl,
-          pricing.supervision,
           pricing.transport,
-          12,
+          25,
+          18,
+          costComponents,
+          new Date().toISOString().split('T')[0],
           true,
         ],
       );
@@ -526,7 +643,7 @@ export async function seedQuoteCalculatorData(
     console.log(`✅ Created ${installationPricing.length} installation pricing tiers`);
 
     // =====================================================
-    // 6. SEED QUOTE CONFIGURATION
+    // 8. SEED QUOTE CONFIGURATION
     // =====================================================
     console.log('⚙️ Creating quote configuration...');
     await queryRunner.query(
@@ -583,14 +700,12 @@ export async function seedQuoteCalculatorData(
  * Run with: npx ts-node src/database/seeds/seed-quote-calculator.ts
  */
 async function main() {
-  // Import datasource using the same pattern as other seed files
   const dataSource = (await import('../ormconfig')).default;
 
   if (!dataSource.isInitialized) {
     await dataSource.initialize();
   }
 
-  // Get organization ID from command line or use default
   const organizationId = process.argv[2] || 'YOUR_ORGANIZATION_ID';
 
   if (organizationId === 'YOUR_ORGANIZATION_ID') {

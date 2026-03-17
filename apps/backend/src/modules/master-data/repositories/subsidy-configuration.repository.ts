@@ -63,6 +63,7 @@ export class SubsidyConfigurationRepository {
     filters?: {
       projectType?: ProjectType;
       isActive?: boolean;
+      search?: string;
     },
   ): Promise<SubsidyConfiguration[]> {
     const query = this.repository
@@ -77,6 +78,12 @@ export class SubsidyConfigurationRepository {
 
     if (filters?.isActive !== undefined) {
       query.andWhere('config.is_active = :isActive', { isActive: filters.isActive });
+    }
+
+    if (filters?.search) {
+      query.andWhere('(config.scheme_name ILIKE :search OR config.scheme_code ILIKE :search)', {
+        search: `%${filters.search}%`,
+      });
     }
 
     return query.orderBy('config.scheme_name', 'ASC').getMany();

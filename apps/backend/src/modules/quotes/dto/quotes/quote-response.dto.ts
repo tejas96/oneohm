@@ -10,7 +10,6 @@ import {
 } from '@oneohm-epc/shared/types';
 import { Expose, Transform } from 'class-transformer';
 
-import { QuoteLineItemResponseDto } from './quote-line-item-response.dto';
 import { QuoteVersionResponseDto } from './quote-version-response.dto';
 import { toNum } from '../../../../common/utils';
 
@@ -27,7 +26,7 @@ const pb = (obj: Record<string, unknown>) =>
  * Serialized response for quote entities.
  * Reads system/pricing data from the current version so the frontend
  * receives the same flat shape it always did.
- * Also includes enriched fields for the detail view: versions, lineItems,
+ * Also includes enriched fields for the detail view: versions,
  * customer contact info, property address, pricing breakdown, and milestones.
  */
 export class QuoteResponseDto {
@@ -245,7 +244,7 @@ export class QuoteResponseDto {
   configSnapshot?: QuoteConfigSnapshot;
 
   @ApiPropertyOptional({
-    description: 'All versions (version metadata only, current version includes line items)',
+    description: 'All versions',
     type: [QuoteVersionResponseDto],
   })
   @Expose()
@@ -273,57 +272,7 @@ export class QuoteResponseDto {
       configSnapshot: v.configSnapshot,
       createdBy: v.createdBy,
       createdAt: v.createdAt,
-      lineItems:
-        v.isCurrent && v.lineItems
-          ? (v.lineItems as Array<Record<string, unknown>>)
-              .sort((a, b) => ((a.displayOrder as number) ?? 0) - ((b.displayOrder as number) ?? 0))
-              .map((li) => ({
-                id: li.id,
-                quoteVersionId: li.quoteVersionId,
-                productId: li.productId,
-                itemCategory: li.itemCategory,
-                itemName: li.itemName,
-                itemDescription: li.itemDescription,
-                specifications: li.specifications,
-                quantity: li.quantity,
-                unitOfMeasure: li.unitOfMeasure,
-                unitPrice: li.unitPrice != null ? Number(li.unitPrice) : undefined,
-                lineTotal: li.lineTotal != null ? Number(li.lineTotal) : undefined,
-                taxRate: li.taxRate != null ? Number(li.taxRate) : undefined,
-                taxAmount: li.taxAmount != null ? Number(li.taxAmount) : undefined,
-                displayOrder: li.displayOrder,
-              }))
-          : undefined,
     }));
   })
   versions?: QuoteVersionResponseDto[];
-
-  @ApiPropertyOptional({
-    description: 'Line items from the current version',
-    type: [QuoteLineItemResponseDto],
-  })
-  @Expose()
-  @Transform(({ obj }) => {
-    const current = cv(obj);
-    if (!current?.lineItems) return undefined;
-    return (current.lineItems as Array<Record<string, unknown>>)
-      .sort((a, b) => ((a.displayOrder as number) ?? 0) - ((b.displayOrder as number) ?? 0))
-      .map((li: Record<string, unknown>) => ({
-        id: li.id,
-        quoteVersionId: li.quoteVersionId,
-        productId: li.productId,
-        itemCategory: li.itemCategory,
-        itemName: li.itemName,
-        itemDescription: li.itemDescription,
-        specifications: li.specifications,
-        quantity: li.quantity,
-        unitOfMeasure: li.unitOfMeasure,
-        unitPrice: li.unitPrice != null ? Number(li.unitPrice) : undefined,
-        lineTotal: li.lineTotal != null ? Number(li.lineTotal) : undefined,
-        taxRate: li.taxRate != null ? Number(li.taxRate) : undefined,
-        taxAmount: li.taxAmount != null ? Number(li.taxAmount) : undefined,
-        displayOrder: li.displayOrder,
-      }));
-  })
-  lineItems?: QuoteLineItemResponseDto[];
 }

@@ -1,58 +1,98 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { ProductCategoryController, ProductController } from './controllers';
 import {
-  ProductCategoryEntity,
+  BrandController,
+  InstallationPricingController,
+  ProductPriceController,
+  ProductController,
+  ProductTypeController,
+  QuoteConfigurationController,
+  SubsidyConfigurationController,
+} from './controllers';
+import {
+  ProductTypeEntity,
+  ProductTypeAttributeEntity,
+  BrandEntity,
+  BrandProductTypeEntity,
   ProductEntity,
-  PricingRuleEntity,
+  ProductPriceEntity,
   SubsidyConfiguration,
   InstallationPricing,
   QuoteConfiguration,
 } from './entities';
 import {
-  ProductCategoryRepository,
+  ProductTypeRepository,
+  BrandRepository,
+  BrandProductTypeRepository,
   ProductRepository,
-  PricingRuleRepository,
+  ProductPriceRepository,
   SubsidyConfigurationRepository,
   InstallationPricingRepository,
   QuoteConfigurationRepository,
 } from './repositories';
-import { ProductCategoryService, ProductService } from './services';
+import {
+  BrandService,
+  InstallationPricingService,
+  ProductPriceService,
+  ProductService,
+  ProductTypeService,
+  QuoteConfigurationService,
+  SubsidyConfigurationService,
+} from './services';
 
-/**
- * Master Data Module
- * Manages product catalog, categories, pricing rules, subsidy configurations,
- * installation pricing, and quote configurations
- */
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      ProductCategoryEntity,
+      ProductTypeEntity,
+      ProductTypeAttributeEntity,
+      BrandEntity,
+      BrandProductTypeEntity,
       ProductEntity,
-      PricingRuleEntity,
+      ProductPriceEntity,
       SubsidyConfiguration,
       InstallationPricing,
       QuoteConfiguration,
     ]),
   ],
-  controllers: [ProductCategoryController, ProductController],
+  controllers: [
+    ProductTypeController,
+    BrandController,
+    ProductController,
+    InstallationPricingController,
+    QuoteConfigurationController,
+    SubsidyConfigurationController,
+    ProductPriceController,
+  ],
   providers: [
-    ProductCategoryService,
-    ProductCategoryRepository,
+    ProductTypeService,
+    ProductTypeRepository,
+    BrandService,
+    BrandRepository,
+    BrandProductTypeRepository,
     ProductService,
     ProductRepository,
-    PricingRuleRepository,
+    ProductPriceService,
+    ProductPriceRepository,
     SubsidyConfigurationRepository,
+    SubsidyConfigurationService,
     InstallationPricingRepository,
+    InstallationPricingService,
     QuoteConfigurationRepository,
+    QuoteConfigurationService,
   ],
   exports: [
-    ProductCategoryService,
+    ProductTypeService,
+    BrandService,
     ProductService,
-    ProductCategoryRepository,
+    ProductPriceService,
+    SubsidyConfigurationService,
+    QuoteConfigurationService,
+    ProductTypeRepository,
+    BrandRepository,
+    BrandProductTypeRepository,
     ProductRepository,
-    PricingRuleRepository,
+    ProductPriceRepository,
     SubsidyConfigurationRepository,
     InstallationPricingRepository,
     QuoteConfigurationRepository,

@@ -10,7 +10,7 @@ import { defaultResponseAdapter } from './response-adapter';
 import type { SubResourceConfig, BaseFilters, ResourceListResponse } from './types';
 import { useOrgContext } from './use-org-context';
 
-interface UseResourceSubListReturn<T> {
+export interface UseResourceSubListReturn<T> {
   items: T[];
   meta: ResourceListResponse<T>['meta'] | undefined;
   isLoading: boolean;

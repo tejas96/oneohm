@@ -7,7 +7,6 @@ import {
 } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import {
-  ArrayMinSize,
   IsArray,
   IsDateString,
   IsEnum,
@@ -21,7 +20,6 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-import { QuoteLineItemDto } from '../line-items/quote-line-item.dto';
 import { PaymentMilestoneDto } from '../versions/payment-milestone.dto';
 
 /**
@@ -139,17 +137,6 @@ export class UpdateQuoteDto {
   @Type(() => PaymentMilestoneDto)
   @IsOptional()
   paymentMilestones?: PaymentMilestoneDto[];
-
-  @ApiPropertyOptional({
-    type: [QuoteLineItemDto],
-    description: 'Updated line items',
-  })
-  @IsArray()
-  @ArrayMinSize(1)
-  @ValidateNested({ each: true })
-  @Type(() => QuoteLineItemDto)
-  @IsOptional()
-  lineItems?: QuoteLineItemDto[];
 
   @ApiPropertyOptional({
     example: 'Updated system size and added battery backup',

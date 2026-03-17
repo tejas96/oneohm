@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, useCallback, useMemo, type JSX } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, type JSX } from 'react';
 
 import { DeleteCustomerModal } from './delete-customer-modal';
 import { ImportCustomersModal } from './import-customers-modal';
@@ -176,10 +176,27 @@ export function CustomerListPage(): JSX.Element {
   const debouncedSortBy = useDebounce(sortBy, SEARCH_DEBOUNCE_MS);
   const debouncedSortOrder = useDebounce(sortOrder, SEARCH_DEBOUNCE_MS);
 
-  // Reset to page 1 when search changes
+  // Sync state from URL when external navigation occurs
+  const searchParamsString = searchParams.toString();
   useEffect(() => {
+    setPage(Number(searchParams.get('page')) || 1);
+    setPageSize(Number(searchParams.get('limit')) || DEFAULT_PAGE_SIZE);
+    setSearchInput(searchParams.get('search') || '');
+    setStatusFilter(searchParams.get('status') || 'all');
+    setLeadSourceFilter(searchParams.get('leadSource') || 'all');
+    setSortBy(getValidSortField(searchParams.get('sortBy')));
+    setSortOrder(getValidSortOrder(searchParams.get('sortOrder')));
+  }, [searchParamsString]);
+
+  // Reset to page 1 when search or filters change (skip initial mount)
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, debouncedStatusFilter, debouncedLeadSourceFilter, pageSize]);
 
   // Sync state to URL when filters change
   useEffect(() => {

@@ -8,7 +8,6 @@ import {
 } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import {
-  ArrayMinSize,
   IsArray,
   IsBoolean,
   IsDateString,
@@ -24,7 +23,6 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-import { QuoteLineItemDto } from '../line-items/quote-line-item.dto';
 import { PaymentMilestoneDto } from '../versions/payment-milestone.dto';
 
 /**
@@ -218,16 +216,4 @@ export class CreateQuoteDto {
   @Type(() => PaymentMilestoneDto)
   @IsOptional()
   paymentMilestones?: PaymentMilestoneDto[];
-
-  // ==================== Line Items ====================
-  @ApiProperty({
-    type: [QuoteLineItemDto],
-    description: 'Quote line items (must have at least 1)',
-  })
-  @IsArray()
-  @ArrayMinSize(1)
-  @ValidateNested({ each: true })
-  @Type(() => QuoteLineItemDto)
-  @IsNotEmpty()
-  lineItems!: QuoteLineItemDto[];
 }

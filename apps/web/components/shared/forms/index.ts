@@ -14,3 +14,5 @@ export type { LeadTemperatureSelectorProps } from './lead-temperature-selector';
 
 export { NumberStepper } from './number-stepper';
 export type { NumberStepperProps } from './number-stepper';
+
+export { FieldLabel } from './field-label';
