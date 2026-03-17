@@ -3,6 +3,7 @@ import { Controller, type Control, type FieldArrayWithId } from 'react-hook-form
 
 import type { ProductTypeFormData } from '../schemas/product-type.schema';
 
+import { FieldLabel } from '@/components/shared';
 import {
   Button,
   Input,
@@ -15,7 +16,6 @@ import {
   Textarea,
   Typography,
 } from '@/components/ui';
-import { FieldLabel } from '@/components/shared';
 
 const DATA_TYPE_OPTIONS = [
   { value: 'string', label: 'Text' },
@@ -27,7 +27,7 @@ const DATA_TYPE_OPTIONS = [
 
 interface ProductTypeAttributesEditorProps {
   control: Control<ProductTypeFormData>;
-  fields: FieldArrayWithId<ProductTypeFormData, 'attributes', 'id'>[];
+  fields: FieldArrayWithId<ProductTypeFormData, 'attributes'>[];
   onAdd: () => void;
   onRemove: (index: number) => void;
   watch: (name: `attributes.${number}.dataType`) => string | undefined;

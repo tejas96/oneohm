@@ -9,6 +9,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { ProductSpecificationsFields } from './product-specifications-fields';
 import { productSchema, type ProductFormData } from '../schemas/product.schema';
 
+import { Alert, FieldLabel } from '@/components/shared';
 import {
   Button,
   Card,
@@ -29,7 +30,6 @@ import {
   Textarea,
   Typography,
 } from '@/components/ui';
-import { Alert, FieldLabel } from '@/components/shared';
 import { useModalForm } from '@/lib/hooks/core';
 import {
   useBrandList,

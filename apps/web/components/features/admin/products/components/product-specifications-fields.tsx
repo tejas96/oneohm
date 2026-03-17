@@ -5,6 +5,7 @@ import { Controller, type Control } from 'react-hook-form';
 
 import type { ProductFormData } from '../schemas/product.schema';
 
+import { FieldLabel } from '@/components/shared';
 import {
   Input,
   Select,
@@ -15,7 +16,6 @@ import {
   Switch,
   Typography,
 } from '@/components/ui';
-import { FieldLabel } from '@/components/shared';
 import type { ProductTypeAttribute } from '@/lib/hooks/resources';
 
 interface ProductSpecificationsFieldsProps {

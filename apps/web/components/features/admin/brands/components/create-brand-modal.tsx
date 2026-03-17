@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 
 import { brandSchema, type BrandFormData } from '../schemas/brand.schema';
 
+import { Alert, FieldLabel } from '@/components/shared';
 import {
   Button,
   Checkbox,
@@ -23,7 +24,6 @@ import {
   Switch,
   Textarea,
 } from '@/components/ui';
-import { Alert, FieldLabel } from '@/components/shared';
 import { useModalForm } from '@/lib/hooks/core';
 import { useBrandMutations, useProductTypeList, type Brand } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils';

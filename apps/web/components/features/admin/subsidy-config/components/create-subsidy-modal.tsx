@@ -9,6 +9,7 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { SCHEME_TYPE_OPTIONS } from '../constants';
 import { subsidyConfigSchema, type SubsidyConfigFormData } from '../schemas/subsidy-config.schema';
 
+import { Alert, FieldLabel } from '@/components/shared';
 import {
   Button,
   Card,
@@ -30,7 +31,6 @@ import {
   Textarea,
   Typography,
 } from '@/components/ui';
-import { Alert, FieldLabel } from '@/components/shared';
 import { useModalForm } from '@/lib/hooks/core';
 import { useSubsidyConfigMutations, type SubsidyConfigItem } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils';

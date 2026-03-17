@@ -11,6 +11,7 @@ import {
   type InstallationPricingFormData,
 } from '../schemas/installation-pricing.schema';
 
+import { Alert, FieldLabel } from '@/components/shared';
 import {
   Button,
   Card,
@@ -26,7 +27,6 @@ import {
   Switch,
   Typography,
 } from '@/components/ui';
-import { Alert, FieldLabel } from '@/components/shared';
 import { useModalForm } from '@/lib/hooks/core';
 import {
   useInstallationPricingMutations,

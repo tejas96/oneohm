@@ -7,6 +7,7 @@ import { useFieldArray, useForm } from 'react-hook-form';
 
 import { quoteConfigSchema, type QuoteConfigFormData } from '../schemas/quote-config.schema';
 
+import { Alert, FieldLabel } from '@/components/shared';
 import {
   Button,
   Card,
@@ -22,7 +23,6 @@ import {
   Textarea,
   Typography,
 } from '@/components/ui';
-import { Alert, FieldLabel } from '@/components/shared';
 import { useQuoteConfig, useQuoteConfigMutations } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils';
 

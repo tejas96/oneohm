@@ -8,6 +8,7 @@ import { Controller, useForm } from 'react-hook-form';
 
 import { productPriceSchema, type ProductPriceFormData } from '../schemas/product-price.schema';
 
+import { Alert, FieldLabel } from '@/components/shared';
 import {
   Button,
   Card,
@@ -26,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui';
-import { Alert, FieldLabel } from '@/components/shared';
 import { useModalForm } from '@/lib/hooks/core';
 import { useProductPriceMutations, type ProductPrice } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils';

@@ -54,9 +54,9 @@ interface SiteVisit {
 
 function getValidStatus(value: string | null): 'all' | SiteVisitStatus {
   if (!value || value === 'all') return 'all';
-  if (value === SiteVisitStatus.PENDING) return SiteVisitStatus.PENDING;
-  if (value === SiteVisitStatus.IN_PROGRESS) return SiteVisitStatus.IN_PROGRESS;
-  if (value === SiteVisitStatus.COMPLETED) return SiteVisitStatus.COMPLETED;
+  if (value === SiteVisitStatus.PENDING.toString()) return SiteVisitStatus.PENDING;
+  if (value === SiteVisitStatus.IN_PROGRESS.toString()) return SiteVisitStatus.IN_PROGRESS;
+  if (value === SiteVisitStatus.COMPLETED.toString()) return SiteVisitStatus.COMPLETED;
   return 'all';
 }
 

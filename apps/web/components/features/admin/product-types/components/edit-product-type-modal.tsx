@@ -9,6 +9,7 @@ import { PRICING_BASIS_OPTIONS, UNIT_OF_MEASURE_OPTIONS } from '../constants';
 import { ProductTypeAttributesEditor } from './product-type-attributes-editor';
 import { productTypeSchema, type ProductTypeFormData } from '../schemas/product-type.schema';
 
+import { Alert, FieldLabel } from '@/components/shared';
 import {
   Button,
   Card,
@@ -29,7 +30,6 @@ import {
   Switch,
   Textarea,
 } from '@/components/ui';
-import { Alert, FieldLabel } from '@/components/shared';
 import { useModalForm } from '@/lib/hooks/core';
 import { useProductTypeMutations, type ProductType } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils';
