@@ -78,6 +78,9 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage,
   Badge,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from '@/components/ui';
 import {
   Dialog,
@@ -199,6 +202,12 @@ export function QuoteBuilder(): JSX.Element {
   const floorNumber = form.watch('floorNumber');
   const systemSizeKw = form.watch('systemSizeKw');
   const projectType = form.watch('projectType');
+  
+  // Watch form fields for validation
+  const preferredPanelBrand = form.watch('preferredPanelBrand');
+  const preferredInverterBrand = form.watch('preferredInverterBrand');
+  const preferredInverterCapacityKw = form.watch('preferredInverterCapacityKw');
+  const structureType = form.watch('structureType');
 
   const {
     transportRatePerKm,
@@ -224,6 +233,40 @@ export function QuoteBuilder(): JSX.Element {
   // ── Calculation state ──
   const [calculation, setCalculation] = useState<CalculateQuoteResponse | null>(null);
   const calculateMutation = useCalculateQuote();
+
+  // Validate required fields for calculate button
+  const { isCalculateDisabled, missingFields, tooltipMessage } = useMemo(() => {
+    const missing = [];
+    if (!preferredPanelBrand) missing.push('Panel Brand');
+    if (!preferredInverterBrand) missing.push('Inverter Brand');
+    if (!preferredInverterCapacityKw) missing.push('Inverter Capacity');
+    if (!structureType) missing.push('Structure Type');
+    
+    const hasMissingFields = missing.length > 0;
+    const isDisabled = calculateMutation.isPending || config.isLoading || hasMissingFields;
+    
+    let message = '';
+    if (hasMissingFields) {
+      message = `Please select: ${missing.join(', ')}`;
+    } else if (calculateMutation.isPending) {
+      message = 'Calculating quote...';
+    } else if (config.isLoading) {
+      message = 'Loading configuration...';
+    }
+    
+    return {
+      isCalculateDisabled: isDisabled,
+      missingFields: missing,
+      tooltipMessage: message,
+    };
+  }, [
+    calculateMutation.isPending,
+    config.isLoading,
+    preferredPanelBrand,
+    preferredInverterBrand,
+    preferredInverterCapacityKw,
+    structureType,
+  ]);
 
   // Manual quantity adjusters
   const [manualDcrPanelCount, setManualDcrPanelCount] = useState<number | undefined>();
@@ -996,7 +1039,14 @@ export function QuoteBuilder(): JSX.Element {
             <div className="space-y-4">
               {/* Panel Brand */}
               <div className="space-y-2">
-                <Label>Panel Brand</Label>
+                <div className="flex items-center gap-2">
+                  <Label>Panel Brand</Label>
+                  {missingFields.includes('Panel Brand') && (
+                    <Badge variant="destructive" size="xs">
+                      Required
+                    </Badge>
+                  )}
+                </div>
                 {config.isLoading ? (
                   <Skeleton className="h-9 w-full" />
                 ) : config.panelBrands.length === 0 ? (
@@ -1005,16 +1055,18 @@ export function QuoteBuilder(): JSX.Element {
                   </p>
                 ) : (
                   <Select
-                    value={form.watch('preferredPanelBrand') || 'auto'}
-                    onValueChange={(v) => formLogic.handleBrandChange(v === 'auto' ? '' : v)}
+                    value={form.watch('preferredPanelBrand') ?? ''}
+                    onValueChange={(v) => formLogic.handleBrandChange(v)}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Auto-select best available" />
+                    <SelectTrigger
+                      className={cn(
+                        missingFields.includes('Panel Brand') &&
+                          'border-destructive ring-destructive/20 ring-2',
+                      )}
+                    >
+                      <SelectValue placeholder="Select panel brand" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="auto">
-                        <span className="text-foreground-tertiary">Auto-select best available</span>
-                      </SelectItem>
                       {config.panelBrands.map((brand) => (
                         <SelectItem key={brand.value} value={brand.value}>
                           {brand.label}
@@ -1078,7 +1130,14 @@ export function QuoteBuilder(): JSX.Element {
 
               {/* Inverter Brand */}
               <div className="space-y-2">
-                <Label>Inverter Brand</Label>
+                <div className="flex items-center gap-2">
+                  <Label>Inverter Brand</Label>
+                  {missingFields.includes('Inverter Brand') && (
+                    <Badge variant="destructive" size="xs">
+                      Required
+                    </Badge>
+                  )}
+                </div>
                 {config.isLoading ? (
                   <Skeleton className="h-9 w-full" />
                 ) : config.inverterBrands.length === 0 ? (
@@ -1087,18 +1146,18 @@ export function QuoteBuilder(): JSX.Element {
                   </p>
                 ) : (
                   <Select
-                    value={form.watch('preferredInverterBrand') || 'auto'}
-                    onValueChange={(v) =>
-                      formLogic.handleInverterBrandChange(v === 'auto' ? '' : v)
-                    }
+                    value={form.watch('preferredInverterBrand') ?? ''}
+                    onValueChange={(v) => formLogic.handleInverterBrandChange(v)}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Auto-select best available" />
+                    <SelectTrigger
+                      className={cn(
+                        missingFields.includes('Inverter Brand') &&
+                          'border-destructive ring-destructive/20 ring-2',
+                      )}
+                    >
+                      <SelectValue placeholder="Select inverter brand" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="auto">
-                        <span className="text-foreground-tertiary">Auto-select best available</span>
-                      </SelectItem>
                       {config.inverterBrands.map((brand) => (
                         <SelectItem key={brand.value} value={brand.value}>
                           {brand.label}
@@ -1116,7 +1175,14 @@ export function QuoteBuilder(): JSX.Element {
 
               {/* Inverter Capacity */}
               <div className="space-y-2">
-                <Label>Inverter Capacity</Label>
+                <div className="flex items-center gap-2">
+                  <Label>Inverter Capacity</Label>
+                  {missingFields.includes('Inverter Capacity') && (
+                    <Badge variant="destructive" size="xs">
+                      Required
+                    </Badge>
+                  )}
+                </div>
                 {(() => {
                   const capacityOptions = config.getInverterCapacities(
                     form.watch('phaseType'),
@@ -1128,21 +1194,20 @@ export function QuoteBuilder(): JSX.Element {
                     </p>
                   ) : (
                     <Select
-                      value={form.watch('preferredInverterCapacityKw')?.toString() ?? 'auto'}
+                      value={form.watch('preferredInverterCapacityKw')?.toString() ?? ''}
                       onValueChange={(v) =>
-                        formLogic.handleFieldChange(
-                          'preferredInverterCapacityKw',
-                          v === 'auto' ? undefined : Number(v),
-                        )
+                        formLogic.handleFieldChange('preferredInverterCapacityKw', Number(v))
                       }
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Auto-select optimal" />
+                      <SelectTrigger
+                        className={cn(
+                          missingFields.includes('Inverter Capacity') &&
+                            'border-destructive ring-destructive/20 ring-2',
+                        )}
+                      >
+                        <SelectValue placeholder="Select inverter capacity" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="auto">
-                          <span className="text-foreground-tertiary">Auto-select optimal</span>
-                        </SelectItem>
                         {capacityOptions.map((cap) => (
                           <SelectItem key={cap.value} value={cap.value.toString()}>
                             {cap.label}
@@ -1156,7 +1221,14 @@ export function QuoteBuilder(): JSX.Element {
 
               {/* Structure Type */}
               <div className="space-y-2">
-                <Label>Structure Type *</Label>
+                <div className="flex items-center gap-2">
+                  <Label>Structure Type *</Label>
+                  {missingFields.includes('Structure Type') && (
+                    <Badge variant="destructive" size="xs">
+                      Required
+                    </Badge>
+                  )}
+                </div>
                 {config.isLoading ? (
                   <div className="flex flex-wrap gap-2">
                     {Array.from({ length: 3 }).map((_, i) => (
@@ -1168,7 +1240,13 @@ export function QuoteBuilder(): JSX.Element {
                     No structure types available. Check product configuration.
                   </p>
                 ) : (
-                  <div className="flex flex-wrap gap-2">
+                  <div 
+                    className={cn(
+                      "flex flex-wrap gap-2 rounded-lg p-3 transition-colors",
+                      missingFields.includes('Structure Type') && 
+                      'border-2 border-destructive/30 bg-destructive/5'
+                    )}
+                  >
                     {config.structureTypes.map((opt) => {
                       const isSelected = form.watch('structureType') === opt.value;
                       return (
@@ -1361,25 +1439,36 @@ export function QuoteBuilder(): JSX.Element {
             >
               Cancel
             </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                void handleCalculate({ resetManualCounts: true });
-              }}
-              disabled={calculateMutation.isPending || config.isLoading}
-            >
-              {calculateMutation.isPending ? (
-                <>
-                  <Spinner size="xs" className="mr-1.5" />
-                  Calculating...
-                </>
-              ) : (
-                <>
-                  <Calculator className="mr-1.5 size-4" />
-                  Calculate Quote
-                </>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex">
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      void handleCalculate({ resetManualCounts: true });
+                    }}
+                    disabled={isCalculateDisabled}
+                  >
+                    {calculateMutation.isPending ? (
+                      <>
+                        <Spinner size="xs" className="mr-1.5" />
+                        Calculating...
+                      </>
+                    ) : (
+                      <>
+                        <Calculator className="mr-1.5 size-4" />
+                        Calculate Quote
+                      </>
+                    )}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {tooltipMessage && (
+                <TooltipContent>
+                  <p className="text-sm">{tooltipMessage}</p>
+                </TooltipContent>
               )}
-            </Button>
+            </Tooltip>
           </div>
         </div>
 

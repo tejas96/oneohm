@@ -9,14 +9,12 @@ import {
   CalculatedInverterConfig,
   CalculatedInstallationCost,
   CalculatedSubsidy,
-  QuoteConfigSnapshot,
   ValidationWarning,
 } from '@oneohm-epc/shared/types';
 
 import { InstallationPricing } from '../../master-data/entities/installation-pricing.entity';
 import { ProductEntity } from '../../master-data/entities/product.entity';
 import { QuoteConfiguration } from '../../master-data/entities/quote-configuration.entity';
-import { SubsidyConfiguration } from '../../master-data/entities/subsidy-configuration.entity';
 import {
   ProductRepository,
   ProductPriceRepository,
@@ -281,91 +279,6 @@ export class QuoteCalculatorService {
       profitabilityPercent,
       profitabilityAmount,
       calculatedAt: new Date().toISOString(),
-    };
-  }
-
-  /**
-   * Create configuration snapshot for audit trail
-   */
-  async createConfigSnapshot(
-    organizationId: string,
-    panels: CalculatedPanelConfig[],
-    inverters: CalculatedInverterConfig,
-    structure: {
-      productId: string;
-      name: string;
-      unitPrice: number;
-      gstRate?: number;
-      structureType?: string;
-    },
-    installation: CalculatedInstallationCost,
-    installationPricing: InstallationPricing,
-    subsidyConfig: SubsidyConfiguration | null,
-    quoteConfig: QuoteConfiguration,
-  ): Promise<QuoteConfigSnapshot> {
-    return {
-      panels: panels.map((p) => ({
-        productId: p.productId,
-        name: p.name,
-        brand: p.brand,
-        pricePerWatt: p.pricePerWatt,
-        isDcr: p.isDcr,
-        technology: p.technology,
-        gstRate: p.gstRate,
-        wattage: p.wattagePerPanel,
-      })),
-      inverters: inverters.inverters.map((inv) => ({
-        productId: inv.productId,
-        name: inv.name,
-        brand: inv.brand,
-        capacityKw: inv.capacityKw,
-        unitPrice: inv.unitPrice,
-        gstRate: inv.gstRate,
-      })),
-      structure: {
-        productId: structure.productId,
-        name: structure.name,
-        pricePerKw: structure.unitPrice,
-        gstRate: structure.gstRate,
-        structureType: structure.structureType,
-      },
-      installationPricing: {
-        minSystemSizeKw: Number(installationPricing.minSystemSizeKw),
-        maxSystemSizeKw:
-          installationPricing.maxSystemSizeKw != null
-            ? Number(installationPricing.maxSystemSizeKw)
-            : null,
-        electricalWorkCost: installation.electricalWork,
-        fixedMaterialCost: installation.fixedMaterial,
-        variableFloorCost: installation.variableFloor,
-        msedclCharges: installation.msedclCharges,
-        supervisionCharges: installation.supervision,
-        floorIncrementPercent: Number(installationPricing.floorIncrementPercent),
-        transportCostPerKm: Number(installationPricing.transportRatePerKm),
-        gstRate: installation.gstRate,
-      },
-      subsidyConfig: subsidyConfig
-        ? {
-            schemeName: subsidyConfig.schemeName,
-            schemeType: subsidyConfig.schemeType,
-            projectType: subsidyConfig.projectType,
-            maxSubsidyKw: Number(subsidyConfig.maxSubsidyKw),
-            requiresDcr: subsidyConfig.requiresDcr,
-            autoSplitEnabled: subsidyConfig.autoSplitEnabled,
-            tiers: subsidyConfig.tiers,
-            isActive: subsidyConfig.isActive,
-          }
-        : null,
-      quoteConfig: {
-        defaultValidityDays: quoteConfig.defaultValidityDays,
-        maxVersions: quoteConfig.maxVersions,
-        defaultCompletionWeeks: quoteConfig.defaultCompletionWeeks,
-        gstConfig: quoteConfig.gstConfig,
-        wattageRounding: quoteConfig.wattageRounding,
-        paymentMilestones: quoteConfig.paymentMilestones,
-        showInventoryStock: quoteConfig.showInventoryStock,
-      },
-      snapshotAt: new Date().toISOString(),
     };
   }
 

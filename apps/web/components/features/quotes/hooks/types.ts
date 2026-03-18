@@ -3,7 +3,6 @@ import type {
   PaymentMilestone,
   PricingBreakdown,
   ProjectType,
-  QuoteConfigSnapshot,
   QuoteStatus,
   SystemType,
 } from '@oneohm-epc/shared/types';
@@ -53,7 +52,6 @@ export interface QuoteDetail {
   pricingBreakdown?: PricingBreakdown;
   paymentMilestones?: PaymentMilestone[];
   projectCompletionWeeks?: number;
-  configSnapshot?: QuoteConfigSnapshot;
   versions?: QuoteVersionDetail[];
 }
 
@@ -76,7 +74,6 @@ export interface QuoteVersionDetail {
   projectCompletionWeeks: number;
   changeSummary?: string;
   isCurrent: boolean;
-  configSnapshot?: QuoteConfigSnapshot;
   createdBy: string;
   createdAt: string;
 }

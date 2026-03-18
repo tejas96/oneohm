@@ -15,7 +15,6 @@ import {
   DcrPreference,
   type PricingBreakdown,
   ProjectType,
-  type QuoteConfigSnapshot,
   QuoteCalculationMode,
   SystemType,
 } from '@oneohm-epc/shared/types';
@@ -204,38 +203,6 @@ export class QuoteCalculatorController {
       isSubsidyApplicable: calculation.subsidy.isApplicable,
     };
 
-    const configSnapshot: QuoteConfigSnapshot = {
-      panels: calculation.panels.map((p) => ({
-        productId: p.productId,
-        name: p.name,
-        brand: p.brand,
-        pricePerWatt: p.pricePerWatt,
-        isDcr: p.isDcr,
-        technology: p.technology,
-        gstRate: p.gstRate,
-        wattage: p.wattagePerPanel,
-      })),
-      inverters: calculation.inverters.inverters.map((inv) => ({
-        productId: inv.productId,
-        name: inv.name,
-        brand: inv.brand,
-        capacityKw: inv.capacityKw,
-        unitPrice: inv.unitPrice,
-        gstRate: inv.gstRate,
-      })),
-      structure: {
-        productId: calculation.structure.productId,
-        name: calculation.structure.name,
-        pricePerKw: calculation.structure.unitPrice,
-        gstRate: calculation.structure.gstRate,
-        structureType: calculation.structure.structureType,
-      },
-      installationPricing:
-        calculation.installation as unknown as QuoteConfigSnapshot['installationPricing'],
-      subsidyConfig: null,
-      quoteConfig: quoteConfig as QuoteConfigSnapshot['quoteConfig'],
-      snapshotAt: new Date().toISOString(),
-    };
 
     // ── Determine if this is a revision or a new quote ──
     // If quoteId is explicitly provided, verify it still has version capacity.
@@ -360,7 +327,6 @@ export class QuoteCalculatorController {
       validUntil: validUntil.toISOString().split('T')[0] as string,
       calculatorInputs,
       pricingBreakdown,
-      configSnapshot,
       finalPrice,
       effectivePrice,
       discountAmount,

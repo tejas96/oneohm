@@ -4,7 +4,6 @@ import {
   type PaymentMilestone,
   type PricingBreakdown,
   ProjectType,
-  type QuoteConfigSnapshot,
   QuoteStatus,
   SystemType,
 } from '@oneohm-epc/shared/types';
@@ -238,10 +237,6 @@ export class QuoteResponseDto {
   @Transform(({ obj }) => cv(obj)?.projectCompletionWeeks ?? undefined)
   projectCompletionWeeks?: number;
 
-  @ApiPropertyOptional({ description: 'Configuration snapshot from current version' })
-  @Expose()
-  @Transform(({ obj }) => cv(obj)?.configSnapshot ?? undefined)
-  configSnapshot?: QuoteConfigSnapshot;
 
   @ApiPropertyOptional({
     description: 'All versions',
@@ -269,7 +264,6 @@ export class QuoteResponseDto {
       projectCompletionWeeks: v.projectCompletionWeeks,
       changeSummary: v.changeSummary,
       isCurrent: v.isCurrent,
-      configSnapshot: v.configSnapshot,
       createdBy: v.createdBy,
       createdAt: v.createdAt,
     }));

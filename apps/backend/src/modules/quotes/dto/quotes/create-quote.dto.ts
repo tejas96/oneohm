@@ -3,7 +3,6 @@ import {
   CalculatorInputs,
   PricingBreakdown,
   ProjectType,
-  QuoteConfigSnapshot,
   SystemType,
 } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
@@ -162,13 +161,6 @@ export class CreateQuoteDto {
   @IsObject()
   calculatorInputs?: CalculatorInputs;
 
-  // ==================== Config Snapshot ====================
-  @ApiPropertyOptional({
-    description: 'Frozen product prices and configuration at quote creation time',
-  })
-  @IsOptional()
-  @IsObject()
-  configSnapshot?: QuoteConfigSnapshot;
 
   // ==================== Loan Financing ====================
   @ApiPropertyOptional({

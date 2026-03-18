@@ -3,7 +3,6 @@ import {
   PaymentMilestone,
   PricingBreakdown,
   ProjectType,
-  QuoteConfigSnapshot,
   SystemType,
 } from '@oneohm-epc/shared/types';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
@@ -89,9 +88,6 @@ export class QuoteVersionEntity extends BaseEntity {
   @Column({ type: 'boolean', name: 'is_current', default: true })
   isCurrent!: boolean;
 
-  // ==================== Configuration Snapshot ====================
-  @Column({ type: 'jsonb', name: 'config_snapshot', nullable: true })
-  configSnapshot?: QuoteConfigSnapshot;
 
   // ==================== Audit ====================
   @Column({ type: 'uuid', name: 'created_by' })

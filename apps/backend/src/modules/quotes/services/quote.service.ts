@@ -134,7 +134,6 @@ export class QuoteService {
           effectivePrice,
           calculatorInputs: createDto.calculatorInputs,
           pricingBreakdown,
-          configSnapshot: createDto.configSnapshot,
           paymentMilestones,
           projectCompletionWeeks:
             createDto.projectCompletionWeeks || quoteConfig.defaultCompletionWeeks,
@@ -335,7 +334,6 @@ export class QuoteService {
           effectivePrice,
           calculatorInputs: updateDto.calculatorInputs || currentVersion.calculatorInputs,
           pricingBreakdown,
-          configSnapshot: currentVersion.configSnapshot,
           paymentMilestones:
             updateDto.paymentMilestones ||
             currentVersion?.paymentMilestones ||
