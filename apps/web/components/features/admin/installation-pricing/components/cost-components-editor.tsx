@@ -58,7 +58,8 @@ export function CostComponentsEditor({ form }: CostComponentsEditorProps): JSX.E
       if (key === 'variable_floor') return;
       const current = form.getValues('costComponents') ?? {};
       if (Object.keys(current).length <= 1) return;
-      const { [key]: _, ...rest } = current;
+      const { [key]: removedValue, ...rest } = current;
+      void removedValue;
       form.setValue('costComponents', rest, { shouldValidate: true });
     },
     [form],
