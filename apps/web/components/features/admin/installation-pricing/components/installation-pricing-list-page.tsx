@@ -47,6 +47,9 @@ import {
 import { formatCurrency, formatDate, getErrorMessage } from '@/lib/utils';
 
 function getTierLabel(item: InstallationPricingItem): string {
+  if (item.maxSystemSizeKw != null && Number(item.maxSystemSizeKw) === Number(item.minSystemSizeKw)) {
+    return `${item.minSystemSizeKw} kW`;
+  }
   const max = item.maxSystemSizeKw == null ? '∞' : item.maxSystemSizeKw;
   return `${item.minSystemSizeKw}–${max} kW`;
 }
@@ -445,11 +448,12 @@ export function InstallationPricingListPage(): JSX.Element {
             <DialogTitle>Delete Tier</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete the tier{' '}
-              <span className="font-medium">{deleteConfirmation.target?.minSystemSizeKw}</span>–
               <span className="font-medium">
-                {deleteConfirmation.target?.maxSystemSizeKw ?? '∞'}
-              </span>{' '}
-              kW?
+                {deleteConfirmation.target
+                  ? getTierLabel(deleteConfirmation.target)
+                  : ''}
+              </span>
+              ?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

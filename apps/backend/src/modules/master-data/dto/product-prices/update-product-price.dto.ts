@@ -37,10 +37,10 @@ export class UpdateProductPriceDto {
   @MaxLength(3)
   currency?: string;
 
-  @ApiPropertyOptional({ enum: ProjectType })
+  @ApiPropertyOptional({ enum: ProjectType, nullable: true })
   @IsEnum(ProjectType)
   @IsOptional()
-  projectType?: ProjectType;
+  projectType?: ProjectType | null;
 
   @ApiPropertyOptional({ example: '2024-01-01' })
   @IsDateString()

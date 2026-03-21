@@ -13,7 +13,7 @@ export const productPriceSchema = z.object({
     .min(0, 'GST rate must be >= 0')
     .max(100, 'GST rate must be <= 100'),
   currency: z.string().trim().min(1, 'Currency is required').max(3),
-  projectType: z.nativeEnum(ProjectType).optional(),
+  projectType: z.nativeEnum(ProjectType).nullable().optional(),
   effectiveFrom: z.string().min(1, 'Effective from date is required'),
   effectiveTo: z.string().optional(),
 });

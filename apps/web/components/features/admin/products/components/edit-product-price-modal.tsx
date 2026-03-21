@@ -8,24 +8,20 @@ import { Controller, useForm } from 'react-hook-form';
 
 import { productPriceSchema, type ProductPriceFormData } from '../schemas/product-price.schema';
 
-import { Alert, FieldLabel } from '@/components/shared';
+import { Alert } from '@/components/shared';
 import {
   Button,
   Card,
   CardContent,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  MUIDialog,
+  MUIDialogBody,
+  MUIDialogDescription,
+  MUIDialogFooter,
+  MUIDialogHeader,
+  MUIDialogTitle,
+  MUIDatePicker,
+  MUIInput,
+  MUISelect,
 } from '@/components/ui';
 import { useModalForm } from '@/lib/hooks/core';
 import { useProductPriceMutations, type ProductPrice } from '@/lib/hooks/resources';
@@ -87,7 +83,7 @@ export function EditProductPriceModal({
         costMultiplier: data.costMultiplier,
         gstRate: data.gstRate,
         currency: data.currency,
-        projectType: data.projectType,
+        projectType: data.projectType ?? null,
         effectiveFrom: data.effectiveFrom,
         effectiveTo: data.effectiveTo || undefined,
       },
@@ -95,14 +91,18 @@ export function EditProductPriceModal({
   });
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[520px]">
-        <DialogHeader>
-          <DialogTitle>Edit Pricing</DialogTitle>
-          <DialogDescription>Update pricing values for this product.</DialogDescription>
-        </DialogHeader>
+    <MUIDialog
+      open={open}
+      onOpenChange={handleClose}
+      size="lg"
+      disableEnforceFocus
+    >
+        <MUIDialogHeader>
+          <MUIDialogTitle>Edit Pricing</MUIDialogTitle>
+          <MUIDialogDescription>Update pricing values for this product.</MUIDialogDescription>
+        </MUIDialogHeader>
         <form onSubmit={(event) => void handleSubmit(event)}>
-          <DialogBody className="space-y-4">
+          <MUIDialogBody sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {Boolean(priceMutations.update.error) && (
               <Alert variant="error" appearance="minimal">
                 {getErrorMessage(priceMutations.update.error)}
@@ -120,153 +120,107 @@ export function EditProductPriceModal({
                 <Alert variant="info" appearance="minimal">
                   Use a project type only if the pricing varies by project category.
                 </Alert>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="price-unit"
-                      label="Unit Price"
-                      required
-                      tooltip="Base unit price before GST (e.g., 15000)."
-                    />
-                    <Input
-                      id="price-unit"
-                      type="number"
-                      step="0.01"
-                      placeholder="e.g. 15000"
-                      error={form.formState.errors.unitPrice?.message}
-                      {...form.register('unitPrice', { valueAsNumber: true })}
-                    />
-                    {form.formState.errors.unitPrice && (
-                      <p className="text-xs text-error">
-                        {form.formState.errors.unitPrice.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="price-multiplier"
-                      label="Cost Multiplier"
-                      tooltip="Multiplier applied to cost for margin (e.g., 1.05)."
-                    />
-                    <Input
-                      id="price-multiplier"
-                      type="number"
-                      step="0.01"
-                      placeholder="e.g. 1.05"
-                      error={form.formState.errors.costMultiplier?.message}
-                      {...form.register('costMultiplier', { valueAsNumber: true })}
-                    />
-                    {form.formState.errors.costMultiplier && (
-                      <p className="text-xs text-error">
-                        {form.formState.errors.costMultiplier.message}
-                      </p>
-                    )}
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <MUIInput
+                    id="price-unit"
+                    fieldLabel="Unit Price"
+                    required
+                    tooltip="Base unit price before GST (e.g., 15000)."
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 15000"
+                    error={form.formState.errors.unitPrice?.message}
+                    {...form.register('unitPrice', { valueAsNumber: true })}
+                  />
+                  <MUIInput
+                    id="price-multiplier"
+                    fieldLabel="Cost Multiplier"
+                    tooltip="Multiplier applied to cost for margin (e.g., 1.05)."
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 1.05"
+                    error={form.formState.errors.costMultiplier?.message}
+                    {...form.register('costMultiplier', { valueAsNumber: true })}
+                  />
+                  <MUIInput
+                    id="price-gst"
+                    fieldLabel="GST Rate (%)"
+                    tooltip="GST percentage applied to this price (e.g., 12)."
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g. 12"
+                    error={form.formState.errors.gstRate?.message}
+                    {...form.register('gstRate', { valueAsNumber: true })}
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="price-gst"
-                      label="GST Rate (%)"
-                      tooltip="GST percentage applied to this price (e.g., 12)."
-                    />
-                    <Input
-                      id="price-gst"
-                      type="number"
-                      step="0.01"
-                      placeholder="e.g. 12"
-                      error={form.formState.errors.gstRate?.message}
-                      {...form.register('gstRate', { valueAsNumber: true })}
-                    />
-                    {form.formState.errors.gstRate && (
-                      <p className="text-xs text-error">{form.formState.errors.gstRate.message}</p>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="price-currency"
-                      label="Currency"
-                      tooltip="Currency code (e.g., INR)."
-                    />
-                    <Input
-                      id="price-currency"
-                      placeholder="e.g. INR"
-                      {...form.register('currency')}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <FieldLabel
-                    label="Project Type (optional)"
-                    tooltip="Choose if pricing varies by project category."
+                  <MUIInput
+                    id="price-currency"
+                    fieldLabel="Currency"
+                    tooltip="Currency code (e.g., INR)."
+                    placeholder="e.g. INR"
+                    {...form.register('currency')}
                   />
                   <Controller
                     name="projectType"
                     control={form.control}
                     render={({ field }) => (
-                      <Select
+                      <MUISelect
+                        fieldLabel="Project Type (optional)"
+                        tooltip="Choose if pricing varies by project category."
                         value={field.value ?? 'all'}
-                        onValueChange={(value) =>
-                          field.onChange(value === 'all' ? undefined : value)
+                        onChange={(event) =>
+                          field.onChange(event.target.value === 'all' ? null : event.target.value)
                         }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="All project types (default)" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All</SelectItem>
-                          {Object.values(ProjectType).map((type) => (
-                            <SelectItem key={type} value={type}>
-                              {type}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        options={[
+                          { value: 'all', label: 'All' },
+                          ...Object.values(ProjectType).map((type) => ({
+                            value: type,
+                            label: type,
+                          })),
+                        ]}
+                      />
                     )}
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="price-from"
-                      label="Effective From"
-                      required
-                      tooltip="Date when this price becomes active."
-                    />
-                    <Input
-                      id="price-from"
-                      type="date"
-                      placeholder="YYYY-MM-DD"
-                      error={form.formState.errors.effectiveFrom?.message}
-                      {...form.register('effectiveFrom')}
-                    />
-                    {form.formState.errors.effectiveFrom && (
-                      <p className="text-xs text-error">
-                        {form.formState.errors.effectiveFrom.message}
-                      </p>
+                  <Controller
+                    name="effectiveFrom"
+                    control={form.control}
+                    render={({ field }) => (
+                      <MUIDatePicker
+                        fieldLabel="Effective From"
+                        required
+                        tooltip="Date when this price becomes active."
+                        error={form.formState.errors.effectiveFrom?.message}
+                        value={field.value || null}
+                        onChange={(date) =>
+                          field.onChange(date ? date.toISOString().slice(0, 10) : '')
+                        }
+                      />
                     )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="price-to"
-                      label="Effective To"
-                      tooltip="Optional end date for this price."
-                    />
-                    <Input
-                      id="price-to"
-                      type="date"
-                      placeholder="YYYY-MM-DD"
-                      {...form.register('effectiveTo')}
-                    />
-                  </div>
+                  />
+                  <Controller
+                    name="effectiveTo"
+                    control={form.control}
+                    render={({ field }) => (
+                      <MUIDatePicker
+                        fieldLabel="Effective To"
+                        tooltip="Optional end date for this price."
+                        value={field.value || null}
+                        onChange={(date) =>
+                          field.onChange(date ? date.toISOString().slice(0, 10) : '')
+                        }
+                      />
+                    )}
+                  />
                 </div>
               </CardContent>
             </Card>
-          </DialogBody>
-          <DialogFooter>
+          </MUIDialogBody>
+          <MUIDialogFooter>
             <Button variant="outline" onClick={() => handleClose(false)}>
               Cancel
             </Button>
@@ -280,9 +234,8 @@ export function EditProductPriceModal({
                 'Save Changes'
               )}
             </Button>
-          </DialogFooter>
+          </MUIDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+    </MUIDialog>
   );
 }

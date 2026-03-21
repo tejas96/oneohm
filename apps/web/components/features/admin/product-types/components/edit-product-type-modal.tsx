@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
-import { type JSX, useEffect } from 'react';
+import { type JSX, useEffect, useMemo } from 'react';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
 
 import { PRICING_BASIS_OPTIONS, UNIT_OF_MEASURE_OPTIONS } from '../constants';
@@ -14,24 +14,19 @@ import {
   Button,
   Card,
   CardContent,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Switch,
+  MUIDialog,
+  MUIDialogBody,
+  MUIDialogDescription,
+  MUIDialogFooter,
+  MUIDialogHeader,
+  MUIDialogTitle,
+  MUIInput,
+  MUISelect,
+  MUISwitch,
   Textarea,
 } from '@/components/ui';
 import { useModalForm } from '@/lib/hooks/core';
-import { useProductTypeMutations, type ProductType } from '@/lib/hooks/resources';
+import { useProductTypeList, useProductTypeMutations, type ProductType } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils';
 
 interface EditProductTypeModalProps {
@@ -46,6 +41,21 @@ export function EditProductTypeModal({
   target,
 }: EditProductTypeModalProps): JSX.Element {
   const productTypeMutations = useProductTypeMutations();
+  const productTypes = useProductTypeList({ syncToUrl: false, defaultPageSize: 200 });
+  const codeOptions = useMemo(
+    () => {
+      const codes = new Map<string, string>();
+      productTypes.items.forEach((type) => {
+        if (type.code) {
+          codes.set(type.code, type.name);
+        }
+      });
+      return Array.from(codes.entries())
+        .map(([code, name]) => ({ value: code, label: code, description: name }))
+        .sort((a, b) => a.value.localeCompare(b.value));
+    },
+    [productTypes.items],
+  );
 
   const form = useForm<ProductTypeFormData>({
     resolver: zodResolver(productTypeSchema),
@@ -59,17 +69,24 @@ export function EditProductTypeModal({
       defaultPricingBasis: PRICING_BASIS_OPTIONS[0]?.value ?? 'per_unit',
       defaultGstRate: 12,
       isActive: true,
-      sortOrder: 0,
+      sortOrder: 1,
       attributes: [],
     },
   });
 
   const attributesFieldArray = useFieldArray({ control: form.control, name: 'attributes' });
 
+  const systemAttrKeys = useMemo(() => {
+    if (!target?.attributes) return new Set<string>();
+    return new Set(
+      target.attributes.filter((a) => a.isSystem).map((a) => a.attributeKey),
+    );
+  }, [target]);
+
   useEffect(() => {
     if (!target) return;
     const mappedAttributes =
-      target.attributes?.map((attr) => ({
+      target.attributes?.map((attr, index) => ({
         id: attr.id,
         attributeKey: attr.attributeKey ?? '',
         label: attr.label ?? '',
@@ -80,7 +97,7 @@ export function EditProductTypeModal({
         isRequired: attr.isRequired ?? false,
         isFilterable: attr.isFilterable ?? false,
         groupName: attr.groupName ?? 'general',
-        sortOrder: attr.sortOrder ?? 0,
+        sortOrder: Math.max(1, attr.sortOrder ?? index + 1),
         defaultValue: attr.defaultValue ?? '',
         helpText: attr.helpText ?? '',
         validationMin:
@@ -103,7 +120,7 @@ export function EditProductTypeModal({
       defaultPricingBasis: target.defaultPricingBasis ?? PRICING_BASIS_OPTIONS[0]?.value ?? '',
       defaultGstRate: target.defaultGstRate ?? 0,
       isActive: target.isActive,
-      sortOrder: target.sortOrder ?? 0,
+      sortOrder: Math.max(1, target.sortOrder ?? 1),
       attributes: mappedAttributes,
     });
   }, [form, target]);
@@ -167,16 +184,15 @@ export function EditProductTypeModal({
   });
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[640px]">
-        <DialogHeader>
-          <DialogTitle>Edit Product Type</DialogTitle>
-          <DialogDescription>
+    <MUIDialog open={open} onOpenChange={handleClose} size="lg">
+        <MUIDialogHeader>
+          <MUIDialogTitle>Edit Product Type</MUIDialogTitle>
+          <MUIDialogDescription>
             Update defaults and visibility for this product type.
-          </DialogDescription>
-        </DialogHeader>
+          </MUIDialogDescription>
+        </MUIDialogHeader>
         <form onSubmit={(event) => void handleSubmit(event)}>
-          <DialogBody className="space-y-4 max-h-[70vh] overflow-y-auto">
+          <MUIDialogBody sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {Boolean(productTypeMutations.update.error) && (
               <Alert variant="error" appearance="minimal">
                 {getErrorMessage(productTypeMutations.update.error)}
@@ -195,54 +211,71 @@ export function EditProductTypeModal({
                   Keep the code stable to avoid impacting product associations.
                 </Alert>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="product-type-name"
-                      label="Name"
-                      required
-                      tooltip="User-friendly type name (e.g., Solar Panel)."
-                    />
-                    <Input
-                      id="product-type-name"
-                      error={form.formState.errors.name?.message}
-                      placeholder="e.g. Solar Panel"
-                      {...form.register('name')}
-                    />
-                    {form.formState.errors.name && (
-                      <p className="text-xs text-error">{form.formState.errors.name.message}</p>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="product-type-code"
-                      label="Code"
-                      required
-                      tooltip="Short stable code used in integrations (e.g., PANEL)."
-                    />
-                    <Input
+                  <MUIInput
+                    id="product-type-name"
+                    fieldLabel="Name"
+                    required
+                    tooltip="User-friendly type name (e.g., Solar Panel)."
+                    error={form.formState.errors.name?.message}
+                    placeholder="e.g. Solar Panel"
+                    {...form.register('name')}
+                  />
+                  {target?.isSystem ? (
+                    <MUIInput
                       id="product-type-code"
-                      error={form.formState.errors.code?.message}
+                      fieldLabel="Code"
+                      required
+                      tooltip="System product type code cannot be changed."
+                      disabled
+                      value={target.code}
                       placeholder="e.g. PANEL"
-                      {...form.register('code')}
                     />
-                    {form.formState.errors.code && (
-                      <p className="text-xs text-error">{form.formState.errors.code.message}</p>
-                    )}
-                  </div>
+                  ) : (
+                    <Controller
+                      name="code"
+                      control={form.control}
+                      render={({ field }) => (
+                        <MUIInput
+                          mode="autocomplete"
+                          id="product-type-code"
+                          fieldLabel="Code"
+                          required
+                          tooltip="Short stable code used in integrations (e.g., PANEL)."
+                          freeSolo
+                          options={codeOptions}
+                          value={field.value ?? ''}
+                          inputValue={field.value ?? ''}
+                          onInputChange={field.onChange}
+                          onBlur={field.onBlur}
+                          onChange={(value) => {
+                            if (typeof value === 'string') {
+                              field.onChange(value);
+                              return;
+                            }
+                            field.onChange(value?.value ?? value?.label ?? '');
+                          }}
+                          getOptionLabel={(option) =>
+                            typeof option === 'string'
+                              ? option
+                              : option.label ?? option.value ?? ''
+                          }
+                          clearable
+                          onClear={() => field.onChange('')}
+                          error={form.formState.errors.code?.message}
+                          textFieldProps={{ placeholder: 'e.g. PANEL' }}
+                        />
+                      )}
+                    />
+                  )}
                 </div>
 
-                <div className="space-y-1.5">
-                  <FieldLabel
-                    htmlFor="product-type-icon"
-                    label="Icon"
-                    tooltip="Optional icon name for UI display (e.g., solar-panel)."
-                  />
-                  <Input
-                    id="product-type-icon"
-                    placeholder="e.g. solar-panel"
-                    {...form.register('icon')}
-                  />
-                </div>
+                <MUIInput
+                  id="product-type-icon"
+                  fieldLabel="Icon"
+                  tooltip="Optional icon name for UI display (e.g., solar-panel)."
+                  placeholder="e.g. solar-panel"
+                  {...form.register('icon')}
+                />
 
                 <div className="space-y-1.5">
                   <FieldLabel
@@ -270,116 +303,94 @@ export function EditProductTypeModal({
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      label="Default Unit"
-                      required
-                      tooltip="Default unit used for pricing and inventory."
-                    />
-                    <Controller
-                      name="defaultUnitOfMeasure"
-                      control={form.control}
-                      render={({ field }) => (
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select unit" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {UNIT_OF_MEASURE_OPTIONS.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      label="Pricing Basis"
-                      required
-                      tooltip="How pricing is calculated for this type."
-                    />
-                    <Controller
-                      name="defaultPricingBasis"
-                      control={form.control}
-                      render={({ field }) => (
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select basis" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {PRICING_BASIS_OPTIONS.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
+                  <Controller
+                    name="defaultUnitOfMeasure"
+                    control={form.control}
+                    render={({ field }) => (
+                      <MUISelect
+                        fieldLabel="Default Unit"
+                        required
+                        tooltip="Default unit used for pricing and inventory."
+                        value={field.value}
+                        onChange={(event) => field.onChange(event.target.value)}
+                        options={UNIT_OF_MEASURE_OPTIONS.map((option) => ({
+                          value: option.value,
+                          label: option.label,
+                        }))}
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="defaultPricingBasis"
+                    control={form.control}
+                    render={({ field }) => (
+                      <MUISelect
+                        fieldLabel="Pricing Basis"
+                        required
+                        tooltip="How pricing is calculated for this type."
+                        value={field.value}
+                        onChange={(event) => field.onChange(event.target.value)}
+                        options={PRICING_BASIS_OPTIONS.map((option) => ({
+                          value: option.value,
+                          label: option.label,
+                        }))}
+                      />
+                    )}
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="product-type-gst"
-                      label="Default GST (%)"
-                      tooltip="GST percentage applied by default."
-                    />
-                    <Input
-                      id="product-type-gst"
-                      type="number"
-                      step="0.01"
-                      error={form.formState.errors.defaultGstRate?.message}
-                      placeholder="e.g. 12"
-                      {...form.register('defaultGstRate', { valueAsNumber: true })}
-                    />
-                    {form.formState.errors.defaultGstRate && (
-                      <p className="text-xs text-error">
-                        {form.formState.errors.defaultGstRate.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="product-type-sort"
-                      label="Sort Order"
-                      tooltip="Lower numbers appear first."
-                    />
-                    <Input
-                      id="product-type-sort"
-                      type="number"
-                      error={form.formState.errors.sortOrder?.message}
-                      placeholder="e.g. 1"
-                      {...form.register('sortOrder', { valueAsNumber: true })}
-                    />
-                    {form.formState.errors.sortOrder && (
-                      <p className="text-xs text-error">
-                        {form.formState.errors.sortOrder.message}
-                      </p>
-                    )}
-                  </div>
+                  <MUIInput
+                    id="product-type-gst"
+                    fieldLabel="Default GST (%)"
+                    tooltip="GST percentage applied by default."
+                    type="number"
+                    min={0}
+                    max={100}
+                    step="0.01"
+                    error={form.formState.errors.defaultGstRate?.message}
+                    placeholder="e.g. 12"
+                    {...form.register('defaultGstRate', { valueAsNumber: true })}
+                  />
+                  <MUIInput
+                    id="product-type-sort"
+                    fieldLabel="Sort Order"
+                    tooltip="Lower numbers appear first."
+                    type="number"
+                    min={1}
+                    step="1"
+                    error={form.formState.errors.sortOrder?.message}
+                    placeholder="e.g. 1"
+                    {...form.register('sortOrder', { valueAsNumber: true })}
+                  />
                 </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardContent className="flex items-center justify-between gap-4">
-                <div>
-                  <FieldLabel
-                    label="Active"
-                    tooltip="Inactive types are hidden from product selection."
-                  />
-                  <p className="text-xs text-foreground-tertiary">
-                    Inactive types are hidden from product selection.
-                  </p>
-                </div>
-                <Switch
-                  checked={form.watch('isActive')}
-                  onCheckedChange={(value) => form.setValue('isActive', value)}
+                <Controller
+                  name="isActive"
+                  control={form.control}
+                  render={({ field }) => (
+                    <MUISwitch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={target?.isSystem === true}
+                      label="Active"
+                      description={
+                        target?.isSystem
+                          ? 'System product types cannot be deactivated.'
+                          : 'Inactive types are hidden from product selection.'
+                      }
+                      tooltip={
+                        target?.isSystem
+                          ? 'System product types are always active.'
+                          : 'Inactive types are hidden from product selection.'
+                      }
+                      labelPosition="left"
+                    />
+                  )}
                 />
               </CardContent>
             </Card>
@@ -399,6 +410,7 @@ export function EditProductTypeModal({
                   control={form.control}
                   fields={attributesFieldArray.fields}
                   watch={form.watch}
+                  systemAttributeKeys={systemAttrKeys}
                   onAdd={() =>
                     attributesFieldArray.append({
                       attributeKey: '',
@@ -407,7 +419,7 @@ export function EditProductTypeModal({
                       isRequired: false,
                       isFilterable: false,
                       groupName: 'general',
-                      sortOrder: attributesFieldArray.fields.length,
+                      sortOrder: attributesFieldArray.fields.length + 1,
                       defaultValue: '',
                       helpText: '',
                       validationMin: undefined,
@@ -419,8 +431,8 @@ export function EditProductTypeModal({
                 />
               </CardContent>
             </Card>
-          </DialogBody>
-          <DialogFooter>
+          </MUIDialogBody>
+          <MUIDialogFooter>
             <Button variant="outline" onClick={() => handleClose(false)}>
               Cancel
             </Button>
@@ -434,9 +446,8 @@ export function EditProductTypeModal({
                 'Save Changes'
               )}
             </Button>
-          </DialogFooter>
+          </MUIDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+    </MUIDialog>
   );
 }

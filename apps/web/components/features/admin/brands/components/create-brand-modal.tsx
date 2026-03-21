@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { type JSX } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 
 import { brandSchema, type BrandFormData } from '../schemas/brand.schema';
 
@@ -13,15 +13,14 @@ import {
   Checkbox,
   Card,
   CardContent,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-  Switch,
+  MUIDialog,
+  MUIDialogBody,
+  MUIDialogDescription,
+  MUIDialogFooter,
+  MUIDialogHeader,
+  MUIDialogTitle,
+  MUIInput,
+  MUISwitch,
   Textarea,
 } from '@/components/ui';
 import { useModalForm } from '@/lib/hooks/core';
@@ -35,7 +34,11 @@ interface CreateBrandModalProps {
 
 export function CreateBrandModal({ open, onOpenChange }: CreateBrandModalProps): JSX.Element {
   const brandMutations = useBrandMutations();
-  const productTypes = useProductTypeList({ syncToUrl: false, defaultPageSize: 200 });
+  const productTypes = useProductTypeList({
+    syncToUrl: false,
+    defaultPageSize: 200,
+    defaultFilters: { isActive: true },
+  });
 
   const form = useForm<BrandFormData>({
     resolver: zodResolver(brandSchema),
@@ -68,26 +71,24 @@ export function CreateBrandModal({ open, onOpenChange }: CreateBrandModalProps):
     }),
   });
 
-  const selectedProductTypeIds = form.watch('productTypeIds') ?? [];
   const toggleProductType = (productTypeId: string, checked: boolean) => {
     const current = form.getValues('productTypeIds') ?? [];
     const next = checked
       ? Array.from(new Set([...current, productTypeId]))
       : current.filter((id) => id !== productTypeId);
-    form.setValue('productTypeIds', next);
+    form.setValue('productTypeIds', next, { shouldValidate: true });
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[560px]">
-        <DialogHeader>
-          <DialogTitle>Create Brand</DialogTitle>
-          <DialogDescription>
+    <MUIDialog open={open} onOpenChange={handleClose} size="default">
+        <MUIDialogHeader>
+          <MUIDialogTitle>Create Brand</MUIDialogTitle>
+          <MUIDialogDescription>
             Add a new brand to the product catalog for selection in quotes.
-          </DialogDescription>
-        </DialogHeader>
+          </MUIDialogDescription>
+        </MUIDialogHeader>
         <form onSubmit={(event) => void handleSubmit(event)}>
-          <DialogBody className="space-y-5 max-h-[70vh] overflow-y-auto">
+          <MUIDialogBody sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             {Boolean(brandMutations.create.error) && (
               <Alert variant="error" appearance="minimal">
                 {getErrorMessage(brandMutations.create.error)}
@@ -106,85 +107,55 @@ export function CreateBrandModal({ open, onOpenChange }: CreateBrandModalProps):
                   Use the manufacturer name for official documentation and warranty references.
                 </Alert>
 
-                <div className="space-y-1.5">
-                  <FieldLabel
-                    htmlFor="brand-name"
-                    label="Brand Name"
-                    required
-                    tooltip="The brand name shown in product selection (e.g., Jinko Solar)."
-                  />
-                  <Input
-                    id="brand-name"
-                    placeholder="e.g. Jinko Solar"
-                    error={form.formState.errors.name?.message}
-                    {...form.register('name')}
-                  />
-                  {form.formState.errors.name && (
-                    <p className="text-xs text-error">{form.formState.errors.name.message}</p>
-                  )}
-                </div>
+                <MUIInput
+                  id="brand-name"
+                  fieldLabel="Brand Name"
+                  required
+                  tooltip="The brand name shown in product selection (e.g., Jinko Solar)."
+                  placeholder="e.g. Jinko Solar"
+                  error={form.formState.errors.name?.message}
+                  {...form.register('name')}
+                />
 
-                <div className="space-y-1.5">
-                  <FieldLabel
-                    htmlFor="brand-manufacturer"
-                    label="Manufacturer"
-                    tooltip="Legal manufacturer name for warranties and documentation."
-                  />
-                  <Input
-                    id="brand-manufacturer"
-                    placeholder="e.g. JinkoSolar Holding"
-                    {...form.register('manufacturerName')}
-                  />
-                </div>
+                <MUIInput
+                  id="brand-manufacturer"
+                  fieldLabel="Manufacturer"
+                  tooltip="Legal manufacturer name for warranties and documentation."
+                  placeholder="e.g. JinkoSolar Holding"
+                  {...form.register('manufacturerName')}
+                />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="brand-website"
-                      label="Website"
-                      tooltip="Official brand website (e.g., https://jinkosolar.com)."
-                    />
-                    <Input
+                  <div>
+                    <MUIInput
                       id="brand-website"
+                      fieldLabel="Website"
+                      tooltip="Official brand website (e.g., https://jinkosolar.com)."
                       placeholder="e.g. https://brand.com"
                       error={form.formState.errors.website?.message}
                       {...form.register('website')}
                     />
-                    {form.formState.errors.website && (
-                      <p className="text-xs text-error">{form.formState.errors.website.message}</p>
-                    )}
                   </div>
 
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="brand-logo"
-                      label="Logo URL"
-                      tooltip="Direct image URL used for brand display (PNG/JPG)."
-                    />
-                    <Input
+                  <div>
+                    <MUIInput
                       id="brand-logo"
+                      fieldLabel="Logo URL"
+                      tooltip="Direct image URL used for brand display (PNG/JPG)."
                       placeholder="e.g. https://brand.com/logo.png"
                       error={form.formState.errors.logoUrl?.message}
                       {...form.register('logoUrl')}
                     />
-                    {form.formState.errors.logoUrl && (
-                      <p className="text-xs text-error">{form.formState.errors.logoUrl.message}</p>
-                    )}
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <FieldLabel
-                    htmlFor="brand-support"
-                    label="Support Contact"
-                    tooltip="Support email or phone shown in internal references."
-                  />
-                  <Input
-                    id="brand-support"
-                    placeholder="e.g. support@brand.com"
-                    {...form.register('supportContact')}
-                  />
-                </div>
+                <MUIInput
+                  id="brand-support"
+                  fieldLabel="Support Contact"
+                  tooltip="Support email or phone shown in internal references."
+                  placeholder="e.g. support@brand.com"
+                  {...form.register('supportContact')}
+                />
 
                 <div className="space-y-1.5">
                   <FieldLabel
@@ -228,45 +199,52 @@ export function CreateBrandModal({ open, onOpenChange }: CreateBrandModalProps):
                     No product types available yet.
                   </p>
                 ) : (
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {productTypes.items.map((type) => (
-                      <div key={type.id} className="flex items-center gap-2 text-sm">
-                        <Checkbox
-                          id={`brand-type-${type.id}`}
-                          checked={selectedProductTypeIds.includes(type.id)}
-                          onCheckedChange={(value) => toggleProductType(type.id, value === true)}
-                        />
-                        <FieldLabel
-                          htmlFor={`brand-type-${type.id}`}
-                          label={type.name}
-                          tooltip={`Allow ${type.name} products for this brand.`}
-                        />
+                  <Controller
+                    name="productTypeIds"
+                    control={form.control}
+                    render={({ field }) => (
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {productTypes.items.map((type) => (
+                          <div key={type.id} className="flex items-center gap-2 text-sm">
+                            <Checkbox
+                              id={`brand-type-${type.id}`}
+                              checked={(field.value ?? []).includes(type.id)}
+                              onCheckedChange={(value) => toggleProductType(type.id, value === true)}
+                            />
+                            <FieldLabel
+                              htmlFor={`brand-type-${type.id}`}
+                              label={type.name}
+                              tooltip={`Allow ${type.name} products for this brand.`}
+                            />
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    )}
+                  />
                 )}
               </CardContent>
             </Card>
 
             <Card>
               <CardContent className="flex items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <FieldLabel
-                    label="Active"
-                    tooltip="Inactive brands are hidden from new product selection."
-                  />
-                  <p className="text-xs text-foreground-tertiary">
-                    Inactive brands are hidden from product selection.
-                  </p>
-                </div>
-                <Switch
-                  checked={form.watch('isActive')}
-                  onCheckedChange={(value) => form.setValue('isActive', value)}
+                <Controller
+                  name="isActive"
+                  control={form.control}
+                  render={({ field }) => (
+                    <MUISwitch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      label="Active"
+                      description="Inactive brands are hidden from product selection."
+                      tooltip="Inactive brands are hidden from new product selection."
+                      labelPosition="left"
+                    />
+                  )}
                 />
               </CardContent>
             </Card>
-          </DialogBody>
-          <DialogFooter>
+          </MUIDialogBody>
+          <MUIDialogFooter>
             <Button variant="outline" onClick={() => handleClose(false)}>
               Cancel
             </Button>
@@ -280,9 +258,8 @@ export function CreateBrandModal({ open, onOpenChange }: CreateBrandModalProps):
                 'Create Brand'
               )}
             </Button>
-          </DialogFooter>
+          </MUIDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+    </MUIDialog>
   );
 }

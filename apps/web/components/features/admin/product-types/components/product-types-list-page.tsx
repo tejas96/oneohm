@@ -8,6 +8,7 @@ import {
   ArrowUpDown,
   Ban,
   Loader2,
+  Lock,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -35,7 +36,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   Input,
-  Switch,
+  MUISwitch,
   Typography,
 } from '@/components/ui';
 import {
@@ -144,7 +145,15 @@ export function ProductTypesListPage(): JSX.Element {
         enableSorting: false,
         cell: ({ row }) => (
           <div className="min-w-0">
-            <div className="font-medium text-foreground leading-tight">{row.original.name}</div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-foreground leading-tight">{row.original.name}</span>
+              {row.original.isSystem && (
+                <Badge variant="secondary" size="xs" shape="rounded" className="gap-1">
+                  <Lock className="size-2.5" />
+                  System
+                </Badge>
+              )}
+            </div>
             <div className="text-foreground-tertiary text-2xs leading-tight mt-0.5">
               {row.original.code}
             </div>
@@ -193,9 +202,9 @@ export function ProductTypesListPage(): JSX.Element {
         enableSorting: false,
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
-            <Switch
+            <MUISwitch
               checked={row.original.isActive}
-              disabled={togglingId === row.original.id}
+              disabled={row.original.isSystem === true || togglingId === row.original.id}
               onCheckedChange={(value) => void handleToggleActive(row.original, value)}
             />
             {togglingId === row.original.id && (
@@ -228,12 +237,14 @@ export function ProductTypesListPage(): JSX.Element {
               <DropdownMenuItem onClick={() => setEditTarget(row.original)}>
                 <Pencil className="mr-2 size-icon-sm" /> Edit
               </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-error"
-                onClick={() => setDisableTarget(row.original)}
-              >
-                <Ban className="mr-2 size-icon-sm" /> Disable
-              </DropdownMenuItem>
+              {!row.original.isSystem && (
+                <DropdownMenuItem
+                  className="text-error"
+                  onClick={() => setDisableTarget(row.original)}
+                >
+                  <Ban className="mr-2 size-icon-sm" /> Disable
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         ),

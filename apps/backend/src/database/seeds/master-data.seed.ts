@@ -153,10 +153,10 @@ export async function seedMasterData(dataSource: DataSource): Promise<void> {
     );
     await queryRunner.query(`DELETE FROM brands WHERE organization_id = $1`, [ORG_ID]);
     await queryRunner.query(
-      `DELETE FROM product_type_attributes WHERE product_type_id IN (SELECT id FROM product_types WHERE organization_id = $1)`,
+      `DELETE FROM product_type_attributes WHERE product_type_id IN (SELECT id FROM product_types WHERE organization_id = $1) AND is_system IS NOT TRUE`,
       [ORG_ID],
     );
-    await queryRunner.query(`DELETE FROM product_types WHERE organization_id = $1`, [ORG_ID]);
+    await queryRunner.query(`DELETE FROM product_types WHERE organization_id = $1 AND is_system IS NOT TRUE`, [ORG_ID]);
 
     console.log('✅ Cleanup completed');
 

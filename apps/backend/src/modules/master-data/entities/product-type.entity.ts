@@ -39,6 +39,9 @@ export class ProductTypeEntity extends BaseEntity {
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 
+  @Column({ name: 'is_system', type: 'boolean', default: false })
+  isSystem!: boolean;
+
   @Column({ name: 'sort_order', type: 'integer', default: 0 })
   sortOrder!: number;
 

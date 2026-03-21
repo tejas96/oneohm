@@ -26,6 +26,7 @@ export interface ProductTypeAttribute {
   groupName: string;
   sortOrder: number;
   helpText?: string;
+  isSystem?: boolean;
 }
 
 export interface ProductType {
@@ -39,6 +40,7 @@ export interface ProductType {
   defaultPricingBasis: string;
   defaultGstRate: number;
   isActive: boolean;
+  isSystem?: boolean;
   sortOrder: number;
   attributes?: ProductTypeAttribute[];
   createdAt: string;

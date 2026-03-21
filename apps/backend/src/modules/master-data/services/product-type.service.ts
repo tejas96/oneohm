@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { QueryFailedError } from 'typeorm';
 
 import { ProductTypeEntity } from '../entities/product-type.entity';
 import { ProductTypeRepository } from '../repositories/product-type.repository';
@@ -31,7 +32,21 @@ export class ProductTypeService {
     data: Partial<ProductTypeEntity>,
     createdBy?: string,
   ): Promise<ProductTypeEntity> {
-    return this.productTypeRepository.create(organizationId, { ...data, createdBy });
+    const sanitized = { ...data, createdBy };
+    delete (sanitized as Record<string, unknown>).isSystem;
+    delete (sanitized as Record<string, unknown>).deletedAt;
+
+    try {
+      return await this.productTypeRepository.create(organizationId, sanitized);
+    } catch (error: unknown) {
+      if (!(error instanceof QueryFailedError)) throw error;
+
+      const pgError = error as unknown as { code?: string };
+      if (pgError.code === '23505') {
+        throw new BadRequestException('A product type with this code already exists');
+      }
+      throw error;
+    }
   }
 
   async update(
@@ -40,7 +55,25 @@ export class ProductTypeService {
     data: Partial<ProductTypeEntity>,
     updatedBy?: string,
   ): Promise<ProductTypeEntity> {
-    await this.findById(id, organizationId);
-    return this.productTypeRepository.update(id, organizationId, { ...data, updatedBy });
+    const existing = await this.findById(id, organizationId);
+
+    const sanitized = { ...data, updatedBy };
+    delete (sanitized as Record<string, unknown>).isSystem;
+    delete (sanitized as Record<string, unknown>).deletedAt;
+
+    if (existing.isSystem) {
+      if (sanitized.code !== undefined && sanitized.code !== existing.code) {
+        throw new BadRequestException(
+          `Cannot change code of system product type '${existing.code}'`,
+        );
+      }
+      if (sanitized.isActive === false) {
+        throw new BadRequestException(
+          `Cannot deactivate system product type '${existing.code}'`,
+        );
+      }
+    }
+
+    return this.productTypeRepository.update(id, organizationId, sanitized);
   }
 }

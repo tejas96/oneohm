@@ -58,6 +58,14 @@ body {
   outline: none;
 }
 
+/* MUI components manage their own focus indicators (outlined border, ripple).
+   Suppress the global focus ring to prevent a double-border effect. */
+.MuiInputBase-root *:focus-visible,
+.MuiSelect-root:focus-visible,
+.MuiAutocomplete-root *:focus-visible {
+  outline: none;
+}
+
 /* ============================================================================
    CUSTOM SCROLLBAR
    ============================================================================ */

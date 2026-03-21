@@ -5,15 +5,10 @@ import { Controller, type Control } from 'react-hook-form';
 
 import type { ProductFormData } from '../schemas/product.schema';
 
-import { FieldLabel } from '@/components/shared';
 import {
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Switch,
+  MUIInput,
+  MUISelect,
+  MUISwitch,
   Typography,
 } from '@/components/ui';
 import type { ProductTypeAttribute } from '@/lib/hooks/resources';
@@ -87,21 +82,18 @@ export function ProductSpecificationsFields({
                     key={attr.attributeKey}
                     className="flex items-center justify-between rounded-lg border border-border-light p-3"
                   >
-                    <div>
-                      <FieldLabel
-                        label={attr.label}
-                        required={attr.isRequired}
-                        tooltip={attr.helpText || 'Toggle this specification on or off.'}
-                      />
-                      {attr.helpText && (
-                        <p className="text-xs text-foreground-tertiary mt-0.5">{attr.helpText}</p>
-                      )}
-                    </div>
                     <Controller
                       name={fieldName}
                       control={control}
                       render={({ field }) => (
-                        <Switch checked={!!field.value} onCheckedChange={field.onChange} />
+                        <MUISwitch
+                          checked={!!field.value}
+                          onCheckedChange={field.onChange}
+                          label={attr.label}
+                          description={attr.helpText || undefined}
+                          tooltip={attr.helpText || 'Toggle this specification on or off.'}
+                          labelPosition="left"
+                        />
                       )}
                     />
                   </div>
@@ -110,66 +102,55 @@ export function ProductSpecificationsFields({
 
               if (attr.dataType === 'enum' && enumValues.length > 0) {
                 return (
-                  <div key={attr.attributeKey} className="space-y-1.5">
-                    <FieldLabel
-                      label={attr.label}
-                      required={attr.isRequired}
-                      tooltip={attr.helpText || 'Select a value from the allowed options.'}
-                    />
+                  <div key={attr.attributeKey}>
                     <Controller
                       name={fieldName}
                       control={control}
                       render={({ field }) => (
-                        <Select
+                        <MUISelect
+                          fieldLabel={attr.label}
+                          required={attr.isRequired}
+                          tooltip={attr.helpText || 'Select a value from the allowed options.'}
+                          placeholder={`Select ${attr.label.toLowerCase()}`}
                           value={
                             typeof field.value === 'string' || typeof field.value === 'number'
                               ? String(field.value)
                               : ''
                           }
-                          onValueChange={field.onChange}
-                        >
-                          <SelectTrigger>
-                            <SelectValue
-                              placeholder={`Select ${attr.label}${
-                                enumValues[0] ? ` (e.g., ${enumValues[0]})` : ''
-                              }`}
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {enumValues.map((value) => (
-                              <SelectItem key={value} value={value}>
-                                {value}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          onChange={(event) => field.onChange(event.target.value)}
+                          options={enumValues.map((value) => ({
+                            value,
+                            label: value,
+                          }))}
+                        />
                       )}
                     />
+                    {attr.helpText && (
+                      <p className="text-xs text-foreground-tertiary mt-1">{attr.helpText}</p>
+                    )}
                   </div>
                 );
               }
 
               return (
-                <div key={attr.attributeKey} className="space-y-1.5">
-                  <FieldLabel
-                    label={attr.label}
-                    required={attr.isRequired}
-                    tooltip={
-                      attr.helpText ||
-                      (isNumeric
-                        ? `Enter a ${attr.dataType} value${
-                            min !== undefined || max !== undefined
-                              ? ` (${min ?? 'any'} to ${max ?? 'any'})`
-                              : ''
-                          }.`
-                        : 'Enter a value for this specification.')
-                    }
-                  />
+                <div key={attr.attributeKey}>
                   <Controller
                     name={fieldName}
                     control={control}
                     render={({ field }) => (
-                      <Input
+                      <MUIInput
+                        fieldLabel={attr.label}
+                        required={attr.isRequired}
+                        tooltip={
+                          attr.helpText ||
+                          (isNumeric
+                            ? `Enter a ${attr.dataType} value${
+                                min !== undefined || max !== undefined
+                                  ? ` (${min ?? 'any'} to ${max ?? 'any'})`
+                                  : ''
+                              }.`
+                            : 'Enter a value for this specification.')
+                        }
                         type={isNumeric ? 'number' : 'text'}
                         step={attr.dataType === 'integer' ? '1' : isNumeric ? '0.01' : undefined}
                         min={min}
@@ -194,7 +175,7 @@ export function ProductSpecificationsFields({
                     )}
                   />
                   {attr.helpText && (
-                    <p className="text-xs text-foreground-tertiary">{attr.helpText}</p>
+                    <p className="text-xs text-foreground-tertiary mt-1">{attr.helpText}</p>
                   )}
                 </div>
               );

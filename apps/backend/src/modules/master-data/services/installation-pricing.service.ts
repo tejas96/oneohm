@@ -95,9 +95,9 @@ export class InstallationPricingService {
   }
 
   private validateRange(min: number, max: number | null): void {
-    if (max !== null && max <= min) {
+    if (max !== null && max < min) {
       throw new BadRequestException(
-        `maxSystemSizeKw (${max}) must be greater than minSystemSizeKw (${min})`,
+        `maxSystemSizeKw (${max}) must be greater than or equal to minSystemSizeKw (${min})`,
       );
     }
     if (min < 0) {

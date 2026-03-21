@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Not, Repository } from 'typeorm';
 
@@ -73,7 +73,7 @@ export class ProductTypeRepository {
         relations: ['attributes'],
       });
       if (!existing) {
-        throw new Error('Product type not found after update');
+        throw new NotFoundException('Product type not found');
       }
 
       let resolvedAttributes: ProductTypeAttributeEntity[] | undefined;
@@ -81,6 +81,24 @@ export class ProductTypeRepository {
         const existingAttributes = existing.attributes ?? [];
         const byId = new Map(existingAttributes.map((attr) => [attr.id, attr]));
         const byKey = new Map(existingAttributes.map((attr) => [attr.attributeKey, attr]));
+
+        const systemAttrs = existingAttributes.filter((a) => a.isSystem);
+        const systemAttrIds = new Set(systemAttrs.map((a) => a.id));
+        const systemAttrKeys = new Set(systemAttrs.map((a) => a.attributeKey));
+
+        for (const incomingAttr of data.attributes) {
+          if (!incomingAttr.id) continue;
+          const existingAttr = byId.get(incomingAttr.id);
+          if (
+            existingAttr?.isSystem &&
+            incomingAttr.attributeKey &&
+            incomingAttr.attributeKey !== existingAttr.attributeKey
+          ) {
+            throw new BadRequestException(
+              `Cannot change key of system attribute '${existingAttr.attributeKey}'`,
+            );
+          }
+        }
 
         const nextAttributes = data.attributes.map((attr) => {
           const base =
@@ -93,14 +111,31 @@ export class ProductTypeRepository {
           });
         });
 
+        const incomingIds = new Set(
+          nextAttributes.map((a) => a.id).filter((aid): aid is string => Boolean(aid)),
+        );
+        const incomingKeys = new Set(nextAttributes.map((a) => a.attributeKey));
+
+        for (const sysAttr of systemAttrs) {
+          if (!incomingIds.has(sysAttr.id) && !incomingKeys.has(sysAttr.attributeKey)) {
+            nextAttributes.push(attrRepo.create({ ...sysAttr }));
+          }
+        }
+
         const keepIds = nextAttributes
           .map((attr) => attr.id)
-          .filter((id): id is string => Boolean(id));
+          .filter((aid): aid is string => Boolean(aid));
+
         if (existingAttributes.length > 0) {
-          if (keepIds.length > 0) {
-            await attrRepo.delete({ productTypeId: id, id: Not(In(keepIds)) });
+          const idsToKeep = [...new Set([...keepIds, ...systemAttrIds])];
+          if (idsToKeep.length > 0) {
+            await attrRepo.delete({
+              productTypeId: id,
+              id: Not(In(idsToKeep)),
+              isSystem: false,
+            });
           } else {
-            await attrRepo.delete({ productTypeId: id });
+            await attrRepo.delete({ productTypeId: id, isSystem: false });
           }
         }
 

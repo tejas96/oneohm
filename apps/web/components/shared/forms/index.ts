@@ -16,3 +16,6 @@ export { NumberStepper } from './number-stepper';
 export type { NumberStepperProps } from './number-stepper';
 
 export { FieldLabel } from './field-label';
+
+export { CreatableCombobox } from './creatable-combobox';
+export type { CreatableComboboxProps, ComboboxOption } from './creatable-combobox';

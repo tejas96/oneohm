@@ -52,8 +52,8 @@ export const installationPricingSchema = z
     effectiveTo: z.string().optional(),
     isActive: z.boolean(),
   })
-  .refine((data) => data.maxSystemSizeKw == null || data.maxSystemSizeKw > data.minSystemSizeKw, {
-    message: 'Maximum size must be greater than minimum size',
+  .refine((data) => data.maxSystemSizeKw == null || data.maxSystemSizeKw >= data.minSystemSizeKw, {
+    message: 'Maximum size must be greater than or equal to minimum size',
     path: ['maxSystemSizeKw'],
   });
 

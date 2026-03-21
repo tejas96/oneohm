@@ -202,11 +202,6 @@ export function QuoteBuilder(): JSX.Element {
   const floorNumber = form.watch('floorNumber');
   const systemSizeKw = form.watch('systemSizeKw');
   const projectType = form.watch('projectType');
-  
-  // Watch form fields for validation
-  const preferredPanelBrand = form.watch('preferredPanelBrand');
-  const preferredInverterBrand = form.watch('preferredInverterBrand');
-  const preferredInverterCapacityKw = form.watch('preferredInverterCapacityKw');
   const structureType = form.watch('structureType');
 
   const {
@@ -234,20 +229,37 @@ export function QuoteBuilder(): JSX.Element {
   const [calculation, setCalculation] = useState<CalculateQuoteResponse | null>(null);
   const calculateMutation = useCalculateQuote();
 
+  // Detect missing product categories (no products configured at all)
+  const missingProductCategories = useMemo(() => {
+    if (config.isLoading) return [];
+    const missing: string[] = [];
+    if (config.panelBrands.length === 0) missing.push('Solar Panels');
+    if (config.inverterBrands.length === 0) missing.push('Inverters');
+    if (config.structureTypes.length === 0) missing.push('Mounting Structures');
+    return missing;
+  }, [config.isLoading, config.panelBrands, config.inverterBrands, config.structureTypes]);
+
   // Validate required fields for calculate button
   const { isCalculateDisabled, missingFields, tooltipMessage } = useMemo(() => {
     const missing = [];
-    if (!preferredPanelBrand) missing.push('Panel Brand');
-    if (!preferredInverterBrand) missing.push('Inverter Brand');
-    if (!preferredInverterCapacityKw) missing.push('Inverter Capacity');
     if (!structureType) missing.push('Structure Type');
     
     const hasMissingFields = missing.length > 0;
-    const isDisabled = calculateMutation.isPending || config.isLoading || hasMissingFields;
+    const hasNoProducts = missingProductCategories.length > 0;
+    const isDisabled =
+      calculateMutation.isPending || config.isLoading || hasMissingFields || hasNoProducts;
     
-    let message = '';
+    const parts: string[] = [];
+    if (hasNoProducts) {
+      parts.push(`Missing product data: ${missingProductCategories.join(', ')}`);
+    }
     if (hasMissingFields) {
-      message = `Please select: ${missing.join(', ')}`;
+      parts.push(`Please select: ${missing.join(', ')}`);
+    }
+
+    let message = '';
+    if (parts.length > 0) {
+      message = parts.join('. ');
     } else if (calculateMutation.isPending) {
       message = 'Calculating quote...';
     } else if (config.isLoading) {
@@ -262,10 +274,8 @@ export function QuoteBuilder(): JSX.Element {
   }, [
     calculateMutation.isPending,
     config.isLoading,
-    preferredPanelBrand,
-    preferredInverterBrand,
-    preferredInverterCapacityKw,
     structureType,
+    missingProductCategories,
   ]);
 
   // Manual quantity adjusters
@@ -655,6 +665,27 @@ export function QuoteBuilder(): JSX.Element {
         </div>
       )}
 
+      {!config.isLoading && missingProductCategories.length > 0 && (
+        <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/5 p-4">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-warning">
+              {missingProductCategories.length === 3
+                ? 'No products configured'
+                : `Missing product configuration: ${missingProductCategories.join(', ')}`}
+            </p>
+            <p className="text-xs text-foreground-secondary">
+              Quote calculation requires active solar panels, inverters, and mounting structures.
+              Please configure products in the{' '}
+              <a href={ROUTES.ADMIN.PRODUCTS} className="font-medium text-primary hover:underline">
+                Admin &rarr; Products
+              </a>{' '}
+              section before creating quotes.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 50/50 Split Layout */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* ── LEFT: Form ── */}
@@ -1039,34 +1070,31 @@ export function QuoteBuilder(): JSX.Element {
             <div className="space-y-4">
               {/* Panel Brand */}
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label>Panel Brand</Label>
-                  {missingFields.includes('Panel Brand') && (
-                    <Badge variant="destructive" size="xs">
-                      Required
-                    </Badge>
-                  )}
-                </div>
+                <Label>Panel Brand</Label>
                 {config.isLoading ? (
                   <Skeleton className="h-9 w-full" />
                 ) : config.panelBrands.length === 0 ? (
-                  <p className="text-xs text-foreground-tertiary">
-                    No panel brands available. Check product configuration.
-                  </p>
+                  <div className="flex items-center gap-2 rounded-md border border-warning/30 bg-warning/5 px-3 py-2">
+                    <AlertTriangle className="size-3.5 shrink-0 text-warning" />
+                    <p className="text-xs text-foreground-secondary">
+                      No active solar panels found.{' '}
+                      <a href={ROUTES.ADMIN.PRODUCTS} className="font-medium text-primary hover:underline">
+                        Add panels
+                      </a>
+                    </p>
+                  </div>
                 ) : (
                   <Select
-                    value={form.watch('preferredPanelBrand') ?? ''}
-                    onValueChange={(v) => formLogic.handleBrandChange(v)}
+                    value={form.watch('preferredPanelBrand') || 'auto'}
+                    onValueChange={(v) => formLogic.handleBrandChange(v === 'auto' ? '' : v)}
                   >
-                    <SelectTrigger
-                      className={cn(
-                        missingFields.includes('Panel Brand') &&
-                          'border-destructive ring-destructive/20 ring-2',
-                      )}
-                    >
-                      <SelectValue placeholder="Select panel brand" />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Auto-select best available" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="auto">
+                        <span className="text-foreground-tertiary">Auto-select best available</span>
+                      </SelectItem>
                       {config.panelBrands.map((brand) => (
                         <SelectItem key={brand.value} value={brand.value}>
                           {brand.label}
@@ -1130,34 +1158,33 @@ export function QuoteBuilder(): JSX.Element {
 
               {/* Inverter Brand */}
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label>Inverter Brand</Label>
-                  {missingFields.includes('Inverter Brand') && (
-                    <Badge variant="destructive" size="xs">
-                      Required
-                    </Badge>
-                  )}
-                </div>
+                <Label>Inverter Brand</Label>
                 {config.isLoading ? (
                   <Skeleton className="h-9 w-full" />
                 ) : config.inverterBrands.length === 0 ? (
-                  <p className="text-xs text-foreground-tertiary">
-                    No inverter brands available. Check product configuration.
-                  </p>
+                  <div className="flex items-center gap-2 rounded-md border border-warning/30 bg-warning/5 px-3 py-2">
+                    <AlertTriangle className="size-3.5 shrink-0 text-warning" />
+                    <p className="text-xs text-foreground-secondary">
+                      No active inverters found.{' '}
+                      <a href={ROUTES.ADMIN.PRODUCTS} className="font-medium text-primary hover:underline">
+                        Add inverters
+                      </a>
+                    </p>
+                  </div>
                 ) : (
                   <Select
-                    value={form.watch('preferredInverterBrand') ?? ''}
-                    onValueChange={(v) => formLogic.handleInverterBrandChange(v)}
+                    value={form.watch('preferredInverterBrand') || 'auto'}
+                    onValueChange={(v) =>
+                      formLogic.handleInverterBrandChange(v === 'auto' ? '' : v)
+                    }
                   >
-                    <SelectTrigger
-                      className={cn(
-                        missingFields.includes('Inverter Brand') &&
-                          'border-destructive ring-destructive/20 ring-2',
-                      )}
-                    >
-                      <SelectValue placeholder="Select inverter brand" />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Auto-select best available" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="auto">
+                        <span className="text-foreground-tertiary">Auto-select best available</span>
+                      </SelectItem>
                       {config.inverterBrands.map((brand) => (
                         <SelectItem key={brand.value} value={brand.value}>
                           {brand.label}
@@ -1175,39 +1202,40 @@ export function QuoteBuilder(): JSX.Element {
 
               {/* Inverter Capacity */}
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label>Inverter Capacity</Label>
-                  {missingFields.includes('Inverter Capacity') && (
-                    <Badge variant="destructive" size="xs">
-                      Required
-                    </Badge>
-                  )}
-                </div>
-                {(() => {
+                <Label>Inverter Capacity</Label>
+                {config.isLoading ? (
+                  <Skeleton className="h-9 w-full" />
+                ) : (() => {
                   const capacityOptions = config.getInverterCapacities(
                     form.watch('phaseType'),
                     form.watch('preferredInverterBrand'),
                   );
                   return capacityOptions.length === 0 ? (
-                    <p className="text-xs text-foreground-tertiary">
-                      No capacity options available for the selected configuration.
-                    </p>
+                    <div className="flex items-center gap-2 rounded-md border border-border-light bg-background-secondary px-3 py-2">
+                      <Info className="size-3.5 shrink-0 text-foreground-tertiary" />
+                      <p className="text-xs text-foreground-tertiary">
+                        {config.inverterBrands.length === 0
+                          ? 'No inverters configured yet.'
+                          : 'No capacity options for the selected brand and phase type. Try a different brand or leave on auto-select.'}
+                      </p>
+                    </div>
                   ) : (
                     <Select
-                      value={form.watch('preferredInverterCapacityKw')?.toString() ?? ''}
+                      value={form.watch('preferredInverterCapacityKw')?.toString() ?? 'auto'}
                       onValueChange={(v) =>
-                        formLogic.handleFieldChange('preferredInverterCapacityKw', Number(v))
+                        formLogic.handleFieldChange(
+                          'preferredInverterCapacityKw',
+                          v === 'auto' ? undefined : Number(v),
+                        )
                       }
                     >
-                      <SelectTrigger
-                        className={cn(
-                          missingFields.includes('Inverter Capacity') &&
-                            'border-destructive ring-destructive/20 ring-2',
-                        )}
-                      >
-                        <SelectValue placeholder="Select inverter capacity" />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Auto-select optimal" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="auto">
+                          <span className="text-foreground-tertiary">Auto-select optimal</span>
+                        </SelectItem>
                         {capacityOptions.map((cap) => (
                           <SelectItem key={cap.value} value={cap.value.toString()}>
                             {cap.label}
@@ -1220,6 +1248,7 @@ export function QuoteBuilder(): JSX.Element {
               </div>
 
               {/* Structure Type */}
+
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Label>Structure Type *</Label>
@@ -1236,9 +1265,15 @@ export function QuoteBuilder(): JSX.Element {
                     ))}
                   </div>
                 ) : config.structureTypes.length === 0 ? (
-                  <p className="text-xs text-foreground-tertiary">
-                    No structure types available. Check product configuration.
-                  </p>
+                  <div className="flex items-center gap-2 rounded-md border border-warning/30 bg-warning/5 px-3 py-2">
+                    <AlertTriangle className="size-3.5 shrink-0 text-warning" />
+                    <p className="text-xs text-foreground-secondary">
+                      No active mounting structures found.{' '}
+                      <a href={ROUTES.ADMIN.PRODUCTS} className="font-medium text-primary hover:underline">
+                        Add structures
+                      </a>
+                    </p>
+                  </div>
                 ) : (
                   <div 
                     className={cn(

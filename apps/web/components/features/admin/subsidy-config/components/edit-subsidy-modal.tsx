@@ -14,20 +14,16 @@ import {
   Button,
   Card,
   CardContent,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Switch,
+  MUIDialog,
+  MUIDialogBody,
+  MUIDialogDescription,
+  MUIDialogFooter,
+  MUIDialogHeader,
+  MUIDialogTitle,
+  MUIInput,
+  MUIDatePicker,
+  MUISelect,
+  MUISwitch,
   Textarea,
   Typography,
 } from '@/components/ui';
@@ -110,14 +106,13 @@ export function EditSubsidyModal({
   });
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[720px]">
-        <DialogHeader>
-          <DialogTitle>Edit Subsidy Rule</DialogTitle>
-          <DialogDescription>Update subsidy scheme settings and tiers.</DialogDescription>
-        </DialogHeader>
+    <MUIDialog open={open} onOpenChange={handleClose} size="lg">
+        <MUIDialogHeader>
+          <MUIDialogTitle>Edit Subsidy Rule</MUIDialogTitle>
+          <MUIDialogDescription>Update subsidy scheme settings and tiers.</MUIDialogDescription>
+        </MUIDialogHeader>
         <form onSubmit={(event) => void handleSubmit(event)}>
-          <DialogBody className="space-y-5 max-h-[75vh] overflow-y-auto">
+          <MUIDialogBody sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             {Boolean(mutations.update.error) && (
               <Alert variant="error" appearance="minimal">
                 {getErrorMessage(mutations.update.error)}
@@ -138,33 +133,22 @@ export function EditSubsidyModal({
                   Keep names and codes consistent for reporting.
                 </Alert>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="scheme-name"
-                      label="Scheme Name"
+                  <div>
+                    <MUIInput
+                      id="scheme-name"
+                      fieldLabel="Scheme Name"
                       required
                       tooltip="Name shown in subsidy selection (e.g., PM Surya Ghar)."
-                    />
-                    <Input
-                      id="scheme-name"
                       error={form.formState.errors.schemeName?.message}
                       placeholder="e.g. PM Surya Ghar"
                       {...form.register('schemeName')}
                     />
-                    {form.formState.errors.schemeName && (
-                      <p className="text-xs text-error">
-                        {form.formState.errors.schemeName.message}
-                      </p>
-                    )}
                   </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="scheme-code"
-                      label="Scheme Code"
-                      tooltip="Optional short code (e.g., PM_SG_2024)."
-                    />
-                    <Input
+                  <div>
+                    <MUIInput
                       id="scheme-code"
+                      fieldLabel="Scheme Code"
+                      tooltip="Optional short code (e.g., PM_SG_2024)."
                       placeholder="e.g. PM_SG_2024"
                       {...form.register('schemeCode')}
                     />
@@ -172,88 +156,65 @@ export function EditSubsidyModal({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      label="Scheme Type"
-                      required
-                      tooltip="Classification of the subsidy scheme."
-                    />
+                  <div>
                     <Controller
                       name="schemeType"
                       control={form.control}
                       render={({ field }) => (
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select scheme type (e.g., PM Surya Ghar)" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {SCHEME_TYPE_OPTIONS.map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <MUISelect
+                          fieldLabel="Scheme Type"
+                          required
+                          tooltip="Classification of the subsidy scheme."
+                          value={field.value}
+                          onChange={(event) => field.onChange(event.target.value)}
+                          options={SCHEME_TYPE_OPTIONS.map((option) => ({
+                            value: option.value,
+                            label: option.label,
+                          }))}
+                        />
                       )}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      label="Project Type"
-                      required
-                      tooltip="Project category eligible for the scheme."
-                    />
+                  <div>
                     <Controller
                       name="projectType"
                       control={form.control}
                       render={({ field }) => (
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select project type (e.g., Residential)" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.values(ProjectType).map((type) => (
-                              <SelectItem key={type} value={type}>
-                                {type}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <MUISelect
+                          fieldLabel="Project Type"
+                          required
+                          tooltip="Project category eligible for the scheme."
+                          value={field.value}
+                          onChange={(event) => field.onChange(event.target.value)}
+                          options={Object.values(ProjectType).map((type) => ({
+                            value: type,
+                            label: type,
+                          }))}
+                        />
                       )}
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="max-kw"
-                      label="Max Subsidy kW"
+                  <div>
+                    <MUIInput
+                      id="max-kw"
+                      fieldLabel="Max Subsidy kW"
                       required
                       tooltip="Maximum system size eligible for subsidy."
-                    />
-                    <Input
-                      id="max-kw"
                       type="number"
                       step="0.01"
                       placeholder="e.g. 3"
                       error={form.formState.errors.maxSubsidyKw?.message}
                       {...form.register('maxSubsidyKw', { valueAsNumber: true })}
                     />
-                    {form.formState.errors.maxSubsidyKw && (
-                      <p className="text-xs text-error">
-                        {form.formState.errors.maxSubsidyKw.message}
-                      </p>
-                    )}
                   </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="max-amount"
-                      label="Max Subsidy Amount"
-                      tooltip="Optional cap amount for the subsidy."
-                    />
-                    <Input
+                  <div>
+                    <MUIInput
                       id="max-amount"
+                      fieldLabel="Max Subsidy Amount"
+                      tooltip="Optional cap amount for the subsidy."
                       type="number"
                       step="0.01"
                       placeholder="e.g. 78000"
@@ -264,29 +225,35 @@ export function EditSubsidyModal({
 
                 <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center justify-between rounded-lg border border-border-light p-3 flex-1 min-w-[220px]">
-                    <div>
-                      <FieldLabel
-                        label="Requires DCR"
-                        tooltip="Only DCR-compliant panels qualify."
-                      />
-                      <p className="text-xs text-foreground-tertiary">Only DCR panels eligible</p>
-                    </div>
-                    <Switch
-                      checked={form.watch('requiresDcr')}
-                      onCheckedChange={(value) => form.setValue('requiresDcr', value)}
+                    <Controller
+                      name="requiresDcr"
+                      control={form.control}
+                      render={({ field }) => (
+                        <MUISwitch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          label="Requires DCR"
+                          description="Only DCR panels eligible"
+                          tooltip="Only DCR-compliant panels qualify."
+                          labelPosition="left"
+                        />
+                      )}
                     />
                   </div>
                   <div className="flex items-center justify-between rounded-lg border border-border-light p-3 flex-1 min-w-[220px]">
-                    <div>
-                      <FieldLabel
-                        label="Auto Split"
-                        tooltip="Split DCR and non-DCR automatically."
-                      />
-                      <p className="text-xs text-foreground-tertiary">Auto split DCR/Non-DCR</p>
-                    </div>
-                    <Switch
-                      checked={form.watch('autoSplitEnabled')}
-                      onCheckedChange={(value) => form.setValue('autoSplitEnabled', value)}
+                    <Controller
+                      name="autoSplitEnabled"
+                      control={form.control}
+                      render={({ field }) => (
+                        <MUISwitch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          label="Auto Split"
+                          description="Auto split DCR/Non-DCR"
+                          tooltip="Split DCR and non-DCR automatically."
+                          labelPosition="left"
+                        />
+                      )}
                     />
                   </div>
                 </div>
@@ -322,27 +289,21 @@ export function EditSubsidyModal({
                   {tiersFieldArray.fields.map((field, index) => (
                     <div key={field.id} className="rounded-lg border border-border-light p-3">
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="space-y-1.5">
-                          <FieldLabel label="From kW" tooltip="Start of tier range." />
-                          <Input
+                        <div>
+                          <MUIInput
+                            fieldLabel="From kW"
+                            tooltip="Start of tier range."
                             type="number"
                             step="0.01"
                             placeholder="e.g. 0"
                             error={form.formState.errors.tiers?.[index]?.fromKw?.message}
                             {...form.register(`tiers.${index}.fromKw`, { valueAsNumber: true })}
                           />
-                          {form.formState.errors.tiers?.[index]?.fromKw && (
-                            <p className="text-xs text-error">
-                              {form.formState.errors.tiers[index]?.fromKw?.message}
-                            </p>
-                          )}
                         </div>
-                        <div className="space-y-1.5">
-                          <FieldLabel
-                            label="To kW"
+                        <div>
+                          <MUIInput
+                            fieldLabel="To kW"
                             tooltip="End of tier range (leave empty for open-ended)."
-                          />
-                          <Input
                             type="number"
                             step="0.01"
                             placeholder="e.g. 3"
@@ -351,29 +312,17 @@ export function EditSubsidyModal({
                               setValueAs: (value) => (value === '' ? null : Number(value)),
                             })}
                           />
-                          {form.formState.errors.tiers?.[index]?.toKw && (
-                            <p className="text-xs text-error">
-                              {form.formState.errors.tiers[index]?.toKw?.message}
-                            </p>
-                          )}
                         </div>
-                        <div className="space-y-1.5">
-                          <FieldLabel
-                            label="Rate per kW"
+                        <div>
+                          <MUIInput
+                            fieldLabel="Rate per kW"
                             tooltip="Subsidy rate per kW in currency."
-                          />
-                          <Input
                             type="number"
                             step="0.01"
                             placeholder="e.g. 14500"
                             error={form.formState.errors.tiers?.[index]?.ratePerKw?.message}
                             {...form.register(`tiers.${index}.ratePerKw`, { valueAsNumber: true })}
                           />
-                          {form.formState.errors.tiers?.[index]?.ratePerKw && (
-                            <p className="text-xs text-error">
-                              {form.formState.errors.tiers[index]?.ratePerKw?.message}
-                            </p>
-                          )}
                         </div>
                       </div>
                       <div className="flex justify-end mt-3">
@@ -408,30 +357,36 @@ export function EditSubsidyModal({
                   </Typography>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="effective-from"
-                      label="Effective From"
-                      tooltip="Date when this scheme becomes active."
-                    />
-                    <Input
-                      id="effective-from"
-                      type="date"
-                      placeholder="YYYY-MM-DD"
-                      {...form.register('effectiveFrom')}
+                  <div>
+                    <Controller
+                      name="effectiveFrom"
+                      control={form.control}
+                      render={({ field }) => (
+                        <MUIDatePicker
+                          fieldLabel="Effective From"
+                          tooltip="Date when this scheme becomes active."
+                          value={field.value || null}
+                          onChange={(date) =>
+                            field.onChange(date ? date.toISOString().slice(0, 10) : '')
+                          }
+                        />
+                      )}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="effective-to"
-                      label="Effective To"
-                      tooltip="Optional end date for the scheme."
-                    />
-                    <Input
-                      id="effective-to"
-                      type="date"
-                      placeholder="YYYY-MM-DD"
-                      {...form.register('effectiveTo')}
+                  <div>
+                    <Controller
+                      name="effectiveTo"
+                      control={form.control}
+                      render={({ field }) => (
+                        <MUIDatePicker
+                          fieldLabel="Effective To"
+                          tooltip="Optional end date for the scheme."
+                          value={field.value || null}
+                          onChange={(date) =>
+                            field.onChange(date ? date.toISOString().slice(0, 10) : '')
+                          }
+                        />
+                      )}
                     />
                   </div>
                 </div>
@@ -451,24 +406,25 @@ export function EditSubsidyModal({
                 </div>
 
                 <div className="flex items-center justify-between rounded-lg border border-border-light p-3">
-                  <div>
-                    <FieldLabel
-                      label="Active"
-                      tooltip="Only active schemes are applied to quotes."
-                    />
-                    <p className="text-xs text-foreground-tertiary">
-                      Only active schemes are applied to quotes.
-                    </p>
-                  </div>
-                  <Switch
-                    checked={form.watch('isActive')}
-                    onCheckedChange={(value) => form.setValue('isActive', value)}
+                  <Controller
+                    name="isActive"
+                    control={form.control}
+                    render={({ field }) => (
+                      <MUISwitch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        label="Active"
+                        description="Only active schemes are applied to quotes."
+                        tooltip="Only active schemes are applied to quotes."
+                        labelPosition="left"
+                      />
+                    )}
                   />
                 </div>
               </CardContent>
             </Card>
-          </DialogBody>
-          <DialogFooter>
+          </MUIDialogBody>
+          <MUIDialogFooter>
             <Button variant="outline" onClick={() => handleClose(false)}>
               Cancel
             </Button>
@@ -482,9 +438,8 @@ export function EditSubsidyModal({
                 'Save Changes'
               )}
             </Button>
-          </DialogFooter>
+          </MUIDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+    </MUIDialog>
   );
 }

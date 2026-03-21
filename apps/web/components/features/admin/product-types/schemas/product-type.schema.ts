@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+const SYSTEM_PRODUCT_TYPE_CODES = ['solar_panel', 'inverter', 'mounting_structure'] as const;
+
 const dataTypeSchema = z.enum(['string', 'integer', 'decimal', 'boolean', 'enum']);
 
 const attributeSchema = z.object({
@@ -16,7 +18,7 @@ const attributeSchema = z.object({
   groupName: z.string().trim().min(1, 'Group name is required'),
   sortOrder: z
     .number({ invalid_type_error: 'Sort order must be a number' })
-    .min(0, 'Sort order must be >= 0'),
+    .min(1, 'Sort order must be >= 1'),
   defaultValue: z.string().trim().optional(),
   helpText: z.string().trim().optional(),
   validationMin: z.number({ invalid_type_error: 'Min must be a number' }).optional(),
@@ -43,7 +45,7 @@ export const productTypeSchema = z
     isActive: z.boolean(),
     sortOrder: z
       .number({ invalid_type_error: 'Sort order must be a number' })
-      .min(0, 'Sort order must be >= 0'),
+      .min(1, 'Sort order must be >= 1'),
     attributes: z.array(attributeSchema),
   })
   .superRefine((data, ctx) => {
@@ -87,5 +89,15 @@ export const productTypeSchema = z
       }
     });
   });
+
+export const createProductTypeSchema = productTypeSchema.superRefine((data, ctx) => {
+  if ((SYSTEM_PRODUCT_TYPE_CODES as readonly string[]).includes(data.code)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `'${data.code}' is a reserved system code and cannot be used`,
+      path: ['code'],
+    });
+  }
+});
 
 export type ProductTypeFormData = z.infer<typeof productTypeSchema>;

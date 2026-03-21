@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { type JSX, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 
 import { COST_COMPONENT_FIELDS } from '../constants';
 import {
@@ -11,20 +11,20 @@ import {
   type InstallationPricingFormData,
 } from '../schemas/installation-pricing.schema';
 
-import { Alert, FieldLabel } from '@/components/shared';
+import { Alert } from '@/components/shared';
 import {
   Button,
   Card,
   CardContent,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-  Switch,
+  MUIDialog,
+  MUIDialogBody,
+  MUIDialogDescription,
+  MUIDialogFooter,
+  MUIDialogHeader,
+  MUIDialogTitle,
+  MUIDatePicker,
+  MUIInput,
+  MUISwitch,
   Typography,
 } from '@/components/ui';
 import { useModalForm } from '@/lib/hooks/core';
@@ -117,16 +117,15 @@ export function EditPricingTierModal({
   });
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[720px]">
-        <DialogHeader>
-          <DialogTitle>Edit Pricing Tier</DialogTitle>
-          <DialogDescription>
+    <MUIDialog open={open} onOpenChange={handleClose} size="lg">
+        <MUIDialogHeader>
+          <MUIDialogTitle>Edit Pricing Tier</MUIDialogTitle>
+          <MUIDialogDescription>
             Update installation pricing for this system size range.
-          </DialogDescription>
-        </DialogHeader>
+          </MUIDialogDescription>
+        </MUIDialogHeader>
         <form onSubmit={(event) => void handleSubmit(event)}>
-          <DialogBody className="space-y-5 max-h-[75vh] overflow-y-auto">
+          <MUIDialogBody sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             {Boolean(mutations.update.error) && (
               <Alert variant="error" appearance="minimal">
                 {getErrorMessage(mutations.update.error)}
@@ -144,14 +143,11 @@ export function EditPricingTierModal({
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="tier-min"
-                      label="Min System Size (kW)"
-                      tooltip="Minimum system size for this pricing tier."
-                    />
-                    <Input
+                  <div>
+                    <MUIInput
                       id="tier-min"
+                      fieldLabel="Min System Size (kW)"
+                      tooltip="Minimum system size for this pricing tier."
                       type="number"
                       step="0.01"
                       placeholder="e.g. 1"
@@ -159,14 +155,11 @@ export function EditPricingTierModal({
                       {...form.register('minSystemSizeKw', { valueAsNumber: true })}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="tier-max"
-                      label="Max System Size (kW)"
-                      tooltip="Leave empty for open-ended tiers."
-                    />
-                    <Input
+                  <div>
+                    <MUIInput
                       id="tier-max"
+                      fieldLabel="Max System Size (kW)"
+                      tooltip="Leave empty for open-ended tiers."
                       type="number"
                       step="0.01"
                       placeholder="e.g. 10 (optional)"
@@ -175,11 +168,6 @@ export function EditPricingTierModal({
                         setValueAs: (value) => (value === '' ? null : Number(value)),
                       })}
                     />
-                    {form.formState.errors.maxSystemSizeKw && (
-                      <p className="text-xs text-error">
-                        {form.formState.errors.maxSystemSizeKw.message}
-                      </p>
-                    )}
                   </div>
                 </div>
 
@@ -192,42 +180,33 @@ export function EditPricingTierModal({
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="tier-transport"
-                      label="Transport Rate (per km)"
-                      tooltip="Transport cost per kilometer."
-                    />
-                    <Input
+                  <div>
+                    <MUIInput
                       id="tier-transport"
+                      fieldLabel="Transport Rate (per km)"
+                      tooltip="Transport cost per kilometer."
                       type="number"
                       step="0.01"
                       placeholder="e.g. 35"
                       {...form.register('transportRatePerKm', { valueAsNumber: true })}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="tier-floor"
-                      label="Floor Increment (%)"
-                      tooltip="Increment per additional floor."
-                    />
-                    <Input
+                  <div>
+                    <MUIInput
                       id="tier-floor"
+                      fieldLabel="Floor Increment (%)"
+                      tooltip="Increment per additional floor."
                       type="number"
                       step="0.01"
                       placeholder="e.g. 25"
                       {...form.register('floorIncrementPercent', { valueAsNumber: true })}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="tier-gst"
-                      label="GST Rate (%)"
-                      tooltip="GST percentage applied to installation."
-                    />
-                    <Input
+                  <div>
+                    <MUIInput
                       id="tier-gst"
+                      fieldLabel="GST Rate (%)"
+                      tooltip="GST percentage applied to installation."
                       type="number"
                       step="0.01"
                       placeholder="e.g. 18"
@@ -255,12 +234,10 @@ export function EditPricingTierModal({
                   {COST_COMPONENT_FIELDS.map((field) => {
                     const fieldKey = field.key;
                     return (
-                      <div key={fieldKey} className="space-y-1.5">
-                        <FieldLabel
-                          label={field.label}
+                      <div key={fieldKey}>
+                        <MUIInput
+                          fieldLabel={field.label}
                           tooltip={`Cost component for ${field.label.toLowerCase()}.`}
-                        />
-                        <Input
                           type="number"
                           step="0.01"
                           placeholder="e.g. 5000"
@@ -286,55 +263,62 @@ export function EditPricingTierModal({
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="tier-from"
-                      label="Effective From"
-                      required
-                      tooltip="Date when this tier becomes active."
-                    />
-                    <Input
-                      id="tier-from"
-                      type="date"
-                      placeholder="YYYY-MM-DD"
-                      error={form.formState.errors.effectiveFrom?.message}
-                      {...form.register('effectiveFrom')}
+                  <div>
+                    <Controller
+                      name="effectiveFrom"
+                      control={form.control}
+                      render={({ field }) => (
+                        <MUIDatePicker
+                          fieldLabel="Effective From"
+                          required
+                          tooltip="Date when this tier becomes active."
+                          error={form.formState.errors.effectiveFrom?.message}
+                          value={field.value || null}
+                          onChange={(date) =>
+                            field.onChange(date ? date.toISOString().slice(0, 10) : '')
+                          }
+                        />
+                      )}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="tier-to"
-                      label="Effective To"
-                      tooltip="Optional end date for this tier."
-                    />
-                    <Input
-                      id="tier-to"
-                      type="date"
-                      placeholder="YYYY-MM-DD"
-                      {...form.register('effectiveTo')}
+                  <div>
+                    <Controller
+                      name="effectiveTo"
+                      control={form.control}
+                      render={({ field }) => (
+                        <MUIDatePicker
+                          fieldLabel="Effective To"
+                          tooltip="Optional end date for this tier."
+                          value={field.value || null}
+                          onChange={(date) =>
+                            field.onChange(date ? date.toISOString().slice(0, 10) : '')
+                          }
+                        />
+                      )}
                     />
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between rounded-lg border border-border-light p-3">
-                  <div>
-                    <FieldLabel
-                      label="Active"
-                      tooltip="Only active tiers are used in calculations."
-                    />
-                    <p className="text-xs text-foreground-tertiary">
-                      Only active tiers are used in calculations.
-                    </p>
-                  </div>
-                  <Switch
-                    checked={form.watch('isActive')}
-                    onCheckedChange={(value) => form.setValue('isActive', value)}
+                  <Controller
+                    name="isActive"
+                    control={form.control}
+                    render={({ field }) => (
+                      <MUISwitch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        label="Active"
+                        description="Only active tiers are used in calculations."
+                        tooltip="Only active tiers are used in calculations."
+                        labelPosition="left"
+                      />
+                    )}
                   />
                 </div>
               </CardContent>
             </Card>
-          </DialogBody>
-          <DialogFooter>
+          </MUIDialogBody>
+          <MUIDialogFooter>
             <Button variant="outline" onClick={() => handleClose(false)}>
               Cancel
             </Button>
@@ -348,9 +332,8 @@ export function EditPricingTierModal({
                 'Save Changes'
               )}
             </Button>
-          </DialogFooter>
+          </MUIDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+    </MUIDialog>
   );
 }

@@ -39,6 +39,9 @@ export class ProductTypeAttributeEntity extends BaseEntity {
   @Column({ name: 'help_text', type: 'text', nullable: true })
   helpText?: string;
 
+  @Column({ name: 'is_system', type: 'boolean', default: false })
+  isSystem!: boolean;
+
   @ManyToOne(() => ProductTypeEntity, (pt) => pt.attributes, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'product_type_id' })
   productType?: ProductTypeEntity;

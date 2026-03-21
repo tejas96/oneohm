@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, Loader2, Plus, Save, Trash2 } from 'lucide-react';
 import { type JSX, useEffect, useMemo } from 'react';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
 
 import { quoteConfigSchema, type QuoteConfigFormData } from '../schemas/quote-config.schema';
 
@@ -14,8 +14,8 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Input,
-  Switch,
+  MUIInput,
+  MUISwitch,
   Tabs,
   TabsContent,
   TabsList,
@@ -197,53 +197,41 @@ export function QuoteConfigPage(): JSX.Element {
 
           <TabsContent value="general" className="mt-6 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-              <div className="space-y-1.5">
-                <FieldLabel
-                  htmlFor="validity"
-                  label="Default Validity (days)"
-                  tooltip="How many days a quote stays valid by default."
-                />
-                <Input
+              <div>
+                <MUIInput
                   id="validity"
+                  fieldLabel="Default Validity (days)"
+                  tooltip="How many days a quote stays valid by default."
                   type="number"
                   placeholder="e.g. 30"
                   {...form.register('defaultValidityDays', { valueAsNumber: true })}
                 />
               </div>
-              <div className="space-y-1.5">
-                <FieldLabel
-                  htmlFor="versions"
-                  label="Max Versions"
-                  tooltip="Maximum revisions allowed per quote."
-                />
-                <Input
+              <div>
+                <MUIInput
                   id="versions"
+                  fieldLabel="Max Versions"
+                  tooltip="Maximum revisions allowed per quote."
                   type="number"
                   placeholder="e.g. 3"
                   {...form.register('maxVersions', { valueAsNumber: true })}
                 />
               </div>
-              <div className="space-y-1.5">
-                <FieldLabel
-                  htmlFor="completion"
-                  label="Completion Weeks"
-                  tooltip="Default project completion timeline."
-                />
-                <Input
+              <div>
+                <MUIInput
                   id="completion"
+                  fieldLabel="Completion Weeks"
+                  tooltip="Default project completion timeline."
                   type="number"
                   placeholder="e.g. 4"
                   {...form.register('defaultCompletionWeeks', { valueAsNumber: true })}
                 />
               </div>
-              <div className="space-y-1.5">
-                <FieldLabel
-                  htmlFor="min-margin"
-                  label="Min Profit Margin (%)"
-                  tooltip="Minimum margin allowed on a quote."
-                />
-                <Input
+              <div>
+                <MUIInput
                   id="min-margin"
+                  fieldLabel="Min Profit Margin (%)"
+                  tooltip="Minimum margin allowed on a quote."
                   type="number"
                   step="0.01"
                   placeholder="e.g. 12.5"
@@ -268,54 +256,59 @@ export function QuoteConfigPage(): JSX.Element {
             </div>
 
             <div className="flex items-center justify-between rounded-lg border border-border-light p-3">
-              <div>
-                <FieldLabel
-                  label="Show Inventory Stock"
-                  tooltip="Display live stock availability in quote builder."
-                />
-                <p className="text-xs text-foreground-tertiary">
-                  Display live stock availability in quote builder.
-                </p>
-              </div>
-              <Switch
-                checked={form.watch('showInventoryStock')}
-                onCheckedChange={(value) => form.setValue('showInventoryStock', value)}
+              <Controller
+                name="showInventoryStock"
+                control={form.control}
+                render={({ field }) => (
+                  <MUISwitch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    label="Show Inventory Stock"
+                    description="Display live stock availability in quote builder."
+                    tooltip="Display live stock availability in quote builder."
+                    labelPosition="left"
+                  />
+                )}
               />
             </div>
           </TabsContent>
 
           <TabsContent value="gst" className="mt-6 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <FieldLabel label="GST Rate 1" tooltip="Primary GST rate used for line items." />
-                <Input
+              <div>
+                <MUIInput
+                  fieldLabel="GST Rate 1"
+                  tooltip="Primary GST rate used for line items."
                   type="number"
                   step="0.01"
                   placeholder="e.g. 5"
                   {...form.register('gstConfig.rate1', { valueAsNumber: true })}
                 />
               </div>
-              <div className="space-y-1.5">
-                <FieldLabel label="Rate 1 Percentage" tooltip="Percentage split for GST rate 1." />
-                <Input
+              <div>
+                <MUIInput
+                  fieldLabel="Rate 1 Percentage"
+                  tooltip="Percentage split for GST rate 1."
                   type="number"
                   step="0.01"
                   placeholder="e.g. 100"
                   {...form.register('gstConfig.rate1Percentage', { valueAsNumber: true })}
                 />
               </div>
-              <div className="space-y-1.5">
-                <FieldLabel label="GST Rate 2" tooltip="Secondary GST rate used when applicable." />
-                <Input
+              <div>
+                <MUIInput
+                  fieldLabel="GST Rate 2"
+                  tooltip="Secondary GST rate used when applicable."
                   type="number"
                   step="0.01"
                   placeholder="e.g. 12"
                   {...form.register('gstConfig.rate2', { valueAsNumber: true })}
                 />
               </div>
-              <div className="space-y-1.5">
-                <FieldLabel label="Rate 2 Percentage" tooltip="Percentage split for GST rate 2." />
-                <Input
+              <div>
+                <MUIInput
+                  fieldLabel="Rate 2 Percentage"
+                  tooltip="Percentage split for GST rate 2."
                   type="number"
                   step="0.01"
                   placeholder="e.g. 0"
@@ -359,29 +352,26 @@ export function QuoteConfigPage(): JSX.Element {
             {milestonesFieldArray.fields.map((field, index) => (
               <div key={field.id} className="rounded-lg border border-border-light p-3">
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      label="Stage"
+                  <div>
+                    <MUIInput
+                      fieldLabel="Stage"
                       tooltip="Short identifier for this milestone stage."
-                    />
-                    <Input
                       placeholder="e.g. booking"
                       {...form.register(`paymentMilestones.${index}.stage`)}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel label="Name" tooltip="Label shown on quotes and invoices." />
-                    <Input
+                  <div>
+                    <MUIInput
+                      fieldLabel="Name"
+                      tooltip="Label shown on quotes and invoices."
                       placeholder="e.g. Booking Amount"
                       {...form.register(`paymentMilestones.${index}.name`)}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      label="Percentage"
+                  <div>
+                    <MUIInput
+                      fieldLabel="Percentage"
                       tooltip="Share of total amount for this milestone."
-                    />
-                    <Input
                       type="number"
                       step="0.01"
                       placeholder="e.g. 10"
@@ -390,9 +380,10 @@ export function QuoteConfigPage(): JSX.Element {
                       })}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel label="Order" tooltip="Display order in the payment schedule." />
-                    <Input
+                  <div>
+                    <MUIInput
+                      fieldLabel="Order"
+                      tooltip="Display order in the payment schedule."
                       type="number"
                       placeholder="e.g. 1"
                       {...form.register(`paymentMilestones.${index}.order`, {
@@ -422,23 +413,19 @@ export function QuoteConfigPage(): JSX.Element {
 
           <TabsContent value="rounding" className="mt-6 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <FieldLabel
-                  label="Round To (W)"
+              <div>
+                <MUIInput
+                  fieldLabel="Round To (W)"
                   tooltip="Round system size to the nearest watt value."
-                />
-                <Input
                   type="number"
                   placeholder="e.g. 10"
                   {...form.register('wattageRounding.roundTo', { valueAsNumber: true })}
                 />
               </div>
-              <div className="space-y-1.5">
-                <FieldLabel
-                  label="Round Up Threshold"
+              <div>
+                <MUIInput
+                  fieldLabel="Round Up Threshold"
                   tooltip="Threshold above which rounding rounds up."
-                />
-                <Input
                   type="number"
                   placeholder="e.g. 5"
                   {...form.register('wattageRounding.roundUpThreshold', {

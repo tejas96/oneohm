@@ -147,7 +147,7 @@ export function ProductPricesDrawer({
   );
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={onOpenChange} modal={false}>
       <SheetContent className="w-full sm:max-w-2xl p-0 flex flex-col">
         <SheetHeader className="p-4 pr-12 border-b border-border-light">
           <div className="flex items-start justify-between gap-3">
@@ -229,50 +229,50 @@ export function ProductPricesDrawer({
           productId={productId}
           target={editTarget}
         />
-
-        <Dialog
-          open={!!deactivateTarget}
-          onOpenChange={(nextOpen) => {
-            if (!nextOpen) setDeactivateTarget(null);
-          }}
-        >
-          <DialogContent className="sm:max-w-[420px]">
-            <DialogHeader>
-              <DialogTitle>Deactivate Price</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to deactivate this price row? It will no longer be used for
-                quotes.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDeactivateTarget(null)}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                disabled={isDeactivating}
-                onClick={() => {
-                  if (!deactivateTarget) return;
-                  setIsDeactivating(true);
-                  void mutations.action('deactivate', deactivateTarget.id).finally(() => {
-                    setIsDeactivating(false);
-                    setDeactivateTarget(null);
-                  });
-                }}
-              >
-                {isDeactivating ? (
-                  <>
-                    <Loader2 className="mr-2 size-4 animate-spin" />
-                    Deactivating...
-                  </>
-                ) : (
-                  'Deactivate'
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </SheetContent>
+
+      <Dialog
+        open={!!deactivateTarget}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setDeactivateTarget(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Deactivate Price</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to deactivate this price row? It will no longer be used for
+              quotes.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeactivateTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isDeactivating}
+              onClick={() => {
+                if (!deactivateTarget) return;
+                setIsDeactivating(true);
+                void mutations.action('deactivate', deactivateTarget.id).finally(() => {
+                  setIsDeactivating(false);
+                  setDeactivateTarget(null);
+                });
+              }}
+            >
+              {isDeactivating ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  Deactivating...
+                </>
+              ) : (
+                'Deactivate'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   );
 }

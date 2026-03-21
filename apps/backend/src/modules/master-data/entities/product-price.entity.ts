@@ -14,7 +14,7 @@ export class ProductPriceEntity extends BaseEntity {
   productId!: string;
 
   @Column({ name: 'project_type', type: 'varchar', length: 50, nullable: true })
-  projectType?: string;
+  projectType?: string | null;
 
   @Column({ name: 'unit_price', type: 'decimal', precision: 12, scale: 2 })
   unitPrice!: number;

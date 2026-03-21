@@ -8,7 +8,7 @@ export interface ProductPrice {
   id: string;
   organizationId: string;
   productId: string;
-  projectType?: ProjectType;
+  projectType?: ProjectType | null;
   unitPrice: number;
   costMultiplier: number;
   gstRate: number;

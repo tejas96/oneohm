@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ProductStatus, UnitOfMeasure } from '@oneohm-epc/shared/types';
 import { Loader2 } from 'lucide-react';
-import { type JSX, useEffect, useMemo } from 'react';
+import { type JSX, useCallback, useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { ProductSpecificationsFields } from './product-specifications-fields';
@@ -14,19 +14,14 @@ import {
   Button,
   Card,
   CardContent,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  MUIDialog,
+  MUIDialogBody,
+  MUIDialogDescription,
+  MUIDialogFooter,
+  MUIDialogHeader,
+  MUIDialogTitle,
+  MUIInput,
+  MUISelect,
   Textarea,
   Typography,
 } from '@/components/ui';
@@ -48,8 +43,16 @@ interface CreateProductModalProps {
 
 export function CreateProductModal({ open, onOpenChange }: CreateProductModalProps): JSX.Element {
   const productMutations = useProductAdminMutations();
-  const productTypes = useProductTypeList({ syncToUrl: false, defaultPageSize: 200 });
-  const brands = useBrandList({ syncToUrl: false, defaultPageSize: 200 });
+  const productTypes = useProductTypeList({
+    syncToUrl: false,
+    defaultPageSize: 200,
+    defaultFilters: { isActive: true },
+  });
+  const brands = useBrandList({
+    syncToUrl: false,
+    defaultPageSize: 200,
+    defaultFilters: { isActive: true },
+  });
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -83,54 +86,57 @@ export function CreateProductModal({ open, onOpenChange }: CreateProductModalPro
   );
   const isSpecificationsLoading = productTypeDetail.isLoading && !!selectedProductTypeId;
 
-  const buildSpecificationDefaults = (
-    attributes: ProductTypeAttribute[],
-  ): Record<string, unknown> => {
-    if (!attributes || !Array.isArray(attributes)) return {};
-    const defaults: Record<string, unknown> = {};
+  const buildSpecificationDefaults = useCallback(
+    (attributes: ProductTypeAttribute[]): Record<string, unknown> => {
+      if (!attributes || !Array.isArray(attributes)) return {};
+      const defaults: Record<string, unknown> = {};
 
-    attributes.forEach((attr) => {
-      const key = attr.attributeKey;
-      if (!key) return;
+      attributes.forEach((attr) => {
+        const key = attr.attributeKey;
+        if (!key) return;
 
-      if (attr.defaultValue && attr.defaultValue !== '') {
-        if (attr.dataType === 'boolean') {
-          defaults[key] = attr.defaultValue === 'true';
-          return;
-        }
-        if (
-          attr.dataType === 'integer' ||
-          attr.dataType === 'decimal' ||
-          attr.dataType === 'number'
-        ) {
-          const parsed = Number(attr.defaultValue);
-          if (Number.isFinite(parsed)) {
-            defaults[key] = parsed;
+        if (attr.defaultValue && attr.defaultValue !== '') {
+          if (attr.dataType === 'boolean') {
+            defaults[key] = attr.defaultValue === 'true';
             return;
           }
+          if (
+            attr.dataType === 'integer' ||
+            attr.dataType === 'decimal' ||
+            attr.dataType === 'number'
+          ) {
+            const parsed = Number(attr.defaultValue);
+            if (Number.isFinite(parsed)) {
+              defaults[key] = parsed;
+              return;
+            }
+          }
+          defaults[key] = attr.defaultValue;
+          return;
         }
-        defaults[key] = attr.defaultValue;
-        return;
-      }
 
-      if (attr.dataType === 'boolean' && attr.isRequired) {
-        defaults[key] = false;
-      }
-    });
+        if (attr.dataType === 'boolean' && attr.isRequired) {
+          defaults[key] = false;
+        }
+      });
 
-    return defaults;
-  };
+      return defaults;
+    },
+    [],
+  );
+
+  const setBrandFilters = brands.setFilters;
 
   useEffect(() => {
     if (!resolvedProductType) {
-      brands.setFilters({ productTypeId: undefined });
+      setBrandFilters({ productTypeId: undefined });
       return;
     }
     form.setValue('unitOfMeasure', resolvedProductType.defaultUnitOfMeasure as UnitOfMeasure);
     form.setValue('specifications', buildSpecificationDefaults(specificationAttributes));
-    brands.setFilters({ productTypeId: resolvedProductType.id });
+    setBrandFilters({ productTypeId: resolvedProductType.id });
     form.setValue('brandId', '');
-  }, [brands, form, resolvedProductType, specificationAttributes]);
+  }, [form, resolvedProductType, specificationAttributes, setBrandFilters, buildSpecificationDefaults]);
 
   const { handleSubmit, handleClose, isSubmitting } = useModalForm<
     ProductFormData,
@@ -155,14 +161,13 @@ export function CreateProductModal({ open, onOpenChange }: CreateProductModalPro
   });
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[720px]">
-        <DialogHeader>
-          <DialogTitle>Create Product</DialogTitle>
-          <DialogDescription>Define a product model and its specifications.</DialogDescription>
-        </DialogHeader>
+    <MUIDialog open={open} onOpenChange={handleClose} size="lg">
+        <MUIDialogHeader>
+          <MUIDialogTitle>Create Product</MUIDialogTitle>
+          <MUIDialogDescription>Define a product model and its specifications.</MUIDialogDescription>
+        </MUIDialogHeader>
         <form onSubmit={(event) => void handleSubmit(event)}>
-          <DialogBody className="space-y-5 max-h-[75vh] overflow-y-auto">
+          <MUIDialogBody sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             {Boolean(productMutations.create.error) && (
               <Alert variant="error" appearance="minimal">
                 {getErrorMessage(productMutations.create.error)}
@@ -183,149 +188,109 @@ export function CreateProductModal({ open, onOpenChange }: CreateProductModalPro
                   Choose a product type first to unlock matching specifications.
                 </Alert>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="product-name"
-                      label="Product Name"
+                  <div>
+                    <MUIInput
+                      id="product-name"
+                      fieldLabel="Product Name"
                       required
                       tooltip="Clear product name shown in quotes (e.g., 540W Mono Panel)."
-                    />
-                    <Input
-                      id="product-name"
                       placeholder="e.g. 540W Mono Panel"
                       error={form.formState.errors.name?.message}
                       {...form.register('name')}
                     />
-                    {form.formState.errors.name && (
-                      <p className="text-xs text-error">{form.formState.errors.name.message}</p>
-                    )}
                   </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="product-code"
-                      label="Product Code"
+                  <div>
+                    <MUIInput
+                      id="product-code"
+                      fieldLabel="Product Code"
                       required
                       tooltip="Short unique code for internal reference (e.g., PAN-540-MONO)."
-                    />
-                    <Input
-                      id="product-code"
                       placeholder="e.g. PAN-540-MONO"
                       error={form.formState.errors.code?.message}
                       {...form.register('code')}
                     />
-                    {form.formState.errors.code && (
-                      <p className="text-xs text-error">{form.formState.errors.code.message}</p>
-                    )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      label="Product Type"
-                      required
-                      tooltip="Controls which specifications and brands are available."
-                    />
+                  <div>
                     <Controller
                       name="productTypeId"
                       control={form.control}
                       render={({ field }) => (
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select type (e.g., Solar Panel)" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {productTypes.items.map((type) => (
-                              <SelectItem key={type.id} value={type.id}>
-                                {type.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <MUISelect
+                          fieldLabel="Product Type"
+                          required
+                          tooltip="Controls which specifications and brands are available."
+                          placeholder="Select product type"
+                          error={form.formState.errors.productTypeId?.message}
+                          value={field.value}
+                          onChange={(event) => field.onChange(event.target.value)}
+                          options={productTypes.items.map((type) => ({
+                            value: type.id,
+                            label: type.name,
+                          }))}
+                        />
                       )}
                     />
-                    {form.formState.errors.productTypeId && (
-                      <p className="text-xs text-error">
-                        {form.formState.errors.productTypeId.message}
-                      </p>
-                    )}
                   </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      label="Brand"
-                      required
-                      tooltip="Brand options are filtered by product type."
-                    />
+                  <div>
                     <Controller
                       name="brandId"
                       control={form.control}
                       render={({ field }) => (
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select brand (e.g., Jinko)" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {brands.items.map((brand) => (
-                              <SelectItem key={brand.id} value={brand.id}>
-                                {brand.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <MUISelect
+                          fieldLabel="Brand"
+                          required
+                          tooltip="Brand options are filtered by product type."
+                          placeholder="Select brand"
+                          error={form.formState.errors.brandId?.message}
+                          value={field.value}
+                          onChange={(event) => field.onChange(event.target.value)}
+                          options={brands.items.map((brand) => ({
+                            value: brand.id,
+                            label: brand.name,
+                          }))}
+                        />
                       )}
                     />
-                    {form.formState.errors.brandId && (
-                      <p className="text-xs text-error">{form.formState.errors.brandId.message}</p>
-                    )}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      label="Unit of Measure"
-                      tooltip="Default unit for pricing and inventory."
-                    />
+                  <div>
                     <Controller
                       name="unitOfMeasure"
                       control={form.control}
                       render={({ field }) => (
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select unit" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.values(UnitOfMeasure).map((unit) => (
-                              <SelectItem key={unit} value={unit}>
-                                {unit}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <MUISelect
+                          fieldLabel="Unit of Measure"
+                          tooltip="Default unit for pricing and inventory."
+                          value={field.value}
+                          onChange={(event) => field.onChange(event.target.value)}
+                          options={Object.values(UnitOfMeasure).map((unit) => ({
+                            value: unit,
+                            label: unit,
+                          }))}
+                        />
                       )}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      label="Status"
-                      tooltip="Inactive products are hidden from new quotes."
-                    />
+                  <div>
                     <Controller
                       name="status"
                       control={form.control}
                       render={({ field }) => (
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.values(ProductStatus).map((status) => (
-                              <SelectItem key={status} value={status}>
-                                {status}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <MUISelect
+                          fieldLabel="Status"
+                          tooltip="Inactive products are hidden from new quotes."
+                          value={field.value}
+                          onChange={(event) => field.onChange(event.target.value)}
+                          options={Object.values(ProductStatus).map((status) => ({
+                            value: status,
+                            label: status,
+                          }))}
+                        />
                       )}
                     />
                   </div>
@@ -344,41 +309,32 @@ export function CreateProductModal({ open, onOpenChange }: CreateProductModalPro
                   </Typography>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="product-model"
-                      label="Model Number"
-                      tooltip="Manufacturer model number (e.g., JKM540M-72HL4)."
-                    />
-                    <Input
+                  <div>
+                    <MUIInput
                       id="product-model"
+                      fieldLabel="Model Number"
+                      tooltip="Manufacturer model number (e.g., JKM540M-72HL4)."
                       placeholder="e.g. JKM540M-72HL4"
                       {...form.register('modelNumber')}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="product-warranty"
-                      label="Product Warranty (Years)"
-                      tooltip="Years of product warranty coverage."
-                    />
-                    <Input
+                  <div>
+                    <MUIInput
                       id="product-warranty"
+                      fieldLabel="Product Warranty"
+                      tooltip="Years of product warranty coverage."
                       type="number"
-                      placeholder="e.g. 12"
+                      placeholder="e.g. 12 years"
                       {...form.register('productWarrantyYears', { valueAsNumber: true })}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <FieldLabel
-                      htmlFor="product-performance-warranty"
-                      label="Performance Warranty (Years)"
-                      tooltip="Years of performance warranty coverage."
-                    />
-                    <Input
+                  <div>
+                    <MUIInput
                       id="product-performance-warranty"
+                      fieldLabel="Performance Warranty"
+                      tooltip="Years of performance warranty coverage."
                       type="number"
-                      placeholder="e.g. 25"
+                      placeholder="e.g. 25 years"
                       {...form.register('performanceWarrantyYears', { valueAsNumber: true })}
                     />
                   </div>
@@ -436,8 +392,8 @@ export function CreateProductModal({ open, onOpenChange }: CreateProductModalPro
                 )}
               </CardContent>
             </Card>
-          </DialogBody>
-          <DialogFooter>
+          </MUIDialogBody>
+          <MUIDialogFooter>
             <Button variant="outline" onClick={() => handleClose(false)}>
               Cancel
             </Button>
@@ -451,9 +407,8 @@ export function CreateProductModal({ open, onOpenChange }: CreateProductModalPro
                 'Create Product'
               )}
             </Button>
-          </DialogFooter>
+          </MUIDialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+    </MUIDialog>
   );
 }

@@ -106,6 +106,9 @@ export class InstallationPricing extends BaseEntity {
   }
 
   getDisplayLabel(): string {
+    if (this.maxSystemSizeKw != null && Number(this.maxSystemSizeKw) === Number(this.minSystemSizeKw)) {
+      return `${this.minSystemSizeKw}KW`;
+    }
     const max = this.maxSystemSizeKw != null ? this.maxSystemSizeKw : '∞';
     return `${this.minSystemSizeKw}-${max}KW`;
   }

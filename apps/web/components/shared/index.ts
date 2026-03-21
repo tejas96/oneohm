@@ -48,6 +48,7 @@ export {
   EditableField,
   LeadTemperatureSelector,
   NumberStepper,
+  CreatableCombobox,
 } from './forms';
 export type {
   RadioCardProps,
@@ -57,6 +58,8 @@ export type {
   EditableFieldProps,
   LeadTemperatureSelectorProps,
   NumberStepperProps,
+  CreatableComboboxProps,
+  ComboboxOption,
 } from './forms';
 
 // Search

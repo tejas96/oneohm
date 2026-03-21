@@ -58,6 +58,7 @@ export class ProductPriceService {
   ): Promise<ProductPriceEntity> {
     await this.assertProductExists(productId, organizationId);
     const existing = await this.findById(id, organizationId, productId);
+    const hasProjectTypeUpdate = Object.prototype.hasOwnProperty.call(dto, 'projectType');
 
     const effectiveFrom = dto.effectiveFrom
       ? this.toDate(dto.effectiveFrom, 'effectiveFrom')
@@ -68,22 +69,35 @@ export class ProductPriceService {
 
     this.validateDateRange(effectiveFrom, effectiveTo);
 
-    const projectType = dto.projectType ?? (existing.projectType as ProjectType | undefined);
-    if (existing.isActive && dto.projectType && dto.projectType !== existing.projectType) {
+    const nextProjectType = hasProjectTypeUpdate
+      ? (dto.projectType ?? undefined)
+      : (existing.projectType as ProjectType | undefined);
+    if (
+      existing.isActive &&
+      hasProjectTypeUpdate &&
+      (existing.projectType ?? null) !== (nextProjectType ?? null)
+    ) {
       await this.deactivateExistingPrices(
         organizationId,
         productId,
-        projectType,
+        nextProjectType,
         effectiveFrom,
         id,
       );
     }
 
-    return this.productPriceRepository.update(id, organizationId, {
+    const updateData: Partial<ProductPriceEntity> = {
       ...dto,
       updatedBy,
       effectiveFrom,
       effectiveTo,
+    };
+    if (hasProjectTypeUpdate) {
+      updateData.projectType = nextProjectType ?? null;
+    }
+
+    return this.productPriceRepository.update(id, organizationId, {
+      ...updateData,
     });
   }
 
