@@ -90,7 +90,7 @@ export class ProductTypeController {
       page,
       limit,
       sortBy,
-      sortOrder: (sortOrder === 'DESC' ? 'DESC' : 'ASC') as 'ASC' | 'DESC',
+      sortOrder: sortOrder === 'DESC' ? ('DESC' as const) : ('ASC' as const),
     };
     return this.productTypeService.findAll(organizationId, filters);
   }

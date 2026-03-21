@@ -107,7 +107,7 @@ export class BrandController {
       page,
       limit,
       sortBy,
-      sortOrder: (sortOrder === 'DESC' ? 'DESC' : 'ASC') as 'ASC' | 'DESC',
+      sortOrder: sortOrder === 'DESC' ? ('DESC' as const) : ('ASC' as const),
     };
     const result = await this.brandService.findAll(organizationId, filter);
     return {

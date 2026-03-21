@@ -53,7 +53,6 @@ export class SubsidyConfigurationService {
     updatedBy?: string,
   ): Promise<SubsidyConfiguration> {
     const existing = await this.findById(id, organizationId);
-    const projectType = dto.projectType ?? existing.projectType;
 
     const effectiveFrom = dto.effectiveFrom
       ? this.toDate(dto.effectiveFrom, 'effectiveFrom')

@@ -107,7 +107,6 @@ export class ProductTypeRepository {
 
         const systemAttrs = existingAttributes.filter((a) => a.isSystem);
         const systemAttrIds = new Set(systemAttrs.map((a) => a.id));
-        const systemAttrKeys = new Set(systemAttrs.map((a) => a.attributeKey));
 
         for (const incomingAttr of data.attributes) {
           if (!incomingAttr.id) continue;

@@ -203,7 +203,8 @@ describe('QuoteCalculatorService', () => {
         {
           provide: SubsidyConfigurationRepository,
           useValue: {
-            findActiveByProjectType: jest.fn(),
+            findAllActiveByProjectType: jest.fn(),
+            findByIds: jest.fn(),
           },
         },
         {
@@ -236,8 +237,8 @@ describe('QuoteCalculatorService', () => {
       // Setup mocks
       jest.spyOn(quoteConfigRepo, 'getOrCreateDefault').mockResolvedValue(mockQuoteConfig as any);
       jest
-        .spyOn(subsidyConfigRepo, 'findActiveByProjectType')
-        .mockResolvedValue(mockSubsidyConfig as any);
+        .spyOn(subsidyConfigRepo, 'findAllActiveByProjectType')
+        .mockResolvedValue([mockSubsidyConfig] as any);
       jest
         .spyOn(installationPricingRepo, 'findBySystemSize')
         .mockResolvedValue(mockInstallationPricing as any);
@@ -296,8 +297,8 @@ describe('QuoteCalculatorService', () => {
     it('should not split system when DCR_ONLY preference is set', async () => {
       jest.spyOn(quoteConfigRepo, 'getOrCreateDefault').mockResolvedValue(mockQuoteConfig as any);
       jest
-        .spyOn(subsidyConfigRepo, 'findActiveByProjectType')
-        .mockResolvedValue(mockSubsidyConfig as any);
+        .spyOn(subsidyConfigRepo, 'findAllActiveByProjectType')
+        .mockResolvedValue([mockSubsidyConfig] as any);
       jest
         .spyOn(installationPricingRepo, 'findBySystemSize')
         .mockResolvedValue(mockInstallationPricing as any);
@@ -339,7 +340,7 @@ describe('QuoteCalculatorService', () => {
 
     it('should use Non-DCR panels when subsidy is not applicable', async () => {
       jest.spyOn(quoteConfigRepo, 'getOrCreateDefault').mockResolvedValue(mockQuoteConfig as any);
-      jest.spyOn(subsidyConfigRepo, 'findActiveByProjectType').mockResolvedValue(null);
+      jest.spyOn(subsidyConfigRepo, 'findAllActiveByProjectType').mockResolvedValue([]);
       jest
         .spyOn(installationPricingRepo, 'findBySystemSize')
         .mockResolvedValue(mockInstallationPricing as any);
@@ -382,16 +383,13 @@ describe('QuoteCalculatorService', () => {
   });
 
   describe('subsidy calculation', () => {
-    it('should calculate tiered subsidy correctly for 3KW', async () => {
-      jest
-        .spyOn(subsidyConfigRepo, 'findActiveByProjectType')
-        .mockResolvedValue(mockSubsidyConfig as any);
-
-      const result = await (service as any).calculateSubsidy(
-        mockOrganizationId,
-        3, // 3KW DCR
-        ProjectType.RESIDENTIAL,
-        true,
+    it('should calculate tiered subsidy correctly for 3KW', () => {
+      // Call the private method directly with the mock config
+      const result = (service as any).calculateSubsidyFromConfigs(
+        [mockSubsidyConfig],
+        3, // dcrSizeKw
+        3, // totalSystemSizeKw
+        true, // subsidyApplicable
       );
 
       // Tier 1: 0-2KW @ 30000 = 60000
@@ -399,19 +397,15 @@ describe('QuoteCalculatorService', () => {
       // Total: 78000
       expect(result.isApplicable).toBe(true);
       expect(result.amount).toBe(78000);
-      expect(result.breakdown?.length).toBe(2);
+      expect(result.schemes[0].breakdown?.length).toBe(2);
     });
 
-    it('should calculate partial tier subsidy for 2.5KW', async () => {
-      jest
-        .spyOn(subsidyConfigRepo, 'findActiveByProjectType')
-        .mockResolvedValue(mockSubsidyConfig as any);
-
-      const result = await (service as any).calculateSubsidy(
-        mockOrganizationId,
-        2.5, // 2.5KW DCR
-        ProjectType.RESIDENTIAL,
-        true,
+    it('should calculate partial tier subsidy for 2.5KW', () => {
+      const result = (service as any).calculateSubsidyFromConfigs(
+        [mockSubsidyConfig],
+        2.5, // dcrSizeKw
+        2.5, // totalSystemSizeKw
+        true, // subsidyApplicable
       );
 
       // Tier 1: 0-2KW @ 30000 = 60000
@@ -419,19 +413,19 @@ describe('QuoteCalculatorService', () => {
       // Total: 69000
       expect(result.isApplicable).toBe(true);
       expect(result.amount).toBe(69000);
-      expect(result.breakdown?.length).toBe(2);
-      expect(result.breakdown?.[0].kw).toBe(2);
-      expect(result.breakdown?.[0].amount).toBe(60000);
-      expect(result.breakdown?.[1].kw).toBe(0.5);
-      expect(result.breakdown?.[1].amount).toBe(9000);
+      expect(result.schemes[0].breakdown?.length).toBe(2);
+      expect(result.schemes[0].breakdown?.[0].kw).toBe(2);
+      expect(result.schemes[0].breakdown?.[0].amount).toBe(60000);
+      expect(result.schemes[0].breakdown?.[1].kw).toBe(0.5);
+      expect(result.schemes[0].breakdown?.[1].amount).toBe(9000);
     });
 
-    it('should return zero subsidy when not applicable', async () => {
-      const result = await (service as any).calculateSubsidy(
-        mockOrganizationId,
-        5,
-        ProjectType.COMMERCIAL,
-        false,
+    it('should return zero subsidy when not applicable', () => {
+      const result = (service as any).calculateSubsidyFromConfigs(
+        [mockSubsidyConfig],
+        5, // dcrSizeKw
+        5, // totalSystemSizeKw
+        false, // subsidyApplicable = false
       );
 
       expect(result.isApplicable).toBe(false);

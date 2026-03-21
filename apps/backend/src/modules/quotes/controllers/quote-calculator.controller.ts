@@ -47,8 +47,6 @@ import { QuoteRepository } from '../repositories';
 import { QuoteCalculatorService } from '../services/quote-calculator.service';
 import { QuoteService } from '../services/quote.service';
 
-const REVISION_NOTE_CALCULATOR = 'Revised via calculator';
-
 /**
  * Quote Calculator Controller
  * Handles HTTP requests for quote calculation

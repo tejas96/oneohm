@@ -152,9 +152,8 @@ export function QuotePreviewPanel({
   if (!calculation) return null;
 
   // A gstConfig with rate1/rate2 of exactly 0 is technically valid (zero-rated);
-  // only treat it as missing if the config object itself is absent or the rates
-  // are null/undefined (not just falsy).
-  if (gstConfig == null || gstConfig.rate1 == null || gstConfig.rate2 == null) {
+  // only treat it as missing if the config object itself is absent.
+  if (gstConfig?.rate1 == null || gstConfig.rate2 == null) {
     return (
       <Card className="border-error/30">
         <CardContent className="p-4">
