@@ -19,15 +19,16 @@ import { ClassConstructor, plainToInstance } from 'class-transformer';
  */
 
 /**
- * Convert a single entity/object to a DTO instance
- * @param DtoClass The DTO class constructor
- * @param entity The entity or plain object to convert
- * @returns Instance of the DTO class with proper transformation applied
+ * Convert a single entity/object to a DTO instance.
+ *
+ * Uses excludeExtraneousValues to only include @Expose() properties.
+ * JSONB fields typed as interfaces need @Transform on the DTO property
+ * to preserve their nested structure (see QuoteConfigurationResponseDto).
  */
 export function toDto<T, V>(DtoClass: ClassConstructor<T>, entity: V): T {
   return plainToInstance(DtoClass, entity, {
-    excludeExtraneousValues: true, // Only include @Expose() decorated properties
-    enableImplicitConversion: true, // Auto-convert types
+    excludeExtraneousValues: true,
+    enableImplicitConversion: true,
   });
 }
 

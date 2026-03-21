@@ -649,9 +649,9 @@ export async function seedQuoteCalculatorData(
     await queryRunner.query(
       `INSERT INTO quote_configurations (
         organization_id, default_validity_days, max_versions,
-        default_completion_weeks, gst_config, wattage_rounding,
+        default_completion_weeks, gst_config,
         payment_milestones, show_inventory_stock, is_active
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       ON CONFLICT DO NOTHING`,
       [
         organizationId,
@@ -659,14 +659,10 @@ export async function seedQuoteCalculatorData(
         3,
         4,
         JSON.stringify({
-          rate1: 12,
+          rate1: 5,
           rate1Percentage: 70,
           rate2: 18,
           rate2Percentage: 30,
-        }),
-        JSON.stringify({
-          roundTo: 10,
-          roundUpThreshold: 5,
         }),
         JSON.stringify([
           { stage: 'advance', name: 'Advance', percentage: 10, order: 1 },

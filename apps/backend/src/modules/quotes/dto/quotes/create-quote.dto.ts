@@ -161,7 +161,6 @@ export class CreateQuoteDto {
   @IsObject()
   calculatorInputs?: CalculatorInputs;
 
-
   // ==================== Loan Financing ====================
   @ApiPropertyOptional({
     example: false,

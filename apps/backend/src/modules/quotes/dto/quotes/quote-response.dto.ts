@@ -237,7 +237,6 @@ export class QuoteResponseDto {
   @Transform(({ obj }) => cv(obj)?.projectCompletionWeeks ?? undefined)
   projectCompletionWeeks?: number;
 
-
   @ApiPropertyOptional({
     description: 'All versions',
     type: [QuoteVersionResponseDto],
@@ -261,6 +260,7 @@ export class QuoteResponseDto {
       effectivePrice: v.effectivePrice != null ? Number(v.effectivePrice) : undefined,
       pricingBreakdown: v.pricingBreakdown,
       paymentMilestones: v.paymentMilestones,
+      calculatorInputs: v.calculatorInputs,
       projectCompletionWeeks: v.projectCompletionWeeks,
       changeSummary: v.changeSummary,
       isCurrent: v.isCurrent,

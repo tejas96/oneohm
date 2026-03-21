@@ -62,14 +62,10 @@ export class QuoteConfigurationRepository {
           maxVersions: 3,
           defaultCompletionWeeks: 4,
           gstConfig: {
-            rate1: 12,
+            rate1: 5,
             rate1Percentage: 70,
             rate2: 18,
             rate2Percentage: 30,
-          },
-          wattageRounding: {
-            roundTo: 10,
-            roundUpThreshold: 5,
           },
           paymentMilestones: [
             { stage: 'advance', name: 'Advance', percentage: 10, order: 1 },
@@ -82,6 +78,7 @@ export class QuoteConfigurationRepository {
             { stage: 'commissioning', name: 'Commissioning', percentage: 5, order: 3 },
           ],
           showInventoryStock: true,
+          profitMarginTiers: [],
         });
       } catch (error: unknown) {
         const err = error as { code?: string };

@@ -103,10 +103,6 @@ export interface InstallationCostComponents {
   /** Documentation charges */
   documentation?: number;
 
-  // ==================== Profitability ====================
-  /** Profitability percentage for this system size tier */
-  profitability_percent?: number;
-
   /** Allow any additional custom cost components */
   [key: string]: number | undefined;
 }
@@ -175,13 +171,15 @@ export interface GstConfig {
 }
 
 /**
- * Wattage Rounding Configuration
+ * Profit Margin Tier - Defines margin for a specific system size range
  */
-export interface WattageRoundingConfig {
-  /** Round to nearest (e.g., 10 for nearest 10W) */
-  roundTo: number;
-  /** Threshold for rounding up (e.g., 5 means >=5 rounds up) */
-  roundUpThreshold: number;
+export interface ProfitMarginTier {
+  /** Minimum system size in kW (inclusive) */
+  minSystemSizeKw: number;
+  /** Maximum system size in kW (inclusive, null for unlimited) */
+  maxSystemSizeKw: number | null;
+  /** Profit margin percentage */
+  marginPercent: number;
 }
 
 /**
@@ -197,14 +195,12 @@ export interface QuoteConfiguration {
   defaultCompletionWeeks: number;
   /** GST configuration */
   gstConfig: GstConfig;
-  /** Wattage rounding rules */
-  wattageRounding: WattageRoundingConfig;
   /** Default payment milestones */
   paymentMilestones: PaymentMilestoneConfig[];
   /** Whether to show real-time inventory */
   showInventoryStock: boolean;
-  /** Minimum profit margin percentage */
-  minProfitMarginPercent?: number;
+  /** System-size-based profit margin tiers */
+  profitMarginTiers: ProfitMarginTier[];
 }
 
 /**
@@ -350,18 +346,37 @@ export interface ValidationWarning {
 }
 
 /**
- * Calculated Subsidy
+ * Per-scheme subsidy calculation result
+ */
+export interface SubsidySchemeResult {
+  schemeId: string;
+  schemeName: string;
+  eligibleKw: number;
+  amount: number;
+  breakdown: {
+    fromKw: number;
+    toKw: number;
+    kw: number;
+    ratePerKw: number;
+    amount: number;
+  }[];
+}
+
+/**
+ * Calculated Subsidy (supports multiple schemes)
  */
 export interface CalculatedSubsidy {
   /** Whether subsidy is applicable */
   isApplicable: boolean;
-  /** Scheme name */
-  schemeName?: string;
-  /** Eligible system size for subsidy */
-  eligibleKw?: number;
-  /** Total subsidy amount */
+  /** Total subsidy amount across all selected schemes */
   amount: number;
-  /** Breakdown by tier */
+  /** Per-scheme breakdown */
+  schemes: SubsidySchemeResult[];
+  /** @deprecated Single-scheme compat fields */
+  schemeName?: string;
+  /** @deprecated */
+  eligibleKw?: number;
+  /** @deprecated */
   breakdown?: {
     fromKw: number;
     toKw: number;
@@ -430,4 +445,3 @@ export interface QuoteCalculationResult {
  * QUOTE VERSION SNAPSHOT INTERFACES
  * ============================================================================
  */
-

@@ -88,7 +88,6 @@ export class QuoteVersionEntity extends BaseEntity {
   @Column({ type: 'boolean', name: 'is_current', default: true })
   isCurrent!: boolean;
 
-
   // ==================== Audit ====================
   @Column({ type: 'uuid', name: 'created_by' })
   createdBy!: string;

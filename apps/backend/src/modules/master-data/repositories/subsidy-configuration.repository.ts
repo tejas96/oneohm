@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProjectType } from '@oneohm-epc/shared/types';
 import { Repository } from 'typeorm';
@@ -56,6 +56,57 @@ export class SubsidyConfigurationRepository {
   }
 
   /**
+   * Find ALL active subsidy configurations for a project type (supports multi-subsidy).
+   */
+  async findAllActiveByProjectType(
+    organizationId: string,
+    projectType: ProjectType,
+    asOfDate?: Date,
+  ): Promise<SubsidyConfiguration[]> {
+    const date = asOfDate || new Date();
+    const dateStr = date.toISOString().split('T')[0];
+
+    return this.repository
+      .createQueryBuilder('config')
+      .where('config.organization_id = :organizationId', { organizationId })
+      .andWhere('config.project_type = :projectType', { projectType })
+      .andWhere('config.is_active = true')
+      .andWhere('(config.effective_from IS NULL OR config.effective_from <= :date)', {
+        date: dateStr,
+      })
+      .andWhere('(config.effective_to IS NULL OR config.effective_to >= :date)', { date: dateStr })
+      .orderBy('config.created_at', 'DESC')
+      .getMany();
+  }
+
+  /**
+   * Find specific subsidy configurations by their IDs (used when user selects specific subsidies).
+   * Only returns active, non-expired configurations.
+   */
+  async findByIds(
+    organizationId: string,
+    ids: string[],
+    asOfDate?: Date,
+  ): Promise<SubsidyConfiguration[]> {
+    if (ids.length === 0) return [];
+    const date = asOfDate || new Date();
+    const dateStr = date.toISOString().split('T')[0];
+
+    return this.repository
+      .createQueryBuilder('config')
+      .where('config.organization_id = :organizationId', { organizationId })
+      .andWhere('config.id IN (:...ids)', { ids })
+      .andWhere('config.is_active = true')
+      .andWhere('(config.effective_from IS NULL OR config.effective_from <= :date)', {
+        date: dateStr,
+      })
+      .andWhere('(config.effective_to IS NULL OR config.effective_to >= :date)', {
+        date: dateStr,
+      })
+      .getMany();
+  }
+
+  /**
    * Find all subsidy configurations for an organization
    */
   async findAll(
@@ -109,7 +160,7 @@ export class SubsidyConfigurationRepository {
     await this.repository.update({ id, organizationId }, data);
     const updated = await this.findById(id, organizationId);
     if (!updated) {
-      throw new Error('Subsidy configuration not found after update');
+      throw new NotFoundException('Subsidy configuration not found after update');
     }
     return updated;
   }
@@ -138,9 +189,9 @@ export class SubsidyConfigurationRepository {
   }
 
   /**
-   * Delete subsidy configuration
+   * Soft-delete subsidy configuration (preserves audit trail for quote recalculation).
    */
   async delete(id: string, organizationId: string): Promise<void> {
-    await this.repository.delete({ id, organizationId });
+    await this.repository.softDelete({ id, organizationId });
   }
 }

@@ -2,9 +2,11 @@ import {
   Body,
   Controller,
   Delete,
+  DefaultValuePipe,
   Get,
   Patch,
   Param,
+  ParseIntPipe,
   ParseUUIDPipe,
   Post,
   Query,
@@ -61,17 +63,26 @@ export class BrandController {
         type: String,
         description: 'Filter by product type',
       },
-      {
-        name: 'isActive',
-        required: false,
-        type: Boolean,
-        description: 'Filter by active status',
-      },
+      { name: 'isActive', required: false, type: Boolean, description: 'Filter by active status' },
       {
         name: 'search',
         required: false,
         type: String,
         description: 'Search by brand name or manufacturer',
+      },
+      { name: 'page', required: false, type: Number, description: 'Page number (default: 1)' },
+      { name: 'limit', required: false, type: Number, description: 'Items per page (default: 20)' },
+      {
+        name: 'sortBy',
+        required: false,
+        type: String,
+        description: 'Sort field (name, createdAt)',
+      },
+      {
+        name: 'sortOrder',
+        required: false,
+        type: String,
+        description: 'Sort direction (ASC, DESC)',
       },
     ],
   })
@@ -81,13 +92,28 @@ export class BrandController {
     @Query('productTypeId') productTypeId?: string,
     @Query('isActive') isActive?: string,
     @Query('search') search?: string,
-  ): Promise<BrandResponseDto[]> {
-    const filter =
-      isActive !== undefined
-        ? { productTypeId, isActive: isActive === 'true', search }
-        : { productTypeId, search };
-    const brands = await this.brandService.findAll(organizationId, filter);
-    return toDtoArray(BrandResponseDto, brands);
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit = 20,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+  ): Promise<{
+    data: BrandResponseDto[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+  }> {
+    const filter = {
+      productTypeId,
+      ...(isActive !== undefined ? { isActive: isActive === 'true' } : {}),
+      search,
+      page,
+      limit,
+      sortBy,
+      sortOrder: (sortOrder === 'DESC' ? 'DESC' : 'ASC') as 'ASC' | 'DESC',
+    };
+    const result = await this.brandService.findAll(organizationId, filter);
+    return {
+      data: toDtoArray(BrandResponseDto, result.data),
+      meta: result.meta,
+    };
   }
 
   @Get(':id')

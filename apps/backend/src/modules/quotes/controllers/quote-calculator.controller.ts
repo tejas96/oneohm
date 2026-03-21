@@ -18,7 +18,7 @@ import {
   QuoteCalculationMode,
   SystemType,
 } from '@oneohm-epc/shared/types';
-import { applyPreGstDiscount } from '@oneohm-epc/shared/utils';
+import { applyPreGstDiscount, GstSplitPercentagesInvalidError } from '@oneohm-epc/shared/utils';
 import { plainToInstance } from 'class-transformer';
 
 import { OrganizationContext } from '../../../common/decorators';
@@ -46,6 +46,8 @@ import {
 import { QuoteRepository } from '../repositories';
 import { QuoteCalculatorService } from '../services/quote-calculator.service';
 import { QuoteService } from '../services/quote.service';
+
+const REVISION_NOTE_CALCULATOR = 'Revised via calculator';
 
 /**
  * Quote Calculator Controller
@@ -85,11 +87,11 @@ export class QuoteCalculatorController {
       
       Features:
       - Auto DCR/Non-DCR split based on subsidy eligibility
-      - Panel quantity calculation with wattage rounding
+      - Panel quantity calculation
       - Inverter combination logic (e.g., 60KW → 50KW + 10KW)
-      - Installation cost calculation
-      - Tiered subsidy calculation
-      - GST split (70% @ 5%, 30% @ 18%)
+      - Installation cost calculation with dynamic cost components
+      - Multi-scheme tiered subsidy calculation
+      - Configurable GST split
     `,
   })
   @ApiResponse({
@@ -166,13 +168,23 @@ export class QuoteCalculatorController {
     }
 
     const discountAmount = input.discountAmount || 0;
-    const discounted = applyPreGstDiscount(
-      calculation.pricing.basePrice,
-      discountAmount,
-      quoteConfig.gstConfig,
-    );
+    let discounted: ReturnType<typeof applyPreGstDiscount>;
+    try {
+      discounted = applyPreGstDiscount(
+        calculation.pricing.basePrice,
+        discountAmount,
+        quoteConfig.gstConfig,
+      );
+    } catch (err: unknown) {
+      if (err instanceof GstSplitPercentagesInvalidError) {
+        throw new BadRequestException(err.message);
+      }
+      throw err;
+    }
     const finalPrice = discounted.grossTotal;
     const effectivePrice = Math.max(0, finalPrice - calculation.subsidy.amount);
+
+    const systemType = input.systemType ?? SystemType.ON_GRID;
 
     const calculatorInputs: CalculatorInputs = {
       phaseType: input.phaseType,
@@ -189,6 +201,15 @@ export class QuoteCalculatorController {
       preferredInverterBrand: input.preferredInverterBrand,
       preferredInverterCapacityKw: input.preferredInverterCapacityKw,
       subsidyApplicable: input.subsidyApplicable,
+      selectedSubsidyIds: input.selectedSubsidyIds,
+      manualDcrPanelCount: input.manualDcrPanelCount,
+      manualNonDcrPanelCount: input.manualNonDcrPanelCount,
+      manualInverterCount: input.manualInverterCount,
+      systemSizeKw: input.systemSizeKw,
+      projectType: input.projectType,
+      actualSystemSizeKw: calculation.actualTotalWattage / 1000,
+      actualDcrSizeKw: calculation.systemConfig.dcrSizeKw,
+      actualNonDcrSizeKw: calculation.systemConfig.nonDcrSizeKw,
     };
 
     const pricingBreakdown: PricingBreakdown = {
@@ -202,7 +223,6 @@ export class QuoteCalculatorController {
       subsidyAmount: calculation.subsidy.amount,
       isSubsidyApplicable: calculation.subsidy.isApplicable,
     };
-
 
     // ── Determine if this is a revision or a new quote ──
     // If quoteId is explicitly provided, verify it still has version capacity.
@@ -254,12 +274,14 @@ export class QuoteCalculatorController {
           salesPersonId: input.salesPersonId,
           resellerId: input.resellerId,
           validUntil: validUntil.toISOString().split('T')[0],
-          systemType: SystemType.ON_GRID,
+          systemType,
           systemSizeKw: calculation.systemConfig.totalSystemSizeKw,
           totalWattageWp: calculation.actualTotalWattage,
           projectType: input.projectType,
           calculatorInputs,
           pricingBreakdown,
+          finalPrice,
+          effectivePrice,
           internalNotes: input.internalNotes,
           customerNotes: input.customerNotes,
           projectCompletionWeeks: calculation.completionWeeks,
@@ -320,7 +342,7 @@ export class QuoteCalculatorController {
       propertyId: input.propertyId,
       salesPersonId: input.salesPersonId,
       resellerId: input.resellerId,
-      systemType: SystemType.ON_GRID,
+      systemType,
       systemSizeKw: calculation.systemConfig.totalSystemSizeKw,
       totalWattageWp: calculation.actualTotalWattage,
       projectType: input.projectType,
@@ -363,7 +385,6 @@ export class QuoteCalculatorController {
       - Default validity days
       - Max versions
       - GST configuration
-      - Wattage rounding rules
       - Payment milestones
     `,
   })
@@ -406,7 +427,7 @@ export class QuoteCalculatorController {
   async getSubsidyRules(
     @OrganizationContext() organizationId: string,
     @Query('projectType') projectType: ProjectType,
-  ) {
+  ): Promise<SubsidyConfigurationResponseDto | null> {
     const config = await this.subsidyConfigRepo.findActiveByProjectType(
       organizationId,
       projectType,
@@ -429,8 +450,10 @@ export class QuoteCalculatorController {
     status: HttpStatus.OK,
     description: 'List of subsidy configurations',
   })
-  async getAllSubsidyRules(@OrganizationContext() organizationId: string) {
-    const configs = await this.subsidyConfigRepo.findAll(organizationId);
+  async getAllSubsidyRules(
+    @OrganizationContext() organizationId: string,
+  ): Promise<SubsidyConfigurationResponseDto[]> {
+    const configs = await this.subsidyConfigRepo.findAll(organizationId, { isActive: true });
     return plainToInstance(SubsidyConfigurationResponseDto, configs, {
       excludeExtraneousValues: true,
     });
@@ -454,7 +477,7 @@ export class QuoteCalculatorController {
   async getInstallationPricing(
     @OrganizationContext() organizationId: string,
     @Query() query: InstallationPricingQueryDto,
-  ) {
+  ): Promise<InstallationPricingResponseDto | null> {
     const pricing = await this.installationPricingRepo.findBySystemSize(
       organizationId,
       query.systemSizeKw,
@@ -477,9 +500,13 @@ export class QuoteCalculatorController {
     status: HttpStatus.OK,
     description: 'List of installation pricing tiers',
   })
-  async getAllInstallationPricing(@OrganizationContext() organizationId: string) {
-    const pricingList = await this.installationPricingRepo.findAll(organizationId);
-    return plainToInstance(InstallationPricingResponseDto, pricingList, {
+  async getAllInstallationPricing(
+    @OrganizationContext() organizationId: string,
+  ): Promise<InstallationPricingResponseDto[]> {
+    const result = await this.installationPricingRepo.findAll(organizationId, {
+      isActive: true,
+    });
+    return plainToInstance(InstallationPricingResponseDto, result.data, {
       excludeExtraneousValues: true,
     });
   }

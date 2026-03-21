@@ -23,6 +23,8 @@ import { QuoteVersionEntity } from '../entities/quote-version.entity';
 import { QuoteEntity } from '../entities/quote.entity';
 import { QuoteRepository, QuoteVersionRepository } from '../repositories';
 
+const CENTS_ROUNDING_FACTOR = 100;
+
 /**
  * Quote Service
  * Business logic for quote management
@@ -56,6 +58,7 @@ export class QuoteService {
       .getRepository('customer_profiles')
       .createQueryBuilder('c')
       .where('c.id = :id', { id: createDto.customerId })
+      .andWhere('c.organization_id = :organizationId', { organizationId })
       .andWhere('c.deleted_at IS NULL')
       .getCount();
 
@@ -65,19 +68,13 @@ export class QuoteService {
 
     const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
 
-    const discount = createDto.discountAmount || 0;
-
-    let pricingBreakdown: PricingBreakdown;
-    let finalPrice: number;
-
-    if (createDto.pricingBreakdown) {
-      pricingBreakdown = createDto.pricingBreakdown;
-      finalPrice = createDto.finalPrice ?? pricingBreakdown.totalPrice - discount;
-    } else {
+    if (!createDto.pricingBreakdown) {
       throw new BadRequestException('pricingBreakdown is required');
     }
 
-    // Subsidy
+    const pricingBreakdown = createDto.pricingBreakdown;
+    const finalPrice = createDto.finalPrice ?? pricingBreakdown.totalPrice;
+
     const isSubsidyApplicable = createDto.calculatorInputs?.subsidyApplicable ?? false;
     const subsidyAmount =
       pricingBreakdown.subsidyAmount ??
@@ -85,14 +82,7 @@ export class QuoteService {
         ? await this.calculateSubsidy(organizationId, createDto.systemSizeKw, createDto.projectType)
         : 0);
 
-    // Update breakdown with subsidy info if not already set
-    if (!createDto.pricingBreakdown) {
-      pricingBreakdown.subsidyAmount = subsidyAmount;
-      pricingBreakdown.isSubsidyApplicable = isSubsidyApplicable;
-      pricingBreakdown.discountAmount = discount;
-    }
-
-    const effectivePrice = createDto.effectivePrice ?? finalPrice - subsidyAmount;
+    const effectivePrice = createDto.effectivePrice ?? Math.max(0, finalPrice - subsidyAmount);
 
     const paymentMilestones =
       createDto.paymentMilestones ||
@@ -266,19 +256,17 @@ export class QuoteService {
     const totalWattageWp = updateDto.totalWattageWp || currentVersion.totalWattageWp;
     const projectType = updateDto.projectType || currentVersion.projectType;
 
-    // Calculate pricing
     let pricingBreakdown: PricingBreakdown;
     let finalPrice: number;
 
     if (updateDto.pricingBreakdown) {
       pricingBreakdown = updateDto.pricingBreakdown;
-      finalPrice = pricingBreakdown.totalPrice - (pricingBreakdown.discountAmount ?? 0);
+      finalPrice = updateDto.finalPrice ?? pricingBreakdown.totalPrice;
     } else {
       pricingBreakdown = currentVersion.pricingBreakdown;
       finalPrice = currentVersion.finalPrice;
     }
 
-    // Subsidy: respect DTO-provided value first, then fall back to DB calculation
     const isSubsidyApplicable =
       updateDto.calculatorInputs?.subsidyApplicable ??
       currentVersion.pricingBreakdown?.isSubsidyApplicable ??
@@ -289,7 +277,6 @@ export class QuoteService {
         (await this.calculateSubsidy(organizationId, systemSizeKw, projectType)))
       : 0;
 
-    // Update breakdown subsidy fields if recalculated
     if (!updateDto.pricingBreakdown) {
       pricingBreakdown = {
         ...pricingBreakdown,
@@ -298,7 +285,7 @@ export class QuoteService {
       };
     }
 
-    const effectivePrice = finalPrice - subsidy;
+    const effectivePrice = updateDto.effectivePrice ?? Math.max(0, finalPrice - subsidy);
 
     await this.dataSource.transaction(async (manager) => {
       const quoteRepo = manager.getRepository(QuoteEntity);
@@ -336,11 +323,10 @@ export class QuoteService {
           pricingBreakdown,
           paymentMilestones:
             updateDto.paymentMilestones ||
-            currentVersion?.paymentMilestones ||
-            this.generatePaymentMilestones(
-              pricingBreakdown.totalPrice,
-              quoteConfig.paymentMilestones,
-            ),
+            (updateDto.pricingBreakdown && currentVersion?.paymentMilestones
+              ? this.recalculateMilestoneAmounts(currentVersion.paymentMilestones, finalPrice)
+              : currentVersion?.paymentMilestones) ||
+            this.generatePaymentMilestones(finalPrice, quoteConfig.paymentMilestones),
           projectCompletionWeeks:
             updateDto.projectCompletionWeeks ||
             currentVersion?.projectCompletionWeeks ||
@@ -476,41 +462,68 @@ export class QuoteService {
       stage: config.stage,
       name: config.name,
       percentage: config.percentage,
-      amount: Math.round(grossTotal * (config.percentage / 100) * 100) / 100,
+      amount:
+        Math.round(grossTotal * (config.percentage / 100) * CENTS_ROUNDING_FACTOR) /
+        CENTS_ROUNDING_FACTOR,
       order: config.order,
     }));
   }
 
   /**
-   * Calculate subsidy using tiered rates from DB (matches QuoteCalculatorService logic).
+   * Recalculate milestone amounts from existing percentages with a new total.
+   * Used when pricing changes on revision but milestones are not explicitly re-sent.
+   */
+  private recalculateMilestoneAmounts(
+    existingMilestones: PaymentMilestone[],
+    newTotal: number,
+  ): PaymentMilestone[] {
+    return existingMilestones.map((m) => ({
+      ...m,
+      amount:
+        Math.round(newTotal * (m.percentage / 100) * CENTS_ROUNDING_FACTOR) / CENTS_ROUNDING_FACTOR,
+    }));
+  }
+
+  /**
+   * Calculate subsidy using tiered rates from DB.
+   * Uses dcrSizeKw (for DCR-requiring subsidies) instead of total systemSizeKw.
    */
   private async calculateSubsidy(
     organizationId: string,
     systemSizeKw: number,
     projectType: ProjectType,
   ): Promise<number> {
-    const subsidyConfig = await this.subsidyConfigRepo.findActiveByProjectType(
+    const configs = await this.subsidyConfigRepo.findAllActiveByProjectType(
       organizationId,
       projectType,
     );
 
-    if (!subsidyConfig) return 0;
+    if (configs.length === 0) return 0;
 
-    let totalAmount = 0;
-    let remainingKw = Math.min(systemSizeKw, Number(subsidyConfig.maxSubsidyKw));
-    const sortedTiers = [...(subsidyConfig.tiers || [])].sort((a, b) => a.fromKw - b.fromKw);
+    let totalSubsidy = 0;
 
-    for (const tier of sortedTiers) {
-      if (remainingKw <= 0) break;
-      const tierMaxKw = (tier.toKw !== null ? tier.toKw : Infinity) - tier.fromKw;
-      const kwInTier = Math.min(remainingKw, tierMaxKw);
-      if (kwInTier > 0) {
-        totalAmount += kwInTier * tier.ratePerKw;
-        remainingKw -= kwInTier;
+    for (const config of configs) {
+      const eligibleKw = Math.min(systemSizeKw, Number(config.maxSubsidyKw));
+      if (eligibleKw <= 0) continue;
+
+      let amount = 0;
+      let remainingKw = eligibleKw;
+      const sortedTiers = [...(config.tiers || [])].sort((a, b) => a.fromKw - b.fromKw);
+
+      for (const tier of sortedTiers) {
+        if (remainingKw <= 0) break;
+        const tierMaxKw = (tier.toKw !== null ? tier.toKw : Infinity) - tier.fromKw;
+        const kwInTier = Math.min(remainingKw, tierMaxKw);
+        if (kwInTier > 0) {
+          amount += kwInTier * tier.ratePerKw;
+          remainingKw -= kwInTier;
+        }
       }
+
+      const maxAmount = Number(config.maxSubsidyAmount) || Infinity;
+      totalSubsidy += Math.min(amount, maxAmount);
     }
 
-    const maxAmount = Number(subsidyConfig.maxSubsidyAmount) || Infinity;
-    return Math.min(totalAmount, maxAmount);
+    return totalSubsidy;
   }
 }

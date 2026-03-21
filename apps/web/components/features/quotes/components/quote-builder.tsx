@@ -5,6 +5,7 @@ import {
   DcrPreference,
   PhaseType,
   ProjectType,
+  StructureType,
   type PaymentMilestone,
 } from '@oneohm-epc/shared/types';
 import { isAxiosError } from 'axios';
@@ -26,7 +27,7 @@ import {
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 
 import { useCustomerProperties, type CustomerPropertyResponse } from '../../customers';
 import { useCustomer, useCustomers } from '../../customers/hooks';
@@ -52,6 +53,7 @@ import type {
   CalculateQuoteRequest,
   CalculateQuoteResponse,
   CreateFromCalculationRequest,
+  SubsidyConfigResponse,
 } from '../types';
 import { PaymentTermsModal } from './payment-terms-modal';
 import { QuotePreviewPanel } from './quote-preview-panel';
@@ -68,7 +70,7 @@ import {
   SelectValue,
   Skeleton,
   Spinner,
-  Switch,
+  Checkbox,
   Textarea,
   showToast,
   Breadcrumb,
@@ -81,8 +83,6 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui';
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -90,8 +90,12 @@ import {
   DialogDescription,
   DialogBody,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
 import { cn } from '@/lib/utils';
 import { getErrorMessage } from '@/lib/utils/error';
@@ -184,7 +188,7 @@ export function QuoteBuilder(): JSX.Element {
       projectType: ProjectType.RESIDENTIAL,
       systemSizeKw: 5,
       phaseType: PhaseType.SINGLE_PHASE,
-      subsidyApplicable: true,
+      selectedSubsidyIds: [],
       dcrPreference: DcrPreference.DCR_ONLY,
       structureType: '',
       floorNumber: 0,
@@ -208,7 +212,7 @@ export function QuoteBuilder(): JSX.Element {
     transportRatePerKm,
     floorIncrementPercent,
     isFetched: isPricingFetched,
-  } = useInstallationPricing(systemSizeKw, projectType);
+  } = useInstallationPricing(systemSizeKw);
 
   // Fetch properties for selected customer (use isFetching since query is disabled when customerId is empty)
   const { data: propertiesRaw, isFetching: isPropertiesFetching } =
@@ -243,18 +247,29 @@ export function QuoteBuilder(): JSX.Element {
   const { isCalculateDisabled, missingFields, tooltipMessage } = useMemo(() => {
     const missing = [];
     if (!structureType) missing.push('Structure Type');
-    
+
     const hasMissingFields = missing.length > 0;
     const hasNoProducts = missingProductCategories.length > 0;
+    const hasMissingPricing =
+      isPricingFetched && floorIncrementPercent == null && transportRatePerKm == null;
     const isDisabled =
-      calculateMutation.isPending || config.isLoading || hasMissingFields || hasNoProducts;
-    
+      calculateMutation.isPending ||
+      config.isLoading ||
+      hasMissingFields ||
+      hasNoProducts ||
+      hasMissingPricing;
+
     const parts: string[] = [];
     if (hasNoProducts) {
       parts.push(`Missing product data: ${missingProductCategories.join(', ')}`);
     }
     if (hasMissingFields) {
       parts.push(`Please select: ${missing.join(', ')}`);
+    }
+    if (hasMissingPricing) {
+      parts.push(
+        `No installation pricing configured for ${systemSizeKw} kW — ask your admin to add a pricing tier`,
+      );
     }
 
     let message = '';
@@ -265,18 +280,13 @@ export function QuoteBuilder(): JSX.Element {
     } else if (config.isLoading) {
       message = 'Loading configuration...';
     }
-    
+
     return {
       isCalculateDisabled: isDisabled,
       missingFields: missing,
       tooltipMessage: message,
     };
-  }, [
-    calculateMutation.isPending,
-    config.isLoading,
-    structureType,
-    missingProductCategories,
-  ]);
+  }, [calculateMutation.isPending, config.isLoading, structureType, missingProductCategories]);
 
   // Manual quantity adjusters
   const [manualDcrPanelCount, setManualDcrPanelCount] = useState<number | undefined>();
@@ -299,11 +309,39 @@ export function QuoteBuilder(): JSX.Element {
     onCalculationCleared,
   });
 
+  const prevProjectTypeRef = useRef<ProjectType | null>(null);
+  const initialSubsidySyncedRef = useRef(false);
+
+  const eligibleSubsidiesForProject = useMemo((): SubsidyConfigResponse[] => {
+    return config.subsidyConfigs.filter((c) => c.isActive && c.projectType === projectType);
+  }, [config.subsidyConfigs, projectType]);
+
+  useEffect(() => {
+    if (config.isLoading) return;
+    const activeIds = eligibleSubsidiesForProject.map((c) => c.id);
+    const prev = prevProjectTypeRef.current;
+    const typeChanged = prev !== null && prev !== projectType;
+
+    if (!initialSubsidySyncedRef.current) {
+      initialSubsidySyncedRef.current = true;
+      formLogic.handleSelectedSubsidyIdsChange(activeIds);
+    } else if (typeChanged) {
+      formLogic.handleSelectedSubsidyIdsChange(activeIds);
+    }
+
+    prevProjectTypeRef.current = projectType;
+  }, [
+    config.isLoading,
+    eligibleSubsidiesForProject,
+    projectType,
+    formLogic.handleSelectedSubsidyIdsChange,
+  ]);
+
   // Set default structure type from API once loaded
   useEffect(() => {
     const firstStructure = config.structureTypes[0];
     if (firstStructure && !form.getValues('structureType')) {
-      form.setValue('structureType', firstStructure.value);
+      form.setValue('structureType', firstStructure.value as StructureType);
     }
   }, [config.structureTypes, form]);
 
@@ -379,7 +417,9 @@ export function QuoteBuilder(): JSX.Element {
       projectType: values.projectType,
       systemSizeKw: values.systemSizeKw,
       phaseType: values.phaseType,
-      subsidyApplicable: values.subsidyApplicable,
+      subsidyApplicable: (values.selectedSubsidyIds?.length ?? 0) > 0,
+      selectedSubsidyIds:
+        (values.selectedSubsidyIds?.length ?? 0) > 0 ? values.selectedSubsidyIds : undefined,
       dcrPreference: values.dcrPreference,
       preferredPanelBrand: values.preferredPanelBrand || undefined,
       preferredPanelTechnology: values.preferredPanelTechnology,
@@ -396,10 +436,23 @@ export function QuoteBuilder(): JSX.Element {
     [manualDcrPanelCount, manualNonDcrPanelCount, manualInverterCount],
   );
 
+  const toggleSubsidySelection = useCallback(
+    (subsidyId: string, checked: boolean, current: string[]): void => {
+      const next = checked
+        ? Array.from(new Set([...current, subsidyId]))
+        : current.filter((id) => id !== subsidyId);
+      formLogic.handleSelectedSubsidyIdsChange(next);
+    },
+    [formLogic],
+  );
+
   const handleCalculate = useCallback(
     async (options?: { resetManualCounts?: boolean }) => {
-      if (!config.quoteConfig?.gstConfig) {
-        showToast.error('GST configuration not loaded. Please refresh the page.');
+      const gc = config.quoteConfig?.gstConfig;
+      if (!gc?.rate1 || !gc.rate2) {
+        showToast.error(
+          'GST configuration is incomplete. Please configure GST rates in Admin → Quote Config.',
+        );
         return;
       }
 
@@ -408,7 +461,6 @@ export function QuoteBuilder(): JSX.Element {
         'projectType',
         'systemSizeKw',
         'phaseType',
-        'subsidyApplicable',
         'structureType',
       ]);
       if (!valid) {
@@ -618,6 +670,8 @@ export function QuoteBuilder(): JSX.Element {
       calculationError={calculateMutation.error ? getErrorMessage(calculateMutation.error) : null}
       discountAmount={discountAmount}
       gstConfig={config.quoteConfig?.gstConfig ?? null}
+      floorNumber={floorNumber}
+      distanceKm={distanceKm}
       manualDcrPanelCount={manualDcrPanelCount}
       manualNonDcrPanelCount={manualNonDcrPanelCount}
       manualInverterCount={manualInverterCount}
@@ -987,21 +1041,87 @@ export function QuoteBuilder(): JSX.Element {
                 )}
               </div>
 
-              {/* Subsidy Toggle */}
-              <div className="rounded-lg border border-primary/30 bg-linear-to-r from-primary/5 to-success/5 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary">
-                    <CircleDollarSign className="size-5 text-white" />
+              {/* Subsidy selection */}
+              <div className="space-y-3 rounded-lg border border-primary/30 bg-linear-to-r from-primary/5 to-success/5 p-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary">
+                    <CircleDollarSign className="size-4 text-white" />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold">PM Surya Ghar Subsidy</p>
-                    <p className="text-xs text-foreground-secondary">Up to ₹78,000 benefit</p>
+                  <div>
+                    <p className="text-sm font-semibold">Government subsidies</p>
+                    <p className="text-xs text-foreground-secondary">
+                      Select schemes to include in this quote.
+                    </p>
                   </div>
-                  <Switch
-                    checked={form.watch('subsidyApplicable')}
-                    onCheckedChange={formLogic.handleSubsidyChange}
-                  />
                 </div>
+                {config.isLoading && (
+                  <div className="space-y-2">
+                    <Skeleton className="h-16 w-full rounded-lg" />
+                    <Skeleton className="h-16 w-full rounded-lg" />
+                  </div>
+                )}
+                {!config.isLoading && config.error && (
+                  <p className="text-xs text-error">
+                    Subsidy rules could not be loaded. You can still calculate without subsidies.
+                  </p>
+                )}
+                {!config.isLoading && !config.error && eligibleSubsidiesForProject.length === 0 && (
+                  <p className="text-xs text-foreground-secondary">
+                    No active subsidy schemes for this project type.
+                  </p>
+                )}
+                {!config.isLoading && !config.error && (
+                  <Controller
+                    control={form.control}
+                    name="selectedSubsidyIds"
+                    render={({ field }) => {
+                      const selectedIds = field.value ?? [];
+                      return (
+                        <>
+                          {eligibleSubsidiesForProject.map((scheme) => {
+                            const checked = selectedIds.includes(scheme.id);
+                            const maxAmountLabel =
+                              scheme.maxSubsidyAmount != null && scheme.maxSubsidyAmount > 0
+                                ? formatCurrency(scheme.maxSubsidyAmount)
+                                : 'Tier-based';
+                            return (
+                              <label
+                                key={scheme.id}
+                                htmlFor={`subsidy-${scheme.id}`}
+                                className={cn(
+                                  'flex cursor-pointer gap-3 rounded-lg border p-3 transition-colors duration-fast',
+                                  checked
+                                    ? 'border-primary bg-primary/5'
+                                    : 'border-border-light bg-background hover:border-primary/40',
+                                )}
+                              >
+                                <Checkbox
+                                  id={`subsidy-${scheme.id}`}
+                                  checked={checked}
+                                  onCheckedChange={(v) =>
+                                    toggleSubsidySelection(scheme.id, v === true, selectedIds)
+                                  }
+                                  className="mt-0.5"
+                                />
+                                <div className="min-w-0 flex-1 space-y-1">
+                                  <p className="text-sm font-medium text-foreground">
+                                    {scheme.schemeName}
+                                  </p>
+                                  <p className="text-2xs text-foreground-secondary">
+                                    Max {scheme.maxSubsidyKw} kW eligible &middot; Max subsidy{' '}
+                                    {maxAmountLabel} &middot;{' '}
+                                    {scheme.requiresDcr ? 'DCR required' : 'DCR not required'}
+                                    {scheme.autoSplitEnabled ? ' · Auto split on' : ''}
+                                  </p>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </>
+                      );
+                    }}
+                  />
+                )}
               </div>
 
               {/* DCR Preference */}
@@ -1078,7 +1198,10 @@ export function QuoteBuilder(): JSX.Element {
                     <AlertTriangle className="size-3.5 shrink-0 text-warning" />
                     <p className="text-xs text-foreground-secondary">
                       No active solar panels found.{' '}
-                      <a href={ROUTES.ADMIN.PRODUCTS} className="font-medium text-primary hover:underline">
+                      <a
+                        href={ROUTES.ADMIN.PRODUCTS}
+                        className="font-medium text-primary hover:underline"
+                      >
                         Add panels
                       </a>
                     </p>
@@ -1166,7 +1289,10 @@ export function QuoteBuilder(): JSX.Element {
                     <AlertTriangle className="size-3.5 shrink-0 text-warning" />
                     <p className="text-xs text-foreground-secondary">
                       No active inverters found.{' '}
-                      <a href={ROUTES.ADMIN.PRODUCTS} className="font-medium text-primary hover:underline">
+                      <a
+                        href={ROUTES.ADMIN.PRODUCTS}
+                        className="font-medium text-primary hover:underline"
+                      >
                         Add inverters
                       </a>
                     </p>
@@ -1205,46 +1331,48 @@ export function QuoteBuilder(): JSX.Element {
                 <Label>Inverter Capacity</Label>
                 {config.isLoading ? (
                   <Skeleton className="h-9 w-full" />
-                ) : (() => {
-                  const capacityOptions = config.getInverterCapacities(
-                    form.watch('phaseType'),
-                    form.watch('preferredInverterBrand'),
-                  );
-                  return capacityOptions.length === 0 ? (
-                    <div className="flex items-center gap-2 rounded-md border border-border-light bg-background-secondary px-3 py-2">
-                      <Info className="size-3.5 shrink-0 text-foreground-tertiary" />
-                      <p className="text-xs text-foreground-tertiary">
-                        {config.inverterBrands.length === 0
-                          ? 'No inverters configured yet.'
-                          : 'No capacity options for the selected brand and phase type. Try a different brand or leave on auto-select.'}
-                      </p>
-                    </div>
-                  ) : (
-                    <Select
-                      value={form.watch('preferredInverterCapacityKw')?.toString() ?? 'auto'}
-                      onValueChange={(v) =>
-                        formLogic.handleFieldChange(
-                          'preferredInverterCapacityKw',
-                          v === 'auto' ? undefined : Number(v),
-                        )
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Auto-select optimal" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="auto">
-                          <span className="text-foreground-tertiary">Auto-select optimal</span>
-                        </SelectItem>
-                        {capacityOptions.map((cap) => (
-                          <SelectItem key={cap.value} value={cap.value.toString()}>
-                            {cap.label}
+                ) : (
+                  (() => {
+                    const capacityOptions = config.getInverterCapacities(
+                      form.watch('phaseType'),
+                      form.watch('preferredInverterBrand'),
+                    );
+                    return capacityOptions.length === 0 ? (
+                      <div className="flex items-center gap-2 rounded-md border border-border-light bg-background-secondary px-3 py-2">
+                        <Info className="size-3.5 shrink-0 text-foreground-tertiary" />
+                        <p className="text-xs text-foreground-tertiary">
+                          {config.inverterBrands.length === 0
+                            ? 'No inverters configured yet.'
+                            : 'No capacity options for the selected brand and phase type. Try a different brand or leave on auto-select.'}
+                        </p>
+                      </div>
+                    ) : (
+                      <Select
+                        value={form.watch('preferredInverterCapacityKw')?.toString() ?? 'auto'}
+                        onValueChange={(v) =>
+                          formLogic.handleFieldChange(
+                            'preferredInverterCapacityKw',
+                            v === 'auto' ? undefined : Number(v),
+                          )
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Auto-select optimal" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="auto">
+                            <span className="text-foreground-tertiary">Auto-select optimal</span>
                           </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  );
-                })()}
+                          {capacityOptions.map((cap) => (
+                            <SelectItem key={cap.value} value={cap.value.toString()}>
+                              {cap.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    );
+                  })()
+                )}
               </div>
 
               {/* Structure Type */}
@@ -1269,17 +1397,20 @@ export function QuoteBuilder(): JSX.Element {
                     <AlertTriangle className="size-3.5 shrink-0 text-warning" />
                     <p className="text-xs text-foreground-secondary">
                       No active mounting structures found.{' '}
-                      <a href={ROUTES.ADMIN.PRODUCTS} className="font-medium text-primary hover:underline">
+                      <a
+                        href={ROUTES.ADMIN.PRODUCTS}
+                        className="font-medium text-primary hover:underline"
+                      >
                         Add structures
                       </a>
                     </p>
                   </div>
                 ) : (
-                  <div 
+                  <div
                     className={cn(
-                      "flex flex-wrap gap-2 rounded-lg p-3 transition-colors",
-                      missingFields.includes('Structure Type') && 
-                      'border-2 border-destructive/30 bg-destructive/5'
+                      'flex flex-wrap gap-2 rounded-lg p-3 transition-colors',
+                      missingFields.includes('Structure Type') &&
+                        'border-2 border-destructive/30 bg-destructive/5',
                     )}
                   >
                     {config.structureTypes.map((opt) => {
@@ -1317,6 +1448,17 @@ export function QuoteBuilder(): JSX.Element {
               <Wrench className="size-4 text-foreground-secondary" />
               <h2 className="text-sm font-semibold">Installation Details</h2>
             </div>
+
+            {isPricingFetched && floorIncrementPercent == null && transportRatePerKm == null && (
+              <div className="mb-4 flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-warning-foreground">
+                <span className="mt-0.5 shrink-0">⚠️</span>
+                <span>
+                  No installation pricing tier is configured for a{' '}
+                  <strong>{systemSizeKw} kW</strong> system. Please ask your administrator to add a
+                  pricing tier covering this size before calculating.
+                </span>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               {/* Floor Number */}

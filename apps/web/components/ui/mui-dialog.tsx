@@ -220,11 +220,7 @@ interface MUIDialogBodyProps {
   dividers?: boolean;
 }
 
-function MUIDialogBody({
-  children,
-  sx,
-  dividers = false,
-}: MUIDialogBodyProps): React.JSX.Element {
+function MUIDialogBody({ children, sx, dividers = false }: MUIDialogBodyProps): React.JSX.Element {
   return (
     <DialogContent
       dividers={dividers}
@@ -248,10 +244,7 @@ interface MUIDialogFooterProps {
   sx?: SxProps<Theme>;
 }
 
-function MUIDialogFooter({
-  children,
-  sx,
-}: MUIDialogFooterProps): React.JSX.Element {
+function MUIDialogFooter({ children, sx }: MUIDialogFooterProps): React.JSX.Element {
   return (
     <DialogActions
       sx={{

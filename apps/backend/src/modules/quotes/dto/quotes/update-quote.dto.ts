@@ -95,7 +95,24 @@ export class UpdateQuoteDto {
   @IsObject()
   calculatorInputs?: CalculatorInputs;
 
-  // ==================== Pricing Breakdown ====================
+  // ==================== Pricing ====================
+  @ApiPropertyOptional({
+    description:
+      'Pre-calculated final price (post-discount, post-GST). When provided, avoids re-deriving from pricingBreakdown.',
+  })
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @IsOptional()
+  finalPrice?: number;
+
+  @ApiPropertyOptional({
+    description: 'Pre-calculated effective price (finalPrice minus subsidy, floored at 0)',
+  })
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @IsOptional()
+  effectivePrice?: number;
+
   @ApiPropertyOptional({
     description: 'Pre-calculated pricing breakdown',
   })

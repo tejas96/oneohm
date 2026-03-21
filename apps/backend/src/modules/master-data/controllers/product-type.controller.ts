@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  DefaultValuePipe,
   Get,
   Patch,
   Param,
+  ParseIntPipe,
   ParseUUIDPipe,
   Post,
   Query,
@@ -51,17 +53,21 @@ export class ProductTypeController {
     description: 'Retrieve all product types with their attribute schemas',
     responseType: ProductTypeEntity,
     additionalQueries: [
+      { name: 'isActive', required: false, type: Boolean, description: 'Filter by active status' },
+      { name: 'search', required: false, type: String, description: 'Search by name or code' },
+      { name: 'page', required: false, type: Number, description: 'Page number (default: 1)' },
+      { name: 'limit', required: false, type: Number, description: 'Items per page (default: 20)' },
       {
-        name: 'isActive',
-        required: false,
-        type: Boolean,
-        description: 'Filter by active status',
-      },
-      {
-        name: 'search',
+        name: 'sortBy',
         required: false,
         type: String,
-        description: 'Search by name or code',
+        description: 'Sort field (name, sortOrder, defaultGstRate, createdAt)',
+      },
+      {
+        name: 'sortOrder',
+        required: false,
+        type: String,
+        description: 'Sort direction (ASC, DESC)',
       },
     ],
   })
@@ -70,8 +76,22 @@ export class ProductTypeController {
     @CurrentUser() _currentUser: CurrentUserType,
     @Query('isActive') isActive?: string,
     @Query('search') search?: string,
-  ): Promise<ProductTypeEntity[]> {
-    const filters = isActive !== undefined ? { isActive: isActive === 'true', search } : { search };
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit = 20,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+  ): Promise<{
+    data: ProductTypeEntity[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+  }> {
+    const filters = {
+      ...(isActive !== undefined ? { isActive: isActive === 'true' } : {}),
+      search,
+      page,
+      limit,
+      sortBy,
+      sortOrder: (sortOrder === 'DESC' ? 'DESC' : 'ASC') as 'ASC' | 'DESC',
+    };
     return this.productTypeService.findAll(organizationId, filters);
   }
 

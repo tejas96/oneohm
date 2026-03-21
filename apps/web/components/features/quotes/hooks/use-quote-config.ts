@@ -52,7 +52,11 @@ export function useQuoteConfig() {
         '/quote-calculator/subsidy-rules/all',
         { headers },
       );
-      return response.data as SubsidyConfigResponse[];
+      const rows = response.data as SubsidyConfigResponse[];
+      return rows.map((c) => ({
+        ...c,
+        autoSplitEnabled: c.autoSplitEnabled ?? false,
+      }));
     },
     staleTime: FIVE_MINUTES,
     enabled: !!organizationId,

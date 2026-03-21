@@ -4,11 +4,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { Box, Tooltip, Typography } from '@mui/material';
 import * as React from 'react';
 
-import {
-  MUI_LABEL_FONT_SIZE,
-  MUI_LABEL_GAP,
-  MUI_LABEL_MB,
-} from '@/lib/theme/mui-theme';
+import { MUI_LABEL_FONT_SIZE, MUI_LABEL_GAP, MUI_LABEL_MB } from '@/lib/theme/mui-theme';
 
 /* -------------------------------------------------------------------------- */
 /*  Shared label for all MUI form components                                   */
@@ -29,7 +25,15 @@ export function MUIFieldLabel({
 }: MUIFieldLabelProps): React.JSX.Element | null {
   if (!fieldLabel) return null;
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: MUI_LABEL_GAP, mb: MUI_LABEL_MB, minHeight: 20 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: MUI_LABEL_GAP,
+        mb: MUI_LABEL_MB,
+        minHeight: 20,
+      }}
+    >
       <Typography
         component="label"
         htmlFor={htmlFor}
@@ -43,16 +47,18 @@ export function MUIFieldLabel({
       >
         {fieldLabel}
         {required && (
-          <Typography component="span" color="error" sx={{ ml: '2px', fontSize: 'inherit', lineHeight: 'inherit' }}>
+          <Typography
+            component="span"
+            color="error"
+            sx={{ ml: '2px', fontSize: 'inherit', lineHeight: 'inherit' }}
+          >
             *
           </Typography>
         )}
       </Typography>
       {tooltip && (
         <Tooltip title={tooltip} arrow placement="top">
-          <InfoOutlinedIcon
-            sx={{ fontSize: 14, color: 'text.secondary', cursor: 'help' }}
-          />
+          <InfoOutlinedIcon sx={{ fontSize: 14, color: 'text.secondary', cursor: 'help' }} />
         </Tooltip>
       )}
     </Box>

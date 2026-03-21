@@ -1,10 +1,6 @@
 'use client';
 
-import type {
-  GstConfig,
-  PaymentMilestoneConfig,
-  WattageRoundingConfig,
-} from '@oneohm-epc/shared/types';
+import type { GstConfig, PaymentMilestoneConfig, ProfitMarginTier } from '@oneohm-epc/shared/types';
 
 import { useResourceDetail, useResourceMutations } from '../core';
 
@@ -15,10 +11,9 @@ export interface QuoteConfig {
   maxVersions: number;
   defaultCompletionWeeks: number;
   gstConfig: GstConfig;
-  wattageRounding: WattageRoundingConfig;
   paymentMilestones: PaymentMilestoneConfig[];
+  profitMarginTiers: ProfitMarginTier[];
   showInventoryStock: boolean;
-  minProfitMarginPercent?: number;
   isActive: boolean;
   notes?: string;
   createdAt: string;

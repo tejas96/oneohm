@@ -28,6 +28,7 @@ export function QuoteOverviewTab({
   const systemSizeKw = version?.systemSizeKw ?? quote.systemSizeKw;
   const totalWattageWp = version?.totalWattageWp ?? quote.totalWattageWp;
   const projectType = version?.projectType ?? quote.projectType;
+  const projectCompletionWeeks = version?.projectCompletionWeeks ?? quote.projectCompletionWeeks;
   const breakdown = version?.pricingBreakdown ?? quote.pricingBreakdown;
   const effectivePrice = version?.effectivePrice ?? quote.effectivePrice;
 
@@ -117,10 +118,10 @@ export function QuoteOverviewTab({
                 <p className="text-2xs text-foreground-secondary uppercase">Project Type</p>
                 <p className="text-sm">{PROJECT_TYPE_LABELS[projectType] ?? projectType}</p>
               </div>
-              {quote.projectCompletionWeeks && (
+              {projectCompletionWeeks != null && (
                 <div>
                   <p className="text-2xs text-foreground-secondary uppercase">Completion</p>
-                  <p className="text-sm">{quote.projectCompletionWeeks} weeks</p>
+                  <p className="text-sm">{projectCompletionWeeks} weeks</p>
                 </div>
               )}
             </div>
@@ -148,13 +149,13 @@ export function QuoteOverviewTab({
               )}
               {breakdown?.gst5OnEquipment != null && (
                 <div className="flex justify-between">
-                  <span className="text-sm text-foreground-secondary">GST on Equipment (5%)</span>
+                  <span className="text-sm text-foreground-secondary">GST on Equipment</span>
                   <span className="text-sm">{formatCurrency(breakdown.gst5OnEquipment)}</span>
                 </div>
               )}
               {breakdown?.gst18OnServices != null && (
                 <div className="flex justify-between">
-                  <span className="text-sm text-foreground-secondary">GST on Services (18%)</span>
+                  <span className="text-sm text-foreground-secondary">GST on Services</span>
                   <span className="text-sm">{formatCurrency(breakdown.gst18OnServices)}</span>
                 </div>
               )}

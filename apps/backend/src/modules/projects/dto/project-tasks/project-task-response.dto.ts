@@ -94,10 +94,12 @@ export class ProjectTaskResponseDto {
 
   @ApiPropertyOptional()
   @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   checklist?: TaskChecklist;
 
   @ApiPropertyOptional()
   @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   attachments?: FileAttachment[];
 
   @ApiPropertyOptional({ type: [String], example: ['urgent'] })
@@ -114,6 +116,7 @@ export class ProjectTaskResponseDto {
 
   @ApiProperty({ type: 'array', description: 'Activity history for this task' })
   @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   activityLog!: TaskActivityEntry[];
 
   @ApiProperty({ example: 1 })

@@ -87,7 +87,7 @@ export class InstallationPricing extends BaseEntity {
   isActive: boolean;
 
   getFixedCostsTotal(): number {
-    const NON_COST_KEYS = new Set(['variable_floor', 'profitability_percent']);
+    const NON_COST_KEYS = new Set(['variable_floor']);
     let total = 0;
     for (const [key, value] of Object.entries(this.costComponents)) {
       if (!NON_COST_KEYS.has(key) && typeof value === 'number') {
@@ -106,7 +106,10 @@ export class InstallationPricing extends BaseEntity {
   }
 
   getDisplayLabel(): string {
-    if (this.maxSystemSizeKw != null && Number(this.maxSystemSizeKw) === Number(this.minSystemSizeKw)) {
+    if (
+      this.maxSystemSizeKw != null &&
+      Number(this.maxSystemSizeKw) === Number(this.minSystemSizeKw)
+    ) {
       return `${this.minSystemSizeKw}KW`;
     }
     const max = this.maxSystemSizeKw != null ? this.maxSystemSizeKw : '∞';

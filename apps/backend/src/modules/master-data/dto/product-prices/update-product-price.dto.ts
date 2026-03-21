@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ProjectType } from '@oneohm-epc/shared/types';
 import {
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsNumber,
@@ -51,4 +52,9 @@ export class UpdateProductPriceDto {
   @IsDateString()
   @IsOptional()
   effectiveTo?: string;
+
+  @ApiPropertyOptional({ example: true })
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }

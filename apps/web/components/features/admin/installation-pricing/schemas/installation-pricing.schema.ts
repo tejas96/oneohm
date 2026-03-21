@@ -19,35 +19,12 @@ export const installationPricingSchema = z
       .number({ invalid_type_error: 'GST rate must be a number' })
       .min(0, 'GST rate must be >= 0')
       .max(100, 'GST rate must be <= 100'),
-    costComponents: z.object({
-      electrical_work: z
-        .number({ invalid_type_error: 'Electrical work must be a number' })
-        .min(0, 'Must be >= 0'),
-      fixed_material: z
-        .number({ invalid_type_error: 'Fixed material must be a number' })
-        .min(0, 'Must be >= 0'),
-      structure_cost: z
-        .number({ invalid_type_error: 'Structure cost must be a number' })
-        .min(0, 'Must be >= 0'),
-      installation_labor: z
-        .number({ invalid_type_error: 'Installation labor must be a number' })
-        .min(0, 'Must be >= 0'),
-      loading_unloading: z
-        .number({ invalid_type_error: 'Loading/unloading must be a number' })
-        .min(0, 'Must be >= 0'),
-      msedcl_charges: z
-        .number({ invalid_type_error: 'MSEDCL charges must be a number' })
-        .min(0, 'Must be >= 0'),
-      supervision: z
-        .number({ invalid_type_error: 'Supervision must be a number' })
-        .min(0, 'Must be >= 0'),
-      variable_floor: z
-        .number({ invalid_type_error: 'Variable floor must be a number' })
-        .min(0, 'Must be >= 0'),
-      profitability_percent: z
-        .number({ invalid_type_error: 'Profitability must be a number' })
-        .min(0, 'Must be >= 0'),
-    }),
+    costComponents: z
+      .record(
+        z.string(),
+        z.number({ invalid_type_error: 'Must be a number' }).min(0, 'Must be >= 0'),
+      )
+      .refine((obj) => Object.keys(obj).length > 0, 'At least one cost component required'),
     effectiveFrom: z.string().min(1, 'Effective from date is required'),
     effectiveTo: z.string().optional(),
     isActive: z.boolean(),

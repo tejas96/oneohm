@@ -109,6 +109,7 @@ export class ProjectResponseDto {
 
   @ApiPropertyOptional({ example: { tags: ['priority', 'referral'] } })
   @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   metadata?: ProjectMetadata;
 
   // ==================== Related Entities ====================

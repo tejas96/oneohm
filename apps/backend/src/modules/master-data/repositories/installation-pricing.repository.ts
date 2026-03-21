@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { InstallationPricing } from '../entities/installation-pricing.entity';
 
@@ -36,7 +37,7 @@ export class InstallationPricingRepository {
     const dateStr: string = date.toISOString().split('T')[0] || '';
     const roundedSizeKw = Math.ceil(systemSizeKw);
 
-    return this.repository
+    const qb = this.repository
       .createQueryBuilder('pricing')
       .where('pricing.organization_id = :organizationId', { organizationId })
       .andWhere('pricing.is_active = true')
@@ -50,8 +51,9 @@ export class InstallationPricingRepository {
       .andWhere('(pricing.effective_to IS NULL OR pricing.effective_to >= :date)', {
         date: dateStr,
       })
-      .orderBy('pricing.min_system_size_kw', 'DESC')
-      .getOne();
+      .orderBy('pricing.min_system_size_kw', 'DESC');
+
+    return qb.getOne();
   }
 
   async findAll(
@@ -59,8 +61,10 @@ export class InstallationPricingRepository {
     filters?: {
       isActive?: boolean;
       search?: string;
+      page?: number;
+      limit?: number;
     },
-  ): Promise<InstallationPricing[]> {
+  ): Promise<{ data: InstallationPricing[]; total: number }> {
     const query = this.repository
       .createQueryBuilder('pricing')
       .where('pricing.organization_id = :organizationId', { organizationId });
@@ -85,7 +89,14 @@ export class InstallationPricingRepository {
       }
     }
 
-    return query.orderBy('pricing.min_system_size_kw', 'ASC').getMany();
+    query.orderBy('pricing.min_system_size_kw', 'ASC');
+
+    const page = filters?.page ?? 1;
+    const limit = filters?.limit ?? 20;
+    const offset = (page - 1) * limit;
+
+    const [data, total] = await query.skip(offset).take(limit).getManyAndCount();
+    return { data, total };
   }
 
   async findById(id: string, organizationId: string): Promise<InstallationPricing | null> {
@@ -99,10 +110,13 @@ export class InstallationPricingRepository {
     organizationId: string,
     data: Partial<InstallationPricing>,
   ): Promise<InstallationPricing> {
-    await this.repository.update({ id, organizationId }, data as any);
+    await this.repository.update({ id, organizationId }, {
+      ...data,
+      updatedAt: new Date(),
+    } as QueryDeepPartialEntity<InstallationPricing>);
     const updated = await this.findById(id, organizationId);
     if (!updated) {
-      throw new Error('Installation pricing not found after update');
+      throw new NotFoundException('Installation pricing not found after update');
     }
     return updated;
   }

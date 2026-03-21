@@ -7,10 +7,12 @@ import {
   HttpStatus,
   Patch,
   Param,
+  ParseIntPipe,
   ParseUUIDPipe,
   Post,
   Query,
   UseGuards,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
@@ -59,7 +61,7 @@ export class InstallationPricingController {
   @Get()
   @ApiReadAll({
     summary: 'Get all installation pricing tiers',
-    description: 'Retrieve all pricing tiers for the organisation, ordered by min system size.',
+    description: 'Retrieve pricing tiers for the organisation, ordered by min system size.',
     responseType: InstallationPricingResponseDto,
     additionalQueries: [
       {
@@ -74,18 +76,38 @@ export class InstallationPricingController {
         type: String,
         description: 'Search by kW size (numeric) or range',
       },
+      { name: 'page', required: false, type: Number, description: 'Page number (default: 1)' },
+      {
+        name: 'limit',
+        required: false,
+        type: Number,
+        description: 'Items per page (default: 20)',
+      },
     ],
   })
   async findAll(
     @OrganizationContext() organizationId: string,
     @Query('isActive') isActive?: string,
     @Query('search') search?: string,
-  ): Promise<InstallationPricingResponseDto[]> {
-    const filter = isActive !== undefined ? { isActive: isActive === 'true', search } : { search };
-    const tiers = await this.installationPricingService.findAll(organizationId, filter);
-    return plainToInstance(InstallationPricingResponseDto, tiers, {
-      excludeExtraneousValues: true,
-    });
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit = 20,
+  ): Promise<{
+    data: InstallationPricingResponseDto[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+  }> {
+    const filter = {
+      ...(isActive !== undefined ? { isActive: isActive === 'true' } : {}),
+      search,
+      page,
+      limit,
+    };
+    const result = await this.installationPricingService.findAll(organizationId, filter);
+    return {
+      data: plainToInstance(InstallationPricingResponseDto, result.data, {
+        excludeExtraneousValues: true,
+      }),
+      meta: result.meta,
+    };
   }
 
   @Get(':id')

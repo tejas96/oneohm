@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  type CalculatorInputs,
   type PaymentMilestone,
   type PricingBreakdown,
   ProjectType,
@@ -55,11 +56,18 @@ export class QuoteVersionResponseDto {
 
   @ApiPropertyOptional({ description: 'Full pricing breakdown' })
   @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   pricingBreakdown?: PricingBreakdown;
 
   @ApiPropertyOptional({ description: 'Payment milestones' })
   @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   paymentMilestones?: PaymentMilestone[];
+
+  @ApiPropertyOptional({ description: 'Calculator inputs used to generate this version' })
+  @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
+  calculatorInputs?: CalculatorInputs;
 
   @ApiProperty({ example: 4 })
   @Expose()
@@ -72,7 +80,6 @@ export class QuoteVersionResponseDto {
   @ApiProperty({ example: true })
   @Expose()
   isCurrent!: boolean;
-
 
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()

@@ -14,8 +14,16 @@ export class BrandRepository {
 
   async findAll(
     organizationId: string,
-    filters?: { productTypeId?: string; isActive?: boolean; search?: string },
-  ): Promise<BrandEntity[]> {
+    filters?: {
+      productTypeId?: string;
+      isActive?: boolean;
+      search?: string;
+      page?: number;
+      limit?: number;
+      sortBy?: string;
+      sortOrder?: 'ASC' | 'DESC';
+    },
+  ): Promise<{ data: BrandEntity[]; total: number }> {
     const query = this.repository
       .createQueryBuilder('brand')
       .where('brand.organization_id = :organizationId', { organizationId })
@@ -41,7 +49,24 @@ export class BrandRepository {
         .andWhere('bpt.is_active = true');
     }
 
-    return query.orderBy('brand.name', 'ASC').getMany();
+    const allowedSortFields: Record<string, string> = {
+      name: 'brand.name',
+      createdAt: 'brand.created_at',
+      updatedAt: 'brand.updated_at',
+      isActive: 'brand.is_active',
+    };
+    const sortField = (filters?.sortBy && allowedSortFields[filters.sortBy]) ?? 'brand.name';
+    const sortOrder = filters?.sortOrder ?? 'ASC';
+    query.orderBy(sortField, sortOrder);
+
+    const page = filters?.page ?? 1;
+    const limit = filters?.limit ?? 20;
+    const [data, total] = await query
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
   }
 
   async findById(id: string, organizationId: string): Promise<BrandEntity | null> {

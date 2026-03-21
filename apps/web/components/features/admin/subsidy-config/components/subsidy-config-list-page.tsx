@@ -96,15 +96,6 @@ export function SubsidyConfigListPage(): JSX.Element {
     sorting.clearSort();
   }, [clearFilters, sorting]);
 
-  const activeCounts = useMemo(() => {
-    const map = new Map<string, number>();
-    configs.forEach((item) => {
-      if (!item.isActive) return;
-      map.set(item.projectType, (map.get(item.projectType) ?? 0) + 1);
-    });
-    return map;
-  }, [configs]);
-
   const SortableHeader = useCallback(
     ({ field, label }: { field: string; label: string }): JSX.Element => {
       const isActive = sorting.sortBy === field;
@@ -201,25 +192,11 @@ export function SubsidyConfigListPage(): JSX.Element {
         accessorKey: 'isActive',
         header: 'Status',
         enableSorting: false,
-        cell: ({ row }) => {
-          const hasConflict = (activeCounts.get(row.original.projectType) ?? 0) > 1;
-          return (
-            <div className="flex items-center gap-2">
-              <Badge
-                variant={row.original.isActive ? 'success' : 'secondary'}
-                size="xs"
-                shape="pill"
-              >
-                {row.original.isActive ? 'Active' : 'Inactive'}
-              </Badge>
-              {row.original.isActive && hasConflict && (
-                <Badge variant="warning" size="xs" shape="pill">
-                  Conflict
-                </Badge>
-              )}
-            </div>
-          );
-        },
+        cell: ({ row }) => (
+          <Badge variant={row.original.isActive ? 'success' : 'secondary'} size="xs" shape="pill">
+            {row.original.isActive ? 'Active' : 'Inactive'}
+          </Badge>
+        ),
       },
       {
         accessorKey: 'effectiveFrom',
@@ -261,7 +238,7 @@ export function SubsidyConfigListPage(): JSX.Element {
         ),
       },
     ],
-    [SortableHeader, activeCounts, deleteConfirmation],
+    [SortableHeader, deleteConfirmation],
   );
 
   if (isLoading) {
@@ -328,13 +305,6 @@ export function SubsidyConfigListPage(): JSX.Element {
           Add Rule
         </Button>
       </div>
-
-      {activeCounts.size > 0 && Array.from(activeCounts.values()).some((count) => count > 1) && (
-        <div className="rounded-lg border border-warning/30 bg-warning/5 p-3 text-sm text-warning">
-          Multiple active schemes exist for at least one project type. Only one active rule should
-          be enabled per project type.
-        </div>
-      )}
 
       <div className="flex items-center gap-3">
         <div className="relative w-72">

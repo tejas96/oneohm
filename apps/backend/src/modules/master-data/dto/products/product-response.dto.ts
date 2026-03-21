@@ -60,6 +60,7 @@ export class ProductResponseDto {
     },
   })
   @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   specifications?: Record<string, unknown>;
 
   @ApiProperty({ enum: UnitOfMeasure, example: UnitOfMeasure.PIECES })

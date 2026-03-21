@@ -1,8 +1,4 @@
-export const SYSTEM_PRODUCT_TYPE_CODES = [
-  'solar_panel',
-  'inverter',
-  'mounting_structure',
-] as const;
+export const SYSTEM_PRODUCT_TYPE_CODES = ['solar_panel', 'inverter', 'mounting_structure'] as const;
 
 export type SystemProductTypeCode = (typeof SYSTEM_PRODUCT_TYPE_CODES)[number];
 
@@ -132,13 +128,7 @@ export const SYSTEM_PRODUCT_TYPES: Record<string, SystemProductTypeDefinition> =
         group: 'core',
         sort: 1,
         validation: {
-          options: [
-            'aluminum_rail',
-            'rcc_3x6',
-            'elevated_6x9',
-            'super_elevated',
-            'ground_mount',
-          ],
+          options: ['aluminum_rail', 'rcc_3x6', 'elevated_6x9', 'super_elevated', 'ground_mount'],
         },
       },
     ],

@@ -36,11 +36,6 @@ export class SubsidyConfigurationService {
     const effectiveTo = dto.effectiveTo ? this.toDate(dto.effectiveTo, 'effectiveTo') : null;
     this.validateDateRange(effectiveFrom, effectiveTo);
 
-    const shouldActivate = dto.isActive !== false;
-    if (shouldActivate) {
-      await this.subsidyConfigurationRepository.deactivateOthers(organizationId, dto.projectType);
-    }
-
     const tiers = this.normalizeTiers(dto.tiers);
     return this.subsidyConfigurationRepository.create(organizationId, {
       ...dto,
@@ -67,10 +62,6 @@ export class SubsidyConfigurationService {
       ? this.toDate(dto.effectiveTo, 'effectiveTo')
       : (existing.effectiveTo ?? null);
     this.validateDateRange(effectiveFrom, effectiveTo);
-
-    if (dto.isActive === true) {
-      await this.subsidyConfigurationRepository.deactivateOthers(organizationId, projectType, id);
-    }
 
     const tiers = this.normalizeTiers(dto.tiers);
     return this.subsidyConfigurationRepository.update(id, organizationId, {

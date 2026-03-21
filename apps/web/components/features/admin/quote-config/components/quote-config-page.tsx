@@ -2,10 +2,14 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, Loader2, Plus, Save, Trash2 } from 'lucide-react';
-import { type JSX, useEffect, useMemo } from 'react';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import { type JSX, useEffect } from 'react';
+import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
 
-import { quoteConfigSchema, type QuoteConfigFormData } from '../schemas/quote-config.schema';
+import {
+  quoteConfigSchema,
+  type QuoteConfigFormData,
+  type QuoteConfigFormInput,
+} from '../schemas/quote-config.schema';
 
 import { Alert, FieldLabel } from '@/components/shared';
 import {
@@ -24,13 +28,13 @@ import {
   Typography,
 } from '@/components/ui';
 import { useQuoteConfig, useQuoteConfigMutations } from '@/lib/hooks/resources';
-import { getErrorMessage } from '@/lib/utils';
+import { cn, getErrorMessage } from '@/lib/utils';
 
 export function QuoteConfigPage(): JSX.Element {
   const { data, isLoading, isError, error, refetch } = useQuoteConfig();
   const mutations = useQuoteConfigMutations();
 
-  const form = useForm<QuoteConfigFormData>({
+  const form = useForm<QuoteConfigFormInput, unknown, QuoteConfigFormData>({
     resolver: zodResolver(quoteConfigSchema),
     mode: 'onChange',
     defaultValues: {
@@ -43,22 +47,22 @@ export function QuoteConfigPage(): JSX.Element {
         rate2: 18,
         rate2Percentage: 30,
       },
-      wattageRounding: {
-        roundTo: 10,
-        roundUpThreshold: 5,
-      },
       paymentMilestones: [
         { stage: 'advance', name: 'Advance', percentage: 10, order: 1 },
         { stage: 'installation_complete', name: 'Installation Complete', percentage: 85, order: 2 },
         { stage: 'commissioning', name: 'Commissioning', percentage: 5, order: 3 },
       ],
+      profitMarginTiers: [],
       showInventoryStock: true,
-      minProfitMarginPercent: undefined,
       notes: '',
     },
   });
 
   const milestonesFieldArray = useFieldArray({ control: form.control, name: 'paymentMilestones' });
+  const profitMarginTiersFieldArray = useFieldArray({
+    control: form.control,
+    name: 'profitMarginTiers',
+  });
 
   useEffect(() => {
     if (!data) return;
@@ -67,38 +71,40 @@ export function QuoteConfigPage(): JSX.Element {
       maxVersions: data.maxVersions,
       defaultCompletionWeeks: data.defaultCompletionWeeks,
       gstConfig: data.gstConfig,
-      wattageRounding: data.wattageRounding,
       paymentMilestones: data.paymentMilestones ?? [],
+      profitMarginTiers: data.profitMarginTiers ?? [],
       showInventoryStock: data.showInventoryStock,
-      minProfitMarginPercent: data.minProfitMarginPercent ?? undefined,
       notes: data.notes ?? '',
     });
   }, [data, form]);
 
-  const gstSummary = useMemo(() => {
-    const rate1 = form.watch('gstConfig.rate1');
-    const rate1Percent = form.watch('gstConfig.rate1Percentage');
-    const rate2 = form.watch('gstConfig.rate2');
-    const rate2Percent = form.watch('gstConfig.rate2Percentage');
-    return `${rate1Percent}% taxed at ${rate1}% + ${rate2Percent}% taxed at ${rate2}%`;
-  }, [form]);
+  // useWatch ensures both gstSummary and milestoneSum re-render whenever the
+  // user edits any of these fields — form.watch() inside useMemo only runs once
+  // because the `form` object reference is stable.
+  const watchedGst = useWatch({
+    control: form.control,
+    name: [
+      'gstConfig.rate1',
+      'gstConfig.rate1Percentage',
+      'gstConfig.rate2',
+      'gstConfig.rate2Percentage',
+    ],
+  });
+  const [watchedRate1, watchedRate1Pct, watchedRate2, watchedRate2Pct] = watchedGst;
+  const gstSummary = `${watchedRate1Pct ?? 0}% taxed at ${watchedRate1 ?? 0}% + ${watchedRate2Pct ?? 0}% taxed at ${watchedRate2 ?? 0}%`;
 
-  const wattagePreview = useMemo(() => {
-    const roundTo = form.watch('wattageRounding.roundTo');
-    const threshold = form.watch('wattageRounding.roundUpThreshold');
-    const example = 547;
-    const remainder = example % roundTo;
-    const rounded = remainder >= threshold ? example + (roundTo - remainder) : example - remainder;
-    return `${example}W rounds to ${rounded}W`;
-  }, [form]);
-
-  const milestoneSum = useMemo(() => {
-    return form.watch('paymentMilestones').reduce((sum, m) => sum + (m.percentage || 0), 0);
-  }, [form]);
+  const watchedMilestones = useWatch({ control: form.control, name: 'paymentMilestones' });
+  // Guard against NaN from partially-typed inputs: use Number() and fall back to 0.
+  const milestoneSum = (watchedMilestones ?? []).reduce((sum, m) => {
+    const pct = Number(m?.percentage);
+    return sum + (Number.isFinite(pct) ? pct : 0);
+  }, 0);
+  // Use same tolerance (0.01) as backend/shared so the color matches what save validation allows.
+  const milestoneDiff = Math.round((milestoneSum - 100) * 100) / 100;
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-lg border border-border-light p-12 flex items-center justify-center">
+      <div className="bg-background rounded-lg border border-border-light p-12 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="size-8 animate-spin text-primary" />
           <p className="text-sm text-foreground-secondary">Loading configuration...</p>
@@ -109,7 +115,7 @@ export function QuoteConfigPage(): JSX.Element {
 
   if (isError) {
     return (
-      <div className="bg-white rounded-lg border border-error/30 p-6">
+      <div className="bg-background rounded-lg border border-error/30 p-6">
         <div className="flex items-center gap-3 text-error">
           <AlertCircle className="size-5 shrink-0" />
           <div className="flex-1">
@@ -126,7 +132,7 @@ export function QuoteConfigPage(): JSX.Element {
 
   if (!data) {
     return (
-      <div className="bg-white rounded-lg border border-border-light p-8">
+      <div className="bg-background rounded-lg border border-border-light p-8">
         <Typography variant="body">Quote configuration is not available yet.</Typography>
       </div>
     );
@@ -190,13 +196,13 @@ export function QuoteConfigPage(): JSX.Element {
             <TabsTrigger value="milestones" variant="underline">
               Payment Milestones
             </TabsTrigger>
-            <TabsTrigger value="rounding" variant="underline">
-              Wattage Rounding
+            <TabsTrigger value="profit-margin" variant="underline">
+              Profit Margin
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="mt-6 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <MUIInput
                   id="validity"
@@ -225,17 +231,6 @@ export function QuoteConfigPage(): JSX.Element {
                   type="number"
                   placeholder="e.g. 4"
                   {...form.register('defaultCompletionWeeks', { valueAsNumber: true })}
-                />
-              </div>
-              <div>
-                <MUIInput
-                  id="min-margin"
-                  fieldLabel="Min Profit Margin (%)"
-                  tooltip="Minimum margin allowed on a quote."
-                  type="number"
-                  step="0.01"
-                  placeholder="e.g. 12.5"
-                  {...form.register('minProfitMarginPercent', { valueAsNumber: true })}
                 />
               </div>
             </div>
@@ -406,37 +401,160 @@ export function QuoteConfigPage(): JSX.Element {
                 </div>
               </div>
             ))}
-            <div className="rounded-lg border border-border-light p-3 text-sm text-foreground-secondary">
-              Current total: {milestoneSum}%
+            <div
+              className={cn(
+                'rounded-lg border p-3 text-sm',
+                Math.abs(milestoneDiff) > 0.01
+                  ? 'border-error/30 bg-error/5 text-error'
+                  : 'border-success/30 bg-success/5 text-success',
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Total percentage</span>
+                <span className="font-semibold">
+                  {milestoneSum}%
+                  {milestoneDiff > 0.01 && (
+                    <span className="ml-1 text-xs font-normal">(+{milestoneDiff}% over)</span>
+                  )}
+                  {milestoneDiff < -0.01 && (
+                    <span className="ml-1 text-xs font-normal">({milestoneDiff}% remaining)</span>
+                  )}
+                </span>
+              </div>
             </div>
           </TabsContent>
 
-          <TabsContent value="rounding" className="mt-6 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <TabsContent value="profit-margin" className="mt-6 space-y-4">
+            <div className="flex items-center justify-between">
               <div>
-                <MUIInput
-                  fieldLabel="Round To (W)"
-                  tooltip="Round system size to the nearest watt value."
-                  type="number"
-                  placeholder="e.g. 10"
-                  {...form.register('wattageRounding.roundTo', { valueAsNumber: true })}
-                />
+                <Typography variant="body" className="font-semibold">
+                  Profit margin by system size
+                </Typography>
+                <Typography variant="body" color="muted" className="text-xs">
+                  Ranges are inclusive (kW). Leave max empty for no upper limit. First matching tier
+                  applies.
+                </Typography>
               </div>
-              <div>
-                <MUIInput
-                  fieldLabel="Round Up Threshold"
-                  tooltip="Threshold above which rounding rounds up."
-                  type="number"
-                  placeholder="e.g. 5"
-                  {...form.register('wattageRounding.roundUpThreshold', {
-                    valueAsNumber: true,
-                  })}
-                />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  profitMarginTiersFieldArray.append({
+                    minSystemSizeKw: 0,
+                    maxSystemSizeKw: null,
+                    marginPercent: 0,
+                  })
+                }
+              >
+                <Plus className="mr-2 size-icon-sm" />
+                Add tier
+              </Button>
+            </div>
+
+            {typeof form.formState.errors.profitMarginTiers?.message === 'string' && (
+              <Alert variant="error" appearance="minimal">
+                {form.formState.errors.profitMarginTiers.message}
+              </Alert>
+            )}
+
+            {profitMarginTiersFieldArray.fields.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-border-light p-8 text-center">
+                <Typography variant="body" color="muted">
+                  No tiers yet. Quotes use 0% margin until you add at least one tier.
+                </Typography>
               </div>
-            </div>
-            <div className="rounded-lg border border-border-light p-3 text-sm text-foreground-secondary">
-              Example: {wattagePreview}
-            </div>
+            ) : (
+              <div className="rounded-lg border border-border-light overflow-hidden">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 px-3 py-2 bg-muted/40 text-xs font-medium text-foreground-secondary border-b border-border-light">
+                  <span className="sm:col-span-3">Min size (kW)</span>
+                  <span className="sm:col-span-3">Max size (kW)</span>
+                  <span className="sm:col-span-3">Margin %</span>
+                  <span className="sm:col-span-3 text-right sm:text-left">Actions</span>
+                </div>
+                <div className="divide-y divide-border-light">
+                  {profitMarginTiersFieldArray.fields.map((field, index) => (
+                    <div key={field.id} className="p-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
+                        <div className="sm:col-span-3">
+                          <MUIInput
+                            fieldLabel="Min size (kW)"
+                            tooltip="Inclusive lower bound in kW."
+                            type="number"
+                            step="0.01"
+                            placeholder="e.g. 0"
+                            {...form.register(`profitMarginTiers.${index}.minSystemSizeKw`, {
+                              valueAsNumber: true,
+                            })}
+                            error={
+                              form.formState.errors.profitMarginTiers?.[index]?.minSystemSizeKw
+                                ?.message
+                            }
+                          />
+                        </div>
+                        <div className="sm:col-span-3">
+                          <Controller
+                            name={`profitMarginTiers.${index}.maxSystemSizeKw`}
+                            control={form.control}
+                            render={({ field: f }) => (
+                              <MUIInput
+                                fieldLabel="Max size (kW)"
+                                tooltip="Inclusive upper bound. Leave empty for unlimited."
+                                type="number"
+                                step="0.01"
+                                placeholder="Unlimited"
+                                value={f.value === null || f.value === undefined ? '' : f.value}
+                                onChange={(e) => {
+                                  const raw = e.target.value;
+                                  if (raw === '') {
+                                    f.onChange(null);
+                                    return;
+                                  }
+                                  const n = parseFloat(raw);
+                                  f.onChange(Number.isFinite(n) ? n : null);
+                                }}
+                                onBlur={f.onBlur}
+                                error={
+                                  form.formState.errors.profitMarginTiers?.[index]?.maxSystemSizeKw
+                                    ?.message
+                                }
+                              />
+                            )}
+                          />
+                        </div>
+                        <div className="sm:col-span-3">
+                          <MUIInput
+                            fieldLabel="Margin %"
+                            tooltip="Applied to raw cost base before GST."
+                            type="number"
+                            step="0.01"
+                            placeholder="e.g. 10"
+                            {...form.register(`profitMarginTiers.${index}.marginPercent`, {
+                              valueAsNumber: true,
+                            })}
+                            error={
+                              form.formState.errors.profitMarginTiers?.[index]?.marginPercent
+                                ?.message
+                            }
+                          />
+                        </div>
+                        <div className="sm:col-span-3 flex justify-end sm:items-end">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => profitMarginTiersFieldArray.remove(index)}
+                          >
+                            <Trash2 className="mr-2 size-icon-sm" />
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>

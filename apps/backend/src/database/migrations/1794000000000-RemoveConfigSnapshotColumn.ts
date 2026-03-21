@@ -2,7 +2,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Migration: Remove config_snapshot column from quote_versions
- * 
+ *
  * The config_snapshot column was storing audit data that was never actually used
  * in business logic. This migration removes it completely to clean up the schema.
  */

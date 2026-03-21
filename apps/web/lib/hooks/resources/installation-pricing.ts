@@ -38,7 +38,7 @@ defineResource<InstallationPricingItem>(
   'installation-pricing',
   {
     endpoint: '/installation-pricing',
-    defaultPageSize: 20,
+    defaultPageSize: 100,
     searchDebounceMs: 500,
     syncToUrl: true,
     staleTime: STALE_TIMES.slow,

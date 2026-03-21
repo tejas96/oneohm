@@ -72,11 +72,16 @@ export class ProductPriceService {
     const nextProjectType = hasProjectTypeUpdate
       ? (dto.projectType ?? undefined)
       : (existing.projectType as ProjectType | undefined);
-    if (
-      existing.isActive &&
-      hasProjectTypeUpdate &&
-      (existing.projectType ?? null) !== (nextProjectType ?? null)
-    ) {
+
+    const nextIsActive = dto.isActive !== undefined ? dto.isActive : existing.isActive;
+    const projectTypeChanged =
+      hasProjectTypeUpdate && (existing.projectType ?? null) !== (nextProjectType ?? null);
+    const touchesScheduleOrActive =
+      Object.prototype.hasOwnProperty.call(dto, 'effectiveFrom') ||
+      Object.prototype.hasOwnProperty.call(dto, 'effectiveTo') ||
+      Object.prototype.hasOwnProperty.call(dto, 'isActive');
+
+    if (nextIsActive && (projectTypeChanged || touchesScheduleOrActive)) {
       await this.deactivateExistingPrices(
         organizationId,
         productId,

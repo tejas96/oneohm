@@ -31,7 +31,7 @@ export interface InstallationPricingData {
  * The backend returns raw entity data where decimal columns are strings
  * (PostgreSQL/TypeORM behavior), so we coerce to number here.
  */
-export function useInstallationPricing(systemSizeKw: number, _projectType?: string) {
+export function useInstallationPricing(systemSizeKw: number) {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
 
@@ -41,6 +41,9 @@ export function useInstallationPricing(systemSizeKw: number, _projectType?: stri
     const timer = setTimeout(() => setDebouncedSize(systemSizeKw), DEBOUNCE_MS);
     return () => clearTimeout(timer);
   }, [systemSizeKw]);
+
+  // True while the user is adjusting size but debounce hasn't fired yet
+  const isDebouncing = systemSizeKw !== debouncedSize;
 
   const query = useQuery<InstallationPricingData | null>({
     queryKey: ['installation-pricing', organizationId, debouncedSize],
@@ -63,10 +66,15 @@ export function useInstallationPricing(systemSizeKw: number, _projectType?: stri
     staleTime: 5 * 60 * 1000,
   });
 
+  const pricingAvailable =
+    query.isFetched && !isDebouncing && query.data !== null && query.data !== undefined;
+
   return {
     pricing: query.data ?? null,
     isLoading: query.isLoading,
     isFetched: query.isFetched,
+    isDebouncing,
+    pricingAvailable,
     transportRatePerKm: query.data?.transportRatePerKm ?? null,
     floorIncrementPercent: query.data?.floorIncrementPercent ?? null,
   };

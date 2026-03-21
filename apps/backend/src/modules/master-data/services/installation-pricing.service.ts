@@ -12,15 +12,44 @@ import {
 import { InstallationPricing } from '../entities/installation-pricing.entity';
 import { InstallationPricingRepository } from '../repositories/installation-pricing.repository';
 
+export interface PaginatedInstallationPricing {
+  data: InstallationPricing[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 @Injectable()
 export class InstallationPricingService {
   constructor(private readonly installationPricingRepository: InstallationPricingRepository) {}
 
   async findAll(
     organizationId: string,
-    filters?: { isActive?: boolean; search?: string },
-  ): Promise<InstallationPricing[]> {
-    return this.installationPricingRepository.findAll(organizationId, filters);
+    filters?: { isActive?: boolean; search?: string; page?: number; limit?: number },
+  ): Promise<PaginatedInstallationPricing> {
+    const page = filters?.page ?? 1;
+    const limit = filters?.limit ?? 20;
+    const { data, total } = await this.installationPricingRepository.findAll(organizationId, {
+      ...filters,
+      page,
+      limit,
+    });
+    return {
+      data,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) || 1 },
+    };
+  }
+
+  /** Fetch all tiers without pagination — used internally for duplicate checks */
+  private async findAllRaw(organizationId: string): Promise<InstallationPricing[]> {
+    const { data } = await this.installationPricingRepository.findAll(organizationId, {
+      page: 1,
+      limit: 10_000,
+    });
+    return data;
   }
 
   async findById(id: string, organizationId: string): Promise<InstallationPricing> {
@@ -38,7 +67,7 @@ export class InstallationPricingService {
     this.validateRange(dto.minSystemSizeKw, dto.maxSystemSizeKw ?? null);
 
     // Check for duplicate tier (same min/max in same org)
-    const existing = await this.installationPricingRepository.findAll(organizationId);
+    const existing = await this.findAllRaw(organizationId);
     const duplicate = existing.find(
       (p) =>
         Number(p.minSystemSizeKw) === dto.minSystemSizeKw &&
@@ -64,21 +93,34 @@ export class InstallationPricingService {
     organizationId: string,
     dto: UpdateInstallationPricingDto,
   ): Promise<InstallationPricing> {
-    await this.findById(id, organizationId);
+    const current = await this.findById(id, organizationId);
+
+    const mergedMin = dto.minSystemSizeKw ?? Number(current.minSystemSizeKw);
+    const mergedMax =
+      dto.maxSystemSizeKw !== undefined
+        ? dto.maxSystemSizeKw
+        : current.maxSystemSizeKw != null
+          ? Number(current.maxSystemSizeKw)
+          : null;
 
     if (dto.minSystemSizeKw !== undefined || dto.maxSystemSizeKw !== undefined) {
-      const current = await this.findById(id, organizationId);
-      const newMin = dto.minSystemSizeKw ?? Number(current.minSystemSizeKw);
-      const newMax =
-        dto.maxSystemSizeKw !== undefined
-          ? dto.maxSystemSizeKw
-          : current.maxSystemSizeKw != null
-            ? Number(current.maxSystemSizeKw)
-            : null;
-      this.validateRange(newMin, newMax);
+      this.validateRange(mergedMin, mergedMax);
     }
 
-    const updateData: Partial<InstallationPricing> = { ...dto } as any;
+    const existingTiers = await this.findAllRaw(organizationId);
+    const duplicate = existingTiers.find(
+      (p) =>
+        p.id !== id &&
+        Number(p.minSystemSizeKw) === mergedMin &&
+        (p.maxSystemSizeKw == null ? mergedMax == null : Number(p.maxSystemSizeKw) === mergedMax),
+    );
+    if (duplicate) {
+      throw new ConflictException(
+        `A pricing tier for ${mergedMin}–${mergedMax ?? '∞'} KW already exists`,
+      );
+    }
+
+    const updateData = { ...dto } as unknown as Partial<InstallationPricing>;
     if (dto.effectiveFrom) {
       updateData.effectiveFrom = new Date(dto.effectiveFrom);
     }

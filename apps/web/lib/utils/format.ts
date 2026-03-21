@@ -11,6 +11,13 @@ export {
   formatSystemSize,
 } from '@oneohm-epc/shared/utils';
 
+export function formatLabel(key: string): string {
+  return key
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
 /**
  * Return a Tailwind text-color class based on whether a due date is overdue,
  * due today, or in the future.

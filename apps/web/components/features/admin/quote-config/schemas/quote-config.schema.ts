@@ -1,5 +1,42 @@
 import { z } from 'zod';
 
+function profitMarginTiersOverlap(
+  a: { minSystemSizeKw: number; maxSystemSizeKw?: number | null },
+  b: { minSystemSizeKw: number; maxSystemSizeKw?: number | null },
+): boolean {
+  const endA = a.maxSystemSizeKw ?? Infinity;
+  const endB = b.maxSystemSizeKw ?? Infinity;
+  return a.minSystemSizeKw <= endB && b.minSystemSizeKw <= endA;
+}
+
+const nonnegativeKw = (label: string): z.ZodEffects<z.ZodNumber, number, number> =>
+  z
+    .number({ invalid_type_error: `${label} must be a number` })
+    .refine((n) => Number.isFinite(n) && n >= 0, {
+      message: `${label} must be a finite number >= 0`,
+    });
+
+const profitMarginTierSchema = z
+  .object({
+    minSystemSizeKw: nonnegativeKw('Min size (kW)'),
+    maxSystemSizeKw: z.union([nonnegativeKw('Max size (kW)'), z.null()]).optional(),
+    marginPercent: nonnegativeKw('Margin %'),
+  })
+  .superRefine((tier, ctx) => {
+    if (tier.maxSystemSizeKw != null && tier.maxSystemSizeKw < tier.minSystemSizeKw) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Max size must be >= min size',
+        path: ['maxSystemSizeKw'],
+      });
+    }
+  })
+  .transform((tier) => ({
+    minSystemSizeKw: tier.minSystemSizeKw,
+    maxSystemSizeKw: tier.maxSystemSizeKw ?? null,
+    marginPercent: tier.marginPercent,
+  }));
+
 const gstConfigSchema = z.object({
   rate1: z
     .number({ invalid_type_error: 'GST rate 1 must be a number' })
@@ -13,15 +50,6 @@ const gstConfigSchema = z.object({
   rate2Percentage: z
     .number({ invalid_type_error: 'Rate 2 percentage must be a number' })
     .min(0, 'Rate 2 percentage must be >= 0'),
-});
-
-const wattageRoundingSchema = z.object({
-  roundTo: z
-    .number({ invalid_type_error: 'Round to must be a number' })
-    .min(1, 'Round to must be >= 1'),
-  roundUpThreshold: z
-    .number({ invalid_type_error: 'Round up threshold must be a number' })
-    .min(0, 'Round up threshold must be >= 0'),
 });
 
 const paymentMilestoneSchema = z.object({
@@ -48,14 +76,9 @@ export const quoteConfigSchema = z
       .min(1, 'Completion weeks must be >= 1')
       .max(52, 'Completion weeks must be <= 52'),
     gstConfig: gstConfigSchema,
-    wattageRounding: wattageRoundingSchema,
     paymentMilestones: z.array(paymentMilestoneSchema).min(1, 'Add at least one milestone'),
+    profitMarginTiers: z.array(profitMarginTierSchema),
     showInventoryStock: z.boolean(),
-    minProfitMarginPercent: z
-      .number({ invalid_type_error: 'Min profit margin must be a number' })
-      .min(0, 'Min profit margin must be >= 0')
-      .max(100, 'Min profit margin must be <= 100')
-      .optional(),
     notes: z.string().trim().optional(),
   })
   .superRefine((data, ctx) => {
@@ -79,6 +102,20 @@ export const quoteConfigSchema = z
         path: ['paymentMilestones'],
       });
     }
+
+    for (let i = 0; i < data.profitMarginTiers.length; i++) {
+      for (let j = i + 1; j < data.profitMarginTiers.length; j++) {
+        if (profitMarginTiersOverlap(data.profitMarginTiers[i]!, data.profitMarginTiers[j]!)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Profit margin tiers must not overlap',
+            path: ['profitMarginTiers'],
+          });
+          return;
+        }
+      }
+    }
   });
 
-export type QuoteConfigFormData = z.infer<typeof quoteConfigSchema>;
+export type QuoteConfigFormInput = z.input<typeof quoteConfigSchema>;
+export type QuoteConfigFormData = z.output<typeof quoteConfigSchema>;

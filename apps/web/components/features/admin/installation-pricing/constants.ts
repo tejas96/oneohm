@@ -15,5 +15,23 @@ export const COST_COMPONENT_FIELDS = [
   { key: 'msedcl_charges', label: 'MSEDCL Charges' },
   { key: 'supervision', label: 'Supervision' },
   { key: 'variable_floor', label: 'Variable Floor Base' },
-  { key: 'profitability_percent', label: 'Profitability %' },
 ] as const;
+
+export const DEFAULT_COST_COMPONENT_SEED = COST_COMPONENT_FIELDS;
+
+export function getDefaultCostComponentsRecord(): Record<string, number> {
+  return Object.fromEntries(DEFAULT_COST_COMPONENT_SEED.map(({ key }) => [key, 0])) as Record<
+    string,
+    number
+  >;
+}
+
+export function labelForCostComponentKey(key: string): string {
+  const found = DEFAULT_COST_COMPONENT_SEED.find((e) => e.key === key);
+  if (found) return found.label;
+  return key
+    .split('_')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+}

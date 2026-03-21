@@ -13,8 +13,7 @@ import {
 } from '@mui/material';
 import * as React from 'react';
 
-export interface MUISwitchProps
-  extends Omit<MuiSwitchProps, 'onChange' | 'checked'> {
+export interface MUISwitchProps extends Omit<MuiSwitchProps, 'onChange' | 'checked'> {
   checked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
   label?: React.ReactNode;
@@ -75,9 +74,7 @@ function MUISwitchInner(
           </Typography>
           {tooltip && (
             <Tooltip title={tooltip} arrow placement="top">
-              <InfoOutlinedIcon
-                sx={{ fontSize: 14, color: 'text.secondary', cursor: 'help' }}
-              />
+              <InfoOutlinedIcon sx={{ fontSize: 14, color: 'text.secondary', cursor: 'help' }} />
             </Tooltip>
           )}
         </Box>
@@ -100,12 +97,8 @@ function MUISwitchInner(
         mx: 0,
         gap: 1,
         alignItems: hasDescription ? 'flex-start' : 'center',
-        ...(hasDescription
-          ? { '& .MuiFormControlLabel-label': { pt: 0.25 } }
-          : {}),
-        ...(labelPosition === 'left'
-          ? { justifyContent: 'space-between', width: '100%' }
-          : {}),
+        ...(hasDescription ? { '& .MuiFormControlLabel-label': { pt: 0.25 } } : {}),
+        ...(labelPosition === 'left' ? { justifyContent: 'space-between', width: '100%' } : {}),
         ...(containerSx ? (containerSx as Record<string, unknown>) : {}),
       }}
     />

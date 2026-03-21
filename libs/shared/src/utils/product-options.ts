@@ -162,9 +162,11 @@ export function deriveStructureTypes(products: ProductOptionInput[]): StructureT
 
   for (const product of products) {
     const st = product.specifications?.structure_type;
-    if (st && !structureMap.has(st)) {
-      structureMap.set(st, {
-        value: st,
+    // If no structure_type in specs, derive a value from the product name (snake_case)
+    const key = st || product.name.toLowerCase().replace(/\s+/g, '_');
+    if (!structureMap.has(key)) {
+      structureMap.set(key, {
+        value: st || key,
         label: product.name,
         material: product.specifications?.material,
       });
@@ -181,14 +183,19 @@ export function getInverterCapacities(
 ): InverterCapacityOption[] {
   let filtered = products;
 
-  if (phaseType) {
-    filtered = filtered.filter((p) => p.specifications?.phase_type === phaseType);
-  }
   if (brand) {
     filtered = filtered.filter((p) => {
       const bName = getBrandName(p);
       return bName.toLowerCase() === brand.toLowerCase();
     });
+  }
+
+  // Filter by phase type — if no matches found, fall back to all (phase_type not set on products)
+  if (phaseType) {
+    const phaseFiltered = filtered.filter(
+      (p) => !p.specifications?.phase_type || p.specifications.phase_type === phaseType,
+    );
+    filtered = phaseFiltered;
   }
 
   const capacities = new Set<number>();

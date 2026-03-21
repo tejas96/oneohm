@@ -5,6 +5,7 @@ import {
   DcrPreference,
   StructureType,
   PanelTechnology,
+  SystemType,
 } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import {
@@ -128,6 +129,16 @@ export class CalculateQuoteDto {
   @IsBoolean()
   @IsNotEmpty()
   subsidyApplicable!: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Specific subsidy configuration IDs to apply. If omitted, all active subsidies for the project type are used.',
+    type: [String],
+  })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @IsOptional()
+  selectedSubsidyIds?: string[];
 
   @ApiProperty({
     enum: DcrPreference,
@@ -311,6 +322,16 @@ export class CalculateQuoteDto {
  * DTO for creating a quote from calculated result
  */
 export class CreateQuoteFromCalculationDto extends CalculateQuoteDto {
+  @ApiPropertyOptional({
+    enum: Object.values(SystemType),
+    enumName: 'SystemType',
+    description: 'System type (defaults to ON_GRID)',
+    example: SystemType.ON_GRID,
+  })
+  @IsEnum(SystemType)
+  @IsOptional()
+  systemType?: SystemType;
+
   @ApiPropertyOptional({
     description:
       'Existing quote ID. When provided, creates a new version of the existing quote instead of a new quote.',

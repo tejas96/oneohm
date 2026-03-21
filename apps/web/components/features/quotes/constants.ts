@@ -204,7 +204,7 @@ export const PRICING_AFFECTING_FIELDS = [
   'systemSizeKw',
   'projectType',
   'phaseType',
-  'subsidyApplicable',
+  'selectedSubsidyIds',
   'dcrPreference',
   'preferredPanelBrand',
   'preferredPanelTechnology',

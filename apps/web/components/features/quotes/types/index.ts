@@ -11,6 +11,7 @@ export type {
   CalculatedInstallation,
   ValidationWarning,
   SubsidyBreakdown,
+  SubsidySchemeResult,
   CalculatedSubsidy,
   PricingSummary,
   InventoryStatus,
@@ -23,4 +24,6 @@ export type {
   QuoteCustomerInfo,
   QuotePropertyInfo,
   QuotePdfData,
+  QuotePdfOrgConfig,
+  PdfCompanyInfo,
 } from './calculator.types';

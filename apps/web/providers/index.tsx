@@ -30,24 +30,24 @@ export function Providers({ children }: ProvidersProps) {
         <ThemeProvider theme={muiTheme}>
           <CssBaseline />
           <LocalizationProvider dateAdapter={AdapterDateFns}>
-          <TooltipProvider delayDuration={200}>
-            <QueryProvider>
-              <AuthProvider>
-                {children}
-                <Toaster
-                  position="top-right"
-                  richColors
-                  closeButton
-                  toastOptions={{
-                    duration: 4000,
-                    style: {
-                      fontFamily: 'Inter, system-ui, sans-serif',
-                    },
-                  }}
-                />
-              </AuthProvider>
-            </QueryProvider>
-          </TooltipProvider>
+            <TooltipProvider delayDuration={200}>
+              <QueryProvider>
+                <AuthProvider>
+                  {children}
+                  <Toaster
+                    position="top-right"
+                    richColors
+                    closeButton
+                    toastOptions={{
+                      duration: 4000,
+                      style: {
+                        fontFamily: 'Inter, system-ui, sans-serif',
+                      },
+                    }}
+                  />
+                </AuthProvider>
+              </QueryProvider>
+            </TooltipProvider>
           </LocalizationProvider>
         </ThemeProvider>
       </AppRouterCacheProvider>

@@ -35,9 +35,7 @@ export interface ProductAdminItem {
 export interface ProductAdminFilters extends BaseFilters {
   status?: ProductStatus | 'all';
   productTypeId?: string;
-  type?: string;
   brandId?: string;
-  brand?: string;
   search?: string;
 }
 

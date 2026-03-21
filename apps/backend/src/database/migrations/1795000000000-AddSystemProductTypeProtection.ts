@@ -96,9 +96,7 @@ export class AddSystemProductTypeProtection1795000000000 implements MigrationInt
     await queryRunner.query(
       `DROP TRIGGER IF EXISTS trg_protect_system_product_type_attributes ON product_type_attributes`,
     );
-    await queryRunner.query(
-      `DROP FUNCTION IF EXISTS protect_system_product_type_attributes()`,
-    );
+    await queryRunner.query(`DROP FUNCTION IF EXISTS protect_system_product_type_attributes()`);
     await queryRunner.query(
       `DROP TRIGGER IF EXISTS trg_protect_system_product_types ON product_types`,
     );
@@ -107,13 +105,9 @@ export class AddSystemProductTypeProtection1795000000000 implements MigrationInt
     await queryRunner.query(
       `UPDATE product_type_attributes SET is_system = false WHERE is_system = true`,
     );
-    await queryRunner.query(
-      `UPDATE product_types SET is_system = false WHERE is_system = true`,
-    );
+    await queryRunner.query(`UPDATE product_types SET is_system = false WHERE is_system = true`);
 
-    await queryRunner.query(
-      `ALTER TABLE product_type_attributes DROP COLUMN IF EXISTS is_system`,
-    );
+    await queryRunner.query(`ALTER TABLE product_type_attributes DROP COLUMN IF EXISTS is_system`);
     await queryRunner.query(`ALTER TABLE product_types DROP COLUMN IF EXISTS is_system`);
   }
 
@@ -130,11 +124,58 @@ export class AddSystemProductTypeProtection1795000000000 implements MigrationInt
         defaultUnitOfMeasure: 'pcs',
         sortOrder: 1,
         attributes: [
-          { key: 'wattage', label: 'Wattage (Wp)', dataType: 'decimal', isRequired: true, isFilterable: true, group: 'core', sort: 1, validation: null },
-          { key: 'technology', label: 'Technology', dataType: 'enum', isRequired: true, isFilterable: true, group: 'core', sort: 2, validation: JSON.stringify({ options: ['perc', 'topcon', 'mono_perc', 'poly', 'bifacial'] }) },
-          { key: 'is_dcr', label: 'DCR Approved', dataType: 'boolean', isRequired: true, isFilterable: true, group: 'core', sort: 3, validation: null },
-          { key: 'min_wattage', label: 'Min Wattage (Wp)', dataType: 'decimal', isRequired: false, isFilterable: false, group: 'core', sort: 4, validation: null },
-          { key: 'max_wattage', label: 'Max Wattage (Wp)', dataType: 'decimal', isRequired: false, isFilterable: false, group: 'core', sort: 5, validation: null },
+          {
+            key: 'wattage',
+            label: 'Wattage (Wp)',
+            dataType: 'decimal',
+            isRequired: true,
+            isFilterable: true,
+            group: 'core',
+            sort: 1,
+            validation: null,
+          },
+          {
+            key: 'technology',
+            label: 'Technology',
+            dataType: 'enum',
+            isRequired: true,
+            isFilterable: true,
+            group: 'core',
+            sort: 2,
+            validation: JSON.stringify({
+              options: ['perc', 'topcon', 'mono_perc', 'poly', 'bifacial'],
+            }),
+          },
+          {
+            key: 'is_dcr',
+            label: 'DCR Approved',
+            dataType: 'boolean',
+            isRequired: true,
+            isFilterable: true,
+            group: 'core',
+            sort: 3,
+            validation: null,
+          },
+          {
+            key: 'min_wattage',
+            label: 'Min Wattage (Wp)',
+            dataType: 'decimal',
+            isRequired: false,
+            isFilterable: false,
+            group: 'core',
+            sort: 4,
+            validation: null,
+          },
+          {
+            key: 'max_wattage',
+            label: 'Max Wattage (Wp)',
+            dataType: 'decimal',
+            isRequired: false,
+            isFilterable: false,
+            group: 'core',
+            sort: 5,
+            validation: null,
+          },
         ],
       },
       {
@@ -145,8 +186,26 @@ export class AddSystemProductTypeProtection1795000000000 implements MigrationInt
         defaultUnitOfMeasure: 'pcs',
         sortOrder: 2,
         attributes: [
-          { key: 'capacity_kw', label: 'Capacity (kW)', dataType: 'decimal', isRequired: true, isFilterable: true, group: 'core', sort: 1, validation: null },
-          { key: 'phase_type', label: 'Phase Type', dataType: 'enum', isRequired: true, isFilterable: true, group: 'core', sort: 2, validation: JSON.stringify({ options: ['single_phase', 'three_phase'] }) },
+          {
+            key: 'capacity_kw',
+            label: 'Capacity (kW)',
+            dataType: 'decimal',
+            isRequired: true,
+            isFilterable: true,
+            group: 'core',
+            sort: 1,
+            validation: null,
+          },
+          {
+            key: 'phase_type',
+            label: 'Phase Type',
+            dataType: 'enum',
+            isRequired: true,
+            isFilterable: true,
+            group: 'core',
+            sort: 2,
+            validation: JSON.stringify({ options: ['single_phase', 'three_phase'] }),
+          },
         ],
       },
       {
@@ -157,7 +216,24 @@ export class AddSystemProductTypeProtection1795000000000 implements MigrationInt
         defaultUnitOfMeasure: 'pcs',
         sortOrder: 3,
         attributes: [
-          { key: 'structure_type', label: 'Structure Type', dataType: 'enum', isRequired: true, isFilterable: true, group: 'core', sort: 1, validation: JSON.stringify({ options: ['aluminum_rail', 'rcc_3x6', 'elevated_6x9', 'super_elevated', 'ground_mount'] }) },
+          {
+            key: 'structure_type',
+            label: 'Structure Type',
+            dataType: 'enum',
+            isRequired: true,
+            isFilterable: true,
+            group: 'core',
+            sort: 1,
+            validation: JSON.stringify({
+              options: [
+                'aluminum_rail',
+                'rcc_3x6',
+                'elevated_6x9',
+                'super_elevated',
+                'ground_mount',
+              ],
+            }),
+          },
         ],
       },
     ];

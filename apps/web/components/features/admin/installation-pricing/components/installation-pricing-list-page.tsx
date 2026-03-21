@@ -47,7 +47,10 @@ import {
 import { formatCurrency, formatDate, getErrorMessage } from '@/lib/utils';
 
 function getTierLabel(item: InstallationPricingItem): string {
-  if (item.maxSystemSizeKw != null && Number(item.maxSystemSizeKw) === Number(item.minSystemSizeKw)) {
+  if (
+    item.maxSystemSizeKw != null &&
+    Number(item.maxSystemSizeKw) === Number(item.minSystemSizeKw)
+  ) {
     return `${item.minSystemSizeKw} kW`;
   }
   const max = item.maxSystemSizeKw == null ? '∞' : item.maxSystemSizeKw;
@@ -55,7 +58,7 @@ function getTierLabel(item: InstallationPricingItem): string {
 }
 
 function calculateFixedTotal(item: InstallationPricingItem): number {
-  const excluded = new Set(['profitability_percent', 'variable_floor']);
+  const excluded = new Set(['variable_floor']);
   return Object.entries(item.costComponents ?? {}).reduce((acc, [key, value]) => {
     if (excluded.has(key)) return acc;
     if (typeof value === 'number') return acc + value;
@@ -63,31 +66,45 @@ function calculateFixedTotal(item: InstallationPricingItem): number {
   }, 0);
 }
 
-function findCoverageGaps(items: InstallationPricingItem[]): string[] {
+function findCoverageGaps(items: InstallationPricingItem[]): {
+  count: number;
+  first: string[];
+  maxKw: number | null;
+} {
   const active = items.filter((item) => item.isActive);
-  if (active.length === 0) return ['No active tiers'];
+  if (active.length === 0) return { count: 0, first: [], maxKw: null };
 
   const sorted = [...active].sort((a, b) => a.minSystemSizeKw - b.minSystemSizeKw);
   const gaps: string[] = [];
 
-  let currentMax: number | null = sorted[0]?.minSystemSizeKw ?? 0;
+  // Check if coverage starts above 0
   if (sorted[0] && sorted[0].minSystemSizeKw > 0) {
     gaps.push(`0–${sorted[0].minSystemSizeKw} kW`);
   }
 
-  for (const tier of sorted) {
-    if (currentMax != null && tier.minSystemSizeKw > currentMax) {
-      gaps.push(`${currentMax}–${tier.minSystemSizeKw} kW`);
+  // Walk through tiers; for point tiers (min=max=N), the next tier at N+1 is contiguous
+  let coverageEnd = sorted[0]?.maxSystemSizeKw ?? sorted[0]?.minSystemSizeKw ?? 0;
+
+  for (let i = 1; i < sorted.length; i++) {
+    const tier = sorted[i]!;
+    const prevEnd = coverageEnd;
+    // A gap exists if this tier starts more than 1 kW after the previous tier ended
+    // (point tiers like min=max=5 and min=max=6 are contiguous)
+    if (tier.minSystemSizeKw > prevEnd + 1) {
+      gaps.push(`${prevEnd}–${tier.minSystemSizeKw} kW`);
     }
-    currentMax = tier.maxSystemSizeKw ?? null;
-    if (currentMax == null) return gaps;
+    const tierMax = tier.maxSystemSizeKw ?? tier.minSystemSizeKw;
+    if (tierMax > coverageEnd) coverageEnd = tierMax;
+    // Unbounded tier — no upper gap possible
+    if (tier.maxSystemSizeKw == null)
+      return { count: gaps.length, first: gaps.slice(0, 3), maxKw: null };
   }
 
-  if (currentMax != null) {
-    gaps.push(`${currentMax}+ kW`);
-  }
+  // Flag that coverage ends at a specific kW (no unbounded tier)
+  const topKw = coverageEnd;
+  gaps.push(`${topKw}+ kW`);
 
-  return gaps;
+  return { count: gaps.length, first: gaps.slice(0, 3), maxKw: topKw };
 }
 
 export function InstallationPricingListPage(): JSX.Element {
@@ -141,7 +158,7 @@ export function InstallationPricingListPage(): JSX.Element {
     sorting.clearSort();
   }, [clearFilters, sorting]);
 
-  const gapWarnings = useMemo(() => findCoverageGaps(tiers), [tiers]);
+  const gapResult = useMemo(() => findCoverageGaps(tiers), [tiers]);
 
   const SortableHeader = useCallback(
     ({ field, label }: { field: string; label: string }): JSX.Element => {
@@ -334,9 +351,31 @@ export function InstallationPricingListPage(): JSX.Element {
         </Button>
       </div>
 
-      {gapWarnings.length > 0 && (
-        <div className="rounded-lg border border-warning/30 bg-warning/5 p-3 text-sm text-warning">
-          Coverage gaps detected: {gapWarnings.join(', ')}
+      {gapResult.count > 0 && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-warning/30 bg-warning/5 p-3 text-sm text-warning">
+          <AlertCircle className="size-4 shrink-0 mt-0.5" />
+          <div>
+            <span className="font-medium">
+              {gapResult.count === 1
+                ? '1 coverage gap detected'
+                : `${gapResult.count} coverage gaps detected`}
+            </span>
+            {gapResult.first.length > 0 && (
+              <span className="text-warning/80">
+                {' '}
+                — e.g. {gapResult.first.join(', ')}
+                {gapResult.count > gapResult.first.length &&
+                  ` and ${gapResult.count - gapResult.first.length} more`}
+              </span>
+            )}
+            {gapResult.maxKw != null && gapResult.count > 0 && (
+              <span className="text-warning/80">
+                {gapResult.first.some((g) => g.endsWith('+ kW'))
+                  ? ''
+                  : `. Tiers only cover up to ${gapResult.maxKw} kW.`}
+              </span>
+            )}
+          </div>
         </div>
       )}
 
@@ -449,9 +488,7 @@ export function InstallationPricingListPage(): JSX.Element {
             <DialogDescription>
               Are you sure you want to delete the tier{' '}
               <span className="font-medium">
-                {deleteConfirmation.target
-                  ? getTierLabel(deleteConfirmation.target)
-                  : ''}
+                {deleteConfirmation.target ? getTierLabel(deleteConfirmation.target) : ''}
               </span>
               ?
             </DialogDescription>

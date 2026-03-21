@@ -134,6 +134,11 @@ export async function seedMasterData(dataSource: DataSource): Promise<void> {
       WHERE quote_id IN (SELECT id FROM quotes WHERE organization_id = $1)`,
       [ORG_ID],
     );
+    // Delete projects that reference quotes for this org (quote_id is NOT NULL in projects)
+    await queryRunner.query(
+      `DELETE FROM projects WHERE quote_id IN (SELECT id FROM quotes WHERE organization_id = $1)`,
+      [ORG_ID],
+    );
     await queryRunner.query(`DELETE FROM quotes WHERE organization_id = $1`, [ORG_ID]);
 
     await queryRunner.query(`DELETE FROM quote_configurations WHERE organization_id = $1`, [
@@ -156,7 +161,10 @@ export async function seedMasterData(dataSource: DataSource): Promise<void> {
       `DELETE FROM product_type_attributes WHERE product_type_id IN (SELECT id FROM product_types WHERE organization_id = $1) AND is_system IS NOT TRUE`,
       [ORG_ID],
     );
-    await queryRunner.query(`DELETE FROM product_types WHERE organization_id = $1 AND is_system IS NOT TRUE`, [ORG_ID]);
+    await queryRunner.query(
+      `DELETE FROM product_types WHERE organization_id = $1 AND is_system IS NOT TRUE`,
+      [ORG_ID],
+    );
 
     console.log('✅ Cleanup completed');
 
@@ -252,7 +260,7 @@ async function insertProductTypes(queryRunner: QueryRunner): Promise<void> {
 
   for (const pt of productTypes) {
     await queryRunner.query(
-      `INSERT INTO product_types (id, organization_id, name, code, description, default_pricing_basis, default_gst_rate, unit_of_measure, is_active, sort_order, created_at, updated_at)
+      `INSERT INTO product_types (id, organization_id, name, code, description, default_pricing_basis, default_gst_rate, default_unit_of_measure, is_active, sort_order, created_at, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, $9, NOW(), NOW())
       ON CONFLICT (organization_id, code) DO NOTHING`,
       [
@@ -268,6 +276,26 @@ async function insertProductTypes(queryRunner: QueryRunner): Promise<void> {
       ],
     );
   }
+
+  // Re-read the actual IDs from DB (ON CONFLICT DO NOTHING may have kept existing rows with different IDs)
+  const [ptSolar] = await queryRunner.query(
+    `SELECT id FROM product_types WHERE organization_id = $1 AND code = 'solar_panel' LIMIT 1`,
+    [ORG_ID],
+  );
+  const [ptInverter] = await queryRunner.query(
+    `SELECT id FROM product_types WHERE organization_id = $1 AND code = 'inverter' LIMIT 1`,
+    [ORG_ID],
+  );
+  const [ptStructure] = await queryRunner.query(
+    `SELECT id FROM product_types WHERE organization_id = $1 AND code = 'mounting_structure' LIMIT 1`,
+    [ORG_ID],
+  );
+
+  // Update in-memory IDs to match what's actually in the DB
+  PRODUCT_TYPE_IDS.SOLAR_PANEL = ptSolar.id as string;
+  PRODUCT_TYPE_IDS.INVERTER = ptInverter.id as string;
+  PRODUCT_TYPE_IDS.MOUNTING_STRUCTURE = ptStructure.id as string;
+
   console.log(`  ✓ Inserted ${productTypes.length} product types`);
 
   // Solar Panel Attributes
@@ -275,7 +303,7 @@ async function insertProductTypes(queryRunner: QueryRunner): Promise<void> {
     {
       key: 'wattage',
       label: 'Wattage (Wp)',
-      dataType: 'number',
+      dataType: 'integer',
       required: true,
       filterable: true,
       validation: { min: 100, max: 1000 },
@@ -305,7 +333,7 @@ async function insertProductTypes(queryRunner: QueryRunner): Promise<void> {
     {
       key: 'min_wattage',
       label: 'Min Wattage (Wp)',
-      dataType: 'number',
+      dataType: 'integer',
       required: false,
       filterable: false,
       validation: null,
@@ -315,7 +343,7 @@ async function insertProductTypes(queryRunner: QueryRunner): Promise<void> {
     {
       key: 'max_wattage',
       label: 'Max Wattage (Wp)',
-      dataType: 'number',
+      dataType: 'integer',
       required: false,
       filterable: false,
       validation: null,
@@ -325,7 +353,7 @@ async function insertProductTypes(queryRunner: QueryRunner): Promise<void> {
     {
       key: 'efficiency',
       label: 'Efficiency (%)',
-      dataType: 'number',
+      dataType: 'decimal',
       required: false,
       filterable: false,
       validation: { min: 10, max: 30 },
@@ -359,7 +387,7 @@ async function insertProductTypes(queryRunner: QueryRunner): Promise<void> {
     {
       key: 'capacity_kw',
       label: 'Capacity (KW)',
-      dataType: 'number',
+      dataType: 'decimal',
       required: true,
       filterable: true,
       validation: { min: 0.5, max: 500 },
@@ -379,7 +407,7 @@ async function insertProductTypes(queryRunner: QueryRunner): Promise<void> {
     {
       key: 'min_system_size_kw',
       label: 'Min System Size (KW)',
-      dataType: 'number',
+      dataType: 'decimal',
       required: false,
       filterable: false,
       validation: null,
@@ -389,7 +417,7 @@ async function insertProductTypes(queryRunner: QueryRunner): Promise<void> {
     {
       key: 'max_system_size_kw',
       label: 'Max System Size (KW)',
-      dataType: 'number',
+      dataType: 'decimal',
       required: false,
       filterable: false,
       validation: null,
@@ -455,7 +483,7 @@ async function insertProductTypes(queryRunner: QueryRunner): Promise<void> {
     {
       key: 'weight_kg',
       label: 'Weight (kg)',
-      dataType: 'number',
+      dataType: 'decimal',
       required: false,
       filterable: false,
       validation: null,
@@ -558,6 +586,16 @@ async function insertBrands(queryRunner: QueryRunner): Promise<void> {
       [brand.id, ORG_ID, brand.name, brand.manufacturer, brand.website],
     );
   }
+
+  // Re-read actual brand IDs from DB (ON CONFLICT DO NOTHING may have kept existing rows)
+  const brandRows = await queryRunner.query(
+    `SELECT id, name FROM brands WHERE organization_id = $1 AND name = ANY($2::text[])`,
+    [ORG_ID, Object.keys(BRAND_IDS)],
+  );
+  for (const row of brandRows as Array<{ id: string; name: string }>) {
+    BRAND_IDS[row.name] = row.id;
+  }
+
   console.log(`  ✓ Inserted ${brands.length} brands`);
 
   // Brand-Product Type mappings
@@ -1499,29 +1537,6 @@ async function insertProductPrices(queryRunner: QueryRunner): Promise<void> {
 // INSTALLATION PRICING (1-100 KW)
 // =====================================================
 
-/**
- * Profitability tiers:
- * - 1 KW: 25%
- * - 2 KW: 20%
- * - 3 KW: 18%
- * - 4-5 KW: 16%
- * - 6-10 KW: 15%
- * - 11-30 KW: 15%
- * - 31-70 KW: 14%
- * - 71-100 KW: 13%
- */
-function getProfitabilityPercent(kw: number): number {
-  if (kw === 1) return 25;
-  if (kw === 2) return 20;
-  if (kw === 3) return 18;
-  if (kw >= 4 && kw <= 5) return 16;
-  if (kw >= 6 && kw <= 10) return 15;
-  if (kw >= 11 && kw <= 30) return 15;
-  if (kw >= 31 && kw <= 70) return 14;
-  if (kw >= 71 && kw <= 100) return 13;
-  return 13;
-}
-
 async function insertInstallationPricing(queryRunner: QueryRunner): Promise<void> {
   const installationData = [
     {
@@ -2434,7 +2449,6 @@ async function insertInstallationPricing(queryRunner: QueryRunner): Promise<void
       installation_labor: data.labor,
       msedcl_charges: data.msedcl,
       loading_unloading: data.loading,
-      profitability_percent: getProfitabilityPercent(data.kw),
     });
 
     await queryRunner.query(
@@ -2538,12 +2552,11 @@ async function insertSubsidyConfigurations(queryRunner: QueryRunner): Promise<vo
 // =====================================================
 async function insertQuoteConfiguration(queryRunner: QueryRunner): Promise<void> {
   const gstConfig = JSON.stringify({
-    rate1: 12,
+    rate1: 5,
     rate1Percentage: 70,
     rate2: 18,
     rate2Percentage: 30,
   });
-  const wattageRounding = JSON.stringify({ roundTo: 10, roundUpThreshold: 5 });
   const paymentMilestones = JSON.stringify([
     { stage: 'advance', name: 'Advance', percentage: 10, order: 1 },
     { stage: 'installation_complete', name: 'Installation Complete', percentage: 85, order: 2 },
@@ -2551,8 +2564,8 @@ async function insertQuoteConfiguration(queryRunner: QueryRunner): Promise<void>
   ]);
 
   await queryRunner.query(
-    `INSERT INTO quote_configurations (id, organization_id, default_validity_days, max_versions, default_completion_weeks, gst_config, wattage_rounding, payment_milestones, show_inventory_stock, min_profit_margin_percent, is_active, notes, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+    `INSERT INTO quote_configurations (id, organization_id, default_validity_days, max_versions, default_completion_weeks, gst_config, payment_milestones, show_inventory_stock, is_active, notes, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
     ON CONFLICT DO NOTHING`,
     [
       uuidv4(),
@@ -2561,10 +2574,8 @@ async function insertQuoteConfiguration(queryRunner: QueryRunner): Promise<void>
       3,
       4,
       gstConfig,
-      wattageRounding,
       paymentMilestones,
       true,
-      15,
       true,
       'Default quote configuration for OneOhm EPC',
     ],

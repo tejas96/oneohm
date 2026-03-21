@@ -4,7 +4,7 @@ import {
   MilestoneType,
   type MilestoneDeliverable,
 } from '@oneohm-epc/shared/types';
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 
 /**
  * Milestone Response DTO
@@ -79,6 +79,7 @@ export class MilestoneResponseDto {
     type: 'array',
   })
   @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   deliverables?: MilestoneDeliverable[];
 
   @ApiProperty({ example: '2025-01-15T10:30:00Z' })

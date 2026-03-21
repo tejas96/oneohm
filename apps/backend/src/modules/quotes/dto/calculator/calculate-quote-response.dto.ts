@@ -244,23 +244,55 @@ export class SubsidyBreakdownDto {
 }
 
 /**
+ * Individual subsidy scheme result (for multi-subsidy support)
+ */
+export class SubsidySchemeResultDto {
+  @ApiProperty({ description: 'Subsidy configuration ID' })
+  schemeId!: string;
+
+  @ApiProperty({ description: 'Scheme name', example: 'PM Surya Ghar' })
+  schemeName!: string;
+
+  @ApiProperty({ description: 'Eligible kW for this scheme', example: 3 })
+  eligibleKw!: number;
+
+  @ApiProperty({ description: 'Subsidy amount from this scheme in INR', example: 78000 })
+  amount!: number;
+
+  @ApiPropertyOptional({ type: [SubsidyBreakdownDto], description: 'Breakdown by tier' })
+  breakdown?: SubsidyBreakdownDto[];
+}
+
+/**
  * Calculated subsidy details
  */
 export class CalculatedSubsidyDto {
   @ApiProperty({ description: 'Whether subsidy is applicable', example: true })
   isApplicable!: boolean;
 
-  @ApiPropertyOptional({ description: 'Scheme name', example: 'PM Surya Ghar' })
+  @ApiPropertyOptional({
+    description: 'Scheme name (deprecated, use schemes[])',
+    example: 'PM Surya Ghar',
+  })
   schemeName?: string;
 
-  @ApiPropertyOptional({ description: 'Eligible system size for subsidy in kW', example: 3 })
+  @ApiPropertyOptional({ description: 'Eligible kW (deprecated, use schemes[])', example: 3 })
   eligibleKw?: number;
 
   @ApiProperty({ description: 'Total subsidy amount in INR', example: 78000 })
   amount!: number;
 
-  @ApiPropertyOptional({ type: [SubsidyBreakdownDto], description: 'Breakdown by tier' })
+  @ApiPropertyOptional({
+    type: [SubsidyBreakdownDto],
+    description: 'Breakdown by tier (deprecated, use schemes[].breakdown)',
+  })
   breakdown?: SubsidyBreakdownDto[];
+
+  @ApiPropertyOptional({
+    type: [SubsidySchemeResultDto],
+    description: 'Per-scheme subsidy results (multi-subsidy)',
+  })
+  schemes?: SubsidySchemeResultDto[];
 }
 
 /**
@@ -271,12 +303,15 @@ export class PricingSummaryDto {
   basePrice!: number;
 
   @ApiProperty({
-    description: 'GST at 5% on solar equipment (panels + inverters) in INR',
+    description: 'GST at rate1% on equipment portion (configured split) in INR',
     example: 10500,
   })
   gst5Amount!: number;
 
-  @ApiProperty({ description: 'GST at 18% on 30% of base in INR', example: 13500 })
+  @ApiProperty({
+    description: 'GST at rate2% on services portion (configured split) in INR',
+    example: 13500,
+  })
   gst18Amount!: number;
 
   @ApiProperty({ description: 'Total GST in INR', example: 34500 })

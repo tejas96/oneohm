@@ -59,17 +59,12 @@ export function CreatableCombobox({
     if (!query) return options;
     return options.filter((option) => {
       const label = option.label ?? option.value;
-      return (
-        label.toLowerCase().includes(query) || option.value.toLowerCase().includes(query)
-      );
+      return label.toLowerCase().includes(query) || option.value.toLowerCase().includes(query);
     });
   }, [options, query]);
 
   const hasExactMatch = React.useMemo(
-    () =>
-      options.some(
-        (option) => option.value.toLowerCase() === inputValue.trim().toLowerCase(),
-      ),
+    () => options.some((option) => option.value.toLowerCase() === inputValue.trim().toLowerCase()),
     [options, inputValue],
   );
 
@@ -117,10 +112,7 @@ export function CreatableCombobox({
           />
         </div>
       </PopoverAnchor>
-      <PopoverContent
-        align="start"
-        className="p-0 w-(--radix-popover-trigger-width)"
-      >
+      <PopoverContent align="start" className="p-0 w-(--radix-popover-trigger-width)">
         <Command shouldFilter={false}>
           <CommandList>
             {showCreate && (

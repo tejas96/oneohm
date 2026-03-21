@@ -14,8 +14,15 @@ export class ProductTypeRepository {
 
   async findAll(
     organizationId: string,
-    filters?: { isActive?: boolean; search?: string },
-  ): Promise<ProductTypeEntity[]> {
+    filters?: {
+      isActive?: boolean;
+      search?: string;
+      page?: number;
+      limit?: number;
+      sortBy?: string;
+      sortOrder?: 'ASC' | 'DESC';
+    },
+  ): Promise<{ data: ProductTypeEntity[]; total: number }> {
     const query = this.repository
       .createQueryBuilder('productType')
       .leftJoinAndSelect('productType.attributes', 'attributes')
@@ -32,10 +39,26 @@ export class ProductTypeRepository {
       });
     }
 
-    return query
-      .orderBy('productType.sort_order', 'ASC')
-      .addOrderBy('productType.name', 'ASC')
-      .getMany();
+    const allowedSortFields: Record<string, string> = {
+      name: 'productType.name',
+      sortOrder: 'productType.sort_order',
+      defaultGstRate: 'productType.default_gst_rate',
+      createdAt: 'productType.created_at',
+      updatedAt: 'productType.updated_at',
+    };
+    const sortField =
+      (filters?.sortBy && allowedSortFields[filters.sortBy]) ?? 'productType.sort_order';
+    const sortOrder = filters?.sortOrder ?? 'ASC';
+    query.orderBy(sortField, sortOrder).addOrderBy('productType.name', 'ASC');
+
+    const page = filters?.page ?? 1;
+    const limit = filters?.limit ?? 20;
+    const [data, total] = await query
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
   }
 
   async findById(id: string, organizationId: string): Promise<ProductTypeEntity | null> {
@@ -47,7 +70,7 @@ export class ProductTypeRepository {
 
   async findByCode(code: string, organizationId: string): Promise<ProductTypeEntity | null> {
     return this.repository.findOne({
-      where: { code, organizationId, deletedAt: IsNull() },
+      where: { code, organizationId, deletedAt: IsNull(), isActive: true },
       relations: ['attributes'],
     });
   }

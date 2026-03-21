@@ -67,7 +67,14 @@ type BaseFieldProps = CommonExtras &
 type AutocompleteModeProps = CommonExtras &
   Omit<
     AutocompleteProps<SearchOption, false, boolean, boolean>,
-    'renderInput' | 'options' | 'value' | 'onChange' | 'inputValue' | 'onInputChange' | 'loading' | 'disableClearable'
+    | 'renderInput'
+    | 'options'
+    | 'value'
+    | 'onChange'
+    | 'inputValue'
+    | 'onInputChange'
+    | 'loading'
+    | 'disableClearable'
   > & {
     mode: 'autocomplete';
     options: SearchOption[];
@@ -115,7 +122,13 @@ const MUIInputInner = (
       )}
       {showClear && (
         <InputAdornment position="end">
-          <IconButton aria-label="Clear" size="small" onClick={onClear} disabled={disabled} edge="end">
+          <IconButton
+            aria-label="Clear"
+            size="small"
+            onClick={onClear}
+            disabled={disabled}
+            edge="end"
+          >
             <CloseIcon fontSize="small" />
           </IconButton>
         </InputAdornment>
@@ -123,8 +136,12 @@ const MUIInputInner = (
       {endIcon && (
         <InputAdornment position="end">
           {onEndIconClick ? (
-            <IconButton size="small" onClick={onEndIconClick} edge="end">{endIcon}</IconButton>
-          ) : endIcon}
+            <IconButton size="small" onClick={onEndIconClick} edge="end">
+              {endIcon}
+            </IconButton>
+          ) : (
+            endIcon
+          )}
         </InputAdornment>
       )}
       {existing}
@@ -145,20 +162,40 @@ const MUIInputInner = (
   if (props.mode === 'autocomplete') {
     /* eslint-disable @typescript-eslint/no-unused-vars -- strip CommonExtras from rest */
     const {
-      mode, error: ce, success: cs, startIcon: csi, endIcon: cei,
-      onEndIconClick: coe, loading: cl, clearable: ccl, onClear: coc,
-      step: cst, min: cmn, max: cmx,
-      fieldLabel: cfl, required: creq, tooltip: ctt,
-      options, value, onChange,
-      getOptionLabel = defaultGetOptionLabel, isOptionEqualToValue,
-      freeSolo = false, inputValue, onInputChange,
-      noOptionsText, loadingText, textFieldProps, disableClearable,
+      mode,
+      error: ce,
+      success: cs,
+      startIcon: csi,
+      endIcon: cei,
+      onEndIconClick: coe,
+      loading: cl,
+      clearable: ccl,
+      onClear: coc,
+      step: cst,
+      min: cmn,
+      max: cmx,
+      fieldLabel: cfl,
+      required: creq,
+      tooltip: ctt,
+      options,
+      value,
+      onChange,
+      getOptionLabel = defaultGetOptionLabel,
+      isOptionEqualToValue,
+      freeSolo = false,
+      inputValue,
+      onInputChange,
+      noOptionsText,
+      loadingText,
+      textFieldProps,
+      disableClearable,
       ...autocompleteProps
     } = props;
     /* eslint-enable @typescript-eslint/no-unused-vars */
 
     const tfProps = textFieldProps ?? {};
-    const color: TextFieldProps['color'] = tfProps.color ?? (hasError ? 'error' : success ? 'success' : 'primary');
+    const color: TextFieldProps['color'] =
+      tfProps.color ?? (hasError ? 'error' : success ? 'success' : 'primary');
     const helperText = tfProps.helperText ?? errorMsg ?? successMsg;
     const mergedRef = mergeRefs<HTMLInputElement>(tfProps.inputRef, ref);
 
@@ -193,10 +230,16 @@ const MUIInputInner = (
                 ...params.InputProps,
                 ...tfProps.InputProps,
                 startAdornment: buildStart(
-                  <>{tfProps.InputProps?.startAdornment}{params.InputProps.startAdornment}</>,
+                  <>
+                    {tfProps.InputProps?.startAdornment}
+                    {params.InputProps.startAdornment}
+                  </>,
                 ),
                 endAdornment: buildEnd(
-                  <>{tfProps.InputProps?.endAdornment}{params.InputProps.endAdornment}</>,
+                  <>
+                    {tfProps.InputProps?.endAdornment}
+                    {params.InputProps.endAdornment}
+                  </>,
                   false,
                 ),
               }}
@@ -211,19 +254,32 @@ const MUIInputInner = (
   /* ---- Text / Select mode ---- */
   /* eslint-disable @typescript-eslint/no-unused-vars -- strip label props from TextField rest */
   const {
-    mode, options, step, min, max,
-    InputProps: inputProps, inputProps: nativeInputProps,
-    children, color, helperText, inputRef,
-    fieldLabel: stripLabel, required: stripReq, tooltip: stripTip,
+    mode,
+    options,
+    step,
+    min,
+    max,
+    InputProps: inputProps,
+    inputProps: nativeInputProps,
+    children,
+    color,
+    helperText,
+    inputRef,
+    fieldLabel: stripLabel,
+    required: stripReq,
+    tooltip: stripTip,
     ref: registerRef,
     ...textFieldProps
   } = props as BaseFieldProps & { ref?: React.Ref<HTMLInputElement> };
   /* eslint-enable @typescript-eslint/no-unused-vars */
 
   const selectOptions = mode === 'select' ? options : undefined;
-  const resolvedColor: TextFieldProps['color'] = color ?? (hasError ? 'error' : success ? 'success' : 'primary');
+  const resolvedColor: TextFieldProps['color'] =
+    color ?? (hasError ? 'error' : success ? 'success' : 'primary');
   const resolvedHelper = helperText ?? errorMsg ?? successMsg;
-  const hasVal = textFieldProps.value !== undefined && textFieldProps.value !== null &&
+  const hasVal =
+    textFieldProps.value !== undefined &&
+    textFieldProps.value !== null &&
     !(typeof textFieldProps.value === 'string' && textFieldProps.value.length === 0);
   const showClear = Boolean(clearable) && Boolean(onClear) && hasVal;
   const mergedRef = mergeRefs<HTMLInputElement>(inputRef, ref, registerRef);
@@ -231,13 +287,20 @@ const MUIInputInner = (
   const resolvedChildren =
     mode === 'select' && selectOptions && selectOptions.length > 0 && !children
       ? selectOptions.map((o) => (
-          <MenuItem key={o.value} value={o.value} disabled={o.disabled}>{o.label}</MenuItem>
+          <MenuItem key={o.value} value={o.value} disabled={o.disabled}>
+            {o.label}
+          </MenuItem>
         ))
       : children;
 
   return (
     <div>
-      <MUIFieldLabel fieldLabel={fieldLabel} required={labelRequired} tooltip={tooltip} htmlFor={textFieldProps.id} />
+      <MUIFieldLabel
+        fieldLabel={fieldLabel}
+        required={labelRequired}
+        tooltip={tooltip}
+        htmlFor={textFieldProps.id}
+      />
       <TextField
         {...textFieldProps}
         inputRef={mergedRef}

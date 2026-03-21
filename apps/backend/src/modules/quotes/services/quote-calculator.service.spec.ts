@@ -160,17 +160,14 @@ describe('QuoteCalculatorService', () => {
     maxVersions: 3,
     defaultCompletionWeeks: 4,
     gstConfig: {
-      rate1: 12,
+      rate1: 5,
       rate1Percentage: 70,
       rate2: 18,
       rate2Percentage: 30,
     },
-    wattageRounding: {
-      roundTo: 10,
-      roundUpThreshold: 5,
-    },
     paymentMilestones: [],
     showInventoryStock: true,
+    profitMarginTiers: [],
   };
 
   beforeEach(async () => {
@@ -384,26 +381,6 @@ describe('QuoteCalculatorService', () => {
     });
   });
 
-  describe('wattage rounding', () => {
-    it('should round 547W to 550W (7 >= 5)', () => {
-      const config = { roundTo: 10, roundUpThreshold: 5 };
-      const result = (service as any).roundWattage(547, config);
-      expect(result).toBe(550);
-    });
-
-    it('should round 544W to 540W (4 < 5)', () => {
-      const config = { roundTo: 10, roundUpThreshold: 5 };
-      const result = (service as any).roundWattage(544, config);
-      expect(result).toBe(540);
-    });
-
-    it('should round 545W to 550W (5 >= 5)', () => {
-      const config = { roundTo: 10, roundUpThreshold: 5 };
-      const result = (service as any).roundWattage(545, config);
-      expect(result).toBe(550);
-    });
-  });
-
   describe('subsidy calculation', () => {
     it('should calculate tiered subsidy correctly for 3KW', async () => {
       jest
@@ -607,11 +584,10 @@ describe('QuoteCalculatorService', () => {
         panelWithNominal,
         3, // 3KW
         mockOrganizationId,
-        mockQuoteConfig,
+        ProjectType.RESIDENTIAL,
       );
 
-      // 545W rounded (545 % 10 = 5, >= threshold 5) = 550W
-      expect(result.wattagePerPanel).toBe(550);
+      expect(result.wattagePerPanel).toBe(545);
     });
   });
 });

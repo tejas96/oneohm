@@ -5,12 +5,7 @@ import { Controller, type Control } from 'react-hook-form';
 
 import type { ProductFormData } from '../schemas/product.schema';
 
-import {
-  MUIInput,
-  MUISelect,
-  MUISwitch,
-  Typography,
-} from '@/components/ui';
+import { MUIInput, MUISelect, MUISwitch, Typography } from '@/components/ui';
 import type { ProductTypeAttribute } from '@/lib/hooks/resources';
 
 interface ProductSpecificationsFieldsProps {

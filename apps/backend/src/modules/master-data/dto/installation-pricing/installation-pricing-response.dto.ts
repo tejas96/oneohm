@@ -35,6 +35,7 @@ export class InstallationPricingResponseDto {
     },
   })
   @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   costComponents!: InstallationCostComponents;
 
   @ApiProperty({ example: 35 })

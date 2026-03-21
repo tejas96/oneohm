@@ -8,7 +8,7 @@
 import { PHASE_TYPE_LABELS } from '@oneohm-epc/shared/constants';
 
 import { applyPreGstDiscount } from '../pricing-utils';
-import type { QuotePdfData } from '../types';
+import type { PdfCompanyInfo, QuotePdfData, QuotePdfOrgConfig } from '../types';
 
 import { formatCurrency, formatNumber } from '@/lib/utils';
 
@@ -18,6 +18,110 @@ function formatDate(dateString: string): string {
     month: 'short',
     year: 'numeric',
   });
+}
+
+type ResolvedPdfCompany = Required<
+  Pick<
+    PdfCompanyInfo,
+    | 'companyName'
+    | 'address'
+    | 'phone'
+    | 'email'
+    | 'bankName'
+    | 'bankAccountNumber'
+    | 'bankIfsc'
+    | 'workmanshipWarrantyYears'
+    | 'cancellationFeePercent'
+    | 'latePaymentInterestPercent'
+  >
+> &
+  Required<Pick<PdfCompanyInfo, 'legalEntityName' | 'bankAccountName' | 'tagline'>> &
+  Pick<PdfCompanyInfo, 'bankBranch'>;
+
+const PDF_COMPANY_DEFAULTS: ResolvedPdfCompany = {
+  companyName: 'OneOhm',
+  legalEntityName: 'OneOhm Sustainable Green Energy Pvt Ltd',
+  tagline: 'Sustainable Green Energy',
+  address: 'Plot No. 93, Vasantdada Industrial Estate<br>Near Old RTO Office, Sangli - 416416',
+  phone: '+91 9225099702',
+  email: 'info@oneohm.co',
+  bankAccountName: 'Oneohm Sustainable Green Energy Pvt Ltd',
+  bankName: 'State Bank of India',
+  bankAccountNumber: '43432696314',
+  bankIfsc: 'SBIN0001501',
+  workmanshipWarrantyYears: 5,
+  cancellationFeePercent: 5,
+  latePaymentInterestPercent: 1.25,
+};
+
+function resolvePdfCompany(
+  ...overrides: (Partial<PdfCompanyInfo> | undefined)[]
+): ResolvedPdfCompany {
+  let out: ResolvedPdfCompany = { ...PDF_COMPANY_DEFAULTS };
+  for (const p of overrides) {
+    if (p) {
+      out = { ...out, ...p };
+    }
+  }
+  out.legalEntityName = out.legalEntityName || PDF_COMPANY_DEFAULTS.legalEntityName;
+  out.bankAccountName = out.bankAccountName || PDF_COMPANY_DEFAULTS.bankAccountName;
+  out.tagline = out.tagline || PDF_COMPANY_DEFAULTS.tagline;
+  out.email = out.email || PDF_COMPANY_DEFAULTS.email;
+  out.bankName = out.bankName || PDF_COMPANY_DEFAULTS.bankName;
+  out.bankAccountNumber = out.bankAccountNumber || PDF_COMPANY_DEFAULTS.bankAccountNumber;
+  out.bankIfsc = out.bankIfsc || PDF_COMPANY_DEFAULTS.bankIfsc;
+  out.workmanshipWarrantyYears =
+    out.workmanshipWarrantyYears ?? PDF_COMPANY_DEFAULTS.workmanshipWarrantyYears;
+  out.cancellationFeePercent =
+    out.cancellationFeePercent ?? PDF_COMPANY_DEFAULTS.cancellationFeePercent;
+  out.latePaymentInterestPercent =
+    out.latePaymentInterestPercent ?? PDF_COMPANY_DEFAULTS.latePaymentInterestPercent;
+  return out;
+}
+
+function normalizeOrgConfigForPdf(
+  org?: Partial<QuotePdfOrgConfig>,
+): Partial<PdfCompanyInfo> | undefined {
+  if (!org) return undefined;
+  const partial: Partial<PdfCompanyInfo> = {};
+  if (org.companyName != null) partial.companyName = org.companyName;
+  if (org.companyAddress != null) partial.address = org.companyAddress;
+  if (org.companyPhone != null) partial.phone = org.companyPhone;
+  if (org.companyEmail != null) partial.email = org.companyEmail;
+  if (org.legalEntityName != null) partial.legalEntityName = org.legalEntityName;
+  if (org.tagline != null) partial.tagline = org.tagline;
+  if (org.bankName != null) partial.bankName = org.bankName;
+  if (org.bankAccount != null) partial.bankAccountNumber = org.bankAccount;
+  if (org.bankIfsc != null) partial.bankIfsc = org.bankIfsc;
+  if (org.bankBranch != null) partial.bankBranch = org.bankBranch;
+  if (org.bankAccountName != null) partial.bankAccountName = org.bankAccountName;
+  const workmanship = org.warrantyWorkmanshipYears ?? org.workmanshipWarrantyYears ?? undefined;
+  if (workmanship != null) partial.workmanshipWarrantyYears = workmanship;
+  if (org.cancellationFeePercent != null) {
+    partial.cancellationFeePercent = org.cancellationFeePercent;
+  } else if (org.cancellationFee != null) {
+    partial.cancellationFeePercent = org.cancellationFee;
+  }
+  if (org.latePaymentRatePercent != null) {
+    partial.latePaymentInterestPercent = org.latePaymentRatePercent;
+  } else if (org.latePaymentRate != null) {
+    partial.latePaymentInterestPercent = org.latePaymentRate;
+  }
+  return Object.keys(partial).length > 0 ? partial : undefined;
+}
+
+function formatBomPanelWarranty(panel: {
+  productWarrantyYears?: number;
+  performanceWarrantyYears?: number;
+}): string {
+  const prod = panel.productWarrantyYears;
+  const perf = panel.performanceWarrantyYears;
+  const hasProd = prod != null && prod > 0;
+  const hasPerf = perf != null && perf > 0;
+  if (hasProd && hasPerf) return `${prod}Y Product + ${perf}Y Performance`;
+  if (hasProd) return `${prod}Y Product`;
+  if (hasPerf) return `${perf}Y Performance`;
+  return 'As per manufacturer';
 }
 
 // ============================================================================
@@ -34,7 +138,11 @@ export function generateQuoteHtml(data: QuotePdfData): string {
     paymentMilestones,
     discountAmount = 0,
     gstConfig,
+    companyInfo,
+    orgConfig,
   } = data;
+
+  const co = resolvePdfCompany(companyInfo, normalizeOrgConfigForPdf(orgConfig));
 
   const totalPanels = calculation.panels.reduce((sum, p) => sum + p.quantity, 0);
   const dcrPanels = calculation.panels.filter((p) => p.isDcr);
@@ -65,11 +173,7 @@ export function generateQuoteHtml(data: QuotePdfData): string {
                 <div class="bom-item-specs">
                   ${panel.brand} ${panel.name} | ${panel.wattagePerPanel}Wp per panel${panel.isDcr ? '<br>DCR Compliant - Subsidy Eligible' : ''}
                 </div>
-                ${
-                  panel.productWarrantyYears || panel.performanceWarrantyYears
-                    ? `<span class="bom-warranty">${panel.productWarrantyYears || 12}Y Product + ${panel.performanceWarrantyYears || 25}Y Performance</span>`
-                    : ''
-                }
+                <span class="bom-warranty">${formatBomPanelWarranty(panel)}</span>
               </td>
               <td>${panel.quantity} nos</td>
             </tr>`,
@@ -86,7 +190,11 @@ export function generateQuoteHtml(data: QuotePdfData): string {
                   ${inv.brand} ${inv.name} | ${PHASE_TYPE_LABELS[calculation.systemConfig.phaseType] || 'N/A'} | ${inv.capacityKw} kWp capacity<br>
                   WiFi/GSM monitoring
                 </div>
-                ${inv.productWarrantyYears ? `<span class="bom-warranty">${inv.productWarrantyYears}Y OEM Warranty</span>` : ''}
+                <span class="bom-warranty">${
+                  inv.productWarrantyYears != null && inv.productWarrantyYears > 0
+                    ? `${inv.productWarrantyYears}Y OEM Warranty`
+                    : 'As per manufacturer'
+                }</span>
               </td>
               <td>${inv.quantity} nos</td>
             </tr>`,
@@ -107,23 +215,9 @@ export function generateQuoteHtml(data: QuotePdfData): string {
           )
           .join('')
       : `
-          <div class="payment-milestone">
-            <div class="milestone-step">Step 1 — Advance</div>
-            <div class="milestone-percent">10%</div>
-            <div class="milestone-amount">${formatCurrency(Math.round(adjustedFinalPrice * 0.1))}</div>
-            <div class="milestone-desc">On project confirmation.</div>
-          </div>
-          <div class="payment-milestone">
-            <div class="milestone-step">Step 2 — Installation</div>
-            <div class="milestone-percent">85%</div>
-            <div class="milestone-amount">${formatCurrency(Math.round(adjustedFinalPrice * 0.85))}</div>
-            <div class="milestone-desc">On installation complete.</div>
-          </div>
-          <div class="payment-milestone">
-            <div class="milestone-step">Step 3 — Commissioning</div>
-            <div class="milestone-percent">5%</div>
-            <div class="milestone-amount">${formatCurrency(Math.round(adjustedFinalPrice * 0.05))}</div>
-            <div class="milestone-desc">After net meter installation & commissioning.</div>
+          <div class="payment-milestone payment-milestone--agreement">
+            <div class="milestone-step">Payment schedule</div>
+            <div class="milestone-desc">Payment terms as per agreement</div>
           </div>`;
 
   return `<!DOCTYPE html>
@@ -147,8 +241,8 @@ ${getQuoteStyles()}
           </svg>
         </div>
         <div class="brand-text">
-          <h1>OneOhm</h1>
-          <p>Sustainable Green Energy</p>
+          <h1>${co.companyName}</h1>
+          <p>${co.tagline}</p>
         </div>
       </div>
       <div class="doc-meta">
@@ -163,12 +257,11 @@ ${getQuoteStyles()}
       <div class="parties">
         <div class="party">
           <h3>From</h3>
-          <div class="party-name">OneOhm Sustainable Green Energy Pvt Ltd</div>
+          <div class="party-name">${co.legalEntityName}</div>
           <div class="party-details">
-            Plot No. 93, Vasantdada Industrial Estate<br>
-            Near Old RTO Office, Sangli - 416416<br>
-            <strong>Phone:</strong> +91 9225099702<br>
-            <strong>Email:</strong> info@oneohm.co
+            ${co.address}<br>
+            <strong>Phone:</strong> ${co.phone}<br>
+            <strong>Email:</strong> ${co.email}
           </div>
         </div>
         <div class="party">
@@ -201,7 +294,7 @@ ${getQuoteStyles()}
             <div class="stat-label">Solar Panels</div>
           </div>
           <div class="system-stat">
-            <div class="stat-value">${calculation.completionWeeks || 16} <span class="stat-unit">wks</span></div>
+            <div class="stat-value">${calculation.completionWeeks} <span class="stat-unit">wks</span></div>
             <div class="stat-label">Timeline</div>
           </div>
         </div>
@@ -230,11 +323,11 @@ ${getQuoteStyles()}
                 : ''
             }
             <tr>
-              <td>GST @ ${gstConfig.rate1}% (Equipment)</td>
+              <td>GST on Equipment (${gstConfig.rate1}%)</td>
               <td>${formatCurrency(displayGst5Amount)}</td>
             </tr>
             <tr>
-              <td>GST @ ${gstConfig.rate2}% (Services)</td>
+              <td>GST on Services (${gstConfig.rate2}%)</td>
               <td>${formatCurrency(displayGst18Amount)}</td>
             </tr>
             <tr class="subtotal">
@@ -254,9 +347,29 @@ ${getQuoteStyles()}
           ? `<section class="section">
         <div class="subsidy-box">
           <div class="subsidy-header">
-            <span class="subsidy-badge">${calculation.subsidy.schemeName || 'PM Surya Ghar'}</span>
+            ${
+              (calculation.subsidy.schemes ?? []).length > 0
+                ? calculation.subsidy
+                    .schemes!.map(
+                      (s: { schemeName?: string }) =>
+                        `<span class="subsidy-badge">${s.schemeName ?? 'Government Subsidy'}</span>`,
+                    )
+                    .join(' ')
+                : `<span class="subsidy-badge">${calculation.subsidy.schemeName ?? 'Government Subsidy'}</span>`
+            }
             <span class="subsidy-title">Government Subsidy Benefit</span>
           </div>
+          ${
+            (calculation.subsidy.schemes ?? []).length > 1
+              ? `<table class="pricing-table" style="margin-bottom: 12px;">
+              <thead><tr><th style="text-align:left">Scheme</th><th>Eligible kW</th><th>Amount</th></tr></thead>
+              <tbody>
+                ${calculation.subsidy.schemes!.map((s: { schemeName?: string; eligibleKw?: number; amount?: number }) => `<tr><td style="text-align:left">${s.schemeName ?? 'Government Subsidy'}</td><td>${s.eligibleKw ?? '-'} kW</td><td>${formatCurrency(s.amount ?? 0)}</td></tr>`).join('')}
+                <tr class="total"><td style="text-align:left"><strong>Total Subsidy</strong></td><td></td><td><strong>${formatCurrency(calculation.subsidy.amount)}</strong></td></tr>
+              </tbody>
+            </table>`
+              : ''
+          }
           <div class="subsidy-calculation">
             <div class="subsidy-item">
               <div class="subsidy-value">${formatCurrency(adjustedFinalPrice)}</div>
@@ -274,7 +387,7 @@ ${getQuoteStyles()}
             </div>
           </div>
           <p class="subsidy-note">
-            * Subsidy applicable for residential projects only. Amount disbursed via Direct Benefit Transfer after commissioning. Actual amount may vary based on final wattage. OneOhm facilitates the process but does not guarantee subsidy approval.
+            * Subsidy applicable for residential projects only. Amount disbursed via Direct Benefit Transfer after commissioning. Actual amount may vary based on final wattage. ${co.companyName} facilitates the process but does not guarantee subsidy approval.
           </p>
         </div>
       </section>`
@@ -352,12 +465,12 @@ ${getQuoteStyles()}
         <h2 class="section-title">Terms & Conditions</h2>
         <div class="terms-grid">
           <div class="terms-block">
-            <h4>OneOhm Scope of Work</h4>
+            <h4>${co.companyName} Scope of Work</h4>
             <ul>
               <li>Site survey, design & shadow analysis</li>
               <li>Supply & installation of all equipment</li>
               <li>MSEDCL application & net metering</li>
-              <li>5-year free workmanship maintenance</li>
+              <li>${co.workmanshipWarrantyYears}-year free workmanship maintenance</li>
               <li>Quarterly maintenance visits</li>
             </ul>
           </div>
@@ -384,9 +497,9 @@ ${getQuoteStyles()}
             <h4>Cancellation Policy</h4>
             <ul>
               <li>Free within 7 days of advance</li>
-              <li>After 7 days: 5% fee + incurred costs</li>
+              <li>After 7 days: ${co.cancellationFeePercent}% fee + incurred costs</li>
               <li>After dispatch: Full forfeiture</li>
-              <li>Late payment: 1.25% monthly interest</li>
+              <li>Late payment: ${co.latePaymentInterestPercent}% monthly interest</li>
             </ul>
           </div>
         </div>
@@ -395,16 +508,21 @@ ${getQuoteStyles()}
       <section class="section">
         <h2 class="section-title">Payment Details</h2>
         <div class="bank-info">
-          <div class="bank-field"><label>Account Name</label><span>Oneohm Sustainable Green Energy Pvt Ltd</span></div>
-          <div class="bank-field"><label>Bank</label><span>State Bank of India</span></div>
-          <div class="bank-field"><label>Account No.</label><span>43432696314</span></div>
-          <div class="bank-field"><label>IFSC</label><span>SBIN0001501</span></div>
+          <div class="bank-field"><label>Account Name</label><span>${co.bankAccountName}</span></div>
+          <div class="bank-field"><label>Bank</label><span>${co.bankName}</span></div>
+          ${
+            co.bankBranch
+              ? `<div class="bank-field"><label>Branch</label><span>${co.bankBranch}</span></div>`
+              : ''
+          }
+          <div class="bank-field"><label>Account No.</label><span>${co.bankAccountNumber}</span></div>
+          <div class="bank-field"><label>IFSC</label><span>${co.bankIfsc}</span></div>
         </div>
       </section>
 
       <div class="signatures">
         <div class="signature-box">
-          <div class="signature-label">For OneOhm Sustainable Green Energy</div>
+          <div class="signature-label">For ${co.legalEntityName}</div>
           <div class="signature-name">Authorized Signatory</div>
         </div>
         <div class="signature-box">
@@ -423,5 +541,5 @@ ${getQuoteStyles()}
 // ============================================================================
 
 export function getQuoteStyles(): string {
-  return `:root{--primary:#16a34a;--primary-dark:#15803d;--primary-light:#22c55e;--primary-50:#f0fdf4;--primary-100:#dcfce7;--secondary:#1e40af;--accent:#f59e0b;--gray-50:#f9fafb;--gray-100:#f3f4f6;--gray-200:#e5e7eb;--gray-300:#d1d5db;--gray-400:#9ca3af;--gray-500:#6b7280;--gray-600:#4b5563;--gray-700:#374151;--gray-800:#1f2937;--gray-900:#111827;--success:#059669;--warning:#d97706;--error:#dc2626;--font-main:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--radius-sm:4px;--radius-md:8px;--radius-lg:12px;--shadow-sm:0 1px 2px rgba(0,0,0,0.05);--shadow-md:0 4px 6px -1px rgba(0,0,0,0.1)}*{margin:0;padding:0;box-sizing:border-box}html{font-size:14px;-webkit-font-smoothing:antialiased}body{font-family:var(--font-main);color:var(--gray-800);background:var(--gray-50);line-height:1.5}.document{max-width:800px;margin:0 auto;background:white}@media print{.document{margin:0;box-shadow:none;max-width:100%}body{background:white}}.doc-header{display:flex;justify-content:space-between;align-items:flex-start;padding:32px 40px;border-bottom:3px solid var(--primary)}.brand{display:flex;align-items:center;gap:12px}.brand-icon{width:48px;height:48px;background:var(--primary);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center}.brand-icon svg{width:28px;height:28px;fill:white}.brand-text h1{font-size:1.5rem;font-weight:800;color:var(--gray-900);letter-spacing:-0.5px}.brand-text p{font-size:.75rem;color:var(--gray-500);font-weight:500;text-transform:uppercase;letter-spacing:1px}.doc-meta{text-align:right}.doc-type{font-size:.65rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px}.doc-number{font-size:1.25rem;font-weight:700;color:var(--gray-900);margin-bottom:8px}.doc-date{font-size:.875rem;color:var(--gray-600)}.validity-tag{display:inline-block;margin-top:8px;padding:4px 12px;background:var(--primary-50);border:1px solid var(--primary-100);border-radius:var(--radius-sm);font-size:.75rem;font-weight:600;color:var(--primary-dark)}.doc-body{padding:32px 40px}.parties{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--gray-200)}.party h3{font-size:.65rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px}.party-name{font-size:1.125rem;font-weight:700;color:var(--gray-900);margin-bottom:8px}.party-details{font-size:.875rem;color:var(--gray-600);line-height:1.6}.party-details strong{color:var(--gray-700)}.section{margin-bottom:28px}.section-title{font-size:.7rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:1.5px;padding-bottom:8px;border-bottom:2px solid var(--gray-100);margin-bottom:16px}.system-overview{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}.system-stat{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-md);padding:16px;text-align:center}.system-stat.highlight{background:var(--primary-50);border-color:var(--primary-100)}.stat-value{font-size:1.75rem;font-weight:800;color:var(--gray-900);line-height:1}.system-stat.highlight .stat-value{color:var(--primary-dark)}.stat-unit{font-size:.875rem;font-weight:500;color:var(--gray-500)}.stat-label{font-size:.75rem;color:var(--gray-500);margin-top:4px;font-weight:500}.pricing-table{width:100%;border-collapse:collapse;margin-bottom:16px}.pricing-table th,.pricing-table td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--gray-100)}.pricing-table th{font-size:.7rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:1px;background:var(--gray-50)}.pricing-table td{font-size:.9375rem;color:var(--gray-700)}.pricing-table td:last-child{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}.pricing-table tr.subtotal{background:var(--gray-50)}.pricing-table tr.subtotal td{font-weight:600}.pricing-table tr.total{background:var(--primary)}.pricing-table tr.total td{color:white;font-weight:700;font-size:1rem;border-bottom:none}.subsidy-box{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a;border-radius:var(--radius-md);padding:20px 24px;margin-bottom:24px}.subsidy-header{display:flex;align-items:center;gap:8px;margin-bottom:16px}.subsidy-badge{background:var(--accent);color:white;padding:3px 10px;border-radius:var(--radius-sm);font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px}.subsidy-title{font-size:.9375rem;font-weight:700;color:var(--gray-800)}.subsidy-calculation{display:flex;align-items:center;justify-content:space-between;gap:16px}.subsidy-item{flex:1;text-align:center}.subsidy-value{font-size:1.5rem;font-weight:800;color:var(--gray-900)}.subsidy-value.green{color:var(--success)}.subsidy-label{font-size:.75rem;color:var(--gray-600);margin-top:2px}.subsidy-operator{font-size:1.25rem;font-weight:700;color:var(--gray-400)}.subsidy-note{margin-top:16px;padding-top:12px;border-top:1px dashed #d97706;font-size:.75rem;color:var(--gray-600);line-height:1.5}.payment-schedule{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.payment-milestone{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-md);padding:16px;position:relative}.payment-milestone::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--primary);border-radius:var(--radius-md) var(--radius-md) 0 0}.milestone-step{font-size:.65rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}.milestone-percent{font-size:1.5rem;font-weight:800;color:var(--gray-900)}.milestone-amount{font-size:1rem;font-weight:600;color:var(--gray-700);margin-bottom:8px}.milestone-desc{font-size:.75rem;color:var(--gray-500);line-height:1.4}.bom-table{width:100%;border-collapse:collapse}.bom-table th,.bom-table td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--gray-100);vertical-align:top}.bom-table th{font-size:.7rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:1px;background:var(--gray-50)}.bom-table td{font-size:.875rem;color:var(--gray-700)}.bom-item-name{font-weight:600;color:var(--gray-800)}.bom-item-specs{font-size:.8125rem;color:var(--gray-500);margin-top:4px;line-height:1.5}.bom-warranty{display:inline-block;padding:2px 8px;background:var(--primary-50);border-radius:var(--radius-sm);font-size:.7rem;font-weight:600;color:var(--primary-dark);margin-top:4px}.bom-category-row td{background:var(--gray-100);font-weight:700;font-size:.75rem;color:var(--gray-600);text-transform:uppercase;letter-spacing:1px;padding:8px 16px}.terms-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}.terms-block h4{font-size:.8125rem;font-weight:700;color:var(--gray-800);margin-bottom:8px;display:flex;align-items:center;gap:6px}.terms-block h4::before{content:'';width:4px;height:4px;background:var(--primary);border-radius:50%}.terms-block ul{list-style:none;font-size:.8125rem;color:var(--gray-600);line-height:1.6}.terms-block li{padding-left:16px;position:relative;margin-bottom:4px}.terms-block li::before{content:'\\2014';position:absolute;left:0;color:var(--gray-300)}.bank-info{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-md);padding:16px 20px}.bank-field label{display:block;font-size:.65rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}.bank-field span{font-size:.9375rem;font-weight:600;color:var(--gray-800)}.signatures{display:grid;grid-template-columns:repeat(2,1fr);gap:40px;margin-top:40px;padding-top:24px;border-top:1px solid var(--gray-200)}.signature-box{padding-top:60px;border-top:1px solid var(--gray-300)}.signature-label{font-size:.75rem;color:var(--gray-500);margin-bottom:4px}.signature-name{font-size:.875rem;font-weight:600;color:var(--gray-800)}`;
+  return `:root{--primary:#16a34a;--primary-dark:#15803d;--primary-light:#22c55e;--primary-50:#f0fdf4;--primary-100:#dcfce7;--secondary:#1e40af;--accent:#f59e0b;--gray-50:#f9fafb;--gray-100:#f3f4f6;--gray-200:#e5e7eb;--gray-300:#d1d5db;--gray-400:#9ca3af;--gray-500:#6b7280;--gray-600:#4b5563;--gray-700:#374151;--gray-800:#1f2937;--gray-900:#111827;--success:#059669;--warning:#d97706;--error:#dc2626;--font-main:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--radius-sm:4px;--radius-md:8px;--radius-lg:12px;--shadow-sm:0 1px 2px rgba(0,0,0,0.05);--shadow-md:0 4px 6px -1px rgba(0,0,0,0.1)}*{margin:0;padding:0;box-sizing:border-box}html{font-size:14px;-webkit-font-smoothing:antialiased}body{font-family:var(--font-main);color:var(--gray-800);background:var(--gray-50);line-height:1.5}.document{max-width:800px;margin:0 auto;background:white}@media print{.document{margin:0;box-shadow:none;max-width:100%}body{background:white}}.doc-header{display:flex;justify-content:space-between;align-items:flex-start;padding:32px 40px;border-bottom:3px solid var(--primary)}.brand{display:flex;align-items:center;gap:12px}.brand-icon{width:48px;height:48px;background:var(--primary);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center}.brand-icon svg{width:28px;height:28px;fill:white}.brand-text h1{font-size:1.5rem;font-weight:800;color:var(--gray-900);letter-spacing:-0.5px}.brand-text p{font-size:.75rem;color:var(--gray-500);font-weight:500;text-transform:uppercase;letter-spacing:1px}.doc-meta{text-align:right}.doc-type{font-size:.65rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:2px;margin-bottom:4px}.doc-number{font-size:1.25rem;font-weight:700;color:var(--gray-900);margin-bottom:8px}.doc-date{font-size:.875rem;color:var(--gray-600)}.validity-tag{display:inline-block;margin-top:8px;padding:4px 12px;background:var(--primary-50);border:1px solid var(--primary-100);border-radius:var(--radius-sm);font-size:.75rem;font-weight:600;color:var(--primary-dark)}.doc-body{padding:32px 40px}.parties{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid var(--gray-200)}.party h3{font-size:.65rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px}.party-name{font-size:1.125rem;font-weight:700;color:var(--gray-900);margin-bottom:8px}.party-details{font-size:.875rem;color:var(--gray-600);line-height:1.6}.party-details strong{color:var(--gray-700)}.section{margin-bottom:28px}.section-title{font-size:.7rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:1.5px;padding-bottom:8px;border-bottom:2px solid var(--gray-100);margin-bottom:16px}.system-overview{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}.system-stat{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-md);padding:16px;text-align:center}.system-stat.highlight{background:var(--primary-50);border-color:var(--primary-100)}.stat-value{font-size:1.75rem;font-weight:800;color:var(--gray-900);line-height:1}.system-stat.highlight .stat-value{color:var(--primary-dark)}.stat-unit{font-size:.875rem;font-weight:500;color:var(--gray-500)}.stat-label{font-size:.75rem;color:var(--gray-500);margin-top:4px;font-weight:500}.pricing-table{width:100%;border-collapse:collapse;margin-bottom:16px}.pricing-table th,.pricing-table td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--gray-100)}.pricing-table th{font-size:.7rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:1px;background:var(--gray-50)}.pricing-table td{font-size:.9375rem;color:var(--gray-700)}.pricing-table td:last-child{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}.pricing-table tr.subtotal{background:var(--gray-50)}.pricing-table tr.subtotal td{font-weight:600}.pricing-table tr.total{background:var(--primary)}.pricing-table tr.total td{color:white;font-weight:700;font-size:1rem;border-bottom:none}.subsidy-box{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a;border-radius:var(--radius-md);padding:20px 24px;margin-bottom:24px}.subsidy-header{display:flex;align-items:center;gap:8px;margin-bottom:16px}.subsidy-badge{background:var(--accent);color:white;padding:3px 10px;border-radius:var(--radius-sm);font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px}.subsidy-title{font-size:.9375rem;font-weight:700;color:var(--gray-800)}.subsidy-calculation{display:flex;align-items:center;justify-content:space-between;gap:16px}.subsidy-item{flex:1;text-align:center}.subsidy-value{font-size:1.5rem;font-weight:800;color:var(--gray-900)}.subsidy-value.green{color:var(--success)}.subsidy-label{font-size:.75rem;color:var(--gray-600);margin-top:2px}.subsidy-operator{font-size:1.25rem;font-weight:700;color:var(--gray-400)}.subsidy-note{margin-top:16px;padding-top:12px;border-top:1px dashed #d97706;font-size:.75rem;color:var(--gray-600);line-height:1.5}.payment-schedule{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.payment-milestone--agreement{grid-column:1/-1}.payment-milestone{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-md);padding:16px;position:relative}.payment-milestone::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--primary);border-radius:var(--radius-md) var(--radius-md) 0 0}.milestone-step{font-size:.65rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}.milestone-percent{font-size:1.5rem;font-weight:800;color:var(--gray-900)}.milestone-amount{font-size:1rem;font-weight:600;color:var(--gray-700);margin-bottom:8px}.milestone-desc{font-size:.75rem;color:var(--gray-500);line-height:1.4}.bom-table{width:100%;border-collapse:collapse}.bom-table th,.bom-table td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--gray-100);vertical-align:top}.bom-table th{font-size:.7rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:1px;background:var(--gray-50)}.bom-table td{font-size:.875rem;color:var(--gray-700)}.bom-item-name{font-weight:600;color:var(--gray-800)}.bom-item-specs{font-size:.8125rem;color:var(--gray-500);margin-top:4px;line-height:1.5}.bom-warranty{display:inline-block;padding:2px 8px;background:var(--primary-50);border-radius:var(--radius-sm);font-size:.7rem;font-weight:600;color:var(--primary-dark);margin-top:4px}.bom-category-row td{background:var(--gray-100);font-weight:700;font-size:.75rem;color:var(--gray-600);text-transform:uppercase;letter-spacing:1px;padding:8px 16px}.terms-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}.terms-block h4{font-size:.8125rem;font-weight:700;color:var(--gray-800);margin-bottom:8px;display:flex;align-items:center;gap:6px}.terms-block h4::before{content:'';width:4px;height:4px;background:var(--primary);border-radius:50%}.terms-block ul{list-style:none;font-size:.8125rem;color:var(--gray-600);line-height:1.6}.terms-block li{padding-left:16px;position:relative;margin-bottom:4px}.terms-block li::before{content:'\\2014';position:absolute;left:0;color:var(--gray-300)}.bank-info{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-md);padding:16px 20px}.bank-field label{display:block;font-size:.65rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}.bank-field span{font-size:.9375rem;font-weight:600;color:var(--gray-800)}.signatures{display:grid;grid-template-columns:repeat(2,1fr);gap:40px;margin-top:40px;padding-top:24px;border-top:1px solid var(--gray-200)}.signature-box{padding-top:60px;border-top:1px solid var(--gray-300)}.signature-label{font-size:.75rem;color:var(--gray-500);margin-bottom:4px}.signature-name{font-size:.875rem;font-weight:600;color:var(--gray-800)}`;
 }

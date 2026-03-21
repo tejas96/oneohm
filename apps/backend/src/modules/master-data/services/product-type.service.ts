@@ -4,15 +4,33 @@ import { QueryFailedError } from 'typeorm';
 import { ProductTypeEntity } from '../entities/product-type.entity';
 import { ProductTypeRepository } from '../repositories/product-type.repository';
 
+export interface PaginatedProductTypes {
+  data: ProductTypeEntity[];
+  meta: { page: number; limit: number; total: number; totalPages: number };
+}
+
 @Injectable()
 export class ProductTypeService {
   constructor(private readonly productTypeRepository: ProductTypeRepository) {}
 
   async findAll(
     organizationId: string,
-    filters?: { isActive?: boolean; search?: string },
-  ): Promise<ProductTypeEntity[]> {
-    return this.productTypeRepository.findAll(organizationId, filters);
+    filters?: {
+      isActive?: boolean;
+      search?: string;
+      page?: number;
+      limit?: number;
+      sortBy?: string;
+      sortOrder?: 'ASC' | 'DESC';
+    },
+  ): Promise<PaginatedProductTypes> {
+    const page = filters?.page ?? 1;
+    const limit = filters?.limit ?? 20;
+    const { data, total } = await this.productTypeRepository.findAll(organizationId, filters);
+    return {
+      data,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) || 1 },
+    };
   }
 
   async findById(id: string, organizationId: string): Promise<ProductTypeEntity> {
@@ -32,6 +50,13 @@ export class ProductTypeService {
     data: Partial<ProductTypeEntity>,
     createdBy?: string,
   ): Promise<ProductTypeEntity> {
+    if (!data.name?.trim()) {
+      throw new BadRequestException('Product type name is required');
+    }
+    if (!data.code?.trim()) {
+      throw new BadRequestException('Product type code is required');
+    }
+
     const sanitized = { ...data, createdBy };
     delete (sanitized as Record<string, unknown>).isSystem;
     delete (sanitized as Record<string, unknown>).deletedAt;
@@ -68,9 +93,7 @@ export class ProductTypeService {
         );
       }
       if (sanitized.isActive === false) {
-        throw new BadRequestException(
-          `Cannot deactivate system product type '${existing.code}'`,
-        );
+        throw new BadRequestException(`Cannot deactivate system product type '${existing.code}'`);
       }
     }
 
