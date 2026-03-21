@@ -1,13 +1,50 @@
 'use client';
 
 import { PANEL_TECHNOLOGY_LABELS } from '@oneohm-epc/shared/types';
-import { AlertTriangle, Calendar, Calculator, Download, Save, Shield, Zap } from 'lucide-react';
+import {
+  AlertTriangle,
+  Calendar,
+  Calculator,
+  Download,
+  Save,
+  Settings,
+  Shield,
+  Zap,
+} from 'lucide-react';
 
 import { applyPreGstDiscount } from '../pricing-utils';
 import type { CalculateQuoteResponse, QuoteConfigResponse } from '../types';
 
 import { Badge, Button, Card, CardContent, Skeleton, Spinner } from '@/components/ui';
-import { formatCurrency, formatCurrencyDecimal } from '@/lib/utils/format';
+import { formatCurrency, formatCurrencyDecimal, formatLabel } from '@/lib/utils';
+
+function formatPreviewPanelWarrantyLabel(calculation: CalculateQuoteResponse): string {
+  const panel =
+    calculation.panels.find(
+      (p) =>
+        (p.productWarrantyYears != null && p.productWarrantyYears > 0) ||
+        (p.performanceWarrantyYears != null && p.performanceWarrantyYears > 0),
+    ) ?? calculation.panels[0];
+  if (!panel) return 'As per manufacturer';
+  const prod = panel.productWarrantyYears;
+  const perf = panel.performanceWarrantyYears;
+  const hasProd = prod != null && prod > 0;
+  const hasPerf = perf != null && perf > 0;
+  if (hasProd && hasPerf) return `${prod}Y product · ${perf}Y performance`;
+  if (hasProd) return `${prod}Y product`;
+  if (hasPerf) return `${perf}Y performance`;
+  return 'As per manufacturer';
+}
+
+function formatSubsidyTierLine(tier: {
+  fromKw: number;
+  toKw: number;
+  kw: number;
+  ratePerKw: number;
+}): string {
+  const band = tier.fromKw === tier.toKw ? `${tier.fromKw} kW` : `${tier.fromKw}–${tier.toKw} kW`;
+  return `${band} · ${tier.kw} kW @ ${formatCurrency(tier.ratePerKw)}/kW`;
+}
 
 // ============================================================================
 // Types
@@ -19,6 +56,8 @@ export interface QuotePreviewPanelProps {
   calculationError: string | null;
   discountAmount: number;
   gstConfig: QuoteConfigResponse['gstConfig'] | null;
+  floorNumber: number;
+  distanceKm: number;
   manualDcrPanelCount: number | undefined;
   manualNonDcrPanelCount: number | undefined;
   manualInverterCount: number | undefined;
@@ -45,6 +84,8 @@ export function QuotePreviewPanel({
   calculationError,
   discountAmount,
   gstConfig,
+  floorNumber,
+  distanceKm,
   manualDcrPanelCount,
   manualNonDcrPanelCount,
   manualInverterCount,
@@ -110,7 +151,9 @@ export function QuotePreviewPanel({
 
   if (!calculation) return null;
 
-  if (!gstConfig) {
+  // A gstConfig with rate1/rate2 of exactly 0 is technically valid (zero-rated);
+  // only treat it as missing if the config object itself is absent.
+  if (gstConfig?.rate1 == null || gstConfig.rate2 == null) {
     return (
       <Card className="border-error/30">
         <CardContent className="p-4">
@@ -119,7 +162,7 @@ export function QuotePreviewPanel({
             <p className="text-sm font-medium text-error">GST Configuration Missing</p>
           </div>
           <p className="mt-1 text-xs text-foreground-secondary">
-            Quote configuration could not be loaded. Please refresh the page or contact support.
+            GST configuration is incomplete. Please configure GST rates in Admin → Quote Config.
           </p>
         </CardContent>
       </Card>
@@ -129,13 +172,48 @@ export function QuotePreviewPanel({
   const totalPanels = calculation.panels.reduce((sum, p) => sum + p.quantity, 0);
   const dcrPanels = calculation.panels.filter((p) => p.isDcr);
   const nonDcrPanels = calculation.panels.filter((p) => !p.isDcr);
-  const discounted = applyPreGstDiscount(calculation.pricing.basePrice, discountAmount, gstConfig);
-  const adjustedFinalPrice = discounted.grossTotal;
-  const adjustedEffectivePrice = Math.max(0, adjustedFinalPrice - calculation.subsidy.amount);
+
+  // applyPreGstDiscount throws if GST splits don't sum to 100% or inputs are invalid.
+  // Catch and render a graceful error instead of crashing the whole panel.
+  let discounted: ReturnType<typeof applyPreGstDiscount>;
+  try {
+    discounted = applyPreGstDiscount(calculation.pricing.basePrice, discountAmount, gstConfig);
+  } catch (err) {
+    return (
+      <Card className="border-error/30">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="size-4 text-error" />
+            <p className="text-sm font-medium text-error">GST Calculation Error</p>
+          </div>
+          <p className="mt-1 text-xs text-foreground-secondary">
+            {err instanceof Error ? err.message : 'Unable to calculate GST. Check Quote Config.'}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Display-consistent rounding: integer-round each GST part independently so that
+  // the displayed "Total GST" always equals gst_rate1_row + gst_rate2_row.
+  const displayGst5 = Math.round(discounted.gst5);
+  const displayGst18 = Math.round(discounted.gst18);
+  const displayTotalGst = displayGst5 + displayGst18;
+  const displayDiscountedBase = Math.round(discounted.discountedBase);
+  const displayGrossTotal = displayDiscountedBase + displayTotalGst;
+  const adjustedEffectivePrice = Math.max(
+    0,
+    displayGrossTotal - Math.round(calculation.subsidy.amount),
+  );
   const pricePerWatt =
     calculation.actualTotalWattage > 0
       ? adjustedEffectivePrice / calculation.actualTotalWattage
       : 0;
+
+  const subsidySchemesList = Array.isArray(calculation.subsidy.schemes)
+    ? calculation.subsidy.schemes
+    : [];
+  const hasSubsidySchemes = subsidySchemesList.length > 0;
 
   return (
     <Card className="overflow-hidden">
@@ -205,6 +283,12 @@ export function QuotePreviewPanel({
                     </Badge>
                     <span className="text-sm font-medium">
                       {panel.brand} {panel.wattagePerPanel}W
+                      {panel.technology && (
+                        <span className="font-normal text-foreground-secondary">
+                          {' '}
+                          ({PANEL_TECHNOLOGY_LABELS[panel.technology] ?? panel.technology})
+                        </span>
+                      )}
                     </span>
                   </div>
                   <p className="text-xs text-foreground-secondary">
@@ -225,8 +309,8 @@ export function QuotePreviewPanel({
         {/* ── Quantity Adjusters ── */}
         <div className="rounded-lg border border-border-light p-3">
           <div className="mb-2 flex items-center gap-2">
-            <div className="flex size-6 items-center justify-center rounded-md bg-primary/10 text-xs">
-              &#9881;
+            <div className="flex size-6 items-center justify-center rounded-md bg-primary/10">
+              <Settings className="size-icon-xs inline text-primary" />
             </div>
             <p className="text-sm font-medium">Adjust Quantities</p>
           </div>
@@ -405,7 +489,7 @@ export function QuotePreviewPanel({
                   <p className="text-sm font-medium">{inv.name}</p>
                   <p className="text-xs text-foreground-secondary">
                     {inv.brand} &middot; {inv.capacityKw}kW &middot; {inv.quantity} nos &times;{' '}
-                    {formatCurrency(inv.unitPrice)}
+                    {formatCurrencyDecimal(inv.unitPrice)}
                   </p>
                 </div>
                 <div className="text-right">
@@ -451,54 +535,36 @@ export function QuotePreviewPanel({
           </p>
           <div className="rounded-lg border border-border-light p-2.5">
             <div className="space-y-1.5">
-              {calculation.installation.electricalWork > 0 && (
-                <div className="flex justify-between text-xs">
-                  <span className="text-foreground-secondary">Electrical Work</span>
-                  <span>{formatCurrency(calculation.installation.electricalWork)}</span>
-                </div>
-              )}
-              {calculation.installation.fixedMaterial > 0 && (
-                <div className="flex justify-between text-xs">
-                  <span className="text-foreground-secondary">Fixed Material</span>
-                  <span>{formatCurrency(calculation.installation.fixedMaterial)}</span>
-                </div>
-              )}
-              {calculation.installation.installationLabor > 0 && (
-                <div className="flex justify-between text-xs">
-                  <span className="text-foreground-secondary">Installation Labor</span>
-                  <span>{formatCurrency(calculation.installation.installationLabor)}</span>
-                </div>
-              )}
-              {calculation.installation.loadingUnloading > 0 && (
-                <div className="flex justify-between text-xs">
-                  <span className="text-foreground-secondary">Loading & Unloading</span>
-                  <span>{formatCurrency(calculation.installation.loadingUnloading)}</span>
-                </div>
-              )}
-              {calculation.installation.msedclCharges > 0 && (
-                <div className="flex justify-between text-xs">
-                  <span className="text-foreground-secondary">MSEDCL Charges</span>
-                  <span>{formatCurrency(calculation.installation.msedclCharges)}</span>
-                </div>
-              )}
-              {calculation.installation.transport > 0 && (
-                <div className="flex justify-between text-xs">
-                  <span className="text-foreground-secondary">Transport</span>
-                  <span>{formatCurrency(calculation.installation.transport)}</span>
-                </div>
-              )}
-              {calculation.installation.variableFloor > 0 && (
-                <div className="flex justify-between text-xs">
-                  <span className="text-foreground-secondary">Floor Charges</span>
-                  <span>{formatCurrency(calculation.installation.variableFloor)}</span>
-                </div>
+              {Object.keys(calculation.installation.breakdown ?? {}).length === 0 ? (
+                <p className="text-xs text-foreground-tertiary">No line items</p>
+              ) : (
+                Object.entries(calculation.installation.breakdown ?? {})
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([key, value]) => {
+                    let label = formatLabel(key);
+                    if (key === 'variable_floor_adjusted' && floorNumber > 0) {
+                      label = `Floor Charges (Floor ${floorNumber})`;
+                    } else if (key === 'transport' && distanceKm > 0) {
+                      label = `Transport (${distanceKm} km)`;
+                    }
+                    return (
+                      <div key={key} className="flex justify-between text-xs">
+                        <span className="text-foreground-secondary">{label}</span>
+                        <span>{formatCurrency(value)}</span>
+                      </div>
+                    );
+                  })
               )}
               <div className="flex justify-between border-t border-border-light pt-1.5 text-xs font-medium">
                 <span>Installation (Before Tax)</span>
                 <span>{formatCurrency(calculation.installation.totalBeforeTax)}</span>
               </div>
               <div className="flex justify-between text-xs text-foreground-secondary">
-                <span>GST (18%)</span>
+                <span>
+                  {calculation.installation.gstRate != null
+                    ? `GST (${calculation.installation.gstRate}%)`
+                    : 'GST'}
+                </span>
                 <span>+{formatCurrency(calculation.installation.gstAmount)}</span>
               </div>
             </div>
@@ -507,32 +573,64 @@ export function QuotePreviewPanel({
 
         {/* ── Subsidy Breakdown ── */}
         {calculation.subsidy.isApplicable && calculation.subsidy.amount > 0 && (
-          <div className="rounded-lg border border-success/20 bg-success/5 p-3">
-            <div className="flex items-center gap-2">
-              <Zap className="size-4 text-success" />
-              <div>
-                <p className="text-xs font-medium text-success">Government Subsidy</p>
-                {calculation.subsidy.schemeName && (
-                  <p className="text-2xs text-success/80">{calculation.subsidy.schemeName}</p>
+          <div className="space-y-3">
+            {hasSubsidySchemes ? (
+              subsidySchemesList.map((scheme) => (
+                <div
+                  key={scheme.schemeId}
+                  className="rounded-lg border border-success/20 bg-success/5 p-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <Zap className="size-4 text-success" />
+                    <p className="text-xs font-medium text-success">{scheme.schemeName}</p>
+                  </div>
+                  {scheme.breakdown.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {scheme.breakdown.map((tier, i) => (
+                        <div key={i} className="flex items-center justify-between text-xs">
+                          <span className="text-foreground-secondary">
+                            {formatSubsidyTierLine(tier)}
+                          </span>
+                          <span className="font-medium">{formatCurrency(tier.amount)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="mt-2 flex justify-between border-t border-success/20 pt-2 text-xs font-medium text-success">
+                    <span>Scheme total ({scheme.eligibleKw} kW eligible)</span>
+                    <span>-{formatCurrency(scheme.amount)}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-lg border border-success/20 bg-success/5 p-3">
+                <div className="flex items-center gap-2">
+                  <Zap className="size-4 text-success" />
+                  <div>
+                    <p className="text-xs font-medium text-success">Government Subsidy</p>
+                    {calculation.subsidy.schemeName && (
+                      <p className="text-2xs text-success/80">{calculation.subsidy.schemeName}</p>
+                    )}
+                  </div>
+                </div>
+                {calculation.subsidy.breakdown && calculation.subsidy.breakdown.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {calculation.subsidy.breakdown.map((tier, i) => (
+                      <div key={i} className="flex items-center justify-between text-xs">
+                        <span className="text-foreground-secondary">
+                          {formatSubsidyTierLine(tier)}
+                        </span>
+                        <span className="font-medium">{formatCurrency(tier.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
-            </div>
-            {calculation.subsidy.breakdown && calculation.subsidy.breakdown.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {calculation.subsidy.breakdown.map((tier, i) => (
-                  <div key={i} className="flex items-center justify-between text-xs">
-                    <span className="text-foreground-secondary">
-                      {tier.kw} kW @ {formatCurrency(tier.ratePerKw)}/kW
-                    </span>
-                    <span className="font-medium">{formatCurrency(tier.amount)}</span>
-                  </div>
-                ))}
-              </div>
             )}
-            <div className="mt-2 flex items-center justify-between border-t border-success/20 pt-2">
+            <div className="flex items-center justify-between rounded-lg border border-success/20 bg-success/5 px-3 py-2">
               <span className="text-xs font-medium text-success">
                 Total Subsidy
-                {calculation.subsidy.eligibleKw
+                {!hasSubsidySchemes && calculation.subsidy.eligibleKw
                   ? ` (${calculation.subsidy.eligibleKw} kW eligible)`
                   : ''}
               </span>
@@ -574,24 +672,30 @@ export function QuotePreviewPanel({
               </div>
             )}
             <div className="flex items-center justify-between text-sm">
-              <span className="text-foreground-secondary">
-                GST on Equipment ({gstConfig.rate1}%)
-              </span>
+              <span className="text-foreground-secondary">GST on Equipment</span>
               <span>{formatCurrency(discounted.gst5)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-foreground-secondary">
-                GST on Services ({gstConfig.rate2}%)
-              </span>
+              <span className="text-foreground-secondary">GST on Services</span>
               <span>{formatCurrency(discounted.gst18)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-foreground-secondary">Total GST</span>
-              <span>{formatCurrency(discounted.totalGst)}</span>
+              {/* Sum the integer-rounded display values so line items always add up correctly */}
+              <span>
+                {formatCurrency(Math.round(discounted.gst5) + Math.round(discounted.gst18))}
+              </span>
             </div>
             <div className="flex items-center justify-between border-t border-border-light pt-1.5 text-sm font-medium">
               <span>Gross Total</span>
-              <span>{formatCurrency(adjustedFinalPrice)}</span>
+              {/* Derive gross total from discounted base + display-rounded GST sum */}
+              <span>
+                {formatCurrency(
+                  Math.round(discounted.discountedBase) +
+                    Math.round(discounted.gst5) +
+                    Math.round(discounted.gst18),
+                )}
+              </span>
             </div>
             {calculation.subsidy.isApplicable && calculation.subsidy.amount > 0 && (
               <div className="flex items-center justify-between text-sm text-success">
@@ -612,7 +716,7 @@ export function QuotePreviewPanel({
               </div>
               <p className="text-2xl font-semibold text-white">
                 {formatCurrency(
-                  calculation.subsidy.isApplicable ? adjustedEffectivePrice : adjustedFinalPrice,
+                  calculation.subsidy.isApplicable ? adjustedEffectivePrice : displayGrossTotal,
                 )}
               </p>
             </div>
@@ -628,7 +732,7 @@ export function QuotePreviewPanel({
           </div>
           <div className="flex flex-col items-center rounded-lg border border-border-light p-3 text-center">
             <Shield className="mb-1 size-4 text-primary" />
-            <p className="text-lg font-semibold">25 Years</p>
+            <p className="text-lg font-semibold">{formatPreviewPanelWarrantyLabel(calculation)}</p>
             <p className="text-2xs text-foreground-secondary">Panel Warranty</p>
           </div>
         </div>

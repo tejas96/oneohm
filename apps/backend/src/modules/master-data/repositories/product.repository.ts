@@ -1,15 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PhaseType, ProductStatus, ProductType, StructureType } from '@oneohm-epc/shared/types';
-import { IsNull, Repository, type FindOptionsWhere } from 'typeorm';
+import { ProductStatus } from '@oneohm-epc/shared/types';
+import { IsNull, Repository, type FindOptionsWhere, type SelectQueryBuilder } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { ProductEntity } from '../entities/product.entity';
 
-/**
- * Product Repository
- * Handles database operations for products
- */
 @Injectable()
 export class ProductRepository {
   constructor(
@@ -17,9 +13,6 @@ export class ProductRepository {
     private readonly repository: Repository<ProductEntity>,
   ) {}
 
-  /**
-   * Create a new product
-   */
   async create(
     organizationId: string,
     productData: Partial<ProductEntity>,
@@ -31,41 +24,44 @@ export class ProductRepository {
     return this.repository.save(product);
   }
 
-  /**
-   * Find all products with pagination and filters
-   */
   async findAll(
     organizationId: string,
     page = 1,
     limit = 20,
     filters?: {
       status?: ProductStatus;
-      type?: ProductType;
-      categoryId?: string;
+      productTypeId?: string;
+      brandId?: string;
       brand?: string;
       search?: string;
     },
   ): Promise<{ data: ProductEntity[]; total: number }> {
     const query = this.repository
       .createQueryBuilder('product')
-      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.productType', 'productType')
+      .leftJoinAndSelect('product.brand', 'brand')
       .where('product.organization_id = :organizationId', { organizationId })
-      .andWhere('product.deleted_at IS NULL');
+      .andWhere('product.deleted_at IS NULL')
+      .andWhere('(brand.id IS NULL OR brand.is_active = true)');
 
     if (filters?.status) {
       query.andWhere('product.status = :status', { status: filters.status });
     }
 
-    if (filters?.type) {
-      query.andWhere('product.type = :type', { type: filters.type });
+    if (filters?.productTypeId) {
+      query.andWhere('product.product_type_id = :productTypeId', {
+        productTypeId: filters.productTypeId,
+      });
     }
 
-    if (filters?.categoryId) {
-      query.andWhere('product.category_id = :categoryId', { categoryId: filters.categoryId });
+    if (filters?.brandId) {
+      query.andWhere('product.brand_id = :brandId', { brandId: filters.brandId });
     }
 
     if (filters?.brand) {
-      query.andWhere('product.brand ILIKE :brand', { brand: `%${filters.brand}%` });
+      query.andWhere('LOWER(brand.name) LIKE LOWER(:brandName)', {
+        brandName: `%${filters.brand}%`,
+      });
     }
 
     if (filters?.search) {
@@ -84,23 +80,35 @@ export class ProductRepository {
     return { data, total };
   }
 
-  /**
-   * Find product by ID
-   */
-  async findById(id: string, organizationId: string): Promise<ProductEntity | null> {
+  async findById(
+    id: string,
+    organizationId: string,
+    options?: { requireActive?: boolean },
+  ): Promise<ProductEntity | null> {
+    const where: FindOptionsWhere<ProductEntity> = {
+      id,
+      organizationId,
+      deletedAt: IsNull(),
+    };
+    if (options?.requireActive === true) {
+      where.status = ProductStatus.ACTIVE;
+    }
+    return this.repository.findOne({
+      where,
+      relations: ['productType', 'brand'],
+    });
+  }
+
+  async findAnyById(id: string, organizationId: string): Promise<ProductEntity | null> {
     return this.repository.findOne({
       where: {
         id,
         organizationId,
-        deletedAt: IsNull(),
       },
-      relations: ['category'],
+      relations: ['productType', 'brand'],
     });
   }
 
-  /**
-   * Find product by code
-   */
   async findByCode(code: string, organizationId: string): Promise<ProductEntity | null> {
     return this.repository.findOne({
       where: {
@@ -111,32 +119,23 @@ export class ProductRepository {
     });
   }
 
-  /**
-   * Update product
-   */
   async update(
     id: string,
     organizationId: string,
     productData: Partial<ProductEntity>,
   ): Promise<ProductEntity> {
-    await this.repository.update(
-      { id, organizationId },
-      {
-        ...productData,
-        updatedAt: new Date(),
-      } as QueryDeepPartialEntity<ProductEntity>, // TypeORM has issues with deep JSONB typing for specifications field
-    );
+    await this.repository.update({ id, organizationId }, {
+      ...productData,
+      updatedAt: new Date(),
+    } as QueryDeepPartialEntity<ProductEntity>);
 
     const updated = await this.findById(id, organizationId);
     if (!updated) {
-      throw new Error('Product not found after update');
+      throw new NotFoundException('Product not found after update');
     }
     return updated;
   }
 
-  /**
-   * Update product status
-   */
   async updateStatus(
     id: string,
     organizationId: string,
@@ -154,14 +153,11 @@ export class ProductRepository {
 
     const updated = await this.findById(id, organizationId);
     if (!updated) {
-      throw new Error('Product not found after status update');
+      throw new NotFoundException('Product not found after status update');
     }
     return updated;
   }
 
-  /**
-   * Soft delete product
-   */
   async softDelete(id: string, organizationId: string): Promise<void> {
     await this.repository.update(
       { id, organizationId },
@@ -171,176 +167,181 @@ export class ProductRepository {
     );
   }
 
+  private addMinActiveUnitPriceJoin(
+    qb: SelectQueryBuilder<ProductEntity>,
+  ): SelectQueryBuilder<ProductEntity> {
+    return qb.leftJoin(
+      `(
+        SELECT product_id, MIN(unit_price::numeric) AS unit_price
+        FROM product_prices
+        WHERE organization_id = :organizationId
+          AND is_active = true
+          AND effective_from <= CURRENT_DATE
+          AND (effective_to IS NULL OR effective_to >= CURRENT_DATE)
+        GROUP BY product_id
+      )`,
+      'price',
+      'price.product_id = product.id',
+    );
+  }
+
   // ==================== Quote Calculator Methods ====================
 
-  /**
-   * Find solar panel by DCR status and optional brand/technology/wattage preference
-   * If preferredWattage is specified, finds panel with matching minWattage
-   * Otherwise returns highest wattage panel matching criteria
-   */
   async findSolarPanel(
     organizationId: string,
     isDcr: boolean,
+    productTypeId: string,
     preferredBrand?: string,
     preferredTechnology?: string,
     preferredWattage?: number,
   ): Promise<ProductEntity | null> {
-    const query = this.repository
-      .createQueryBuilder('product')
-      .where('product.organization_id = :organizationId', { organizationId })
-      .andWhere('product.type = :type', { type: ProductType.SOLAR_PANEL })
-      .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
-      .andWhere('product.deleted_at IS NULL')
-      .andWhere("product.specifications->'panel'->>'isDcr' = :isDcr", {
-        isDcr: isDcr.toString(),
-      });
+    const query = this.addMinActiveUnitPriceJoin(
+      this.repository
+        .createQueryBuilder('product')
+        .leftJoinAndSelect('product.brand', 'brand')
+        .where('product.organization_id = :organizationId', { organizationId })
+        .andWhere('product.product_type_id = :productTypeId', { productTypeId })
+        .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
+        .andWhere('product.deleted_at IS NULL')
+        .andWhere("product.specifications->>'is_dcr' = :isDcr", {
+          isDcr: isDcr.toString(),
+        })
+        .andWhere('(brand.id IS NULL OR brand.is_active = true)'),
+    );
 
     if (preferredBrand) {
-      query.andWhere('LOWER(product.brand) = LOWER(:brand)', { brand: preferredBrand });
+      query.andWhere('LOWER(brand.name) = LOWER(:brand)', { brand: preferredBrand });
     }
 
     if (preferredTechnology) {
-      query.andWhere("LOWER(product.specifications->'panel'->>'technology') = LOWER(:technology)", {
+      query.andWhere("LOWER(product.specifications->>'technology') = LOWER(:technology)", {
         technology: preferredTechnology,
       });
     }
 
-    // If specific wattage is preferred, match by minWattage (e.g., 560 for 560-580Wp range)
     if (preferredWattage) {
-      query.andWhere("(product.specifications->'panel'->>'minWattage')::int = :preferredWattage", {
+      query.andWhere("(product.specifications->>'min_wattage')::int = :preferredWattage", {
         preferredWattage,
       });
     }
 
-    // Order by wattage descending (prefer higher wattage panels when no specific wattage requested)
-    query.orderBy("(product.specifications->'panel'->>'wattage')::int", 'DESC');
+    query
+      .orderBy("(product.specifications->>'wattage')::int", 'DESC')
+      .addOrderBy('price.unit_price', 'ASC', 'NULLS LAST');
 
     return query.getOne();
   }
 
-  /**
-   * Find ALL solar panels by DCR status and optional brand/technology preference
-   * Returns all matching panels sorted by wattage ascending (for quantity-constrained selection)
-   *
-   * Used when user specifies a manual panel count and backend needs to find
-   * the best wattage panel to meet the required capacity.
-   *
-   * @param organizationId - Organization ID
-   * @param isDcr - Whether to find DCR or Non-DCR panels
-   * @param preferredBrand - Optional brand filter
-   * @param preferredTechnology - Optional technology filter (PERC/TOPCON)
-   * @param minWattage - Optional minimum wattage filter (panels with wattage >= this value)
-   * @returns Array of matching panels sorted by wattage ascending
-   */
   async findAllSolarPanels(
     organizationId: string,
     isDcr: boolean,
+    productTypeId: string,
     preferredBrand?: string,
     preferredTechnology?: string,
     minWattage?: number,
   ): Promise<ProductEntity[]> {
-    const query = this.repository
-      .createQueryBuilder('product')
-      .where('product.organization_id = :organizationId', { organizationId })
-      .andWhere('product.type = :type', { type: ProductType.SOLAR_PANEL })
-      .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
-      .andWhere('product.deleted_at IS NULL')
-      .andWhere("product.specifications->'panel'->>'isDcr' = :isDcr", {
-        isDcr: isDcr.toString(),
-      });
+    const query = this.addMinActiveUnitPriceJoin(
+      this.repository
+        .createQueryBuilder('product')
+        .leftJoinAndSelect('product.brand', 'brand')
+        .where('product.organization_id = :organizationId', { organizationId })
+        .andWhere('product.product_type_id = :productTypeId', { productTypeId })
+        .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
+        .andWhere('product.deleted_at IS NULL')
+        .andWhere("product.specifications->>'is_dcr' = :isDcr", {
+          isDcr: isDcr.toString(),
+        })
+        .andWhere('(brand.id IS NULL OR brand.is_active = true)'),
+    );
 
     if (preferredBrand) {
-      query.andWhere('LOWER(product.brand) = LOWER(:brand)', { brand: preferredBrand });
+      query.andWhere('LOWER(brand.name) = LOWER(:brand)', { brand: preferredBrand });
     }
 
     if (preferredTechnology) {
-      query.andWhere("LOWER(product.specifications->'panel'->>'technology') = LOWER(:technology)", {
+      query.andWhere("LOWER(product.specifications->>'technology') = LOWER(:technology)", {
         technology: preferredTechnology,
       });
     }
 
-    // Filter by minimum wattage if specified (for quantity-constrained selection)
     if (minWattage) {
-      query.andWhere("(product.specifications->'panel'->>'wattage')::int >= :minWattage", {
+      query.andWhere("(product.specifications->>'wattage')::int >= :minWattage", {
         minWattage: Math.ceil(minWattage),
       });
     }
 
-    // Order by wattage ascending (prefer lower wattage panels to minimize overage)
-    query.orderBy("(product.specifications->'panel'->>'wattage')::int", 'ASC');
+    query
+      .orderBy("(product.specifications->>'wattage')::int", 'ASC')
+      .addOrderBy('price.unit_price', 'ASC', 'NULLS LAST');
 
     return query.getMany();
   }
 
-  /**
-   * Find all inverters by phase type and optional brand preference
-   * Returns inverters ordered by capacity descending (for combination algorithm)
-   */
   async findInvertersByPhase(
     organizationId: string,
-    phaseType: PhaseType,
+    phaseType: string,
+    productTypeId: string,
     preferredBrand?: string,
     preferredCapacityKw?: number,
   ): Promise<ProductEntity[]> {
     const query = this.repository
       .createQueryBuilder('product')
+      .leftJoinAndSelect('product.brand', 'brand')
       .where('product.organization_id = :organizationId', { organizationId })
-      .andWhere('product.type = :type', { type: ProductType.INVERTER })
+      .andWhere('product.product_type_id = :productTypeId', { productTypeId })
       .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
       .andWhere('product.deleted_at IS NULL')
-      .andWhere("product.specifications->'inverter'->>'phaseType' = :phaseType", { phaseType });
+      .andWhere("product.specifications->>'phase_type' = :phaseType", { phaseType })
+      .andWhere('(brand.id IS NULL OR brand.is_active = true)');
 
     if (preferredBrand) {
-      query.andWhere('LOWER(product.brand) = LOWER(:brand)', { brand: preferredBrand });
+      query.andWhere('LOWER(brand.name) = LOWER(:brand)', { brand: preferredBrand });
     }
 
     if (preferredCapacityKw !== undefined) {
-      query.andWhere("(product.specifications->'inverter'->>'capacityKw')::float = :capacityKw", {
+      query.andWhere("(product.specifications->>'capacity_kw')::float = :capacityKw", {
         capacityKw: preferredCapacityKw,
       });
     }
 
-    // Order by capacity descending for greedy algorithm
-    query.orderBy("(product.specifications->'inverter'->>'capacityKw')::float", 'DESC');
+    query.orderBy("(product.specifications->>'capacity_kw')::float", 'DESC');
 
     return query.getMany();
   }
 
-  /**
-   * Find mounting structure product
-   * Returns active structure for the organization, optionally filtered by type
-   */
   async findMountingStructure(
     organizationId: string,
-    structureType?: StructureType,
+    productTypeId: string,
+    structureType?: string,
   ): Promise<ProductEntity | null> {
     const query = this.repository
       .createQueryBuilder('product')
+      .leftJoinAndSelect('product.brand', 'brand')
       .where('product.organization_id = :organizationId', { organizationId })
-      .andWhere('product.type = :type', { type: ProductType.MOUNTING_STRUCTURE })
+      .andWhere('product.product_type_id = :productTypeId', { productTypeId })
       .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
-      .andWhere('product.deleted_at IS NULL');
+      .andWhere('product.deleted_at IS NULL')
+      .andWhere('(brand.id IS NULL OR brand.is_active = true)');
 
     if (structureType) {
-      query.andWhere("product.specifications->'structure'->>'structureType' = :structureType", {
+      query.andWhere("product.specifications->>'structure_type' = :structureType", {
         structureType,
       });
     }
 
+    query.orderBy('product.name', 'ASC');
+
     return query.getOne();
   }
 
-  /**
-   * Find products by type
-   */
   async findByType(
     organizationId: string,
-    productType: ProductType,
+    productTypeId: string,
     activeOnly = true,
   ): Promise<ProductEntity[]> {
     const where: FindOptionsWhere<ProductEntity> = {
       organizationId,
-      type: productType,
+      productTypeId,
       deletedAt: IsNull(),
     };
 
@@ -350,6 +351,7 @@ export class ProductRepository {
 
     return this.repository.find({
       where,
+      relations: ['brand'],
       order: { name: 'ASC' },
     });
   }

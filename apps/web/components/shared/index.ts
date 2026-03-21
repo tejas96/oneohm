@@ -14,6 +14,9 @@ export { AuthGuard, PermissionGuard } from './guards';
 export { Alert, alertVariants } from './alerts';
 export type { AlertProps } from './alerts';
 
+// Forms
+export { FieldLabel } from './forms';
+
 // Data Table
 export {
   Pagination,
@@ -45,6 +48,7 @@ export {
   EditableField,
   LeadTemperatureSelector,
   NumberStepper,
+  CreatableCombobox,
 } from './forms';
 export type {
   RadioCardProps,
@@ -54,6 +58,8 @@ export type {
   EditableFieldProps,
   LeadTemperatureSelectorProps,
   NumberStepperProps,
+  CreatableComboboxProps,
+  ComboboxOption,
 } from './forms';
 
 // Search

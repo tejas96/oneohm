@@ -37,7 +37,6 @@ export type {
   UseQuoteFormLogicReturn,
   QuoteDetail,
   QuoteVersionDetail,
-  QuoteLineItemDetail,
   QuotePaymentMilestone,
 } from './hooks';
 
@@ -50,8 +49,10 @@ export type {
   QuoteConfigResponse,
   SubsidyConfigResponse,
   QuotePdfData,
+  QuotePdfOrgConfig,
   QuoteCustomerInfo,
   QuotePropertyInfo,
+  PdfCompanyInfo,
 } from './types';
 
 // Constants

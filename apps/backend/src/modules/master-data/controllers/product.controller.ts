@@ -3,16 +3,16 @@ import {
   Controller,
   Delete,
   Get,
+  Patch,
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
   Post,
-  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { type PaginatedResponse, ProductStatus, ProductType } from '@oneohm-epc/shared/types';
+import { type PaginatedResponse, ProductStatus } from '@oneohm-epc/shared/types';
 import { plainToInstance } from 'class-transformer';
 
 import {
@@ -67,26 +67,27 @@ export class ProductController {
     responseType: ProductResponseDto,
     additionalQueries: [
       { name: 'page', required: false, type: Number, description: 'Page number (default: 1)' },
-      {
-        name: 'limit',
-        required: false,
-        type: Number,
-        description: 'Items per page (default: 20)',
-      },
+      { name: 'limit', required: false, type: Number, description: 'Items per page (default: 20)' },
       {
         name: 'status',
         required: false,
         enum: Object.values(ProductStatus),
         description: 'Filter by status',
       },
-      { name: 'type', required: false, type: String, description: 'Filter by product type' },
       {
-        name: 'categoryId',
+        name: 'productTypeId',
         required: false,
         type: String,
-        description: 'Filter by category ID',
+        description: 'Filter by product type ID',
       },
-      { name: 'brand', required: false, type: String, description: 'Filter by brand' },
+      {
+        name: 'type',
+        required: false,
+        type: String,
+        description: 'Filter by product type code (e.g. solar_panel, inverter)',
+      },
+      { name: 'brandId', required: false, type: String, description: 'Filter by brand ID' },
+      { name: 'brand', required: false, type: String, description: 'Filter by brand name' },
       {
         name: 'search',
         required: false,
@@ -97,19 +98,21 @@ export class ProductController {
   })
   async findAll(
     @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
+    @CurrentUser() _currentUser: CurrentUserType,
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
     @Query('status') status?: ProductStatus,
-    @Query('type') type?: ProductType,
-    @Query('categoryId') categoryId?: string,
+    @Query('productTypeId') productTypeId?: string,
+    @Query('type') type?: string,
+    @Query('brandId') brandId?: string,
     @Query('brand') brand?: string,
     @Query('search') search?: string,
   ): Promise<PaginatedResponse<ProductResponseDto>> {
     const result = await this.productService.findAll(organizationId, page, limit, {
       status,
+      productTypeId,
       type,
-      categoryId,
+      brandId,
       brand,
       search,
     });
@@ -135,7 +138,7 @@ export class ProductController {
   })
   async findOne(
     @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
+    @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ProductResponseDto> {
     const product = await this.productService.findById(id, organizationId);
@@ -145,7 +148,7 @@ export class ProductController {
     });
   }
 
-  @Put(':id')
+  @Patch(':id')
   @ApiUpdate({
     summary: 'Update product',
     description: 'Update an existing product',
@@ -196,7 +199,7 @@ export class ProductController {
   })
   async delete(
     @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
+    @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
     await this.productService.delete(id, organizationId);

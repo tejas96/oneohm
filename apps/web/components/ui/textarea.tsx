@@ -10,13 +10,18 @@ import { cn } from '@/lib/utils';
  * - Consistent styling with Input component (per tailwind.config.ts)
  * - Resize control
  * - Error state
- * - Min height of 100px by default
+ * - Size variants for consistent height control
  */
 const textareaVariants = cva(
   // Uses theme tokens for consistent styling
   'flex w-full rounded-md border-1.5 bg-background px-input-px py-3 text-sm text-foreground transition-all duration-fast outline-none placeholder:text-foreground-tertiary disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-70',
   {
     variants: {
+      size: {
+        sm: 'min-h-[72px]',
+        md: 'min-h-[88px]',
+        lg: 'min-h-textarea-min-h',
+      },
       variant: {
         default:
           'border-border-medium hover:border-border focus:border-primary focus:ring-focus focus:ring-primary/15',
@@ -31,6 +36,7 @@ const textareaVariants = cva(
       },
     },
     defaultVariants: {
+      size: 'lg',
       variant: 'default',
       resize: 'vertical',
     },
@@ -45,13 +51,12 @@ export interface TextareaProps
 }
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, variant, resize, error, ...props }, ref) => {
+  ({ className, size, variant, resize, error, ...props }, ref) => {
     const hasError = !!error;
     return (
       <textarea
         className={cn(
-          textareaVariants({ variant: hasError ? 'error' : variant, resize }),
-          'min-h-textarea-min-h',
+          textareaVariants({ size, variant: hasError ? 'error' : variant, resize }),
           className,
         )}
         ref={ref}

@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { type MilestoneType, type TaskChecklist } from '@oneohm-epc/shared/types';
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 
 export class WorkflowStepResponseDto {
   @ApiProperty()
@@ -61,6 +61,7 @@ export class WorkflowStepResponseDto {
 
   @ApiPropertyOptional()
   @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   checklistTemplate?: TaskChecklist;
 
   @ApiPropertyOptional()

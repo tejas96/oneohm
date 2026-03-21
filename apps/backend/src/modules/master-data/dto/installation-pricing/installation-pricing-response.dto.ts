@@ -1,12 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProjectType, InstallationCostComponents } from '@oneohm-epc/shared/types';
+import { InstallationCostComponents } from '@oneohm-epc/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../../common/utils';
 
-/**
- * DTO for installation pricing response
- */
 export class InstallationPricingResponseDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   @Expose()
@@ -16,27 +13,15 @@ export class InstallationPricingResponseDto {
   @Expose()
   organizationId!: string;
 
-  @ApiPropertyOptional({ example: 'Installation Charges 3KW' })
-  @Expose()
-  name?: string;
-
-  @ApiPropertyOptional({ example: 'INST-3KW' })
-  @Expose()
-  code?: string;
-
   @ApiProperty({ example: 3 })
   @Expose()
   @Transform(({ value }) => toNum(value))
   minSystemSizeKw!: number;
 
-  @ApiProperty({ example: 3 })
+  @ApiPropertyOptional({ example: 3 })
   @Expose()
-  @Transform(({ value }) => toNum(value))
-  maxSystemSizeKw!: number;
-
-  @ApiProperty({ enum: ProjectType, example: ProjectType.RESIDENTIAL })
-  @Expose()
-  projectType!: ProjectType;
+  @Transform(({ value }) => (value != null ? toNum(value) : null))
+  maxSystemSizeKw!: number | null;
 
   @ApiProperty({
     example: {
@@ -50,6 +35,7 @@ export class InstallationPricingResponseDto {
     },
   })
   @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   costComponents!: InstallationCostComponents;
 
   @ApiProperty({ example: 35 })
@@ -79,10 +65,6 @@ export class InstallationPricingResponseDto {
   @Expose()
   isActive!: boolean;
 
-  @ApiPropertyOptional({ example: 'Notes about this pricing tier' })
-  @Expose()
-  notes?: string;
-
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
   @Expose()
   createdAt!: Date;
@@ -90,21 +72,8 @@ export class InstallationPricingResponseDto {
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
   @Expose()
   updatedAt!: Date;
-
-  // ==================== Computed Fields ====================
-
-  /**
-   * Total of all fixed cost components (excludes variable_floor)
-   */
-  @ApiPropertyOptional({ example: 33436, description: 'Total fixed costs' })
-  @Expose()
-  @Transform(({ value }) => toNum(value))
-  totalFixedCosts?: number;
 }
 
-/**
- * DTO for paginated installation pricing response
- */
 export class InstallationPricingListResponseDto {
   @ApiProperty({ type: [InstallationPricingResponseDto] })
   @Expose()

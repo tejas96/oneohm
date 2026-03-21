@@ -14,7 +14,7 @@ export interface UseQuoteFormLogicOptions {
 
 export interface UseQuoteFormLogicReturn {
   handleSystemSizeChange: (value: number) => void;
-  handleSubsidyChange: (value: boolean) => void;
+  handleSelectedSubsidyIdsChange: (ids: string[]) => void;
   handleBrandChange: (value: string) => void;
   handleInverterBrandChange: (value: string) => void;
   handlePhaseChange: (value: PhaseType) => void;
@@ -34,10 +34,10 @@ export function useQuoteFormLogic({
   form,
   onCalculationCleared,
 }: UseQuoteFormLogicOptions): UseQuoteFormLogicReturn {
-  const { setValue, watch } = form;
+  const { setValue, watch, getValues } = form;
 
   const systemSizeKw = watch('systemSizeKw');
-  const subsidyApplicable = watch('subsidyApplicable');
+  const selectedSubsidyIds = watch('selectedSubsidyIds') ?? [];
 
   const pricingFieldsRef = useRef(new Set<string>(PRICING_AFFECTING_FIELDS));
 
@@ -63,18 +63,20 @@ export function useQuoteFormLogic({
     [setValue, clearCalculationIfNeeded],
   );
 
-  // Subsidy toggle -> force DCR preference
-  const handleSubsidyChange = useCallback(
-    (value: boolean) => {
-      setValue('subsidyApplicable', value);
-      if (!value) {
+  const handleSelectedSubsidyIdsChange = useCallback(
+    (ids: string[]) => {
+      setValue('selectedSubsidyIds', ids, { shouldValidate: true });
+      if (ids.length === 0) {
         setValue('dcrPreference', DcrPreference.NON_DCR_ONLY);
       } else {
-        setValue('dcrPreference', DcrPreference.DCR_ONLY);
+        const pref = getValues('dcrPreference');
+        if (pref === DcrPreference.NON_DCR_ONLY) {
+          setValue('dcrPreference', DcrPreference.DCR_ONLY);
+        }
       }
-      clearCalculationIfNeeded('subsidyApplicable');
+      clearCalculationIfNeeded('selectedSubsidyIds');
     },
-    [setValue, clearCalculationIfNeeded],
+    [setValue, getValues, clearCalculationIfNeeded],
   );
 
   // Brand change -> reset technology + wattage
@@ -143,7 +145,7 @@ export function useQuoteFormLogic({
 
   return {
     handleSystemSizeChange,
-    handleSubsidyChange,
+    handleSelectedSubsidyIdsChange,
     handleBrandChange,
     handleInverterBrandChange,
     handlePhaseChange,
@@ -151,7 +153,7 @@ export function useQuoteFormLogic({
     handlePropertySelect,
     handleFieldChange,
     shouldDisableSinglePhase: systemSizeKw > 7,
-    shouldShowDcrPreference: subsidyApplicable,
-    isDcrDisabled: !subsidyApplicable,
+    shouldShowDcrPreference: selectedSubsidyIds.length > 0,
+    isDcrDisabled: selectedSubsidyIds.length === 0,
   };
 }

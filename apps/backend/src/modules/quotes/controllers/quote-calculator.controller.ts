@@ -13,14 +13,12 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@ne
 import {
   type CalculatorInputs,
   DcrPreference,
-  ItemCategory,
   type PricingBreakdown,
   ProjectType,
-  type QuoteConfigSnapshot,
   QuoteCalculationMode,
   SystemType,
 } from '@oneohm-epc/shared/types';
-import { applyPreGstDiscount } from '@oneohm-epc/shared/utils';
+import { applyPreGstDiscount, GstSplitPercentagesInvalidError } from '@oneohm-epc/shared/utils';
 import { plainToInstance } from 'class-transformer';
 
 import { OrganizationContext } from '../../../common/decorators';
@@ -43,6 +41,7 @@ import {
   CreateQuoteDto,
   CreateQuoteFromCalculationDto,
   UpdateQuoteDto,
+  InstallationPricingQueryDto,
 } from '../dto';
 import { QuoteRepository } from '../repositories';
 import { QuoteCalculatorService } from '../services/quote-calculator.service';
@@ -86,11 +85,11 @@ export class QuoteCalculatorController {
       
       Features:
       - Auto DCR/Non-DCR split based on subsidy eligibility
-      - Panel quantity calculation with wattage rounding
+      - Panel quantity calculation
       - Inverter combination logic (e.g., 60KW → 50KW + 10KW)
-      - Installation cost calculation
-      - Tiered subsidy calculation
-      - GST split (70% @ 5%, 30% @ 18%)
+      - Installation cost calculation with dynamic cost components
+      - Multi-scheme tiered subsidy calculation
+      - Configurable GST split
     `,
   })
   @ApiResponse({
@@ -153,8 +152,6 @@ export class QuoteCalculatorController {
     const validUntil = new Date();
     validUntil.setDate(validUntil.getDate() + quoteConfig.defaultValidityDays);
 
-    const lineItems = this.buildLineItemsFromCalculation(calculation);
-
     if (!input.customerId) {
       throw new BadRequestException('Customer ID is required to save a quote');
     }
@@ -169,13 +166,23 @@ export class QuoteCalculatorController {
     }
 
     const discountAmount = input.discountAmount || 0;
-    const discounted = applyPreGstDiscount(
-      calculation.pricing.basePrice,
-      discountAmount,
-      quoteConfig.gstConfig,
-    );
+    let discounted: ReturnType<typeof applyPreGstDiscount>;
+    try {
+      discounted = applyPreGstDiscount(
+        calculation.pricing.basePrice,
+        discountAmount,
+        quoteConfig.gstConfig,
+      );
+    } catch (err: unknown) {
+      if (err instanceof GstSplitPercentagesInvalidError) {
+        throw new BadRequestException(err.message);
+      }
+      throw err;
+    }
     const finalPrice = discounted.grossTotal;
     const effectivePrice = Math.max(0, finalPrice - calculation.subsidy.amount);
+
+    const systemType = input.systemType ?? SystemType.ON_GRID;
 
     const calculatorInputs: CalculatorInputs = {
       phaseType: input.phaseType,
@@ -192,6 +199,15 @@ export class QuoteCalculatorController {
       preferredInverterBrand: input.preferredInverterBrand,
       preferredInverterCapacityKw: input.preferredInverterCapacityKw,
       subsidyApplicable: input.subsidyApplicable,
+      selectedSubsidyIds: input.selectedSubsidyIds,
+      manualDcrPanelCount: input.manualDcrPanelCount,
+      manualNonDcrPanelCount: input.manualNonDcrPanelCount,
+      manualInverterCount: input.manualInverterCount,
+      systemSizeKw: input.systemSizeKw,
+      projectType: input.projectType,
+      actualSystemSizeKw: calculation.actualTotalWattage / 1000,
+      actualDcrSizeKw: calculation.systemConfig.dcrSizeKw,
+      actualNonDcrSizeKw: calculation.systemConfig.nonDcrSizeKw,
     };
 
     const pricingBreakdown: PricingBreakdown = {
@@ -204,39 +220,6 @@ export class QuoteCalculatorController {
       discountAmount,
       subsidyAmount: calculation.subsidy.amount,
       isSubsidyApplicable: calculation.subsidy.isApplicable,
-    };
-
-    const configSnapshot: QuoteConfigSnapshot = {
-      panels: calculation.panels.map((p) => ({
-        productId: p.productId,
-        name: p.name,
-        brand: p.brand,
-        pricePerWatt: p.pricePerWatt,
-        isDcr: p.isDcr,
-        technology: p.technology,
-        gstRate: p.gstRate,
-        wattage: p.wattagePerPanel,
-      })),
-      inverters: calculation.inverters.inverters.map((inv) => ({
-        productId: inv.productId,
-        name: inv.name,
-        brand: inv.brand,
-        capacityKw: inv.capacityKw,
-        unitPrice: inv.unitPrice,
-        gstRate: inv.gstRate,
-      })),
-      structure: {
-        productId: calculation.structure.productId,
-        name: calculation.structure.name,
-        pricePerKw: calculation.structure.unitPrice,
-        gstRate: calculation.structure.gstRate,
-        structureType: calculation.structure.structureType,
-      },
-      installationPricing:
-        calculation.installation as unknown as QuoteConfigSnapshot['installationPricing'],
-      subsidyConfig: null,
-      quoteConfig: quoteConfig as QuoteConfigSnapshot['quoteConfig'],
-      snapshotAt: new Date().toISOString(),
     };
 
     // ── Determine if this is a revision or a new quote ──
@@ -289,17 +272,18 @@ export class QuoteCalculatorController {
           salesPersonId: input.salesPersonId,
           resellerId: input.resellerId,
           validUntil: validUntil.toISOString().split('T')[0],
-          systemType: SystemType.ON_GRID,
+          systemType,
           systemSizeKw: calculation.systemConfig.totalSystemSizeKw,
           totalWattageWp: calculation.actualTotalWattage,
           projectType: input.projectType,
           calculatorInputs,
           pricingBreakdown,
+          finalPrice,
+          effectivePrice,
           internalNotes: input.internalNotes,
           customerNotes: input.customerNotes,
           projectCompletionWeeks: calculation.completionWeeks,
           paymentMilestones: input.paymentMilestones,
-          lineItems,
           changeSummary: 'Revised via calculator',
         };
 
@@ -356,14 +340,13 @@ export class QuoteCalculatorController {
       propertyId: input.propertyId,
       salesPersonId: input.salesPersonId,
       resellerId: input.resellerId,
-      systemType: SystemType.ON_GRID,
+      systemType,
       systemSizeKw: calculation.systemConfig.totalSystemSizeKw,
       totalWattageWp: calculation.actualTotalWattage,
       projectType: input.projectType,
       validUntil: validUntil.toISOString().split('T')[0] as string,
       calculatorInputs,
       pricingBreakdown,
-      configSnapshot,
       finalPrice,
       effectivePrice,
       discountAmount,
@@ -371,7 +354,6 @@ export class QuoteCalculatorController {
       customerNotes: input.customerNotes,
       projectCompletionWeeks: calculation.completionWeeks,
       paymentMilestones: input.paymentMilestones,
-      lineItems,
     };
 
     const quote = await this.quoteService.create(organizationId, createDto, currentUser.id);
@@ -401,7 +383,6 @@ export class QuoteCalculatorController {
       - Default validity days
       - Max versions
       - GST configuration
-      - Wattage rounding rules
       - Payment milestones
     `,
   })
@@ -444,7 +425,7 @@ export class QuoteCalculatorController {
   async getSubsidyRules(
     @OrganizationContext() organizationId: string,
     @Query('projectType') projectType: ProjectType,
-  ) {
+  ): Promise<SubsidyConfigurationResponseDto | null> {
     const config = await this.subsidyConfigRepo.findActiveByProjectType(
       organizationId,
       projectType,
@@ -467,8 +448,10 @@ export class QuoteCalculatorController {
     status: HttpStatus.OK,
     description: 'List of subsidy configurations',
   })
-  async getAllSubsidyRules(@OrganizationContext() organizationId: string) {
-    const configs = await this.subsidyConfigRepo.findAll(organizationId);
+  async getAllSubsidyRules(
+    @OrganizationContext() organizationId: string,
+  ): Promise<SubsidyConfigurationResponseDto[]> {
+    const configs = await this.subsidyConfigRepo.findAll(organizationId, { isActive: true });
     return plainToInstance(SubsidyConfigurationResponseDto, configs, {
       excludeExtraneousValues: true,
     });
@@ -482,25 +465,8 @@ export class QuoteCalculatorController {
     summary: 'Get installation pricing',
     description: `
       Returns installation pricing for a specific system size.
-      Includes:
-      - Electrical work cost
-      - Fixed material cost
-      - Floor variable cost
-      - MSEDCL charges
-      - Transport cost
+      Includes all cost components, transport rate, floor increment, and GST rate.
     `,
-  })
-  @ApiQuery({
-    name: 'systemSizeKw',
-    type: Number,
-    required: true,
-    description: 'System size in kW',
-  })
-  @ApiQuery({
-    name: 'projectType',
-    enum: ProjectType,
-    required: true,
-    description: 'Project type',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -508,13 +474,11 @@ export class QuoteCalculatorController {
   })
   async getInstallationPricing(
     @OrganizationContext() organizationId: string,
-    @Query('systemSizeKw') systemSizeKw: number,
-    @Query('projectType') projectType: ProjectType,
-  ) {
+    @Query() query: InstallationPricingQueryDto,
+  ): Promise<InstallationPricingResponseDto | null> {
     const pricing = await this.installationPricingRepo.findBySystemSize(
       organizationId,
-      systemSizeKw,
-      projectType,
+      query.systemSizeKw,
     );
     if (!pricing) return null;
     return plainToInstance(InstallationPricingResponseDto, pricing, {
@@ -534,71 +498,14 @@ export class QuoteCalculatorController {
     status: HttpStatus.OK,
     description: 'List of installation pricing tiers',
   })
-  async getAllInstallationPricing(@OrganizationContext() organizationId: string) {
-    const pricingList = await this.installationPricingRepo.findAll(organizationId);
-    return plainToInstance(InstallationPricingResponseDto, pricingList, {
+  async getAllInstallationPricing(
+    @OrganizationContext() organizationId: string,
+  ): Promise<InstallationPricingResponseDto[]> {
+    const result = await this.installationPricingRepo.findAll(organizationId, {
+      isActive: true,
+    });
+    return plainToInstance(InstallationPricingResponseDto, result.data, {
       excludeExtraneousValues: true,
     });
-  }
-
-  /**
-   * Build line items from calculation response
-   */
-  private buildLineItemsFromCalculation(calculation: CalculateQuoteResponseDto) {
-    const lineItems = [];
-    let displayOrder = 1;
-
-    // Add panel line items
-    for (const panel of calculation.panels) {
-      lineItems.push({
-        productId: panel.productId,
-        itemCategory: ItemCategory.SOLAR_PANELS,
-        itemName: panel.name,
-        itemDescription: `${panel.brand} ${panel.wattagePerPanel}W ${panel.isDcr ? 'DCR' : 'Non-DCR'}`,
-        quantity: panel.quantity,
-        unitPrice: panel.pricePerWatt * panel.wattagePerPanel,
-        taxRate: panel.gstRate,
-        displayOrder: displayOrder++,
-      });
-    }
-
-    // Add inverter line items
-    for (const inverter of calculation.inverters.inverters) {
-      lineItems.push({
-        productId: inverter.productId,
-        itemCategory: ItemCategory.INVERTERS,
-        itemName: inverter.name,
-        itemDescription: `${inverter.brand} ${inverter.capacityKw}kW Inverter`,
-        quantity: inverter.quantity,
-        unitPrice: inverter.unitPrice,
-        taxRate: inverter.gstRate,
-        displayOrder: displayOrder++,
-      });
-    }
-
-    // Add structure line item
-    lineItems.push({
-      productId: calculation.structure.productId,
-      itemCategory: ItemCategory.MOUNTING,
-      itemName: calculation.structure.name,
-      itemDescription: `${calculation.structure.structureType} mounting structure`,
-      quantity: calculation.structure.quantity,
-      unitPrice: calculation.structure.unitPrice,
-      taxRate: calculation.structure.gstRate,
-      displayOrder: displayOrder++,
-    });
-
-    // Add installation line item (as a service)
-    lineItems.push({
-      itemCategory: ItemCategory.INSTALLATION,
-      itemName: 'Installation & Services',
-      itemDescription: 'Electrical work, MSEDCL charges, transport, supervision',
-      quantity: 1,
-      unitPrice: calculation.installation.totalBeforeTax,
-      taxRate: calculation.installation.gstRate,
-      displayOrder: displayOrder++,
-    });
-
-    return lineItems;
   }
 }

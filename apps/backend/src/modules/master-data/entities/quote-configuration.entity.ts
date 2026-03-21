@@ -1,9 +1,5 @@
-import type {
-  GstConfig,
-  WattageRoundingConfig,
-  PaymentMilestoneConfig,
-} from '@oneohm-epc/shared/types';
-import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm';
+import type { GstConfig, PaymentMilestoneConfig, ProfitMarginTier } from '@oneohm-epc/shared/types';
+import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne, Index } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
@@ -18,7 +14,6 @@ import { OrganizationEntity } from '../../organizations/entities/organization.en
  * - Version limits
  * - GST split configuration
  * - Default payment milestones
- * - Wattage rounding rules
  */
 @Entity('quote_configurations')
 @Index(['organizationId', 'isActive'], { unique: true, where: '"is_active" = true' })
@@ -81,27 +76,6 @@ export class QuoteConfiguration extends BaseEntity {
   })
   gstConfig!: GstConfig;
 
-  // ==================== Wattage Rounding ====================
-
-  /**
-   * Wattage Rounding Configuration (JSONB)
-   *
-   * Example: Round to nearest 10W, 5+ rounds up
-   * {
-   *   roundTo: 10,
-   *   roundUpThreshold: 5
-   * }
-   *
-   * So 547W → 550W (7 >= 5, rounds up)
-   * And 544W → 540W (4 < 5, rounds down)
-   */
-  @Column({
-    type: 'jsonb',
-    name: 'wattage_rounding',
-    default: '{"roundTo": 10, "roundUpThreshold": 5}',
-  })
-  wattageRounding!: WattageRoundingConfig;
-
   // ==================== Payment Configuration ====================
 
   /**
@@ -122,6 +96,13 @@ export class QuoteConfiguration extends BaseEntity {
   })
   paymentMilestones!: PaymentMilestoneConfig[];
 
+  @Column({
+    type: 'jsonb',
+    name: 'profit_margin_tiers',
+    default: '[]',
+  })
+  profitMarginTiers!: ProfitMarginTier[];
+
   // ==================== UI Settings ====================
 
   /**
@@ -133,21 +114,6 @@ export class QuoteConfiguration extends BaseEntity {
     default: true,
   })
   showInventoryStock!: boolean;
-
-  // ==================== Validation ====================
-
-  /**
-   * Minimum profit margin percentage (optional)
-   * Used for validation during manual pricing
-   */
-  @Column({
-    type: 'decimal',
-    precision: 5,
-    scale: 2,
-    name: 'min_profit_margin_percent',
-    nullable: true,
-  })
-  minProfitMarginPercent?: number;
 
   // ==================== Status ====================
 
@@ -172,12 +138,19 @@ export class QuoteConfiguration extends BaseEntity {
   })
   notes?: string;
 
+  // ==================== Audit ====================
+
+  @DeleteDateColumn({ type: 'timestamptz', name: 'deleted_at', nullable: true })
+  deletedAt?: Date;
+
+  @Column({ type: 'uuid', name: 'created_by', nullable: true })
+  createdBy?: string;
+
+  @Column({ type: 'uuid', name: 'updated_by', nullable: true })
+  updatedBy?: string;
+
   // ==================== Relationships ====================
 
-  /**
-   * Organization relationship
-   * @lazy Load with: .relations(['organization'])
-   */
   @ManyToOne(() => OrganizationEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'organization_id' })
   organization?: OrganizationEntity;

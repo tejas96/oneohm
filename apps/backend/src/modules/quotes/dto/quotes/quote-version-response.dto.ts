@@ -1,14 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  type CalculatorInputs,
   type PaymentMilestone,
   type PricingBreakdown,
   ProjectType,
-  type QuoteConfigSnapshot,
   SystemType,
 } from '@oneohm-epc/shared/types';
-import { Expose, Transform, Type } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 
-import { QuoteLineItemResponseDto } from './quote-line-item-response.dto';
 import { toNum } from '../../../../common/utils';
 
 /**
@@ -57,11 +56,18 @@ export class QuoteVersionResponseDto {
 
   @ApiPropertyOptional({ description: 'Full pricing breakdown' })
   @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   pricingBreakdown?: PricingBreakdown;
 
   @ApiPropertyOptional({ description: 'Payment milestones' })
   @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   paymentMilestones?: PaymentMilestone[];
+
+  @ApiPropertyOptional({ description: 'Calculator inputs used to generate this version' })
+  @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
+  calculatorInputs?: CalculatorInputs;
 
   @ApiProperty({ example: 4 })
   @Expose()
@@ -75,10 +81,6 @@ export class QuoteVersionResponseDto {
   @Expose()
   isCurrent!: boolean;
 
-  @ApiPropertyOptional({ description: 'Configuration snapshot at time of version creation' })
-  @Expose()
-  configSnapshot?: QuoteConfigSnapshot;
-
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()
   createdBy!: string;
@@ -86,9 +88,4 @@ export class QuoteVersionResponseDto {
   @ApiProperty({ example: '2025-01-15T10:00:00Z' })
   @Expose()
   createdAt!: string;
-
-  @ApiPropertyOptional({ description: 'Line items for this version' })
-  @Expose()
-  @Type(() => QuoteLineItemResponseDto)
-  lineItems?: QuoteLineItemResponseDto[];
 }

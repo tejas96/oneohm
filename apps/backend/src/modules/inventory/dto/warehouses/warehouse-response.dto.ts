@@ -4,7 +4,7 @@ import {
   WarehouseType,
   type WarehouseCoordinates,
 } from '@oneohm-epc/shared/types';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 
 /**
  * Warehouse Response DTO
@@ -54,6 +54,7 @@ export class WarehouseResponseDto {
     required: false,
   })
   @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   coordinates?: WarehouseCoordinates;
 
   // ==================== Type ====================

@@ -63,7 +63,7 @@ export function ProjectListPage() {
   );
   const [currentPage, setCurrentPage] = useState(parseInt(url.get('page') || '1', 10));
   const [pageSize, setPageSize] = useState(
-    parseInt(url.get('pageSize') || String(DEFAULT_PAGE_SIZE), 10),
+    parseInt(url.get('limit') || url.get('pageSize') || String(DEFAULT_PAGE_SIZE), 10),
   );
 
   useEffect(() => {
@@ -71,7 +71,16 @@ export function ProjectListPage() {
     setPriorityFilter(url.searchParams.get('priority') ?? '');
     setTypeFilter(url.searchParams.get('projectType') ?? '');
     setSearchInput(url.searchParams.get('search') ?? '');
+    setCurrentView((url.searchParams.get('view') as 'card' | 'table') || 'table');
     setCurrentPage(parseInt(url.searchParams.get('page') || '1', 10));
+    setPageSize(
+      parseInt(
+        url.searchParams.get('limit') ||
+          url.searchParams.get('pageSize') ||
+          String(DEFAULT_PAGE_SIZE),
+        10,
+      ),
+    );
   }, [url.searchParams]);
 
   const debouncedSearch = useDebounce(searchInput, 550);
@@ -134,7 +143,11 @@ export function ProjectListPage() {
     (size: number) => {
       setPageSize(size);
       setCurrentPage(1);
-      url.set({ pageSize: size !== DEFAULT_PAGE_SIZE ? String(size) : '', page: '' });
+      url.set({
+        limit: size !== DEFAULT_PAGE_SIZE ? String(size) : '',
+        pageSize: '',
+        page: '',
+      });
     },
     [url],
   );

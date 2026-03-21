@@ -1,154 +1,53 @@
-import { PhaseType, PanelTechnology, StructureType } from '../enums/product.enum';
-
 /**
  * ============================================================================
- * PRODUCT ENTITY SPECIFICATIONS INTERFACES
+ * PRODUCT FLAT SPECIFICATIONS INTERFACE
  * ============================================================================
  *
- * These interfaces define the structure for the `specifications` JSONB column
- * in the products table. They provide a type-safe, nested structure for
- * different product types while maintaining flexibility for custom fields.
+ * Flat JSONB structure for the products.specifications column.
+ * All product types share a single flat namespace - keys are defined
+ * per product type in the product_type_attributes table.
  */
 
 /**
- * Common specifications shared across all product types
- */
-export interface CommonProductSpecs {
-  /** Wattage in W */
-  wattage?: number;
-  /** Capacity in kW/kWh */
-  capacity?: number;
-  /** Voltage specification (e.g., "230V AC") */
-  voltage?: string;
-  /** Efficiency percentage */
-  efficiency?: number;
-  /** Dimensions (e.g., "2278x1134x35mm") */
-  dimensions?: string;
-  /** Weight in kg */
-  weight?: number;
-  /** Input voltage range (e.g., "350-850V DC") */
-  inputVoltage?: string;
-  /** Output voltage (e.g., "230V AC") */
-  outputVoltage?: string;
-  /** Number of phases */
-  phases?: number;
-  /** MPPT channels count */
-  mpptChannels?: number;
-  /** Solar cell type (e.g., "Monocrystalline") */
-  cellType?: string;
-  /** Battery chemistry (e.g., "Lithium-ion") */
-  chemistry?: string;
-  /** Battery cycle life */
-  cycleLife?: number;
-  /** Depth of discharge percentage */
-  depthOfDischarge?: number;
-}
-
-/**
- * Solar Panel specific specifications
- */
-export interface PanelProductSpecs {
-  /** Whether panel qualifies for DCR subsidy */
-  isDcr?: boolean;
-  /** Panel technology (PERC, TOPCon, etc.) */
-  technology?: PanelTechnology;
-  /** Nominal wattage */
-  wattage?: number;
-  /** Minimum wattage in batch (defaults to wattage if not specified) */
-  minWattage?: number;
-  /** Maximum wattage in batch (defaults to wattage if not specified) */
-  maxWattage?: number;
-}
-
-/**
- * Inverter specific specifications
- */
-export interface InverterProductSpecs {
-  /** Inverter capacity in kW */
-  capacityKw?: number;
-  /** Phase type (1-phase or 3-phase) */
-  phaseType?: PhaseType;
-  /** Minimum system size this inverter supports */
-  minSystemSizeKw?: number;
-  /** Maximum system size this inverter supports */
-  maxSystemSizeKw?: number;
-  /** Number of MPPT channels */
-  mpptCount?: number;
-}
-
-/**
- * Mounting Structure specific specifications
- */
-export interface StructureProductSpecs {
-  /** Type of mounting structure */
-  structureType?: StructureType;
-  /** Material (e.g., aluminum, GI) */
-  material?: string;
-  /** Maximum wind speed rating in km/h */
-  maxWindSpeedKmh?: number;
-  /**
-   * Cost multiplier applied to base structure cost from installation pricing
-   * e.g., 1.0 for standard aluminum rail, 1.3 for elevated, 1.5 for super elevated
-   */
-  costMultiplier?: number;
-}
-
-/**
- * Product Specifications (JSONB)
+ * Flat Product Specifications (JSONB)
  *
- * Strongly typed JSONB structure for the products.specifications column.
- * Supports hybrid approach: typed sections + flexible additional fields.
+ * All specification keys are at the top level. Which keys apply
+ * is determined by the product's product_type (via product_type_attributes).
  *
  * @example Solar Panel
- * {
- *   panel: {
- *     isDcr: true,
- *     technology: "perc",
- *     wattage: 550,
- *     minWattage: 530,
- *     maxWattage: 550
- *   },
- *   common: {
- *     efficiency: 21.5,
- *     dimensions: "2278x1134x35mm",
- *     weight: 27.5
- *   }
- * }
+ * { technology: "perc", is_dcr: true, wattage: 540, min_wattage: 530, max_wattage: 550, efficiency: 21.5 }
  *
  * @example Inverter
- * {
- *   inverter: {
- *     capacityKw: 5,
- *     phaseType: "single_phase",
- *     minSystemSizeKw: 1,
- *     maxSystemSizeKw: 6,
- *     mpptCount: 2
- *   },
- *   common: {
- *     efficiency: 98.3,
- *     inputVoltage: "350-850V DC",
- *     outputVoltage: "230V AC"
- *   }
- * }
+ * { capacity_kw: 5, phase_type: "single_phase", min_system_size_kw: 1, max_system_size_kw: 6, voltage: "230V AC" }
  *
  * @example Mounting Structure
- * {
- *   structure: {
- *     structureType: "elevated",
- *     material: "Aluminum",
- *     maxWindSpeedKmh: 150
- *   }
- * }
+ * { structure_type: "elevated_6x9", material: "Aluminum", weight_kg: 45 }
  */
 export interface ProductSpecifications {
-  /** Common specifications (efficiency, dimensions, weight, etc.) */
-  common?: CommonProductSpecs;
-  /** Solar Panel specific fields (isDcr, technology, wattage range) */
-  panel?: PanelProductSpecs;
-  /** Inverter specific fields (capacity, phase, system size range) */
-  inverter?: InverterProductSpecs;
-  /** Mounting structure specific fields (type, material) */
-  structure?: StructureProductSpecs;
-  /** Additional flexible fields for custom specifications */
-  additional?: Record<string, unknown>;
+  // Panel attributes
+  technology?: string;
+  is_dcr?: boolean;
+  wattage?: number;
+  min_wattage?: number;
+  max_wattage?: number;
+
+  // Inverter attributes
+  capacity_kw?: number;
+  phase_type?: string;
+  min_system_size_kw?: number;
+  max_system_size_kw?: number;
+  mppt_count?: number;
+
+  // Structure attributes
+  structure_type?: string;
+  material?: string;
+  max_wind_speed_kmh?: number;
+
+  // Shared attributes
+  efficiency?: number;
+  voltage?: string;
+  weight_kg?: number;
+
+  // Allow any additional fields for future product types
+  [key: string]: unknown;
 }

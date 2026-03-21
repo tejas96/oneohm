@@ -9,10 +9,13 @@ import {
 } from '@nestjs/common';
 import { OrganizationStatus } from '@oneohm-epc/shared/types';
 import { plainToInstance } from 'class-transformer';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 
 import { RoleEntity } from '../../iam/entities/role.entity';
 import { RoleRepository } from '../../iam/repositories/role.repository';
+import { SYSTEM_PRODUCT_TYPES } from '../../master-data/constants/system-product-types';
+import { ProductTypeAttributeEntity } from '../../master-data/entities/product-type-attribute.entity';
+import { ProductTypeEntity } from '../../master-data/entities/product-type.entity';
 import { UserRoleEntity } from '../../users/entities/user-role.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 import { UserRoleRepository } from '../../users/repositories/user-role.repository';
@@ -143,6 +146,8 @@ export class OrganizationService {
             organizationId: org.id,
           }),
         );
+
+        await this.seedSystemProductTypes(manager, org.id);
 
         return {
           organization: org,
@@ -398,6 +403,49 @@ export class OrganizationService {
   }
 
   // ==================== PRIVATE HELPERS ====================
+
+  private async seedSystemProductTypes(
+    manager: EntityManager,
+    organizationId: string,
+  ): Promise<void> {
+    const ptRepo = manager.getRepository(ProductTypeEntity);
+    const attrRepo = manager.getRepository(ProductTypeAttributeEntity);
+
+    for (const def of Object.values(SYSTEM_PRODUCT_TYPES)) {
+      const productType = await ptRepo.save(
+        ptRepo.create({
+          organizationId,
+          name: def.name,
+          code: def.code,
+          defaultPricingBasis: def.defaultPricingBasis,
+          defaultGstRate: def.defaultGstRate,
+          defaultUnitOfMeasure: def.defaultUnitOfMeasure,
+          isActive: true,
+          sortOrder: def.sortOrder,
+          isSystem: true,
+        }),
+      );
+
+      for (const attrDef of def.attributes) {
+        await attrRepo.save(
+          attrRepo.create({
+            productTypeId: productType.id,
+            attributeKey: attrDef.key,
+            label: attrDef.label,
+            dataType: attrDef.dataType,
+            isRequired: attrDef.isRequired,
+            isFilterable: attrDef.isFilterable,
+            groupName: attrDef.group,
+            sortOrder: attrDef.sort,
+            isSystem: true,
+            validation: attrDef.validation,
+          }),
+        );
+      }
+    }
+
+    this.logger.log(`Seeded system product types for org ${organizationId}`);
+  }
 
   private getDefaultRoleDefinitions(): Array<{
     code: string;

@@ -5,7 +5,21 @@ import type {
   StructureType,
   PanelTechnology,
   PaymentMilestone as SharedPaymentMilestone,
+  ProfitMarginTier,
+  SubsidyTier as SharedSubsidyTier,
+  SubsidySchemeResult as SharedSubsidySchemeResult,
+  CalculatedSubsidy as SharedCalculatedSubsidy,
+  ValidationWarning as SharedValidationWarning,
+  CalculatedPanelConfig,
+  CalculatedInstallationCost,
+  GstConfig,
 } from '@oneohm-epc/shared/types';
+
+// Re-export shared types that consumers already reference by local names
+export type { ProfitMarginTier } from '@oneohm-epc/shared/types';
+export type ValidationWarning = SharedValidationWarning;
+export type SubsidySchemeResult = SharedSubsidySchemeResult;
+export type SubsidyTier = SharedSubsidyTier;
 
 // ============================================================================
 // Request Types (mirrors backend CalculateQuoteDto)
@@ -42,14 +56,10 @@ export interface CalculateQuoteRequest {
   manualInverterCount?: number;
   manualDcrPanelCount?: number;
   manualNonDcrPanelCount?: number;
+  selectedSubsidyIds?: string[];
 }
 
-/**
- * Extends CalculateQuoteRequest with save-only fields
- * Mirrors backend CreateQuoteFromCalculationDto
- */
 export interface CreateFromCalculationRequest extends CalculateQuoteRequest {
-  /** Existing quote ID — when provided, creates a new version instead of a new quote */
   quoteId?: string;
   discountAmount?: number;
   internalNotes?: string;
@@ -61,6 +71,8 @@ export interface CreateFromCalculationRequest extends CalculateQuoteRequest {
 
 // ============================================================================
 // Response Types (mirrors backend CalculateQuoteResponseDto)
+// Re-uses shared types but adds frontend-specific shapes where the API
+// response differs slightly from the canonical shared interface.
 // ============================================================================
 
 export interface SystemConfig {
@@ -70,21 +82,12 @@ export interface SystemConfig {
   phaseType: PhaseType;
 }
 
-export interface CalculatedPanel {
-  productId: string;
-  name: string;
-  brand: string;
-  isDcr: boolean;
-  technology?: PanelTechnology;
-  wattagePerPanel: number;
-  quantity: number;
-  totalWattage: number;
-  pricePerWatt: number;
-  lineTotal: number;
-  gstAmount: number;
+/**
+ * Frontend alias for shared CalculatedPanelConfig.
+ * Identical structure -- gstRate is optional in the API response.
+ */
+export interface CalculatedPanel extends Omit<CalculatedPanelConfig, 'gstRate'> {
   gstRate?: number;
-  productWarrantyYears?: number;
-  performanceWarrantyYears?: number;
 }
 
 export interface InverterItem {
@@ -118,27 +121,12 @@ export interface CalculatedStructure {
   gstRate?: number;
 }
 
-export interface CalculatedInstallation {
-  electricalWork: number;
-  fixedMaterial: number;
-  variableFloor: number;
-  structureCost: number;
-  installationLabor: number;
-  loadingUnloading: number;
-  msedclCharges: number;
-  supervision: number;
-  transport: number;
-  totalBeforeTax: number;
-  gstAmount: number;
+/**
+ * Frontend installation type -- extends shared CalculatedInstallationCost
+ * with optional gstRate (required in shared but optional in API response).
+ */
+export interface CalculatedInstallation extends Omit<CalculatedInstallationCost, 'gstRate'> {
   gstRate?: number;
-  totalWithGst: number;
-  breakdown?: Record<string, number>;
-}
-
-export interface ValidationWarning {
-  code: string;
-  message: string;
-  severity: 'info' | 'warning' | 'error';
 }
 
 export interface SubsidyBreakdown {
@@ -149,12 +137,12 @@ export interface SubsidyBreakdown {
   amount: number;
 }
 
-export interface CalculatedSubsidy {
-  isApplicable: boolean;
-  schemeName?: string;
-  eligibleKw?: number;
-  amount: number;
-  breakdown?: SubsidyBreakdown[];
+/**
+ * Frontend CalculatedSubsidy -- mirrors shared but with optional `schemes`
+ * for backward compatibility with API responses that predate multi-scheme.
+ */
+export interface CalculatedSubsidy extends Omit<SharedCalculatedSubsidy, 'schemes'> {
+  schemes?: SubsidySchemeResult[];
 }
 
 export interface PricingSummary {
@@ -225,20 +213,9 @@ export interface PaymentMilestone {
 export interface QuoteConfigResponse {
   defaultValidityDays: number;
   maxVersions: number;
-  gstConfig: {
-    rate1: number;
-    rate1Percentage: number;
-    rate2: number;
-    rate2Percentage: number;
-  };
-  wattageRounding: string;
+  gstConfig: GstConfig;
   paymentMilestones: PaymentMilestone[];
-}
-
-export interface SubsidyTier {
-  fromKw: number;
-  toKw: number;
-  ratePerKw: number;
+  profitMarginTiers: ProfitMarginTier[];
 }
 
 export interface SubsidyConfigResponse {
@@ -246,14 +223,36 @@ export interface SubsidyConfigResponse {
   schemeName: string;
   projectType: ProjectType;
   maxSubsidyKw: number;
+  maxSubsidyAmount?: number;
   requiresDcr: boolean;
+  autoSplitEnabled: boolean;
   tiers: SubsidyTier[];
   isActive: boolean;
 }
 
 // ============================================================================
-// PDF Data Types
+// PDF Data Types (frontend-only)
 // ============================================================================
+
+export interface PdfCompanyInfo {
+  companyName: string;
+  address: string;
+  phone: string;
+  email?: string;
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankIfsc?: string;
+  bankBranch?: string;
+  workmanshipWarrantyYears?: number;
+  cancellationFeePercent?: number;
+  latePaymentInterestPercent?: number;
+  legalEntityName?: string;
+  bankAccountName?: string;
+  tagline?: string;
+  websiteUrl?: string;
+  whatsappDigits?: string;
+  copyrightEntity?: string;
+}
 
 export interface QuoteCustomerInfo {
   name: string;
@@ -276,6 +275,26 @@ export interface QuotePropertyInfo {
   propertyType?: string;
 }
 
+export interface QuotePdfOrgConfig {
+  companyName?: string;
+  companyAddress?: string;
+  companyPhone?: string;
+  companyEmail?: string;
+  legalEntityName?: string;
+  tagline?: string;
+  bankName?: string;
+  bankAccount?: string;
+  bankIfsc?: string;
+  bankBranch?: string;
+  bankAccountName?: string;
+  workmanshipWarrantyYears?: number;
+  warrantyWorkmanshipYears?: number;
+  cancellationFee?: number;
+  cancellationFeePercent?: number;
+  latePaymentRate?: number;
+  latePaymentRatePercent?: number;
+}
+
 export interface QuotePdfData {
   calculation: CalculateQuoteResponse;
   customer: QuoteCustomerInfo;
@@ -286,4 +305,6 @@ export interface QuotePdfData {
   showPriceBreakdown?: boolean;
   discountAmount?: number;
   gstConfig: QuoteConfigResponse['gstConfig'];
+  companyInfo?: Partial<PdfCompanyInfo>;
+  orgConfig?: Partial<QuotePdfOrgConfig>;
 }

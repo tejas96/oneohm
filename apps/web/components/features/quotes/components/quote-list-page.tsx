@@ -84,9 +84,10 @@ export function QuoteListPage(): JSX.Element {
   const initialStatus = searchParams.get('status') || 'all';
   const initialSortBy = getValidSortField(searchParams.get('sortBy'));
   const initialSortOrder = getValidSortOrder(searchParams.get('sortOrder'));
+  const initialLimit = Number(searchParams.get('limit')) || DEFAULT_PAGE_SIZE;
 
   const [page, setPage] = useState(initialPage);
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [pageSize, setPageSize] = useState(initialLimit);
   const [searchInput, setSearchInput] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [sortBy, setSortBy] = useState<QuoteSortField>(initialSortBy);
@@ -101,6 +102,7 @@ export function QuoteListPage(): JSX.Element {
   const searchParamsString = searchParams.toString();
   useEffect(() => {
     setPage(Number(searchParams.get('page')) || 1);
+    setPageSize(Number(searchParams.get('limit')) || DEFAULT_PAGE_SIZE);
     setSearchInput(searchParams.get('search') || '');
     setStatusFilter(searchParams.get('status') || 'all');
     setSortBy(getValidSortField(searchParams.get('sortBy')));
@@ -115,12 +117,13 @@ export function QuoteListPage(): JSX.Element {
       return;
     }
     setPage(1);
-  }, [debouncedSearch, debouncedStatusFilter]);
+  }, [debouncedSearch, debouncedStatusFilter, pageSize]);
 
   // Sync state to URL
   useEffect(() => {
     const params = new URLSearchParams();
     if (page > 1) params.set('page', String(page));
+    if (pageSize !== DEFAULT_PAGE_SIZE) params.set('limit', String(pageSize));
     if (debouncedSearch) params.set('search', debouncedSearch);
     if (statusFilter !== 'all') params.set('status', statusFilter);
     if (sortBy !== QuoteSortField.CREATED_AT) params.set('sortBy', sortBy);
@@ -129,7 +132,7 @@ export function QuoteListPage(): JSX.Element {
     const query = params.toString();
     const newUrl = query ? `?${query}` : window.location.pathname;
     window.history.replaceState({}, '', newUrl);
-  }, [page, debouncedSearch, statusFilter, sortBy, sortOrder]);
+  }, [page, pageSize, debouncedSearch, statusFilter, sortBy, sortOrder]);
 
   // ---------------------------------------------------------------------------
   // Data Fetching

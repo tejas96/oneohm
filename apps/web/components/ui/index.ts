@@ -65,6 +65,17 @@ export {
 } from './dialog';
 export type { DialogContentProps, ConfirmDialogProps } from './dialog';
 
+// MUI Dialog
+export {
+  MUIDialog,
+  MUIDialogHeader,
+  MUIDialogTitle,
+  MUIDialogDescription,
+  MUIDialogBody,
+  MUIDialogFooter,
+} from './mui-dialog';
+export type { MUIDialogProps } from './mui-dialog';
+
 // Dropdown Menu
 export {
   DropdownMenu,
@@ -99,6 +110,14 @@ export {
 // Input
 export { Input, inputVariants } from './input';
 export type { InputProps } from './input';
+
+// MUI Input
+export { MUIInput } from './mui-input';
+export type { MUIInputProps } from './mui-input';
+
+// MUI Select
+export { MUISelect } from './mui-select';
+export type { MUISelectProps, MUISelectOption } from './mui-select';
 
 // PasswordInput
 export { PasswordInput } from './password-input';
@@ -173,6 +192,18 @@ export { Skeleton } from './skeleton';
 // Switch
 export { Switch, switchVariants } from './switch';
 export type { SwitchProps } from './switch';
+
+// MUI Switch
+export { MUISwitch } from './mui-switch';
+export type { MUISwitchProps } from './mui-switch';
+
+// MUI Date Picker
+export { MUIDatePicker } from './mui-date-picker';
+export type { MUIDatePickerProps } from './mui-date-picker';
+
+// MUI Shared (labels, ref utils)
+export { MUIFieldLabel, mergeRefs } from './mui-shared';
+export type { MUIFieldLabelProps } from './mui-shared';
 
 // Sonner (Toasts)
 export { Toaster, showToast } from './sonner';

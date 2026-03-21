@@ -204,7 +204,7 @@ export const PRICING_AFFECTING_FIELDS = [
   'systemSizeKw',
   'projectType',
   'phaseType',
-  'subsidyApplicable',
+  'selectedSubsidyIds',
   'dcrPreference',
   'preferredPanelBrand',
   'preferredPanelTechnology',
@@ -222,7 +222,6 @@ export const PRICING_AFFECTING_FIELDS = [
 
 export const QUOTE_DETAIL_TABS = [
   { value: 'overview', label: 'Overview' },
-  { value: 'line-items', label: 'Line Items' },
   { value: 'versions', label: 'Versions' },
   { value: 'payments', label: 'Payments' },
   { value: 'activity', label: 'Activity' },

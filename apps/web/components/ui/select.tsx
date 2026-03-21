@@ -12,25 +12,28 @@ const SelectGroup = SelectPrimitive.Group;
 
 const SelectValue = SelectPrimitive.Value;
 
-export type SelectTriggerProps = React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>;
+export type SelectTriggerProps = React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> & {
+  variant?: 'default' | 'borderless';
+};
 
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
   SelectTriggerProps
->(({ className, children, ...props }, ref) => (
+>(({ className, children, variant = 'default', ...props }, ref) => (
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
       // Base styling
       'flex h-input-lg w-full items-center justify-between',
       'whitespace-nowrap rounded-md px-input-px text-sm',
-      // Border and background (matches Input component)
-      'border-1.5 border-border-medium bg-background',
+      // Border + background (matches Input component)
+      variant === 'default' && 'border-1.5 border-border-medium bg-background hover:border-border',
+      variant === 'borderless' && 'border-0 bg-transparent',
       // Placeholder
       'data-[placeholder]:text-foreground-tertiary',
-      // Hover and focus states (matches Input component)
-      'hover:border-border',
-      'focus:outline-none focus:border-primary focus:ring-focus focus:ring-primary/15',
+      // Focus state (matches Input component)
+      'focus:outline-none focus:ring-focus focus:ring-primary/15',
+      variant === 'default' && 'focus:border-primary',
       // Disabled state
       'disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-70',
       // Transition

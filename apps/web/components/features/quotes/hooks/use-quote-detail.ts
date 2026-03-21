@@ -27,8 +27,8 @@ export const quoteDetailKeys = {
 
 /**
  * Fetch enriched quote detail by ID.
- * Includes versions (with current version's line items), customer contact info,
- * property address, pricing breakdown, and payment milestones.
+ * Includes versions, customer contact info, property address,
+ * pricing breakdown, and payment milestones.
  */
 export function useQuoteDetail(
   quoteId: string,
@@ -51,7 +51,7 @@ export function useQuoteDetail(
 }
 
 /**
- * Fetch a specific version of a quote with its line items.
+ * Fetch a specific version of a quote.
  * Used when viewing historical (non-current) versions.
  * Historical versions are immutable, so staleTime is set to Infinity.
  */

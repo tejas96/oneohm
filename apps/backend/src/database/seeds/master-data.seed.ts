@@ -7,45 +7,52 @@ import loadConfig from '../../config/configuration';
  * Master Data Seed for Organization: OneOhm EPC
  *
  * Seeds:
- * 1. Product Categories (12)
- * 2. Products (56 - panels, inverters, structures)
- *    - DCR Panels: 9 (including new Adani TOPCon DCR 600-620Wp)
+ * 1. Product Types (3) + Product Type Attributes
+ * 2. Brands (10) + Brand-Product Type mappings
+ * 3. Products (56 - panels, inverters, structures)
+ *    - DCR Panels: 9 (including Adani TOPCon DCR 600-620Wp)
  *    - Non-DCR Panels: 9
  *    - 1-Phase Inverters: 13
  *    - 3-Phase Inverters: 20
  *    - Structures: 5 (Rail Mount, RCC 3X6, Elevated 6X9, Super Elevated, Ground Mount)
- * 3. Pricing Rules (51)
- * 4. Installation Pricing (100 - 1KW to 100KW)
- * 5. Subsidy Configurations (3 - residential, apartment, commercial/industrial)
- * 6. Quote Configuration (1)
+ * 4. Product Prices (51)
+ * 5. Installation Pricing (100 - 1KW to 100KW)
+ * 6. Subsidy Configurations (3 - residential, apartment, commercial/industrial)
+ * 7. Quote Configuration (1)
  */
 
 const ORG_ID = loadConfig().seed.organizationId;
 
 // =====================================================
-// Category IDs (Pre-generated for reference)
+// Product Type IDs (Pre-generated)
 // =====================================================
-const CATEGORY_IDS = {
-  SOLAR: uuidv4(),
-  PANELS: uuidv4(),
-  DCR_PANELS: uuidv4(),
-  NON_DCR_PANELS: uuidv4(),
-  INVERTERS: uuidv4(),
-  INV_1P: uuidv4(),
-  INV_3P: uuidv4(),
-  STRUCTURES: uuidv4(),
-  ROOF_STRUCT: uuidv4(),
-  GROUND_STRUCT: uuidv4(),
-  CABLES: uuidv4(),
-  ACCESSORIES: uuidv4(),
+const PRODUCT_TYPE_IDS = {
+  SOLAR_PANEL: uuidv4(),
+  INVERTER: uuidv4(),
+  MOUNTING_STRUCTURE: uuidv4(),
 };
 
 // =====================================================
-// Product IDs (Pre-generated for pricing rule references)
+// Brand IDs (Pre-generated)
+// =====================================================
+const BRAND_IDS: Record<string, string> = {
+  Adani: uuidv4(),
+  Waaree: uuidv4(),
+  Premier: uuidv4(),
+  Navitas: uuidv4(),
+  Vikram: uuidv4(),
+  Renewsys: uuidv4(),
+  Sungrow: uuidv4(),
+  Goodwe: uuidv4(),
+  SolarEdge: uuidv4(),
+  Generic: uuidv4(),
+};
+
+// =====================================================
+// Product IDs (Pre-generated for pricing references)
 // =====================================================
 const PRODUCT_IDS: Record<string, string> = {};
 
-// Generate product IDs upfront
 const productCodes = [
   'ADANI-PERC-DCR',
   'ADANI-TOPCON-DCR',
@@ -122,28 +129,18 @@ export async function seedMasterData(dataSource: DataSource): Promise<void> {
     // =====================================================
     console.log('🧹 Cleaning up existing master data...');
 
-    // Delete in reverse dependency order
-    // First, clean up quote-related tables that reference products
-    // quote_line_items -> quote_versions -> quotes (cascade delete path)
     await queryRunner.query(
-      `
-      DELETE FROM quote_line_items 
-      WHERE quote_version_id IN (
-        SELECT qv.id FROM quote_versions qv 
-        JOIN quotes q ON qv.quote_id = q.id 
-        WHERE q.organization_id = $1
-      )`,
+      `DELETE FROM quote_versions 
+      WHERE quote_id IN (SELECT id FROM quotes WHERE organization_id = $1)`,
       [ORG_ID],
     );
+    // Delete projects that reference quotes for this org (quote_id is NOT NULL in projects)
     await queryRunner.query(
-      `
-      DELETE FROM quote_versions 
-      WHERE quote_id IN (SELECT id FROM quotes WHERE organization_id = $1)`,
+      `DELETE FROM projects WHERE quote_id IN (SELECT id FROM quotes WHERE organization_id = $1)`,
       [ORG_ID],
     );
     await queryRunner.query(`DELETE FROM quotes WHERE organization_id = $1`, [ORG_ID]);
 
-    // Then clean up master data tables
     await queryRunner.query(`DELETE FROM quote_configurations WHERE organization_id = $1`, [
       ORG_ID,
     ]);
@@ -153,50 +150,62 @@ export async function seedMasterData(dataSource: DataSource): Promise<void> {
     await queryRunner.query(`DELETE FROM installation_pricing WHERE organization_id = $1`, [
       ORG_ID,
     ]);
-    await queryRunner.query(`DELETE FROM pricing_rules WHERE organization_id = $1`, [ORG_ID]);
+    await queryRunner.query(`DELETE FROM product_prices WHERE organization_id = $1`, [ORG_ID]);
     await queryRunner.query(`DELETE FROM products WHERE organization_id = $1`, [ORG_ID]);
-    await queryRunner.query(`DELETE FROM product_categories WHERE organization_id = $1`, [ORG_ID]);
+    await queryRunner.query(
+      `DELETE FROM brand_product_types WHERE brand_id IN (SELECT id FROM brands WHERE organization_id = $1)`,
+      [ORG_ID],
+    );
+    await queryRunner.query(`DELETE FROM brands WHERE organization_id = $1`, [ORG_ID]);
+    await queryRunner.query(
+      `DELETE FROM product_type_attributes WHERE product_type_id IN (SELECT id FROM product_types WHERE organization_id = $1) AND is_system IS NOT TRUE`,
+      [ORG_ID],
+    );
+    await queryRunner.query(
+      `DELETE FROM product_types WHERE organization_id = $1 AND is_system IS NOT TRUE`,
+      [ORG_ID],
+    );
 
     console.log('✅ Cleanup completed');
 
     // =====================================================
-    // 1. PRODUCT CATEGORIES
+    // 1. PRODUCT TYPES + ATTRIBUTES
     // =====================================================
-    console.log('📁 Inserting product categories...');
-    await insertProductCategories(queryRunner);
+    console.log('📁 Inserting product types and attributes...');
+    await insertProductTypes(queryRunner);
 
     // =====================================================
-    // 2. PRODUCTS
+    // 2. BRANDS + BRAND-PRODUCT TYPE MAPPINGS
+    // =====================================================
+    console.log('🏷️ Inserting brands...');
+    await insertBrands(queryRunner);
+
+    // =====================================================
+    // 3. PRODUCTS
     // =====================================================
     console.log('📦 Inserting products...');
     await insertProducts(queryRunner);
 
     // =====================================================
-    // 3. PRICING RULES
+    // 4. PRODUCT PRICES
     // =====================================================
-    console.log('💰 Inserting pricing rules...');
-    await insertPricingRules(queryRunner);
+    console.log('💰 Inserting product prices...');
+    await insertProductPrices(queryRunner);
 
     // =====================================================
-    // 3b. STRUCTURE PRICING RULES (must run after products are inserted)
-    // =====================================================
-    console.log('🏗️ Inserting structure pricing rules...');
-    await insertStructurePricingRules(queryRunner);
-
-    // =====================================================
-    // 4. INSTALLATION PRICING
+    // 5. INSTALLATION PRICING
     // =====================================================
     console.log('🔧 Inserting installation pricing (1-100 KW)...');
     await insertInstallationPricing(queryRunner);
 
     // =====================================================
-    // 5. SUBSIDY CONFIGURATIONS
+    // 6. SUBSIDY CONFIGURATIONS
     // =====================================================
     console.log('🏛️ Inserting subsidy configurations...');
     await insertSubsidyConfigurations(queryRunner);
 
     // =====================================================
-    // 6. QUOTE CONFIGURATION
+    // 7. QUOTE CONFIGURATION
     // =====================================================
     console.log('📋 Inserting quote configuration...');
     await insertQuoteConfiguration(queryRunner);
@@ -213,107 +222,408 @@ export async function seedMasterData(dataSource: DataSource): Promise<void> {
 }
 
 // =====================================================
-// PRODUCT CATEGORIES
+// PRODUCT TYPES + ATTRIBUTES
 // =====================================================
-async function insertProductCategories(queryRunner: QueryRunner): Promise<void> {
-  const categories = [
+async function insertProductTypes(queryRunner: QueryRunner): Promise<void> {
+  const productTypes = [
     {
-      id: CATEGORY_IDS.SOLAR,
-      name: 'Solar Equipment',
-      code: 'SOLAR',
-      description: 'All solar equipment and components',
-      parentId: null,
-    },
-    {
-      id: CATEGORY_IDS.PANELS,
-      name: 'Solar Panels',
-      code: 'PANELS',
+      id: PRODUCT_TYPE_IDS.SOLAR_PANEL,
+      name: 'Solar Panel',
+      code: 'solar_panel',
       description: 'Solar photovoltaic panels',
-      parentId: CATEGORY_IDS.SOLAR,
+      defaultPricingBasis: 'per_watt',
+      defaultGstRate: 5.0,
+      unitOfMeasure: 'pcs',
+      sortOrder: 1,
     },
     {
-      id: CATEGORY_IDS.DCR_PANELS,
-      name: 'DCR Panels',
-      code: 'DCR-PANELS',
-      description: 'Domestic Content Requirement panels for subsidy projects',
-      parentId: CATEGORY_IDS.PANELS,
-    },
-    {
-      id: CATEGORY_IDS.NON_DCR_PANELS,
-      name: 'Non-DCR Panels',
-      code: 'NON-DCR-PANELS',
-      description: 'Non-DCR panels for commercial and industrial projects',
-      parentId: CATEGORY_IDS.PANELS,
-    },
-    {
-      id: CATEGORY_IDS.INVERTERS,
-      name: 'Inverters',
-      code: 'INVERTERS',
+      id: PRODUCT_TYPE_IDS.INVERTER,
+      name: 'Inverter',
+      code: 'inverter',
       description: 'Solar inverters for power conversion',
-      parentId: CATEGORY_IDS.SOLAR,
+      defaultPricingBasis: 'per_unit',
+      defaultGstRate: 5.0,
+      unitOfMeasure: 'pcs',
+      sortOrder: 2,
     },
     {
-      id: CATEGORY_IDS.INV_1P,
-      name: '1-Phase Inverters',
-      code: 'INV-1P',
-      description: 'Single phase inverters for residential',
-      parentId: CATEGORY_IDS.INVERTERS,
-    },
-    {
-      id: CATEGORY_IDS.INV_3P,
-      name: '3-Phase Inverters',
-      code: 'INV-3P',
-      description: 'Three phase inverters for commercial and industrial',
-      parentId: CATEGORY_IDS.INVERTERS,
-    },
-    {
-      id: CATEGORY_IDS.STRUCTURES,
-      name: 'Mounting Structures',
-      code: 'STRUCTURES',
+      id: PRODUCT_TYPE_IDS.MOUNTING_STRUCTURE,
+      name: 'Mounting Structure',
+      code: 'mounting_structure',
       description: 'Panel mounting structures',
-      parentId: CATEGORY_IDS.SOLAR,
-    },
-    {
-      id: CATEGORY_IDS.ROOF_STRUCT,
-      name: 'Rooftop Structures',
-      code: 'ROOF-STRUCT',
-      description: 'Rooftop mounting structures',
-      parentId: CATEGORY_IDS.STRUCTURES,
-    },
-    {
-      id: CATEGORY_IDS.GROUND_STRUCT,
-      name: 'Ground Mount Structures',
-      code: 'GROUND-STRUCT',
-      description: 'Ground mounting structures',
-      parentId: CATEGORY_IDS.STRUCTURES,
-    },
-    {
-      id: CATEGORY_IDS.CABLES,
-      name: 'Cables and Wiring',
-      code: 'CABLES',
-      description: 'Electrical cables and wiring',
-      parentId: CATEGORY_IDS.SOLAR,
-    },
-    {
-      id: CATEGORY_IDS.ACCESSORIES,
-      name: 'Accessories',
-      code: 'ACCESSORIES',
-      description: 'Solar system accessories',
-      parentId: CATEGORY_IDS.SOLAR,
+      defaultPricingBasis: 'per_kw',
+      defaultGstRate: 18.0,
+      unitOfMeasure: 'set',
+      sortOrder: 3,
     },
   ];
 
-  for (const cat of categories) {
+  for (const pt of productTypes) {
     await queryRunner.query(
-      `
-      INSERT INTO product_categories (id, organization_id, name, code, description, parent_category_id, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-      ON CONFLICT (organization_id, code) DO NOTHING
-    `,
-      [cat.id, ORG_ID, cat.name, cat.code, cat.description, cat.parentId],
+      `INSERT INTO product_types (id, organization_id, name, code, description, default_pricing_basis, default_gst_rate, default_unit_of_measure, is_active, sort_order, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE, $9, NOW(), NOW())
+      ON CONFLICT (organization_id, code) DO NOTHING`,
+      [
+        pt.id,
+        ORG_ID,
+        pt.name,
+        pt.code,
+        pt.description,
+        pt.defaultPricingBasis,
+        pt.defaultGstRate,
+        pt.unitOfMeasure,
+        pt.sortOrder,
+      ],
     );
   }
-  console.log(`  ✓ Inserted ${categories.length} categories`);
+
+  // Re-read the actual IDs from DB (ON CONFLICT DO NOTHING may have kept existing rows with different IDs)
+  const [ptSolar] = await queryRunner.query(
+    `SELECT id FROM product_types WHERE organization_id = $1 AND code = 'solar_panel' LIMIT 1`,
+    [ORG_ID],
+  );
+  const [ptInverter] = await queryRunner.query(
+    `SELECT id FROM product_types WHERE organization_id = $1 AND code = 'inverter' LIMIT 1`,
+    [ORG_ID],
+  );
+  const [ptStructure] = await queryRunner.query(
+    `SELECT id FROM product_types WHERE organization_id = $1 AND code = 'mounting_structure' LIMIT 1`,
+    [ORG_ID],
+  );
+
+  // Update in-memory IDs to match what's actually in the DB
+  PRODUCT_TYPE_IDS.SOLAR_PANEL = ptSolar.id as string;
+  PRODUCT_TYPE_IDS.INVERTER = ptInverter.id as string;
+  PRODUCT_TYPE_IDS.MOUNTING_STRUCTURE = ptStructure.id as string;
+
+  console.log(`  ✓ Inserted ${productTypes.length} product types`);
+
+  // Solar Panel Attributes
+  const solarPanelAttrs = [
+    {
+      key: 'wattage',
+      label: 'Wattage (Wp)',
+      dataType: 'integer',
+      required: true,
+      filterable: true,
+      validation: { min: 100, max: 1000 },
+      group: 'specifications',
+      sort: 1,
+    },
+    {
+      key: 'technology',
+      label: 'Cell Technology',
+      dataType: 'enum',
+      required: true,
+      filterable: true,
+      validation: { values: ['perc', 'topcon', 'hjt', 'thin_film'] },
+      group: 'specifications',
+      sort: 2,
+    },
+    {
+      key: 'is_dcr',
+      label: 'DCR Approved',
+      dataType: 'boolean',
+      required: true,
+      filterable: true,
+      validation: null,
+      group: 'compliance',
+      sort: 3,
+    },
+    {
+      key: 'min_wattage',
+      label: 'Min Wattage (Wp)',
+      dataType: 'integer',
+      required: false,
+      filterable: false,
+      validation: null,
+      group: 'specifications',
+      sort: 4,
+    },
+    {
+      key: 'max_wattage',
+      label: 'Max Wattage (Wp)',
+      dataType: 'integer',
+      required: false,
+      filterable: false,
+      validation: null,
+      group: 'specifications',
+      sort: 5,
+    },
+    {
+      key: 'efficiency',
+      label: 'Efficiency (%)',
+      dataType: 'decimal',
+      required: false,
+      filterable: false,
+      validation: { min: 10, max: 30 },
+      group: 'performance',
+      sort: 6,
+    },
+  ];
+
+  for (const attr of solarPanelAttrs) {
+    await queryRunner.query(
+      `INSERT INTO product_type_attributes (id, product_type_id, attribute_key, label, data_type, is_required, is_filterable, default_value, validation, group_name, sort_order)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NULL, $8, $9, $10)
+      ON CONFLICT (product_type_id, attribute_key) DO NOTHING`,
+      [
+        uuidv4(),
+        PRODUCT_TYPE_IDS.SOLAR_PANEL,
+        attr.key,
+        attr.label,
+        attr.dataType,
+        attr.required,
+        attr.filterable,
+        attr.validation ? JSON.stringify(attr.validation) : null,
+        attr.group,
+        attr.sort,
+      ],
+    );
+  }
+
+  // Inverter Attributes
+  const inverterAttrs = [
+    {
+      key: 'capacity_kw',
+      label: 'Capacity (KW)',
+      dataType: 'decimal',
+      required: true,
+      filterable: true,
+      validation: { min: 0.5, max: 500 },
+      group: 'specifications',
+      sort: 1,
+    },
+    {
+      key: 'phase_type',
+      label: 'Phase Type',
+      dataType: 'enum',
+      required: true,
+      filterable: true,
+      validation: { values: ['single_phase', 'three_phase'] },
+      group: 'specifications',
+      sort: 2,
+    },
+    {
+      key: 'min_system_size_kw',
+      label: 'Min System Size (KW)',
+      dataType: 'decimal',
+      required: false,
+      filterable: false,
+      validation: null,
+      group: 'compatibility',
+      sort: 3,
+    },
+    {
+      key: 'max_system_size_kw',
+      label: 'Max System Size (KW)',
+      dataType: 'decimal',
+      required: false,
+      filterable: false,
+      validation: null,
+      group: 'compatibility',
+      sort: 4,
+    },
+    {
+      key: 'voltage',
+      label: 'Voltage',
+      dataType: 'string',
+      required: false,
+      filterable: false,
+      validation: null,
+      group: 'specifications',
+      sort: 5,
+    },
+  ];
+
+  for (const attr of inverterAttrs) {
+    await queryRunner.query(
+      `INSERT INTO product_type_attributes (id, product_type_id, attribute_key, label, data_type, is_required, is_filterable, default_value, validation, group_name, sort_order)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NULL, $8, $9, $10)
+      ON CONFLICT (product_type_id, attribute_key) DO NOTHING`,
+      [
+        uuidv4(),
+        PRODUCT_TYPE_IDS.INVERTER,
+        attr.key,
+        attr.label,
+        attr.dataType,
+        attr.required,
+        attr.filterable,
+        attr.validation ? JSON.stringify(attr.validation) : null,
+        attr.group,
+        attr.sort,
+      ],
+    );
+  }
+
+  // Mounting Structure Attributes
+  const structureAttrs = [
+    {
+      key: 'structure_type',
+      label: 'Structure Type',
+      dataType: 'enum',
+      required: true,
+      filterable: true,
+      validation: {
+        values: ['aluminum_rail', 'rcc_3x6', 'elevated_6x9', 'super_elevated', 'ground_mount'],
+      },
+      group: 'specifications',
+      sort: 1,
+    },
+    {
+      key: 'material',
+      label: 'Material',
+      dataType: 'string',
+      required: false,
+      filterable: false,
+      validation: null,
+      group: 'specifications',
+      sort: 2,
+    },
+    {
+      key: 'weight_kg',
+      label: 'Weight (kg)',
+      dataType: 'decimal',
+      required: false,
+      filterable: false,
+      validation: null,
+      group: 'specifications',
+      sort: 3,
+    },
+  ];
+
+  for (const attr of structureAttrs) {
+    await queryRunner.query(
+      `INSERT INTO product_type_attributes (id, product_type_id, attribute_key, label, data_type, is_required, is_filterable, default_value, validation, group_name, sort_order)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NULL, $8, $9, $10)
+      ON CONFLICT (product_type_id, attribute_key) DO NOTHING`,
+      [
+        uuidv4(),
+        PRODUCT_TYPE_IDS.MOUNTING_STRUCTURE,
+        attr.key,
+        attr.label,
+        attr.dataType,
+        attr.required,
+        attr.filterable,
+        attr.validation ? JSON.stringify(attr.validation) : null,
+        attr.group,
+        attr.sort,
+      ],
+    );
+  }
+
+  const totalAttrs = solarPanelAttrs.length + inverterAttrs.length + structureAttrs.length;
+  console.log(`  ✓ Inserted ${totalAttrs} product type attributes`);
+}
+
+// =====================================================
+// BRANDS + BRAND-PRODUCT TYPE MAPPINGS
+// =====================================================
+async function insertBrands(queryRunner: QueryRunner): Promise<void> {
+  const brands = [
+    {
+      id: BRAND_IDS['Adani'],
+      name: 'Adani',
+      manufacturer: 'Adani Solar',
+      website: 'https://www.adanisolar.com',
+    },
+    {
+      id: BRAND_IDS['Waaree'],
+      name: 'Waaree',
+      manufacturer: 'Waaree Energies',
+      website: 'https://www.waaree.com',
+    },
+    {
+      id: BRAND_IDS['Premier'],
+      name: 'Premier',
+      manufacturer: 'Premier Energies',
+      website: 'https://www.premierenergies.com',
+    },
+    {
+      id: BRAND_IDS['Navitas'],
+      name: 'Navitas',
+      manufacturer: 'Navitas Solar',
+      website: 'https://www.navitassolar.com',
+    },
+    {
+      id: BRAND_IDS['Vikram'],
+      name: 'Vikram',
+      manufacturer: 'Vikram Solar',
+      website: 'https://www.vikramsolar.com',
+    },
+    {
+      id: BRAND_IDS['Renewsys'],
+      name: 'Renewsys',
+      manufacturer: 'Renewsys India',
+      website: 'https://www.renewsysindia.com',
+    },
+    {
+      id: BRAND_IDS['Sungrow'],
+      name: 'Sungrow',
+      manufacturer: 'Sungrow Power',
+      website: 'https://www.sungrowpower.com',
+    },
+    {
+      id: BRAND_IDS['Goodwe'],
+      name: 'Goodwe',
+      manufacturer: 'Goodwe Power',
+      website: 'https://www.goodwe.com',
+    },
+    {
+      id: BRAND_IDS['SolarEdge'],
+      name: 'SolarEdge',
+      manufacturer: 'SolarEdge Technologies',
+      website: 'https://www.solaredge.com',
+    },
+    { id: BRAND_IDS['Generic'], name: 'Generic', manufacturer: 'OneOhm', website: null },
+  ];
+
+  for (const brand of brands) {
+    await queryRunner.query(
+      `INSERT INTO brands (id, organization_id, name, manufacturer_name, website, is_active, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, TRUE, NOW(), NOW())
+      ON CONFLICT (organization_id, name) DO NOTHING`,
+      [brand.id, ORG_ID, brand.name, brand.manufacturer, brand.website],
+    );
+  }
+
+  // Re-read actual brand IDs from DB (ON CONFLICT DO NOTHING may have kept existing rows)
+  const brandRows = await queryRunner.query(
+    `SELECT id, name FROM brands WHERE organization_id = $1 AND name = ANY($2::text[])`,
+    [ORG_ID, Object.keys(BRAND_IDS)],
+  );
+  for (const row of brandRows as Array<{ id: string; name: string }>) {
+    BRAND_IDS[row.name] = row.id;
+  }
+
+  console.log(`  ✓ Inserted ${brands.length} brands`);
+
+  // Brand-Product Type mappings
+  const brandProductTypes = [
+    // Panel brands
+    { brandId: BRAND_IDS['Adani'], productTypeId: PRODUCT_TYPE_IDS.SOLAR_PANEL },
+    { brandId: BRAND_IDS['Waaree'], productTypeId: PRODUCT_TYPE_IDS.SOLAR_PANEL },
+    { brandId: BRAND_IDS['Premier'], productTypeId: PRODUCT_TYPE_IDS.SOLAR_PANEL },
+    { brandId: BRAND_IDS['Navitas'], productTypeId: PRODUCT_TYPE_IDS.SOLAR_PANEL },
+    { brandId: BRAND_IDS['Vikram'], productTypeId: PRODUCT_TYPE_IDS.SOLAR_PANEL },
+    { brandId: BRAND_IDS['Renewsys'], productTypeId: PRODUCT_TYPE_IDS.SOLAR_PANEL },
+    // Inverter brands
+    { brandId: BRAND_IDS['Sungrow'], productTypeId: PRODUCT_TYPE_IDS.INVERTER },
+    { brandId: BRAND_IDS['Goodwe'], productTypeId: PRODUCT_TYPE_IDS.INVERTER },
+    { brandId: BRAND_IDS['SolarEdge'], productTypeId: PRODUCT_TYPE_IDS.INVERTER },
+    // Structure brand
+    { brandId: BRAND_IDS['Generic'], productTypeId: PRODUCT_TYPE_IDS.MOUNTING_STRUCTURE },
+  ];
+
+  for (const bpt of brandProductTypes) {
+    await queryRunner.query(
+      `INSERT INTO brand_product_types (id, brand_id, product_type_id, is_active, created_at)
+      VALUES ($1, $2, $3, TRUE, NOW())
+      ON CONFLICT (brand_id, product_type_id) DO NOTHING`,
+      [uuidv4(), bpt.brandId, bpt.productTypeId],
+    );
+  }
+  console.log(`  ✓ Inserted ${brandProductTypes.length} brand-product type mappings`);
 }
 
 // =====================================================
@@ -326,7 +636,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'ADANI-PERC-DCR',
       name: 'Adani Solar Panel PERC DCR 530-550Wp',
       brand: 'Adani',
-      manufacturer: 'Adani Solar',
       model: 'PERC-545-DCR',
       wattage: 540,
       minW: 530,
@@ -340,7 +649,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'ADANI-TOPCON-DCR',
       name: 'Adani Solar Panel TOPCon DCR 560-580Wp',
       brand: 'Adani',
-      manufacturer: 'Adani Solar',
       model: 'TOPCON-570-DCR',
       wattage: 570,
       minW: 560,
@@ -354,7 +662,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'ADANI-TOPCON-DCR-600',
       name: 'Adani Solar Panel TOPCon DCR 600-620Wp',
       brand: 'Adani',
-      manufacturer: 'Adani Solar',
       model: 'TOPCON-610-DCR',
       wattage: 610,
       minW: 600,
@@ -368,7 +675,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'WAAREE-PERC-DCR',
       name: 'Waaree Solar Panel PERC DCR 530-550Wp',
       brand: 'Waaree',
-      manufacturer: 'Waaree Energies',
       model: 'PERC-545-DCR',
       wattage: 540,
       minW: 530,
@@ -382,7 +688,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'WAAREE-TOPCON-DCR',
       name: 'Waaree Solar Panel TOPCon DCR 560-580Wp',
       brand: 'Waaree',
-      manufacturer: 'Waaree Energies',
       model: 'TOPCON-570-DCR',
       wattage: 570,
       minW: 560,
@@ -396,7 +701,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'PREMIER-PERC-DCR',
       name: 'Premier Solar Panel PERC DCR 530-550Wp',
       brand: 'Premier',
-      manufacturer: 'Premier Energies',
       model: 'PERC-545-DCR',
       wattage: 540,
       minW: 530,
@@ -410,7 +714,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'PREMIER-TOPCON-DCR',
       name: 'Premier Solar Panel TOPCon DCR 600-620Wp',
       brand: 'Premier',
-      manufacturer: 'Premier Energies',
       model: 'TOPCON-600-DCR',
       wattage: 600,
       minW: 600,
@@ -424,7 +727,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'NAVITAS-PERC-DCR',
       name: 'Navitas Solar Panel PERC DCR 530-550Wp',
       brand: 'Navitas',
-      manufacturer: 'Navitas Solar',
       model: 'PERC-545-DCR',
       wattage: 540,
       minW: 530,
@@ -438,7 +740,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'VIKRAM-PERC-DCR',
       name: 'Vikram Solar Panel PERC DCR 530-550Wp',
       brand: 'Vikram',
-      manufacturer: 'Vikram Solar',
       model: 'PERC-545-DCR',
       wattage: 540,
       minW: 530,
@@ -456,7 +757,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'ADANI-PERC-NONDCR',
       name: 'Adani Solar Panel PERC Non-DCR 530-550Wp',
       brand: 'Adani',
-      manufacturer: 'Adani Solar',
       model: 'PERC-545-NONDCR',
       wattage: 540,
       minW: 530,
@@ -470,7 +770,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'ADANI-TOPCON-NONDCR',
       name: 'Adani Solar Panel TOPCon Non-DCR 600-620Wp',
       brand: 'Adani',
-      manufacturer: 'Adani Solar',
       model: 'TOPCON-610-NONDCR',
       wattage: 610,
       minW: 600,
@@ -484,7 +783,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'WAAREE-PERC-NONDCR',
       name: 'Waaree Solar Panel PERC Non-DCR 530-550Wp',
       brand: 'Waaree',
-      manufacturer: 'Waaree Energies',
       model: 'PERC-545-NONDCR',
       wattage: 540,
       minW: 530,
@@ -498,7 +796,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'WAAREE-TOPCON-NONDCR',
       name: 'Waaree Solar Panel TOPCon Non-DCR 600-620Wp',
       brand: 'Waaree',
-      manufacturer: 'Waaree Energies',
       model: 'TOPCON-610-NONDCR',
       wattage: 610,
       minW: 600,
@@ -512,7 +809,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'PREMIER-PERC-NONDCR',
       name: 'Premier Solar Panel PERC Non-DCR 530-550Wp',
       brand: 'Premier',
-      manufacturer: 'Premier Energies',
       model: 'PERC-545-NONDCR',
       wattage: 540,
       minW: 530,
@@ -526,7 +822,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'PREMIER-TOPCON-NONDCR',
       name: 'Premier Solar Panel TOPCon Non-DCR 600-620Wp',
       brand: 'Premier',
-      manufacturer: 'Premier Energies',
       model: 'TOPCON-610-NONDCR',
       wattage: 610,
       minW: 600,
@@ -540,7 +835,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'NAVITAS-TOPCON-NONDCR',
       name: 'Navitas Solar Panel TOPCon Non-DCR 600-620Wp',
       brand: 'Navitas',
-      manufacturer: 'Navitas Solar',
       model: 'TOPCON-610-NONDCR',
       wattage: 610,
       minW: 600,
@@ -554,7 +848,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'VIKRAM-TOPCON-NONDCR',
       name: 'Vikram Solar Panel TOPCon Non-DCR 600-620Wp',
       brand: 'Vikram',
-      manufacturer: 'Vikram Solar',
       model: 'TOPCON-610-NONDCR',
       wattage: 610,
       minW: 600,
@@ -568,7 +861,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'RENEWSYS-TOPCON-NONDCR',
       name: 'Renewsys Solar Panel TOPCon Non-DCR 600-620Wp',
       brand: 'Renewsys',
-      manufacturer: 'Renewsys India',
       model: 'TOPCON-610-NONDCR',
       wattage: 610,
       minW: 600,
@@ -583,31 +875,25 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
   // Insert DCR Panels
   for (const panel of dcrPanels) {
     const specs = JSON.stringify({
-      common: { wattage: panel.wattage, cellType: panel.tech.toUpperCase(), efficiency: panel.eff },
-      panel: {
-        isDcr: true,
-        technology: panel.tech,
-        wattage: panel.wattage,
-        minWattage: panel.minW,
-        maxWattage: panel.maxW,
-      },
+      wattage: panel.wattage,
+      technology: panel.tech,
+      is_dcr: true,
+      min_wattage: panel.minW,
+      max_wattage: panel.maxW,
+      efficiency: panel.eff,
     });
     await queryRunner.query(
-      `
-      INSERT INTO products (id, organization_id, category_id, name, code, description, type, brand, manufacturer, model_number, unit_of_measure, product_warranty_years, performance_warranty_years, status, specifications, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW())
-      ON CONFLICT (organization_id, code) DO NOTHING
-    `,
+      `INSERT INTO products (id, organization_id, product_type_id, brand_id, name, code, description, model_number, unit_of_measure, product_warranty_years, performance_warranty_years, status, specifications, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
+      ON CONFLICT (organization_id, code) DO NOTHING`,
       [
         PRODUCT_IDS[panel.code],
         ORG_ID,
-        CATEGORY_IDS.DCR_PANELS,
+        PRODUCT_TYPE_IDS.SOLAR_PANEL,
+        BRAND_IDS[panel.brand],
         panel.name,
         panel.code,
         `${panel.brand} DCR approved ${panel.tech.toUpperCase()} technology panel for subsidy projects`,
-        'solar_panel',
-        panel.brand,
-        panel.manufacturer,
         panel.model,
         'pcs',
         panel.warranty,
@@ -621,31 +907,25 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
   // Insert Non-DCR Panels
   for (const panel of nonDcrPanels) {
     const specs = JSON.stringify({
-      common: { wattage: panel.wattage, cellType: panel.tech.toUpperCase(), efficiency: panel.eff },
-      panel: {
-        isDcr: false,
-        technology: panel.tech,
-        wattage: panel.wattage,
-        minWattage: panel.minW,
-        maxWattage: panel.maxW,
-      },
+      wattage: panel.wattage,
+      technology: panel.tech,
+      is_dcr: false,
+      min_wattage: panel.minW,
+      max_wattage: panel.maxW,
+      efficiency: panel.eff,
     });
     await queryRunner.query(
-      `
-      INSERT INTO products (id, organization_id, category_id, name, code, description, type, brand, manufacturer, model_number, unit_of_measure, product_warranty_years, performance_warranty_years, status, specifications, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW())
-      ON CONFLICT (organization_id, code) DO NOTHING
-    `,
+      `INSERT INTO products (id, organization_id, product_type_id, brand_id, name, code, description, model_number, unit_of_measure, product_warranty_years, performance_warranty_years, status, specifications, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
+      ON CONFLICT (organization_id, code) DO NOTHING`,
       [
         PRODUCT_IDS[panel.code],
         ORG_ID,
-        CATEGORY_IDS.NON_DCR_PANELS,
+        PRODUCT_TYPE_IDS.SOLAR_PANEL,
+        BRAND_IDS[panel.brand],
         panel.name,
         panel.code,
         `${panel.brand} Non-DCR ${panel.tech.toUpperCase()} panel for commercial projects`,
-        'solar_panel',
-        panel.brand,
-        panel.manufacturer,
         panel.model,
         'pcs',
         panel.warranty,
@@ -662,7 +942,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SUNGROW-1KW-1P',
       name: 'Sungrow 1KW 1-Phase On-Grid Inverter',
       brand: 'Sungrow',
-      manufacturer: 'Sungrow Power',
       model: 'SG1K-S',
       capacity: 1,
       minSize: 1,
@@ -673,7 +952,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SUNGROW-2KW-1P',
       name: 'Sungrow 2KW 1-Phase On-Grid Inverter',
       brand: 'Sungrow',
-      manufacturer: 'Sungrow Power',
       model: 'SG2K-S',
       capacity: 2,
       minSize: 2,
@@ -684,7 +962,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SUNGROW-3KW-1P',
       name: 'Sungrow 3KW 1-Phase On-Grid Inverter',
       brand: 'Sungrow',
-      manufacturer: 'Sungrow Power',
       model: 'SG3K-S',
       capacity: 3,
       minSize: 3,
@@ -695,7 +972,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SUNGROW-4KW-1P',
       name: 'Sungrow 4KW 1-Phase On-Grid Inverter',
       brand: 'Sungrow',
-      manufacturer: 'Sungrow Power',
       model: 'SG4K-S',
       capacity: 4,
       minSize: 4,
@@ -706,7 +982,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SUNGROW-5KW-1P',
       name: 'Sungrow 5KW 1-Phase On-Grid Inverter',
       brand: 'Sungrow',
-      manufacturer: 'Sungrow Power',
       model: 'SG5K-S',
       capacity: 5,
       minSize: 5,
@@ -717,7 +992,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SUNGROW-6KW-1P',
       name: 'Sungrow 6KW 1-Phase On-Grid Inverter',
       brand: 'Sungrow',
-      manufacturer: 'Sungrow Power',
       model: 'SG6K-S',
       capacity: 6,
       minSize: 6,
@@ -728,7 +1002,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'GOODWE-2KW-1P',
       name: 'Goodwe 2KW 1-Phase On-Grid Inverter',
       brand: 'Goodwe',
-      manufacturer: 'Goodwe Power',
       model: 'GW2K-NS',
       capacity: 2,
       minSize: 2,
@@ -739,7 +1012,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'GOODWE-3KW-1P',
       name: 'Goodwe 3KW 1-Phase On-Grid Inverter',
       brand: 'Goodwe',
-      manufacturer: 'Goodwe Power',
       model: 'GW3K-NS',
       capacity: 3,
       minSize: 3,
@@ -750,7 +1022,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'GOODWE-4KW-1P',
       name: 'Goodwe 4KW 1-Phase On-Grid Inverter',
       brand: 'Goodwe',
-      manufacturer: 'Goodwe Power',
       model: 'GW4K-NS',
       capacity: 4,
       minSize: 4,
@@ -761,7 +1032,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'GOODWE-5KW-1P',
       name: 'Goodwe 5KW 1-Phase On-Grid Inverter',
       brand: 'Goodwe',
-      manufacturer: 'Goodwe Power',
       model: 'GW5K-NS',
       capacity: 5,
       minSize: 5,
@@ -772,7 +1042,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'GOODWE-6KW-1P',
       name: 'Goodwe 6KW 1-Phase On-Grid Inverter',
       brand: 'Goodwe',
-      manufacturer: 'Goodwe Power',
       model: 'GW6K-NS',
       capacity: 6,
       minSize: 6,
@@ -783,7 +1052,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SOLAREDGE-3KW-1P',
       name: 'SolarEdge 3KW 1-Phase On-Grid Inverter',
       brand: 'SolarEdge',
-      manufacturer: 'SolarEdge Technologies',
       model: 'SE3K',
       capacity: 3,
       minSize: 3,
@@ -794,7 +1062,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SOLAREDGE-5KW-1P',
       name: 'SolarEdge 5KW 1-Phase On-Grid Inverter',
       brand: 'SolarEdge',
-      manufacturer: 'SolarEdge Technologies',
       model: 'SE5K',
       capacity: 5,
       minSize: 4,
@@ -809,7 +1076,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SUNGROW-8KW-3P',
       name: 'Sungrow 8KW 3-Phase On-Grid Inverter',
       brand: 'Sungrow',
-      manufacturer: 'Sungrow Power',
       model: 'SG8KTL-M',
       capacity: 8,
       minSize: 7,
@@ -820,7 +1086,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SUNGROW-10KW-3P',
       name: 'Sungrow 10KW 3-Phase On-Grid Inverter',
       brand: 'Sungrow',
-      manufacturer: 'Sungrow Power',
       model: 'SG10KTL-M',
       capacity: 10,
       minSize: 9,
@@ -831,7 +1096,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SUNGROW-12KW-3P',
       name: 'Sungrow 12KW 3-Phase On-Grid Inverter',
       brand: 'Sungrow',
-      manufacturer: 'Sungrow Power',
       model: 'SG12KTL-M',
       capacity: 12,
       minSize: 12,
@@ -842,7 +1106,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SUNGROW-15KW-3P',
       name: 'Sungrow 15KW 3-Phase On-Grid Inverter',
       brand: 'Sungrow',
-      manufacturer: 'Sungrow Power',
       model: 'SG15KTL-M',
       capacity: 15,
       minSize: 14,
@@ -853,7 +1116,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SUNGROW-20KW-3P',
       name: 'Sungrow 20KW 3-Phase On-Grid Inverter',
       brand: 'Sungrow',
-      manufacturer: 'Sungrow Power',
       model: 'SG20KTL-M',
       capacity: 20,
       minSize: 18,
@@ -864,7 +1126,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SUNGROW-33KW-3P',
       name: 'Sungrow 33KW 3-Phase On-Grid Inverter',
       brand: 'Sungrow',
-      manufacturer: 'Sungrow Power',
       model: 'SG33KTL-M',
       capacity: 33,
       minSize: 26,
@@ -875,7 +1136,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SUNGROW-50KW-3P',
       name: 'Sungrow 50KW 3-Phase On-Grid Inverter',
       brand: 'Sungrow',
-      manufacturer: 'Sungrow Power',
       model: 'SG50KTL-M',
       capacity: 50,
       minSize: 40,
@@ -886,7 +1146,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SUNGROW-75KW-3P',
       name: 'Sungrow 75KW 3-Phase On-Grid Inverter',
       brand: 'Sungrow',
-      manufacturer: 'Sungrow Power',
       model: 'SG75KTL-M',
       capacity: 75,
       minSize: 61,
@@ -897,7 +1156,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SUNGROW-100KW-3P',
       name: 'Sungrow 100KW 3-Phase On-Grid Inverter',
       brand: 'Sungrow',
-      manufacturer: 'Sungrow Power',
       model: 'SG100KTL-M',
       capacity: 100,
       minSize: 91,
@@ -908,7 +1166,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'GOODWE-8KW-3P',
       name: 'Goodwe 8KW 3-Phase On-Grid Inverter',
       brand: 'Goodwe',
-      manufacturer: 'Goodwe Power',
       model: 'GW8K-DT',
       capacity: 8,
       minSize: 7,
@@ -919,7 +1176,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'GOODWE-10KW-3P',
       name: 'Goodwe 10KW 3-Phase On-Grid Inverter',
       brand: 'Goodwe',
-      manufacturer: 'Goodwe Power',
       model: 'GW10K-DT',
       capacity: 10,
       minSize: 9,
@@ -930,7 +1186,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'GOODWE-15KW-3P',
       name: 'Goodwe 15KW 3-Phase On-Grid Inverter',
       brand: 'Goodwe',
-      manufacturer: 'Goodwe Power',
       model: 'GW15K-DT',
       capacity: 15,
       minSize: 12,
@@ -941,7 +1196,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'GOODWE-20KW-3P',
       name: 'Goodwe 20KW 3-Phase On-Grid Inverter',
       brand: 'Goodwe',
-      manufacturer: 'Goodwe Power',
       model: 'GW20K-DT',
       capacity: 20,
       minSize: 17,
@@ -952,7 +1206,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'GOODWE-25KW-3P',
       name: 'Goodwe 25KW 3-Phase On-Grid Inverter',
       brand: 'Goodwe',
-      manufacturer: 'Goodwe Power',
       model: 'GW25K-DT',
       capacity: 25,
       minSize: 23,
@@ -963,7 +1216,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'GOODWE-36KW-3P',
       name: 'Goodwe 36KW 3-Phase On-Grid Inverter',
       brand: 'Goodwe',
-      manufacturer: 'Goodwe Power',
       model: 'GW36K-DT',
       capacity: 36,
       minSize: 28,
@@ -974,7 +1226,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'GOODWE-50KW-3P',
       name: 'Goodwe 50KW 3-Phase On-Grid Inverter',
       brand: 'Goodwe',
-      manufacturer: 'Goodwe Power',
       model: 'GW50K-MT',
       capacity: 50,
       minSize: 39,
@@ -985,7 +1236,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'GOODWE-80KW-3P',
       name: 'Goodwe 80KW 3-Phase On-Grid Inverter',
       brand: 'Goodwe',
-      manufacturer: 'Goodwe Power',
       model: 'GW80K-MT',
       capacity: 80,
       minSize: 56,
@@ -996,7 +1246,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'GOODWE-100KW-3P',
       name: 'Goodwe 100KW 3-Phase On-Grid Inverter',
       brand: 'Goodwe',
-      manufacturer: 'Goodwe Power',
       model: 'GW100K-MT',
       capacity: 100,
       minSize: 91,
@@ -1007,7 +1256,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SOLAREDGE-8KW-3P',
       name: 'SolarEdge 8KW 3-Phase On-Grid Inverter',
       brand: 'SolarEdge',
-      manufacturer: 'SolarEdge Technologies',
       model: 'SE8K',
       capacity: 8,
       minSize: 7,
@@ -1018,7 +1266,6 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
       code: 'SOLAREDGE-10KW-3P',
       name: 'SolarEdge 10KW 3-Phase On-Grid Inverter',
       brand: 'SolarEdge',
-      manufacturer: 'SolarEdge Technologies',
       model: 'SE10K',
       capacity: 10,
       minSize: 9,
@@ -1030,30 +1277,24 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
   // Insert 1-Phase Inverters
   for (const inv of inverters1P) {
     const specs = JSON.stringify({
-      common: { capacity: inv.capacity, phases: 1, voltage: '230V' },
-      inverter: {
-        capacityKw: inv.capacity,
-        phaseType: 'single_phase',
-        minSystemSizeKw: inv.minSize,
-        maxSystemSizeKw: inv.maxSize,
-      },
+      capacity_kw: inv.capacity,
+      phase_type: 'single_phase',
+      min_system_size_kw: inv.minSize,
+      max_system_size_kw: inv.maxSize,
+      voltage: '230V',
     });
     await queryRunner.query(
-      `
-      INSERT INTO products (id, organization_id, category_id, name, code, description, type, brand, manufacturer, model_number, unit_of_measure, product_warranty_years, status, specifications, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
-      ON CONFLICT (organization_id, code) DO NOTHING
-    `,
+      `INSERT INTO products (id, organization_id, product_type_id, brand_id, name, code, description, model_number, unit_of_measure, product_warranty_years, status, specifications, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+      ON CONFLICT (organization_id, code) DO NOTHING`,
       [
         PRODUCT_IDS[inv.code],
         ORG_ID,
-        CATEGORY_IDS.INV_1P,
+        PRODUCT_TYPE_IDS.INVERTER,
+        BRAND_IDS[inv.brand],
         inv.name,
         inv.code,
         `${inv.brand} ${inv.capacity}KW single phase on-grid inverter`,
-        'inverter',
-        inv.brand,
-        inv.manufacturer,
         inv.model,
         'pcs',
         inv.warranty,
@@ -1066,30 +1307,24 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
   // Insert 3-Phase Inverters
   for (const inv of inverters3P) {
     const specs = JSON.stringify({
-      common: { capacity: inv.capacity, phases: 3, voltage: '415V' },
-      inverter: {
-        capacityKw: inv.capacity,
-        phaseType: 'three_phase',
-        minSystemSizeKw: inv.minSize,
-        maxSystemSizeKw: inv.maxSize,
-      },
+      capacity_kw: inv.capacity,
+      phase_type: 'three_phase',
+      min_system_size_kw: inv.minSize,
+      max_system_size_kw: inv.maxSize,
+      voltage: '415V',
     });
     await queryRunner.query(
-      `
-      INSERT INTO products (id, organization_id, category_id, name, code, description, type, brand, manufacturer, model_number, unit_of_measure, product_warranty_years, status, specifications, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
-      ON CONFLICT (organization_id, code) DO NOTHING
-    `,
+      `INSERT INTO products (id, organization_id, product_type_id, brand_id, name, code, description, model_number, unit_of_measure, product_warranty_years, status, specifications, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+      ON CONFLICT (organization_id, code) DO NOTHING`,
       [
         PRODUCT_IDS[inv.code],
         ORG_ID,
-        CATEGORY_IDS.INV_3P,
+        PRODUCT_TYPE_IDS.INVERTER,
+        BRAND_IDS[inv.brand],
         inv.name,
         inv.code,
         `${inv.brand} ${inv.capacity}KW three phase on-grid inverter`,
-        'inverter',
-        inv.brand,
-        inv.manufacturer,
         inv.model,
         'pcs',
         inv.warranty,
@@ -1100,70 +1335,52 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
   }
 
   // Mounting Structures
-  // Note: Pricing multipliers are stored in pricing_rules table, not here
   const structures = [
     {
       code: 'STRUCT-RAIL-MOUNT',
       name: 'Aluminum Rail Mount Structure',
       type: 'aluminum_rail',
       weight: 15,
-      catId: CATEGORY_IDS.ROOF_STRUCT,
     },
-    {
-      code: 'STRUCT-RCC-3X6',
-      name: '3 feet X 6 Feet Structure',
-      type: 'rcc_3x6',
-      weight: 20,
-      catId: CATEGORY_IDS.ROOF_STRUCT,
-    },
+    { code: 'STRUCT-RCC-3X6', name: '3 feet X 6 Feet Structure', type: 'rcc_3x6', weight: 20 },
     {
       code: 'STRUCT-ELEVATED-6X9',
       name: 'Elevated 6x9 Feet Structure',
       type: 'elevated_6x9',
       weight: 35,
-      catId: CATEGORY_IDS.ROOF_STRUCT,
     },
     {
       code: 'STRUCT-SUPER-ELEVATED',
       name: 'Super Elevated 10x14 Feet Structure',
       type: 'super_elevated',
       weight: 50,
-      catId: CATEGORY_IDS.ROOF_STRUCT,
     },
     {
       code: 'STRUCT-GROUND-MOUNT',
       name: 'Ground Mount Structure',
       type: 'ground_mount',
       weight: 40,
-      catId: CATEGORY_IDS.GROUND_STRUCT,
     },
   ];
 
   for (const struct of structures) {
     const specs = JSON.stringify({
-      common: { weight: struct.weight },
-      structure: {
-        structureType: struct.type,
-        material: 'Aluminum',
-        // Note: costMultiplier removed - pricing is in pricing_rules table
-      },
+      structure_type: struct.type,
+      material: 'Aluminum',
+      weight_kg: struct.weight,
     });
     await queryRunner.query(
-      `
-      INSERT INTO products (id, organization_id, category_id, name, code, description, type, brand, manufacturer, model_number, unit_of_measure, product_warranty_years, status, specifications, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
-      ON CONFLICT (organization_id, code) DO NOTHING
-    `,
+      `INSERT INTO products (id, organization_id, product_type_id, brand_id, name, code, description, model_number, unit_of_measure, product_warranty_years, status, specifications, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+      ON CONFLICT (organization_id, code) DO NOTHING`,
       [
         PRODUCT_IDS[struct.code],
         ORG_ID,
-        struct.catId,
+        PRODUCT_TYPE_IDS.MOUNTING_STRUCTURE,
+        BRAND_IDS['Generic'],
         struct.name,
         struct.code,
         `${struct.name} for solar installation`,
-        'mounting_structure',
-        'Generic',
-        'OneOhm',
         struct.code,
         'set',
         10,
@@ -1179,534 +1396,148 @@ async function insertProducts(queryRunner: QueryRunner): Promise<void> {
 }
 
 // =====================================================
-// PRICING RULES
+// PRODUCT PRICES
 // =====================================================
-async function insertPricingRules(queryRunner: QueryRunner): Promise<void> {
-  // Panel Pricing Rules (DCR - Residential)
+async function insertProductPrices(queryRunner: QueryRunner): Promise<void> {
+  // Panel Prices
   const panelPricing = [
-    {
-      productCode: 'ADANI-PERC-DCR',
-      code: 'ADANI-PERC-DCR-RES',
-      name: 'Adani PERC DCR Panel - Residential Price',
-      pricePerWatt: 25.75,
-      projectType: 'residential',
-    },
-    {
-      productCode: 'ADANI-TOPCON-DCR',
-      code: 'ADANI-TOPCON-DCR-RES',
-      name: 'Adani TOPCon DCR Panel - Residential Price',
-      pricePerWatt: 26.4,
-      projectType: 'residential',
-    },
-    {
-      productCode: 'ADANI-TOPCON-DCR-600',
-      code: 'ADANI-TOPCON-DCR-600-RES',
-      name: 'Adani TOPCon DCR 600Wp Panel - Residential Price',
-      pricePerWatt: 26.4,
-      projectType: 'residential',
-    },
-    {
-      productCode: 'ADANI-PERC-NONDCR',
-      code: 'ADANI-PERC-NONDCR-COM',
-      name: 'Adani PERC Non-DCR Panel - Commercial Price',
-      pricePerWatt: 15.0,
-      projectType: 'commercial',
-    },
-    {
-      productCode: 'ADANI-TOPCON-NONDCR',
-      code: 'ADANI-TOPCON-NONDCR-COM',
-      name: 'Adani TOPCon Non-DCR Panel - Commercial Price',
-      pricePerWatt: 15.5,
-      projectType: 'commercial',
-    },
-    {
-      productCode: 'WAAREE-PERC-DCR',
-      code: 'WAAREE-PERC-DCR-RES',
-      name: 'Waaree PERC DCR Panel - Residential Price',
-      pricePerWatt: 24.5,
-      projectType: 'residential',
-    },
-    {
-      productCode: 'WAAREE-TOPCON-DCR',
-      code: 'WAAREE-TOPCON-DCR-RES',
-      name: 'Waaree TOPCon DCR Panel - Residential Price',
-      pricePerWatt: 25.0,
-      projectType: 'residential',
-    },
-    {
-      productCode: 'WAAREE-PERC-NONDCR',
-      code: 'WAAREE-PERC-NONDCR-COM',
-      name: 'Waaree PERC Non-DCR Panel - Commercial Price',
-      pricePerWatt: 14.0,
-      projectType: 'commercial',
-    },
-    {
-      productCode: 'WAAREE-TOPCON-NONDCR',
-      code: 'WAAREE-TOPCON-NONDCR-COM',
-      name: 'Waaree TOPCon Non-DCR Panel - Commercial Price',
-      pricePerWatt: 14.5,
-      projectType: 'commercial',
-    },
-    {
-      productCode: 'PREMIER-PERC-DCR',
-      code: 'PREMIER-PERC-DCR-RES',
-      name: 'Premier PERC DCR Panel - Residential Price',
-      pricePerWatt: 24.25,
-      projectType: 'residential',
-    },
-    {
-      productCode: 'PREMIER-TOPCON-DCR',
-      code: 'PREMIER-TOPCON-DCR-RES',
-      name: 'Premier TOPCon DCR Panel - Residential Price',
-      pricePerWatt: 24.5,
-      projectType: 'residential',
-    },
-    {
-      productCode: 'PREMIER-PERC-NONDCR',
-      code: 'PREMIER-PERC-NONDCR-COM',
-      name: 'Premier PERC Non-DCR Panel - Commercial Price',
-      pricePerWatt: 14.0,
-      projectType: 'commercial',
-    },
-    {
-      productCode: 'PREMIER-TOPCON-NONDCR',
-      code: 'PREMIER-TOPCON-NONDCR-COM',
-      name: 'Premier TOPCon Non-DCR Panel - Commercial Price',
-      pricePerWatt: 14.5,
-      projectType: 'commercial',
-    },
-    {
-      productCode: 'NAVITAS-PERC-DCR',
-      code: 'NAVITAS-PERC-DCR-RES',
-      name: 'Navitas PERC DCR Panel - Residential Price',
-      pricePerWatt: 24.0,
-      projectType: 'residential',
-    },
-    {
-      productCode: 'NAVITAS-TOPCON-NONDCR',
-      code: 'NAVITAS-TOPCON-NONDCR-COM',
-      name: 'Navitas TOPCon Non-DCR Panel - Commercial Price',
-      pricePerWatt: 14.0,
-      projectType: 'commercial',
-    },
-    {
-      productCode: 'VIKRAM-PERC-DCR',
-      code: 'VIKRAM-PERC-DCR-RES',
-      name: 'Vikram PERC DCR Panel - Residential Price',
-      pricePerWatt: 27.0,
-      projectType: 'residential',
-    },
-    {
-      productCode: 'VIKRAM-TOPCON-NONDCR',
-      code: 'VIKRAM-TOPCON-NONDCR-COM',
-      name: 'Vikram TOPCon Non-DCR Panel - Commercial Price',
-      pricePerWatt: 16.0,
-      projectType: 'commercial',
-    },
-    {
-      productCode: 'RENEWSYS-TOPCON-NONDCR',
-      code: 'RENEWSYS-TOPCON-NONDCR-COM',
-      name: 'Renewsys TOPCon Non-DCR Panel - Commercial Price',
-      pricePerWatt: 14.5,
-      projectType: 'commercial',
-    },
+    { productCode: 'ADANI-PERC-DCR', unitPrice: 25.75, projectType: 'residential' },
+    { productCode: 'ADANI-TOPCON-DCR', unitPrice: 26.4, projectType: 'residential' },
+    { productCode: 'ADANI-TOPCON-DCR-600', unitPrice: 26.4, projectType: 'residential' },
+    { productCode: 'ADANI-PERC-NONDCR', unitPrice: 15.0, projectType: 'commercial' },
+    { productCode: 'ADANI-TOPCON-NONDCR', unitPrice: 15.5, projectType: 'commercial' },
+    { productCode: 'WAAREE-PERC-DCR', unitPrice: 24.5, projectType: 'residential' },
+    { productCode: 'WAAREE-TOPCON-DCR', unitPrice: 25.0, projectType: 'residential' },
+    { productCode: 'WAAREE-PERC-NONDCR', unitPrice: 14.0, projectType: 'commercial' },
+    { productCode: 'WAAREE-TOPCON-NONDCR', unitPrice: 14.5, projectType: 'commercial' },
+    { productCode: 'PREMIER-PERC-DCR', unitPrice: 24.25, projectType: 'residential' },
+    { productCode: 'PREMIER-TOPCON-DCR', unitPrice: 24.5, projectType: 'residential' },
+    { productCode: 'PREMIER-PERC-NONDCR', unitPrice: 14.0, projectType: 'commercial' },
+    { productCode: 'PREMIER-TOPCON-NONDCR', unitPrice: 14.5, projectType: 'commercial' },
+    { productCode: 'NAVITAS-PERC-DCR', unitPrice: 24.0, projectType: 'residential' },
+    { productCode: 'NAVITAS-TOPCON-NONDCR', unitPrice: 14.0, projectType: 'commercial' },
+    { productCode: 'VIKRAM-PERC-DCR', unitPrice: 27.0, projectType: 'residential' },
+    { productCode: 'VIKRAM-TOPCON-NONDCR', unitPrice: 16.0, projectType: 'commercial' },
+    { productCode: 'RENEWSYS-TOPCON-NONDCR', unitPrice: 14.5, projectType: 'commercial' },
   ];
 
   for (const price of panelPricing) {
-    const formula = JSON.stringify({
-      pricePerWatt: price.pricePerWatt,
-      gstRate: 5,
-      currency: 'INR',
-    });
     await queryRunner.query(
-      `
-      INSERT INTO pricing_rules (id, organization_id, name, code, description, rule_type, product_id, product_type, project_type, formula, effective_from, priority, is_active, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
-      ON CONFLICT DO NOTHING
-    `,
+      `INSERT INTO product_prices (id, organization_id, product_id, project_type, unit_price, cost_multiplier, gst_rate, currency, effective_from, is_active, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+      ON CONFLICT DO NOTHING`,
       [
         uuidv4(),
         ORG_ID,
-        price.name,
-        price.code,
-        `Base price for ${price.name}`,
-        'base_price',
         PRODUCT_IDS[price.productCode],
-        'solar_panel',
         price.projectType,
-        formula,
+        price.unitPrice,
+        1.0,
+        5.0,
+        'INR',
         '2024-01-01',
-        10,
         true,
       ],
     );
   }
 
-  // Inverter Pricing Rules
+  // Inverter Prices
   const inverterPricing = [
-    {
-      productCode: 'SUNGROW-1KW-1P',
-      code: 'SUNGROW-1KW-1P-PRICE',
-      name: 'Sungrow 1KW 1-Phase Inverter Price',
-      basePrice: 13500,
-    },
-    {
-      productCode: 'SUNGROW-2KW-1P',
-      code: 'SUNGROW-2KW-1P-PRICE',
-      name: 'Sungrow 2KW 1-Phase Inverter Price',
-      basePrice: 14500,
-    },
-    {
-      productCode: 'SUNGROW-3KW-1P',
-      code: 'SUNGROW-3KW-1P-PRICE',
-      name: 'Sungrow 3KW 1-Phase Inverter Price',
-      basePrice: 15800,
-    },
-    {
-      productCode: 'SUNGROW-4KW-1P',
-      code: 'SUNGROW-4KW-1P-PRICE',
-      name: 'Sungrow 4KW 1-Phase Inverter Price',
-      basePrice: 26500,
-    },
-    {
-      productCode: 'SUNGROW-5KW-1P',
-      code: 'SUNGROW-5KW-1P-PRICE',
-      name: 'Sungrow 5KW 1-Phase Inverter Price',
-      basePrice: 29000,
-    },
-    {
-      productCode: 'SUNGROW-6KW-1P',
-      code: 'SUNGROW-6KW-1P-PRICE',
-      name: 'Sungrow 6KW 1-Phase Inverter Price',
-      basePrice: 30000,
-    },
-    {
-      productCode: 'SUNGROW-8KW-3P',
-      code: 'SUNGROW-8KW-3P-PRICE',
-      name: 'Sungrow 8KW 3-Phase Inverter Price',
-      basePrice: 52000,
-    },
-    {
-      productCode: 'SUNGROW-10KW-3P',
-      code: 'SUNGROW-10KW-3P-PRICE',
-      name: 'Sungrow 10KW 3-Phase Inverter Price',
-      basePrice: 56000,
-    },
-    {
-      productCode: 'SUNGROW-12KW-3P',
-      code: 'SUNGROW-12KW-3P-PRICE',
-      name: 'Sungrow 12KW 3-Phase Inverter Price',
-      basePrice: 62000,
-    },
-    {
-      productCode: 'SUNGROW-15KW-3P',
-      code: 'SUNGROW-15KW-3P-PRICE',
-      name: 'Sungrow 15KW 3-Phase Inverter Price',
-      basePrice: 67000,
-    },
-    {
-      productCode: 'SUNGROW-20KW-3P',
-      code: 'SUNGROW-20KW-3P-PRICE',
-      name: 'Sungrow 20KW 3-Phase Inverter Price',
-      basePrice: 77000,
-    },
-    {
-      productCode: 'SUNGROW-33KW-3P',
-      code: 'SUNGROW-33KW-3P-PRICE',
-      name: 'Sungrow 33KW 3-Phase Inverter Price',
-      basePrice: 126000,
-    },
-    {
-      productCode: 'SUNGROW-50KW-3P',
-      code: 'SUNGROW-50KW-3P-PRICE',
-      name: 'Sungrow 50KW 3-Phase Inverter Price',
-      basePrice: 148000,
-    },
-    {
-      productCode: 'SUNGROW-75KW-3P',
-      code: 'SUNGROW-75KW-3P-PRICE',
-      name: 'Sungrow 75KW 3-Phase Inverter Price',
-      basePrice: 222000,
-    },
-    {
-      productCode: 'SUNGROW-100KW-3P',
-      code: 'SUNGROW-100KW-3P-PRICE',
-      name: 'Sungrow 100KW 3-Phase Inverter Price',
-      basePrice: 265000,
-    },
-    {
-      productCode: 'GOODWE-2KW-1P',
-      code: 'GOODWE-2KW-1P-PRICE',
-      name: 'Goodwe 2KW 1-Phase Inverter Price',
-      basePrice: 15400,
-    },
-    {
-      productCode: 'GOODWE-3KW-1P',
-      code: 'GOODWE-3KW-1P-PRICE',
-      name: 'Goodwe 3KW 1-Phase Inverter Price',
-      basePrice: 15600,
-    },
-    {
-      productCode: 'GOODWE-4KW-1P',
-      code: 'GOODWE-4KW-1P-PRICE',
-      name: 'Goodwe 4KW 1-Phase Inverter Price',
-      basePrice: 30700,
-    },
-    {
-      productCode: 'GOODWE-5KW-1P',
-      code: 'GOODWE-5KW-1P-PRICE',
-      name: 'Goodwe 5KW 1-Phase Inverter Price',
-      basePrice: 31800,
-    },
-    {
-      productCode: 'GOODWE-6KW-1P',
-      code: 'GOODWE-6KW-1P-PRICE',
-      name: 'Goodwe 6KW 1-Phase Inverter Price',
-      basePrice: 33000,
-    },
-    {
-      productCode: 'GOODWE-8KW-3P',
-      code: 'GOODWE-8KW-3P-PRICE',
-      name: 'Goodwe 8KW 3-Phase Inverter Price',
-      basePrice: 53400,
-    },
-    {
-      productCode: 'GOODWE-10KW-3P',
-      code: 'GOODWE-10KW-3P-PRICE',
-      name: 'Goodwe 10KW 3-Phase Inverter Price',
-      basePrice: 54300,
-    },
-    {
-      productCode: 'GOODWE-15KW-3P',
-      code: 'GOODWE-15KW-3P-PRICE',
-      name: 'Goodwe 15KW 3-Phase Inverter Price',
-      basePrice: 62900,
-    },
-    {
-      productCode: 'GOODWE-20KW-3P',
-      code: 'GOODWE-20KW-3P-PRICE',
-      name: 'Goodwe 20KW 3-Phase Inverter Price',
-      basePrice: 65800,
-    },
-    {
-      productCode: 'GOODWE-25KW-3P',
-      code: 'GOODWE-25KW-3P-PRICE',
-      name: 'Goodwe 25KW 3-Phase Inverter Price',
-      basePrice: 98000,
-    },
-    {
-      productCode: 'GOODWE-36KW-3P',
-      code: 'GOODWE-36KW-3P-PRICE',
-      name: 'Goodwe 36KW 3-Phase Inverter Price',
-      basePrice: 124000,
-    },
-    {
-      productCode: 'GOODWE-50KW-3P',
-      code: 'GOODWE-50KW-3P-PRICE',
-      name: 'Goodwe 50KW 3-Phase Inverter Price',
-      basePrice: 159600,
-    },
-    {
-      productCode: 'GOODWE-80KW-3P',
-      code: 'GOODWE-80KW-3P-PRICE',
-      name: 'Goodwe 80KW 3-Phase Inverter Price',
-      basePrice: 220500,
-    },
-    {
-      productCode: 'GOODWE-100KW-3P',
-      code: 'GOODWE-100KW-3P-PRICE',
-      name: 'Goodwe 100KW 3-Phase Inverter Price',
-      basePrice: 260000,
-    },
-    {
-      productCode: 'SOLAREDGE-3KW-1P',
-      code: 'SOLAREDGE-3KW-1P-PRICE',
-      name: 'SolarEdge 3KW 1-Phase Inverter Price',
-      basePrice: 18500,
-    },
-    {
-      productCode: 'SOLAREDGE-5KW-1P',
-      code: 'SOLAREDGE-5KW-1P-PRICE',
-      name: 'SolarEdge 5KW 1-Phase Inverter Price',
-      basePrice: 29000,
-    },
-    {
-      productCode: 'SOLAREDGE-8KW-3P',
-      code: 'SOLAREDGE-8KW-3P-PRICE',
-      name: 'SolarEdge 8KW 3-Phase Inverter Price',
-      basePrice: 58000,
-    },
-    {
-      productCode: 'SOLAREDGE-10KW-3P',
-      code: 'SOLAREDGE-10KW-3P-PRICE',
-      name: 'SolarEdge 10KW 3-Phase Inverter Price',
-      basePrice: 63000,
-    },
+    { productCode: 'SUNGROW-1KW-1P', unitPrice: 13500 },
+    { productCode: 'SUNGROW-2KW-1P', unitPrice: 14500 },
+    { productCode: 'SUNGROW-3KW-1P', unitPrice: 15800 },
+    { productCode: 'SUNGROW-4KW-1P', unitPrice: 26500 },
+    { productCode: 'SUNGROW-5KW-1P', unitPrice: 29000 },
+    { productCode: 'SUNGROW-6KW-1P', unitPrice: 30000 },
+    { productCode: 'SUNGROW-8KW-3P', unitPrice: 52000 },
+    { productCode: 'SUNGROW-10KW-3P', unitPrice: 56000 },
+    { productCode: 'SUNGROW-12KW-3P', unitPrice: 62000 },
+    { productCode: 'SUNGROW-15KW-3P', unitPrice: 67000 },
+    { productCode: 'SUNGROW-20KW-3P', unitPrice: 77000 },
+    { productCode: 'SUNGROW-33KW-3P', unitPrice: 126000 },
+    { productCode: 'SUNGROW-50KW-3P', unitPrice: 148000 },
+    { productCode: 'SUNGROW-75KW-3P', unitPrice: 222000 },
+    { productCode: 'SUNGROW-100KW-3P', unitPrice: 265000 },
+    { productCode: 'GOODWE-2KW-1P', unitPrice: 15400 },
+    { productCode: 'GOODWE-3KW-1P', unitPrice: 15600 },
+    { productCode: 'GOODWE-4KW-1P', unitPrice: 30700 },
+    { productCode: 'GOODWE-5KW-1P', unitPrice: 31800 },
+    { productCode: 'GOODWE-6KW-1P', unitPrice: 33000 },
+    { productCode: 'GOODWE-8KW-3P', unitPrice: 53400 },
+    { productCode: 'GOODWE-10KW-3P', unitPrice: 54300 },
+    { productCode: 'GOODWE-15KW-3P', unitPrice: 62900 },
+    { productCode: 'GOODWE-20KW-3P', unitPrice: 65800 },
+    { productCode: 'GOODWE-25KW-3P', unitPrice: 98000 },
+    { productCode: 'GOODWE-36KW-3P', unitPrice: 124000 },
+    { productCode: 'GOODWE-50KW-3P', unitPrice: 159600 },
+    { productCode: 'GOODWE-80KW-3P', unitPrice: 220500 },
+    { productCode: 'GOODWE-100KW-3P', unitPrice: 260000 },
+    { productCode: 'SOLAREDGE-3KW-1P', unitPrice: 18500 },
+    { productCode: 'SOLAREDGE-5KW-1P', unitPrice: 29000 },
+    { productCode: 'SOLAREDGE-8KW-3P', unitPrice: 58000 },
+    { productCode: 'SOLAREDGE-10KW-3P', unitPrice: 63000 },
   ];
 
   for (const price of inverterPricing) {
-    const formula = JSON.stringify({ basePrice: price.basePrice, gstRate: 5, currency: 'INR' });
     await queryRunner.query(
-      `
-      INSERT INTO pricing_rules (id, organization_id, name, code, description, rule_type, product_id, product_type, formula, effective_from, priority, is_active, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
-      ON CONFLICT DO NOTHING
-    `,
+      `INSERT INTO product_prices (id, organization_id, product_id, project_type, unit_price, cost_multiplier, gst_rate, currency, effective_from, is_active, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+      ON CONFLICT DO NOTHING`,
       [
         uuidv4(),
         ORG_ID,
-        price.name,
-        price.code,
-        `Base price for ${price.name}`,
-        'base_price',
         PRODUCT_IDS[price.productCode],
-        'inverter',
-        formula,
+        null,
+        price.unitPrice,
+        1.0,
+        5.0,
+        'INR',
         '2024-01-01',
-        10,
         true,
       ],
     );
   }
 
-  console.log(`  ✓ Inserted ${panelPricing.length + inverterPricing.length} pricing rules`);
-}
-
-// =====================================================
-// STRUCTURE PRICING RULES
-// =====================================================
-/**
- * Insert pricing rules for mounting structures
- * Uses the formula: basePrice × multiplier × systemSizeKw
- *
- * Multipliers:
- * - Aluminum Rail: 1.0
- * - RCC 3X6: 2.2
- * - Elevated 6X9: 2.5
- * - Super Elevated: 3.2
- * - Ground Mount: 3.5
- */
-async function insertStructurePricingRules(queryRunner: QueryRunner): Promise<void> {
-  // Map product CODE to pricing rule config
-  // Product codes are stable identifiers in the database
-  // Formula: basePrice × multiplier × systemSizeKw
-  // Updated multipliers as per business requirements (2026-01-16)
-  const structurePricingRules = [
-    {
-      productCode: 'STRUCT-RAIL-MOUNT',
-      ruleCode: 'PRICE-STRUCT-RAIL',
-      name: 'Aluminum Rail Mount I&C',
-      formula: { basePrice: 700, multiplier: 1.2, gstRate: 18 }, // 700 × 1.2 = ₹840/KW
-    },
-    {
-      productCode: 'STRUCT-RCC-3X6',
-      ruleCode: 'PRICE-STRUCT-3X6',
-      name: '3 feet X 6 Feet Structure I&C',
-      formula: { basePrice: 700, multiplier: 4, gstRate: 18 }, // 700 × 4 = ₹2,800/KW
-    },
-    {
-      productCode: 'STRUCT-ELEVATED-6X9',
-      ruleCode: 'PRICE-STRUCT-6X9',
-      name: 'Elevated 6x9 Feet Structure I&C',
-      formula: { basePrice: 700, multiplier: 8, gstRate: 18 }, // 700 × 8 = ₹5,600/KW
-    },
-    {
-      productCode: 'STRUCT-SUPER-ELEVATED',
-      ruleCode: 'PRICE-STRUCT-SE',
-      name: 'Super Elevated Structure I&C',
-      formula: { basePrice: 700, multiplier: 12, gstRate: 18 }, // 700 × 12 = ₹8,400/KW
-    },
-    {
-      productCode: 'STRUCT-GROUND-MOUNT',
-      ruleCode: 'PRICE-STRUCT-GM',
-      name: 'Ground Mount Structure I&C',
-      formula: { basePrice: 700, multiplier: 10, gstRate: 18 }, // 700 × 10 = ₹7,000/KW
-    },
+  // Structure Prices
+  // Formula: unit_price × cost_multiplier × systemSizeKw
+  const structurePricing = [
+    { productCode: 'STRUCT-RAIL-MOUNT', unitPrice: 700, costMultiplier: 1.2 }, // 700 × 1.2 = ₹840/KW
+    { productCode: 'STRUCT-RCC-3X6', unitPrice: 700, costMultiplier: 4.0 }, // 700 × 4 = ₹2,800/KW
+    { productCode: 'STRUCT-ELEVATED-6X9', unitPrice: 700, costMultiplier: 8.0 }, // 700 × 8 = ₹5,600/KW
+    { productCode: 'STRUCT-SUPER-ELEVATED', unitPrice: 700, costMultiplier: 12.0 }, // 700 × 12 = ₹8,400/KW
+    { productCode: 'STRUCT-GROUND-MOUNT', unitPrice: 700, costMultiplier: 10.0 }, // 700 × 10 = ₹7,000/KW
   ];
 
-  let insertedCount = 0;
-
-  for (const rule of structurePricingRules) {
-    // Look up product ID by CODE (stable identifier, not sample UUIDs)
-    const productResult = await queryRunner.query(
-      `SELECT id FROM products 
-       WHERE organization_id = $1 
-       AND code = $2
-       AND deleted_at IS NULL
-       LIMIT 1`,
-      [ORG_ID, rule.productCode],
+  for (const price of structurePricing) {
+    await queryRunner.query(
+      `INSERT INTO product_prices (id, organization_id, product_id, project_type, unit_price, cost_multiplier, gst_rate, currency, effective_from, is_active, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+      ON CONFLICT DO NOTHING`,
+      [
+        uuidv4(),
+        ORG_ID,
+        PRODUCT_IDS[price.productCode],
+        null,
+        price.unitPrice,
+        price.costMultiplier,
+        18.0,
+        'INR',
+        '2024-01-01',
+        true,
+      ],
     );
-
-    if (productResult.length > 0) {
-      const productId = productResult[0].id;
-      const formulaJson = JSON.stringify(rule.formula);
-
-      // Insert pricing rule linked to actual product ID from database
-      await queryRunner.query(
-        `INSERT INTO pricing_rules (
-          id, organization_id, name, code, description, rule_type, 
-          product_id, product_type, formula, effective_from, priority, is_active, 
-          created_at, updated_at
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()
-        ) ON CONFLICT (organization_id, code) DO UPDATE SET
-          formula = $9,
-          updated_at = NOW()`,
-        [
-          uuidv4(), // id
-          ORG_ID, // organization_id
-          rule.name, // name
-          rule.ruleCode, // code
-          `Installation charges for ${rule.name}`, // description
-          'base_price', // rule_type
-          productId, // product_id (from DB lookup)
-          'mounting_structure', // product_type
-          formulaJson, // formula
-          '2024-01-01', // effective_from
-          10, // priority
-          true, // is_active
-        ],
-      );
-      insertedCount++;
-    } else {
-      console.warn(`  ⚠ Product not found for structure pricing rule: ${rule.productCode}`);
-    }
   }
 
-  console.log(`  ✓ Inserted ${insertedCount} structure pricing rules`);
+  console.log(
+    `  ✓ Inserted ${panelPricing.length + inverterPricing.length + structurePricing.length} product prices`,
+  );
 }
 
 // =====================================================
 // INSTALLATION PRICING (1-100 KW)
 // =====================================================
 
-/**
- * Get profitability percentage based on system size
- * Profitability tiers:
- * - 1 KW: 25%
- * - 2 KW: 20%
- * - 3 KW: 18%
- * - 4-5 KW: 16%
- * - 6-10 KW: 15%
- * - 11-30 KW: 15%
- * - 31-70 KW: 14%
- * - 71-100 KW: 13%
- */
-function getProfitabilityPercent(kw: number): number {
-  if (kw === 1) return 25;
-  if (kw === 2) return 20;
-  if (kw === 3) return 18;
-  if (kw >= 4 && kw <= 5) return 16;
-  if (kw >= 6 && kw <= 10) return 15;
-  if (kw >= 11 && kw <= 30) return 15;
-  if (kw >= 31 && kw <= 70) return 14;
-  if (kw >= 71 && kw <= 100) return 13;
-  return 13; // Default for > 100 KW
-}
-
 async function insertInstallationPricing(queryRunner: QueryRunner): Promise<void> {
-  // Installation pricing data - structure costs are now calculated separately via pricing rules
-  // Structure pricing uses formula: basePrice × multiplier × systemSizeKw (see insertStructurePricingRules)
   const installationData = [
     {
       kw: 1,
@@ -2611,7 +2442,6 @@ async function insertInstallationPricing(queryRunner: QueryRunner): Promise<void
   ];
 
   for (const data of installationData) {
-    // Structure costs are now calculated separately via pricing rules (insertStructurePricingRules)
     const costComponents = JSON.stringify({
       electrical_work: data.electrical,
       fixed_material: data.material,
@@ -2619,34 +2449,13 @@ async function insertInstallationPricing(queryRunner: QueryRunner): Promise<void
       installation_labor: data.labor,
       msedcl_charges: data.msedcl,
       loading_unloading: data.loading,
-      // Profitability percentage for this system size tier
-      profitability_percent: getProfitabilityPercent(data.kw),
     });
 
-    const name = `Installation Charges ${data.kw}KW`;
-    const code = `INST-${data.kw}KW`;
-
     await queryRunner.query(
-      `
-      INSERT INTO installation_pricing (id, organization_id, name, code, min_system_size_kw, max_system_size_kw, project_type, transport_rate_per_km, floor_increment_percent, gst_rate, cost_components, effective_from, is_active, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW())
-      ON CONFLICT DO NOTHING
-    `,
-      [
-        uuidv4(),
-        ORG_ID,
-        name,
-        code,
-        data.kw,
-        data.kw,
-        'residential',
-        35,
-        25,
-        18,
-        costComponents,
-        '2024-01-01',
-        true,
-      ],
+      `INSERT INTO installation_pricing (id, organization_id, min_system_size_kw, max_system_size_kw, transport_rate_per_km, floor_increment_percent, gst_rate, cost_components, effective_from, is_active, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, NOW(), NOW())
+      ON CONFLICT (organization_id, min_system_size_kw, max_system_size_kw) DO NOTHING`,
+      [uuidv4(), ORG_ID, data.kw, data.kw, 35, 25, 18, costComponents, '2024-01-01', true],
     );
   }
 
@@ -2664,11 +2473,9 @@ async function insertSubsidyConfigurations(queryRunner: QueryRunner): Promise<vo
   ]);
 
   await queryRunner.query(
-    `
-    INSERT INTO subsidy_configurations (id, organization_id, scheme_name, scheme_code, scheme_type, project_type, max_subsidy_kw, max_subsidy_amount, requires_dcr, auto_split_enabled, tiers, is_active, description, effective_from, created_at, updated_at)
+    `INSERT INTO subsidy_configurations (id, organization_id, scheme_name, scheme_code, scheme_type, project_type, max_subsidy_kw, max_subsidy_amount, requires_dcr, auto_split_enabled, tiers, is_active, description, effective_from, created_at, updated_at)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
-    ON CONFLICT DO NOTHING
-  `,
+    ON CONFLICT DO NOTHING`,
     [
       uuidv4(),
       ORG_ID,
@@ -2691,11 +2498,9 @@ async function insertSubsidyConfigurations(queryRunner: QueryRunner): Promise<vo
   const apartmentTiers = JSON.stringify([{ fromKw: 0, toKw: 500, ratePerKw: 18000 }]);
 
   await queryRunner.query(
-    `
-    INSERT INTO subsidy_configurations (id, organization_id, scheme_name, scheme_code, scheme_type, project_type, max_subsidy_kw, max_subsidy_amount, requires_dcr, auto_split_enabled, tiers, is_active, description, effective_from, created_at, updated_at)
+    `INSERT INTO subsidy_configurations (id, organization_id, scheme_name, scheme_code, scheme_type, project_type, max_subsidy_kw, max_subsidy_amount, requires_dcr, auto_split_enabled, tiers, is_active, description, effective_from, created_at, updated_at)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
-    ON CONFLICT DO NOTHING
-  `,
+    ON CONFLICT DO NOTHING`,
     [
       uuidv4(),
       ORG_ID,
@@ -2718,11 +2523,9 @@ async function insertSubsidyConfigurations(queryRunner: QueryRunner): Promise<vo
   const noSubsidyTiers = JSON.stringify([]);
 
   await queryRunner.query(
-    `
-    INSERT INTO subsidy_configurations (id, organization_id, scheme_name, scheme_code, scheme_type, project_type, max_subsidy_kw, max_subsidy_amount, requires_dcr, auto_split_enabled, tiers, is_active, description, effective_from, created_at, updated_at)
+    `INSERT INTO subsidy_configurations (id, organization_id, scheme_name, scheme_code, scheme_type, project_type, max_subsidy_kw, max_subsidy_amount, requires_dcr, auto_split_enabled, tiers, is_active, description, effective_from, created_at, updated_at)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
-    ON CONFLICT DO NOTHING
-  `,
+    ON CONFLICT DO NOTHING`,
     [
       uuidv4(),
       ORG_ID,
@@ -2749,12 +2552,11 @@ async function insertSubsidyConfigurations(queryRunner: QueryRunner): Promise<vo
 // =====================================================
 async function insertQuoteConfiguration(queryRunner: QueryRunner): Promise<void> {
   const gstConfig = JSON.stringify({
-    rate1: 12,
+    rate1: 5,
     rate1Percentage: 70,
     rate2: 18,
     rate2Percentage: 30,
   });
-  const wattageRounding = JSON.stringify({ roundTo: 10, roundUpThreshold: 5 });
   const paymentMilestones = JSON.stringify([
     { stage: 'advance', name: 'Advance', percentage: 10, order: 1 },
     { stage: 'installation_complete', name: 'Installation Complete', percentage: 85, order: 2 },
@@ -2762,11 +2564,9 @@ async function insertQuoteConfiguration(queryRunner: QueryRunner): Promise<void>
   ]);
 
   await queryRunner.query(
-    `
-    INSERT INTO quote_configurations (id, organization_id, default_validity_days, max_versions, default_completion_weeks, gst_config, wattage_rounding, payment_milestones, show_inventory_stock, min_profit_margin_percent, is_active, notes, created_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
-    ON CONFLICT DO NOTHING
-  `,
+    `INSERT INTO quote_configurations (id, organization_id, default_validity_days, max_versions, default_completion_weeks, gst_config, payment_milestones, show_inventory_stock, is_active, notes, created_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+    ON CONFLICT DO NOTHING`,
     [
       uuidv4(),
       ORG_ID,
@@ -2774,10 +2574,8 @@ async function insertQuoteConfiguration(queryRunner: QueryRunner): Promise<void>
       3,
       4,
       gstConfig,
-      wattageRounding,
       paymentMilestones,
       true,
-      15,
       true,
       'Default quote configuration for OneOhm EPC',
     ],
@@ -2790,8 +2588,6 @@ async function insertQuoteConfiguration(queryRunner: QueryRunner): Promise<void>
 // MAIN EXPORT - Run from command line
 // =====================================================
 export async function runSeed(): Promise<void> {
-  // This will be called from the seed runner
-  // Import the DataSource from ormconfig (default export)
   const dataSource = (await import('../ormconfig')).default;
 
   if (!dataSource.isInitialized) {

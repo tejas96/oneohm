@@ -10,6 +10,7 @@ import {
   IsOptional,
   IsString,
   Min,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 
@@ -39,21 +40,6 @@ export class GstConfigDto {
 }
 
 /**
- * DTO for wattage rounding configuration
- */
-export class WattageRoundingConfigDto {
-  @ApiProperty({ example: 10, description: 'Round wattage to nearest value' })
-  @IsInt()
-  @Min(1)
-  roundTo!: number;
-
-  @ApiProperty({ example: 5, description: 'Round up threshold (>=)' })
-  @IsInt()
-  @Min(0)
-  roundUpThreshold!: number;
-}
-
-/**
  * DTO for payment milestone
  */
 export class PaymentMilestoneDto {
@@ -76,6 +62,28 @@ export class PaymentMilestoneDto {
   @IsInt()
   @Min(1)
   order!: number;
+}
+
+export class ProfitMarginTierDto {
+  @ApiProperty({ example: 0, description: 'Minimum system size (kW, inclusive)' })
+  @IsNumber()
+  @Min(0)
+  minSystemSizeKw!: number;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    description: 'Maximum system size (kW, inclusive); null means no upper limit',
+    example: 10,
+  })
+  @ValidateIf((_, v) => v !== null && v !== undefined)
+  @IsNumber()
+  @Min(0)
+  maxSystemSizeKw?: number | null;
+
+  @ApiProperty({ example: 12, description: 'Profit margin percentage' })
+  @IsNumber()
+  @Min(0)
+  marginPercent!: number;
 }
 
 /**
@@ -103,24 +111,13 @@ export class CreateQuoteConfigurationDto {
   @ApiPropertyOptional({
     type: GstConfigDto,
     description: 'GST split configuration',
-    example: { rate1: 12, rate1Percentage: 70, rate2: 18, rate2Percentage: 30 },
+    example: { rate1: 5, rate1Percentage: 70, rate2: 18, rate2Percentage: 30 },
   })
   @IsObject()
   @IsOptional()
   @ValidateNested()
   @Type(() => GstConfigDto)
   gstConfig?: GstConfigDto;
-
-  @ApiPropertyOptional({
-    type: WattageRoundingConfigDto,
-    description: 'Wattage rounding configuration',
-    example: { roundTo: 10, roundUpThreshold: 5 },
-  })
-  @IsObject()
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => WattageRoundingConfigDto)
-  wattageRounding?: WattageRoundingConfigDto;
 
   @ApiPropertyOptional({
     type: [PaymentMilestoneDto],
@@ -137,16 +134,20 @@ export class CreateQuoteConfigurationDto {
   @Type(() => PaymentMilestoneDto)
   paymentMilestones?: PaymentMilestoneDto[];
 
+  @ApiPropertyOptional({
+    type: [ProfitMarginTierDto],
+    description: 'Profit margin tiers by system size (kW)',
+  })
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => ProfitMarginTierDto)
+  profitMarginTiers?: ProfitMarginTierDto[];
+
   @ApiPropertyOptional({ example: true, description: 'Show inventory stock in quote UI' })
   @IsBoolean()
   @IsOptional()
   showInventoryStock?: boolean;
-
-  @ApiPropertyOptional({ example: 15, description: 'Minimum profit margin percentage' })
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  minProfitMarginPercent?: number;
 
   @ApiPropertyOptional({ example: 'Default configuration for residential quotes' })
   @IsString()

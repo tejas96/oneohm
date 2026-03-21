@@ -432,14 +432,12 @@ async function seed(): Promise<void> {
            max_versions,
            default_completion_weeks,
            gst_config,
-           wattage_rounding,
            payment_milestones,
            show_inventory_stock,
            is_active
          ) VALUES (
            $1, 30, 3, 4,
            '{"rate1": 5, "rate1Percentage": 70, "rate2": 18, "rate2Percentage": 30}',
-           '{"roundTo": 10, "roundUpThreshold": 5}',
            '[{"stage":"advance","name":"Advance","percentage":10,"order":1},{"stage":"installation_complete","name":"Installation Complete","percentage":85,"order":2},{"stage":"commissioning","name":"Commissioning","percentage":5,"order":3}]',
            true,
            true
