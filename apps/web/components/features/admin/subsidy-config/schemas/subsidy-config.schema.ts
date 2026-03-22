@@ -1,6 +1,10 @@
 import { ProjectType, SubsidySchemeType } from '@oneohm-epc/shared/types';
 import { z } from 'zod';
 
+// Coerces NaN (produced by valueAsNumber on empty input) to undefined so
+// optional number fields stay valid when left blank.
+const nanToUndefined = z.nan().transform(() => undefined as unknown as number);
+
 const tierSchema = z.object({
   fromKw: z
     .number({ invalid_type_error: 'From kW must be a number' })
@@ -18,19 +22,16 @@ export const subsidyConfigSchema = z
     schemeCode: z.string().trim().optional(),
     schemeType: z.nativeEnum(SubsidySchemeType),
     projectType: z.nativeEnum(ProjectType),
-    maxSubsidyKw: z.preprocess(
-      (v) => (v === '' || (typeof v === 'number' && isNaN(v)) ? undefined : v),
-      z
-        .number({ invalid_type_error: 'Max subsidy kW must be a number' })
-        .min(0, 'Max subsidy kW must be >= 0'),
-    ),
-    maxSubsidyAmount: z.preprocess(
-      (v) => (v === '' || (typeof v === 'number' && isNaN(v)) ? undefined : v),
-      z
-        .number({ invalid_type_error: 'Max subsidy amount must be a number' })
-        .min(0, 'Max subsidy amount must be >= 0')
-        .optional(),
-    ),
+    maxSubsidyKw: z.union([
+      z.number({ invalid_type_error: 'Max subsidy kW must be a number' }).min(0, 'Max subsidy kW must be >= 0'),
+      nanToUndefined,
+    ]),
+    maxSubsidyAmount: z
+      .union([
+        z.number({ invalid_type_error: 'Max subsidy amount must be a number' }).min(0, 'Max subsidy amount must be >= 0'),
+        nanToUndefined,
+      ])
+      .optional(),
     requiresDcr: z.boolean(),
     autoSplitEnabled: z.boolean(),
     tiers: z.array(tierSchema).min(1, 'At least one tier is required'),
