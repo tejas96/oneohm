@@ -39,28 +39,30 @@ export class ProductTypeRepository {
       });
     }
 
-    // Use raw SQL column references (not entity property paths) to avoid a TypeORM
-    // getManyAndCount bug where createOrderByCombinedWithSelectExpression crashes
-    // when a leftJoinAndSelect is present and orderBy uses entity property aliases.
+    // TypeORM getManyAndCount() crashes with "alias was not found" when a query
+    // has both leftJoinAndSelect and addOrderBy. Split into separate count + data
+    // queries to avoid this entirely.
+    const total = await query.getCount();
+
     const allowedSortFields: Record<string, string> = {
-      name: '"productType"."name"',
-      sortOrder: '"productType"."sort_order"',
-      defaultGstRate: '"productType"."default_gst_rate"',
-      createdAt: '"productType"."created_at"',
-      updatedAt: '"productType"."updated_at"',
+      name: 'productType.name',
+      sortOrder: 'productType.sortOrder',
+      defaultGstRate: 'productType.defaultGstRate',
+      createdAt: 'productType.createdAt',
+      updatedAt: 'productType.updatedAt',
     };
     const sortField =
-      (filters?.sortBy && allowedSortFields[filters.sortBy]) ?? '"productType"."sort_order"';
+      (filters?.sortBy && allowedSortFields[filters.sortBy]) ?? 'productType.sortOrder';
     const sortOrder = filters?.sortOrder ?? 'ASC';
-    // Pass both order fields as a single object to avoid addOrderBy + getManyAndCount crash
-    query.orderBy(sortField, sortOrder).addOrderBy('"productType"."name"', 'ASC');
 
     const page = filters?.page ?? 1;
     const limit = filters?.limit ?? 20;
-    const [data, total] = await query
+    const data = await query
+      .orderBy(sortField, sortOrder)
+      .addOrderBy('productType.name', 'ASC')
       .skip((page - 1) * limit)
       .take(limit)
-      .getManyAndCount();
+      .getMany();
 
     return { data, total };
   }
