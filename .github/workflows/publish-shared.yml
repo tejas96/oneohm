@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 env:
@@ -25,6 +25,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GH_PACKAGES_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -42,26 +44,43 @@ jobs:
       - name: Build shared package
         run: npx nx build shared
 
-      - name: Check if version changed
-        id: version-check
+      - name: Auto-bump patch version if already published
+        id: version-bump
         working-directory: libs/shared
         run: |
           PACKAGE_NAME=$(node -p "require('./package.json').name")
-          PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          PUBLISHED=$(npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version 2>/dev/null || echo "")
-          if [ "$PUBLISHED" = "$PACKAGE_VERSION" ]; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-            echo "Version ${PACKAGE_VERSION} already published, skipping"
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          PUBLISHED=$(npm view "${PACKAGE_NAME}@${CURRENT_VERSION}" version 2>/dev/null || echo "")
+
+          if [ "$PUBLISHED" = "$CURRENT_VERSION" ]; then
+            # Version already published — auto-bump patch
+            NEW_VERSION=$(node -p "
+              const [maj, min, pat] = '${CURRENT_VERSION}'.split('.').map(Number);
+              \`\${maj}.\${min}.\${pat + 1}\`
+            ")
+            echo "Bumping ${CURRENT_VERSION} -> ${NEW_VERSION}"
+            npm version "$NEW_VERSION" --no-git-tag-version
+            echo "bumped=true" >> $GITHUB_OUTPUT
+            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           else
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "Publishing version ${PACKAGE_VERSION}"
+            echo "bumped=false" >> $GITHUB_OUTPUT
+            echo "new_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+            echo "Version ${CURRENT_VERSION} not yet published, publishing as-is"
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
           GITHUB_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
 
+      - name: Commit bumped version back to main
+        if: steps.version-bump.outputs.bumped == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add libs/shared/package.json
+          git commit -m "chore(shared): auto-bump version to ${{ steps.version-bump.outputs.new_version }} [skip ci]"
+          git push
+
       - name: Publish to GitHub Packages
-        if: steps.version-check.outputs.changed == 'true'
         working-directory: libs/shared
         run: npm publish
         env:
@@ -73,8 +92,8 @@ jobs:
         run: |
           VERSION=$(node -p "require('./libs/shared/package.json').version")
           echo "## Shared Package" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.version-check.outputs.changed }}" == "true" ]; then
-            echo "Published @tejas96/shared@${VERSION}" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.version-bump.outputs.bumped }}" == "true" ]; then
+            echo "✅ Auto-bumped and published @tejas96/shared@${VERSION}" >> $GITHUB_STEP_SUMMARY
           else
-            echo "v${VERSION} already published, skipped" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Published @tejas96/shared@${VERSION}" >> $GITHUB_STEP_SUMMARY
           fi
