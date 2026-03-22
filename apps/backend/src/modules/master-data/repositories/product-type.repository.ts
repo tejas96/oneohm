@@ -39,17 +39,21 @@ export class ProductTypeRepository {
       });
     }
 
+    // Use raw SQL column references (not entity property paths) to avoid a TypeORM
+    // getManyAndCount bug where createOrderByCombinedWithSelectExpression crashes
+    // when a leftJoinAndSelect is present and orderBy uses entity property aliases.
     const allowedSortFields: Record<string, string> = {
-      name: 'productType.name',
-      sortOrder: 'productType.sort_order',
-      defaultGstRate: 'productType.default_gst_rate',
-      createdAt: 'productType.created_at',
-      updatedAt: 'productType.updated_at',
+      name: '"productType"."name"',
+      sortOrder: '"productType"."sort_order"',
+      defaultGstRate: '"productType"."default_gst_rate"',
+      createdAt: '"productType"."created_at"',
+      updatedAt: '"productType"."updated_at"',
     };
     const sortField =
-      (filters?.sortBy && allowedSortFields[filters.sortBy]) ?? 'productType.sort_order';
+      (filters?.sortBy && allowedSortFields[filters.sortBy]) ?? '"productType"."sort_order"';
     const sortOrder = filters?.sortOrder ?? 'ASC';
-    query.orderBy(sortField, sortOrder).addOrderBy('productType.name', 'ASC');
+    // Pass both order fields as a single object to avoid addOrderBy + getManyAndCount crash
+    query.orderBy(sortField, sortOrder).addOrderBy('"productType"."name"', 'ASC');
 
     const page = filters?.page ?? 1;
     const limit = filters?.limit ?? 20;
