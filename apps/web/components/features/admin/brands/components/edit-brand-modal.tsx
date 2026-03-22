@@ -68,6 +68,7 @@ export function EditBrandModal({ open, onOpenChange, target }: EditBrandModalPro
       isActive: target.isActive,
       productTypeIds: target.productTypeIds ?? [],
     });
+    void form.trigger();
   }, [form, target]);
 
   const { handleSubmit, handleClose, isSubmitting } = useModalForm<

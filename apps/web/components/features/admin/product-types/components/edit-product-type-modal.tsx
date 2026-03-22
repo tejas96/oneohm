@@ -122,6 +122,7 @@ export function EditProductTypeModal({
       sortOrder: Math.max(1, target.sortOrder ?? 1),
       attributes: mappedAttributes,
     });
+    void form.trigger();
   }, [form, target]);
 
   const buildAttributesPayload = (attributes: ProductTypeFormData['attributes']) =>

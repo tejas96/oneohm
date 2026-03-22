@@ -83,7 +83,7 @@ export const quoteConfigSchema = z
   })
   .superRefine((data, ctx) => {
     const gstSum = data.gstConfig.rate1Percentage + data.gstConfig.rate2Percentage;
-    if (gstSum !== 100) {
+    if (Math.round(gstSum * 100) !== 10000) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'GST percentages must sum to 100%',
@@ -95,7 +95,7 @@ export const quoteConfigSchema = z
       (sum, milestone) => sum + milestone.percentage,
       0,
     );
-    if (milestoneSum !== 100) {
+    if (Math.round(milestoneSum * 100) !== 10000) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Payment milestone percentages must sum to 100%',
