@@ -8,8 +8,8 @@
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 
-import { ProductTypeEntity } from '../entities/product-type.entity';
 import { ProductTypeRepository } from './product-type.repository';
+import { ProductTypeEntity } from '../entities/product-type.entity';
 
 const makeQb = () => {
   const qb: Record<string, jest.Mock> = {};
@@ -28,9 +28,9 @@ const makeQb = () => {
   });
   qb['getCount'] = jest.fn().mockResolvedValue(3);
   qb['getMany'] = jest.fn().mockResolvedValue([]);
-  qb['getManyAndCount'] = jest.fn().mockRejectedValue(
-    new Error('getManyAndCount should NOT be called — use getCount + getMany'),
-  );
+  qb['getManyAndCount'] = jest
+    .fn()
+    .mockRejectedValue(new Error('getManyAndCount should NOT be called — use getCount + getMany'));
   return qb;
 };
 
@@ -72,10 +72,7 @@ describe('ProductTypeRepository', () => {
 
     it('applies sortBy=sortOrder correctly', async () => {
       await repo.findAll('org-1', { sortBy: 'sortOrder', sortOrder: 'DESC' });
-      expect(qb['orderBy']).toHaveBeenCalledWith(
-        'productType.sortOrder',
-        'DESC',
-      );
+      expect(qb['orderBy']).toHaveBeenCalledWith('productType.sortOrder', 'DESC');
     });
 
     it('applies sortBy=name correctly', async () => {
@@ -85,10 +82,9 @@ describe('ProductTypeRepository', () => {
 
     it('applies isActive filter', async () => {
       await repo.findAll('org-1', { isActive: true });
-      expect(qb['andWhere']).toHaveBeenCalledWith(
-        'productType.is_active = :isActive',
-        { isActive: true },
-      );
+      expect(qb['andWhere']).toHaveBeenCalledWith('productType.is_active = :isActive', {
+        isActive: true,
+      });
     });
 
     it('applies search filter', async () => {

@@ -7,8 +7,8 @@
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 
-import { ProductEntity } from '../entities/product.entity';
 import { ProductRepository } from './product.repository';
+import { ProductEntity } from '../entities/product.entity';
 
 const makeQb = () => {
   const qb: Record<string, jest.Mock> = {};
@@ -27,9 +27,9 @@ const makeQb = () => {
   });
   qb['getCount'] = jest.fn().mockResolvedValue(0);
   qb['getMany'] = jest.fn().mockResolvedValue([]);
-  qb['getManyAndCount'] = jest.fn().mockRejectedValue(
-    new Error('getManyAndCount should NOT be called — use getCount + getMany'),
-  );
+  qb['getManyAndCount'] = jest
+    .fn()
+    .mockRejectedValue(new Error('getManyAndCount should NOT be called — use getCount + getMany'));
   return qb;
 };
 

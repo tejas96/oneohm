@@ -45,7 +45,7 @@ const getDataSourceConfig = () => {
       username = username || (url.username ? decodeURIComponent(url.username) : undefined);
       password = password || (url.password ? decodeURIComponent(url.password) : undefined);
       const dbPath = url.pathname.replace(/^\//, '');
-      database = database || (dbPath || undefined);
+      database = database || dbPath || undefined;
     } catch {
       // If DATABASE_URL is malformed, fall through and let the connection attempt fail clearly
     }

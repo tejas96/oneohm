@@ -49,9 +49,7 @@ export const createDataSourceOptions = (
 
   // Fall back to DATABASE_URL when individual host/user/pass/name vars are absent
   const fromUrl =
-    !dbConfig.host && !dbConfig.user && dbConfig.url
-      ? parseDatabaseUrl(dbConfig.url)
-      : {};
+    !dbConfig.host && !dbConfig.user && dbConfig.url ? parseDatabaseUrl(dbConfig.url) : {};
 
   const host = dbConfig.host || fromUrl.host;
   const port = dbConfig.port || fromUrl.port || 5432;

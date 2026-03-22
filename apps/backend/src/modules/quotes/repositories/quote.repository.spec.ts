@@ -9,8 +9,8 @@ import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { QuoteSortField, SortOrder } from '@oneohm-epc/shared/types';
 
-import { QuoteEntity } from '../entities/quote.entity';
 import { QuoteRepository } from './quote.repository';
+import { QuoteEntity } from '../entities/quote.entity';
 
 const makeQb = () => {
   const qb: Record<string, jest.Mock> = {};
@@ -32,9 +32,9 @@ const makeQb = () => {
   qb['getCount'] = jest.fn().mockResolvedValue(0);
   qb['getMany'] = jest.fn().mockResolvedValue([]);
   qb['getOne'] = jest.fn().mockResolvedValue(null);
-  qb['getManyAndCount'] = jest.fn().mockRejectedValue(
-    new Error('getManyAndCount should NOT be called — use getCount + getMany'),
-  );
+  qb['getManyAndCount'] = jest
+    .fn()
+    .mockRejectedValue(new Error('getManyAndCount should NOT be called — use getCount + getMany'));
   return qb;
 };
 
@@ -93,11 +93,7 @@ describe('QuoteRepository', () => {
         ...baseQuery,
         sortBy: QuoteSortField.CUSTOMER_NAME,
       });
-      expect(qb['addOrderBy']).toHaveBeenCalledWith(
-        'customer.lastName',
-        'DESC',
-        'NULLS LAST',
-      );
+      expect(qb['addOrderBy']).toHaveBeenCalledWith('customer.lastName', 'DESC', 'NULLS LAST');
     });
 
     it('applies pagination correctly', async () => {
