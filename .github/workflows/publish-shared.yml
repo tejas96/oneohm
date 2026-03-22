@@ -24,12 +24,12 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_PACKAGES_TOKEN }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           registry-url: 'https://npm.pkg.github.com'
@@ -44,35 +44,42 @@ jobs:
       - name: Build shared package
         run: npx nx build shared
 
-      - name: Auto-bump patch version if already published
-        id: version-bump
+      - name: Check if version already published
+        id: version-check
         working-directory: libs/shared
         run: |
           PACKAGE_NAME=$(node -p "require('./package.json').name")
           CURRENT_VERSION=$(node -p "require('./package.json').version")
-          PUBLISHED=$(npm view "${PACKAGE_NAME}@${CURRENT_VERSION}" version 2>/dev/null || echo "")
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
-          if [ "$PUBLISHED" = "$CURRENT_VERSION" ]; then
-            # Version already published — auto-bump patch
-            NEW_VERSION=$(node -p "
-              const [maj, min, pat] = '${CURRENT_VERSION}'.split('.').map(Number);
-              \`\${maj}.\${min}.\${pat + 1}\`
-            ")
-            echo "Bumping ${CURRENT_VERSION} -> ${NEW_VERSION}"
-            npm version "$NEW_VERSION" --no-git-tag-version
-            echo "bumped=true" >> $GITHUB_OUTPUT
-            echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          # Try to fetch the specific version — exit code 0 means already published
+          if npm view "${PACKAGE_NAME}@${CURRENT_VERSION}" version \
+               --registry https://npm.pkg.github.com 2>/dev/null | grep -q "^${CURRENT_VERSION}$"; then
+            echo "already_published=true" >> $GITHUB_OUTPUT
+            echo "Version ${CURRENT_VERSION} is already published"
           else
-            echo "bumped=false" >> $GITHUB_OUTPUT
-            echo "new_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-            echo "Version ${CURRENT_VERSION} not yet published, publishing as-is"
+            echo "already_published=false" >> $GITHUB_OUTPUT
+            echo "Version ${CURRENT_VERSION} is not yet published"
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
-          GITHUB_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
 
-      - name: Commit bumped version back to main
-        if: steps.version-bump.outputs.bumped == 'true'
+      - name: Auto-bump patch version when already published
+        id: version-bump
+        if: steps.version-check.outputs.already_published == 'true'
+        working-directory: libs/shared
+        run: |
+          CURRENT_VERSION="${{ steps.version-check.outputs.current_version }}"
+          NEW_VERSION=$(node -p "
+            const [maj, min, pat] = '${CURRENT_VERSION}'.split('.').map(Number);
+            \`\${maj}.\${min}.\${pat + 1}\`
+          ")
+          echo "Auto-bumping ${CURRENT_VERSION} -> ${NEW_VERSION}"
+          npm version "$NEW_VERSION" --no-git-tag-version
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Commit auto-bumped version back to main
+        if: steps.version-check.outputs.already_published == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -91,9 +98,10 @@ jobs:
         if: always()
         run: |
           VERSION=$(node -p "require('./libs/shared/package.json').version")
-          echo "## Shared Package" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.version-bump.outputs.bumped }}" == "true" ]; then
+          if [ "${{ steps.version-check.outputs.already_published }}" == "true" ]; then
+            echo "## Shared Package" >> $GITHUB_STEP_SUMMARY
             echo "✅ Auto-bumped and published @tejas96/shared@${VERSION}" >> $GITHUB_STEP_SUMMARY
           else
+            echo "## Shared Package" >> $GITHUB_STEP_SUMMARY
             echo "✅ Published @tejas96/shared@${VERSION}" >> $GITHUB_STEP_SUMMARY
           fi

@@ -1,6 +1,6 @@
 {
   "name": "@tejas96/shared",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Shared types, utilities, and schemas for OneOhm EPC apps",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
