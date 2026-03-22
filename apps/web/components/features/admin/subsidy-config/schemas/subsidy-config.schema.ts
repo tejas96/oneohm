@@ -23,12 +23,16 @@ export const subsidyConfigSchema = z
     schemeType: z.nativeEnum(SubsidySchemeType),
     projectType: z.nativeEnum(ProjectType),
     maxSubsidyKw: z.union([
-      z.number({ invalid_type_error: 'Max subsidy kW must be a number' }).min(0, 'Max subsidy kW must be >= 0'),
+      z
+        .number({ invalid_type_error: 'Max subsidy kW must be a number' })
+        .min(0, 'Max subsidy kW must be >= 0'),
       nanToUndefined,
     ]),
     maxSubsidyAmount: z
       .union([
-        z.number({ invalid_type_error: 'Max subsidy amount must be a number' }).min(0, 'Max subsidy amount must be >= 0'),
+        z
+          .number({ invalid_type_error: 'Max subsidy amount must be a number' })
+          .min(0, 'Max subsidy amount must be >= 0'),
         nanToUndefined,
       ])
       .optional(),
