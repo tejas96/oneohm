@@ -12,11 +12,17 @@ export const productSchema = z.object({
   unitOfMeasure: z.nativeEnum(UnitOfMeasure),
   productWarrantyYears: z.preprocess(
     (v) => (v === '' || (typeof v === 'number' && isNaN(v)) ? undefined : v),
-    z.number({ invalid_type_error: 'Warranty must be a number' }).min(0, 'Warranty must be >= 0').optional(),
+    z
+      .number({ invalid_type_error: 'Warranty must be a number' })
+      .min(0, 'Warranty must be >= 0')
+      .optional(),
   ),
   performanceWarrantyYears: z.preprocess(
     (v) => (v === '' || (typeof v === 'number' && isNaN(v)) ? undefined : v),
-    z.number({ invalid_type_error: 'Warranty must be a number' }).min(0, 'Warranty must be >= 0').optional(),
+    z
+      .number({ invalid_type_error: 'Warranty must be a number' })
+      .min(0, 'Warranty must be >= 0')
+      .optional(),
   ),
   status: z.nativeEnum(ProductStatus),
 });

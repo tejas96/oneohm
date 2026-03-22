@@ -20,11 +20,16 @@ export const subsidyConfigSchema = z
     projectType: z.nativeEnum(ProjectType),
     maxSubsidyKw: z.preprocess(
       (v) => (v === '' || (typeof v === 'number' && isNaN(v)) ? undefined : v),
-      z.number({ invalid_type_error: 'Max subsidy kW must be a number' }).min(0, 'Max subsidy kW must be >= 0'),
+      z
+        .number({ invalid_type_error: 'Max subsidy kW must be a number' })
+        .min(0, 'Max subsidy kW must be >= 0'),
     ),
     maxSubsidyAmount: z.preprocess(
       (v) => (v === '' || (typeof v === 'number' && isNaN(v)) ? undefined : v),
-      z.number({ invalid_type_error: 'Max subsidy amount must be a number' }).min(0, 'Max subsidy amount must be >= 0').optional(),
+      z
+        .number({ invalid_type_error: 'Max subsidy amount must be a number' })
+        .min(0, 'Max subsidy amount must be >= 0')
+        .optional(),
     ),
     requiresDcr: z.boolean(),
     autoSplitEnabled: z.boolean(),
