@@ -5,6 +5,7 @@
  * Both findAll (5 leftJoinAndSelect) and findWithFilters (addOrderBy on customer join)
  * previously crashed. These tests ensure the split getCount + getMany pattern is used.
  */
+import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { QuoteSortField, SortOrder } from '@oneohm-epc/shared/types';
@@ -12,9 +13,19 @@ import { QuoteSortField, SortOrder } from '@oneohm-epc/shared/types';
 import { QuoteRepository } from './quote.repository';
 import { QuoteEntity } from '../entities/quote.entity';
 
-const makeQb = () => {
-  const qb: Record<string, jest.Mock> = {};
-  const chain = () => qb as unknown as ReturnType<typeof makeQb>;
+interface MockFn {
+  (...args: unknown[]): unknown;
+  mockReturnValue: (v: unknown) => MockFn;
+  mockResolvedValue: (v: unknown) => MockFn;
+  mockRejectedValue: (v: unknown) => MockFn;
+  mock: { calls: unknown[][] };
+}
+
+const mockFn = (): MockFn => jest.fn() as unknown as MockFn;
+
+const makeQb = (): Record<string, MockFn> => {
+  const qb: Record<string, MockFn> = {};
+  const chain = (): Record<string, MockFn> => qb;
   [
     'createQueryBuilder',
     'leftJoinAndSelect',
@@ -27,14 +38,14 @@ const makeQb = () => {
     'skip',
     'take',
   ].forEach((m) => {
-    qb[m] = jest.fn().mockReturnValue(chain());
+    qb[m] = mockFn().mockReturnValue(chain());
   });
-  qb['getCount'] = jest.fn().mockResolvedValue(0);
-  qb['getMany'] = jest.fn().mockResolvedValue([]);
-  qb['getOne'] = jest.fn().mockResolvedValue(null);
-  qb['getManyAndCount'] = jest
-    .fn()
-    .mockRejectedValue(new Error('getManyAndCount should NOT be called — use getCount + getMany'));
+  qb['getCount'] = mockFn().mockResolvedValue(0);
+  qb['getMany'] = mockFn().mockResolvedValue([]);
+  qb['getOne'] = mockFn().mockResolvedValue(null);
+  qb['getManyAndCount'] = mockFn().mockRejectedValue(
+    new Error('getManyAndCount should NOT be called — use getCount + getMany'),
+  );
   return qb;
 };
 
@@ -44,7 +55,7 @@ describe('QuoteRepository', () => {
 
   beforeEach(async () => {
     qb = makeQb();
-    const mockOrmRepo = { createQueryBuilder: jest.fn().mockReturnValue(qb) };
+    const mockOrmRepo = { createQueryBuilder: mockFn().mockReturnValue(qb) };
 
     const module = await Test.createTestingModule({
       providers: [
@@ -65,8 +76,8 @@ describe('QuoteRepository', () => {
     });
 
     it('returns correct shape', async () => {
-      (qb['getCount'] as jest.Mock).mockResolvedValue(1);
-      (qb['getMany'] as jest.Mock).mockResolvedValue([{ id: 'q-1' }]);
+      qb['getCount'].mockResolvedValue(1);
+      qb['getMany'].mockResolvedValue([{ id: 'q-1' }]);
       const result = await repo.findAll('org-1', 1, 10);
       expect(result.total).toBe(1);
       expect(result.quotes).toHaveLength(1);

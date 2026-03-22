@@ -4,15 +4,26 @@
  * Regression tests for TypeORM getManyAndCount crash with leftJoinAndSelect.
  * product.findAll joins productType + brand then paginates — previously crashed.
  */
+import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 
 import { ProductRepository } from './product.repository';
 import { ProductEntity } from '../entities/product.entity';
 
-const makeQb = () => {
-  const qb: Record<string, jest.Mock> = {};
-  const chain = () => qb as unknown as ReturnType<typeof makeQb>;
+interface MockFn {
+  (...args: unknown[]): unknown;
+  mockReturnValue: (v: unknown) => MockFn;
+  mockResolvedValue: (v: unknown) => MockFn;
+  mockRejectedValue: (v: unknown) => MockFn;
+  mock: { calls: unknown[][] };
+}
+
+const mockFn = (): MockFn => jest.fn() as unknown as MockFn;
+
+const makeQb = (): Record<string, MockFn> => {
+  const qb: Record<string, MockFn> = {};
+  const chain = (): Record<string, MockFn> => qb;
   [
     'createQueryBuilder',
     'leftJoinAndSelect',
@@ -23,13 +34,13 @@ const makeQb = () => {
     'skip',
     'take',
   ].forEach((m) => {
-    qb[m] = jest.fn().mockReturnValue(chain());
+    qb[m] = mockFn().mockReturnValue(chain());
   });
-  qb['getCount'] = jest.fn().mockResolvedValue(0);
-  qb['getMany'] = jest.fn().mockResolvedValue([]);
-  qb['getManyAndCount'] = jest
-    .fn()
-    .mockRejectedValue(new Error('getManyAndCount should NOT be called — use getCount + getMany'));
+  qb['getCount'] = mockFn().mockResolvedValue(0);
+  qb['getMany'] = mockFn().mockResolvedValue([]);
+  qb['getManyAndCount'] = mockFn().mockRejectedValue(
+    new Error('getManyAndCount should NOT be called — use getCount + getMany'),
+  );
   return qb;
 };
 
@@ -39,7 +50,7 @@ describe('ProductRepository', () => {
 
   beforeEach(async () => {
     qb = makeQb();
-    const mockOrmRepo = { createQueryBuilder: jest.fn().mockReturnValue(qb) };
+    const mockOrmRepo = { createQueryBuilder: mockFn().mockReturnValue(qb) };
 
     const module = await Test.createTestingModule({
       providers: [
@@ -60,8 +71,8 @@ describe('ProductRepository', () => {
     });
 
     it('returns correct shape', async () => {
-      (qb['getCount'] as jest.Mock).mockResolvedValue(2);
-      (qb['getMany'] as jest.Mock).mockResolvedValue([{ id: 'p-1' }, { id: 'p-2' }]);
+      qb['getCount'].mockResolvedValue(2);
+      qb['getMany'].mockResolvedValue([{ id: 'p-1' }, { id: 'p-2' }]);
       const result = await repo.findAll('org-1', 1, 10);
       expect(result.total).toBe(2);
       expect(result.data).toHaveLength(2);
