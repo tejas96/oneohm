@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductStatus } from '@oneohm-epc/shared/types';
-import { IsNull, Repository, type FindOptionsWhere, type SelectQueryBuilder } from 'typeorm';
+import { IsNull, Repository, SelectQueryBuilder, type FindOptionsWhere } from 'typeorm';
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { ProductEntity } from '../entities/product.entity';
@@ -71,11 +71,14 @@ export class ProductRepository {
       );
     }
 
-    const [data, total] = await query
+    // Split getCount + getMany to avoid TypeORM getManyAndCount crash
+    // when leftJoinAndSelect is combined with orderBy on a joined alias.
+    const total = await query.getCount();
+    const data = await query
+      .orderBy('product.name', 'ASC')
       .skip((page - 1) * limit)
       .take(limit)
-      .orderBy('product.name', 'ASC')
-      .getManyAndCount();
+      .getMany();
 
     return { data, total };
   }
@@ -164,24 +167,6 @@ export class ProductRepository {
       {
         deletedAt: new Date(),
       },
-    );
-  }
-
-  private addMinActiveUnitPriceJoin(
-    qb: SelectQueryBuilder<ProductEntity>,
-  ): SelectQueryBuilder<ProductEntity> {
-    return qb.leftJoin(
-      `(
-        SELECT product_id, MIN(unit_price::numeric) AS unit_price
-        FROM product_prices
-        WHERE organization_id = :organizationId
-          AND is_active = true
-          AND effective_from <= CURRENT_DATE
-          AND (effective_to IS NULL OR effective_to >= CURRENT_DATE)
-        GROUP BY product_id
-      )`,
-      'price',
-      'price.product_id = product.id',
     );
   }
 
@@ -354,5 +339,23 @@ export class ProductRepository {
       relations: ['brand'],
       order: { name: 'ASC' },
     });
+  }
+
+  private addMinActiveUnitPriceJoin(
+    qb: SelectQueryBuilder<ProductEntity>,
+  ): SelectQueryBuilder<ProductEntity> {
+    return qb.leftJoin(
+      `(
+        SELECT product_id, MIN(unit_price::numeric) AS unit_price
+        FROM product_prices
+        WHERE organization_id = :organizationId
+          AND is_active = true
+          AND effective_from <= CURRENT_DATE
+          AND (effective_to IS NULL OR effective_to >= CURRENT_DATE)
+        GROUP BY product_id
+      )`,
+      'price',
+      'price.product_id = product.id',
+    );
   }
 }

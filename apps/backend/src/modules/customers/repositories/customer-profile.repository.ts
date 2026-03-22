@@ -223,11 +223,17 @@ export class CustomerProfileRepository {
       qb.andWhere('customer.created_by = :createdBy', { createdBy });
     }
 
-    qb.orderBy('customer.createdAt', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit);
+    qb.orderBy('customer.createdAt', 'DESC');
 
-    return qb.getManyAndCount();
+    // Split getCount + getMany to avoid TypeORM getManyAndCount crash
+    // when leftJoinAndSelect is combined with orderBy on a joined alias.
+    const total = await qb.getCount();
+    const data = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
+
+    return [data, total];
   }
 
   /**
@@ -304,9 +310,14 @@ export class CustomerProfileRepository {
     const sortDirection = query.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
     qb.orderBy(sortColumn, sortDirection);
 
-    // ===== Pagination =====
-    qb.skip((query.page - 1) * query.limit).take(query.limit);
+    // Split getCount + getMany to avoid TypeORM getManyAndCount crash
+    // when leftJoinAndSelect is combined with orderBy on a joined alias.
+    const total = await qb.getCount();
+    const data = await qb
+      .skip((query.page - 1) * query.limit)
+      .take(query.limit)
+      .getMany();
 
-    return qb.getManyAndCount();
+    return [data, total];
   }
 }

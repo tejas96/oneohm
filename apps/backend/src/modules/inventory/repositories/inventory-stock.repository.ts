@@ -101,7 +101,10 @@ export class InventoryStockRepository {
     // Order by
     query.orderBy('product.name', 'ASC');
 
-    const [stocks, total] = await query.getManyAndCount();
+    // Split getCount + getMany to avoid TypeORM getManyAndCount crash
+    // when leftJoinAndSelect is combined with orderBy on a joined alias.
+    const total = await query.getCount();
+    const stocks = await query.skip(skip).take(limit).getMany();
 
     return { stocks, total };
   }
