@@ -96,6 +96,7 @@ export function EditProductModal({
       performanceWarrantyYears: target.performanceWarrantyYears ?? undefined,
       status: target.status ?? ProductStatus.ACTIVE,
     });
+    void form.trigger();
   }, [form, target]);
 
   const selectedProductType = useMemo(
@@ -379,7 +380,9 @@ export function EditProductModal({
                     tooltip="Years of product warranty coverage."
                     type="number"
                     placeholder="e.g. 12 years"
-                    {...form.register('productWarrantyYears', { valueAsNumber: true })}
+                    {...form.register('productWarrantyYears', {
+                      setValueAs: (v) => (v === '' || v === null ? undefined : Number(v)),
+                    })}
                   />
                 </div>
                 <div>
@@ -389,7 +392,9 @@ export function EditProductModal({
                     tooltip="Years of performance warranty coverage."
                     type="number"
                     placeholder="e.g. 25 years"
-                    {...form.register('performanceWarrantyYears', { valueAsNumber: true })}
+                    {...form.register('performanceWarrantyYears', {
+                      setValueAs: (v) => (v === '' || v === null ? undefined : Number(v)),
+                    })}
                   />
                 </div>
               </div>

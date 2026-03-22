@@ -10,14 +10,14 @@ export const productSchema = z.object({
   modelNumber: z.string().trim().optional(),
   specifications: z.record(z.unknown()),
   unitOfMeasure: z.nativeEnum(UnitOfMeasure),
-  productWarrantyYears: z
-    .number({ invalid_type_error: 'Warranty must be a number' })
-    .min(0, 'Warranty must be >= 0')
-    .optional(),
-  performanceWarrantyYears: z
-    .number({ invalid_type_error: 'Warranty must be a number' })
-    .min(0, 'Warranty must be >= 0')
-    .optional(),
+  productWarrantyYears: z.preprocess(
+    (v) => (v === '' || (typeof v === 'number' && isNaN(v)) ? undefined : v),
+    z.number({ invalid_type_error: 'Warranty must be a number' }).min(0, 'Warranty must be >= 0').optional(),
+  ),
+  performanceWarrantyYears: z.preprocess(
+    (v) => (v === '' || (typeof v === 'number' && isNaN(v)) ? undefined : v),
+    z.number({ invalid_type_error: 'Warranty must be a number' }).min(0, 'Warranty must be >= 0').optional(),
+  ),
   status: z.nativeEnum(ProductStatus),
 });
 

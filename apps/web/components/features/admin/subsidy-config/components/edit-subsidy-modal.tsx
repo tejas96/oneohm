@@ -83,6 +83,7 @@ export function EditSubsidyModal({
       isActive: target.isActive,
       description: target.description ?? '',
     });
+    void form.trigger();
   }, [form, target]);
 
   const { handleSubmit, handleClose, isSubmitting } = useModalForm<
@@ -207,7 +208,9 @@ export function EditSubsidyModal({
                     step="0.01"
                     placeholder="e.g. 3"
                     error={form.formState.errors.maxSubsidyKw?.message}
-                    {...form.register('maxSubsidyKw', { valueAsNumber: true })}
+                    {...form.register('maxSubsidyKw', {
+                      setValueAs: (v) => (v === '' || v === null ? undefined : Number(v)),
+                    })}
                   />
                 </div>
                 <div>
@@ -218,7 +221,9 @@ export function EditSubsidyModal({
                     type="number"
                     step="0.01"
                     placeholder="e.g. 78000"
-                    {...form.register('maxSubsidyAmount', { valueAsNumber: true })}
+                    {...form.register('maxSubsidyAmount', {
+                      setValueAs: (v) => (v === '' || v === null ? undefined : Number(v)),
+                    })}
                   />
                 </div>
               </div>

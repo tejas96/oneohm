@@ -18,13 +18,14 @@ export const subsidyConfigSchema = z
     schemeCode: z.string().trim().optional(),
     schemeType: z.nativeEnum(SubsidySchemeType),
     projectType: z.nativeEnum(ProjectType),
-    maxSubsidyKw: z
-      .number({ invalid_type_error: 'Max subsidy kW must be a number' })
-      .min(0, 'Max subsidy kW must be >= 0'),
-    maxSubsidyAmount: z
-      .number({ invalid_type_error: 'Max subsidy amount must be a number' })
-      .min(0, 'Max subsidy amount must be >= 0')
-      .optional(),
+    maxSubsidyKw: z.preprocess(
+      (v) => (v === '' || (typeof v === 'number' && isNaN(v)) ? undefined : v),
+      z.number({ invalid_type_error: 'Max subsidy kW must be a number' }).min(0, 'Max subsidy kW must be >= 0'),
+    ),
+    maxSubsidyAmount: z.preprocess(
+      (v) => (v === '' || (typeof v === 'number' && isNaN(v)) ? undefined : v),
+      z.number({ invalid_type_error: 'Max subsidy amount must be a number' }).min(0, 'Max subsidy amount must be >= 0').optional(),
+    ),
     requiresDcr: z.boolean(),
     autoSplitEnabled: z.boolean(),
     tiers: z.array(tierSchema).min(1, 'At least one tier is required'),

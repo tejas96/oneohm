@@ -83,6 +83,7 @@ export function EditPricingTierModal({
       effectiveTo: target.effectiveTo ?? '',
       isActive: target.isActive,
     });
+    void form.trigger();
   }, [form, target]);
 
   const { handleSubmit, handleClose, isSubmitting } = useModalForm<

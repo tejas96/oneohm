@@ -67,6 +67,7 @@ export function EditProductPriceModal({
       effectiveFrom: target.effectiveFrom ?? '',
       effectiveTo: target.effectiveTo ?? '',
     });
+    void form.trigger();
   }, [form, target]);
 
   const { handleSubmit, handleClose, isSubmitting } = useModalForm<
