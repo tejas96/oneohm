@@ -325,7 +325,10 @@ export class CustomerController {
     type: CustomerResponseDto,
   })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Customer or assignee user not found' })
-  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Assignee is not in this org or is inactive' })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Assignee is not in this org or is inactive',
+  })
   async assignCustomer(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() assigneeDto: UpdateAssigneeDto,

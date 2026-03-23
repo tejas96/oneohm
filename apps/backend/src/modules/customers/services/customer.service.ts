@@ -453,16 +453,12 @@ export class CustomerService {
         organizationId,
       );
       if (!employeeProfile) {
-        throw new BadRequestException(
-          `User '${assigneeId}' does not belong to this organization`,
-        );
+        throw new BadRequestException(`User '${assigneeId}' does not belong to this organization`);
       }
 
       // Validate assignee is active
       if (employeeProfile.status !== UserStatus.ACTIVE) {
-        throw new BadRequestException(
-          `Cannot assign to inactive user '${assigneeId}'`,
-        );
+        throw new BadRequestException(`Cannot assign to inactive user '${assigneeId}'`);
       }
     }
 

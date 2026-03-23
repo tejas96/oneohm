@@ -156,6 +156,7 @@ export function MUIUserAssigneeSelector({
       const id = window.setTimeout(() => searchRef.current?.focus(), 50);
       return () => window.clearTimeout(id);
     }
+    return undefined;
   }, [isOpen]);
 
   /* ---- Trigger ---- */
@@ -252,7 +253,14 @@ export function MUIUserAssigneeSelector({
       {/* Validation error */}
       {errorMsg && (
         <Typography
-          sx={{ fontSize: '0.75rem', color: 'error.main', mt: '4px', display: 'flex', alignItems: 'center', gap: 0.5 }}
+          sx={{
+            fontSize: '0.75rem',
+            color: 'error.main',
+            mt: '4px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+          }}
         >
           <WarningAmberIcon sx={{ fontSize: 13 }} />
           {errorMsg}
@@ -315,7 +323,9 @@ export function MUIUserAssigneeSelector({
                   '&:hover': { backgroundColor: 'error.50', color: 'error.main' },
                 }}
               >
-                <PersonRemoveOutlinedIcon sx={{ fontSize: 16, color: 'error.main', flexShrink: 0 }} />
+                <PersonRemoveOutlinedIcon
+                  sx={{ fontSize: 16, color: 'error.main', flexShrink: 0 }}
+                />
                 <Typography sx={{ fontSize: '0.8125rem', color: 'error.main' }}>
                   Remove assignee
                 </Typography>
@@ -363,13 +373,16 @@ export function MUIUserAssigneeSelector({
           )}
 
           {/* Empty — no search matches */}
-          {!employeesError && !employeesLoading && employees.length > 0 && filtered.length === 0 && (
-            <Box sx={{ py: 3, px: 2, textAlign: 'center' }}>
-              <Typography sx={{ fontSize: '0.8125rem', color: 'text.secondary' }}>
-                No results for &ldquo;{search}&rdquo;.
-              </Typography>
-            </Box>
-          )}
+          {!employeesError &&
+            !employeesLoading &&
+            employees.length > 0 &&
+            filtered.length === 0 && (
+              <Box sx={{ py: 3, px: 2, textAlign: 'center' }}>
+                <Typography sx={{ fontSize: '0.8125rem', color: 'text.secondary' }}>
+                  No results for &ldquo;{search}&rdquo;.
+                </Typography>
+              </Box>
+            )}
 
           {/* Employee rows */}
           {!employeesError && !employeesLoading && filtered.length > 0 && (
@@ -377,9 +390,7 @@ export function MUIUserAssigneeSelector({
               {filtered.map((emp) => {
                 const name = employeeDisplayName(emp);
                 const isSelected = emp.userId === value;
-                const secondaryText = [emp.designation, emp.department]
-                  .filter(Boolean)
-                  .join(' · ');
+                const secondaryText = [emp.designation, emp.department].filter(Boolean).join(' · ');
 
                 return (
                   <ListItemButton
@@ -422,7 +433,9 @@ export function MUIUserAssigneeSelector({
                       }}
                     />
                     {isSelected && (
-                      <CheckIcon sx={{ fontSize: 15, color: 'primary.main', flexShrink: 0, ml: 0.5 }} />
+                      <CheckIcon
+                        sx={{ fontSize: 15, color: 'primary.main', flexShrink: 0, ml: 0.5 }}
+                      />
                     )}
                   </ListItemButton>
                 );

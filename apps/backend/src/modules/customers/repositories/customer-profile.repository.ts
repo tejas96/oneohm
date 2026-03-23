@@ -112,10 +112,7 @@ export class CustomerProfileRepository {
       .leftJoinAndSelect('customer.assignee', 'assignee')
       .where('customer.organizationId = :organizationId', { organizationId })
       .andWhere('customer.deletedAt IS NULL')
-      .andWhere(
-        '(customer.createdBy = :userId OR customer.assigneeId = :userId)',
-        { userId },
-      )
+      .andWhere('(customer.createdBy = :userId OR customer.assigneeId = :userId)', { userId })
       .orderBy('customer.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
@@ -238,10 +235,9 @@ export class CustomerProfileRepository {
 
     // Filter by creator OR assignee (for field workers — covers both own-created and assigned)
     if (createdBy) {
-      qb.andWhere(
-        '(customer.createdBy = :createdBy OR customer.assigneeId = :createdBy)',
-        { createdBy },
-      );
+      qb.andWhere('(customer.createdBy = :createdBy OR customer.assigneeId = :createdBy)', {
+        createdBy,
+      });
     }
 
     qb.orderBy('customer.createdAt', 'DESC');
@@ -335,10 +331,9 @@ export class CustomerProfileRepository {
 
     if (query.createdBy) {
       // Return customers where user is the creator OR the assignee (for field worker "my leads" view)
-      qb.andWhere(
-        '(customer.createdBy = :createdBy OR customer.assigneeId = :createdBy)',
-        { createdBy: query.createdBy },
-      );
+      qb.andWhere('(customer.createdBy = :createdBy OR customer.assigneeId = :createdBy)', {
+        createdBy: query.createdBy,
+      });
     }
 
     if (query.fromDate) {

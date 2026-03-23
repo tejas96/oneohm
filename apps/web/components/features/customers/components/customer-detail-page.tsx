@@ -19,16 +19,16 @@ import {
   useRemovePropertyDocument,
   useUpdateCustomer,
 } from '../hooks';
-import { useEmployees } from '@/components/features/employees';
-import { MUIUserAssigneeSelector } from '@/components/ui';
 import { DocumentPreviewModal } from './document-preview-modal';
 import { DocumentRow, type AggregatedDocument } from './document-row';
 import { PropertyCard } from './property-card';
 import { PropertySelectModal } from './property-select-modal';
 import { UploadDocumentModal } from './upload-document-modal';
 
+import { useEmployees } from '@/components/features/employees';
 import { EditableField, EmptyState } from '@/components/shared';
 import {
+  MUIUserAssigneeSelector,
   Badge,
   Button,
   Breadcrumb,
@@ -143,7 +143,11 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
   const { data: quotesData, isLoading: isLoadingQuotes } = useCustomerQuotes(customerId);
   const updateCustomerMutation = useUpdateCustomer();
   const assignCustomerMutation = useAssignCustomer();
-  const { data: employees = [], isLoading: isLoadingEmployees, error: employeesError } = useEmployees();
+  const {
+    data: employees = [],
+    isLoading: isLoadingEmployees,
+    error: employeesError,
+  } = useEmployees();
   const { user } = useAuth();
 
   useEffect(() => {
@@ -542,9 +546,7 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                     employees={employees}
                     employeesLoading={isLoadingEmployees}
                     employeesError={
-                      employeesError
-                        ? 'Failed to load employees. Please try again.'
-                        : null
+                      employeesError ? 'Failed to load employees. Please try again.' : null
                     }
                     loading={assignCustomerMutation.isPending}
                     allowUnassign
