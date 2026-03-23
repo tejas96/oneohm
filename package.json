@@ -55,6 +55,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.965.0",
     "@aws-sdk/s3-request-presigner": "^3.965.0",
+    "@googlemaps/js-api-loader": "^2.0.2",
     "@hookform/resolvers": "^5.2.2",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
@@ -120,7 +121,6 @@
     "zustand": "^5.0.10"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3",
     "@babel/core": "^7.26.0",
     "@babel/preset-react": "^7.26.3",
     "@eslint/eslintrc": "^3.2.0",
@@ -134,7 +134,7 @@
     "@nx/next": "^22.0.2",
     "@nx/react": "^22.0.2",
     "@nx/web": "22.0.2",
-    "@nx/webpack": "22.5.3",
+    "@nx/webpack": "^22.0.2",
     "@nx/workspace": "^22.0.2",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.7",
     "@svgr/webpack": "^8.0.1",
@@ -152,6 +152,7 @@
     "@types/react-dom": "^19.0.6",
     "@types/supertest": "^6.0.2",
     "@typescript-eslint/parser": "^8.46.2",
+    "cross-env": "^7.0.3",
     "eslint": "^9.18.0",
     "eslint-config-next": "16.0.1",
     "eslint-config-prettier": "^10.0.1",

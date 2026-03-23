@@ -22,6 +22,8 @@ interface AddressAutocompleteProps {
   error?: boolean;
   errorMessage?: string;
   disabled?: boolean;
+  /** Label for the address field (default: "Street Address") */
+  label?: string;
 }
 
 // ============================================================================
@@ -35,9 +37,12 @@ export function AddressAutocomplete({
   error,
   errorMessage,
   disabled,
+  label = 'Street Address',
 }: AddressAutocompleteProps): React.JSX.Element {
-  const { suggestions, isLoading, isOpen, selectPlace, close } =
+  const { suggestions, isLoading, isOpen, selectPlace, close, error: loaderError } =
     useAddressAutocomplete(value);
+
+  const hasAutocomplete = !loaderError;
 
   const containerRef = useRef<HTMLDivElement>(null);
   const activeIndexRef = useRef<number>(-1);
@@ -127,7 +132,7 @@ export function AddressAutocomplete({
 
   return (
     <div ref={containerRef} className="relative">
-      <Label htmlFor="address">Street Address</Label>
+      <Label htmlFor="address">{label}</Label>
       <div className="relative mt-2">
         <Input
           ref={inputRef}
@@ -158,7 +163,7 @@ export function AddressAutocomplete({
         />
       </div>
 
-      {isOpen && suggestions.length > 0 && (
+      {hasAutocomplete && isOpen && suggestions.length > 0 && (
         <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-sm overflow-hidden">
           <ul
             role="listbox"
@@ -197,6 +202,12 @@ export function AddressAutocomplete({
             </p>
           </div>
         </div>
+      )}
+
+      {loaderError && (
+        <p className="text-xs text-foreground-tertiary mt-1.5">
+          Enter address manually (Google Maps not configured)
+        </p>
       )}
     </div>
   );

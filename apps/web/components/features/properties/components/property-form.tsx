@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { type CustomerResponse } from '../../customers';
+import { AddressAutocomplete, type CustomerResponse } from '../../customers';
 import { PROPERTY_ALERTS, REQUIRED_FIELDS_TOTAL } from '../constants';
 import {
   useCreateProperty,
@@ -521,17 +521,38 @@ export function PropertyForm({
                 </Alert>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="address" className="text-sm" required>
-                  Full Address
-                </Label>
-                <Textarea
-                  id="address"
-                  placeholder="Street address, area, landmark"
-                  {...form.register('address')}
-                  error={form.formState.errors.address?.message}
-                />
-              </div>
+              <AddressAutocomplete
+                label="Full Address"
+                value={form.watch('address') ?? ''}
+                onChange={(val) =>
+                  form.setValue('address', val, { shouldDirty: true })
+                }
+                onPlaceSelect={(details) => {
+                  form.setValue('address', details.address, {
+                    shouldDirty: true,
+                  });
+                  if (details.city)
+                    form.setValue('city', details.city, {
+                      shouldDirty: true,
+                    });
+                  if (details.pincode)
+                    form.setValue('pincode', details.pincode, {
+                      shouldDirty: true,
+                    });
+                  if (details.state) {
+                    const matched = INDIAN_STATES.find(
+                      (s) =>
+                        s.toLowerCase() === details.state.toLowerCase(),
+                    );
+                    if (matched)
+                      form.setValue('state', matched, {
+                        shouldDirty: true,
+                      });
+                  }
+                }}
+                error={!!form.formState.errors.address}
+                errorMessage={form.formState.errors.address?.message}
+              />
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">

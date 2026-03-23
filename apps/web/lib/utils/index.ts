@@ -1,4 +1,6 @@
 // Export utility functions
+export { extractAddressComponents } from './address-utils';
+export type { PlaceDetails } from './address-utils';
 export { getErrorMessage } from './error';
 export {
   extractFileKey,

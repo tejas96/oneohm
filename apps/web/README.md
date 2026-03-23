@@ -237,6 +237,9 @@ NEXT_PUBLIC_APP_URL=http://localhost:3001
 
 # Feature Flags (optional)
 NEXT_PUBLIC_ENABLE_ANALYTICS=true
+
+# Google Maps (for address autocomplete)
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
 ```
 
 ---

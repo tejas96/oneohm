@@ -1,10 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { apiClient } from '@/lib/api/client';
-import { useDebounce } from '@/lib/hooks';
-import { useAuth } from '@/providers/auth-provider';
+import { useDebounce, useGoogleMapsLoader } from '@/lib/hooks';
+import { extractAddressComponents, type PlaceDetails } from '@/lib/utils/address-utils';
 
 export interface PlaceSuggestion {
   placeId: string;
@@ -13,15 +12,7 @@ export interface PlaceSuggestion {
   secondaryText: string;
 }
 
-export interface PlaceDetails {
-  address: string;
-  city: string;
-  state: string;
-  pincode: string;
-  country: string;
-  lat: number | null;
-  lng: number | null;
-}
+export type { PlaceDetails };
 
 interface UseAddressAutocompleteReturn {
   suggestions: PlaceSuggestion[];
@@ -29,6 +20,7 @@ interface UseAddressAutocompleteReturn {
   isOpen: boolean;
   selectPlace: (placeId: string) => Promise<PlaceDetails | null>;
   close: () => void;
+  error: string | null;
 }
 
 const DEBOUNCE_MS = 300;
@@ -37,15 +29,15 @@ const MIN_CHARS = 3;
 export function useAddressAutocomplete(
   input: string,
 ): UseAddressAutocompleteReturn {
-  const { user } = useAuth();
+  const { places, isLoaded, error: loaderError } = useGoogleMapsLoader();
   const debouncedInput = useDebounce(input, DEBOUNCE_MS);
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const headers = { 'X-Organization-Id': user?.organizationId };
+  const placesServiceContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (debouncedInput.length < MIN_CHARS) {
+    if (!isLoaded || !places || debouncedInput.length < MIN_CHARS) {
       setSuggestions([]);
       setIsOpen(false);
       return;
@@ -54,45 +46,72 @@ export function useAddressAutocomplete(
     let cancelled = false;
     setIsLoading(true);
 
-    void apiClient
-      .get<PlaceSuggestion[]>(
-        `/location/autocomplete?input=${encodeURIComponent(debouncedInput)}`,
-        { headers },
-      )
-      .then(({ data }) => {
-        if (!cancelled) {
-          setSuggestions(data);
-          setIsOpen(data.length > 0);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
+    const autocompleteService = new places.AutocompleteService();
+    autocompleteService.getPlacePredictions(
+      {
+        input: debouncedInput,
+        componentRestrictions: { country: 'in' },
+      },
+      (predictions, status) => {
+        if (cancelled) return;
+        if (status !== google.maps.places.PlacesServiceStatus.OK || !predictions) {
           setSuggestions([]);
           setIsOpen(false);
+          setIsLoading(false);
+          return;
         }
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
+        const mapped: PlaceSuggestion[] = predictions.map((p) => ({
+          placeId: p.place_id ?? '',
+          description: p.description ?? '',
+          mainText: p.structured_formatting?.main_text ?? '',
+          secondaryText: p.structured_formatting?.secondary_text ?? '',
+        }));
+        setSuggestions(mapped);
+        setIsOpen(mapped.length > 0);
+        setIsLoading(false);
+      },
+    );
 
     return () => {
       cancelled = true;
     };
-  }, [debouncedInput, user?.organizationId]);
+  }, [debouncedInput, isLoaded, places]);
 
   const selectPlace = useCallback(
     async (placeId: string): Promise<PlaceDetails | null> => {
-      try {
-        const { data } = await apiClient.get<PlaceDetails>(
-          `/location/details?placeId=${encodeURIComponent(placeId)}`,
-          { headers },
-        );
-        return data;
-      } catch {
-        return null;
+      if (!places) return null;
+
+      const container =
+        placesServiceContainerRef.current ?? document.createElement('div');
+      if (!placesServiceContainerRef.current) {
+        placesServiceContainerRef.current = container;
+        container.style.display = 'none';
+        document.body.appendChild(container);
       }
+
+      const service = new places.PlacesService(container);
+
+      return new Promise((resolve) => {
+        service.getDetails(
+          {
+            placeId,
+            fields: [
+              'address_components',
+              'formatted_address',
+              'geometry',
+            ],
+          },
+          (place, status) => {
+            if (status !== google.maps.places.PlacesServiceStatus.OK || !place) {
+              resolve(null);
+              return;
+            }
+            resolve(extractAddressComponents(place));
+          },
+        );
+      });
     },
-    [user?.organizationId],
+    [places],
   );
 
   const close = useCallback(() => {
@@ -100,5 +119,12 @@ export function useAddressAutocomplete(
     setSuggestions([]);
   }, []);
 
-  return { suggestions, isLoading, isOpen, selectPlace, close };
+  return {
+    suggestions,
+    isLoading,
+    isOpen,
+    selectPlace,
+    close,
+    error: loaderError,
+  };
 }
