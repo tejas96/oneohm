@@ -1,559 +1,1559 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sales Dashboard - OneOhm Solar EPC</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            DEFAULT: '#76c044',
-                            dark: '#5ea031',
-                            light: '#8fd35f',
-                        },
-                        secondary: {
-                            DEFAULT: '#0d74b8',
-                            dark: '#0a5c92',
-                        },
-                        success: '#22c55e',
-                        warning: '#eab308',
-                        error: '#dc2626',
-                        info: '#0ea5e9',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    },
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: '#76c044',
+                dark: '#5ea031',
+                light: '#8fd35f',
+              },
+              secondary: {
+                DEFAULT: '#0d74b8',
+                dark: '#0a5c92',
+              },
+              success: '#22c55e',
+              warning: '#eab308',
+              error: '#dc2626',
+              info: '#0ea5e9',
+            },
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+            },
+          },
+        },
+      };
     </script>
     <style>
-        body { font-family: 'Inter', system-ui, sans-serif; }
-        
-        /* ==================== GLOBAL HEADER ==================== */
-        .global-header {
-            height: 48px;
-            background: #ffffff;
-            border-bottom: 1px solid #f4f4f5;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 50;
-            display: flex;
-            align-items: center;
-            padding: 0 12px;
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+
+      /* ==================== GLOBAL HEADER ==================== */
+      .global-header {
+        height: 48px;
+        background: #ffffff;
+        border-bottom: 1px solid #f4f4f5;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+      }
+
+      /* ==================== RAIL ==================== */
+      .rail {
+        width: 48px;
+        background: #ffffff;
+        border-right: 1px solid #f4f4f5;
+        position: fixed;
+        top: 48px;
+        left: 0;
+        height: calc(100vh - 48px);
+        display: flex;
+        flex-direction: column;
+        z-index: 40;
+      }
+      .rail-top {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding-top: 8px;
+      }
+      .rail-bottom {
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 8px;
+        border-top: 1px solid #f3f4f6;
+      }
+      .rail-icon {
+        width: 48px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6b7280;
+        cursor: pointer;
+        position: relative;
+        transition: all 150ms ease;
+      }
+      .rail-icon:hover {
+        background: #f9fafb;
+        color: #374151;
+      }
+      .rail-icon.active {
+        background: rgba(118, 192, 68, 0.08);
+        color: #76c044;
+        border-left: 3px solid #76c044;
+      }
+      .rail-icon .badge {
+        position: absolute;
+        top: 6px;
+        right: 10px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        font-size: 10px;
+        font-weight: 600;
+        background: #ef4444;
+        color: white;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .rail-icon .tooltip {
+        position: absolute;
+        left: 60px;
+        background: #1f2937;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 150ms ease;
+        z-index: 100;
+      }
+      .rail-icon:hover .tooltip {
+        opacity: 1;
+        visibility: visible;
+      }
+      .rail-user {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      .rail-user:hover {
+        background: #f9fafb;
+      }
+
+      /* ==================== PANEL ==================== */
+      .panel {
+        width: 200px;
+        background: #ffffff;
+        border-right: 1px solid #f4f4f5;
+        position: fixed;
+        top: 48px;
+        left: 48px;
+        height: calc(100vh - 48px);
+        display: flex;
+        flex-direction: column;
+        z-index: 35;
+        transition:
+          transform 200ms ease,
+          opacity 200ms ease;
+      }
+      .panel.collapsed {
+        transform: translateX(-240px);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .panel-header {
+        height: 48px;
+        padding: 0 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #f3f4f6;
+        flex-shrink: 0;
+      }
+      .panel-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #111827;
+      }
+      .panel-close-btn {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #9ca3af;
+        border-radius: 6px;
+        cursor: pointer;
+        opacity: 0;
+        transition: all 150ms ease;
+        background: none;
+        border: none;
+      }
+      .panel-header:hover .panel-close-btn {
+        opacity: 1;
+      }
+      .panel-close-btn:hover {
+        background: #f3f4f6;
+        color: #374151;
+      }
+      .panel-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      .panel-container.hidden {
+        display: none !important;
+      }
+      .panel-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 0;
+      }
+      .panel-section {
+        padding: 0 8px;
+        margin-bottom: 8px;
+      }
+      .section-header {
+        font-size: 11px;
+        font-weight: 600;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 12px 8px 6px 8px;
+      }
+      .panel-item {
+        height: 36px;
+        padding: 0 12px;
+        display: flex;
+        align-items: center;
+        color: #374151;
+        font-size: 14px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: all 100ms ease;
+      }
+      .panel-item:hover {
+        background: #f9fafb;
+      }
+      .panel-item.active {
+        background: rgba(118, 192, 68, 0.12);
+        color: #5ea031;
+        font-weight: 500;
+      }
+      .panel-item svg {
+        width: 18px;
+        height: 18px;
+        margin-right: 10px;
+        flex-shrink: 0;
+      }
+      .panel-item .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 10px;
+        flex-shrink: 0;
+      }
+      .panel-item .status-dot.hot {
+        background: #ef4444;
+      }
+      .panel-item .status-dot.warm {
+        background: #eab308;
+      }
+      .panel-item .status-dot.cold {
+        background: #60a5fa;
+      }
+      .panel-item.sub-item {
+        padding-left: 28px;
+        font-size: 13px;
+        color: #6b7280;
+      }
+      .panel-item.sub-item:hover {
+        color: #374151;
+      }
+      .panel-item span:not(.badge):not(.panel-badge):not(.status-dot) {
+        flex: 1;
+      }
+      .panel-item .badge {
+        margin-left: auto;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 12px;
+        background: rgba(118, 192, 68, 0.15);
+        color: #76c044;
+      }
+      .panel-item .badge.warning {
+        background: #fef3c7;
+        color: #d97706;
+      }
+      .panel-item .badge.error {
+        background: #fee2e2;
+        color: #dc2626;
+      }
+
+      /* ==================== MAIN CONTENT ==================== */
+      .main-content {
+        margin-left: 248px;
+        margin-top: 48px;
+        min-height: calc(100vh - 48px);
+        background: #f3f4f6;
+        transition: margin-left 200ms ease;
+      }
+      .main-content.panel-collapsed {
+        margin-left: 48px;
+      }
+
+      /* ==================== GLASSMORPHISM ==================== */
+      .glass-card {
+        background: linear-gradient(135deg, #0d74b8 0%, #025580 100%);
+        position: relative;
+        overflow: hidden;
+      }
+      .glass-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+      }
+
+      /* ==================== ANIMATIONS ==================== */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
         }
-        
-        /* ==================== RAIL ==================== */
-        .rail {
-            width: 48px;
-            background: #ffffff;
-            border-right: 1px solid #f4f4f5;
-            position: fixed;
-            top: 48px;
-            left: 0;
-            height: calc(100vh - 48px);
-            display: flex;
-            flex-direction: column;
-            z-index: 40;
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        .rail-top { flex: 1; display: flex; flex-direction: column; padding-top: 8px; }
-        .rail-bottom { display: flex; flex-direction: column; padding-bottom: 8px; border-top: 1px solid #f3f4f6; }
-        .rail-icon {
-            width: 48px; height: 44px; display: flex; align-items: center; justify-content: center;
-            color: #6b7280; cursor: pointer; position: relative; transition: all 150ms ease;
+      }
+      .animate-fade-in {
+        animation: fadeInUp 0.4s ease forwards;
+      }
+      .animation-delay-100 {
+        animation-delay: 0.1s;
+      }
+      .animation-delay-200 {
+        animation-delay: 0.2s;
+      }
+      .animation-delay-300 {
+        animation-delay: 0.3s;
+      }
+      .animation-delay-400 {
+        animation-delay: 0.4s;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
         }
-        .rail-icon:hover { background: #f9fafb; color: #374151; }
-        .rail-icon.active { background: rgba(118, 192, 68, 0.08); color: #76c044; border-left: 3px solid #76c044; }
-        .rail-icon .badge {
-            position: absolute; top: 6px; right: 10px; min-width: 18px; height: 18px; padding: 0 5px;
-            font-size: 10px; font-weight: 600; background: #ef4444; color: white; border-radius: 9px;
-            display: flex; align-items: center; justify-content: center;
+        50% {
+          opacity: 0.5;
         }
-        .rail-icon .tooltip {
-            position: absolute; left: 60px; background: #1f2937; color: white; padding: 6px 10px;
-            border-radius: 6px; font-size: 12px; font-weight: 500; white-space: nowrap;
-            opacity: 0; visibility: hidden; transition: all 150ms ease; z-index: 100;
-        }
-        .rail-icon:hover .tooltip { opacity: 1; visibility: visible; }
-        .rail-user { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .rail-user:hover { background: #f9fafb; }
-        
-        /* ==================== PANEL ==================== */
-        .panel {
-            width: 200px; background: #ffffff; border-right: 1px solid #f4f4f5;
-            position: fixed; top: 48px; left: 48px; height: calc(100vh - 48px);
-            display: flex; flex-direction: column; z-index: 35; transition: transform 200ms ease, opacity 200ms ease;
-        }
-        .panel.collapsed { transform: translateX(-240px); opacity: 0; pointer-events: none; }
-        .panel-header { height: 48px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f3f4f6; flex-shrink: 0; }
-        .panel-title { font-size: 15px; font-weight: 600; color: #111827; }
-        .panel-close-btn { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: #9ca3af; border-radius: 6px; cursor: pointer; opacity: 0; transition: all 150ms ease; background: none; border: none; }
-        .panel-header:hover .panel-close-btn { opacity: 1; }
-        .panel-close-btn:hover { background: #f3f4f6; color: #374151; }
-        .panel-container { display: flex; flex-direction: column; height: 100%; }
-        .panel-container.hidden { display: none !important; }
-        .panel-content { flex: 1; overflow-y: auto; padding: 8px 0; }
-        .panel-section { padding: 0 8px; margin-bottom: 8px; }
-        .section-header { font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 8px 6px 8px; }
-        .panel-item { height: 36px; padding: 0 12px; display: flex; align-items: center; color: #374151; font-size: 14px; cursor: pointer; border-radius: 8px; transition: all 100ms ease; }
-        .panel-item:hover { background: #f9fafb; }
-        .panel-item.active { background: rgba(118, 192, 68, 0.12); color: #5ea031; font-weight: 500; }
-        .panel-item svg { width: 18px; height: 18px; margin-right: 10px; flex-shrink: 0; }
-        .panel-item .status-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 10px; flex-shrink: 0; }
-        .panel-item .status-dot.hot { background: #ef4444; }
-        .panel-item .status-dot.warm { background: #eab308; }
-        .panel-item .status-dot.cold { background: #60a5fa; }
-        .panel-item.sub-item { padding-left: 28px; font-size: 13px; color: #6b7280; }
-        .panel-item.sub-item:hover { color: #374151; }
-        .panel-item span:not(.badge):not(.panel-badge):not(.status-dot) { flex: 1; }
-        .panel-item .badge { margin-left: auto; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 12px; background: rgba(118, 192, 68, 0.15); color: #76c044; }
-        .panel-item .badge.warning { background: #fef3c7; color: #d97706; }
-        .panel-item .badge.error { background: #fee2e2; color: #dc2626; }
-        
-        /* ==================== MAIN CONTENT ==================== */
-        .main-content { margin-left: 248px; margin-top: 48px; min-height: calc(100vh - 48px); background: #f3f4f6; transition: margin-left 200ms ease; }
-        .main-content.panel-collapsed { margin-left: 48px; }
-        
-        /* ==================== GLASSMORPHISM ==================== */
-        .glass-card { background: linear-gradient(135deg, #0d74b8 0%, #025580 100%); position: relative; overflow: hidden; }
-        .glass-card::before { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
-        
-        /* ==================== ANIMATIONS ==================== */
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeInUp 0.4s ease forwards; }
-        .animation-delay-100 { animation-delay: 0.1s; }
-        .animation-delay-200 { animation-delay: 0.2s; }
-        .animation-delay-300 { animation-delay: 0.3s; }
-        .animation-delay-400 { animation-delay: 0.4s; }
-        
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .animate-pulse-slow { animation: pulse 2s ease-in-out infinite; }
-        
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 3px; }
+      }
+      .animate-pulse-slow {
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #e5e7eb;
+        border-radius: 3px;
+      }
     </style>
-</head>
-<body class="bg-gray-100">
+  </head>
+  <body class="bg-gray-100">
     <!-- ==================== GLOBAL HEADER ==================== -->
     <header class="global-header">
-        <div class="flex items-center">
-            <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto">
+      <div class="flex items-center">
+        <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto" />
+      </div>
+      <div class="flex-1 ml-6 mr-4">
+        <button
+          onclick="openCommandPalette()"
+          class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors text-left"
+        >
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <span class="text-gray-400 flex-1 text-sm">Search...</span>
+          <kbd
+            class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-100 rounded"
+            >⌘K</kbd
+          >
+        </button>
+      </div>
+      <div class="flex items-center space-x-2">
+        <div class="hidden lg:flex items-center space-x-2 text-sm text-gray-500 mr-2">
+          <span class="w-2 h-2 bg-primary rounded-full animate-pulse-slow"></span>
+          <span>3 online</span>
         </div>
-        <div class="flex-1 ml-6 mr-4">
-            <button onclick="openCommandPalette()" class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors text-left">
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <span class="text-gray-400 flex-1 text-sm">Search...</span>
-                <kbd class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-100 rounded">⌘K</kbd>
-            </button>
-        </div>
-        <div class="flex items-center space-x-2">
-            <div class="hidden lg:flex items-center space-x-2 text-sm text-gray-500 mr-2">
-                <span class="w-2 h-2 bg-primary rounded-full animate-pulse-slow"></span>
-                <span>3 online</span>
-            </div>
-            <button class="relative p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
-            </button>
-            <button class="p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            </button>
-            <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors">
-                <div class="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold text-sm">SM</div>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-            </button>
-        </div>
+        <button class="relative p-2 hover:bg-gray-50 rounded-lg transition-colors">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
+          </svg>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
+        </button>
+        <button class="p-2 hover:bg-gray-50 rounded-lg transition-colors">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+        </button>
+        <button
+          class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors"
+        >
+          <div
+            class="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold text-sm"
+          >
+            SM
+          </div>
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+      </div>
     </header>
-    
+
     <!-- ==================== RAIL ==================== -->
     <aside class="rail">
-        <div class="rail-top">
-            <a href="index.html?rail=home" class="rail-icon" data-rail="home"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg><span class="tooltip">Home</span></a>
-            <div class="rail-icon active" data-rail="crm"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg><span class="badge">12</span><span class="tooltip">Sales & CRM</span></div>
-            <div class="rail-icon" data-rail="quotes"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><span class="tooltip">Quotations</span></div>
-            <a href="projects.html" class="rail-icon" data-rail="projects"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg><span class="tooltip">Projects</span></a>
-            <a href="inventory.html" class="rail-icon" data-rail="inventory"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg><span class="tooltip">Inventory</span></a>
-            <a href="finance.html" class="rail-icon" data-rail="finance"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg><span class="tooltip">Finance</span></a>
-            <div class="rail-icon" data-rail="service"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg><span class="tooltip">Service & AMC</span></div>
-            <div class="rail-icon" data-rail="analytics"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span class="tooltip">Analytics</span></div>
+      <div class="rail-top">
+        <a href="index.html?rail=home" class="rail-icon" data-rail="home"
+          ><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+            /></svg
+          ><span class="tooltip">Home</span></a
+        >
+        <div class="rail-icon active" data-rail="crm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+            /></svg
+          ><span class="badge">12</span><span class="tooltip">Sales & CRM</span>
         </div>
-        <div class="rail-bottom">
-            <div class="rail-icon" onclick="togglePanel()"><svg id="toggleIconExpand" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg><svg id="toggleIconCollapse" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg><span class="tooltip">Toggle Panel (⌘\)</span></div>
-            <div class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span class="tooltip">Help</span></div>
-            <div class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg><span class="tooltip">Admin</span></div>
+        <div class="rail-icon" data-rail="quotes">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            /></svg
+          ><span class="tooltip">Quotations</span>
         </div>
-        <div class="rail-user"><div class="w-9 h-9 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold text-sm">SM</div></div>
+        <a href="projects.html" class="rail-icon" data-rail="projects"
+          ><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+            /></svg
+          ><span class="tooltip">Projects</span></a
+        >
+        <a href="inventory.html" class="rail-icon" data-rail="inventory"
+          ><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+            /></svg
+          ><span class="tooltip">Inventory</span></a
+        >
+        <a href="finance.html" class="rail-icon" data-rail="finance"
+          ><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+            /></svg
+          ><span class="tooltip">Finance</span></a
+        >
+        <div class="rail-icon" data-rail="service">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            /></svg
+          ><span class="tooltip">Service & AMC</span>
+        </div>
+        <div class="rail-icon" data-rail="analytics">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            /></svg
+          ><span class="tooltip">Analytics</span>
+        </div>
+      </div>
+      <div class="rail-bottom">
+        <div class="rail-icon" onclick="togglePanel()">
+          <svg
+            id="toggleIconExpand"
+            class="w-5 h-5 hidden"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 5l7 7-7 7M5 5l7 7-7 7"
+            /></svg
+          ><svg
+            id="toggleIconCollapse"
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+            /></svg
+          ><span class="tooltip">Toggle Panel (⌘\)</span>
+        </div>
+        <div class="rail-icon">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            /></svg
+          ><span class="tooltip">Help</span>
+        </div>
+        <div class="rail-icon">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+            /></svg
+          ><span class="tooltip">Admin</span>
+        </div>
+      </div>
+      <div class="rail-user">
+        <div
+          class="w-9 h-9 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold text-sm"
+        >
+          SM
+        </div>
+      </div>
     </aside>
-    
+
     <!-- ==================== PANEL ==================== -->
     <aside id="panel" class="panel">
-        <div class="panel-header">
-            <span class="panel-title">Sales & CRM</span>
-            <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
-                </svg>
-            </button>
+      <div class="panel-header">
+        <span class="panel-title">Sales & CRM</span>
+        <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+            />
+          </svg>
+        </button>
+      </div>
+      <div class="panel-content custom-scrollbar">
+        <!-- Customers -->
+        <div class="panel-section">
+          <div class="section-header">Customers</div>
+          <a href="../crm/customers.html" class="panel-item">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              />
+            </svg>
+            <span>All Customers</span>
+            <span class="badge">156</span>
+          </a>
+          <a href="../crm/customer-detail.html" class="panel-item">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
+            </svg>
+            <span>Customer 360</span>
+          </a>
         </div>
-        <div class="panel-content custom-scrollbar">
-            <!-- Customers -->
-            <div class="panel-section">
-                <div class="section-header">Customers</div>
-                <a href="../crm/customers.html" class="panel-item">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                    <span>All Customers</span>
-                    <span class="badge">156</span>
-                </a>
-                <a href="../crm/customer-detail.html" class="panel-item">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                    <span>Customer 360</span>
-                </a>
-            </div>
-            <!-- Properties -->
-            <div class="panel-section">
-                <div class="section-header">Properties</div>
-                <a href="../crm/properties.html" class="panel-item">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                    <span>All Properties</span>
-                    <span class="badge">89</span>
-                </a>
-                <a href="../crm/properties.html?temp=hot" class="panel-item sub-item"><span class="status-dot hot"></span><span>Hot</span><span class="badge error">5</span></a>
-                <a href="../crm/properties.html?temp=warm" class="panel-item sub-item"><span class="status-dot warm"></span><span>Warm</span><span class="badge warning">18</span></a>
-                <a href="../crm/properties.html?temp=cold" class="panel-item sub-item"><span class="status-dot cold"></span><span>Cold</span><span class="badge">24</span></a>
-                <a href="../crm/site-visits.html" class="panel-item">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    <span>Site Visits</span>
-                </a>
-            </div>
-            <!-- Pipeline -->
-            <div class="panel-section">
-                <div class="section-header">Pipeline</div>
-                <a href="../crm/pipeline.html" class="panel-item active">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                    <span>Sales Pipeline</span>
-                </a>
-                <a href="../crm/pipeline.html" class="panel-item">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-                    <span>Conversion Funnel</span>
-                </a>
-            </div>
-            <!-- Follow-ups -->
-            <div class="panel-section">
-                <div class="section-header">Follow-ups</div>
-                <a href="../crm/followups.html" class="panel-item">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    <span>Today</span>
-                    <span class="badge warning">8</span>
-                </a>
-                <a href="../crm/followups.html?filter=overdue" class="panel-item">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                    <span>Overdue</span>
-                    <span class="badge error">3</span>
-                </a>
-                <a href="../crm/followups.html?filter=upcoming" class="panel-item">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    <span>Upcoming</span>
-                </a>
-            </div>
+        <!-- Properties -->
+        <div class="panel-section">
+          <div class="section-header">Properties</div>
+          <a href="../crm/properties.html" class="panel-item">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+              />
+            </svg>
+            <span>All Properties</span>
+            <span class="badge">89</span>
+          </a>
+          <a href="../crm/properties.html?temp=hot" class="panel-item sub-item"
+            ><span class="status-dot hot"></span><span>Hot</span
+            ><span class="badge error">5</span></a
+          >
+          <a href="../crm/properties.html?temp=warm" class="panel-item sub-item"
+            ><span class="status-dot warm"></span><span>Warm</span
+            ><span class="badge warning">18</span></a
+          >
+          <a href="../crm/properties.html?temp=cold" class="panel-item sub-item"
+            ><span class="status-dot cold"></span><span>Cold</span><span class="badge">24</span></a
+          >
+          <a href="../crm/site-visits.html" class="panel-item">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+            <span>Site Visits</span>
+          </a>
         </div>
+        <!-- Pipeline -->
+        <div class="panel-section">
+          <div class="section-header">Pipeline</div>
+          <a href="../crm/pipeline.html" class="panel-item active">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
+            </svg>
+            <span>Sales Pipeline</span>
+          </a>
+          <a href="../crm/pipeline.html" class="panel-item">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              />
+            </svg>
+            <span>Conversion Funnel</span>
+          </a>
+        </div>
+        <!-- Follow-ups -->
+        <div class="panel-section">
+          <div class="section-header">Follow-ups</div>
+          <a href="../crm/followups.html" class="panel-item">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span>Today</span>
+            <span class="badge warning">8</span>
+          </a>
+          <a href="../crm/followups.html?filter=overdue" class="panel-item">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            <span>Overdue</span>
+            <span class="badge error">3</span>
+          </a>
+          <a href="../crm/followups.html?filter=upcoming" class="panel-item">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            <span>Upcoming</span>
+          </a>
+        </div>
+      </div>
     </aside>
-    
+
     <!-- ==================== MAIN CONTENT ==================== -->
     <main id="mainContent" class="main-content">
-        <div class="p-6">
-            <!-- Greeting -->
-            <div class="mb-8 animate-fade-in opacity-0">
-                <h1 class="text-xl font-semibold text-gray-800">Sales Dashboard</h1>
-                <p class="text-gray-500 mt-1">Track your pipeline, leads, and conversion metrics</p>
-            </div>
-            
-            <!-- Bento Grid -->
-            <div class="grid grid-cols-12 gap-4">
-                <!-- Hero Card: Pipeline Value -->
-                <div class="col-span-12 lg:col-span-5 glass-card rounded-lg p-4 text-white animate-fade-in opacity-0 animation-delay-100 min-h-[240px]">
-                    <div class="relative z-10">
-                        <p class="text-white/80 text-sm font-medium">Total Pipeline Value</p>
-                        <p class="text-4xl font-bold mt-2">₹1.25 Cr</p>
-                        <div class="flex items-center mt-2">
-                            <span class="flex items-center text-sm bg-white/20 px-2 py-1 rounded-full">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-                                18.2% vs last month
-                            </span>
-                        </div>
-                        <div class="mt-6 grid grid-cols-3 gap-4">
-                            <div class="text-center"><p class="text-xl font-semibold">45</p><p class="text-xs text-white/70">Open Deals</p></div>
-                            <div class="text-center"><p class="text-xl font-semibold">12</p><p class="text-xs text-white/70">Closing Soon</p></div>
-                            <div class="text-center"><p class="text-xl font-semibold">8</p><p class="text-xs text-white/70">Won This Month</p></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- KPI Cards -->
-                <div class="col-span-12 lg:col-span-7 grid grid-cols-2 gap-4">
-                    <div class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-200">
-                        <div class="flex items-start justify-between">
-                            <div class="w-10 h-10 rounded-lg bg-error/10 flex items-center justify-center"><svg class="w-5 h-5 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg></div>
-                            <span class="text-xs font-medium text-error bg-error/10 px-2 py-1 rounded-full">Priority</span>
-                        </div>
-                        <p class="text-3xl font-bold text-gray-800 mt-4">28</p>
-                        <p class="text-sm text-gray-500 mt-1">Hot Leads</p>
-                    </div>
-                    <div class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-200">
-                        <div class="flex items-start justify-between">
-                            <div class="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center"><svg class="w-5 h-5 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/></svg></div>
-                            <span class="text-xs font-medium text-warning bg-warning/10 px-2 py-1 rounded-full">Follow-up</span>
-                        </div>
-                        <p class="text-3xl font-bold text-gray-800 mt-4">64</p>
-                        <p class="text-sm text-gray-500 mt-1">Warm Leads</p>
-                    </div>
-                    <div class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-300">
-                        <div class="flex items-start justify-between">
-                            <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
-                            <span class="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full">↑ 3.5%</span>
-                        </div>
-                        <p class="text-3xl font-bold text-gray-800 mt-4">32%</p>
-                        <p class="text-sm text-gray-500 mt-1">Conversion Rate</p>
-                    </div>
-                    <div class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-300">
-                        <div class="flex items-start justify-between">
-                            <div class="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center"><svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
-                            <span class="text-xs font-medium text-secondary bg-secondary/10 px-2 py-1 rounded-full">₹2.8L avg</span>
-                        </div>
-                        <p class="text-3xl font-bold text-gray-800 mt-4">₹2.8L</p>
-                        <p class="text-sm text-gray-500 mt-1">Avg Deal Size</p>
-                    </div>
-                </div>
-                
-                <!-- Sales Funnel -->
-                <div class="col-span-12 lg:col-span-6 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400">
-                    <h3 class="font-semibold text-gray-800 mb-6">Sales Funnel</h3>
-                    <div class="space-y-4">
-                        <div><div class="flex justify-between mb-2"><span class="text-sm text-gray-500">New Leads</span><span class="text-sm font-medium text-gray-800">156</span></div><div class="h-8 bg-gray-100 rounded-lg overflow-hidden"><div class="h-full bg-gray-400 rounded-lg" style="width: 100%"></div></div></div>
-                        <div><div class="flex justify-between mb-2"><span class="text-sm text-gray-500">Qualified</span><span class="text-sm font-medium text-gray-800">92</span></div><div class="h-8 bg-gray-100 rounded-lg overflow-hidden"><div class="h-full bg-secondary/60 rounded-lg" style="width: 59%"></div></div></div>
-                        <div><div class="flex justify-between mb-2"><span class="text-sm text-gray-500">Proposal Sent</span><span class="text-sm font-medium text-gray-800">64</span></div><div class="h-8 bg-gray-100 rounded-lg overflow-hidden"><div class="h-full bg-secondary rounded-lg" style="width: 41%"></div></div></div>
-                        <div><div class="flex justify-between mb-2"><span class="text-sm text-gray-500">Negotiation</span><span class="text-sm font-medium text-gray-800">38</span></div><div class="h-8 bg-gray-100 rounded-lg overflow-hidden"><div class="h-full bg-primary/70 rounded-lg" style="width: 24%"></div></div></div>
-                        <div><div class="flex justify-between mb-2"><span class="text-sm text-gray-500">Won</span><span class="text-sm font-medium text-primary">24</span></div><div class="h-8 bg-gray-100 rounded-lg overflow-hidden"><div class="h-full bg-primary rounded-lg" style="width: 15%"></div></div></div>
-                    </div>
-                </div>
-                
-                <!-- Lead Sources -->
-                <div class="col-span-12 lg:col-span-6 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400">
-                    <h3 class="font-semibold text-gray-800 mb-6">Lead Sources</h3>
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center"><svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></div>
-                                <div><p class="font-medium text-gray-800">WhatsApp</p><p class="text-xs text-gray-500">42% conversion</p></div>
-                            </div>
-                            <div class="text-right"><p class="font-bold text-gray-800">48</p><p class="text-xs text-gray-500">leads</p></div>
-                        </div>
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center"><svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg></div>
-                                <div><p class="font-medium text-gray-800">Website</p><p class="text-xs text-gray-500">28% conversion</p></div>
-                            </div>
-                            <div class="text-right"><p class="font-bold text-gray-800">35</p><p class="text-xs text-gray-500">leads</p></div>
-                        </div>
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center"><svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>
-                                <div><p class="font-medium text-gray-800">Referral</p><p class="text-xs text-gray-500">55% conversion</p></div>
-                            </div>
-                            <div class="text-right"><p class="font-bold text-gray-800">28</p><p class="text-xs text-gray-500">leads</p></div>
-                        </div>
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center"><svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></div>
-                                <div><p class="font-medium text-gray-800">Exhibition</p><p class="text-xs text-gray-500">18% conversion</p></div>
-                            </div>
-                            <div class="text-right"><p class="font-bold text-gray-800">22</p><p class="text-xs text-gray-500">leads</p></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Activity Feed -->
-                <div class="col-span-12 lg:col-span-4 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400 max-h-[480px] flex flex-col">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-semibold text-gray-800">Recent Activity</h3>
-                        <a href="#" class="text-xs text-secondary hover:text-secondary-dark font-medium">View All</a>
-                    </div>
-                    <div class="space-y-4 overflow-y-auto flex-1 pr-1 custom-scrollbar">
-                        <!-- Activity 1 -->
-                        <div class="flex items-start gap-3">
-                            <div class="w-8 h-8 rounded-full bg-primary/15 flex-shrink-0 flex items-center justify-center">
-                                <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm text-gray-800"><span class="font-medium">Quote accepted</span> by Rajesh Sharma</p>
-                                <p class="text-xs text-gray-500 mt-0.5">Koramangala Residence • ₹2.8L</p>
-                                <p class="text-xs text-gray-400 mt-1">2 mins ago</p>
-                            </div>
-                        </div>
-                        <!-- Activity 2 -->
-                        <div class="flex items-start gap-3">
-                            <div class="w-8 h-8 rounded-full bg-secondary/15 flex-shrink-0 flex items-center justify-center">
-                                <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm text-gray-800"><span class="font-medium">Site visit completed</span></p>
-                                <p class="text-xs text-gray-500 mt-0.5">HSR Layout Office • Amit K.</p>
-                                <p class="text-xs text-gray-400 mt-1">15 mins ago</p>
-                            </div>
-                        </div>
-                        <!-- Activity 3 -->
-                        <div class="flex items-start gap-3">
-                            <div class="w-8 h-8 rounded-full bg-warning/15 flex-shrink-0 flex items-center justify-center">
-                                <svg class="w-4 h-4 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm text-gray-800"><span class="font-medium">Quote sent</span> to Priya Industries</p>
-                                <p class="text-xs text-gray-500 mt-0.5">Commercial • ₹5.8L</p>
-                                <p class="text-xs text-gray-400 mt-1">1 hour ago</p>
-                            </div>
-                        </div>
-                        <!-- Activity 4 -->
-                        <div class="flex items-start gap-3">
-                            <div class="w-8 h-8 rounded-full bg-green-100 flex-shrink-0 flex items-center justify-center">
-                                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm text-gray-800"><span class="font-medium">New lead</span> added from WhatsApp</p>
-                                <p class="text-xs text-gray-500 mt-0.5">Vikram Rao • Electronic City</p>
-                                <p class="text-xs text-gray-400 mt-1">2 hours ago</p>
-                            </div>
-                        </div>
-                        <!-- Activity 5 -->
-                        <div class="flex items-start gap-3">
-                            <div class="w-8 h-8 rounded-full bg-red-100 flex-shrink-0 flex items-center justify-center">
-                                <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm text-gray-800"><span class="font-medium">Hot lead upgraded</span></p>
-                                <p class="text-xs text-gray-500 mt-0.5">Jayanagar Villa • Sunita M.</p>
-                                <p class="text-xs text-gray-400 mt-1">3 hours ago</p>
-                            </div>
-                        </div>
-                        <!-- Activity 6 -->
-                        <div class="flex items-start gap-3">
-                            <div class="w-8 h-8 rounded-full bg-purple-100 flex-shrink-0 flex items-center justify-center">
-                                <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm text-gray-800"><span class="font-medium">Follow-up call</span> completed</p>
-                                <p class="text-xs text-gray-500 mt-0.5">Mukesh Kumar • Indiranagar</p>
-                                <p class="text-xs text-gray-400 mt-1">5 hours ago</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Recent Leads Table -->
-                <div class="col-span-12 lg:col-span-8 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400">
-                    <div class="flex items-center justify-between mb-6">
-                        <h3 class="font-semibold text-gray-800">Recent Leads</h3>
-                        <a href="#" class="text-sm text-secondary hover:text-secondary-dark font-medium">View All →</a>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                    <th class="pb-4">Lead</th>
-                                    <th class="pb-4">Source</th>
-                                    <th class="pb-4">Temperature</th>
-                                    <th class="pb-4">Value</th>
-                                    <th class="pb-4">Status</th>
-                                    <th class="pb-4">Assigned</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100">
-                                <tr class="hover:bg-gray-50">
-                                    <td class="py-4"><div class="flex items-center space-x-3"><div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">RS</div><div><p class="font-medium text-gray-800">Ravi Sharma</p><p class="text-xs text-gray-500">Pune, Maharashtra</p></div></div></td>
-                                    <td class="py-4"><span class="text-sm text-gray-500">WhatsApp</span></td>
-                                    <td class="py-4"><span class="px-2 py-1 text-xs font-medium bg-error/10 text-error rounded-full">Hot</span></td>
-                                    <td class="py-4"><span class="text-sm font-medium text-gray-800">₹3.2L</span></td>
-                                    <td class="py-4"><span class="px-2 py-1 text-xs font-medium bg-secondary/10 text-secondary rounded-full">Proposal Sent</span></td>
-                                    <td class="py-4"><span class="text-sm text-gray-500">Amit K.</span></td>
-                                </tr>
-                                <tr class="hover:bg-gray-50">
-                                    <td class="py-4"><div class="flex items-center space-x-3"><div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary font-bold text-sm">PI</div><div><p class="font-medium text-gray-800">Priya Industries</p><p class="text-xs text-gray-500">Mumbai, Maharashtra</p></div></div></td>
-                                    <td class="py-4"><span class="text-sm text-gray-500">Website</span></td>
-                                    <td class="py-4"><span class="px-2 py-1 text-xs font-medium bg-warning/10 text-warning rounded-full">Warm</span></td>
-                                    <td class="py-4"><span class="text-sm font-medium text-gray-800">₹5.8L</span></td>
-                                    <td class="py-4"><span class="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-600 rounded-full">Qualified</span></td>
-                                    <td class="py-4"><span class="text-sm text-gray-500">Sunita M.</span></td>
-                                </tr>
-                                <tr class="hover:bg-gray-50">
-                                    <td class="py-4"><div class="flex items-center space-x-3"><div class="w-10 h-10 rounded-full bg-warning/10 flex items-center justify-center text-warning font-bold text-sm">AK</div><div><p class="font-medium text-gray-800">Arun Kumar</p><p class="text-xs text-gray-500">Nashik, Maharashtra</p></div></div></td>
-                                    <td class="py-4"><span class="text-sm text-gray-500">Referral</span></td>
-                                    <td class="py-4"><span class="px-2 py-1 text-xs font-medium bg-error/10 text-error rounded-full">Hot</span></td>
-                                    <td class="py-4"><span class="text-sm font-medium text-gray-800">₹2.1L</span></td>
-                                    <td class="py-4"><span class="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">Negotiation</span></td>
-                                    <td class="py-4"><span class="text-sm text-gray-500">Vikram P.</span></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+      <div class="p-6">
+        <!-- Greeting -->
+        <div class="mb-8 animate-fade-in opacity-0">
+          <h1 class="text-xl font-semibold text-gray-800">Sales Dashboard</h1>
+          <p class="text-gray-500 mt-1">Track your pipeline, leads, and conversion metrics</p>
         </div>
+
+        <!-- Bento Grid -->
+        <div class="grid grid-cols-12 gap-4">
+          <!-- Hero Card: Pipeline Value -->
+          <div
+            class="col-span-12 lg:col-span-5 glass-card rounded-lg p-4 text-white animate-fade-in opacity-0 animation-delay-100 min-h-[240px]"
+          >
+            <div class="relative z-10">
+              <p class="text-white/80 text-sm font-medium">Total Pipeline Value</p>
+              <p class="text-4xl font-bold mt-2">₹1.25 Cr</p>
+              <div class="flex items-center mt-2">
+                <span class="flex items-center text-sm bg-white/20 px-2 py-1 rounded-full">
+                  <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                    />
+                  </svg>
+                  18.2% vs last month
+                </span>
+              </div>
+              <div class="mt-6 grid grid-cols-3 gap-4">
+                <div class="text-center">
+                  <p class="text-xl font-semibold">45</p>
+                  <p class="text-xs text-white/70">Open Deals</p>
+                </div>
+                <div class="text-center">
+                  <p class="text-xl font-semibold">12</p>
+                  <p class="text-xs text-white/70">Closing Soon</p>
+                </div>
+                <div class="text-center">
+                  <p class="text-xl font-semibold">8</p>
+                  <p class="text-xs text-white/70">Won This Month</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI Cards -->
+          <div class="col-span-12 lg:col-span-7 grid grid-cols-2 gap-4">
+            <div
+              class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-200"
+            >
+              <div class="flex items-start justify-between">
+                <div class="w-10 h-10 rounded-lg bg-error/10 flex items-center justify-center">
+                  <svg
+                    class="w-5 h-5 text-error"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"
+                    />
+                  </svg>
+                </div>
+                <span class="text-xs font-medium text-error bg-error/10 px-2 py-1 rounded-full"
+                  >Priority</span
+                >
+              </div>
+              <p class="text-3xl font-bold text-gray-800 mt-4">28</p>
+              <p class="text-sm text-gray-500 mt-1">Hot Leads</p>
+            </div>
+            <div
+              class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-200"
+            >
+              <div class="flex items-start justify-between">
+                <div class="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                  <svg
+                    class="w-5 h-5 text-warning"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"
+                    />
+                  </svg>
+                </div>
+                <span class="text-xs font-medium text-warning bg-warning/10 px-2 py-1 rounded-full"
+                  >Follow-up</span
+                >
+              </div>
+              <p class="text-3xl font-bold text-gray-800 mt-4">64</p>
+              <p class="text-sm text-gray-500 mt-1">Warm Leads</p>
+            </div>
+            <div
+              class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-300"
+            >
+              <div class="flex items-start justify-between">
+                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <svg
+                    class="w-5 h-5 text-primary"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <span class="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full"
+                  >↑ 3.5%</span
+                >
+              </div>
+              <p class="text-3xl font-bold text-gray-800 mt-4">32%</p>
+              <p class="text-sm text-gray-500 mt-1">Conversion Rate</p>
+            </div>
+            <div
+              class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-300"
+            >
+              <div class="flex items-start justify-between">
+                <div class="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
+                  <svg
+                    class="w-5 h-5 text-secondary"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <span
+                  class="text-xs font-medium text-secondary bg-secondary/10 px-2 py-1 rounded-full"
+                  >₹2.8L avg</span
+                >
+              </div>
+              <p class="text-3xl font-bold text-gray-800 mt-4">₹2.8L</p>
+              <p class="text-sm text-gray-500 mt-1">Avg Deal Size</p>
+            </div>
+          </div>
+
+          <!-- Sales Funnel -->
+          <div
+            class="col-span-12 lg:col-span-6 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400"
+          >
+            <h3 class="font-semibold text-gray-800 mb-6">Sales Funnel</h3>
+            <div class="space-y-4">
+              <div>
+                <div class="flex justify-between mb-2">
+                  <span class="text-sm text-gray-500">New Leads</span
+                  ><span class="text-sm font-medium text-gray-800">156</span>
+                </div>
+                <div class="h-8 bg-gray-100 rounded-lg overflow-hidden">
+                  <div class="h-full bg-gray-400 rounded-lg" style="width: 100%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between mb-2">
+                  <span class="text-sm text-gray-500">Qualified</span
+                  ><span class="text-sm font-medium text-gray-800">92</span>
+                </div>
+                <div class="h-8 bg-gray-100 rounded-lg overflow-hidden">
+                  <div class="h-full bg-secondary/60 rounded-lg" style="width: 59%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between mb-2">
+                  <span class="text-sm text-gray-500">Proposal Sent</span
+                  ><span class="text-sm font-medium text-gray-800">64</span>
+                </div>
+                <div class="h-8 bg-gray-100 rounded-lg overflow-hidden">
+                  <div class="h-full bg-secondary rounded-lg" style="width: 41%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between mb-2">
+                  <span class="text-sm text-gray-500">Negotiation</span
+                  ><span class="text-sm font-medium text-gray-800">38</span>
+                </div>
+                <div class="h-8 bg-gray-100 rounded-lg overflow-hidden">
+                  <div class="h-full bg-primary/70 rounded-lg" style="width: 24%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between mb-2">
+                  <span class="text-sm text-gray-500">Won</span
+                  ><span class="text-sm font-medium text-primary">24</span>
+                </div>
+                <div class="h-8 bg-gray-100 rounded-lg overflow-hidden">
+                  <div class="h-full bg-primary rounded-lg" style="width: 15%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lead Sources -->
+          <div
+            class="col-span-12 lg:col-span-6 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400"
+          >
+            <h3 class="font-semibold text-gray-800 mb-6">Lead Sources</h3>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div class="flex items-center space-x-3">
+                  <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path
+                        d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="font-medium text-gray-800">WhatsApp</p>
+                    <p class="text-xs text-gray-500">42% conversion</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="font-bold text-gray-800">48</p>
+                  <p class="text-xs text-gray-500">leads</p>
+                </div>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div class="flex items-center space-x-3">
+                  <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <svg
+                      class="w-5 h-5 text-blue-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="font-medium text-gray-800">Website</p>
+                    <p class="text-xs text-gray-500">28% conversion</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="font-bold text-gray-800">35</p>
+                  <p class="text-xs text-gray-500">leads</p>
+                </div>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div class="flex items-center space-x-3">
+                  <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                    <svg
+                      class="w-5 h-5 text-purple-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="font-medium text-gray-800">Referral</p>
+                    <p class="text-xs text-gray-500">55% conversion</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="font-bold text-gray-800">28</p>
+                  <p class="text-xs text-gray-500">leads</p>
+                </div>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div class="flex items-center space-x-3">
+                  <div class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                    <svg
+                      class="w-5 h-5 text-orange-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="font-medium text-gray-800">Exhibition</p>
+                    <p class="text-xs text-gray-500">18% conversion</p>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="font-bold text-gray-800">22</p>
+                  <p class="text-xs text-gray-500">leads</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Activity Feed -->
+          <div
+            class="col-span-12 lg:col-span-4 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400 max-h-[480px] flex flex-col"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-gray-800">Recent Activity</h3>
+              <a href="#" class="text-xs text-secondary hover:text-secondary-dark font-medium"
+                >View All</a
+              >
+            </div>
+            <div class="space-y-4 overflow-y-auto flex-1 pr-1 custom-scrollbar">
+              <!-- Activity 1 -->
+              <div class="flex items-start gap-3">
+                <div
+                  class="w-8 h-8 rounded-full bg-primary/15 flex-shrink-0 flex items-center justify-center"
+                >
+                  <svg
+                    class="w-4 h-4 text-primary"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm text-gray-800">
+                    <span class="font-medium">Quote accepted</span> by Rajesh Sharma
+                  </p>
+                  <p class="text-xs text-gray-500 mt-0.5">Koramangala Residence • ₹2.8L</p>
+                  <p class="text-xs text-gray-400 mt-1">2 mins ago</p>
+                </div>
+              </div>
+              <!-- Activity 2 -->
+              <div class="flex items-start gap-3">
+                <div
+                  class="w-8 h-8 rounded-full bg-secondary/15 flex-shrink-0 flex items-center justify-center"
+                >
+                  <svg
+                    class="w-4 h-4 text-secondary"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                    />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm text-gray-800">
+                    <span class="font-medium">Site visit completed</span>
+                  </p>
+                  <p class="text-xs text-gray-500 mt-0.5">HSR Layout Office • Amit K.</p>
+                  <p class="text-xs text-gray-400 mt-1">15 mins ago</p>
+                </div>
+              </div>
+              <!-- Activity 3 -->
+              <div class="flex items-start gap-3">
+                <div
+                  class="w-8 h-8 rounded-full bg-warning/15 flex-shrink-0 flex items-center justify-center"
+                >
+                  <svg
+                    class="w-4 h-4 text-warning"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm text-gray-800">
+                    <span class="font-medium">Quote sent</span> to Priya Industries
+                  </p>
+                  <p class="text-xs text-gray-500 mt-0.5">Commercial • ₹5.8L</p>
+                  <p class="text-xs text-gray-400 mt-1">1 hour ago</p>
+                </div>
+              </div>
+              <!-- Activity 4 -->
+              <div class="flex items-start gap-3">
+                <div
+                  class="w-8 h-8 rounded-full bg-green-100 flex-shrink-0 flex items-center justify-center"
+                >
+                  <svg
+                    class="w-4 h-4 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                    />
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm text-gray-800">
+                    <span class="font-medium">New lead</span> added from WhatsApp
+                  </p>
+                  <p class="text-xs text-gray-500 mt-0.5">Vikram Rao • Electronic City</p>
+                  <p class="text-xs text-gray-400 mt-1">2 hours ago</p>
+                </div>
+              </div>
+              <!-- Activity 5 -->
+              <div class="flex items-start gap-3">
+                <div
+                  class="w-8 h-8 rounded-full bg-red-100 flex-shrink-0 flex items-center justify-center"
+                >
+                  <svg
+                    class="w-4 h-4 text-red-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"
+                    />
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm text-gray-800">
+                    <span class="font-medium">Hot lead upgraded</span>
+                  </p>
+                  <p class="text-xs text-gray-500 mt-0.5">Jayanagar Villa • Sunita M.</p>
+                  <p class="text-xs text-gray-400 mt-1">3 hours ago</p>
+                </div>
+              </div>
+              <!-- Activity 6 -->
+              <div class="flex items-start gap-3">
+                <div
+                  class="w-8 h-8 rounded-full bg-purple-100 flex-shrink-0 flex items-center justify-center"
+                >
+                  <svg
+                    class="w-4 h-4 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                    />
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm text-gray-800">
+                    <span class="font-medium">Follow-up call</span> completed
+                  </p>
+                  <p class="text-xs text-gray-500 mt-0.5">Mukesh Kumar • Indiranagar</p>
+                  <p class="text-xs text-gray-400 mt-1">5 hours ago</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Leads Table -->
+          <div
+            class="col-span-12 lg:col-span-8 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400"
+          >
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="font-semibold text-gray-800">Recent Leads</h3>
+              <a href="#" class="text-sm text-secondary hover:text-secondary-dark font-medium"
+                >View All →</a
+              >
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr
+                    class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"
+                  >
+                    <th class="pb-4">Lead</th>
+                    <th class="pb-4">Source</th>
+                    <th class="pb-4">Temperature</th>
+                    <th class="pb-4">Value</th>
+                    <th class="pb-4">Status</th>
+                    <th class="pb-4">Assigned</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  <tr class="hover:bg-gray-50">
+                    <td class="py-4">
+                      <div class="flex items-center space-x-3">
+                        <div
+                          class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm"
+                        >
+                          RS
+                        </div>
+                        <div>
+                          <p class="font-medium text-gray-800">Ravi Sharma</p>
+                          <p class="text-xs text-gray-500">Pune, Maharashtra</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="py-4"><span class="text-sm text-gray-500">WhatsApp</span></td>
+                    <td class="py-4">
+                      <span
+                        class="px-2 py-1 text-xs font-medium bg-error/10 text-error rounded-full"
+                        >Hot</span
+                      >
+                    </td>
+                    <td class="py-4">
+                      <span class="text-sm font-medium text-gray-800">₹3.2L</span>
+                    </td>
+                    <td class="py-4">
+                      <span
+                        class="px-2 py-1 text-xs font-medium bg-secondary/10 text-secondary rounded-full"
+                        >Proposal Sent</span
+                      >
+                    </td>
+                    <td class="py-4"><span class="text-sm text-gray-500">Amit K.</span></td>
+                  </tr>
+                  <tr class="hover:bg-gray-50">
+                    <td class="py-4">
+                      <div class="flex items-center space-x-3">
+                        <div
+                          class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary font-bold text-sm"
+                        >
+                          PI
+                        </div>
+                        <div>
+                          <p class="font-medium text-gray-800">Priya Industries</p>
+                          <p class="text-xs text-gray-500">Mumbai, Maharashtra</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="py-4"><span class="text-sm text-gray-500">Website</span></td>
+                    <td class="py-4">
+                      <span
+                        class="px-2 py-1 text-xs font-medium bg-warning/10 text-warning rounded-full"
+                        >Warm</span
+                      >
+                    </td>
+                    <td class="py-4">
+                      <span class="text-sm font-medium text-gray-800">₹5.8L</span>
+                    </td>
+                    <td class="py-4">
+                      <span
+                        class="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-600 rounded-full"
+                        >Qualified</span
+                      >
+                    </td>
+                    <td class="py-4"><span class="text-sm text-gray-500">Sunita M.</span></td>
+                  </tr>
+                  <tr class="hover:bg-gray-50">
+                    <td class="py-4">
+                      <div class="flex items-center space-x-3">
+                        <div
+                          class="w-10 h-10 rounded-full bg-warning/10 flex items-center justify-center text-warning font-bold text-sm"
+                        >
+                          AK
+                        </div>
+                        <div>
+                          <p class="font-medium text-gray-800">Arun Kumar</p>
+                          <p class="text-xs text-gray-500">Nashik, Maharashtra</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="py-4"><span class="text-sm text-gray-500">Referral</span></td>
+                    <td class="py-4">
+                      <span
+                        class="px-2 py-1 text-xs font-medium bg-error/10 text-error rounded-full"
+                        >Hot</span
+                      >
+                    </td>
+                    <td class="py-4">
+                      <span class="text-sm font-medium text-gray-800">₹2.1L</span>
+                    </td>
+                    <td class="py-4">
+                      <span
+                        class="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full"
+                        >Negotiation</span
+                      >
+                    </td>
+                    <td class="py-4"><span class="text-sm text-gray-500">Vikram P.</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
-    
+
     <!-- ==================== COMMAND PALETTE ==================== -->
     <div id="commandPalette" class="fixed inset-0 z-[100] hidden">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeCommandPalette()"></div>
-        <div class="relative max-w-xl mx-auto mt-24">
-            <div class="bg-white rounded-lg shadow-2xl overflow-hidden">
-                <div class="flex items-center px-4 border-b border-gray-100">
-                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    <input type="text" id="commandInput" placeholder="Search..." class="w-full px-4 py-4 outline-none text-gray-800 placeholder-gray-400" autofocus>
-                    <kbd class="px-2 py-1 text-xs font-medium text-gray-400 bg-gray-100 rounded">ESC</kbd>
-                </div>
-                <div class="max-h-96 overflow-y-auto p-2">
-                    <div class="px-3 py-2"><p class="text-xs font-semibold text-gray-400 uppercase">Navigation</p></div>
-                    <a href="index.html?rail=home" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"><svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg><span class="text-sm text-gray-700">Home</span></a>
-                    <a href="projects.html" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"><svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg><span class="text-sm text-gray-700">Projects</span></a>
-                    <a href="finance.html" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"><svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg><span class="text-sm text-gray-700">Finance</span></a>
-                    <a href="inventory.html" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"><svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg><span class="text-sm text-gray-700">Inventory</span></a>
-                </div>
-                <div class="px-3 py-2 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
-                    <div class="flex items-center space-x-4"><span>↑↓ Navigate</span><span>↵ Select</span><span>ESC Close</span></div>
-                    <span>Powered by OneOhm</span>
-                </div>
+      <div
+        class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onclick="closeCommandPalette()"
+      ></div>
+      <div class="relative max-w-xl mx-auto mt-24">
+        <div class="bg-white rounded-lg shadow-2xl overflow-hidden">
+          <div class="flex items-center px-4 border-b border-gray-100">
+            <svg
+              class="w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <input
+              type="text"
+              id="commandInput"
+              placeholder="Search..."
+              class="w-full px-4 py-4 outline-none text-gray-800 placeholder-gray-400"
+              autofocus
+            />
+            <kbd class="px-2 py-1 text-xs font-medium text-gray-400 bg-gray-100 rounded">ESC</kbd>
+          </div>
+          <div class="max-h-96 overflow-y-auto p-2">
+            <div class="px-3 py-2">
+              <p class="text-xs font-semibold text-gray-400 uppercase">Navigation</p>
             </div>
+            <a
+              href="index.html?rail=home"
+              class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"
+              ><svg
+                class="w-5 h-5 text-primary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                /></svg
+              ><span class="text-sm text-gray-700">Home</span></a
+            >
+            <a
+              href="projects.html"
+              class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"
+              ><svg
+                class="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                /></svg
+              ><span class="text-sm text-gray-700">Projects</span></a
+            >
+            <a
+              href="finance.html"
+              class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"
+              ><svg
+                class="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                /></svg
+              ><span class="text-sm text-gray-700">Finance</span></a
+            >
+            <a
+              href="inventory.html"
+              class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"
+              ><svg
+                class="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                /></svg
+              ><span class="text-sm text-gray-700">Inventory</span></a
+            >
+          </div>
+          <div
+            class="px-3 py-2 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400"
+          >
+            <div class="flex items-center space-x-4">
+              <span>↑↓ Navigate</span><span>↵ Select</span><span>ESC Close</span>
+            </div>
+            <span>Powered by OneOhm</span>
+          </div>
         </div>
+      </div>
     </div>
-    
+
     <script>
-        let panelVisible = true;
-        function togglePanel() {
-            const panel = document.getElementById('panel');
-            const mainContent = document.getElementById('mainContent');
-            const expandIcon = document.getElementById('toggleIconExpand');
-            const collapseIcon = document.getElementById('toggleIconCollapse');
-            panelVisible = !panelVisible;
-            if (panelVisible) { panel.classList.remove('collapsed'); mainContent.classList.remove('panel-collapsed'); expandIcon.classList.add('hidden'); collapseIcon.classList.remove('hidden'); }
-            else { panel.classList.add('collapsed'); mainContent.classList.add('panel-collapsed'); expandIcon.classList.remove('hidden'); collapseIcon.classList.add('hidden'); }
-            localStorage.setItem('panelVisible', panelVisible);
+      let panelVisible = true;
+      function togglePanel() {
+        const panel = document.getElementById('panel');
+        const mainContent = document.getElementById('mainContent');
+        const expandIcon = document.getElementById('toggleIconExpand');
+        const collapseIcon = document.getElementById('toggleIconCollapse');
+        panelVisible = !panelVisible;
+        if (panelVisible) {
+          panel.classList.remove('collapsed');
+          mainContent.classList.remove('panel-collapsed');
+          expandIcon.classList.add('hidden');
+          collapseIcon.classList.remove('hidden');
+        } else {
+          panel.classList.add('collapsed');
+          mainContent.classList.add('panel-collapsed');
+          expandIcon.classList.remove('hidden');
+          collapseIcon.classList.add('hidden');
         }
-        function openCommandPalette() { document.getElementById('commandPalette').classList.remove('hidden'); document.getElementById('commandInput').focus(); }
-        function closeCommandPalette() { document.getElementById('commandPalette').classList.add('hidden'); }
-        document.addEventListener('keydown', function(e) {
-            if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openCommandPalette(); }
-            if ((e.metaKey || e.ctrlKey) && e.key === '\\') { e.preventDefault(); togglePanel(); }
-            if (e.key === 'Escape') { closeCommandPalette(); }
-        });
-        document.addEventListener('DOMContentLoaded', function() {
-            const savedPanelVisible = localStorage.getItem('panelVisible');
-            if (savedPanelVisible === 'false') { panelVisible = true; togglePanel(); }
-        });
+        localStorage.setItem('panelVisible', panelVisible);
+      }
+      function openCommandPalette() {
+        document.getElementById('commandPalette').classList.remove('hidden');
+        document.getElementById('commandInput').focus();
+      }
+      function closeCommandPalette() {
+        document.getElementById('commandPalette').classList.add('hidden');
+      }
+      document.addEventListener('keydown', function (e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+          e.preventDefault();
+          openCommandPalette();
+        }
+        if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+          e.preventDefault();
+          togglePanel();
+        }
+        if (e.key === 'Escape') {
+          closeCommandPalette();
+        }
+      });
+      document.addEventListener('DOMContentLoaded', function () {
+        const savedPanelVisible = localStorage.getItem('panelVisible');
+        if (savedPanelVisible === 'false') {
+          panelVisible = true;
+          togglePanel();
+        }
+      });
     </script>
-</body>
+  </body>
 </html>

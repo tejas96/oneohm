@@ -48,39 +48,42 @@ OneOhm EPC is a complete business management solution for solar installation com
 ## 🛠 Tech Stack
 
 ### Backend
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| NestJS | 11.0 | API Framework |
-| TypeORM | 0.3 | Database ORM |
-| PostgreSQL | 15 | Primary Database |
-| Passport | 0.7 | Authentication |
-| JWT | 11.0 | Token-based Auth |
-| Swagger | 11.2 | API Documentation |
-| AWS S3 | 3.x | File Storage |
+
+| Technology | Version | Purpose           |
+| ---------- | ------- | ----------------- |
+| NestJS     | 11.0    | API Framework     |
+| TypeORM    | 0.3     | Database ORM      |
+| PostgreSQL | 15      | Primary Database  |
+| Passport   | 0.7     | Authentication    |
+| JWT        | 11.0    | Token-based Auth  |
+| Swagger    | 11.2    | API Documentation |
+| AWS S3     | 3.x     | File Storage      |
 
 ### Frontend (Web)
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Next.js | 16.0 | React Framework |
-| React | 19.2 | UI Library |
-| Tailwind CSS | 4.0 | Styling |
-| TanStack Query | 5.x | Data Fetching |
-| TanStack Table | 8.x | Data Tables |
-| Zustand | 5.0 | State Management |
-| Radix UI | Latest | UI Components |
-| Recharts | 3.7 | Charts & Analytics |
-| Zod | 3.24 | Validation |
+
+| Technology     | Version | Purpose            |
+| -------------- | ------- | ------------------ |
+| Next.js        | 16.0    | React Framework    |
+| React          | 19.2    | UI Library         |
+| Tailwind CSS   | 4.0     | Styling            |
+| TanStack Query | 5.x     | Data Fetching      |
+| TanStack Table | 8.x     | Data Tables        |
+| Zustand        | 5.0     | State Management   |
+| Radix UI       | Latest  | UI Components      |
+| Recharts       | 3.7     | Charts & Analytics |
+| Zod            | 3.24    | Validation         |
 
 ### Build & DevOps
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| NX | 22.0 | Monorepo Management |
-| Docker | Latest | Containerization |
-| Fly.io | - | Production Hosting |
-| TypeScript | 5.7 | Type Safety |
-| ESLint | 9.x | Code Linting |
-| Prettier | 3.4 | Code Formatting |
-| Jest | 30.0 | Testing |
+
+| Technology | Version | Purpose             |
+| ---------- | ------- | ------------------- |
+| NX         | 22.0    | Monorepo Management |
+| Docker     | Latest  | Containerization    |
+| Fly.io     | -       | Production Hosting  |
+| TypeScript | 5.7     | Type Safety         |
+| ESLint     | 9.x     | Code Linting        |
+| Prettier   | 3.4     | Code Formatting     |
+| Jest       | 30.0    | Testing             |
 
 ---
 
@@ -166,6 +169,7 @@ oneohm-epc/
 A comprehensive NestJS REST API powering all business operations.
 
 **Key Features:**
+
 - JWT-based authentication with role-based access control
 - Multi-tenant organization support
 - RESTful API with Swagger documentation
@@ -174,6 +178,7 @@ A comprehensive NestJS REST API powering all business operations.
 - Rate limiting and security features
 
 **Quick Start:**
+
 ```bash
 npm run backend:dev     # Start with hot reload
 npm run backend:build   # Build for production
@@ -191,6 +196,7 @@ npm run backend:test    # Run tests
 A modern Next.js 16 admin dashboard for managing all business operations.
 
 **Key Features:**
+
 - Server-side rendering with App Router
 - React Query for data fetching & caching
 - Zustand for state management
@@ -211,6 +217,7 @@ A modern Next.js 16 admin dashboard for managing all business operations.
 | Users | User & role management |
 
 **Quick Start:**
+
 ```bash
 npm run web:dev    # Start with hot reload
 npm run web:build  # Build for production
@@ -225,12 +232,14 @@ npm run web:build  # Build for production
 HTML/CSS mockups and interactive prototypes for both mobile and web applications.
 
 **Structure:**
+
 - **`mobile/`** - React Native mobile app designs by user role
 - **`web/`** - Web dashboard designs (v1 and v2)
 - **`animation/`** - Lottie animation files
 - **`data/`** - Mock JSON data for prototypes
 
 **User Roles with Mobile Designs:**
+
 - 👤 **Customer** - Project tracking, payments, service requests
 - 🔧 **Field Worker** - Lead capture, site visits, quotes
 - 📞 **Telecaller** - Lead follow-ups, call management
@@ -254,12 +263,12 @@ import { loginSchema, customerSchema } from '@oneohm-epc/shared/schemas';
 import { PROJECT_TYPE_LABELS, DISCOUNT_PRESETS } from '@oneohm-epc/shared/constants';
 ```
 
-| Sub-path | Contents |
-|----------|----------|
-| `@oneohm-epc/shared/types` | Enums, interfaces, and type definitions |
-| `@oneohm-epc/shared/utils` | Pure utility functions (formatters, validators, pricing, pagination) |
-| `@oneohm-epc/shared/schemas` | Zod validation schemas |
-| `@oneohm-epc/shared/constants` | Label maps and configuration constants |
+| Sub-path                       | Contents                                                             |
+| ------------------------------ | -------------------------------------------------------------------- |
+| `@oneohm-epc/shared/types`     | Enums, interfaces, and type definitions                              |
+| `@oneohm-epc/shared/utils`     | Pure utility functions (formatters, validators, pricing, pagination) |
+| `@oneohm-epc/shared/schemas`   | Zod validation schemas                                               |
+| `@oneohm-epc/shared/constants` | Label maps and configuration constants                               |
 
 > See [`libs/shared/README.md`](./libs/shared/README.md) for full developer setup and publishing docs.
 
@@ -271,55 +280,55 @@ The backend is organized into feature modules following NestJS best practices:
 
 ### Core Modules
 
-| Module | Description | Entities |
-|--------|-------------|----------|
-| **auth** | Authentication & authorization | JWT, Passport strategies |
-| **iam** | Identity & Access Management | Roles, Permissions, Features |
-| **users** | User management | User, Employee profiles |
-| **organizations** | Multi-tenant organization support | Organization, Settings |
+| Module            | Description                       | Entities                     |
+| ----------------- | --------------------------------- | ---------------------------- |
+| **auth**          | Authentication & authorization    | JWT, Passport strategies     |
+| **iam**           | Identity & Access Management      | Roles, Permissions, Features |
+| **users**         | User management                   | User, Employee profiles      |
+| **organizations** | Multi-tenant organization support | Organization, Settings       |
 
 ### Business Modules
 
-| Module | Description | Key Entities |
-|--------|-------------|--------------|
-| **customers** | Customer & property management | CustomerProfile, CustomerProperty |
-| **quotes** | Quote generation & calculator | Quote, QuoteVersion, QuoteLineItem |
-| **projects** | Project lifecycle management | Project, Task, Phase, Timeline |
-| **inventory** | Stock & warehouse management | Product, Warehouse, StockMovement |
-| **master-data** | Product catalog & pricing | Product, ProductPrice, SubsidyConfiguration |
+| Module          | Description                    | Key Entities                                |
+| --------------- | ------------------------------ | ------------------------------------------- |
+| **customers**   | Customer & property management | CustomerProfile, CustomerProperty           |
+| **quotes**      | Quote generation & calculator  | Quote, QuoteVersion, QuoteLineItem          |
+| **projects**    | Project lifecycle management   | Project, Task, Phase, Timeline              |
+| **inventory**   | Stock & warehouse management   | Product, Warehouse, StockMovement           |
+| **master-data** | Product catalog & pricing      | Product, ProductPrice, SubsidyConfiguration |
 
 ### Operations Modules
 
-| Module | Description | Key Entities |
-|--------|-------------|--------------|
-| **approvals** | Multi-level approval workflows | ApprovalRequest, ApprovalStep |
-| **documents** | Document management | Document, DocumentVersion |
-| **storage** | S3 file storage | Pre-signed URLs, Upload management |
-| **comments** | Universal commenting system | Comment, Thread |
+| Module        | Description                    | Key Entities                       |
+| ------------- | ------------------------------ | ---------------------------------- |
+| **approvals** | Multi-level approval workflows | ApprovalRequest, ApprovalStep      |
+| **documents** | Document management            | Document, DocumentVersion          |
+| **storage**   | S3 file storage                | Pre-signed URLs, Upload management |
+| **comments**  | Universal commenting system    | Comment, Thread                    |
 
 ### Finance Modules
 
-| Module | Description | Key Entities |
-|--------|-------------|--------------|
-| **payments** | Payment tracking | Payment, PaymentSchedule |
+| Module           | Description                 | Key Entities                  |
+| ---------------- | --------------------------- | ----------------------------- |
+| **payments**     | Payment tracking            | Payment, PaymentSchedule      |
 | **loan-finance** | Loan application management | LoanApplication, LoanDocument |
 
 ### Compliance & Audit
 
-| Module | Description | Key Entities |
-|--------|-------------|--------------|
-| **compliance** | Subsidy & regulatory compliance | SubsidyApplication, ComplianceCheck |
-| **audit** | Audit trail logging | AuditLog, ChangeHistory |
-| **security-events** | Security event tracking | SecurityEvent, LoginAttempt |
+| Module              | Description                     | Key Entities                        |
+| ------------------- | ------------------------------- | ----------------------------------- |
+| **compliance**      | Subsidy & regulatory compliance | SubsidyApplication, ComplianceCheck |
+| **audit**           | Audit trail logging             | AuditLog, ChangeHistory             |
+| **security-events** | Security event tracking         | SecurityEvent, LoginAttempt         |
 
 ### Service Modules
 
-| Module | Description | Key Entities |
-|--------|-------------|--------------|
-| **service-maintenance** | AMC & service requests | ServiceRequest, MaintenanceSchedule |
-| **customer-feedback** | Feedback & ratings | Feedback, Rating, Survey |
-| **integrations** | Third-party integrations | IntegrationProvider, Webhook |
-| **resellers** | Reseller/partner management | Reseller, Commission |
+| Module                  | Description                 | Key Entities                        |
+| ----------------------- | --------------------------- | ----------------------------------- |
+| **service-maintenance** | AMC & service requests      | ServiceRequest, MaintenanceSchedule |
+| **customer-feedback**   | Feedback & ratings          | Feedback, Rating, Survey            |
+| **integrations**        | Third-party integrations    | IntegrationProvider, Webhook        |
+| **resellers**           | Reseller/partner management | Reseller, Commission                |
 
 ---
 
@@ -380,41 +389,41 @@ Generate a token with `read:packages` scope at https://github.com/settings/token
 
 ### Application Commands
 
-| Command | Description |
-|---------|-------------|
-| `npm run backend:dev` | Start backend in watch mode |
+| Command                 | Description                  |
+| ----------------------- | ---------------------------- |
+| `npm run backend:dev`   | Start backend in watch mode  |
 | `npm run backend:build` | Build backend for production |
-| `npm run backend:test` | Run backend unit tests |
-| `npm run web:dev` | Start Next.js dev server |
-| `npm run web:build` | Build Next.js for production |
-| `npm run ux:dev` | Serve UX designs |
+| `npm run backend:test`  | Run backend unit tests       |
+| `npm run web:dev`       | Start Next.js dev server     |
+| `npm run web:build`     | Build Next.js for production |
+| `npm run ux:dev`        | Serve UX designs             |
 
 ### NX Commands
 
-| Command | Description |
-|---------|-------------|
-| `npm run build` | Build all apps |
-| `npm run test` | Test all apps |
-| `npm run lint` | Lint all code |
-| `npm run affected:build` | Build only changed apps |
-| `npm run affected:test` | Test only changed apps |
-| `npm run graph` | Visualize dependency graph |
+| Command                  | Description                |
+| ------------------------ | -------------------------- |
+| `npm run build`          | Build all apps             |
+| `npm run test`           | Test all apps              |
+| `npm run lint`           | Lint all code              |
+| `npm run affected:build` | Build only changed apps    |
+| `npm run affected:test`  | Test only changed apps     |
+| `npm run graph`          | Visualize dependency graph |
 
 ### Code Quality
 
-| Command | Description |
-|---------|-------------|
-| `npm run format` | Format all code with Prettier |
-| `npm run format:check` | Check code formatting |
-| `npm run lint:fix` | Lint and auto-fix issues |
-| `npm run typecheck` | Run TypeScript type checking |
+| Command                | Description                   |
+| ---------------------- | ----------------------------- |
+| `npm run format`       | Format all code with Prettier |
+| `npm run format:check` | Check code formatting         |
+| `npm run lint:fix`     | Lint and auto-fix issues      |
+| `npm run typecheck`    | Run TypeScript type checking  |
 
 ### Utility Commands
 
-| Command | Description |
-|---------|-------------|
-| `npm run clean` | Remove all build artifacts and caches |
-| `npm run install:all` | Fresh install of all dependencies |
+| Command               | Description                           |
+| --------------------- | ------------------------------------- |
+| `npm run clean`       | Remove all build artifacts and caches |
+| `npm run install:all` | Fresh install of all dependencies     |
 
 ---
 
@@ -425,6 +434,7 @@ Generate a token with `read:packages` scope at https://github.com/settings/token
 The application uses PostgreSQL 15 with TypeORM.
 
 **Default Credentials (Development):**
+
 ```env
 DATABASE_HOST=localhost
 DATABASE_PORT=5436
@@ -490,11 +500,11 @@ docker compose down -v
 
 ### Services & Ports
 
-| Service | Port | Description |
-|---------|------|-------------|
-| Backend | 8085 | NestJS API |
-| Web | 3001 | Next.js App |
-| PostgreSQL | 5436 | Database |
+| Service    | Port | Description |
+| ---------- | ---- | ----------- |
+| Backend    | 8085 | NestJS API  |
+| Web        | 3001 | Next.js App |
+| PostgreSQL | 5436 | Database    |
 
 ### Building Images
 
@@ -639,15 +649,15 @@ Authorization: Bearer <accessToken>
 
 ### Key API Endpoints
 
-| Endpoint | Description |
-|----------|-------------|
-| `POST /auth/login` | User authentication |
-| `GET /users/me` | Current user profile |
-| `GET /customers` | List customers |
-| `POST /quotes` | Create quote |
-| `POST /quotes/calculate` | Calculate quote pricing |
-| `GET /projects` | List projects |
-| `GET /inventory/products` | List products |
+| Endpoint                  | Description             |
+| ------------------------- | ----------------------- |
+| `POST /auth/login`        | User authentication     |
+| `GET /users/me`           | Current user profile    |
+| `GET /customers`          | List customers          |
+| `POST /quotes`            | Create quote            |
+| `POST /quotes/calculate`  | Calculate quote pricing |
+| `GET /projects`           | List projects           |
+| `GET /inventory/products` | List products           |
 
 ---
 

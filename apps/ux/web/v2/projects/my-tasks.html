@@ -1,686 +1,1573 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Tasks - OneOhm Projects</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: { DEFAULT: '#76c044', dark: '#5ea031', light: '#8fd35f' },
-                        secondary: { DEFAULT: '#0d74b8', dark: '#0a5c92' },
-                    },
-                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: { DEFAULT: '#76c044', dark: '#5ea031', light: '#8fd35f' },
+              secondary: { DEFAULT: '#0d74b8', dark: '#0a5c92' },
+            },
+            fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          },
+        },
+      };
     </script>
     <style>
-        body { font-family: 'Inter', system-ui, sans-serif; }
-        .global-header { height: 48px; background: #fff; border-bottom: 1px solid #f4f4f5; position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; align-items: center; padding: 0 12px; }
-        .rail { width: 48px; background: #fff; border-right: 1px solid #f4f4f5; position: fixed; top: 48px; left: 0; height: calc(100vh - 48px); z-index: 40; }
-        .panel { width: 200px; background: #fff; border-right: 1px solid #f4f4f5; position: fixed; top: 48px; left: 48px; height: calc(100vh - 48px); z-index: 35; }
-        .main-content { margin-left: 248px; margin-top: 48px; min-height: calc(100vh - 48px); background: #fafafa; }
-        .task-row { transition: all 100ms ease; }
-        .task-row:hover { background: #f9fafb; }
-        .task-row:hover .quick-actions { opacity: 1; }
-        .quick-actions { opacity: 0; transition: opacity 150ms ease; }
-        .progress-bar { height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden; }
-        .progress-bar-fill { height: 100%; background: #76c044; border-radius: 2px; }
-        .status-dropdown { display: none; }
-        .status-dropdown.show { display: block; }
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+      .global-header {
+        height: 48px;
+        background: #fff;
+        border-bottom: 1px solid #f4f4f5;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+      }
+      .rail {
+        width: 48px;
+        background: #fff;
+        border-right: 1px solid #f4f4f5;
+        position: fixed;
+        top: 48px;
+        left: 0;
+        height: calc(100vh - 48px);
+        z-index: 40;
+      }
+      .panel {
+        width: 200px;
+        background: #fff;
+        border-right: 1px solid #f4f4f5;
+        position: fixed;
+        top: 48px;
+        left: 48px;
+        height: calc(100vh - 48px);
+        z-index: 35;
+      }
+      .main-content {
+        margin-left: 248px;
+        margin-top: 48px;
+        min-height: calc(100vh - 48px);
+        background: #fafafa;
+      }
+      .task-row {
+        transition: all 100ms ease;
+      }
+      .task-row:hover {
+        background: #f9fafb;
+      }
+      .task-row:hover .quick-actions {
+        opacity: 1;
+      }
+      .quick-actions {
+        opacity: 0;
+        transition: opacity 150ms ease;
+      }
+      .progress-bar {
+        height: 4px;
+        background: #e5e7eb;
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .progress-bar-fill {
+        height: 100%;
+        background: #76c044;
+        border-radius: 2px;
+      }
+      .status-dropdown {
+        display: none;
+      }
+      .status-dropdown.show {
+        display: block;
+      }
     </style>
-</head>
-<body class="bg-gray-50">
+  </head>
+  <body class="bg-gray-50">
     <!-- Header -->
     <header class="global-header">
-        <div class="flex items-center">
-            <a href="../dashboard/index.html"><img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto"></a>
-        </div>
-        <div class="flex-1 ml-6 mr-4">
-            <button class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-100 text-left">
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <span class="text-gray-400 flex-1 text-sm">Search my tasks...</span>
-                <kbd class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-100 rounded">⌘K</kbd>
-            </button>
-        </div>
-        <div class="flex items-center space-x-2">
-            <button class="relative p-2 hover:bg-gray-50 rounded-lg">
-                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
-            <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg">
-                <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">RK</div>
-            </button>
-        </div>
+      <div class="flex items-center">
+        <a href="../dashboard/index.html"
+          ><img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto"
+        /></a>
+      </div>
+      <div class="flex-1 ml-6 mr-4">
+        <button
+          class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-100 text-left"
+        >
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <span class="text-gray-400 flex-1 text-sm">Search my tasks...</span>
+          <kbd
+            class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-100 rounded"
+            >⌘K</kbd
+          >
+        </button>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button class="relative p-2 hover:bg-gray-50 rounded-lg">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
+          </svg>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+        </button>
+        <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg">
+          <div
+            class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm"
+          >
+            RK
+          </div>
+        </button>
+      </div>
     </header>
 
     <!-- Rail -->
     <aside class="rail flex flex-col items-center pt-2">
-        <a href="../dashboard/index.html?rail=home" class="w-10 h-9 flex items-center justify-center text-gray-400 hover:bg-gray-50 rounded-lg mb-1" title="Home">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-        </a>
-        <a href="list.html" class="w-10 h-9 flex items-center justify-center text-primary bg-primary/10 rounded-lg mb-1 border-l-2 border-primary">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
-        </a>
+      <a
+        href="../dashboard/index.html?rail=home"
+        class="w-10 h-9 flex items-center justify-center text-gray-400 hover:bg-gray-50 rounded-lg mb-1"
+        title="Home"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+          />
+        </svg>
+      </a>
+      <a
+        href="list.html"
+        class="w-10 h-9 flex items-center justify-center text-primary bg-primary/10 rounded-lg mb-1 border-l-2 border-primary"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+          />
+        </svg>
+      </a>
     </aside>
 
     <!-- Panel -->
     <aside class="panel">
-        <div class="h-12 px-4 flex items-center border-b border-gray-100">
-            <span class="text-[15px] font-semibold text-gray-900">Projects</span>
+      <div class="h-12 px-4 flex items-center border-b border-gray-100">
+        <span class="text-[15px] font-semibold text-gray-900">Projects</span>
+      </div>
+      <div class="p-2">
+        <div class="px-2 py-3 text-[10px] font-medium text-gray-400 uppercase tracking-wide">
+          Overview
         </div>
-        <div class="p-2">
-            <div class="px-2 py-3 text-[10px] font-medium text-gray-400 uppercase tracking-wide">Overview</div>
-            <a href="../dashboard/projects.html" class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg">
-                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
-                Dashboard
-            </a>
-            <a href="list.html" class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg">
-                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
-                All Projects
-            </a>
-            <div class="px-2 py-3 mt-2 text-[10px] font-medium text-gray-400 uppercase tracking-wide">My Work</div>
-            <a href="my-tasks.html" class="h-8 px-3 flex items-center text-[13px] text-primary bg-primary/10 rounded-lg font-medium">
-                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-                My Tasks
-                <span class="ml-auto text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded font-semibold">12</span>
-            </a>
-            <a href="#" class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg">
-                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                Milestones Due
-                <span class="ml-auto text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">4</span>
-            </a>
-            <div class="px-2 py-3 mt-2 text-[10px] font-medium text-gray-400 uppercase tracking-wide">Scheduling</div>
-            <a href="kanban.html" class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg">
-                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
-                Kanban Board
-            </a>
-            <a href="timeline.html" class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg">
-                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                Timeline / Gantt
-            </a>
+        <a
+          href="../dashboard/projects.html"
+          class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg"
+        >
+          <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+            />
+          </svg>
+          Dashboard
+        </a>
+        <a
+          href="list.html"
+          class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg"
+        >
+          <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+            />
+          </svg>
+          All Projects
+        </a>
+        <div class="px-2 py-3 mt-2 text-[10px] font-medium text-gray-400 uppercase tracking-wide">
+          My Work
         </div>
+        <a
+          href="my-tasks.html"
+          class="h-8 px-3 flex items-center text-[13px] text-primary bg-primary/10 rounded-lg font-medium"
+        >
+          <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+            />
+          </svg>
+          My Tasks
+          <span
+            class="ml-auto text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded font-semibold"
+            >12</span
+          >
+        </a>
+        <a
+          href="#"
+          class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg"
+        >
+          <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          Milestones Due
+          <span
+            class="ml-auto text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium"
+            >4</span
+          >
+        </a>
+        <div class="px-2 py-3 mt-2 text-[10px] font-medium text-gray-400 uppercase tracking-wide">
+          Scheduling
+        </div>
+        <a
+          href="kanban.html"
+          class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg"
+        >
+          <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+            />
+          </svg>
+          Kanban Board
+        </a>
+        <a
+          href="timeline.html"
+          class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg"
+        >
+          <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+          Timeline / Gantt
+        </a>
+      </div>
     </aside>
 
     <!-- Main Content -->
     <main class="main-content">
-        <div class="p-5">
-            <!-- Header -->
-            <div class="flex items-center justify-between mb-5">
-                <div>
-                    <h1 class="text-xl font-semibold text-gray-900">My Tasks</h1>
-                    <p class="text-[13px] text-gray-500 mt-0.5">All tasks assigned to you across projects</p>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <!-- Project Filter -->
-                    <select class="px-3 py-1.5 border border-gray-200 rounded-lg text-[13px] text-gray-600 bg-white">
-                        <option selected>All Projects</option>
-                        <option>PROJ-001: Smith Residence</option>
-                        <option>PROJ-002: Jones Rooftop</option>
-                        <option>PROJ-003: Kumar Commercial</option>
-                        <option>PROJ-004: Sharma Industries</option>
-                    </select>
-                    <!-- Status Filter -->
-                    <select class="px-3 py-1.5 border border-gray-200 rounded-lg text-[13px] text-gray-600 bg-white">
-                        <option>All Status</option>
-                        <option>To Do</option>
-                        <option>In Progress</option>
-                        <option>In Review</option>
-                        <option>Blocked</option>
-                    </select>
-                    <!-- Group By -->
-                    <select class="px-3 py-1.5 border border-gray-200 rounded-lg text-[13px] text-gray-600 bg-white">
-                        <option selected>Group by: Due Date</option>
-                        <option>Group by: Priority</option>
-                        <option>Group by: Project</option>
-                        <option>Group by: Status</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Summary Cards -->
-            <div class="grid grid-cols-4 gap-4 mb-6">
-                <div class="bg-white rounded-lg border border-gray-100 p-4">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[13px] text-gray-500">Total Tasks</span>
-                        <span class="text-2xl font-semibold text-gray-900">12</span>
-                    </div>
-                </div>
-                <div class="bg-red-50 rounded-lg border border-red-100 p-4">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[13px] text-red-600">Overdue</span>
-                        <span class="text-2xl font-semibold text-red-600">2</span>
-                    </div>
-                </div>
-                <div class="bg-amber-50 rounded-lg border border-amber-100 p-4">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[13px] text-amber-600">Due Today</span>
-                        <span class="text-2xl font-semibold text-amber-600">1</span>
-                    </div>
-                </div>
-                <div class="bg-green-50 rounded-lg border border-green-100 p-4">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[13px] text-green-600">Completed This Week</span>
-                        <span class="text-2xl font-semibold text-green-600">5</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Overdue Section -->
-            <div class="mb-6">
-                <div class="flex items-center mb-3">
-                    <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                    <h2 class="text-[14px] font-semibold text-red-700">OVERDUE</h2>
-                    <span class="ml-2 text-[12px] text-red-500 bg-red-50 px-2 py-0.5 rounded-full font-medium">2</span>
-                </div>
-                <div class="bg-white rounded-lg border border-red-100 overflow-hidden">
-                    <!-- Task Row -->
-                    <div class="task-row flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer" onclick="openTaskDrawer()">
-                        <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-3">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center space-x-2">
-                                <a href="detail.html?id=1" class="text-[11px] font-mono text-gray-500 hover:text-primary">PROJ-001</a>
-                                <span class="text-gray-300">/</span>
-                                <span class="text-[11px] font-mono text-gray-400">T-028</span>
-                                <span class="px-1.5 py-0.5 text-[10px] font-medium bg-red-100 text-red-700 rounded">Urgent</span>
-                            </div>
-                            <div class="text-[13px] font-medium text-gray-900 mt-0.5">Electrical Wiring Installation</div>
-                            <div class="flex items-center mt-1">
-                                <div class="progress-bar w-24 mr-2">
-                                    <div class="progress-bar-fill" style="width: 40%"></div>
-                                </div>
-                                <span class="text-[11px] text-gray-400">40%</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-3 ml-4">
-                            <span class="text-[11px] text-red-600 font-medium flex items-center gap-1 whitespace-nowrap">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                3 days overdue
-                            </span>
-                            <!-- Quick Status Actions -->
-                            <div class="quick-actions flex items-center space-x-1">
-                                <div class="relative">
-                                    <button onclick="event.stopPropagation(); toggleStatusDropdown(this)" class="px-2 py-1 text-[11px] text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center gap-1">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                        Status
-                                    </button>
-                                    <div class="status-dropdown absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30">
-                                        <button onclick="updateStatus(this, 'todo')" class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                            <span class="w-2 h-2 rounded-full bg-gray-400"></span>To Do
-                                        </button>
-                                        <button onclick="updateStatus(this, 'in_progress')" class="w-full px-3 py-1.5 text-left text-[12px] text-blue-700 bg-blue-50 flex items-center gap-2">
-                                            <span class="w-2 h-2 rounded-full bg-blue-500"></span>In Progress ✓
-                                        </button>
-                                        <button onclick="updateStatus(this, 'in_review')" class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                            <span class="w-2 h-2 rounded-full bg-amber-500"></span>In Review
-                                        </button>
-                                        <button onclick="updateStatus(this, 'blocked')" class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                            <span class="w-2 h-2 rounded-full bg-red-500"></span>Blocked
-                                        </button>
-                                        <div class="border-t border-gray-100 my-1"></div>
-                                        <button onclick="updateStatus(this, 'done')" class="w-full px-3 py-1.5 text-left text-[12px] text-green-700 hover:bg-green-50 flex items-center gap-2">
-                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                            Done
-                                        </button>
-                                    </div>
-                                </div>
-                                <button onclick="event.stopPropagation(); markComplete(this)" class="px-2 py-1 text-[11px] text-green-600 bg-green-50 hover:bg-green-100 rounded flex items-center gap-1" title="Mark as Done">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                    Done
-                                </button>
-                            </div>
-                            <div class="flex space-x-1">
-                                <button class="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded">Open</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="task-row flex items-center px-4 py-3 cursor-pointer" onclick="openTaskDrawer()">
-                        <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-3">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center space-x-2">
-                                <a href="detail.html?id=2" class="text-[11px] font-mono text-gray-500 hover:text-primary">PROJ-002</a>
-                                <span class="text-gray-300">/</span>
-                                <span class="text-[11px] font-mono text-gray-400">T-015</span>
-                                <span class="px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 rounded">High</span>
-                            </div>
-                            <div class="text-[13px] font-medium text-gray-900 mt-0.5">Panel Mounting</div>
-                            <div class="flex items-center mt-1">
-                                <div class="progress-bar w-24 mr-2">
-                                    <div class="progress-bar-fill" style="width: 20%"></div>
-                                </div>
-                                <span class="text-[11px] text-gray-400">20%</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-3 ml-4">
-                            <span class="text-[11px] text-red-600 font-medium flex items-center gap-1 whitespace-nowrap">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                1 day overdue
-                            </span>
-                            <!-- Quick Status Actions -->
-                            <div class="quick-actions flex items-center space-x-1">
-                                <div class="relative">
-                                    <button onclick="event.stopPropagation(); toggleStatusDropdown(this)" class="px-2 py-1 text-[11px] text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center gap-1">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                        Status
-                                    </button>
-                                    <div class="status-dropdown absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30">
-                                        <button onclick="updateStatus(this, 'todo')" class="w-full px-3 py-1.5 text-left text-[12px] text-blue-700 bg-blue-50 flex items-center gap-2">
-                                            <span class="w-2 h-2 rounded-full bg-gray-400"></span>To Do ✓
-                                        </button>
-                                        <button onclick="updateStatus(this, 'in_progress')" class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                            <span class="w-2 h-2 rounded-full bg-blue-500"></span>In Progress
-                                        </button>
-                                        <button onclick="updateStatus(this, 'in_review')" class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                            <span class="w-2 h-2 rounded-full bg-amber-500"></span>In Review
-                                        </button>
-                                        <button onclick="updateStatus(this, 'blocked')" class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                            <span class="w-2 h-2 rounded-full bg-red-500"></span>Blocked
-                                        </button>
-                                        <div class="border-t border-gray-100 my-1"></div>
-                                        <button onclick="updateStatus(this, 'done')" class="w-full px-3 py-1.5 text-left text-[12px] text-green-700 hover:bg-green-50 flex items-center gap-2">
-                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                            Done
-                                        </button>
-                                    </div>
-                                </div>
-                                <button onclick="event.stopPropagation(); markComplete(this)" class="px-2 py-1 text-[11px] text-green-600 bg-green-50 hover:bg-green-100 rounded flex items-center gap-1" title="Mark as Done">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                    Done
-                                </button>
-                            </div>
-                            <div class="flex space-x-1">
-                                <button class="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded">Open</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Due Today Section -->
-            <div class="mb-6">
-                <div class="flex items-center mb-3">
-                    <div class="w-3 h-3 rounded-full bg-amber-500 mr-2"></div>
-                    <h2 class="text-[14px] font-semibold text-amber-700">DUE TODAY</h2>
-                    <span class="ml-2 text-[12px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-medium">1</span>
-                </div>
-                <div class="bg-white rounded-lg border border-amber-100 overflow-hidden">
-                    <div class="task-row flex items-center px-4 py-3 cursor-pointer" onclick="openTaskDrawer()">
-                        <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-3">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center space-x-2">
-                                <a href="detail.html?id=3" class="text-[11px] font-mono text-gray-500 hover:text-primary">PROJ-003</a>
-                                <span class="text-gray-300">/</span>
-                                <span class="text-[11px] font-mono text-gray-400">T-042</span>
-                                <span class="px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 rounded">High</span>
-                            </div>
-                            <div class="text-[13px] font-medium text-gray-900 mt-0.5">Site Inspection</div>
-                        </div>
-                        <div class="flex items-center space-x-3 ml-4">
-                            <span class="text-[11px] text-amber-600 font-medium flex items-center gap-1 whitespace-nowrap">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                Today
-                            </span>
-                            <!-- Quick Status Actions -->
-                            <div class="quick-actions flex items-center space-x-1">
-                                <div class="relative">
-                                    <button onclick="event.stopPropagation(); toggleStatusDropdown(this)" class="px-2 py-1 text-[11px] text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center gap-1">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                        Status
-                                    </button>
-                                    <div class="status-dropdown absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30">
-                                        <button onclick="updateStatus(this, 'todo')" class="w-full px-3 py-1.5 text-left text-[12px] text-blue-700 bg-blue-50 flex items-center gap-2">
-                                            <span class="w-2 h-2 rounded-full bg-gray-400"></span>To Do ✓
-                                        </button>
-                                        <button onclick="updateStatus(this, 'in_progress')" class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                            <span class="w-2 h-2 rounded-full bg-blue-500"></span>In Progress
-                                        </button>
-                                        <button onclick="updateStatus(this, 'in_review')" class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                            <span class="w-2 h-2 rounded-full bg-amber-500"></span>In Review
-                                        </button>
-                                        <button onclick="updateStatus(this, 'blocked')" class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                            <span class="w-2 h-2 rounded-full bg-red-500"></span>Blocked
-                                        </button>
-                                        <div class="border-t border-gray-100 my-1"></div>
-                                        <button onclick="updateStatus(this, 'done')" class="w-full px-3 py-1.5 text-left text-[12px] text-green-700 hover:bg-green-50 flex items-center gap-2">
-                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                                            Done
-                                        </button>
-                                    </div>
-                                </div>
-                                <button onclick="event.stopPropagation(); markComplete(this)" class="px-2 py-1 text-[11px] text-green-600 bg-green-50 hover:bg-green-100 rounded flex items-center gap-1" title="Mark as Done">
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                    Done
-                                </button>
-                            </div>
-                            <div class="flex space-x-1">
-                                <button class="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded">Open</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- This Week Section -->
-            <div class="mb-6">
-                <div class="flex items-center mb-3">
-                    <div class="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-                    <h2 class="text-[14px] font-semibold text-blue-700">THIS WEEK</h2>
-                    <span class="ml-2 text-[12px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-medium">4</span>
-                </div>
-                <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
-                    <div class="task-row flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer" onclick="openTaskDrawer()">
-                        <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-3">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center space-x-2">
-                                <a href="detail.html?id=1" class="text-[11px] font-mono text-gray-500 hover:text-primary">PROJ-001</a>
-                                <span class="text-gray-300">/</span>
-                                <span class="text-[11px] font-mono text-gray-400">T-051</span>
-                                <span class="px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded">Medium</span>
-                            </div>
-                            <div class="text-[13px] font-medium text-gray-900 mt-0.5">Grid Connection Setup</div>
-                        </div>
-                        <div class="flex items-center space-x-3 ml-4">
-                            <span class="text-[11px] text-gray-500 whitespace-nowrap">Feb 10</span>
-                            <!-- Quick Status Actions -->
-                            <div class="quick-actions flex items-center space-x-1">
-                                <div class="relative">
-                                    <button onclick="event.stopPropagation(); toggleStatusDropdown(this)" class="px-2 py-1 text-[11px] text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center gap-1">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                        Status
-                                    </button>
-                                    <div class="status-dropdown absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30">
-                                        <button onclick="updateStatus(this, 'todo')" class="w-full px-3 py-1.5 text-left text-[12px] text-blue-700 bg-blue-50 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-gray-400"></span>To Do ✓</button>
-                                        <button onclick="updateStatus(this, 'in_progress')" class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-500"></span>In Progress</button>
-                                        <button onclick="updateStatus(this, 'in_review')" class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-amber-500"></span>In Review</button>
-                                        <button onclick="updateStatus(this, 'blocked')" class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500"></span>Blocked</button>
-                                        <div class="border-t border-gray-100 my-1"></div>
-                                        <button onclick="updateStatus(this, 'done')" class="w-full px-3 py-1.5 text-left text-[12px] text-green-700 hover:bg-green-50 flex items-center gap-2"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Done</button>
-                                    </div>
-                                </div>
-                                <button onclick="event.stopPropagation(); markComplete(this)" class="px-2 py-1 text-[11px] text-green-600 bg-green-50 hover:bg-green-100 rounded flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Done</button>
-                            </div>
-                            <button class="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded">Open</button>
-                        </div>
-                    </div>
-                    <div class="task-row flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer" onclick="openTaskDrawer()">
-                        <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-3">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center space-x-2">
-                                <a href="detail.html?id=1" class="text-[11px] font-mono text-gray-500 hover:text-primary">PROJ-001</a>
-                                <span class="text-gray-300">/</span>
-                                <span class="text-[11px] font-mono text-gray-400">T-052</span>
-                                <span class="px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded">Medium</span>
-                            </div>
-                            <div class="text-[13px] font-medium text-gray-900 mt-0.5">Inverter Configuration</div>
-                        </div>
-                        <div class="flex items-center space-x-3 ml-4">
-                            <span class="text-[11px] text-gray-500 whitespace-nowrap">Feb 11</span>
-                            <div class="quick-actions flex items-center space-x-1">
-                                <div class="relative">
-                                    <button onclick="event.stopPropagation(); toggleStatusDropdown(this)" class="px-2 py-1 text-[11px] text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Status</button>
-                                    <div class="status-dropdown absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30">
-                                        <button onclick="updateStatus(this, 'todo')" class="w-full px-3 py-1.5 text-left text-[12px] text-blue-700 bg-blue-50 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-gray-400"></span>To Do ✓</button>
-                                        <button onclick="updateStatus(this, 'in_progress')" class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-500"></span>In Progress</button>
-                                        <button onclick="updateStatus(this, 'done')" class="w-full px-3 py-1.5 text-left text-[12px] text-green-700 hover:bg-green-50 flex items-center gap-2"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Done</button>
-                                    </div>
-                                </div>
-                                <button onclick="event.stopPropagation(); markComplete(this)" class="px-2 py-1 text-[11px] text-green-600 bg-green-50 hover:bg-green-100 rounded flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Done</button>
-                            </div>
-                            <button class="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded">Open</button>
-                        </div>
-                    </div>
-                    <div class="task-row flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer" onclick="openTaskDrawer()">
-                        <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-3">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center space-x-2">
-                                <a href="detail.html?id=2" class="text-[11px] font-mono text-gray-500 hover:text-primary">PROJ-002</a>
-                                <span class="text-gray-300">/</span>
-                                <span class="text-[11px] font-mono text-gray-400">T-053</span>
-                                <span class="px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded">Low</span>
-                            </div>
-                            <div class="text-[13px] font-medium text-gray-900 mt-0.5">Documentation Update</div>
-                        </div>
-                        <div class="flex items-center space-x-3 ml-4">
-                            <span class="text-[11px] text-gray-500 whitespace-nowrap">Feb 12</span>
-                            <div class="quick-actions flex items-center space-x-1">
-                                <div class="relative">
-                                    <button onclick="event.stopPropagation(); toggleStatusDropdown(this)" class="px-2 py-1 text-[11px] text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Status</button>
-                                    <div class="status-dropdown absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30">
-                                        <button onclick="updateStatus(this, 'todo')" class="w-full px-3 py-1.5 text-left text-[12px] text-blue-700 bg-blue-50 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-gray-400"></span>To Do ✓</button>
-                                        <button onclick="updateStatus(this, 'in_progress')" class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-500"></span>In Progress</button>
-                                        <button onclick="updateStatus(this, 'done')" class="w-full px-3 py-1.5 text-left text-[12px] text-green-700 hover:bg-green-50 flex items-center gap-2"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Done</button>
-                                    </div>
-                                </div>
-                                <button onclick="event.stopPropagation(); markComplete(this)" class="px-2 py-1 text-[11px] text-green-600 bg-green-50 hover:bg-green-100 rounded flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Done</button>
-                            </div>
-                            <button class="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded">Open</button>
-                        </div>
-                    </div>
-                    <div class="task-row flex items-center px-4 py-3 cursor-pointer" onclick="openTaskDrawer()">
-                        <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-3">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center space-x-2">
-                                <a href="detail.html?id=3" class="text-[11px] font-mono text-gray-500 hover:text-primary">PROJ-003</a>
-                                <span class="text-gray-300">/</span>
-                                <span class="text-[11px] font-mono text-gray-400">T-054</span>
-                                <span class="px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 rounded">High</span>
-                            </div>
-                            <div class="text-[13px] font-medium text-gray-900 mt-0.5">Safety Inspection</div>
-                        </div>
-                        <div class="flex items-center space-x-3 ml-4">
-                            <span class="text-[11px] text-gray-500 whitespace-nowrap">Feb 14</span>
-                            <div class="quick-actions flex items-center space-x-1">
-                                <div class="relative">
-                                    <button onclick="event.stopPropagation(); toggleStatusDropdown(this)" class="px-2 py-1 text-[11px] text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Status</button>
-                                    <div class="status-dropdown absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30">
-                                        <button onclick="updateStatus(this, 'todo')" class="w-full px-3 py-1.5 text-left text-[12px] text-blue-700 bg-blue-50 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-gray-400"></span>To Do ✓</button>
-                                        <button onclick="updateStatus(this, 'in_progress')" class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-500"></span>In Progress</button>
-                                        <button onclick="updateStatus(this, 'done')" class="w-full px-3 py-1.5 text-left text-[12px] text-green-700 hover:bg-green-50 flex items-center gap-2"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Done</button>
-                                    </div>
-                                </div>
-                                <button onclick="event.stopPropagation(); markComplete(this)" class="px-2 py-1 text-[11px] text-green-600 bg-green-50 hover:bg-green-100 rounded flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Done</button>
-                            </div>
-                            <button class="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded">Open</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Later Section -->
-            <div class="mb-6">
-                <div class="flex items-center mb-3">
-                    <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                    <h2 class="text-[14px] font-semibold text-green-700">LATER</h2>
-                    <span class="ml-2 text-[12px] text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-medium">5</span>
-                </div>
-                <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
-                    <div class="task-row flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer" onclick="openTaskDrawer()">
-                        <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-3">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center space-x-2">
-                                <a href="detail.html?id=1" class="text-[11px] font-mono text-gray-500 hover:text-primary">PROJ-001</a>
-                                <span class="text-gray-300">/</span>
-                                <span class="text-[11px] font-mono text-gray-400">T-060</span>
-                                <span class="px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded">Medium</span>
-                            </div>
-                            <div class="text-[13px] font-medium text-gray-900 mt-0.5">Net Metering Application</div>
-                        </div>
-                        <div class="flex items-center space-x-3 ml-4">
-                            <span class="text-[11px] text-gray-500 whitespace-nowrap">Feb 20</span>
-                            <div class="quick-actions flex items-center space-x-1">
-                                <div class="relative">
-                                    <button onclick="event.stopPropagation(); toggleStatusDropdown(this)" class="px-2 py-1 text-[11px] text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Status</button>
-                                    <div class="status-dropdown absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30">
-                                        <button onclick="updateStatus(this, 'todo')" class="w-full px-3 py-1.5 text-left text-[12px] text-blue-700 bg-blue-50 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-gray-400"></span>To Do ✓</button>
-                                        <button onclick="updateStatus(this, 'in_progress')" class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-500"></span>In Progress</button>
-                                        <button onclick="updateStatus(this, 'done')" class="w-full px-3 py-1.5 text-left text-[12px] text-green-700 hover:bg-green-50 flex items-center gap-2"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Done</button>
-                                    </div>
-                                </div>
-                                <button onclick="event.stopPropagation(); markComplete(this)" class="px-2 py-1 text-[11px] text-green-600 bg-green-50 hover:bg-green-100 rounded flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Done</button>
-                            </div>
-                            <button class="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded">Open</button>
-                        </div>
-                    </div>
-                    <div class="task-row flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer" onclick="openTaskDrawer()">
-                        <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-3">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center space-x-2">
-                                <a href="detail.html?id=1" class="text-[11px] font-mono text-gray-500 hover:text-primary">PROJ-001</a>
-                                <span class="text-gray-300">/</span>
-                                <span class="text-[11px] font-mono text-gray-400">T-061</span>
-                                <span class="px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded">Low</span>
-                            </div>
-                            <div class="text-[13px] font-medium text-gray-900 mt-0.5">Final Testing</div>
-                        </div>
-                        <div class="flex items-center space-x-3 ml-4">
-                            <span class="text-[11px] text-gray-500 whitespace-nowrap">Feb 25</span>
-                            <div class="quick-actions flex items-center space-x-1">
-                                <div class="relative">
-                                    <button onclick="event.stopPropagation(); toggleStatusDropdown(this)" class="px-2 py-1 text-[11px] text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>Status</button>
-                                    <div class="status-dropdown absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30">
-                                        <button onclick="updateStatus(this, 'todo')" class="w-full px-3 py-1.5 text-left text-[12px] text-blue-700 bg-blue-50 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-gray-400"></span>To Do ✓</button>
-                                        <button onclick="updateStatus(this, 'in_progress')" class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-500"></span>In Progress</button>
-                                        <button onclick="updateStatus(this, 'done')" class="w-full px-3 py-1.5 text-left text-[12px] text-green-700 hover:bg-green-50 flex items-center gap-2"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Done</button>
-                                    </div>
-                                </div>
-                                <button onclick="event.stopPropagation(); markComplete(this)" class="px-2 py-1 text-[11px] text-green-600 bg-green-50 hover:bg-green-100 rounded flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Done</button>
-                            </div>
-                            <button class="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded">Open</button>
-                        </div>
-                    </div>
-                    <div class="text-center py-3">
-                        <button class="text-[12px] text-gray-400 hover:text-gray-600">Show 3 more...</button>
-                    </div>
-                </div>
-            </div>
+      <div class="p-5">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h1 class="text-xl font-semibold text-gray-900">My Tasks</h1>
+            <p class="text-[13px] text-gray-500 mt-0.5">
+              All tasks assigned to you across projects
+            </p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <!-- Project Filter -->
+            <select
+              class="px-3 py-1.5 border border-gray-200 rounded-lg text-[13px] text-gray-600 bg-white"
+            >
+              <option selected>All Projects</option>
+              <option>PROJ-001: Smith Residence</option>
+              <option>PROJ-002: Jones Rooftop</option>
+              <option>PROJ-003: Kumar Commercial</option>
+              <option>PROJ-004: Sharma Industries</option>
+            </select>
+            <!-- Status Filter -->
+            <select
+              class="px-3 py-1.5 border border-gray-200 rounded-lg text-[13px] text-gray-600 bg-white"
+            >
+              <option>All Status</option>
+              <option>To Do</option>
+              <option>In Progress</option>
+              <option>In Review</option>
+              <option>Blocked</option>
+            </select>
+            <!-- Group By -->
+            <select
+              class="px-3 py-1.5 border border-gray-200 rounded-lg text-[13px] text-gray-600 bg-white"
+            >
+              <option selected>Group by: Due Date</option>
+              <option>Group by: Priority</option>
+              <option>Group by: Project</option>
+              <option>Group by: Status</option>
+            </select>
+          </div>
         </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <div class="bg-white rounded-lg border border-gray-100 p-4">
+            <div class="flex items-center justify-between">
+              <span class="text-[13px] text-gray-500">Total Tasks</span>
+              <span class="text-2xl font-semibold text-gray-900">12</span>
+            </div>
+          </div>
+          <div class="bg-red-50 rounded-lg border border-red-100 p-4">
+            <div class="flex items-center justify-between">
+              <span class="text-[13px] text-red-600">Overdue</span>
+              <span class="text-2xl font-semibold text-red-600">2</span>
+            </div>
+          </div>
+          <div class="bg-amber-50 rounded-lg border border-amber-100 p-4">
+            <div class="flex items-center justify-between">
+              <span class="text-[13px] text-amber-600">Due Today</span>
+              <span class="text-2xl font-semibold text-amber-600">1</span>
+            </div>
+          </div>
+          <div class="bg-green-50 rounded-lg border border-green-100 p-4">
+            <div class="flex items-center justify-between">
+              <span class="text-[13px] text-green-600">Completed This Week</span>
+              <span class="text-2xl font-semibold text-green-600">5</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Overdue Section -->
+        <div class="mb-6">
+          <div class="flex items-center mb-3">
+            <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+            <h2 class="text-[14px] font-semibold text-red-700">OVERDUE</h2>
+            <span
+              class="ml-2 text-[12px] text-red-500 bg-red-50 px-2 py-0.5 rounded-full font-medium"
+              >2</span
+            >
+          </div>
+          <div class="bg-white rounded-lg border border-red-100 overflow-hidden">
+            <!-- Task Row -->
+            <div
+              class="task-row flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer"
+              onclick="openTaskDrawer()"
+            >
+              <input
+                type="checkbox"
+                class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-3"
+              />
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center space-x-2">
+                  <a
+                    href="detail.html?id=1"
+                    class="text-[11px] font-mono text-gray-500 hover:text-primary"
+                    >PROJ-001</a
+                  >
+                  <span class="text-gray-300">/</span>
+                  <span class="text-[11px] font-mono text-gray-400">T-028</span>
+                  <span
+                    class="px-1.5 py-0.5 text-[10px] font-medium bg-red-100 text-red-700 rounded"
+                    >Urgent</span
+                  >
+                </div>
+                <div class="text-[13px] font-medium text-gray-900 mt-0.5">
+                  Electrical Wiring Installation
+                </div>
+                <div class="flex items-center mt-1">
+                  <div class="progress-bar w-24 mr-2">
+                    <div class="progress-bar-fill" style="width: 40%"></div>
+                  </div>
+                  <span class="text-[11px] text-gray-400">40%</span>
+                </div>
+              </div>
+              <div class="flex items-center space-x-3 ml-4">
+                <span
+                  class="text-[11px] text-red-600 font-medium flex items-center gap-1 whitespace-nowrap"
+                >
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  3 days overdue
+                </span>
+                <!-- Quick Status Actions -->
+                <div class="quick-actions flex items-center space-x-1">
+                  <div class="relative">
+                    <button
+                      onclick="
+                        event.stopPropagation();
+                        toggleStatusDropdown(this);
+                      "
+                      class="px-2 py-1 text-[11px] text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center gap-1"
+                    >
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                      Status
+                    </button>
+                    <div
+                      class="status-dropdown absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30"
+                    >
+                      <button
+                        onclick="updateStatus(this, 'todo')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-gray-400"></span>To Do
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'in_progress')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-blue-700 bg-blue-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>In Progress ✓
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'in_review')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>In Review
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'blocked')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-red-500"></span>Blocked
+                      </button>
+                      <div class="border-t border-gray-100 my-1"></div>
+                      <button
+                        onclick="updateStatus(this, 'done')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-green-700 hover:bg-green-50 flex items-center gap-2"
+                      >
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd"
+                          />
+                        </svg>
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onclick="
+                      event.stopPropagation();
+                      markComplete(this);
+                    "
+                    class="px-2 py-1 text-[11px] text-green-600 bg-green-50 hover:bg-green-100 rounded flex items-center gap-1"
+                    title="Mark as Done"
+                  >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    Done
+                  </button>
+                </div>
+                <div class="flex space-x-1">
+                  <button class="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded">
+                    Open
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div
+              class="task-row flex items-center px-4 py-3 cursor-pointer"
+              onclick="openTaskDrawer()"
+            >
+              <input
+                type="checkbox"
+                class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-3"
+              />
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center space-x-2">
+                  <a
+                    href="detail.html?id=2"
+                    class="text-[11px] font-mono text-gray-500 hover:text-primary"
+                    >PROJ-002</a
+                  >
+                  <span class="text-gray-300">/</span>
+                  <span class="text-[11px] font-mono text-gray-400">T-015</span>
+                  <span
+                    class="px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 rounded"
+                    >High</span
+                  >
+                </div>
+                <div class="text-[13px] font-medium text-gray-900 mt-0.5">Panel Mounting</div>
+                <div class="flex items-center mt-1">
+                  <div class="progress-bar w-24 mr-2">
+                    <div class="progress-bar-fill" style="width: 20%"></div>
+                  </div>
+                  <span class="text-[11px] text-gray-400">20%</span>
+                </div>
+              </div>
+              <div class="flex items-center space-x-3 ml-4">
+                <span
+                  class="text-[11px] text-red-600 font-medium flex items-center gap-1 whitespace-nowrap"
+                >
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  1 day overdue
+                </span>
+                <!-- Quick Status Actions -->
+                <div class="quick-actions flex items-center space-x-1">
+                  <div class="relative">
+                    <button
+                      onclick="
+                        event.stopPropagation();
+                        toggleStatusDropdown(this);
+                      "
+                      class="px-2 py-1 text-[11px] text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center gap-1"
+                    >
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                      Status
+                    </button>
+                    <div
+                      class="status-dropdown absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30"
+                    >
+                      <button
+                        onclick="updateStatus(this, 'todo')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-blue-700 bg-blue-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-gray-400"></span>To Do ✓
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'in_progress')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>In Progress
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'in_review')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>In Review
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'blocked')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-red-500"></span>Blocked
+                      </button>
+                      <div class="border-t border-gray-100 my-1"></div>
+                      <button
+                        onclick="updateStatus(this, 'done')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-green-700 hover:bg-green-50 flex items-center gap-2"
+                      >
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd"
+                          />
+                        </svg>
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onclick="
+                      event.stopPropagation();
+                      markComplete(this);
+                    "
+                    class="px-2 py-1 text-[11px] text-green-600 bg-green-50 hover:bg-green-100 rounded flex items-center gap-1"
+                    title="Mark as Done"
+                  >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    Done
+                  </button>
+                </div>
+                <div class="flex space-x-1">
+                  <button class="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded">
+                    Open
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Due Today Section -->
+        <div class="mb-6">
+          <div class="flex items-center mb-3">
+            <div class="w-3 h-3 rounded-full bg-amber-500 mr-2"></div>
+            <h2 class="text-[14px] font-semibold text-amber-700">DUE TODAY</h2>
+            <span
+              class="ml-2 text-[12px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-medium"
+              >1</span
+            >
+          </div>
+          <div class="bg-white rounded-lg border border-amber-100 overflow-hidden">
+            <div
+              class="task-row flex items-center px-4 py-3 cursor-pointer"
+              onclick="openTaskDrawer()"
+            >
+              <input
+                type="checkbox"
+                class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-3"
+              />
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center space-x-2">
+                  <a
+                    href="detail.html?id=3"
+                    class="text-[11px] font-mono text-gray-500 hover:text-primary"
+                    >PROJ-003</a
+                  >
+                  <span class="text-gray-300">/</span>
+                  <span class="text-[11px] font-mono text-gray-400">T-042</span>
+                  <span
+                    class="px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 rounded"
+                    >High</span
+                  >
+                </div>
+                <div class="text-[13px] font-medium text-gray-900 mt-0.5">Site Inspection</div>
+              </div>
+              <div class="flex items-center space-x-3 ml-4">
+                <span
+                  class="text-[11px] text-amber-600 font-medium flex items-center gap-1 whitespace-nowrap"
+                >
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  Today
+                </span>
+                <!-- Quick Status Actions -->
+                <div class="quick-actions flex items-center space-x-1">
+                  <div class="relative">
+                    <button
+                      onclick="
+                        event.stopPropagation();
+                        toggleStatusDropdown(this);
+                      "
+                      class="px-2 py-1 text-[11px] text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center gap-1"
+                    >
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                      Status
+                    </button>
+                    <div
+                      class="status-dropdown absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30"
+                    >
+                      <button
+                        onclick="updateStatus(this, 'todo')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-blue-700 bg-blue-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-gray-400"></span>To Do ✓
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'in_progress')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>In Progress
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'in_review')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>In Review
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'blocked')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-red-500"></span>Blocked
+                      </button>
+                      <div class="border-t border-gray-100 my-1"></div>
+                      <button
+                        onclick="updateStatus(this, 'done')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-green-700 hover:bg-green-50 flex items-center gap-2"
+                      >
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd"
+                          />
+                        </svg>
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onclick="
+                      event.stopPropagation();
+                      markComplete(this);
+                    "
+                    class="px-2 py-1 text-[11px] text-green-600 bg-green-50 hover:bg-green-100 rounded flex items-center gap-1"
+                    title="Mark as Done"
+                  >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                    Done
+                  </button>
+                </div>
+                <div class="flex space-x-1">
+                  <button class="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded">
+                    Open
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- This Week Section -->
+        <div class="mb-6">
+          <div class="flex items-center mb-3">
+            <div class="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+            <h2 class="text-[14px] font-semibold text-blue-700">THIS WEEK</h2>
+            <span
+              class="ml-2 text-[12px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-medium"
+              >4</span
+            >
+          </div>
+          <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
+            <div
+              class="task-row flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer"
+              onclick="openTaskDrawer()"
+            >
+              <input
+                type="checkbox"
+                class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-3"
+              />
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center space-x-2">
+                  <a
+                    href="detail.html?id=1"
+                    class="text-[11px] font-mono text-gray-500 hover:text-primary"
+                    >PROJ-001</a
+                  >
+                  <span class="text-gray-300">/</span>
+                  <span class="text-[11px] font-mono text-gray-400">T-051</span>
+                  <span
+                    class="px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded"
+                    >Medium</span
+                  >
+                </div>
+                <div class="text-[13px] font-medium text-gray-900 mt-0.5">
+                  Grid Connection Setup
+                </div>
+              </div>
+              <div class="flex items-center space-x-3 ml-4">
+                <span class="text-[11px] text-gray-500 whitespace-nowrap">Feb 10</span>
+                <!-- Quick Status Actions -->
+                <div class="quick-actions flex items-center space-x-1">
+                  <div class="relative">
+                    <button
+                      onclick="
+                        event.stopPropagation();
+                        toggleStatusDropdown(this);
+                      "
+                      class="px-2 py-1 text-[11px] text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center gap-1"
+                    >
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
+                      </svg>
+                      Status
+                    </button>
+                    <div
+                      class="status-dropdown absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30"
+                    >
+                      <button
+                        onclick="updateStatus(this, 'todo')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-blue-700 bg-blue-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-gray-400"></span>To Do ✓
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'in_progress')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>In Progress
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'in_review')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>In Review
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'blocked')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-red-500"></span>Blocked
+                      </button>
+                      <div class="border-t border-gray-100 my-1"></div>
+                      <button
+                        onclick="updateStatus(this, 'done')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-green-700 hover:bg-green-50 flex items-center gap-2"
+                      >
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd"
+                          /></svg
+                        >Done
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onclick="
+                      event.stopPropagation();
+                      markComplete(this);
+                    "
+                    class="px-2 py-1 text-[11px] text-green-600 bg-green-50 hover:bg-green-100 rounded flex items-center gap-1"
+                  >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"
+                      /></svg
+                    >Done
+                  </button>
+                </div>
+                <button class="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded">
+                  Open
+                </button>
+              </div>
+            </div>
+            <div
+              class="task-row flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer"
+              onclick="openTaskDrawer()"
+            >
+              <input
+                type="checkbox"
+                class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-3"
+              />
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center space-x-2">
+                  <a
+                    href="detail.html?id=1"
+                    class="text-[11px] font-mono text-gray-500 hover:text-primary"
+                    >PROJ-001</a
+                  >
+                  <span class="text-gray-300">/</span>
+                  <span class="text-[11px] font-mono text-gray-400">T-052</span>
+                  <span
+                    class="px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded"
+                    >Medium</span
+                  >
+                </div>
+                <div class="text-[13px] font-medium text-gray-900 mt-0.5">
+                  Inverter Configuration
+                </div>
+              </div>
+              <div class="flex items-center space-x-3 ml-4">
+                <span class="text-[11px] text-gray-500 whitespace-nowrap">Feb 11</span>
+                <div class="quick-actions flex items-center space-x-1">
+                  <div class="relative">
+                    <button
+                      onclick="
+                        event.stopPropagation();
+                        toggleStatusDropdown(this);
+                      "
+                      class="px-2 py-1 text-[11px] text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center gap-1"
+                    >
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        /></svg
+                      >Status
+                    </button>
+                    <div
+                      class="status-dropdown absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30"
+                    >
+                      <button
+                        onclick="updateStatus(this, 'todo')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-blue-700 bg-blue-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-gray-400"></span>To Do ✓
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'in_progress')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>In Progress
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'done')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-green-700 hover:bg-green-50 flex items-center gap-2"
+                      >
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd"
+                          /></svg
+                        >Done
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onclick="
+                      event.stopPropagation();
+                      markComplete(this);
+                    "
+                    class="px-2 py-1 text-[11px] text-green-600 bg-green-50 hover:bg-green-100 rounded flex items-center gap-1"
+                  >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"
+                      /></svg
+                    >Done
+                  </button>
+                </div>
+                <button class="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded">
+                  Open
+                </button>
+              </div>
+            </div>
+            <div
+              class="task-row flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer"
+              onclick="openTaskDrawer()"
+            >
+              <input
+                type="checkbox"
+                class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-3"
+              />
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center space-x-2">
+                  <a
+                    href="detail.html?id=2"
+                    class="text-[11px] font-mono text-gray-500 hover:text-primary"
+                    >PROJ-002</a
+                  >
+                  <span class="text-gray-300">/</span>
+                  <span class="text-[11px] font-mono text-gray-400">T-053</span>
+                  <span
+                    class="px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded"
+                    >Low</span
+                  >
+                </div>
+                <div class="text-[13px] font-medium text-gray-900 mt-0.5">Documentation Update</div>
+              </div>
+              <div class="flex items-center space-x-3 ml-4">
+                <span class="text-[11px] text-gray-500 whitespace-nowrap">Feb 12</span>
+                <div class="quick-actions flex items-center space-x-1">
+                  <div class="relative">
+                    <button
+                      onclick="
+                        event.stopPropagation();
+                        toggleStatusDropdown(this);
+                      "
+                      class="px-2 py-1 text-[11px] text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center gap-1"
+                    >
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        /></svg
+                      >Status
+                    </button>
+                    <div
+                      class="status-dropdown absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30"
+                    >
+                      <button
+                        onclick="updateStatus(this, 'todo')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-blue-700 bg-blue-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-gray-400"></span>To Do ✓
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'in_progress')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>In Progress
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'done')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-green-700 hover:bg-green-50 flex items-center gap-2"
+                      >
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd"
+                          /></svg
+                        >Done
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onclick="
+                      event.stopPropagation();
+                      markComplete(this);
+                    "
+                    class="px-2 py-1 text-[11px] text-green-600 bg-green-50 hover:bg-green-100 rounded flex items-center gap-1"
+                  >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"
+                      /></svg
+                    >Done
+                  </button>
+                </div>
+                <button class="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded">
+                  Open
+                </button>
+              </div>
+            </div>
+            <div
+              class="task-row flex items-center px-4 py-3 cursor-pointer"
+              onclick="openTaskDrawer()"
+            >
+              <input
+                type="checkbox"
+                class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-3"
+              />
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center space-x-2">
+                  <a
+                    href="detail.html?id=3"
+                    class="text-[11px] font-mono text-gray-500 hover:text-primary"
+                    >PROJ-003</a
+                  >
+                  <span class="text-gray-300">/</span>
+                  <span class="text-[11px] font-mono text-gray-400">T-054</span>
+                  <span
+                    class="px-1.5 py-0.5 text-[10px] font-medium bg-orange-100 text-orange-700 rounded"
+                    >High</span
+                  >
+                </div>
+                <div class="text-[13px] font-medium text-gray-900 mt-0.5">Safety Inspection</div>
+              </div>
+              <div class="flex items-center space-x-3 ml-4">
+                <span class="text-[11px] text-gray-500 whitespace-nowrap">Feb 14</span>
+                <div class="quick-actions flex items-center space-x-1">
+                  <div class="relative">
+                    <button
+                      onclick="
+                        event.stopPropagation();
+                        toggleStatusDropdown(this);
+                      "
+                      class="px-2 py-1 text-[11px] text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center gap-1"
+                    >
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        /></svg
+                      >Status
+                    </button>
+                    <div
+                      class="status-dropdown absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30"
+                    >
+                      <button
+                        onclick="updateStatus(this, 'todo')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-blue-700 bg-blue-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-gray-400"></span>To Do ✓
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'in_progress')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>In Progress
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'done')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-green-700 hover:bg-green-50 flex items-center gap-2"
+                      >
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd"
+                          /></svg
+                        >Done
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onclick="
+                      event.stopPropagation();
+                      markComplete(this);
+                    "
+                    class="px-2 py-1 text-[11px] text-green-600 bg-green-50 hover:bg-green-100 rounded flex items-center gap-1"
+                  >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"
+                      /></svg
+                    >Done
+                  </button>
+                </div>
+                <button class="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded">
+                  Open
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Later Section -->
+        <div class="mb-6">
+          <div class="flex items-center mb-3">
+            <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+            <h2 class="text-[14px] font-semibold text-green-700">LATER</h2>
+            <span
+              class="ml-2 text-[12px] text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-medium"
+              >5</span
+            >
+          </div>
+          <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
+            <div
+              class="task-row flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer"
+              onclick="openTaskDrawer()"
+            >
+              <input
+                type="checkbox"
+                class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-3"
+              />
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center space-x-2">
+                  <a
+                    href="detail.html?id=1"
+                    class="text-[11px] font-mono text-gray-500 hover:text-primary"
+                    >PROJ-001</a
+                  >
+                  <span class="text-gray-300">/</span>
+                  <span class="text-[11px] font-mono text-gray-400">T-060</span>
+                  <span
+                    class="px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded"
+                    >Medium</span
+                  >
+                </div>
+                <div class="text-[13px] font-medium text-gray-900 mt-0.5">
+                  Net Metering Application
+                </div>
+              </div>
+              <div class="flex items-center space-x-3 ml-4">
+                <span class="text-[11px] text-gray-500 whitespace-nowrap">Feb 20</span>
+                <div class="quick-actions flex items-center space-x-1">
+                  <div class="relative">
+                    <button
+                      onclick="
+                        event.stopPropagation();
+                        toggleStatusDropdown(this);
+                      "
+                      class="px-2 py-1 text-[11px] text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center gap-1"
+                    >
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        /></svg
+                      >Status
+                    </button>
+                    <div
+                      class="status-dropdown absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30"
+                    >
+                      <button
+                        onclick="updateStatus(this, 'todo')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-blue-700 bg-blue-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-gray-400"></span>To Do ✓
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'in_progress')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>In Progress
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'done')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-green-700 hover:bg-green-50 flex items-center gap-2"
+                      >
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd"
+                          /></svg
+                        >Done
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onclick="
+                      event.stopPropagation();
+                      markComplete(this);
+                    "
+                    class="px-2 py-1 text-[11px] text-green-600 bg-green-50 hover:bg-green-100 rounded flex items-center gap-1"
+                  >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"
+                      /></svg
+                    >Done
+                  </button>
+                </div>
+                <button class="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded">
+                  Open
+                </button>
+              </div>
+            </div>
+            <div
+              class="task-row flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer"
+              onclick="openTaskDrawer()"
+            >
+              <input
+                type="checkbox"
+                class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-3"
+              />
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center space-x-2">
+                  <a
+                    href="detail.html?id=1"
+                    class="text-[11px] font-mono text-gray-500 hover:text-primary"
+                    >PROJ-001</a
+                  >
+                  <span class="text-gray-300">/</span>
+                  <span class="text-[11px] font-mono text-gray-400">T-061</span>
+                  <span
+                    class="px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded"
+                    >Low</span
+                  >
+                </div>
+                <div class="text-[13px] font-medium text-gray-900 mt-0.5">Final Testing</div>
+              </div>
+              <div class="flex items-center space-x-3 ml-4">
+                <span class="text-[11px] text-gray-500 whitespace-nowrap">Feb 25</span>
+                <div class="quick-actions flex items-center space-x-1">
+                  <div class="relative">
+                    <button
+                      onclick="
+                        event.stopPropagation();
+                        toggleStatusDropdown(this);
+                      "
+                      class="px-2 py-1 text-[11px] text-blue-600 bg-blue-50 hover:bg-blue-100 rounded flex items-center gap-1"
+                    >
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        /></svg
+                      >Status
+                    </button>
+                    <div
+                      class="status-dropdown absolute right-0 top-full mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-30"
+                    >
+                      <button
+                        onclick="updateStatus(this, 'todo')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-blue-700 bg-blue-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-gray-400"></span>To Do ✓
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'in_progress')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                      >
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>In Progress
+                      </button>
+                      <button
+                        onclick="updateStatus(this, 'done')"
+                        class="w-full px-3 py-1.5 text-left text-[12px] text-green-700 hover:bg-green-50 flex items-center gap-2"
+                      >
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clip-rule="evenodd"
+                          /></svg
+                        >Done
+                      </button>
+                    </div>
+                  </div>
+                  <button
+                    onclick="
+                      event.stopPropagation();
+                      markComplete(this);
+                    "
+                    class="px-2 py-1 text-[11px] text-green-600 bg-green-50 hover:bg-green-100 rounded flex items-center gap-1"
+                  >
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"
+                      /></svg
+                    >Done
+                  </button>
+                </div>
+                <button class="px-2 py-1 text-[11px] text-gray-500 hover:bg-gray-100 rounded">
+                  Open
+                </button>
+              </div>
+            </div>
+            <div class="text-center py-3">
+              <button class="text-[12px] text-gray-400 hover:text-gray-600">Show 3 more...</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <!-- Task Drawer -->
-    <div id="taskDrawer" class="fixed inset-y-0 right-0 w-[420px] bg-white shadow-xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out" style="top: 48px;">
-        <div class="h-full flex flex-col">
-            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <span class="text-[11px] text-gray-400 font-mono">PROJ-001 / T-028</span>
-                <button onclick="closeTaskDrawer()" class="p-1.5 hover:bg-gray-100 rounded-lg">
-                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-            <div class="flex-1 overflow-y-auto p-5">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Electrical Wiring Installation</h2>
-                <div class="flex items-center space-x-3 mb-4">
-                    <span class="px-2.5 py-1 text-[12px] font-medium bg-blue-100 text-blue-700 rounded-lg">In Progress</span>
-                    <span class="px-2.5 py-1 text-[12px] font-medium bg-red-100 text-red-700 rounded-lg flex items-center gap-1">
-                                    <span class="w-2 h-2 rounded-full bg-red-500"></span> Urgent
-                                </span>
-                </div>
-                <div class="space-y-3 text-[13px]">
-                    <div class="flex"><span class="w-24 text-gray-500">Assignee</span><span class="text-gray-900">Ravi Kumar</span></div>
-                    <div class="flex"><span class="w-24 text-gray-500">Project</span><a href="detail.html" class="text-primary">Smith Solar</a></div>
-                    <div class="flex"><span class="w-24 text-gray-500">Due Date</span><span class="text-red-600">Feb 5, 2026 (Overdue)</span></div>
-                    <div class="flex"><span class="w-24 text-gray-500">Progress</span><span class="text-gray-900">40%</span></div>
-                </div>
-            </div>
-            <div class="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
-                <button class="text-[13px] text-red-500 hover:text-red-600">Delete</button>
-                <button class="px-4 py-2 bg-primary text-white rounded-lg text-[13px] font-medium">Complete ✓</button>
-            </div>
+    <div
+      id="taskDrawer"
+      class="fixed inset-y-0 right-0 w-[420px] bg-white shadow-xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out"
+      style="top: 48px"
+    >
+      <div class="h-full flex flex-col">
+        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <span class="text-[11px] text-gray-400 font-mono">PROJ-001 / T-028</span>
+          <button onclick="closeTaskDrawer()" class="p-1.5 hover:bg-gray-100 rounded-lg">
+            <svg
+              class="w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
         </div>
+        <div class="flex-1 overflow-y-auto p-5">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Electrical Wiring Installation</h2>
+          <div class="flex items-center space-x-3 mb-4">
+            <span class="px-2.5 py-1 text-[12px] font-medium bg-blue-100 text-blue-700 rounded-lg"
+              >In Progress</span
+            >
+            <span
+              class="px-2.5 py-1 text-[12px] font-medium bg-red-100 text-red-700 rounded-lg flex items-center gap-1"
+            >
+              <span class="w-2 h-2 rounded-full bg-red-500"></span> Urgent
+            </span>
+          </div>
+          <div class="space-y-3 text-[13px]">
+            <div class="flex">
+              <span class="w-24 text-gray-500">Assignee</span
+              ><span class="text-gray-900">Ravi Kumar</span>
+            </div>
+            <div class="flex">
+              <span class="w-24 text-gray-500">Project</span
+              ><a href="detail.html" class="text-primary">Smith Solar</a>
+            </div>
+            <div class="flex">
+              <span class="w-24 text-gray-500">Due Date</span
+              ><span class="text-red-600">Feb 5, 2026 (Overdue)</span>
+            </div>
+            <div class="flex">
+              <span class="w-24 text-gray-500">Progress</span><span class="text-gray-900">40%</span>
+            </div>
+          </div>
+        </div>
+        <div class="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
+          <button class="text-[13px] text-red-500 hover:text-red-600">Delete</button>
+          <button class="px-4 py-2 bg-primary text-white rounded-lg text-[13px] font-medium">
+            Complete ✓
+          </button>
+        </div>
+      </div>
     </div>
-    <div id="drawerOverlay" class="fixed inset-0 bg-black/30 z-40 hidden" style="top: 48px;" onclick="closeTaskDrawer()"></div>
+    <div
+      id="drawerOverlay"
+      class="fixed inset-0 bg-black/30 z-40 hidden"
+      style="top: 48px"
+      onclick="closeTaskDrawer()"
+    ></div>
 
     <script>
-        function openTaskDrawer() {
-            document.getElementById('taskDrawer').classList.remove('translate-x-full');
-            document.getElementById('drawerOverlay').classList.remove('hidden');
-        }
-        function closeTaskDrawer() {
-            document.getElementById('taskDrawer').classList.add('translate-x-full');
-            document.getElementById('drawerOverlay').classList.add('hidden');
-        }
+      function openTaskDrawer() {
+        document.getElementById('taskDrawer').classList.remove('translate-x-full');
+        document.getElementById('drawerOverlay').classList.remove('hidden');
+      }
+      function closeTaskDrawer() {
+        document.getElementById('taskDrawer').classList.add('translate-x-full');
+        document.getElementById('drawerOverlay').classList.add('hidden');
+      }
 
-        // Toggle status dropdown
-        function toggleStatusDropdown(btn) {
-            // Close all other dropdowns first
-            document.querySelectorAll('.status-dropdown.show').forEach(d => {
-                if (d !== btn.nextElementSibling) d.classList.remove('show');
-            });
-            btn.nextElementSibling.classList.toggle('show');
+      // Toggle status dropdown
+      function toggleStatusDropdown(btn) {
+        // Close all other dropdowns first
+        document.querySelectorAll('.status-dropdown.show').forEach((d) => {
+          if (d !== btn.nextElementSibling) d.classList.remove('show');
+        });
+        btn.nextElementSibling.classList.toggle('show');
+      }
+
+      // Update task status
+      function updateStatus(btn, status) {
+        const taskRow = btn.closest('.task-row');
+        const taskId = taskRow.querySelector('.font-mono').textContent;
+
+        // Visual feedback
+        const statusColors = {
+          todo: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'To Do' },
+          in_progress: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'In Progress' },
+          in_review: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'In Review' },
+          blocked: { bg: 'bg-red-100', text: 'text-red-700', label: 'Blocked' },
+          done: { bg: 'bg-green-100', text: 'text-green-700', label: 'Done' },
+        };
+
+        // Show toast notification
+        showToast(`${taskId} status updated to "${statusColors[status].label}"`);
+
+        // Close dropdown
+        btn.closest('.status-dropdown').classList.remove('show');
+
+        // If done, apply completed styling
+        if (status === 'done') {
+          taskRow.style.opacity = '0.6';
+          taskRow.querySelector('.text-gray-900').classList.add('line-through');
         }
+      }
 
-        // Update task status
-        function updateStatus(btn, status) {
-            const taskRow = btn.closest('.task-row');
-            const taskId = taskRow.querySelector('.font-mono').textContent;
-            
-            // Visual feedback
-            const statusColors = {
-                'todo': { bg: 'bg-gray-100', text: 'text-gray-700', label: 'To Do' },
-                'in_progress': { bg: 'bg-blue-100', text: 'text-blue-700', label: 'In Progress' },
-                'in_review': { bg: 'bg-amber-100', text: 'text-amber-700', label: 'In Review' },
-                'blocked': { bg: 'bg-red-100', text: 'text-red-700', label: 'Blocked' },
-                'done': { bg: 'bg-green-100', text: 'text-green-700', label: 'Done' }
-            };
+      // Quick mark as complete
+      function markComplete(btn) {
+        const taskRow = btn.closest('.task-row');
+        const taskId = taskRow.querySelector('.font-mono').textContent;
 
-            // Show toast notification
-            showToast(`${taskId} status updated to "${statusColors[status].label}"`);
-            
-            // Close dropdown
-            btn.closest('.status-dropdown').classList.remove('show');
-            
-            // If done, apply completed styling
-            if (status === 'done') {
-                taskRow.style.opacity = '0.6';
-                taskRow.querySelector('.text-gray-900').classList.add('line-through');
-            }
-        }
+        // Visual feedback - fade out row
+        taskRow.style.transition = 'all 300ms ease';
+        taskRow.style.opacity = '0.5';
+        taskRow.style.background = '#f0fdf4';
 
-        // Quick mark as complete
-        function markComplete(btn) {
-            const taskRow = btn.closest('.task-row');
-            const taskId = taskRow.querySelector('.font-mono').textContent;
-            
-            // Visual feedback - fade out row
-            taskRow.style.transition = 'all 300ms ease';
-            taskRow.style.opacity = '0.5';
-            taskRow.style.background = '#f0fdf4';
-            
-            // Show toast
-            showToast(`${taskId} marked as Done ✓`);
-            
-            // In real app, this would make an API call
-            setTimeout(() => {
-                taskRow.querySelector('.text-gray-900').classList.add('line-through', 'text-gray-500');
-            }, 200);
-        }
+        // Show toast
+        showToast(`${taskId} marked as Done ✓`);
 
-        // Toast notification
-        function showToast(message) {
-            const toast = document.createElement('div');
-            toast.className = 'fixed bottom-5 right-5 bg-gray-900 text-white px-4 py-2.5 rounded-lg shadow-lg text-[13px] z-50 flex items-center gap-2';
-            toast.innerHTML = `
+        // In real app, this would make an API call
+        setTimeout(() => {
+          taskRow.querySelector('.text-gray-900').classList.add('line-through', 'text-gray-500');
+        }, 200);
+      }
+
+      // Toast notification
+      function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className =
+          'fixed bottom-5 right-5 bg-gray-900 text-white px-4 py-2.5 rounded-lg shadow-lg text-[13px] z-50 flex items-center gap-2';
+        toast.innerHTML = `
                 <svg class="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                 ${message}
             `;
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.transition = 'opacity 300ms ease';
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 2500);
-        }
+        document.body.appendChild(toast);
 
-        // Close dropdowns when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.relative')) {
-                document.querySelectorAll('.status-dropdown.show').forEach(d => d.classList.remove('show'));
-            }
-        });
+        setTimeout(() => {
+          toast.style.transition = 'opacity 300ms ease';
+          toast.style.opacity = '0';
+          setTimeout(() => toast.remove(), 300);
+        }, 2500);
+      }
+
+      // Close dropdowns when clicking outside
+      document.addEventListener('click', function (e) {
+        if (!e.target.closest('.relative')) {
+          document
+            .querySelectorAll('.status-dropdown.show')
+            .forEach((d) => d.classList.remove('show'));
+        }
+      });
     </script>
-</body>
+  </body>
 </html>

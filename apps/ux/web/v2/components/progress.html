@@ -1,401 +1,476 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Progress | OneOhm Design System</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: { DEFAULT: '#76c044', dark: '#5ea031' },
-                    },
-                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: { DEFAULT: '#76c044', dark: '#5ea031' },
+            },
+            fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          },
+        },
+      };
     </script>
-</head>
-<body class="bg-gray-50 min-h-screen font-sans">
+  </head>
+  <body class="bg-gray-50 min-h-screen font-sans">
     <header class="bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 py-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <h1 class="text-xl font-semibold text-gray-900">Progress</h1>
-                        <p class="text-sm text-gray-500">OneOhm Design System</p>
-                    </div>
-                </div>
-                <a href="design-system.html" class="text-sm text-gray-500 hover:text-primary flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back to Design System
-                </a>
+      <div class="max-w-7xl mx-auto px-6 py-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
             </div>
+            <div>
+              <h1 class="text-xl font-semibold text-gray-900">Progress</h1>
+              <p class="text-sm text-gray-500">OneOhm Design System</p>
+            </div>
+          </div>
+          <a
+            href="design-system.html"
+            class="text-sm text-gray-500 hover:text-primary flex items-center gap-2"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+            Back to Design System
+          </a>
         </div>
+      </div>
     </header>
 
     <main class="max-w-7xl mx-auto px-6 py-8">
-        <!-- Basic Progress Bar -->
-        <section class="mb-12">
-            <h2 class="text-lg font-semibold text-gray-900 mb-2">Basic Progress Bar</h2>
-            <p class="text-gray-500 mb-6">Simple linear progress indicators.</p>
-            
-            <div class="bg-white rounded-lg border border-gray-100 p-4 space-y-6">
-                <div>
-                    <div class="flex justify-between text-sm mb-2">
-                        <span class="text-gray-500">Progress</span>
-                        <span class="text-gray-900 font-medium">25%</span>
-                    </div>
-                    <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div class="h-full w-1/4 bg-primary rounded-full"></div>
-                    </div>
-                </div>
+      <!-- Basic Progress Bar -->
+      <section class="mb-12">
+        <h2 class="text-lg font-semibold text-gray-900 mb-2">Basic Progress Bar</h2>
+        <p class="text-gray-500 mb-6">Simple linear progress indicators.</p>
 
-                <div>
-                    <div class="flex justify-between text-sm mb-2">
-                        <span class="text-gray-500">Progress</span>
-                        <span class="text-gray-900 font-medium">50%</span>
-                    </div>
-                    <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div class="h-full w-1/2 bg-primary rounded-full"></div>
-                    </div>
-                </div>
-
-                <div>
-                    <div class="flex justify-between text-sm mb-2">
-                        <span class="text-gray-500">Progress</span>
-                        <span class="text-gray-900 font-medium">75%</span>
-                    </div>
-                    <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div class="h-full w-3/4 bg-primary rounded-full"></div>
-                    </div>
-                </div>
-
-                <div>
-                    <div class="flex justify-between text-sm mb-2">
-                        <span class="text-gray-500">Complete</span>
-                        <span class="text-gray-900 font-medium">100%</span>
-                    </div>
-                    <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div class="h-full w-full bg-green-500 rounded-full"></div>
-                    </div>
-                </div>
+        <div class="bg-white rounded-lg border border-gray-100 p-4 space-y-6">
+          <div>
+            <div class="flex justify-between text-sm mb-2">
+              <span class="text-gray-500">Progress</span>
+              <span class="text-gray-900 font-medium">25%</span>
             </div>
-        </section>
-
-        <!-- Sizes -->
-        <section class="mb-12">
-            <h2 class="text-lg font-semibold text-gray-900 mb-2">Size Variants</h2>
-            <p class="text-gray-500 mb-6">Progress bars in different heights.</p>
-            
-            <div class="bg-white rounded-lg border border-gray-100 p-4 space-y-6">
-                <div>
-                    <p class="text-xs text-gray-500 mb-2 uppercase tracking-wider font-medium">Extra Small (2px)</p>
-                    <div class="h-0.5 bg-gray-200 rounded-full overflow-hidden">
-                        <div class="h-full w-3/5 bg-primary rounded-full"></div>
-                    </div>
-                </div>
-
-                <div>
-                    <p class="text-xs text-gray-500 mb-2 uppercase tracking-wider font-medium">Small (4px)</p>
-                    <div class="h-1 bg-gray-200 rounded-full overflow-hidden">
-                        <div class="h-full w-3/5 bg-primary rounded-full"></div>
-                    </div>
-                </div>
-
-                <div>
-                    <p class="text-xs text-gray-500 mb-2 uppercase tracking-wider font-medium">Medium (8px)</p>
-                    <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div class="h-full w-3/5 bg-primary rounded-full"></div>
-                    </div>
-                </div>
-
-                <div>
-                    <p class="text-xs text-gray-500 mb-2 uppercase tracking-wider font-medium">Large (12px)</p>
-                    <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
-                        <div class="h-full w-3/5 bg-primary rounded-full"></div>
-                    </div>
-                </div>
-
-                <div>
-                    <p class="text-xs text-gray-500 mb-2 uppercase tracking-wider font-medium">Extra Large (16px)</p>
-                    <div class="h-4 bg-gray-200 rounded-full overflow-hidden">
-                        <div class="h-full w-3/5 bg-primary rounded-full"></div>
-                    </div>
-                </div>
+            <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full w-1/4 bg-primary rounded-full"></div>
             </div>
-        </section>
+          </div>
 
-        <!-- Colors -->
-        <section class="mb-12">
-            <h2 class="text-lg font-semibold text-gray-900 mb-2">Color Variants</h2>
-            <p class="text-gray-500 mb-6">Progress bars in different colors for status indication.</p>
-            
-            <div class="bg-white rounded-lg border border-gray-100 p-4 space-y-4">
-                <div class="flex items-center gap-4">
-                    <div class="flex-1">
-                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div class="h-full w-4/5 bg-primary rounded-full"></div>
-                        </div>
-                    </div>
-                    <span class="text-sm text-gray-500 w-20">Primary</span>
-                </div>
-
-                <div class="flex items-center gap-4">
-                    <div class="flex-1">
-                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div class="h-full w-3/5 bg-blue-500 rounded-full"></div>
-                        </div>
-                    </div>
-                    <span class="text-sm text-gray-500 w-20">Info</span>
-                </div>
-
-                <div class="flex items-center gap-4">
-                    <div class="flex-1">
-                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div class="h-full w-full bg-green-500 rounded-full"></div>
-                        </div>
-                    </div>
-                    <span class="text-sm text-gray-500 w-20">Success</span>
-                </div>
-
-                <div class="flex items-center gap-4">
-                    <div class="flex-1">
-                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div class="h-full w-2/5 bg-amber-500 rounded-full"></div>
-                        </div>
-                    </div>
-                    <span class="text-sm text-gray-500 w-20">Warning</span>
-                </div>
-
-                <div class="flex items-center gap-4">
-                    <div class="flex-1">
-                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <div class="h-full w-1/5 bg-red-500 rounded-full"></div>
-                        </div>
-                    </div>
-                    <span class="text-sm text-gray-500 w-20">Danger</span>
-                </div>
+          <div>
+            <div class="flex justify-between text-sm mb-2">
+              <span class="text-gray-500">Progress</span>
+              <span class="text-gray-900 font-medium">50%</span>
             </div>
-        </section>
-
-        <!-- With Labels Inside -->
-        <section class="mb-12">
-            <h2 class="text-lg font-semibold text-gray-900 mb-2">With Labels Inside</h2>
-            <p class="text-gray-500 mb-6">Progress bar with percentage label inside.</p>
-            
-            <div class="bg-white rounded-lg border border-gray-100 p-4 space-y-4">
-                <div class="h-6 bg-gray-200 rounded-full overflow-hidden">
-                    <div class="h-full w-3/4 bg-primary rounded-full flex items-center justify-end pr-3">
-                        <span class="text-xs font-semibold text-white">75%</span>
-                    </div>
-                </div>
-
-                <div class="h-6 bg-gray-200 rounded-full overflow-hidden">
-                    <div class="h-full w-1/2 bg-blue-500 rounded-full flex items-center justify-end pr-3">
-                        <span class="text-xs font-semibold text-white">50%</span>
-                    </div>
-                </div>
+            <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full w-1/2 bg-primary rounded-full"></div>
             </div>
-        </section>
+          </div>
 
-        <!-- Segmented Progress -->
-        <section class="mb-12">
-            <h2 class="text-lg font-semibold text-gray-900 mb-2">Segmented Progress</h2>
-            <p class="text-gray-500 mb-6">Multi-part progress bars for stages.</p>
-            
-            <div class="bg-white rounded-lg border border-gray-100 p-4 space-y-6">
-                <div>
-                    <div class="flex gap-1">
-                        <div class="flex-1 h-2 bg-green-500 rounded-l-full"></div>
-                        <div class="flex-1 h-2 bg-green-500"></div>
-                        <div class="flex-1 h-2 bg-green-500"></div>
-                        <div class="flex-1 h-2 bg-amber-400"></div>
-                        <div class="flex-1 h-2 bg-gray-200 rounded-r-full"></div>
-                    </div>
-                    <div class="flex justify-between text-xs text-gray-500 mt-2">
-                        <span>Lead</span>
-                        <span>Qualified</span>
-                        <span>Quote Sent</span>
-                        <span>Negotiation</span>
-                        <span>Converted</span>
-                    </div>
-                </div>
+          <div>
+            <div class="flex justify-between text-sm mb-2">
+              <span class="text-gray-500">Progress</span>
+              <span class="text-gray-900 font-medium">75%</span>
             </div>
-        </section>
-
-        <!-- Circular Progress -->
-        <section class="mb-12">
-            <h2 class="text-lg font-semibold text-gray-900 mb-2">Circular Progress</h2>
-            <p class="text-gray-500 mb-6">Circular progress indicators.</p>
-            
-            <div class="bg-white rounded-lg border border-gray-100 p-4">
-                <div class="flex items-center gap-8">
-                    <!-- Small -->
-                    <div class="text-center">
-                        <div class="relative w-16 h-16">
-                            <svg class="w-16 h-16 transform -rotate-90">
-                                <circle cx="32" cy="32" r="28" stroke="#e5e7eb" stroke-width="4" fill="none"/>
-                                <circle cx="32" cy="32" r="28" stroke="#76c044" stroke-width="4" fill="none" 
-                                    stroke-dasharray="175.93" stroke-dashoffset="44" stroke-linecap="round"/>
-                            </svg>
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <span class="text-sm font-semibold text-gray-900">75%</span>
-                            </div>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-2">Small</p>
-                    </div>
-
-                    <!-- Medium -->
-                    <div class="text-center">
-                        <div class="relative w-24 h-24">
-                            <svg class="w-24 h-24 transform -rotate-90">
-                                <circle cx="48" cy="48" r="42" stroke="#e5e7eb" stroke-width="6" fill="none"/>
-                                <circle cx="48" cy="48" r="42" stroke="#76c044" stroke-width="6" fill="none" 
-                                    stroke-dasharray="263.89" stroke-dashoffset="66" stroke-linecap="round"/>
-                            </svg>
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <span class="text-lg font-semibold text-gray-900">75%</span>
-                            </div>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-2">Medium</p>
-                    </div>
-
-                    <!-- Large -->
-                    <div class="text-center">
-                        <div class="relative w-32 h-32">
-                            <svg class="w-32 h-32 transform -rotate-90">
-                                <circle cx="64" cy="64" r="56" stroke="#e5e7eb" stroke-width="8" fill="none"/>
-                                <circle cx="64" cy="64" r="56" stroke="#76c044" stroke-width="8" fill="none" 
-                                    stroke-dasharray="351.86" stroke-dashoffset="88" stroke-linecap="round"/>
-                            </svg>
-                            <div class="absolute inset-0 flex flex-col items-center justify-center">
-                                <span class="text-2xl font-semibold text-gray-900">75%</span>
-                                <span class="text-xs text-gray-500">Complete</span>
-                            </div>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-2">Large</p>
-                    </div>
-                </div>
+            <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full w-3/4 bg-primary rounded-full"></div>
             </div>
-        </section>
+          </div>
 
-        <!-- Usage Examples -->
-        <section class="mb-12">
-            <h2 class="text-lg font-semibold text-gray-900 mb-2">Usage Examples</h2>
-            <p class="text-gray-500 mb-6">Real-world progress bar applications.</p>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Quote Status -->
-                <div class="bg-white rounded-lg border border-gray-100 p-4">
-                    <h3 class="text-sm font-medium text-gray-900 mb-4">Quote Completion</h3>
-                    <div class="space-y-4">
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-500">System Details</span>
-                                <span class="text-green-600">Complete</span>
-                            </div>
-                            <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div class="h-full w-full bg-green-500 rounded-full"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-500">Customer Info</span>
-                                <span class="text-green-600">Complete</span>
-                            </div>
-                            <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div class="h-full w-full bg-green-500 rounded-full"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-500">Pricing</span>
-                                <span class="text-amber-600">In Progress</span>
-                            </div>
-                            <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div class="h-full w-2/3 bg-amber-400 rounded-full"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span class="text-gray-500">Documents</span>
-                                <span class="text-gray-500">Pending</span>
-                            </div>
-                            <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div class="h-full w-0 bg-gray-400 rounded-full"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Installation Progress -->
-                <div class="bg-white rounded-lg border border-gray-100 p-4">
-                    <h3 class="text-sm font-medium text-gray-900 mb-4">Installation Progress</h3>
-                    <div class="space-y-4">
-                        <div class="flex items-center gap-4">
-                            <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-sm font-medium text-gray-900">Site Survey</p>
-                                <p class="text-xs text-gray-500">Completed on Jan 15</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-sm font-medium text-gray-900">Material Delivery</p>
-                                <p class="text-xs text-gray-500">Completed on Jan 20</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <div class="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center animate-pulse">
-                                <span class="text-xs font-semibold text-primary">3</span>
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-sm font-medium text-gray-900">Panel Installation</p>
-                                <p class="text-xs text-primary">In Progress - 60%</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                <span class="text-xs font-semibold text-gray-400">4</span>
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-sm font-medium text-gray-400">Inverter Setup</p>
-                                <p class="text-xs text-gray-400">Pending</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                                <span class="text-xs font-semibold text-gray-400">5</span>
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-sm font-medium text-gray-400">Final Inspection</p>
-                                <p class="text-xs text-gray-400">Pending</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+          <div>
+            <div class="flex justify-between text-sm mb-2">
+              <span class="text-gray-500">Complete</span>
+              <span class="text-gray-900 font-medium">100%</span>
             </div>
-        </section>
+            <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full w-full bg-green-500 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sizes -->
+      <section class="mb-12">
+        <h2 class="text-lg font-semibold text-gray-900 mb-2">Size Variants</h2>
+        <p class="text-gray-500 mb-6">Progress bars in different heights.</p>
+
+        <div class="bg-white rounded-lg border border-gray-100 p-4 space-y-6">
+          <div>
+            <p class="text-xs text-gray-500 mb-2 uppercase tracking-wider font-medium">
+              Extra Small (2px)
+            </p>
+            <div class="h-0.5 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full w-3/5 bg-primary rounded-full"></div>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-xs text-gray-500 mb-2 uppercase tracking-wider font-medium">
+              Small (4px)
+            </p>
+            <div class="h-1 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full w-3/5 bg-primary rounded-full"></div>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-xs text-gray-500 mb-2 uppercase tracking-wider font-medium">
+              Medium (8px)
+            </p>
+            <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full w-3/5 bg-primary rounded-full"></div>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-xs text-gray-500 mb-2 uppercase tracking-wider font-medium">
+              Large (12px)
+            </p>
+            <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full w-3/5 bg-primary rounded-full"></div>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-xs text-gray-500 mb-2 uppercase tracking-wider font-medium">
+              Extra Large (16px)
+            </p>
+            <div class="h-4 bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full w-3/5 bg-primary rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Colors -->
+      <section class="mb-12">
+        <h2 class="text-lg font-semibold text-gray-900 mb-2">Color Variants</h2>
+        <p class="text-gray-500 mb-6">Progress bars in different colors for status indication.</p>
+
+        <div class="bg-white rounded-lg border border-gray-100 p-4 space-y-4">
+          <div class="flex items-center gap-4">
+            <div class="flex-1">
+              <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full w-4/5 bg-primary rounded-full"></div>
+              </div>
+            </div>
+            <span class="text-sm text-gray-500 w-20">Primary</span>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <div class="flex-1">
+              <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full w-3/5 bg-blue-500 rounded-full"></div>
+              </div>
+            </div>
+            <span class="text-sm text-gray-500 w-20">Info</span>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <div class="flex-1">
+              <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full w-full bg-green-500 rounded-full"></div>
+              </div>
+            </div>
+            <span class="text-sm text-gray-500 w-20">Success</span>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <div class="flex-1">
+              <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full w-2/5 bg-amber-500 rounded-full"></div>
+              </div>
+            </div>
+            <span class="text-sm text-gray-500 w-20">Warning</span>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <div class="flex-1">
+              <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full w-1/5 bg-red-500 rounded-full"></div>
+              </div>
+            </div>
+            <span class="text-sm text-gray-500 w-20">Danger</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- With Labels Inside -->
+      <section class="mb-12">
+        <h2 class="text-lg font-semibold text-gray-900 mb-2">With Labels Inside</h2>
+        <p class="text-gray-500 mb-6">Progress bar with percentage label inside.</p>
+
+        <div class="bg-white rounded-lg border border-gray-100 p-4 space-y-4">
+          <div class="h-6 bg-gray-200 rounded-full overflow-hidden">
+            <div class="h-full w-3/4 bg-primary rounded-full flex items-center justify-end pr-3">
+              <span class="text-xs font-semibold text-white">75%</span>
+            </div>
+          </div>
+
+          <div class="h-6 bg-gray-200 rounded-full overflow-hidden">
+            <div class="h-full w-1/2 bg-blue-500 rounded-full flex items-center justify-end pr-3">
+              <span class="text-xs font-semibold text-white">50%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Segmented Progress -->
+      <section class="mb-12">
+        <h2 class="text-lg font-semibold text-gray-900 mb-2">Segmented Progress</h2>
+        <p class="text-gray-500 mb-6">Multi-part progress bars for stages.</p>
+
+        <div class="bg-white rounded-lg border border-gray-100 p-4 space-y-6">
+          <div>
+            <div class="flex gap-1">
+              <div class="flex-1 h-2 bg-green-500 rounded-l-full"></div>
+              <div class="flex-1 h-2 bg-green-500"></div>
+              <div class="flex-1 h-2 bg-green-500"></div>
+              <div class="flex-1 h-2 bg-amber-400"></div>
+              <div class="flex-1 h-2 bg-gray-200 rounded-r-full"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-500 mt-2">
+              <span>Lead</span>
+              <span>Qualified</span>
+              <span>Quote Sent</span>
+              <span>Negotiation</span>
+              <span>Converted</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Circular Progress -->
+      <section class="mb-12">
+        <h2 class="text-lg font-semibold text-gray-900 mb-2">Circular Progress</h2>
+        <p class="text-gray-500 mb-6">Circular progress indicators.</p>
+
+        <div class="bg-white rounded-lg border border-gray-100 p-4">
+          <div class="flex items-center gap-8">
+            <!-- Small -->
+            <div class="text-center">
+              <div class="relative w-16 h-16">
+                <svg class="w-16 h-16 transform -rotate-90">
+                  <circle cx="32" cy="32" r="28" stroke="#e5e7eb" stroke-width="4" fill="none" />
+                  <circle
+                    cx="32"
+                    cy="32"
+                    r="28"
+                    stroke="#76c044"
+                    stroke-width="4"
+                    fill="none"
+                    stroke-dasharray="175.93"
+                    stroke-dashoffset="44"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <span class="text-sm font-semibold text-gray-900">75%</span>
+                </div>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">Small</p>
+            </div>
+
+            <!-- Medium -->
+            <div class="text-center">
+              <div class="relative w-24 h-24">
+                <svg class="w-24 h-24 transform -rotate-90">
+                  <circle cx="48" cy="48" r="42" stroke="#e5e7eb" stroke-width="6" fill="none" />
+                  <circle
+                    cx="48"
+                    cy="48"
+                    r="42"
+                    stroke="#76c044"
+                    stroke-width="6"
+                    fill="none"
+                    stroke-dasharray="263.89"
+                    stroke-dashoffset="66"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <span class="text-lg font-semibold text-gray-900">75%</span>
+                </div>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">Medium</p>
+            </div>
+
+            <!-- Large -->
+            <div class="text-center">
+              <div class="relative w-32 h-32">
+                <svg class="w-32 h-32 transform -rotate-90">
+                  <circle cx="64" cy="64" r="56" stroke="#e5e7eb" stroke-width="8" fill="none" />
+                  <circle
+                    cx="64"
+                    cy="64"
+                    r="56"
+                    stroke="#76c044"
+                    stroke-width="8"
+                    fill="none"
+                    stroke-dasharray="351.86"
+                    stroke-dashoffset="88"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                <div class="absolute inset-0 flex flex-col items-center justify-center">
+                  <span class="text-2xl font-semibold text-gray-900">75%</span>
+                  <span class="text-xs text-gray-500">Complete</span>
+                </div>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">Large</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Usage Examples -->
+      <section class="mb-12">
+        <h2 class="text-lg font-semibold text-gray-900 mb-2">Usage Examples</h2>
+        <p class="text-gray-500 mb-6">Real-world progress bar applications.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Quote Status -->
+          <div class="bg-white rounded-lg border border-gray-100 p-4">
+            <h3 class="text-sm font-medium text-gray-900 mb-4">Quote Completion</h3>
+            <div class="space-y-4">
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-gray-500">System Details</span>
+                  <span class="text-green-600">Complete</span>
+                </div>
+                <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div class="h-full w-full bg-green-500 rounded-full"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-gray-500">Customer Info</span>
+                  <span class="text-green-600">Complete</span>
+                </div>
+                <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div class="h-full w-full bg-green-500 rounded-full"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-gray-500">Pricing</span>
+                  <span class="text-amber-600">In Progress</span>
+                </div>
+                <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div class="h-full w-2/3 bg-amber-400 rounded-full"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-gray-500">Documents</span>
+                  <span class="text-gray-500">Pending</span>
+                </div>
+                <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div class="h-full w-0 bg-gray-400 rounded-full"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Installation Progress -->
+          <div class="bg-white rounded-lg border border-gray-100 p-4">
+            <h3 class="text-sm font-medium text-gray-900 mb-4">Installation Progress</h3>
+            <div class="space-y-4">
+              <div class="flex items-center gap-4">
+                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <svg
+                    class="w-4 h-4 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-gray-900">Site Survey</p>
+                  <p class="text-xs text-gray-500">Completed on Jan 15</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <svg
+                    class="w-4 h-4 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-gray-900">Material Delivery</p>
+                  <p class="text-xs text-gray-500">Completed on Jan 20</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-4">
+                <div
+                  class="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center animate-pulse"
+                >
+                  <span class="text-xs font-semibold text-primary">3</span>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-gray-900">Panel Installation</p>
+                  <p class="text-xs text-primary">In Progress - 60%</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                  <span class="text-xs font-semibold text-gray-400">4</span>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-gray-400">Inverter Setup</p>
+                  <p class="text-xs text-gray-400">Pending</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-4">
+                <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                  <span class="text-xs font-semibold text-gray-400">5</span>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-gray-400">Final Inspection</p>
+                  <p class="text-xs text-gray-400">Pending</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
-</body>
+  </body>
 </html>

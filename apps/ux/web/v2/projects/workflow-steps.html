@@ -1,489 +1,1029 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Task Templates - OneOhm Projects</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: { DEFAULT: '#76c044', dark: '#5ea031', light: '#8fd35f' },
-                        secondary: { DEFAULT: '#0d74b8', dark: '#0a5c92' },
-                    },
-                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: { DEFAULT: '#76c044', dark: '#5ea031', light: '#8fd35f' },
+              secondary: { DEFAULT: '#0d74b8', dark: '#0a5c92' },
+            },
+            fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          },
+        },
+      };
     </script>
     <style>
-        body { font-family: 'Inter', system-ui, sans-serif; }
-        .global-header { height: 48px; background: #fff; border-bottom: 1px solid #f4f4f5; position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; align-items: center; padding: 0 12px; }
-        .rail { width: 48px; background: #fff; border-right: 1px solid #f4f4f5; position: fixed; top: 48px; left: 0; height: calc(100vh - 48px); z-index: 40; }
-        .panel { width: 200px; background: #fff; border-right: 1px solid #f4f4f5; position: fixed; top: 48px; left: 48px; height: calc(100vh - 48px); z-index: 35; }
-        .main-content { margin-left: 248px; margin-top: 48px; min-height: calc(100vh - 48px); background: #fafafa; }
-        .template-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
-        .checklist-item { display: flex; align-items: center; padding: 6px 0; }
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+      .global-header {
+        height: 48px;
+        background: #fff;
+        border-bottom: 1px solid #f4f4f5;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+      }
+      .rail {
+        width: 48px;
+        background: #fff;
+        border-right: 1px solid #f4f4f5;
+        position: fixed;
+        top: 48px;
+        left: 0;
+        height: calc(100vh - 48px);
+        z-index: 40;
+      }
+      .panel {
+        width: 200px;
+        background: #fff;
+        border-right: 1px solid #f4f4f5;
+        position: fixed;
+        top: 48px;
+        left: 48px;
+        height: calc(100vh - 48px);
+        z-index: 35;
+      }
+      .main-content {
+        margin-left: 248px;
+        margin-top: 48px;
+        min-height: calc(100vh - 48px);
+        background: #fafafa;
+      }
+      .template-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transform: translateY(-1px);
+      }
+      .checklist-item {
+        display: flex;
+        align-items: center;
+        padding: 6px 0;
+      }
     </style>
-</head>
-<body class="bg-gray-50">
+  </head>
+  <body class="bg-gray-50">
     <!-- Header -->
     <header class="global-header">
-        <div class="flex items-center">
-            <a href="../dashboard/index.html"><img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto"></a>
-        </div>
-        <div class="flex-1 ml-6 mr-4">
-            <button class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-100 text-left">
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <span class="text-gray-400 flex-1 text-sm">Search templates...</span>
-                <kbd class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-100 rounded">⌘K</kbd>
-            </button>
-        </div>
-        <div class="flex items-center space-x-2">
-            <button class="relative p-2 hover:bg-gray-50 rounded-lg">
-                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
-            <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg">
-                <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">RK</div>
-            </button>
-        </div>
+      <div class="flex items-center">
+        <a href="../dashboard/index.html"
+          ><img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto"
+        /></a>
+      </div>
+      <div class="flex-1 ml-6 mr-4">
+        <button
+          class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-100 text-left"
+        >
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <span class="text-gray-400 flex-1 text-sm">Search templates...</span>
+          <kbd
+            class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-100 rounded"
+            >⌘K</kbd
+          >
+        </button>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button class="relative p-2 hover:bg-gray-50 rounded-lg">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
+          </svg>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+        </button>
+        <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg">
+          <div
+            class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm"
+          >
+            RK
+          </div>
+        </button>
+      </div>
     </header>
 
     <!-- Rail -->
     <aside class="rail flex flex-col items-center pt-2">
-        <a href="../dashboard/index.html?rail=home" class="w-10 h-9 flex items-center justify-center text-gray-400 hover:bg-gray-50 rounded-lg mb-1" title="Home">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-        </a>
-        <a href="list.html" class="w-10 h-9 flex items-center justify-center text-primary bg-primary/10 rounded-lg mb-1 border-l-2 border-primary">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
-        </a>
+      <a
+        href="../dashboard/index.html?rail=home"
+        class="w-10 h-9 flex items-center justify-center text-gray-400 hover:bg-gray-50 rounded-lg mb-1"
+        title="Home"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+          />
+        </svg>
+      </a>
+      <a
+        href="list.html"
+        class="w-10 h-9 flex items-center justify-center text-primary bg-primary/10 rounded-lg mb-1 border-l-2 border-primary"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+          />
+        </svg>
+      </a>
     </aside>
 
     <!-- Panel -->
     <aside class="panel">
-        <div class="h-12 px-4 flex items-center border-b border-gray-100">
-            <span class="text-[15px] font-semibold text-gray-900">Projects</span>
+      <div class="h-12 px-4 flex items-center border-b border-gray-100">
+        <span class="text-[15px] font-semibold text-gray-900">Projects</span>
+      </div>
+      <div class="p-2">
+        <div class="px-2 py-3 text-[10px] font-medium text-gray-400 uppercase tracking-wide">
+          Overview
         </div>
-        <div class="p-2">
-            <div class="px-2 py-3 text-[10px] font-medium text-gray-400 uppercase tracking-wide">Overview</div>
-            <a href="../dashboard/projects.html" class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg">
-                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
-                Dashboard
-            </a>
-            <a href="list.html" class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg">
-                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
-                All Projects
-            </a>
-            <div class="px-2 py-3 mt-2 text-[10px] font-medium text-gray-400 uppercase tracking-wide">My Work</div>
-            <a href="my-tasks.html" class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg">
-                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-                My Tasks
-            </a>
-            <div class="px-2 py-3 mt-2 text-[10px] font-medium text-gray-400 uppercase tracking-wide">Scheduling</div>
-            <a href="kanban.html" class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg">
-                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
-                Kanban Board
-            </a>
-            <a href="timeline.html" class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg">
-                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                Timeline / Gantt
-            </a>
-            <div class="px-2 py-3 mt-2 text-[10px] font-medium text-gray-400 uppercase tracking-wide">Settings</div>
-            <a href="workflow-steps.html" class="h-8 px-3 flex items-center text-[13px] text-primary bg-primary/10 rounded-lg font-medium">
-                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
-                Workflow Steps
-            </a>
+        <a
+          href="../dashboard/projects.html"
+          class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg"
+        >
+          <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+            />
+          </svg>
+          Dashboard
+        </a>
+        <a
+          href="list.html"
+          class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg"
+        >
+          <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+            />
+          </svg>
+          All Projects
+        </a>
+        <div class="px-2 py-3 mt-2 text-[10px] font-medium text-gray-400 uppercase tracking-wide">
+          My Work
         </div>
+        <a
+          href="my-tasks.html"
+          class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg"
+        >
+          <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+            />
+          </svg>
+          My Tasks
+        </a>
+        <div class="px-2 py-3 mt-2 text-[10px] font-medium text-gray-400 uppercase tracking-wide">
+          Scheduling
+        </div>
+        <a
+          href="kanban.html"
+          class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg"
+        >
+          <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+            />
+          </svg>
+          Kanban Board
+        </a>
+        <a
+          href="timeline.html"
+          class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg"
+        >
+          <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+          Timeline / Gantt
+        </a>
+        <div class="px-2 py-3 mt-2 text-[10px] font-medium text-gray-400 uppercase tracking-wide">
+          Settings
+        </div>
+        <a
+          href="workflow-steps.html"
+          class="h-8 px-3 flex items-center text-[13px] text-primary bg-primary/10 rounded-lg font-medium"
+        >
+          <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+            />
+          </svg>
+          Workflow Steps
+        </a>
+      </div>
     </aside>
 
     <!-- Main Content -->
     <main class="main-content">
-        <div class="p-5">
-            <!-- Header -->
-            <div class="flex items-center justify-between mb-5">
-                <div>
-                    <h1 class="text-xl font-semibold text-gray-900">Task Templates</h1>
-                    <p class="text-[13px] text-gray-500 mt-0.5">Reusable task definitions for consistent project workflows</p>
-                </div>
-                <button onclick="openCreateModal()" class="px-4 py-2 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-primary-dark flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    New Template
-                </button>
-            </div>
-
-            <!-- Filters -->
-            <div class="flex items-center space-x-3 mb-5">
-                <div class="flex-1 relative">
-                    <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    <input type="text" placeholder="Search templates..." class="w-full max-w-xs pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-primary">
-                </div>
-                <select class="px-3 py-2 border border-gray-200 rounded-lg text-[13px] text-gray-600 bg-white">
-                    <option>All Departments</option>
-                    <option>Site Survey</option>
-                    <option>Installation</option>
-                    <option>Electrical</option>
-                    <option>Compliance</option>
-                </select>
-                <select class="px-3 py-2 border border-gray-200 rounded-lg text-[13px] text-gray-600 bg-white">
-                    <option>All Phases</option>
-                    <option>Pre-Installation</option>
-                    <option>Installation</option>
-                    <option>Commissioning</option>
-                </select>
-            </div>
-
-            <!-- Summary Stats -->
-            <div class="grid grid-cols-4 gap-4 mb-6">
-                <div class="bg-white rounded-lg border border-gray-100 p-4">
-                    <div class="text-[12px] text-gray-500 mb-1">Total Templates</div>
-                    <div class="text-2xl font-semibold text-gray-900">18</div>
-                </div>
-                <div class="bg-white rounded-lg border border-gray-100 p-4">
-                    <div class="text-[12px] text-gray-500 mb-1">Active</div>
-                    <div class="text-2xl font-semibold text-primary">15</div>
-                </div>
-                <div class="bg-white rounded-lg border border-gray-100 p-4">
-                    <div class="text-[12px] text-gray-500 mb-1">Departments</div>
-                    <div class="text-2xl font-semibold text-gray-900">5</div>
-                </div>
-                <div class="bg-white rounded-lg border border-gray-100 p-4">
-                    <div class="text-[12px] text-gray-500 mb-1">Avg Duration</div>
-                    <div class="text-2xl font-semibold text-gray-900">3.2 days</div>
-                </div>
-            </div>
-
-            <!-- Template Cards Grid -->
-            <div class="grid grid-cols-3 gap-4">
-                <!-- Template Card 1 -->
-                <div class="template-card bg-white rounded-lg border border-gray-100 p-4 transition-all duration-200 cursor-pointer" onclick="openEditModal()">
-                    <div class="flex items-start justify-between mb-3">
-                        <div>
-                            <div class="flex items-center mb-1">
-                                <span class="text-[10px] font-mono text-gray-400 mr-2">TPL-001</span>
-                                <span class="px-1.5 py-0.5 text-[10px] bg-green-100 text-green-700 rounded">Active</span>
-                            </div>
-                            <h3 class="text-[14px] font-medium text-gray-900">Site Survey</h3>
-                        </div>
-                        <span class="px-2 py-1 text-[11px] bg-blue-100 text-blue-700 rounded">Site Survey</span>
-                    </div>
-                    <p class="text-[12px] text-gray-500 mb-3 line-clamp-2">Complete site assessment including roof analysis, shading study, and electrical infrastructure check.</p>
-                    <div class="flex items-center text-[12px] text-gray-500 mb-3">
-                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span>2 days</span>
-                        <span class="mx-2">•</span>
-                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                        <span>8 checklist items</span>
-                    </div>
-                    <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-                        <span class="text-[11px] text-gray-400">Used 42 times</span>
-                        <div class="flex space-x-2">
-                            <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                            </button>
-                            <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Template Card 2 -->
-                <div class="template-card bg-white rounded-lg border border-gray-100 p-4 transition-all duration-200 cursor-pointer">
-                    <div class="flex items-start justify-between mb-3">
-                        <div>
-                            <div class="flex items-center mb-1">
-                                <span class="text-[10px] font-mono text-gray-400 mr-2">TPL-002</span>
-                                <span class="px-1.5 py-0.5 text-[10px] bg-green-100 text-green-700 rounded">Active</span>
-                            </div>
-                            <h3 class="text-[14px] font-medium text-gray-900">Structure Installation</h3>
-                        </div>
-                        <span class="px-2 py-1 text-[11px] bg-amber-100 text-amber-700 rounded">Installation</span>
-                    </div>
-                    <p class="text-[12px] text-gray-500 mb-3 line-clamp-2">Install mounting structure including rails, clamps, and brackets as per design specifications.</p>
-                    <div class="flex items-center text-[12px] text-gray-500 mb-3">
-                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span>3 days</span>
-                        <span class="mx-2">•</span>
-                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                        <span>12 checklist items</span>
-                    </div>
-                    <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-                        <span class="text-[11px] text-gray-400">Used 38 times</span>
-                        <div class="flex space-x-2">
-                            <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                            </button>
-                            <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Template Card 3 -->
-                <div class="template-card bg-white rounded-lg border border-gray-100 p-4 transition-all duration-200 cursor-pointer">
-                    <div class="flex items-start justify-between mb-3">
-                        <div>
-                            <div class="flex items-center mb-1">
-                                <span class="text-[10px] font-mono text-gray-400 mr-2">TPL-003</span>
-                                <span class="px-1.5 py-0.5 text-[10px] bg-green-100 text-green-700 rounded">Active</span>
-                            </div>
-                            <h3 class="text-[14px] font-medium text-gray-900">Panel Mounting</h3>
-                        </div>
-                        <span class="px-2 py-1 text-[11px] bg-amber-100 text-amber-700 rounded">Installation</span>
-                    </div>
-                    <p class="text-[12px] text-gray-500 mb-3 line-clamp-2">Mount solar panels on installed structure following safety protocols and manufacturer guidelines.</p>
-                    <div class="flex items-center text-[12px] text-gray-500 mb-3">
-                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span>4 days</span>
-                        <span class="mx-2">•</span>
-                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                        <span>10 checklist items</span>
-                    </div>
-                    <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-                        <span class="text-[11px] text-gray-400">Used 36 times</span>
-                        <div class="flex space-x-2">
-                            <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                            </button>
-                            <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Template Card 4 -->
-                <div class="template-card bg-white rounded-lg border border-gray-100 p-4 transition-all duration-200 cursor-pointer">
-                    <div class="flex items-start justify-between mb-3">
-                        <div>
-                            <div class="flex items-center mb-1">
-                                <span class="text-[10px] font-mono text-gray-400 mr-2">TPL-004</span>
-                                <span class="px-1.5 py-0.5 text-[10px] bg-green-100 text-green-700 rounded">Active</span>
-                            </div>
-                            <h3 class="text-[14px] font-medium text-gray-900">Electrical Wiring</h3>
-                        </div>
-                        <span class="px-2 py-1 text-[11px] bg-purple-100 text-purple-700 rounded">Electrical</span>
-                    </div>
-                    <p class="text-[12px] text-gray-500 mb-3 line-clamp-2">Complete DC and AC wiring including string connections, junction boxes, and main cable runs.</p>
-                    <div class="flex items-center text-[12px] text-gray-500 mb-3">
-                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span>3 days</span>
-                        <span class="mx-2">•</span>
-                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                        <span>15 checklist items</span>
-                    </div>
-                    <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-                        <span class="text-[11px] text-gray-400">Used 35 times</span>
-                        <div class="flex space-x-2">
-                            <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                            </button>
-                            <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Template Card 5 -->
-                <div class="template-card bg-white rounded-lg border border-gray-100 p-4 transition-all duration-200 cursor-pointer">
-                    <div class="flex items-start justify-between mb-3">
-                        <div>
-                            <div class="flex items-center mb-1">
-                                <span class="text-[10px] font-mono text-gray-400 mr-2">TPL-005</span>
-                                <span class="px-1.5 py-0.5 text-[10px] bg-green-100 text-green-700 rounded">Active</span>
-                            </div>
-                            <h3 class="text-[14px] font-medium text-gray-900">Inverter Installation</h3>
-                        </div>
-                        <span class="px-2 py-1 text-[11px] bg-purple-100 text-purple-700 rounded">Electrical</span>
-                    </div>
-                    <p class="text-[12px] text-gray-500 mb-3 line-clamp-2">Install and configure inverter including mounting, connections, and initial programming.</p>
-                    <div class="flex items-center text-[12px] text-gray-500 mb-3">
-                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span>2 days</span>
-                        <span class="mx-2">•</span>
-                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                        <span>9 checklist items</span>
-                    </div>
-                    <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-                        <span class="text-[11px] text-gray-400">Used 34 times</span>
-                        <div class="flex space-x-2">
-                            <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                            </button>
-                            <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Template Card 6 -->
-                <div class="template-card bg-white rounded-lg border border-gray-100 p-4 transition-all duration-200 cursor-pointer">
-                    <div class="flex items-start justify-between mb-3">
-                        <div>
-                            <div class="flex items-center mb-1">
-                                <span class="text-[10px] font-mono text-gray-400 mr-2">TPL-006</span>
-                                <span class="px-1.5 py-0.5 text-[10px] bg-green-100 text-green-700 rounded">Active</span>
-                            </div>
-                            <h3 class="text-[14px] font-medium text-gray-900">Net Metering Application</h3>
-                        </div>
-                        <span class="px-2 py-1 text-[11px] bg-red-100 text-red-700 rounded">Compliance</span>
-                    </div>
-                    <p class="text-[12px] text-gray-500 mb-3 line-clamp-2">Submit net metering application to DISCOM including all required documentation and follow-ups.</p>
-                    <div class="flex items-center text-[12px] text-gray-500 mb-3">
-                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span>5 days</span>
-                        <span class="mx-2">•</span>
-                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                        <span>7 checklist items</span>
-                    </div>
-                    <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-                        <span class="text-[11px] text-gray-400">Used 32 times</span>
-                        <div class="flex space-x-2">
-                            <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                            </button>
-                            <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <div class="p-5">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h1 class="text-xl font-semibold text-gray-900">Task Templates</h1>
+            <p class="text-[13px] text-gray-500 mt-0.5">
+              Reusable task definitions for consistent project workflows
+            </p>
+          </div>
+          <button
+            onclick="openCreateModal()"
+            class="px-4 py-2 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-primary-dark flex items-center"
+          >
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            New Template
+          </button>
         </div>
+
+        <!-- Filters -->
+        <div class="flex items-center space-x-3 mb-5">
+          <div class="flex-1 relative">
+            <svg
+              class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search templates..."
+              class="w-full max-w-xs pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-primary"
+            />
+          </div>
+          <select
+            class="px-3 py-2 border border-gray-200 rounded-lg text-[13px] text-gray-600 bg-white"
+          >
+            <option>All Departments</option>
+            <option>Site Survey</option>
+            <option>Installation</option>
+            <option>Electrical</option>
+            <option>Compliance</option>
+          </select>
+          <select
+            class="px-3 py-2 border border-gray-200 rounded-lg text-[13px] text-gray-600 bg-white"
+          >
+            <option>All Phases</option>
+            <option>Pre-Installation</option>
+            <option>Installation</option>
+            <option>Commissioning</option>
+          </select>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <div class="bg-white rounded-lg border border-gray-100 p-4">
+            <div class="text-[12px] text-gray-500 mb-1">Total Templates</div>
+            <div class="text-2xl font-semibold text-gray-900">18</div>
+          </div>
+          <div class="bg-white rounded-lg border border-gray-100 p-4">
+            <div class="text-[12px] text-gray-500 mb-1">Active</div>
+            <div class="text-2xl font-semibold text-primary">15</div>
+          </div>
+          <div class="bg-white rounded-lg border border-gray-100 p-4">
+            <div class="text-[12px] text-gray-500 mb-1">Departments</div>
+            <div class="text-2xl font-semibold text-gray-900">5</div>
+          </div>
+          <div class="bg-white rounded-lg border border-gray-100 p-4">
+            <div class="text-[12px] text-gray-500 mb-1">Avg Duration</div>
+            <div class="text-2xl font-semibold text-gray-900">3.2 days</div>
+          </div>
+        </div>
+
+        <!-- Template Cards Grid -->
+        <div class="grid grid-cols-3 gap-4">
+          <!-- Template Card 1 -->
+          <div
+            class="template-card bg-white rounded-lg border border-gray-100 p-4 transition-all duration-200 cursor-pointer"
+            onclick="openEditModal()"
+          >
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <div class="flex items-center mb-1">
+                  <span class="text-[10px] font-mono text-gray-400 mr-2">TPL-001</span>
+                  <span class="px-1.5 py-0.5 text-[10px] bg-green-100 text-green-700 rounded"
+                    >Active</span
+                  >
+                </div>
+                <h3 class="text-[14px] font-medium text-gray-900">Site Survey</h3>
+              </div>
+              <span class="px-2 py-1 text-[11px] bg-blue-100 text-blue-700 rounded"
+                >Site Survey</span
+              >
+            </div>
+            <p class="text-[12px] text-gray-500 mb-3 line-clamp-2">
+              Complete site assessment including roof analysis, shading study, and electrical
+              infrastructure check.
+            </p>
+            <div class="flex items-center text-[12px] text-gray-500 mb-3">
+              <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>2 days</span>
+              <span class="mx-2">•</span>
+              <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
+              </svg>
+              <span>8 checklist items</span>
+            </div>
+            <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+              <span class="text-[11px] text-gray-400">Used 42 times</span>
+              <div class="flex space-x-2">
+                <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                    />
+                  </svg>
+                </button>
+                <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Template Card 2 -->
+          <div
+            class="template-card bg-white rounded-lg border border-gray-100 p-4 transition-all duration-200 cursor-pointer"
+          >
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <div class="flex items-center mb-1">
+                  <span class="text-[10px] font-mono text-gray-400 mr-2">TPL-002</span>
+                  <span class="px-1.5 py-0.5 text-[10px] bg-green-100 text-green-700 rounded"
+                    >Active</span
+                  >
+                </div>
+                <h3 class="text-[14px] font-medium text-gray-900">Structure Installation</h3>
+              </div>
+              <span class="px-2 py-1 text-[11px] bg-amber-100 text-amber-700 rounded"
+                >Installation</span
+              >
+            </div>
+            <p class="text-[12px] text-gray-500 mb-3 line-clamp-2">
+              Install mounting structure including rails, clamps, and brackets as per design
+              specifications.
+            </p>
+            <div class="flex items-center text-[12px] text-gray-500 mb-3">
+              <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>3 days</span>
+              <span class="mx-2">•</span>
+              <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
+              </svg>
+              <span>12 checklist items</span>
+            </div>
+            <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+              <span class="text-[11px] text-gray-400">Used 38 times</span>
+              <div class="flex space-x-2">
+                <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                    />
+                  </svg>
+                </button>
+                <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Template Card 3 -->
+          <div
+            class="template-card bg-white rounded-lg border border-gray-100 p-4 transition-all duration-200 cursor-pointer"
+          >
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <div class="flex items-center mb-1">
+                  <span class="text-[10px] font-mono text-gray-400 mr-2">TPL-003</span>
+                  <span class="px-1.5 py-0.5 text-[10px] bg-green-100 text-green-700 rounded"
+                    >Active</span
+                  >
+                </div>
+                <h3 class="text-[14px] font-medium text-gray-900">Panel Mounting</h3>
+              </div>
+              <span class="px-2 py-1 text-[11px] bg-amber-100 text-amber-700 rounded"
+                >Installation</span
+              >
+            </div>
+            <p class="text-[12px] text-gray-500 mb-3 line-clamp-2">
+              Mount solar panels on installed structure following safety protocols and manufacturer
+              guidelines.
+            </p>
+            <div class="flex items-center text-[12px] text-gray-500 mb-3">
+              <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>4 days</span>
+              <span class="mx-2">•</span>
+              <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
+              </svg>
+              <span>10 checklist items</span>
+            </div>
+            <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+              <span class="text-[11px] text-gray-400">Used 36 times</span>
+              <div class="flex space-x-2">
+                <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                    />
+                  </svg>
+                </button>
+                <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Template Card 4 -->
+          <div
+            class="template-card bg-white rounded-lg border border-gray-100 p-4 transition-all duration-200 cursor-pointer"
+          >
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <div class="flex items-center mb-1">
+                  <span class="text-[10px] font-mono text-gray-400 mr-2">TPL-004</span>
+                  <span class="px-1.5 py-0.5 text-[10px] bg-green-100 text-green-700 rounded"
+                    >Active</span
+                  >
+                </div>
+                <h3 class="text-[14px] font-medium text-gray-900">Electrical Wiring</h3>
+              </div>
+              <span class="px-2 py-1 text-[11px] bg-purple-100 text-purple-700 rounded"
+                >Electrical</span
+              >
+            </div>
+            <p class="text-[12px] text-gray-500 mb-3 line-clamp-2">
+              Complete DC and AC wiring including string connections, junction boxes, and main cable
+              runs.
+            </p>
+            <div class="flex items-center text-[12px] text-gray-500 mb-3">
+              <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>3 days</span>
+              <span class="mx-2">•</span>
+              <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
+              </svg>
+              <span>15 checklist items</span>
+            </div>
+            <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+              <span class="text-[11px] text-gray-400">Used 35 times</span>
+              <div class="flex space-x-2">
+                <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                    />
+                  </svg>
+                </button>
+                <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Template Card 5 -->
+          <div
+            class="template-card bg-white rounded-lg border border-gray-100 p-4 transition-all duration-200 cursor-pointer"
+          >
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <div class="flex items-center mb-1">
+                  <span class="text-[10px] font-mono text-gray-400 mr-2">TPL-005</span>
+                  <span class="px-1.5 py-0.5 text-[10px] bg-green-100 text-green-700 rounded"
+                    >Active</span
+                  >
+                </div>
+                <h3 class="text-[14px] font-medium text-gray-900">Inverter Installation</h3>
+              </div>
+              <span class="px-2 py-1 text-[11px] bg-purple-100 text-purple-700 rounded"
+                >Electrical</span
+              >
+            </div>
+            <p class="text-[12px] text-gray-500 mb-3 line-clamp-2">
+              Install and configure inverter including mounting, connections, and initial
+              programming.
+            </p>
+            <div class="flex items-center text-[12px] text-gray-500 mb-3">
+              <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>2 days</span>
+              <span class="mx-2">•</span>
+              <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
+              </svg>
+              <span>9 checklist items</span>
+            </div>
+            <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+              <span class="text-[11px] text-gray-400">Used 34 times</span>
+              <div class="flex space-x-2">
+                <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                    />
+                  </svg>
+                </button>
+                <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Template Card 6 -->
+          <div
+            class="template-card bg-white rounded-lg border border-gray-100 p-4 transition-all duration-200 cursor-pointer"
+          >
+            <div class="flex items-start justify-between mb-3">
+              <div>
+                <div class="flex items-center mb-1">
+                  <span class="text-[10px] font-mono text-gray-400 mr-2">TPL-006</span>
+                  <span class="px-1.5 py-0.5 text-[10px] bg-green-100 text-green-700 rounded"
+                    >Active</span
+                  >
+                </div>
+                <h3 class="text-[14px] font-medium text-gray-900">Net Metering Application</h3>
+              </div>
+              <span class="px-2 py-1 text-[11px] bg-red-100 text-red-700 rounded">Compliance</span>
+            </div>
+            <p class="text-[12px] text-gray-500 mb-3 line-clamp-2">
+              Submit net metering application to DISCOM including all required documentation and
+              follow-ups.
+            </p>
+            <div class="flex items-center text-[12px] text-gray-500 mb-3">
+              <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>5 days</span>
+              <span class="mx-2">•</span>
+              <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
+              </svg>
+              <span>7 checklist items</span>
+            </div>
+            <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+              <span class="text-[11px] text-gray-400">Used 32 times</span>
+              <div class="flex space-x-2">
+                <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                    />
+                  </svg>
+                </button>
+                <button class="p-1.5 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <!-- Create/Edit Modal -->
-    <div id="templateModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center" style="top: 0;">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-gray-900">Create Task Template</h2>
-                <button onclick="closeModal()" class="p-2 hover:bg-gray-100 rounded-lg">
-                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-            <div class="p-6 overflow-y-auto max-h-[calc(90vh-130px)]">
-                <div class="space-y-5">
-                    <!-- Template Name -->
-                    <div>
-                        <label class="block text-[13px] font-medium text-gray-700 mb-1.5">Template Name *</label>
-                        <input type="text" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-primary" placeholder="e.g., Site Survey">
-                    </div>
-
-                    <!-- Description -->
-                    <div>
-                        <label class="block text-[13px] font-medium text-gray-700 mb-1.5">Description</label>
-                        <textarea class="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-primary resize-none" rows="3" placeholder="Describe what this task involves..."></textarea>
-                    </div>
-
-                    <!-- Two columns -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-[13px] font-medium text-gray-700 mb-1.5">Department *</label>
-                            <select class="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-primary bg-white">
-                                <option>Select department...</option>
-                                <option>Site Survey</option>
-                                <option>Installation</option>
-                                <option>Electrical</option>
-                                <option>Compliance</option>
-                                <option>Documentation</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[13px] font-medium text-gray-700 mb-1.5">Default Role</label>
-                            <select class="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-primary bg-white">
-                                <option>Select role...</option>
-                                <option>Site Engineer</option>
-                                <option>Installation Lead</option>
-                                <option>Electrician</option>
-                                <option>Compliance Officer</option>
-                                <option>Project Manager</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-[13px] font-medium text-gray-700 mb-1.5">Estimated Duration (days)</label>
-                            <input type="number" class="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-primary" placeholder="3" value="3">
-                        </div>
-                        <div>
-                            <label class="block text-[13px] font-medium text-gray-700 mb-1.5">Default Priority</label>
-                            <select class="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-primary bg-white">
-                                <option>Medium</option>
-                                <option>Urgent</option>
-                                <option>High</option>
-                                <option>Low</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Dependencies -->
-                    <div>
-                        <label class="block text-[13px] font-medium text-gray-700 mb-1.5">Depends On (Templates)</label>
-                        <select class="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-primary bg-white" multiple>
-                            <option>TPL-001 Site Survey</option>
-                            <option>TPL-002 Structure Installation</option>
-                            <option>TPL-003 Panel Mounting</option>
-                        </select>
-                        <p class="text-[11px] text-gray-400 mt-1">Hold Ctrl/Cmd to select multiple</p>
-                    </div>
-
-                    <!-- Checklist -->
-                    <div>
-                        <label class="block text-[13px] font-medium text-gray-700 mb-1.5">Checklist Template</label>
-                        <div class="border border-gray-200 rounded-lg p-3 space-y-2">
-                            <div class="flex items-center">
-                                <input type="checkbox" class="w-4 h-4 rounded border-gray-300 mr-2" checked disabled>
-                                <input type="text" class="flex-1 px-2 py-1 text-[13px] border border-gray-100 rounded focus:outline-none focus:border-primary" value="Verify site accessibility">
-                                <button class="ml-2 p-1 hover:bg-gray-100 rounded text-gray-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-                            </div>
-                            <div class="flex items-center">
-                                <input type="checkbox" class="w-4 h-4 rounded border-gray-300 mr-2" checked disabled>
-                                <input type="text" class="flex-1 px-2 py-1 text-[13px] border border-gray-100 rounded focus:outline-none focus:border-primary" value="Complete safety check">
-                                <button class="ml-2 p-1 hover:bg-gray-100 rounded text-gray-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-                            </div>
-                            <div class="flex items-center">
-                                <input type="checkbox" class="w-4 h-4 rounded border-gray-300 mr-2" checked disabled>
-                                <input type="text" class="flex-1 px-2 py-1 text-[13px] border border-gray-100 rounded focus:outline-none focus:border-primary" value="Take required photographs">
-                                <button class="ml-2 p-1 hover:bg-gray-100 rounded text-gray-400"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-                            </div>
-                            <button class="w-full py-2 border border-dashed border-gray-200 rounded text-[12px] text-gray-500 hover:bg-gray-50">+ Add checklist item</button>
-                        </div>
-                    </div>
-
-                    <!-- Status -->
-                    <div class="flex items-center">
-                        <input type="checkbox" id="activeToggle" class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-2" checked>
-                        <label for="activeToggle" class="text-[13px] text-gray-700">Template is active and available for use</label>
-                    </div>
-                </div>
-            </div>
-            <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-end space-x-3">
-                <button onclick="closeModal()" class="px-4 py-2 border border-gray-200 rounded-lg text-[13px] text-gray-600 hover:bg-gray-50">Cancel</button>
-                <button class="px-4 py-2 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-primary-dark">Save Template</button>
-            </div>
+    <div
+      id="templateModal"
+      class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center"
+      style="top: 0"
+    >
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-900">Create Task Template</h2>
+          <button onclick="closeModal()" class="p-2 hover:bg-gray-100 rounded-lg">
+            <svg
+              class="w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
         </div>
+        <div class="p-6 overflow-y-auto max-h-[calc(90vh-130px)]">
+          <div class="space-y-5">
+            <!-- Template Name -->
+            <div>
+              <label class="block text-[13px] font-medium text-gray-700 mb-1.5"
+                >Template Name *</label
+              >
+              <input
+                type="text"
+                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-primary"
+                placeholder="e.g., Site Survey"
+              />
+            </div>
+
+            <!-- Description -->
+            <div>
+              <label class="block text-[13px] font-medium text-gray-700 mb-1.5">Description</label>
+              <textarea
+                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-primary resize-none"
+                rows="3"
+                placeholder="Describe what this task involves..."
+              ></textarea>
+            </div>
+
+            <!-- Two columns -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[13px] font-medium text-gray-700 mb-1.5"
+                  >Department *</label
+                >
+                <select
+                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-primary bg-white"
+                >
+                  <option>Select department...</option>
+                  <option>Site Survey</option>
+                  <option>Installation</option>
+                  <option>Electrical</option>
+                  <option>Compliance</option>
+                  <option>Documentation</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[13px] font-medium text-gray-700 mb-1.5"
+                  >Default Role</label
+                >
+                <select
+                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-primary bg-white"
+                >
+                  <option>Select role...</option>
+                  <option>Site Engineer</option>
+                  <option>Installation Lead</option>
+                  <option>Electrician</option>
+                  <option>Compliance Officer</option>
+                  <option>Project Manager</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[13px] font-medium text-gray-700 mb-1.5"
+                  >Estimated Duration (days)</label
+                >
+                <input
+                  type="number"
+                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-primary"
+                  placeholder="3"
+                  value="3"
+                />
+              </div>
+              <div>
+                <label class="block text-[13px] font-medium text-gray-700 mb-1.5"
+                  >Default Priority</label
+                >
+                <select
+                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-primary bg-white"
+                >
+                  <option>Medium</option>
+                  <option>Urgent</option>
+                  <option>High</option>
+                  <option>Low</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Dependencies -->
+            <div>
+              <label class="block text-[13px] font-medium text-gray-700 mb-1.5"
+                >Depends On (Templates)</label
+              >
+              <select
+                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] focus:outline-none focus:border-primary bg-white"
+                multiple
+              >
+                <option>TPL-001 Site Survey</option>
+                <option>TPL-002 Structure Installation</option>
+                <option>TPL-003 Panel Mounting</option>
+              </select>
+              <p class="text-[11px] text-gray-400 mt-1">Hold Ctrl/Cmd to select multiple</p>
+            </div>
+
+            <!-- Checklist -->
+            <div>
+              <label class="block text-[13px] font-medium text-gray-700 mb-1.5"
+                >Checklist Template</label
+              >
+              <div class="border border-gray-200 rounded-lg p-3 space-y-2">
+                <div class="flex items-center">
+                  <input
+                    type="checkbox"
+                    class="w-4 h-4 rounded border-gray-300 mr-2"
+                    checked
+                    disabled
+                  />
+                  <input
+                    type="text"
+                    class="flex-1 px-2 py-1 text-[13px] border border-gray-100 rounded focus:outline-none focus:border-primary"
+                    value="Verify site accessibility"
+                  />
+                  <button class="ml-2 p-1 hover:bg-gray-100 rounded text-gray-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div class="flex items-center">
+                  <input
+                    type="checkbox"
+                    class="w-4 h-4 rounded border-gray-300 mr-2"
+                    checked
+                    disabled
+                  />
+                  <input
+                    type="text"
+                    class="flex-1 px-2 py-1 text-[13px] border border-gray-100 rounded focus:outline-none focus:border-primary"
+                    value="Complete safety check"
+                  />
+                  <button class="ml-2 p-1 hover:bg-gray-100 rounded text-gray-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div class="flex items-center">
+                  <input
+                    type="checkbox"
+                    class="w-4 h-4 rounded border-gray-300 mr-2"
+                    checked
+                    disabled
+                  />
+                  <input
+                    type="text"
+                    class="flex-1 px-2 py-1 text-[13px] border border-gray-100 rounded focus:outline-none focus:border-primary"
+                    value="Take required photographs"
+                  />
+                  <button class="ml-2 p-1 hover:bg-gray-100 rounded text-gray-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <button
+                  class="w-full py-2 border border-dashed border-gray-200 rounded text-[12px] text-gray-500 hover:bg-gray-50"
+                >
+                  + Add checklist item
+                </button>
+              </div>
+            </div>
+
+            <!-- Status -->
+            <div class="flex items-center">
+              <input
+                type="checkbox"
+                id="activeToggle"
+                class="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary mr-2"
+                checked
+              />
+              <label for="activeToggle" class="text-[13px] text-gray-700"
+                >Template is active and available for use</label
+              >
+            </div>
+          </div>
+        </div>
+        <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-end space-x-3">
+          <button
+            onclick="closeModal()"
+            class="px-4 py-2 border border-gray-200 rounded-lg text-[13px] text-gray-600 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            class="px-4 py-2 bg-primary text-white rounded-lg text-[13px] font-medium hover:bg-primary-dark"
+          >
+            Save Template
+          </button>
+        </div>
+      </div>
     </div>
 
     <script>
-        function openCreateModal() {
-            document.getElementById('templateModal').classList.remove('hidden');
-            document.getElementById('templateModal').classList.add('flex');
-        }
-        function openEditModal() {
-            openCreateModal();
-        }
-        function closeModal() {
-            document.getElementById('templateModal').classList.add('hidden');
-            document.getElementById('templateModal').classList.remove('flex');
-        }
+      function openCreateModal() {
+        document.getElementById('templateModal').classList.remove('hidden');
+        document.getElementById('templateModal').classList.add('flex');
+      }
+      function openEditModal() {
+        openCreateModal();
+      }
+      function closeModal() {
+        document.getElementById('templateModal').classList.add('hidden');
+        document.getElementById('templateModal').classList.remove('flex');
+      }
     </script>
-</body>
+  </body>
 </html>

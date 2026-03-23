@@ -1,300 +1,419 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Purchase Orders - OneOhm Solar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#F97316',
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#F97316',
+            },
+          },
+        },
+      };
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+      body {
+        font-family: 'Inter', sans-serif;
+      }
     </style>
-</head>
-<body class="bg-gray-50">
+  </head>
+  <body class="bg-gray-50">
     <div class="flex h-screen">
-        <!-- Sidebar -->
-        <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
-            <div class="p-6 border-b border-gray-700">
-                <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
-                <p class="text-gray-400 text-sm mt-1">Purchase Orders</p>
-            </div>
-            
-            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-                <a href="../admin/admin-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                    </svg>
-                    <span>Dashboard</span>
-                </a>
-                <a href="vendor-database.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-                    <span>Vendor Database</span>
-                </a>
-                <a href="purchase-orders.html" class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
-                    </svg>
-                    <span>Purchase Orders</span>
-                </a>
-                <a href="vendor-payments.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-                    <span>Vendor Payments</span>
-                </a>
-            </nav>
-
-            <div class="p-4 border-t border-gray-700">
-                <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
-                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">SA</div>
-                    <div class="flex-1 min-w-0">
-                        <p class="font-semibold text-sm truncate">Super Admin</p>
-                        <p class="text-xs text-gray-400 truncate">Administrator</p>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Top Bar -->
-            <header class="bg-white border-b border-gray-200 px-8 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-900">Purchase Order Management</h2>
-                        <p class="text-sm text-gray-600">Track and manage vendor purchase orders</p>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <button class="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold hover:bg-gray-50">Export Report</button>
-                        <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600">+ Create PO</button>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Stats -->
-            <div class="bg-white border-b border-gray-200 px-8 py-6">
-                <div class="grid grid-cols-6 gap-4">
-                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border-2 border-blue-200">
-                        <p class="text-3xl font-bold text-blue-600">156</p>
-                        <p class="text-xs text-gray-600">Total POs</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-4 border-2 border-yellow-200">
-                        <p class="text-3xl font-bold text-yellow-600">24</p>
-                        <p class="text-xs text-gray-600">Pending</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border-2 border-purple-200">
-                        <p class="text-3xl font-bold text-purple-600">18</p>
-                        <p class="text-xs text-gray-600">Approved</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-4 border-2 border-indigo-200">
-                        <p class="text-3xl font-bold text-indigo-600">42</p>
-                        <p class="text-xs text-gray-600">In Transit</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border-2 border-green-200">
-                        <p class="text-3xl font-bold text-green-600">68</p>
-                        <p class="text-xs text-gray-600">Delivered</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 border-2 border-red-200">
-                        <p class="text-3xl font-bold text-red-600">4</p>
-                        <p class="text-xs text-gray-600">Cancelled</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Filters -->
-            <div class="bg-white border-b border-gray-200 px-8 py-4">
-                <div class="flex items-center space-x-4">
-                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
-                        <option>All Status</option>
-                        <option>Draft</option>
-                        <option>Pending Approval</option>
-                        <option>Approved</option>
-                        <option>Sent to Vendor</option>
-                        <option>In Transit</option>
-                        <option>Delivered</option>
-                    </select>
-                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
-                        <option>All Vendors</option>
-                        <option>Waaree Solar</option>
-                        <option>Luminous</option>
-                        <option>Tata Power</option>
-                    </select>
-                    <input type="date" class="px-4 py-2 border border-gray-300 rounded-lg">
-                    <div class="flex-1"></div>
-                    <input type="text" placeholder="Search PO..." class="px-4 py-2 border border-gray-300 rounded-lg w-64">
-                </div>
-            </div>
-
-            <!-- PO List -->
-            <main class="flex-1 overflow-y-auto p-8">
-                <div class="space-y-4">
-                    <!-- PO 1 - Pending Approval -->
-                    <div class="bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 rounded-xl p-6 hover:shadow-lg transition-shadow">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex-1">
-                                <div class="flex items-center space-x-3 mb-2">
-                                    <h3 class="text-xl font-bold text-gray-900">PO-2025-0148</h3>
-                                    <span class="px-3 py-1 bg-yellow-500 text-white text-xs font-bold rounded-full">PENDING APPROVAL</span>
-                                    <span class="px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full">URGENT</span>
-                                </div>
-                                <div class="grid grid-cols-5 gap-6 mb-4">
-                                    <div>
-                                        <p class="text-xs text-gray-600">Vendor</p>
-                                        <p class="font-semibold text-gray-900">Luminous Power</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-600">PO Date</p>
-                                        <p class="font-semibold text-gray-900">Oct 27, 2025</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-600">Expected Delivery</p>
-                                        <p class="font-semibold text-red-600">Nov 5, 2025</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-600">Total Amount</p>
-                                        <p class="font-bold text-gray-900">₹7,80,300</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-600">Items</p>
-                                        <p class="font-semibold text-gray-900">27 units</p>
-                                    </div>
-                                </div>
-                                <div class="bg-white rounded-lg p-4 border border-yellow-200 mb-3">
-                                    <p class="text-sm font-semibold text-gray-900 mb-2">Items Summary:</p>
-                                    <p class="text-sm text-gray-700">• Luminous 5kW Inverter (27 units) - ₹7,80,300</p>
-                                    <p class="text-xs text-gray-500 mt-2">Required for Project: PRJ-2025-085, PRJ-2025-086</p>
-                                </div>
-                            </div>
-                            <div class="flex flex-col space-y-2 ml-4">
-                                <button class="px-6 py-2 bg-green-600 text-white rounded-lg font-semibold text-sm hover:bg-green-700">✓ Approve</button>
-                                <button class="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold text-sm hover:bg-red-700">✗ Reject</button>
-                                <button class="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-50">View Details</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- PO 2 - In Transit -->
-                    <div class="bg-gradient-to-r from-indigo-50 to-blue-50 border-2 border-indigo-200 rounded-xl p-6 hover:shadow-lg transition-shadow">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex-1">
-                                <div class="flex items-center space-x-3 mb-2">
-                                    <h3 class="text-xl font-bold text-gray-900">PO-2025-0142</h3>
-                                    <span class="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full">IN TRANSIT</span>
-                                </div>
-                                <div class="grid grid-cols-5 gap-6 mb-4">
-                                    <div>
-                                        <p class="text-xs text-gray-600">Vendor</p>
-                                        <p class="font-semibold text-gray-900">Waaree Solar</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-600">Dispatch Date</p>
-                                        <p class="font-semibold text-gray-900">Oct 23, 2025</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-600">Expected Delivery</p>
-                                        <p class="font-semibold text-indigo-600">Oct 30, 2025</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-600">Total Amount</p>
-                                        <p class="font-bold text-gray-900">₹8,25,000</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-600">Tracking</p>
-                                        <p class="font-semibold text-indigo-600">TRK-89456</p>
-                                    </div>
-                                </div>
-                                <div class="bg-white rounded-lg p-4 border border-indigo-200 mb-3">
-                                    <p class="text-sm font-semibold text-gray-900 mb-2">Shipment Details:</p>
-                                    <p class="text-sm text-gray-700">• Waaree 540W Solar Panel (50 units)</p>
-                                    <div class="mt-3">
-                                        <div class="flex items-center justify-between mb-1">
-                                            <span class="text-xs text-gray-600">Delivery Progress</span>
-                                            <span class="text-xs text-indigo-600 font-bold">75%</span>
-                                        </div>
-                                        <div class="w-full bg-gray-200 rounded-full h-2">
-                                            <div class="bg-indigo-600 h-2 rounded-full" style="width: 75%"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="flex flex-col space-y-2 ml-4">
-                                <button class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-semibold text-sm hover:bg-indigo-700">Track Shipment</button>
-                                <button class="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-50">View Details</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- PO 3 - Delivered -->
-                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex-1">
-                                <div class="flex items-center space-x-3 mb-2">
-                                    <h3 class="text-xl font-bold text-gray-900">PO-2025-0138</h3>
-                                    <span class="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full">✓ DELIVERED</span>
-                                </div>
-                                <div class="grid grid-cols-5 gap-6 mb-4">
-                                    <div>
-                                        <p class="text-xs text-gray-600">Vendor</p>
-                                        <p class="font-semibold text-gray-900">Exide Industries</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-600">Delivered On</p>
-                                        <p class="font-semibold text-green-600">Oct 25, 2025</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-600">Received By</p>
-                                        <p class="font-semibold text-gray-900">Ramesh Patil</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-600">Total Amount</p>
-                                        <p class="font-bold text-gray-900">₹4,62,500</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-600">Payment Status</p>
-                                        <p class="font-semibold text-yellow-600">Pending</p>
-                                    </div>
-                                </div>
-                                <div class="bg-white rounded-lg p-4 border border-green-200">
-                                    <p class="text-sm text-green-800 font-semibold mb-2">✓ Successfully delivered and received</p>
-                                    <p class="text-sm text-gray-700">• Exide 150Ah Tubular Battery (25 units)</p>
-                                    <p class="text-xs text-gray-500 mt-2">Quality check passed • GRN: GRN-2025-0485</p>
-                                </div>
-                            </div>
-                            <div class="flex flex-col space-y-2 ml-4">
-                                <button class="px-6 py-2 bg-primary text-white rounded-lg font-semibold text-sm hover:bg-orange-600">Process Payment</button>
-                                <button class="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-50">View GRN</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Pagination -->
-                <div class="mt-8 flex items-center justify-between">
-                    <p class="text-sm text-gray-600">Showing 1 to 3 of 156 purchase orders</p>
-                    <div class="flex space-x-2">
-                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Previous</button>
-                        <button class="px-4 py-2 bg-primary text-white rounded-lg">1</button>
-                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">2</button>
-                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">3</button>
-                        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Next</button>
-                    </div>
-                </div>
-            </main>
+      <!-- Sidebar -->
+      <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
+        <div class="p-6 border-b border-gray-700">
+          <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
+          <p class="text-gray-400 text-sm mt-1">Purchase Orders</p>
         </div>
-    </div>
-</body>
-</html>
 
+        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+          <a
+            href="../admin/admin-dashboard.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              ></path>
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a
+            href="vendor-database.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              ></path>
+            </svg>
+            <span>Vendor Database</span>
+          </a>
+          <a
+            href="purchase-orders.html"
+            class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold"
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                clip-rule="evenodd"
+              ></path>
+            </svg>
+            <span>Purchase Orders</span>
+          </a>
+          <a
+            href="vendor-payments.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+              ></path>
+            </svg>
+            <span>Vendor Payments</span>
+          </a>
+        </nav>
+
+        <div class="p-4 border-t border-gray-700">
+          <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
+            <div
+              class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold"
+            >
+              SA
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm truncate">Super Admin</p>
+              <p class="text-xs text-gray-400 truncate">Administrator</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Top Bar -->
+        <header class="bg-white border-b border-gray-200 px-8 py-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900">Purchase Order Management</h2>
+              <p class="text-sm text-gray-600">Track and manage vendor purchase orders</p>
+            </div>
+            <div class="flex items-center space-x-3">
+              <button
+                class="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold hover:bg-gray-50"
+              >
+                Export Report
+              </button>
+              <button
+                class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600"
+              >
+                + Create PO
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <!-- Stats -->
+        <div class="bg-white border-b border-gray-200 px-8 py-6">
+          <div class="grid grid-cols-6 gap-4">
+            <div
+              class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border-2 border-blue-200"
+            >
+              <p class="text-3xl font-bold text-blue-600">156</p>
+              <p class="text-xs text-gray-600">Total POs</p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-4 border-2 border-yellow-200"
+            >
+              <p class="text-3xl font-bold text-yellow-600">24</p>
+              <p class="text-xs text-gray-600">Pending</p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border-2 border-purple-200"
+            >
+              <p class="text-3xl font-bold text-purple-600">18</p>
+              <p class="text-xs text-gray-600">Approved</p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-4 border-2 border-indigo-200"
+            >
+              <p class="text-3xl font-bold text-indigo-600">42</p>
+              <p class="text-xs text-gray-600">In Transit</p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border-2 border-green-200"
+            >
+              <p class="text-3xl font-bold text-green-600">68</p>
+              <p class="text-xs text-gray-600">Delivered</p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 border-2 border-red-200"
+            >
+              <p class="text-3xl font-bold text-red-600">4</p>
+              <p class="text-xs text-gray-600">Cancelled</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white border-b border-gray-200 px-8 py-4">
+          <div class="flex items-center space-x-4">
+            <select class="px-4 py-2 border border-gray-300 rounded-lg">
+              <option>All Status</option>
+              <option>Draft</option>
+              <option>Pending Approval</option>
+              <option>Approved</option>
+              <option>Sent to Vendor</option>
+              <option>In Transit</option>
+              <option>Delivered</option>
+            </select>
+            <select class="px-4 py-2 border border-gray-300 rounded-lg">
+              <option>All Vendors</option>
+              <option>Waaree Solar</option>
+              <option>Luminous</option>
+              <option>Tata Power</option>
+            </select>
+            <input type="date" class="px-4 py-2 border border-gray-300 rounded-lg" />
+            <div class="flex-1"></div>
+            <input
+              type="text"
+              placeholder="Search PO..."
+              class="px-4 py-2 border border-gray-300 rounded-lg w-64"
+            />
+          </div>
+        </div>
+
+        <!-- PO List -->
+        <main class="flex-1 overflow-y-auto p-8">
+          <div class="space-y-4">
+            <!-- PO 1 - Pending Approval -->
+            <div
+              class="bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-300 rounded-xl p-6 hover:shadow-lg transition-shadow"
+            >
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                  <div class="flex items-center space-x-3 mb-2">
+                    <h3 class="text-xl font-bold text-gray-900">PO-2025-0148</h3>
+                    <span class="px-3 py-1 bg-yellow-500 text-white text-xs font-bold rounded-full"
+                      >PENDING APPROVAL</span
+                    >
+                    <span class="px-3 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full"
+                      >URGENT</span
+                    >
+                  </div>
+                  <div class="grid grid-cols-5 gap-6 mb-4">
+                    <div>
+                      <p class="text-xs text-gray-600">Vendor</p>
+                      <p class="font-semibold text-gray-900">Luminous Power</p>
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-600">PO Date</p>
+                      <p class="font-semibold text-gray-900">Oct 27, 2025</p>
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-600">Expected Delivery</p>
+                      <p class="font-semibold text-red-600">Nov 5, 2025</p>
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-600">Total Amount</p>
+                      <p class="font-bold text-gray-900">₹7,80,300</p>
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-600">Items</p>
+                      <p class="font-semibold text-gray-900">27 units</p>
+                    </div>
+                  </div>
+                  <div class="bg-white rounded-lg p-4 border border-yellow-200 mb-3">
+                    <p class="text-sm font-semibold text-gray-900 mb-2">Items Summary:</p>
+                    <p class="text-sm text-gray-700">
+                      • Luminous 5kW Inverter (27 units) - ₹7,80,300
+                    </p>
+                    <p class="text-xs text-gray-500 mt-2">
+                      Required for Project: PRJ-2025-085, PRJ-2025-086
+                    </p>
+                  </div>
+                </div>
+                <div class="flex flex-col space-y-2 ml-4">
+                  <button
+                    class="px-6 py-2 bg-green-600 text-white rounded-lg font-semibold text-sm hover:bg-green-700"
+                  >
+                    ✓ Approve
+                  </button>
+                  <button
+                    class="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold text-sm hover:bg-red-700"
+                  >
+                    ✗ Reject
+                  </button>
+                  <button
+                    class="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-50"
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- PO 2 - In Transit -->
+            <div
+              class="bg-gradient-to-r from-indigo-50 to-blue-50 border-2 border-indigo-200 rounded-xl p-6 hover:shadow-lg transition-shadow"
+            >
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                  <div class="flex items-center space-x-3 mb-2">
+                    <h3 class="text-xl font-bold text-gray-900">PO-2025-0142</h3>
+                    <span
+                      class="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full"
+                      >IN TRANSIT</span
+                    >
+                  </div>
+                  <div class="grid grid-cols-5 gap-6 mb-4">
+                    <div>
+                      <p class="text-xs text-gray-600">Vendor</p>
+                      <p class="font-semibold text-gray-900">Waaree Solar</p>
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-600">Dispatch Date</p>
+                      <p class="font-semibold text-gray-900">Oct 23, 2025</p>
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-600">Expected Delivery</p>
+                      <p class="font-semibold text-indigo-600">Oct 30, 2025</p>
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-600">Total Amount</p>
+                      <p class="font-bold text-gray-900">₹8,25,000</p>
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-600">Tracking</p>
+                      <p class="font-semibold text-indigo-600">TRK-89456</p>
+                    </div>
+                  </div>
+                  <div class="bg-white rounded-lg p-4 border border-indigo-200 mb-3">
+                    <p class="text-sm font-semibold text-gray-900 mb-2">Shipment Details:</p>
+                    <p class="text-sm text-gray-700">• Waaree 540W Solar Panel (50 units)</p>
+                    <div class="mt-3">
+                      <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs text-gray-600">Delivery Progress</span>
+                        <span class="text-xs text-indigo-600 font-bold">75%</span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-indigo-600 h-2 rounded-full" style="width: 75%"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex flex-col space-y-2 ml-4">
+                  <button
+                    class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-semibold text-sm hover:bg-indigo-700"
+                  >
+                    Track Shipment
+                  </button>
+                  <button
+                    class="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-50"
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- PO 3 - Delivered -->
+            <div
+              class="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6"
+            >
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                  <div class="flex items-center space-x-3 mb-2">
+                    <h3 class="text-xl font-bold text-gray-900">PO-2025-0138</h3>
+                    <span class="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full"
+                      >✓ DELIVERED</span
+                    >
+                  </div>
+                  <div class="grid grid-cols-5 gap-6 mb-4">
+                    <div>
+                      <p class="text-xs text-gray-600">Vendor</p>
+                      <p class="font-semibold text-gray-900">Exide Industries</p>
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-600">Delivered On</p>
+                      <p class="font-semibold text-green-600">Oct 25, 2025</p>
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-600">Received By</p>
+                      <p class="font-semibold text-gray-900">Ramesh Patil</p>
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-600">Total Amount</p>
+                      <p class="font-bold text-gray-900">₹4,62,500</p>
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-600">Payment Status</p>
+                      <p class="font-semibold text-yellow-600">Pending</p>
+                    </div>
+                  </div>
+                  <div class="bg-white rounded-lg p-4 border border-green-200">
+                    <p class="text-sm text-green-800 font-semibold mb-2">
+                      ✓ Successfully delivered and received
+                    </p>
+                    <p class="text-sm text-gray-700">• Exide 150Ah Tubular Battery (25 units)</p>
+                    <p class="text-xs text-gray-500 mt-2">
+                      Quality check passed • GRN: GRN-2025-0485
+                    </p>
+                  </div>
+                </div>
+                <div class="flex flex-col space-y-2 ml-4">
+                  <button
+                    class="px-6 py-2 bg-primary text-white rounded-lg font-semibold text-sm hover:bg-orange-600"
+                  >
+                    Process Payment
+                  </button>
+                  <button
+                    class="px-6 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-50"
+                  >
+                    View GRN
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pagination -->
+          <div class="mt-8 flex items-center justify-between">
+            <p class="text-sm text-gray-600">Showing 1 to 3 of 156 purchase orders</p>
+            <div class="flex space-x-2">
+              <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                Previous
+              </button>
+              <button class="px-4 py-2 bg-primary text-white rounded-lg">1</button>
+              <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                2
+              </button>
+              <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                3
+              </button>
+              <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                Next
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

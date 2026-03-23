@@ -1,323 +1,389 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Projects - OneOhm Solar ERP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#F97316',
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#F97316',
+            },
+          },
+        },
+      };
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+      body {
+        font-family: 'Inter', sans-serif;
+      }
     </style>
-</head>
-<body class="bg-gray-50">
+  </head>
+  <body class="bg-gray-50">
     <div class="flex h-screen">
-        <!-- Sidebar -->
-        <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
-            <div class="p-6 border-b border-gray-700">
-                <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
-                <p class="text-gray-400 text-sm mt-1">ERP System</p>
-            </div>
-            
-            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-                <a href="admin-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                    </svg>
-                    <span>Dashboard</span>
-                </a>
-                <a href="admin-leads.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-                    <span>Leads</span>
-                </a>
-                <a href="admin-projects.html" class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2h-1.528A6 6 0 004 9.528V4z"></path>
-                        <path fill-rule="evenodd" d="M8 10a4 4 0 00-3.446 6.032l-1.261 1.26a1 1 0 101.414 1.415l1.261-1.261A4 4 0 108 10zm-2 4a2 2 0 114 0 2 2 0 01-4 0z" clip-rule="evenodd"></path>
-                    </svg>
-                    <span>Projects</span>
-                </a>
-                <a href="admin-quotes.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <span>Quotes</span>
-                </a>
-                <a href="admin-payments.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span>Payments</span>
-                </a>
-            </nav>
-
-            <div class="p-4 border-t border-gray-700">
-                <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
-                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
-                        SA
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="font-semibold text-sm truncate">Super Admin</p>
-                        <p class="text-xs text-gray-400 truncate">admin@oneohm.com</p>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Top Bar -->
-            <header class="bg-white border-b border-gray-200 px-8 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-900">Projects</h2>
-                        <p class="text-sm text-gray-600">Track and manage all installation projects</p>
-                    </div>
-                    <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600">
-                        + New Project
-                    </button>
-                </div>
-            </header>
-
-            <!-- Stats Bar -->
-            <div class="bg-white border-b border-gray-200 px-8 py-4">
-                <div class="grid grid-cols-6 gap-4">
-                    <div class="text-center">
-                        <p class="text-2xl font-bold text-gray-900">42</p>
-                        <p class="text-xs text-gray-600">Active</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-2xl font-bold text-blue-600">8</p>
-                        <p class="text-xs text-gray-600">Design</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-2xl font-bold text-yellow-600">12</p>
-                        <p class="text-xs text-gray-600">Installation</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-2xl font-bold text-purple-600">6</p>
-                        <p class="text-xs text-gray-600">Net Metering</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-2xl font-bold text-green-600">16</p>
-                        <p class="text-xs text-gray-600">Completed</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-2xl font-bold text-gray-600">156</p>
-                        <p class="text-xs text-gray-600">Total</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Filters -->
-            <div class="bg-white border-b border-gray-200 px-8 py-4">
-                <div class="flex items-center space-x-4">
-                    <input type="text" placeholder="Search projects..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg">
-                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
-                        <option>All Status</option>
-                        <option>In Progress</option>
-                        <option>Completed</option>
-                        <option>On Hold</option>
-                    </select>
-                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
-                        <option>All Types</option>
-                        <option>Residential</option>
-                        <option>Commercial</option>
-                        <option>Industrial</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Projects Grid -->
-            <main class="flex-1 overflow-y-auto p-8">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Project Card 1 -->
-                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-primary transition-all">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex-1">
-                                <h3 class="text-lg font-bold text-gray-900 mb-1">PRJ-2025-042</h3>
-                                <p class="text-sm text-gray-600">Rajesh Patel</p>
-                                <p class="text-xs text-gray-500 mt-1">Mumbai, Maharashtra</p>
-                            </div>
-                            <span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full">In Progress</span>
-                        </div>
-
-                        <div class="grid grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
-                            <div>
-                                <p class="text-xs text-gray-500 mb-1">Type</p>
-                                <p class="text-sm font-semibold text-gray-900">Residential</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500 mb-1">Capacity</p>
-                                <p class="text-sm font-semibold text-gray-900">10 kW</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500 mb-1">Value</p>
-                                <p class="text-sm font-semibold text-primary">₹5.45L</p>
-                            </div>
-                        </div>
-
-                        <div class="mb-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-sm font-semibold text-gray-700">Installation Phase</span>
-                                <span class="text-sm font-bold text-gray-900">65%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-yellow-500 h-2 rounded-full" style="width: 65%"></div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between text-sm">
-                            <div>
-                                <p class="text-xs text-gray-500">Start Date</p>
-                                <p class="font-semibold text-gray-900">Oct 10, 2025</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs text-gray-500">Est. Completion</p>
-                                <p class="font-semibold text-gray-900">Nov 15, 2025</p>
-                            </div>
-                        </div>
-
-                        <div class="flex space-x-2 mt-4">
-                            <button class="flex-1 py-2 bg-primary text-white rounded-lg font-semibold text-sm hover:bg-orange-600">
-                                View Details
-                            </button>
-                            <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-200">
-                                Timeline
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Project Card 2 -->
-                    <div class="bg-white border-2 border-green-200 rounded-xl p-6">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex-1">
-                                <h3 class="text-lg font-bold text-gray-900 mb-1">PRJ-2025-038</h3>
-                                <p class="text-sm text-gray-600">Sunita Sharma</p>
-                                <p class="text-xs text-gray-500 mt-1">Pune, Maharashtra</p>
-                            </div>
-                            <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">Completed</span>
-                        </div>
-
-                        <div class="grid grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
-                            <div>
-                                <p class="text-xs text-gray-500 mb-1">Type</p>
-                                <p class="text-sm font-semibold text-gray-900">Commercial</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500 mb-1">Capacity</p>
-                                <p class="text-sm font-semibold text-gray-900">25 kW</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500 mb-1">Value</p>
-                                <p class="text-sm font-semibold text-primary">₹12.25L</p>
-                            </div>
-                        </div>
-
-                        <div class="mb-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-sm font-semibold text-gray-700">Project Complete</span>
-                                <span class="text-sm font-bold text-green-600">100%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-green-500 h-2 rounded-full" style="width: 100%"></div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between text-sm">
-                            <div>
-                                <p class="text-xs text-gray-500">Start Date</p>
-                                <p class="font-semibold text-gray-900">Sept 1, 2025</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs text-gray-500">Completed On</p>
-                                <p class="font-semibold text-green-600">Oct 20, 2025</p>
-                            </div>
-                        </div>
-
-                        <div class="flex space-x-2 mt-4">
-                            <button class="flex-1 py-2 bg-primary text-white rounded-lg font-semibold text-sm">
-                                View Details
-                            </button>
-                            <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm">
-                                Report
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Project Card 3 -->
-                    <div class="bg-white border-2 border-blue-200 rounded-xl p-6">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex-1">
-                                <h3 class="text-lg font-bold text-gray-900 mb-1">PRJ-2025-040</h3>
-                                <p class="text-sm text-gray-600">Anil Verma</p>
-                                <p class="text-xs text-gray-500 mt-1">Delhi, Delhi</p>
-                            </div>
-                            <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">Design</span>
-                        </div>
-
-                        <div class="grid grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
-                            <div>
-                                <p class="text-xs text-gray-500 mb-1">Type</p>
-                                <p class="text-sm font-semibold text-gray-900">Residential</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500 mb-1">Capacity</p>
-                                <p class="text-sm font-semibold text-gray-900">8 kW</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500 mb-1">Value</p>
-                                <p class="text-sm font-semibold text-primary">₹4.80L</p>
-                            </div>
-                        </div>
-
-                        <div class="mb-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-sm font-semibold text-gray-700">Design Phase</span>
-                                <span class="text-sm font-bold text-gray-900">30%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-blue-500 h-2 rounded-full" style="width: 30%"></div>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between text-sm">
-                            <div>
-                                <p class="text-xs text-gray-500">Start Date</p>
-                                <p class="font-semibold text-gray-900">Oct 20, 2025</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs text-gray-500">Est. Completion</p>
-                                <p class="font-semibold text-gray-900">Dec 5, 2025</p>
-                            </div>
-                        </div>
-
-                        <div class="flex space-x-2 mt-4">
-                            <button class="flex-1 py-2 bg-primary text-white rounded-lg font-semibold text-sm">
-                                View Details
-                            </button>
-                            <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm">
-                                Timeline
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </main>
+      <!-- Sidebar -->
+      <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
+        <div class="p-6 border-b border-gray-700">
+          <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
+          <p class="text-gray-400 text-sm mt-1">ERP System</p>
         </div>
-    </div>
-</body>
-</html>
 
+        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+          <a
+            href="admin-dashboard.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              ></path>
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a
+            href="admin-leads.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              ></path>
+            </svg>
+            <span>Leads</span>
+          </a>
+          <a
+            href="admin-projects.html"
+            class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold"
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2h-1.528A6 6 0 004 9.528V4z"
+              ></path>
+              <path
+                fill-rule="evenodd"
+                d="M8 10a4 4 0 00-3.446 6.032l-1.261 1.26a1 1 0 101.414 1.415l1.261-1.261A4 4 0 108 10zm-2 4a2 2 0 114 0 2 2 0 01-4 0z"
+                clip-rule="evenodd"
+              ></path>
+            </svg>
+            <span>Projects</span>
+          </a>
+          <a
+            href="admin-quotes.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              ></path>
+            </svg>
+            <span>Quotes</span>
+          </a>
+          <a
+            href="admin-payments.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            <span>Payments</span>
+          </a>
+        </nav>
+
+        <div class="p-4 border-t border-gray-700">
+          <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
+            <div
+              class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold"
+            >
+              SA
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm truncate">Super Admin</p>
+              <p class="text-xs text-gray-400 truncate">admin@oneohm.com</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Top Bar -->
+        <header class="bg-white border-b border-gray-200 px-8 py-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900">Projects</h2>
+              <p class="text-sm text-gray-600">Track and manage all installation projects</p>
+            </div>
+            <button
+              class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600"
+            >
+              + New Project
+            </button>
+          </div>
+        </header>
+
+        <!-- Stats Bar -->
+        <div class="bg-white border-b border-gray-200 px-8 py-4">
+          <div class="grid grid-cols-6 gap-4">
+            <div class="text-center">
+              <p class="text-2xl font-bold text-gray-900">42</p>
+              <p class="text-xs text-gray-600">Active</p>
+            </div>
+            <div class="text-center">
+              <p class="text-2xl font-bold text-blue-600">8</p>
+              <p class="text-xs text-gray-600">Design</p>
+            </div>
+            <div class="text-center">
+              <p class="text-2xl font-bold text-yellow-600">12</p>
+              <p class="text-xs text-gray-600">Installation</p>
+            </div>
+            <div class="text-center">
+              <p class="text-2xl font-bold text-purple-600">6</p>
+              <p class="text-xs text-gray-600">Net Metering</p>
+            </div>
+            <div class="text-center">
+              <p class="text-2xl font-bold text-green-600">16</p>
+              <p class="text-xs text-gray-600">Completed</p>
+            </div>
+            <div class="text-center">
+              <p class="text-2xl font-bold text-gray-600">156</p>
+              <p class="text-xs text-gray-600">Total</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white border-b border-gray-200 px-8 py-4">
+          <div class="flex items-center space-x-4">
+            <input
+              type="text"
+              placeholder="Search projects..."
+              class="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
+            />
+            <select class="px-4 py-2 border border-gray-300 rounded-lg">
+              <option>All Status</option>
+              <option>In Progress</option>
+              <option>Completed</option>
+              <option>On Hold</option>
+            </select>
+            <select class="px-4 py-2 border border-gray-300 rounded-lg">
+              <option>All Types</option>
+              <option>Residential</option>
+              <option>Commercial</option>
+              <option>Industrial</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Projects Grid -->
+        <main class="flex-1 overflow-y-auto p-8">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Project Card 1 -->
+            <div
+              class="bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-primary transition-all"
+            >
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                  <h3 class="text-lg font-bold text-gray-900 mb-1">PRJ-2025-042</h3>
+                  <p class="text-sm text-gray-600">Rajesh Patel</p>
+                  <p class="text-xs text-gray-500 mt-1">Mumbai, Maharashtra</p>
+                </div>
+                <span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full"
+                  >In Progress</span
+                >
+              </div>
+
+              <div class="grid grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <p class="text-xs text-gray-500 mb-1">Type</p>
+                  <p class="text-sm font-semibold text-gray-900">Residential</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 mb-1">Capacity</p>
+                  <p class="text-sm font-semibold text-gray-900">10 kW</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 mb-1">Value</p>
+                  <p class="text-sm font-semibold text-primary">₹5.45L</p>
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-semibold text-gray-700">Installation Phase</span>
+                  <span class="text-sm font-bold text-gray-900">65%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div class="bg-yellow-500 h-2 rounded-full" style="width: 65%"></div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between text-sm">
+                <div>
+                  <p class="text-xs text-gray-500">Start Date</p>
+                  <p class="font-semibold text-gray-900">Oct 10, 2025</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-xs text-gray-500">Est. Completion</p>
+                  <p class="font-semibold text-gray-900">Nov 15, 2025</p>
+                </div>
+              </div>
+
+              <div class="flex space-x-2 mt-4">
+                <button
+                  class="flex-1 py-2 bg-primary text-white rounded-lg font-semibold text-sm hover:bg-orange-600"
+                >
+                  View Details
+                </button>
+                <button
+                  class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-200"
+                >
+                  Timeline
+                </button>
+              </div>
+            </div>
+
+            <!-- Project Card 2 -->
+            <div class="bg-white border-2 border-green-200 rounded-xl p-6">
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                  <h3 class="text-lg font-bold text-gray-900 mb-1">PRJ-2025-038</h3>
+                  <p class="text-sm text-gray-600">Sunita Sharma</p>
+                  <p class="text-xs text-gray-500 mt-1">Pune, Maharashtra</p>
+                </div>
+                <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full"
+                  >Completed</span
+                >
+              </div>
+
+              <div class="grid grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <p class="text-xs text-gray-500 mb-1">Type</p>
+                  <p class="text-sm font-semibold text-gray-900">Commercial</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 mb-1">Capacity</p>
+                  <p class="text-sm font-semibold text-gray-900">25 kW</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 mb-1">Value</p>
+                  <p class="text-sm font-semibold text-primary">₹12.25L</p>
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-semibold text-gray-700">Project Complete</span>
+                  <span class="text-sm font-bold text-green-600">100%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div class="bg-green-500 h-2 rounded-full" style="width: 100%"></div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between text-sm">
+                <div>
+                  <p class="text-xs text-gray-500">Start Date</p>
+                  <p class="font-semibold text-gray-900">Sept 1, 2025</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-xs text-gray-500">Completed On</p>
+                  <p class="font-semibold text-green-600">Oct 20, 2025</p>
+                </div>
+              </div>
+
+              <div class="flex space-x-2 mt-4">
+                <button class="flex-1 py-2 bg-primary text-white rounded-lg font-semibold text-sm">
+                  View Details
+                </button>
+                <button
+                  class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm"
+                >
+                  Report
+                </button>
+              </div>
+            </div>
+
+            <!-- Project Card 3 -->
+            <div class="bg-white border-2 border-blue-200 rounded-xl p-6">
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                  <h3 class="text-lg font-bold text-gray-900 mb-1">PRJ-2025-040</h3>
+                  <p class="text-sm text-gray-600">Anil Verma</p>
+                  <p class="text-xs text-gray-500 mt-1">Delhi, Delhi</p>
+                </div>
+                <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full"
+                  >Design</span
+                >
+              </div>
+
+              <div class="grid grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <p class="text-xs text-gray-500 mb-1">Type</p>
+                  <p class="text-sm font-semibold text-gray-900">Residential</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 mb-1">Capacity</p>
+                  <p class="text-sm font-semibold text-gray-900">8 kW</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 mb-1">Value</p>
+                  <p class="text-sm font-semibold text-primary">₹4.80L</p>
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-semibold text-gray-700">Design Phase</span>
+                  <span class="text-sm font-bold text-gray-900">30%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div class="bg-blue-500 h-2 rounded-full" style="width: 30%"></div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between text-sm">
+                <div>
+                  <p class="text-xs text-gray-500">Start Date</p>
+                  <p class="font-semibold text-gray-900">Oct 20, 2025</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-xs text-gray-500">Est. Completion</p>
+                  <p class="font-semibold text-gray-900">Dec 5, 2025</p>
+                </div>
+              </div>
+
+              <div class="flex space-x-2 mt-4">
+                <button class="flex-1 py-2 bg-primary text-white rounded-lg font-semibold text-sm">
+                  View Details
+                </button>
+                <button
+                  class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm"
+                >
+                  Timeline
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

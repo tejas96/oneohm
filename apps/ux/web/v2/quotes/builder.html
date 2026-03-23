@@ -1,1093 +1,1768 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Quote Builder - OneOhm Solar EPC</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            DEFAULT: '#76c044',
-                            dark: '#5ea031',
-                            light: '#8fd35f',
-                        },
-                        secondary: {
-                            DEFAULT: '#0d74b8',
-                            dark: '#0a5c92',
-                        },
-                        success: '#22c55e',
-                        warning: '#eab308',
-                        error: '#dc2626',
-                        info: '#0ea5e9',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    },
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: '#76c044',
+                dark: '#5ea031',
+                light: '#8fd35f',
+              },
+              secondary: {
+                DEFAULT: '#0d74b8',
+                dark: '#0a5c92',
+              },
+              success: '#22c55e',
+              warning: '#eab308',
+              error: '#dc2626',
+              info: '#0ea5e9',
+            },
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+            },
+          },
+        },
+      };
     </script>
     <style>
-        .step-card { transition: all 0.3s ease; }
-        .step-card.collapsed { max-height: 64px; overflow: hidden; }
-        .step-card.expanded { max-height: 2000px; }
-        .gradient-border { background: linear-gradient(135deg, #76c044 0%, #0d74b8 100%); padding: 2px; }
-        .glass-effect { backdrop-filter: blur(10px); background: rgba(255,255,255,0.9); }
-        .shine { background: linear-gradient(110deg, transparent 40%, rgba(255,255,255,0.4) 50%, transparent 60%); background-size: 200% 100%; animation: shine 3s infinite; }
-        @keyframes shine { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        .pulse-dot { animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .size-chip { transition: all 0.2s ease; }
-        .size-chip:hover { transform: scale(1.05); }
-        .size-chip.active { transform: scale(1.05); box-shadow: 0 4px 15px rgba(118, 192, 68, 0.3); }
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        input[type="number"] { -moz-appearance: textfield; }
+      .step-card {
+        transition: all 0.3s ease;
+      }
+      .step-card.collapsed {
+        max-height: 64px;
+        overflow: hidden;
+      }
+      .step-card.expanded {
+        max-height: 2000px;
+      }
+      .gradient-border {
+        background: linear-gradient(135deg, #76c044 0%, #0d74b8 100%);
+        padding: 2px;
+      }
+      .glass-effect {
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.9);
+      }
+      .shine {
+        background: linear-gradient(
+          110deg,
+          transparent 40%,
+          rgba(255, 255, 255, 0.4) 50%,
+          transparent 60%
+        );
+        background-size: 200% 100%;
+        animation: shine 3s infinite;
+      }
+      @keyframes shine {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+      .pulse-dot {
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+      .size-chip {
+        transition: all 0.2s ease;
+      }
+      .size-chip:hover {
+        transform: scale(1.05);
+      }
+      .size-chip.active {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(118, 192, 68, 0.3);
+      }
+      input[type='number']::-webkit-inner-spin-button,
+      input[type='number']::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      input[type='number'] {
+        -moz-appearance: textfield;
+      }
     </style>
-</head>
-<body class="font-sans bg-gray-50 min-h-screen text-[13px]">
+  </head>
+  <body class="font-sans bg-gray-50 min-h-screen text-[13px]">
     <!-- Compact Header -->
-    <header class="h-12 bg-white/80 backdrop-blur-lg border-b border-gray-100 fixed top-0 left-0 right-0 z-50 flex items-center px-3">
-        <a href="list.html" class="flex items-center gap-3 text-gray-500 hover:text-gray-900 transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-            <span class="text-sm font-medium">Back to Quotes</span>
-        </a>
-        <div class="flex-1 flex justify-center">
-            <h1 class="text-base font-semibold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Quote Builder</h1>
-        </div>
-        <div class="flex items-center gap-2">
-            <button class="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-50 rounded-lg transition-colors">Save Draft</button>
-        </div>
+    <header
+      class="h-12 bg-white/80 backdrop-blur-lg border-b border-gray-100 fixed top-0 left-0 right-0 z-50 flex items-center px-3"
+    >
+      <a
+        href="list.html"
+        class="flex items-center gap-3 text-gray-500 hover:text-gray-900 transition-colors"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 19l-7-7m0 0l7-7m-7 7h18"
+          />
+        </svg>
+        <span class="text-sm font-medium">Back to Quotes</span>
+      </a>
+      <div class="flex-1 flex justify-center">
+        <h1
+          class="text-base font-semibold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+        >
+          Quote Builder
+        </h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <button
+          class="px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-50 rounded-lg transition-colors"
+        >
+          Save Draft
+        </button>
+      </div>
     </header>
-    
+
     <!-- Main Content -->
     <main class="pt-12 min-h-screen">
-        <div class="flex h-[calc(100vh-48px)]">
-            <!-- Left Panel: Configuration Steps -->
-            <div class="w-[55%] overflow-y-auto border-r border-gray-200">
-                <div class="max-w-2xl mx-auto px-8 py-6">
-                    
-                    <!-- STEP 1: Customer Selection -->
-                    <div id="step1" class="step-card expanded mb-4">
-                        <div onclick="toggleStep(1)" class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-primary/30 transition-all">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-medium">1</div>
-                                <div>
-                                    <div class="font-semibold text-gray-900">Customer & Property</div>
-                                    <div id="step1Summary" class="text-sm text-gray-500">Select customer for this quote</div>
-                                </div>
-                            </div>
-                            <svg id="step1Chevron" class="w-5 h-5 text-gray-400 transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </div>
-                        <div id="step1Content" class="p-4 bg-gray-50 rounded-b-xl border-x border-b border-gray-200 -mt-2">
-                            <div class="grid grid-cols-2 gap-4">
-                                <!-- Customer -->
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Customer</label>
-                                    <div id="customerSelect" onclick="openCustomerDropdown()" class="group flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg cursor-pointer hover:border-primary transition-all">
-                                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white font-semibold text-sm">RS</div>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="font-medium text-gray-900 truncate">Rajesh Sharma</div>
-                                            <div class="text-xs text-gray-500">+91 98765 43210</div>
-                                        </div>
-                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/></svg>
-                                    </div>
-                                </div>
-                                <!-- Property -->
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Property</label>
-                                    <div id="propertySelect" onclick="openPropertyDropdown()" class="group flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg cursor-pointer hover:border-primary transition-all">
-                                        <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="font-medium text-gray-900 truncate">Home - MG Road</div>
-                                            <div class="text-xs text-gray-500 truncate">Pune, Maharashtra</div>
-                                        </div>
-                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/></svg>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+      <div class="flex h-[calc(100vh-48px)]">
+        <!-- Left Panel: Configuration Steps -->
+        <div class="w-[55%] overflow-y-auto border-r border-gray-200">
+          <div class="max-w-2xl mx-auto px-8 py-6">
+            <!-- STEP 1: Customer Selection -->
+            <div id="step1" class="step-card expanded mb-4">
+              <div
+                onclick="toggleStep(1)"
+                class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-primary/30 transition-all"
+              >
+                <div class="flex items-center gap-3">
+                  <div
+                    class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-medium"
+                  >
+                    1
+                  </div>
+                  <div>
+                    <div class="font-semibold text-gray-900">Customer & Property</div>
+                    <div id="step1Summary" class="text-sm text-gray-500">
+                      Select customer for this quote
                     </div>
-                    
-                    <!-- STEP 2: System Configuration -->
-                    <div id="step2" class="step-card expanded mb-4">
-                        <div onclick="toggleStep(2)" class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-primary/30 transition-all">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-medium">2</div>
-                                <div>
-                                    <div class="font-semibold text-gray-900">System Configuration</div>
-                                    <div id="step2Summary" class="text-sm text-gray-500">5 kW • Residential • Single Phase</div>
-                                </div>
-                            </div>
-                            <svg id="step2Chevron" class="w-5 h-5 text-gray-400 transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </div>
-                        <div id="step2Content" class="p-4 bg-gray-50 rounded-b-xl border-x border-b border-gray-200 -mt-2">
-                            <!-- System Size - The HERO -->
-                            <div class="mb-6">
-                                <label class="block text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide">System Size</label>
-                                <div class="flex items-center gap-4">
-                                    <!-- Size Input -->
-                                    <div class="relative">
-                                        <input type="number" id="systemSizeInput" value="5" step="0.5" min="1" max="500"
-                                            class="w-32 h-14 px-4 pr-12 border-2 border-primary rounded-lg text-xl font-semibold text-gray-900 focus:outline-none focus:ring-4 focus:ring-primary/20 transition-all bg-white text-center"
-                                            oninput="handleSizeChange()">
-                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">kW</span>
-                                    </div>
-                                    <!-- Quick Select -->
-                                    <div class="flex flex-wrap gap-2">
-                                        <button onclick="setSize(3)" class="size-chip px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-gray-500 hover:border-primary hover:text-primary" data-size="3">3</button>
-                                        <button onclick="setSize(5)" class="size-chip active px-4 py-2 rounded-lg bg-primary/10 border-2 border-primary text-sm font-semibold text-primary" data-size="5">5</button>
-                                        <button onclick="setSize(7)" class="size-chip px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-gray-500 hover:border-primary hover:text-primary" data-size="7">7</button>
-                                        <button onclick="setSize(10)" class="size-chip px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-gray-500 hover:border-primary hover:text-primary" data-size="10">10</button>
-                                        <button onclick="setSize(15)" class="size-chip px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-gray-500 hover:border-primary hover:text-primary" data-size="15">15</button>
-                                        <button onclick="setSize(20)" class="size-chip px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-gray-500 hover:border-primary hover:text-primary" data-size="20">20</button>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="grid grid-cols-2 gap-4">
-                                <!-- Project Type -->
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Project Type</label>
-                                    <select id="projectType" onchange="updateConfig()" class="w-full h-12 px-4 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer" style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 12px center;">
-                                        <option value="residential">🏠 Residential</option>
-                                        <option value="residential_apartment">🏢 Apartment</option>
-                                        <option value="commercial">🏪 Commercial</option>
-                                        <option value="industrial">🏭 Industrial</option>
-                                        <option value="agricultural">🌾 Agricultural</option>
-                                    </select>
-                                </div>
-                                <!-- Phase Type -->
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Electrical Phase</label>
-                                    <select id="phaseType" onchange="updateConfig()" class="w-full h-12 px-4 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer" style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 12px center;">
-                                        <option value="single_phase">Single Phase (1Ø)</option>
-                                        <option value="three_phase">Three Phase (3Ø)</option>
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <!-- Subsidy Toggle -->
-                            <div id="subsidyCard" class="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                                            <span class="text-xl">💰</span>
-                                        </div>
-                                        <div>
-                                            <div class="font-semibold text-gray-900">PM Surya Ghar Yojana</div>
-                                            <div class="text-xs text-gray-500">Up to ₹78,000 subsidy</div>
-                                        </div>
-                                    </div>
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input type="checkbox" id="subsidyToggle" checked onchange="updateConfig()" class="sr-only peer">
-                                        <div class="w-12 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                                    </label>
-                                </div>
-                                <!-- DCR Preference -->
-                                <div id="dcrSection" class="mt-4 pt-4 border-t border-green-200">
-                                    <div class="flex gap-2">
-                                        <label class="flex-1 cursor-pointer">
-                                            <input type="radio" name="dcrPref" value="auto_split" checked class="peer sr-only" onchange="updateConfig()">
-                                            <div class="p-3 text-center rounded-lg bg-white border border-gray-200 peer-checked:border-primary peer-checked:bg-primary/5 transition-all">
-                                                <div class="font-medium text-gray-900 text-sm">Auto Split</div>
-                                                <div class="text-xs text-gray-500">Optimized</div>
-                                            </div>
-                                        </label>
-                                        <label class="flex-1 cursor-pointer">
-                                            <input type="radio" name="dcrPref" value="dcr_only" class="peer sr-only" onchange="updateConfig()">
-                                            <div class="p-3 text-center rounded-lg bg-white border border-gray-200 peer-checked:border-primary peer-checked:bg-primary/5 transition-all">
-                                                <div class="font-medium text-gray-900 text-sm">DCR Only</div>
-                                                <div class="text-xs text-gray-500">Full Subsidy</div>
-                                            </div>
-                                        </label>
-                                        <label class="flex-1 cursor-pointer">
-                                            <input type="radio" name="dcrPref" value="non_dcr_only" class="peer sr-only" onchange="updateConfig()">
-                                            <div class="p-3 text-center rounded-lg bg-white border border-gray-200 peer-checked:border-primary peer-checked:bg-primary/5 transition-all">
-                                                <div class="font-medium text-gray-900 text-sm">Non-DCR</div>
-                                                <div class="text-xs text-gray-500">Lower Cost</div>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                  </div>
+                </div>
+                <svg
+                  id="step1Chevron"
+                  class="w-5 h-5 text-gray-400 transition-transform rotate-180"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+              <div
+                id="step1Content"
+                class="p-4 bg-gray-50 rounded-b-xl border-x border-b border-gray-200 -mt-2"
+              >
+                <div class="grid grid-cols-2 gap-4">
+                  <!-- Customer -->
+                  <div>
+                    <label
+                      class="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide"
+                      >Customer</label
+                    >
+                    <div
+                      id="customerSelect"
+                      onclick="openCustomerDropdown()"
+                      class="group flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg cursor-pointer hover:border-primary transition-all"
+                    >
+                      <div
+                        class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white font-semibold text-sm"
+                      >
+                        RS
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="font-medium text-gray-900 truncate">Rajesh Sharma</div>
+                        <div class="text-xs text-gray-500">+91 98765 43210</div>
+                      </div>
+                      <svg
+                        class="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M8 9l4-4 4 4m0 6l-4 4-4-4"
+                        />
+                      </svg>
                     </div>
-                    
-                    <!-- STEP 3: Equipment Preferences -->
-                    <div id="step3" class="step-card expanded mb-4">
-                        <div onclick="toggleStep(3)" class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-primary/30 transition-all">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-medium">3</div>
-                                <div>
-                                    <div class="font-semibold text-gray-900">Equipment Preferences</div>
-                                    <div id="step3Summary" class="text-sm text-gray-500">Panel & inverter brands (optional)</div>
-                                </div>
-                            </div>
-                            <svg id="step3Chevron" class="w-5 h-5 text-gray-400 transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </div>
-                        <div id="step3Content" class="p-4 bg-gray-50 rounded-b-xl border-x border-b border-gray-200 -mt-2">
-                            <!-- Solar Panels Section -->
-                            <div class="mb-5">
-                                <div class="flex items-center gap-2 mb-3">
-                                    <div class="w-6 h-6 rounded-full bg-yellow-100 flex items-center justify-center">
-                                        <svg class="w-3.5 h-3.5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/></svg>
-                                    </div>
-                                    <span class="text-xs font-semibold text-gray-700 uppercase tracking-wide">Solar Panels</span>
-                                </div>
-                                
-                                <!-- Panel Brand Selector -->
-                                <label class="block text-xs font-medium text-gray-500 mb-2">Preferred Brand</label>
-                                <div class="flex gap-2 overflow-x-auto pb-2 mb-3" id="panelBrandContainer">
-                                    <button onclick="selectPanelBrand('')" class="panel-brand-btn flex-shrink-0 px-3 py-2 rounded-lg bg-primary/10 border-2 border-primary text-sm font-medium text-primary transition-all" data-brand="">
-                                        <div class="font-medium">Auto</div>
-                                        <div class="text-xs opacity-75">Best Available</div>
-                                    </button>
-                                    <button onclick="selectPanelBrand('adani')" class="panel-brand-btn flex-shrink-0 px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-500 hover:border-primary/50 transition-all" data-brand="adani">
-                                        <div class="font-medium">Adani</div>
-                                        <div class="text-xs text-gray-500">540-585Wp</div>
-                                    </button>
-                                    <button onclick="selectPanelBrand('waaree')" class="panel-brand-btn flex-shrink-0 px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-500 hover:border-primary/50 transition-all" data-brand="waaree">
-                                        <div class="font-medium">Waaree</div>
-                                        <div class="text-xs text-gray-500">545-590Wp</div>
-                                    </button>
-                                    <button onclick="selectPanelBrand('tata')" class="panel-brand-btn flex-shrink-0 px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-500 hover:border-primary/50 transition-all" data-brand="tata">
-                                        <div class="font-medium">Tata</div>
-                                        <div class="text-xs text-gray-500">540-580Wp</div>
-                                    </button>
-                                    <button onclick="selectPanelBrand('vikram')" class="panel-brand-btn flex-shrink-0 px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-500 hover:border-primary/50 transition-all" data-brand="vikram">
-                                        <div class="font-medium">Vikram</div>
-                                        <div class="text-xs text-gray-500">545-575Wp</div>
-                                    </button>
-                                    <button onclick="selectPanelBrand('jinko')" class="panel-brand-btn flex-shrink-0 px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-500 hover:border-primary/50 transition-all" data-brand="jinko">
-                                        <div class="font-medium">Jinko</div>
-                                        <div class="text-xs text-gray-500">550-610Wp</div>
-                                    </button>
-                                    <button onclick="selectPanelBrand('longi')" class="panel-brand-btn flex-shrink-0 px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-500 hover:border-primary/50 transition-all" data-brand="longi">
-                                        <div class="font-medium">LONGi</div>
-                                        <div class="text-xs text-gray-500">555-605Wp</div>
-                                    </button>
-                                </div>
-                                
-                                <!-- Panel Technology (Dynamic - appears when brand selected) -->
-                                <div id="panelTechSection" class="hidden mt-3">
-                                    <label class="block text-xs font-medium text-gray-500 mb-2">Panel Technology</label>
-                                    <div class="flex gap-2 overflow-x-auto pb-1" id="panelTechContainer">
-                                        <!-- Dynamically populated -->
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Divider -->
-                            <div class="border-t border-gray-200 my-4"></div>
-                            
-                            <!-- Inverter & Structure Section -->
-                            <div>
-                                <div class="flex items-center gap-2 mb-3">
-                                    <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                                        <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                                    </div>
-                                    <span class="text-xs font-semibold text-gray-700 uppercase tracking-wide">Inverter & Mounting</span>
-                                </div>
-                                
-                                <div class="grid grid-cols-2 gap-4">
-                                    <!-- Inverter Brand -->
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-500 mb-2">Inverter Brand</label>
-                                        <select id="inverterBrand" onchange="updateConfig()" class="w-full h-11 px-3 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer" style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 10px center;">
-                                            <option value="">Auto (Best Available)</option>
-                                            <option value="growatt">Growatt</option>
-                                            <option value="sungrow">Sungrow</option>
-                                            <option value="goodwe">GoodWe</option>
-                                            <option value="huawei">Huawei</option>
-                                            <option value="deye">Deye</option>
-                                        </select>
-                                    </div>
-                                    <!-- Structure Type -->
-                                    <div>
-                                        <label class="block text-xs font-medium text-gray-500 mb-2">Mounting Structure</label>
-                                        <select id="structureType" onchange="updateConfig()" class="w-full h-11 px-3 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer" style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 10px center;">
-                                            <option value="aluminum_rail">Aluminum Rail</option>
-                                            <option value="rcc_3x6">RCC Elevated 3×6</option>
-                                            <option value="elevated_6x9">Elevated 6×9</option>
-                                            <option value="super_elevated">Super Elevated</option>
-                                            <option value="ground_mount">Ground Mount</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                  </div>
+                  <!-- Property -->
+                  <div>
+                    <label
+                      class="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide"
+                      >Property</label
+                    >
+                    <div
+                      id="propertySelect"
+                      onclick="openPropertyDropdown()"
+                      class="group flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg cursor-pointer hover:border-primary transition-all"
+                    >
+                      <div
+                        class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500"
+                      >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                          />
+                        </svg>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="font-medium text-gray-900 truncate">Home - MG Road</div>
+                        <div class="text-xs text-gray-500 truncate">Pune, Maharashtra</div>
+                      </div>
+                      <svg
+                        class="w-4 h-4 text-gray-400 group-hover:text-primary transition-colors"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M8 9l4-4 4 4m0 6l-4 4-4-4"
+                        />
+                      </svg>
                     </div>
-                    
-                    <!-- STEP 4: Site & Pricing -->
-                    <div id="step4" class="step-card expanded mb-4">
-                        <div onclick="toggleStep(4)" class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-primary/30 transition-all">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-medium">4</div>
-                                <div>
-                                    <div class="font-semibold text-gray-900">Site & Pricing</div>
-                                    <div id="step4Summary" class="text-sm text-gray-500">Installation details & discount</div>
-                                </div>
-                            </div>
-                            <svg id="step4Chevron" class="w-5 h-5 text-gray-400 transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </div>
-                        <div id="step4Content" class="p-4 bg-gray-50 rounded-b-xl border-x border-b border-gray-200 -mt-2">
-                            <!-- Floor Number - Stepper Style -->
-                            <div class="mb-5 p-4 bg-white rounded-lg border border-gray-200">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <div class="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center">
-                                                <svg class="w-3.5 h-3.5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                                            </div>
-                                            <span class="text-xs font-medium text-gray-500">Installation Floor</span>
-                                        </div>
-                                        <div id="floorChargesText" class="text-xs text-gray-500 ml-8">Ground floor - No extra charges</div>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <button onclick="adjustFloor(-1)" class="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
-                                        </button>
-                                        <div id="floorValue" class="w-12 text-center text-lg font-semibold text-gray-800">0</div>
-                                        <button onclick="adjustFloor(1)" class="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Distance with Live Cost -->
-                            <div class="mb-5 p-4 bg-white rounded-lg border border-gray-200">
-                                <div class="flex items-center gap-2 mb-3">
-                                    <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                                        <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                    </div>
-                                    <span class="text-xs font-medium text-gray-500">Distance from Office</span>
-                                </div>
-                                <div class="flex items-center gap-4">
-                                    <div class="relative flex-1">
-                                        <input type="number" id="distanceKm" value="25" min="0" max="500" oninput="updateDistanceCost()" 
-                                            class="w-full h-12 px-4 pr-12 bg-gray-50 border-2 border-gray-200 rounded-lg text-base font-semibold text-gray-800 text-center focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-                                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">km</span>
-                                    </div>
-                                    <div class="text-right min-w-[100px]">
-                                        <div class="text-xs text-gray-500">Transport Cost</div>
-                                        <div id="transportCost" class="text-base font-semibold text-primary">₹750</div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Discount Section -->
-                            <div class="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                                <div class="flex items-center gap-2 mb-3">
-                                    <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
-                                        <span class="text-sm">💰</span>
-                                    </div>
-                                    <span class="text-xs font-medium text-gray-500">Apply Discount</span>
-                                </div>
-                                <div class="text-xs text-gray-500 mb-3">Enter discount amount or use quick presets</div>
-                                
-                                <!-- Discount Input -->
-                                <div class="flex items-center gap-3 mb-3">
-                                    <div class="relative flex-1">
-                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">₹</span>
-                                        <input type="number" id="discountAmount" value="0" min="0" oninput="updateDiscount()" 
-                                            class="w-full h-12 pl-8 pr-10 bg-white border-2 border-gray-200 rounded-lg text-base font-semibold text-gray-800 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
-                                            placeholder="0">
-                                        <button onclick="clearDiscount()" id="discountClearBtn" class="hidden absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-500 transition-colors">
-                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <!-- Quick Presets -->
-                                <div class="flex gap-2 flex-wrap">
-                                    <button onclick="setDiscount(1000)" class="discount-preset px-3 py-1.5 rounded-lg bg-white border border-green-200 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors">₹1,000</button>
-                                    <button onclick="setDiscount(2000)" class="discount-preset px-3 py-1.5 rounded-lg bg-white border border-green-200 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors">₹2,000</button>
-                                    <button onclick="setDiscount(3000)" class="discount-preset px-3 py-1.5 rounded-lg bg-white border border-green-200 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors">₹3,000</button>
-                                    <button onclick="setDiscount(5000)" class="discount-preset px-3 py-1.5 rounded-lg bg-white border border-green-200 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors">₹5,000</button>
-                                    <button onclick="setDiscount(10000)" class="discount-preset px-3 py-1.5 rounded-lg bg-white border border-green-200 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors">₹10,000</button>
-                                </div>
-                            </div>
-                            
-                            <!-- Notes -->
-                            <div class="mt-4">
-                                <label class="block text-xs font-medium text-gray-500 mb-2">Special Notes (Optional)</label>
-                                <textarea id="notes" rows="2" placeholder="Any specific requirements or site conditions..." class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none"></textarea>
-                            </div>
-                        </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 2: System Configuration -->
+            <div id="step2" class="step-card expanded mb-4">
+              <div
+                onclick="toggleStep(2)"
+                class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-primary/30 transition-all"
+              >
+                <div class="flex items-center gap-3">
+                  <div
+                    class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-medium"
+                  >
+                    2
+                  </div>
+                  <div>
+                    <div class="font-semibold text-gray-900">System Configuration</div>
+                    <div id="step2Summary" class="text-sm text-gray-500">
+                      5 kW • Residential • Single Phase
                     </div>
-                    
-                    <!-- Calculate Button -->
-                    <button id="calculateBtn" onclick="calculateQuote()" class="w-full h-14 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg font-semibold text-base hover:shadow-lg hover:shadow-primary/30 transition-all flex items-center justify-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                        Calculate Quote
+                  </div>
+                </div>
+                <svg
+                  id="step2Chevron"
+                  class="w-5 h-5 text-gray-400 transition-transform rotate-180"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+              <div
+                id="step2Content"
+                class="p-4 bg-gray-50 rounded-b-xl border-x border-b border-gray-200 -mt-2"
+              >
+                <!-- System Size - The HERO -->
+                <div class="mb-6">
+                  <label
+                    class="block text-xs font-medium text-gray-500 mb-3 uppercase tracking-wide"
+                    >System Size</label
+                  >
+                  <div class="flex items-center gap-4">
+                    <!-- Size Input -->
+                    <div class="relative">
+                      <input
+                        type="number"
+                        id="systemSizeInput"
+                        value="5"
+                        step="0.5"
+                        min="1"
+                        max="500"
+                        class="w-32 h-14 px-4 pr-12 border-2 border-primary rounded-lg text-xl font-semibold text-gray-900 focus:outline-none focus:ring-4 focus:ring-primary/20 transition-all bg-white text-center"
+                        oninput="handleSizeChange()"
+                      />
+                      <span
+                        class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium"
+                        >kW</span
+                      >
+                    </div>
+                    <!-- Quick Select -->
+                    <div class="flex flex-wrap gap-2">
+                      <button
+                        onclick="setSize(3)"
+                        class="size-chip px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-gray-500 hover:border-primary hover:text-primary"
+                        data-size="3"
+                      >
+                        3
+                      </button>
+                      <button
+                        onclick="setSize(5)"
+                        class="size-chip active px-4 py-2 rounded-lg bg-primary/10 border-2 border-primary text-sm font-semibold text-primary"
+                        data-size="5"
+                      >
+                        5
+                      </button>
+                      <button
+                        onclick="setSize(7)"
+                        class="size-chip px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-gray-500 hover:border-primary hover:text-primary"
+                        data-size="7"
+                      >
+                        7
+                      </button>
+                      <button
+                        onclick="setSize(10)"
+                        class="size-chip px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-gray-500 hover:border-primary hover:text-primary"
+                        data-size="10"
+                      >
+                        10
+                      </button>
+                      <button
+                        onclick="setSize(15)"
+                        class="size-chip px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-gray-500 hover:border-primary hover:text-primary"
+                        data-size="15"
+                      >
+                        15
+                      </button>
+                      <button
+                        onclick="setSize(20)"
+                        class="size-chip px-4 py-2 rounded-lg bg-white border border-gray-200 text-sm font-medium text-gray-500 hover:border-primary hover:text-primary"
+                        data-size="20"
+                      >
+                        20
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                  <!-- Project Type -->
+                  <div>
+                    <label
+                      class="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide"
+                      >Project Type</label
+                    >
+                    <select
+                      id="projectType"
+                      onchange="updateConfig()"
+                      class="w-full h-12 px-4 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
+                      style="
+                        background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E');
+                        background-repeat: no-repeat;
+                        background-position: right 12px center;
+                      "
+                    >
+                      <option value="residential">🏠 Residential</option>
+                      <option value="residential_apartment">🏢 Apartment</option>
+                      <option value="commercial">🏪 Commercial</option>
+                      <option value="industrial">🏭 Industrial</option>
+                      <option value="agricultural">🌾 Agricultural</option>
+                    </select>
+                  </div>
+                  <!-- Phase Type -->
+                  <div>
+                    <label
+                      class="block text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide"
+                      >Electrical Phase</label
+                    >
+                    <select
+                      id="phaseType"
+                      onchange="updateConfig()"
+                      class="w-full h-12 px-4 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
+                      style="
+                        background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E');
+                        background-repeat: no-repeat;
+                        background-position: right 12px center;
+                      "
+                    >
+                      <option value="single_phase">Single Phase (1Ø)</option>
+                      <option value="three_phase">Three Phase (3Ø)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Subsidy Toggle -->
+                <div
+                  id="subsidyCard"
+                  class="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg"
+                >
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center"
+                      >
+                        <span class="text-xl">💰</span>
+                      </div>
+                      <div>
+                        <div class="font-semibold text-gray-900">PM Surya Ghar Yojana</div>
+                        <div class="text-xs text-gray-500">Up to ₹78,000 subsidy</div>
+                      </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        id="subsidyToggle"
+                        checked
+                        onchange="updateConfig()"
+                        class="sr-only peer"
+                      />
+                      <div
+                        class="w-12 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/25 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"
+                      ></div>
+                    </label>
+                  </div>
+                  <!-- DCR Preference -->
+                  <div id="dcrSection" class="mt-4 pt-4 border-t border-green-200">
+                    <div class="flex gap-2">
+                      <label class="flex-1 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="dcrPref"
+                          value="auto_split"
+                          checked
+                          class="peer sr-only"
+                          onchange="updateConfig()"
+                        />
+                        <div
+                          class="p-3 text-center rounded-lg bg-white border border-gray-200 peer-checked:border-primary peer-checked:bg-primary/5 transition-all"
+                        >
+                          <div class="font-medium text-gray-900 text-sm">Auto Split</div>
+                          <div class="text-xs text-gray-500">Optimized</div>
+                        </div>
+                      </label>
+                      <label class="flex-1 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="dcrPref"
+                          value="dcr_only"
+                          class="peer sr-only"
+                          onchange="updateConfig()"
+                        />
+                        <div
+                          class="p-3 text-center rounded-lg bg-white border border-gray-200 peer-checked:border-primary peer-checked:bg-primary/5 transition-all"
+                        >
+                          <div class="font-medium text-gray-900 text-sm">DCR Only</div>
+                          <div class="text-xs text-gray-500">Full Subsidy</div>
+                        </div>
+                      </label>
+                      <label class="flex-1 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="dcrPref"
+                          value="non_dcr_only"
+                          class="peer sr-only"
+                          onchange="updateConfig()"
+                        />
+                        <div
+                          class="p-3 text-center rounded-lg bg-white border border-gray-200 peer-checked:border-primary peer-checked:bg-primary/5 transition-all"
+                        >
+                          <div class="font-medium text-gray-900 text-sm">Non-DCR</div>
+                          <div class="text-xs text-gray-500">Lower Cost</div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 3: Equipment Preferences -->
+            <div id="step3" class="step-card expanded mb-4">
+              <div
+                onclick="toggleStep(3)"
+                class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-primary/30 transition-all"
+              >
+                <div class="flex items-center gap-3">
+                  <div
+                    class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-medium"
+                  >
+                    3
+                  </div>
+                  <div>
+                    <div class="font-semibold text-gray-900">Equipment Preferences</div>
+                    <div id="step3Summary" class="text-sm text-gray-500">
+                      Panel & inverter brands (optional)
+                    </div>
+                  </div>
+                </div>
+                <svg
+                  id="step3Chevron"
+                  class="w-5 h-5 text-gray-400 transition-transform rotate-180"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+              <div
+                id="step3Content"
+                class="p-4 bg-gray-50 rounded-b-xl border-x border-b border-gray-200 -mt-2"
+              >
+                <!-- Solar Panels Section -->
+                <div class="mb-5">
+                  <div class="flex items-center gap-2 mb-3">
+                    <div
+                      class="w-6 h-6 rounded-full bg-yellow-100 flex items-center justify-center"
+                    >
+                      <svg
+                        class="w-3.5 h-3.5 text-yellow-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"
+                        />
+                      </svg>
+                    </div>
+                    <span class="text-xs font-semibold text-gray-700 uppercase tracking-wide"
+                      >Solar Panels</span
+                    >
+                  </div>
+
+                  <!-- Panel Brand Selector -->
+                  <label class="block text-xs font-medium text-gray-500 mb-2"
+                    >Preferred Brand</label
+                  >
+                  <div class="flex gap-2 overflow-x-auto pb-2 mb-3" id="panelBrandContainer">
+                    <button
+                      onclick="selectPanelBrand('')"
+                      class="panel-brand-btn flex-shrink-0 px-3 py-2 rounded-lg bg-primary/10 border-2 border-primary text-sm font-medium text-primary transition-all"
+                      data-brand=""
+                    >
+                      <div class="font-medium">Auto</div>
+                      <div class="text-xs opacity-75">Best Available</div>
                     </button>
-                </div>
-            </div>
-            
-            <!-- Right Panel: Quote Preview -->
-            <div class="w-[45%] bg-gradient-to-br from-gray-100 to-gray-50 overflow-y-auto">
-                <div class="p-8">
-                    <!-- Empty State (Before Calculation) -->
-                    <div id="emptyPreview" class="h-full flex flex-col items-center justify-center text-center py-16">
-                        <div class="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center mb-6">
-                            <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        </div>
-                        <h3 class="text-xl font-semibold text-gray-700 mb-2">Configure Your Quote</h3>
-                        <p class="text-gray-500 max-w-xs">Complete the configuration on the left and click <strong>"Calculate Quote"</strong> to see the pricing breakdown</p>
-                        
-                        <!-- Quick Stats Preview -->
-                        <div class="mt-8 grid grid-cols-3 gap-4 w-full max-w-md">
-                            <div class="bg-white rounded-lg p-4 border border-gray-200">
-                                <div class="text-xs text-gray-500 uppercase tracking-wide">System</div>
-                                <div id="previewSizeQuick" class="text-xl font-semibold text-gray-800 mt-1">5 kW</div>
-                            </div>
-                            <div class="bg-white rounded-lg p-4 border border-gray-200">
-                                <div class="text-xs text-gray-500 uppercase tracking-wide">Est. Generation</div>
-                                <div id="previewGenQuick" class="text-xl font-semibold text-primary mt-1">600</div>
-                                <div class="text-xs text-gray-500">units/month</div>
-                            </div>
-                            <div class="bg-white rounded-lg p-4 border border-gray-200">
-                                <div class="text-xs text-gray-500 uppercase tracking-wide">Est. Savings</div>
-                                <div id="previewSavingsQuick" class="text-xl font-semibold text-success mt-1">₹4.8K</div>
-                                <div class="text-xs text-gray-500">per month</div>
-                            </div>
-                        </div>
+                    <button
+                      onclick="selectPanelBrand('adani')"
+                      class="panel-brand-btn flex-shrink-0 px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-500 hover:border-primary/50 transition-all"
+                      data-brand="adani"
+                    >
+                      <div class="font-medium">Adani</div>
+                      <div class="text-xs text-gray-500">540-585Wp</div>
+                    </button>
+                    <button
+                      onclick="selectPanelBrand('waaree')"
+                      class="panel-brand-btn flex-shrink-0 px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-500 hover:border-primary/50 transition-all"
+                      data-brand="waaree"
+                    >
+                      <div class="font-medium">Waaree</div>
+                      <div class="text-xs text-gray-500">545-590Wp</div>
+                    </button>
+                    <button
+                      onclick="selectPanelBrand('tata')"
+                      class="panel-brand-btn flex-shrink-0 px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-500 hover:border-primary/50 transition-all"
+                      data-brand="tata"
+                    >
+                      <div class="font-medium">Tata</div>
+                      <div class="text-xs text-gray-500">540-580Wp</div>
+                    </button>
+                    <button
+                      onclick="selectPanelBrand('vikram')"
+                      class="panel-brand-btn flex-shrink-0 px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-500 hover:border-primary/50 transition-all"
+                      data-brand="vikram"
+                    >
+                      <div class="font-medium">Vikram</div>
+                      <div class="text-xs text-gray-500">545-575Wp</div>
+                    </button>
+                    <button
+                      onclick="selectPanelBrand('jinko')"
+                      class="panel-brand-btn flex-shrink-0 px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-500 hover:border-primary/50 transition-all"
+                      data-brand="jinko"
+                    >
+                      <div class="font-medium">Jinko</div>
+                      <div class="text-xs text-gray-500">550-610Wp</div>
+                    </button>
+                    <button
+                      onclick="selectPanelBrand('longi')"
+                      class="panel-brand-btn flex-shrink-0 px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs font-medium text-gray-500 hover:border-primary/50 transition-all"
+                      data-brand="longi"
+                    >
+                      <div class="font-medium">LONGi</div>
+                      <div class="text-xs text-gray-500">555-605Wp</div>
+                    </button>
+                  </div>
+
+                  <!-- Panel Technology (Dynamic - appears when brand selected) -->
+                  <div id="panelTechSection" class="hidden mt-3">
+                    <label class="block text-xs font-medium text-gray-500 mb-2"
+                      >Panel Technology</label
+                    >
+                    <div class="flex gap-2 overflow-x-auto pb-1" id="panelTechContainer">
+                      <!-- Dynamically populated -->
                     </div>
-                    
-                    <!-- Quote Card (After Calculation) -->
-                    <div id="quotePreview" class="hidden">
-                        <!-- Quote Header -->
-                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden mb-4">
-                            <div class="p-6 bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-gray-100">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <span class="px-2 py-0.5 bg-primary/20 text-primary text-xs font-semibold rounded">DRAFT</span>
-                                        </div>
-                                        <div class="text-lg font-semibold text-gray-900">#QT-2026-00124</div>
-                                    </div>
-                                    <div class="text-right">
-                                        <div class="text-xs text-gray-500">Valid for 7 days</div>
-                                        <div class="text-xs font-medium text-gray-500" id="validUntil">Feb 12, 2026</div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Customer -->
-                            <div class="p-4 border-b border-gray-100">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white font-semibold text-sm">RS</div>
-                                    <div>
-                                        <div class="font-semibold text-gray-900">Rajesh Sharma</div>
-                                        <div class="text-sm text-gray-500">Home - MG Road, Pune</div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- System Summary -->
-                            <div class="p-4 bg-gray-50">
-                                <div class="grid grid-cols-4 gap-3">
-                                    <div class="text-center">
-                                        <div class="text-xs text-gray-500">System</div>
-                                        <div id="calcSize" class="text-base font-semibold text-gray-800">5 kW</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="text-xs text-gray-500">Panels</div>
-                                        <div id="calcPanels" class="text-base font-semibold text-gray-800">10</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="text-xs text-gray-500">Generation</div>
-                                        <div id="calcGen" class="text-base font-semibold text-primary">600/mo</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="text-xs text-gray-500">Savings</div>
-                                        <div id="calcSavings" class="text-base font-semibold text-success">₹4.8K/mo</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Price Breakdown -->
-                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden mb-4">
-                            <div class="p-4 border-b border-gray-100">
-                                <h3 class="font-semibold text-gray-900">Price Breakdown</h3>
-                            </div>
-                            <div class="p-4 space-y-3">
-                                <div class="flex justify-between">
-                                    <div>
-                                        <div class="font-medium text-gray-800">Solar Panels</div>
-                                        <div id="panelDesc" class="text-xs text-gray-500">Mono PERC 540W × 10</div>
-                                    </div>
-                                    <div id="panelPrice" class="font-semibold text-gray-800">₹1,40,000</div>
-                                </div>
-                                <div class="flex justify-between">
-                                    <div>
-                                        <div class="font-medium text-gray-800">Inverter</div>
-                                        <div id="inverterDesc" class="text-xs text-gray-500">Growatt 5kW</div>
-                                    </div>
-                                    <div id="inverterPrice" class="font-semibold text-gray-800">₹30,000</div>
-                                </div>
-                                <div class="flex justify-between">
-                                    <div>
-                                        <div class="font-medium text-gray-800">Structure</div>
-                                        <div id="structureDesc" class="text-xs text-gray-500">Aluminum Rail</div>
-                                    </div>
-                                    <div id="structurePrice" class="font-semibold text-gray-800">₹15,000</div>
-                                </div>
-                                <div class="flex justify-between">
-                                    <div>
-                                        <div class="font-medium text-gray-800">Installation & BOS</div>
-                                        <div class="text-xs text-gray-500">Complete with cabling</div>
-                                    </div>
-                                    <div id="installPrice" class="font-semibold text-gray-800">₹25,000</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Totals -->
-                            <div class="p-4 bg-gray-50 border-t border-gray-100 space-y-2">
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-500">Subtotal</span>
-                                    <span id="subtotal" class="font-medium text-gray-800">₹2,10,000</span>
-                                </div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-500">GST</span>
-                                    <span id="gstAmount" class="font-medium text-gray-800">₹28,980</span>
-                                </div>
-                                <div id="discountRow" class="hidden flex justify-between text-sm">
-                                    <span class="text-green-600">Discount</span>
-                                    <span id="discountDisplay" class="font-medium text-green-600">-₹5,000</span>
-                                </div>
-                                <div id="subsidyRow" class="flex justify-between text-sm">
-                                    <span class="text-green-600 flex items-center gap-1">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                        PM Surya Ghar Subsidy
-                                    </span>
-                                    <span id="subsidyDisplay" class="font-medium text-green-600">-₹78,000</span>
-                                </div>
-                                
-                                <div class="pt-3 mt-3 border-t border-gray-200">
-                                    <div class="flex items-end justify-between">
-                                        <div>
-                                            <div class="text-sm text-gray-500">Net Payable</div>
-                                            <div class="text-xs text-gray-500" id="pricePerWatt">₹32.20/Wp</div>
-                                        </div>
-                                        <div id="totalPrice" class="text-3xl font-semibold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent">₹1,60,980</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Actions -->
-                        <div class="flex gap-3">
-                            <button onclick="recalculate()" class="flex-1 h-12 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                Recalculate
-                            </button>
-                            <button onclick="saveAndSend()" class="flex-1 h-12 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg font-medium text-sm hover:shadow-lg hover:shadow-primary/30 transition-all flex items-center justify-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                                Save & Send
-                            </button>
-                        </div>
-                    </div>
+                  </div>
                 </div>
+
+                <!-- Divider -->
+                <div class="border-t border-gray-200 my-4"></div>
+
+                <!-- Inverter & Structure Section -->
+                <div>
+                  <div class="flex items-center gap-2 mb-3">
+                    <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                      <svg
+                        class="w-3.5 h-3.5 text-blue-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M13 10V3L4 14h7v7l9-11h-7z"
+                        />
+                      </svg>
+                    </div>
+                    <span class="text-xs font-semibold text-gray-700 uppercase tracking-wide"
+                      >Inverter & Mounting</span
+                    >
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-4">
+                    <!-- Inverter Brand -->
+                    <div>
+                      <label class="block text-xs font-medium text-gray-500 mb-2"
+                        >Inverter Brand</label
+                      >
+                      <select
+                        id="inverterBrand"
+                        onchange="updateConfig()"
+                        class="w-full h-11 px-3 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
+                        style="
+                          background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E');
+                          background-repeat: no-repeat;
+                          background-position: right 10px center;
+                        "
+                      >
+                        <option value="">Auto (Best Available)</option>
+                        <option value="growatt">Growatt</option>
+                        <option value="sungrow">Sungrow</option>
+                        <option value="goodwe">GoodWe</option>
+                        <option value="huawei">Huawei</option>
+                        <option value="deye">Deye</option>
+                      </select>
+                    </div>
+                    <!-- Structure Type -->
+                    <div>
+                      <label class="block text-xs font-medium text-gray-500 mb-2"
+                        >Mounting Structure</label
+                      >
+                      <select
+                        id="structureType"
+                        onchange="updateConfig()"
+                        class="w-full h-11 px-3 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
+                        style="
+                          background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E');
+                          background-repeat: no-repeat;
+                          background-position: right 10px center;
+                        "
+                      >
+                        <option value="aluminum_rail">Aluminum Rail</option>
+                        <option value="rcc_3x6">RCC Elevated 3×6</option>
+                        <option value="elevated_6x9">Elevated 6×9</option>
+                        <option value="super_elevated">Super Elevated</option>
+                        <option value="ground_mount">Ground Mount</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
+
+            <!-- STEP 4: Site & Pricing -->
+            <div id="step4" class="step-card expanded mb-4">
+              <div
+                onclick="toggleStep(4)"
+                class="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 cursor-pointer hover:border-primary/30 transition-all"
+              >
+                <div class="flex items-center gap-3">
+                  <div
+                    class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-medium"
+                  >
+                    4
+                  </div>
+                  <div>
+                    <div class="font-semibold text-gray-900">Site & Pricing</div>
+                    <div id="step4Summary" class="text-sm text-gray-500">
+                      Installation details & discount
+                    </div>
+                  </div>
+                </div>
+                <svg
+                  id="step4Chevron"
+                  class="w-5 h-5 text-gray-400 transition-transform rotate-180"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+              <div
+                id="step4Content"
+                class="p-4 bg-gray-50 rounded-b-xl border-x border-b border-gray-200 -mt-2"
+              >
+                <!-- Floor Number - Stepper Style -->
+                <div class="mb-5 p-4 bg-white rounded-lg border border-gray-200">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <div class="flex items-center gap-2 mb-1">
+                        <div
+                          class="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center"
+                        >
+                          <svg
+                            class="w-3.5 h-3.5 text-orange-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                            />
+                          </svg>
+                        </div>
+                        <span class="text-xs font-medium text-gray-500">Installation Floor</span>
+                      </div>
+                      <div id="floorChargesText" class="text-xs text-gray-500 ml-8">
+                        Ground floor - No extra charges
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <button
+                        onclick="adjustFloor(-1)"
+                        class="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M20 12H4"
+                          />
+                        </svg>
+                      </button>
+                      <div
+                        id="floorValue"
+                        class="w-12 text-center text-lg font-semibold text-gray-800"
+                      >
+                        0
+                      </div>
+                      <button
+                        onclick="adjustFloor(1)"
+                        class="w-9 h-9 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors"
+                      >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M12 4v16m8-8H4"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Distance with Live Cost -->
+                <div class="mb-5 p-4 bg-white rounded-lg border border-gray-200">
+                  <div class="flex items-center gap-2 mb-3">
+                    <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                      <svg
+                        class="w-3.5 h-3.5 text-blue-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                    </div>
+                    <span class="text-xs font-medium text-gray-500">Distance from Office</span>
+                  </div>
+                  <div class="flex items-center gap-4">
+                    <div class="relative flex-1">
+                      <input
+                        type="number"
+                        id="distanceKm"
+                        value="25"
+                        min="0"
+                        max="500"
+                        oninput="updateDistanceCost()"
+                        class="w-full h-12 px-4 pr-12 bg-gray-50 border-2 border-gray-200 rounded-lg text-base font-semibold text-gray-800 text-center focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                      />
+                      <span
+                        class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm"
+                        >km</span
+                      >
+                    </div>
+                    <div class="text-right min-w-[100px]">
+                      <div class="text-xs text-gray-500">Transport Cost</div>
+                      <div id="transportCost" class="text-base font-semibold text-primary">
+                        ₹750
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Discount Section -->
+                <div
+                  class="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200"
+                >
+                  <div class="flex items-center gap-2 mb-3">
+                    <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+                      <span class="text-sm">💰</span>
+                    </div>
+                    <span class="text-xs font-medium text-gray-500">Apply Discount</span>
+                  </div>
+                  <div class="text-xs text-gray-500 mb-3">
+                    Enter discount amount or use quick presets
+                  </div>
+
+                  <!-- Discount Input -->
+                  <div class="flex items-center gap-3 mb-3">
+                    <div class="relative flex-1">
+                      <span
+                        class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium"
+                        >₹</span
+                      >
+                      <input
+                        type="number"
+                        id="discountAmount"
+                        value="0"
+                        min="0"
+                        oninput="updateDiscount()"
+                        class="w-full h-12 pl-8 pr-10 bg-white border-2 border-gray-200 rounded-lg text-base font-semibold text-gray-800 focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
+                        placeholder="0"
+                      />
+                      <button
+                        onclick="clearDiscount()"
+                        id="discountClearBtn"
+                        class="hidden absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-500 transition-colors"
+                      >
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Quick Presets -->
+                  <div class="flex gap-2 flex-wrap">
+                    <button
+                      onclick="setDiscount(1000)"
+                      class="discount-preset px-3 py-1.5 rounded-lg bg-white border border-green-200 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors"
+                    >
+                      ₹1,000
+                    </button>
+                    <button
+                      onclick="setDiscount(2000)"
+                      class="discount-preset px-3 py-1.5 rounded-lg bg-white border border-green-200 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors"
+                    >
+                      ₹2,000
+                    </button>
+                    <button
+                      onclick="setDiscount(3000)"
+                      class="discount-preset px-3 py-1.5 rounded-lg bg-white border border-green-200 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors"
+                    >
+                      ₹3,000
+                    </button>
+                    <button
+                      onclick="setDiscount(5000)"
+                      class="discount-preset px-3 py-1.5 rounded-lg bg-white border border-green-200 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors"
+                    >
+                      ₹5,000
+                    </button>
+                    <button
+                      onclick="setDiscount(10000)"
+                      class="discount-preset px-3 py-1.5 rounded-lg bg-white border border-green-200 text-xs font-medium text-green-700 hover:bg-green-100 transition-colors"
+                    >
+                      ₹10,000
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="mt-4">
+                  <label class="block text-xs font-medium text-gray-500 mb-2"
+                    >Special Notes (Optional)</label
+                  >
+                  <textarea
+                    id="notes"
+                    rows="2"
+                    placeholder="Any specific requirements or site conditions..."
+                    class="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none"
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Calculate Button -->
+            <button
+              id="calculateBtn"
+              onclick="calculateQuote()"
+              class="w-full h-14 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg font-semibold text-base hover:shadow-lg hover:shadow-primary/30 transition-all flex items-center justify-center gap-2"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                />
+              </svg>
+              Calculate Quote
+            </button>
+          </div>
         </div>
+
+        <!-- Right Panel: Quote Preview -->
+        <div class="w-[45%] bg-gradient-to-br from-gray-100 to-gray-50 overflow-y-auto">
+          <div class="p-8">
+            <!-- Empty State (Before Calculation) -->
+            <div
+              id="emptyPreview"
+              class="h-full flex flex-col items-center justify-center text-center py-16"
+            >
+              <div class="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center mb-6">
+                <svg
+                  class="w-12 h-12 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.5"
+                    d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </div>
+              <h3 class="text-xl font-semibold text-gray-700 mb-2">Configure Your Quote</h3>
+              <p class="text-gray-500 max-w-xs">
+                Complete the configuration on the left and click
+                <strong>"Calculate Quote"</strong> to see the pricing breakdown
+              </p>
+
+              <!-- Quick Stats Preview -->
+              <div class="mt-8 grid grid-cols-3 gap-4 w-full max-w-md">
+                <div class="bg-white rounded-lg p-4 border border-gray-200">
+                  <div class="text-xs text-gray-500 uppercase tracking-wide">System</div>
+                  <div id="previewSizeQuick" class="text-xl font-semibold text-gray-800 mt-1">
+                    5 kW
+                  </div>
+                </div>
+                <div class="bg-white rounded-lg p-4 border border-gray-200">
+                  <div class="text-xs text-gray-500 uppercase tracking-wide">Est. Generation</div>
+                  <div id="previewGenQuick" class="text-xl font-semibold text-primary mt-1">
+                    600
+                  </div>
+                  <div class="text-xs text-gray-500">units/month</div>
+                </div>
+                <div class="bg-white rounded-lg p-4 border border-gray-200">
+                  <div class="text-xs text-gray-500 uppercase tracking-wide">Est. Savings</div>
+                  <div id="previewSavingsQuick" class="text-xl font-semibold text-success mt-1">
+                    ₹4.8K
+                  </div>
+                  <div class="text-xs text-gray-500">per month</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quote Card (After Calculation) -->
+            <div id="quotePreview" class="hidden">
+              <!-- Quote Header -->
+              <div
+                class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden mb-4"
+              >
+                <div
+                  class="p-6 bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-gray-100"
+                >
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <div class="flex items-center gap-2 mb-1">
+                        <span
+                          class="px-2 py-0.5 bg-primary/20 text-primary text-xs font-semibold rounded"
+                          >DRAFT</span
+                        >
+                      </div>
+                      <div class="text-lg font-semibold text-gray-900">#QT-2026-00124</div>
+                    </div>
+                    <div class="text-right">
+                      <div class="text-xs text-gray-500">Valid for 7 days</div>
+                      <div class="text-xs font-medium text-gray-500" id="validUntil">
+                        Feb 12, 2026
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Customer -->
+                <div class="p-4 border-b border-gray-100">
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-white font-semibold text-sm"
+                    >
+                      RS
+                    </div>
+                    <div>
+                      <div class="font-semibold text-gray-900">Rajesh Sharma</div>
+                      <div class="text-sm text-gray-500">Home - MG Road, Pune</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- System Summary -->
+                <div class="p-4 bg-gray-50">
+                  <div class="grid grid-cols-4 gap-3">
+                    <div class="text-center">
+                      <div class="text-xs text-gray-500">System</div>
+                      <div id="calcSize" class="text-base font-semibold text-gray-800">5 kW</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-xs text-gray-500">Panels</div>
+                      <div id="calcPanels" class="text-base font-semibold text-gray-800">10</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-xs text-gray-500">Generation</div>
+                      <div id="calcGen" class="text-base font-semibold text-primary">600/mo</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="text-xs text-gray-500">Savings</div>
+                      <div id="calcSavings" class="text-base font-semibold text-success">
+                        ₹4.8K/mo
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Price Breakdown -->
+              <div
+                class="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden mb-4"
+              >
+                <div class="p-4 border-b border-gray-100">
+                  <h3 class="font-semibold text-gray-900">Price Breakdown</h3>
+                </div>
+                <div class="p-4 space-y-3">
+                  <div class="flex justify-between">
+                    <div>
+                      <div class="font-medium text-gray-800">Solar Panels</div>
+                      <div id="panelDesc" class="text-xs text-gray-500">Mono PERC 540W × 10</div>
+                    </div>
+                    <div id="panelPrice" class="font-semibold text-gray-800">₹1,40,000</div>
+                  </div>
+                  <div class="flex justify-between">
+                    <div>
+                      <div class="font-medium text-gray-800">Inverter</div>
+                      <div id="inverterDesc" class="text-xs text-gray-500">Growatt 5kW</div>
+                    </div>
+                    <div id="inverterPrice" class="font-semibold text-gray-800">₹30,000</div>
+                  </div>
+                  <div class="flex justify-between">
+                    <div>
+                      <div class="font-medium text-gray-800">Structure</div>
+                      <div id="structureDesc" class="text-xs text-gray-500">Aluminum Rail</div>
+                    </div>
+                    <div id="structurePrice" class="font-semibold text-gray-800">₹15,000</div>
+                  </div>
+                  <div class="flex justify-between">
+                    <div>
+                      <div class="font-medium text-gray-800">Installation & BOS</div>
+                      <div class="text-xs text-gray-500">Complete with cabling</div>
+                    </div>
+                    <div id="installPrice" class="font-semibold text-gray-800">₹25,000</div>
+                  </div>
+                </div>
+
+                <!-- Totals -->
+                <div class="p-4 bg-gray-50 border-t border-gray-100 space-y-2">
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">Subtotal</span>
+                    <span id="subtotal" class="font-medium text-gray-800">₹2,10,000</span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">GST</span>
+                    <span id="gstAmount" class="font-medium text-gray-800">₹28,980</span>
+                  </div>
+                  <div id="discountRow" class="hidden flex justify-between text-sm">
+                    <span class="text-green-600">Discount</span>
+                    <span id="discountDisplay" class="font-medium text-green-600">-₹5,000</span>
+                  </div>
+                  <div id="subsidyRow" class="flex justify-between text-sm">
+                    <span class="text-green-600 flex items-center gap-1">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      PM Surya Ghar Subsidy
+                    </span>
+                    <span id="subsidyDisplay" class="font-medium text-green-600">-₹78,000</span>
+                  </div>
+
+                  <div class="pt-3 mt-3 border-t border-gray-200">
+                    <div class="flex items-end justify-between">
+                      <div>
+                        <div class="text-sm text-gray-500">Net Payable</div>
+                        <div class="text-xs text-gray-500" id="pricePerWatt">₹32.20/Wp</div>
+                      </div>
+                      <div
+                        id="totalPrice"
+                        class="text-3xl font-semibold bg-gradient-to-r from-primary to-primary-dark bg-clip-text text-transparent"
+                      >
+                        ₹1,60,980
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex gap-3">
+                <button
+                  onclick="recalculate()"
+                  class="flex-1 h-12 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  Recalculate
+                </button>
+                <button
+                  onclick="saveAndSend()"
+                  class="flex-1 h-12 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg font-medium text-sm hover:shadow-lg hover:shadow-primary/30 transition-all flex items-center justify-center gap-2"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                    />
+                  </svg>
+                  Save & Send
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <script>
-        // State
-        let systemSize = 5;
-        let isCalculated = false;
-        let selectedPanelBrand = '';
-        let selectedPanelTech = null; // { technology: 'perc', wattage: 540 }
-        
-        // Panel technology data per brand (simulating API response)
-        const PANEL_TECHNOLOGIES = {
-            'adani': [
-                { technology: 'perc', label: 'PERC', wattage: 540, wattageRange: '530-545Wp' },
-                { technology: 'perc', label: 'PERC', wattage: 555, wattageRange: '550-560Wp' },
-                { technology: 'topcon', label: 'TOPCon', wattage: 575, wattageRange: '570-580Wp' },
-                { technology: 'topcon', label: 'TOPCon', wattage: 585, wattageRange: '580-590Wp' },
-            ],
-            'waaree': [
-                { technology: 'perc', label: 'PERC', wattage: 545, wattageRange: '540-550Wp' },
-                { technology: 'perc', label: 'PERC', wattage: 560, wattageRange: '555-565Wp' },
-                { technology: 'topcon', label: 'TOPCon', wattage: 580, wattageRange: '575-585Wp' },
-                { technology: 'topcon', label: 'TOPCon', wattage: 595, wattageRange: '590-600Wp' },
-            ],
-            'tata': [
-                { technology: 'perc', label: 'PERC', wattage: 540, wattageRange: '535-545Wp' },
-                { technology: 'topcon', label: 'TOPCon', wattage: 570, wattageRange: '565-575Wp' },
-                { technology: 'topcon', label: 'TOPCon', wattage: 585, wattageRange: '580-590Wp' },
-            ],
-            'vikram': [
-                { technology: 'perc', label: 'PERC', wattage: 545, wattageRange: '540-550Wp' },
-                { technology: 'topcon', label: 'TOPCon', wattage: 565, wattageRange: '560-570Wp' },
-                { technology: 'topcon', label: 'TOPCon', wattage: 580, wattageRange: '575-585Wp' },
-            ],
-            'jinko': [
-                { technology: 'perc', label: 'PERC', wattage: 550, wattageRange: '545-555Wp' },
-                { technology: 'topcon', label: 'TOPCon', wattage: 585, wattageRange: '580-590Wp' },
-                { technology: 'topcon', label: 'TOPCon N-Type', wattage: 610, wattageRange: '605-615Wp' },
-            ],
-            'longi': [
-                { technology: 'perc', label: 'PERC', wattage: 555, wattageRange: '550-560Wp' },
-                { technology: 'topcon', label: 'Hi-MO 6', wattage: 580, wattageRange: '575-585Wp' },
-                { technology: 'topcon', label: 'Hi-MO 7', wattage: 600, wattageRange: '595-605Wp' },
-            ],
-        };
-        
-        // Panel brand selection
-        function selectPanelBrand(brand) {
-            selectedPanelBrand = brand;
-            selectedPanelTech = null; // Reset technology when brand changes
-            
-            // Update brand button states
-            document.querySelectorAll('.panel-brand-btn').forEach(btn => {
-                if (btn.dataset.brand === brand) {
-                    btn.classList.remove('bg-white', 'border-gray-200', 'text-gray-700', 'border');
-                    btn.classList.add('bg-primary/10', 'border-2', 'border-primary', 'text-primary');
-                } else {
-                    btn.classList.remove('bg-primary/10', 'border-2', 'border-primary', 'text-primary');
-                    btn.classList.add('bg-white', 'border', 'border-gray-200', 'text-gray-700');
-                }
-            });
-            
-            // Show/hide and populate technology section
-            const techSection = document.getElementById('panelTechSection');
-            const techContainer = document.getElementById('panelTechContainer');
-            
-            if (brand && PANEL_TECHNOLOGIES[brand]) {
-                const technologies = PANEL_TECHNOLOGIES[brand];
-                techContainer.innerHTML = technologies.map((tech, index) => `
+      // State
+      let systemSize = 5;
+      let isCalculated = false;
+      let selectedPanelBrand = '';
+      let selectedPanelTech = null; // { technology: 'perc', wattage: 540 }
+
+      // Panel technology data per brand (simulating API response)
+      const PANEL_TECHNOLOGIES = {
+        adani: [
+          { technology: 'perc', label: 'PERC', wattage: 540, wattageRange: '530-545Wp' },
+          { technology: 'perc', label: 'PERC', wattage: 555, wattageRange: '550-560Wp' },
+          { technology: 'topcon', label: 'TOPCon', wattage: 575, wattageRange: '570-580Wp' },
+          { technology: 'topcon', label: 'TOPCon', wattage: 585, wattageRange: '580-590Wp' },
+        ],
+        waaree: [
+          { technology: 'perc', label: 'PERC', wattage: 545, wattageRange: '540-550Wp' },
+          { technology: 'perc', label: 'PERC', wattage: 560, wattageRange: '555-565Wp' },
+          { technology: 'topcon', label: 'TOPCon', wattage: 580, wattageRange: '575-585Wp' },
+          { technology: 'topcon', label: 'TOPCon', wattage: 595, wattageRange: '590-600Wp' },
+        ],
+        tata: [
+          { technology: 'perc', label: 'PERC', wattage: 540, wattageRange: '535-545Wp' },
+          { technology: 'topcon', label: 'TOPCon', wattage: 570, wattageRange: '565-575Wp' },
+          { technology: 'topcon', label: 'TOPCon', wattage: 585, wattageRange: '580-590Wp' },
+        ],
+        vikram: [
+          { technology: 'perc', label: 'PERC', wattage: 545, wattageRange: '540-550Wp' },
+          { technology: 'topcon', label: 'TOPCon', wattage: 565, wattageRange: '560-570Wp' },
+          { technology: 'topcon', label: 'TOPCon', wattage: 580, wattageRange: '575-585Wp' },
+        ],
+        jinko: [
+          { technology: 'perc', label: 'PERC', wattage: 550, wattageRange: '545-555Wp' },
+          { technology: 'topcon', label: 'TOPCon', wattage: 585, wattageRange: '580-590Wp' },
+          { technology: 'topcon', label: 'TOPCon N-Type', wattage: 610, wattageRange: '605-615Wp' },
+        ],
+        longi: [
+          { technology: 'perc', label: 'PERC', wattage: 555, wattageRange: '550-560Wp' },
+          { technology: 'topcon', label: 'Hi-MO 6', wattage: 580, wattageRange: '575-585Wp' },
+          { technology: 'topcon', label: 'Hi-MO 7', wattage: 600, wattageRange: '595-605Wp' },
+        ],
+      };
+
+      // Panel brand selection
+      function selectPanelBrand(brand) {
+        selectedPanelBrand = brand;
+        selectedPanelTech = null; // Reset technology when brand changes
+
+        // Update brand button states
+        document.querySelectorAll('.panel-brand-btn').forEach((btn) => {
+          if (btn.dataset.brand === brand) {
+            btn.classList.remove('bg-white', 'border-gray-200', 'text-gray-700', 'border');
+            btn.classList.add('bg-primary/10', 'border-2', 'border-primary', 'text-primary');
+          } else {
+            btn.classList.remove('bg-primary/10', 'border-2', 'border-primary', 'text-primary');
+            btn.classList.add('bg-white', 'border', 'border-gray-200', 'text-gray-700');
+          }
+        });
+
+        // Show/hide and populate technology section
+        const techSection = document.getElementById('panelTechSection');
+        const techContainer = document.getElementById('panelTechContainer');
+
+        if (brand && PANEL_TECHNOLOGIES[brand]) {
+          const technologies = PANEL_TECHNOLOGIES[brand];
+          techContainer.innerHTML = technologies
+            .map(
+              (tech, index) => `
                     <button onclick="selectPanelTech('${tech.technology}', ${tech.wattage}, ${index})" 
                         class="panel-tech-btn flex-shrink-0 px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm transition-all hover:border-primary/50" 
                         data-index="${index}">
                         <div class="font-medium text-gray-700">${tech.label}</div>
                         <div class="text-xs text-gray-500">${tech.wattageRange}</div>
                     </button>
-                `).join('');
-                techSection.classList.remove('hidden');
-            } else {
-                techSection.classList.add('hidden');
-                techContainer.innerHTML = '';
-            }
-            
-            updateStep3Summary();
-            updateConfig();
+                `,
+            )
+            .join('');
+          techSection.classList.remove('hidden');
+        } else {
+          techSection.classList.add('hidden');
+          techContainer.innerHTML = '';
         }
-        
-        // Panel technology selection
-        function selectPanelTech(technology, wattage, index) {
-            selectedPanelTech = { technology, wattage };
-            
-            // Update technology button states
-            document.querySelectorAll('.panel-tech-btn').forEach(btn => {
-                if (parseInt(btn.dataset.index) === index) {
-                    btn.classList.remove('bg-white', 'border-gray-200');
-                    btn.classList.add('bg-primary/10', 'border-2', 'border-primary');
-                    btn.querySelector('.font-medium').classList.remove('text-gray-700');
-                    btn.querySelector('.font-medium').classList.add('text-primary');
-                } else {
-                    btn.classList.remove('bg-primary/10', 'border-2', 'border-primary');
-                    btn.classList.add('bg-white', 'border-gray-200');
-                    btn.querySelector('.font-medium').classList.remove('text-primary');
-                    btn.querySelector('.font-medium').classList.add('text-gray-700');
-                }
-            });
-            
-            updateStep3Summary();
-            updateConfig();
+
+        updateStep3Summary();
+        updateConfig();
+      }
+
+      // Panel technology selection
+      function selectPanelTech(technology, wattage, index) {
+        selectedPanelTech = { technology, wattage };
+
+        // Update technology button states
+        document.querySelectorAll('.panel-tech-btn').forEach((btn) => {
+          if (parseInt(btn.dataset.index) === index) {
+            btn.classList.remove('bg-white', 'border-gray-200');
+            btn.classList.add('bg-primary/10', 'border-2', 'border-primary');
+            btn.querySelector('.font-medium').classList.remove('text-gray-700');
+            btn.querySelector('.font-medium').classList.add('text-primary');
+          } else {
+            btn.classList.remove('bg-primary/10', 'border-2', 'border-primary');
+            btn.classList.add('bg-white', 'border-gray-200');
+            btn.querySelector('.font-medium').classList.remove('text-primary');
+            btn.querySelector('.font-medium').classList.add('text-gray-700');
+          }
+        });
+
+        updateStep3Summary();
+        updateConfig();
+      }
+
+      function updateStep3Summary() {
+        let summary = 'Panel & inverter brands (optional)';
+        if (selectedPanelBrand) {
+          const brandLabel =
+            selectedPanelBrand.charAt(0).toUpperCase() + selectedPanelBrand.slice(1);
+          summary = brandLabel;
+          if (selectedPanelTech) {
+            const techLabel = selectedPanelTech.technology === 'topcon' ? 'TOPCon' : 'PERC';
+            summary += ` ${techLabel} ${selectedPanelTech.wattage}Wp`;
+          }
         }
-        
-        function updateStep3Summary() {
-            let summary = 'Panel & inverter brands (optional)';
-            if (selectedPanelBrand) {
-                const brandLabel = selectedPanelBrand.charAt(0).toUpperCase() + selectedPanelBrand.slice(1);
-                summary = brandLabel;
-                if (selectedPanelTech) {
-                    const techLabel = selectedPanelTech.technology === 'topcon' ? 'TOPCon' : 'PERC';
-                    summary += ` ${techLabel} ${selectedPanelTech.wattage}Wp`;
-                }
-            }
-            document.getElementById('step3Summary').textContent = summary;
+        document.getElementById('step3Summary').textContent = summary;
+      }
+
+      // Floor number state
+      let floorNumber = 0;
+      const FLOOR_PERCENTAGE = 5; // 5% per floor
+      const BASE_INSTALL_COST = 25000; // Base installation cost for calculation
+      const TRANSPORT_RATE_PER_KM = 30; // ₹30 per km
+
+      // Floor stepper
+      function adjustFloor(delta) {
+        floorNumber = Math.max(0, Math.min(20, floorNumber + delta));
+        document.getElementById('floorValue').textContent = floorNumber;
+        updateFloorCharges();
+        updateStep4Summary();
+      }
+
+      function updateFloorCharges() {
+        const chargesText = document.getElementById('floorChargesText');
+        if (floorNumber === 0) {
+          chargesText.textContent = 'Ground floor - No extra charges';
+          chargesText.classList.remove('text-orange-600', 'font-medium');
+          chargesText.classList.add('text-gray-500');
+        } else {
+          const percentage = floorNumber * FLOOR_PERCENTAGE;
+          const charges = Math.round(BASE_INSTALL_COST * systemSize * (percentage / 100));
+          chargesText.textContent = `+${percentage}% floor charges (₹${charges.toLocaleString('en-IN')})`;
+          chargesText.classList.remove('text-gray-500');
+          chargesText.classList.add('text-orange-600', 'font-medium');
         }
-        
-        // Floor number state
-        let floorNumber = 0;
-        const FLOOR_PERCENTAGE = 5; // 5% per floor
-        const BASE_INSTALL_COST = 25000; // Base installation cost for calculation
-        const TRANSPORT_RATE_PER_KM = 30; // ₹30 per km
-        
-        // Floor stepper
-        function adjustFloor(delta) {
-            floorNumber = Math.max(0, Math.min(20, floorNumber + delta));
-            document.getElementById('floorValue').textContent = floorNumber;
-            updateFloorCharges();
-            updateStep4Summary();
+      }
+
+      // Distance cost
+      function updateDistanceCost() {
+        const distance = parseInt(document.getElementById('distanceKm').value) || 0;
+        const cost = distance * TRANSPORT_RATE_PER_KM;
+        document.getElementById('transportCost').textContent = `₹${cost.toLocaleString('en-IN')}`;
+        updateStep4Summary();
+      }
+
+      // Discount functions
+      function updateDiscount() {
+        const discountInput = document.getElementById('discountAmount');
+        const clearBtn = document.getElementById('discountClearBtn');
+        const value = parseFloat(discountInput.value) || 0;
+
+        if (value > 0) {
+          clearBtn.classList.remove('hidden');
+          clearBtn.classList.add('flex');
+        } else {
+          clearBtn.classList.add('hidden');
+          clearBtn.classList.remove('flex');
         }
-        
-        function updateFloorCharges() {
-            const chargesText = document.getElementById('floorChargesText');
-            if (floorNumber === 0) {
-                chargesText.textContent = 'Ground floor - No extra charges';
-                chargesText.classList.remove('text-orange-600', 'font-medium');
-                chargesText.classList.add('text-gray-500');
-            } else {
-                const percentage = floorNumber * FLOOR_PERCENTAGE;
-                const charges = Math.round(BASE_INSTALL_COST * systemSize * (percentage / 100));
-                chargesText.textContent = `+${percentage}% floor charges (₹${charges.toLocaleString('en-IN')})`;
-                chargesText.classList.remove('text-gray-500');
-                chargesText.classList.add('text-orange-600', 'font-medium');
-            }
+
+        // Highlight active preset
+        document.querySelectorAll('.discount-preset').forEach((btn) => {
+          btn.classList.remove('bg-green-500', 'text-white', 'border-green-500');
+          btn.classList.add('bg-white', 'text-green-700', 'border-green-200');
+        });
+
+        updateStep4Summary();
+      }
+
+      function setDiscount(amount) {
+        document.getElementById('discountAmount').value = amount;
+        updateDiscount();
+
+        // Highlight the selected preset
+        document.querySelectorAll('.discount-preset').forEach((btn) => {
+          const btnAmount = parseInt(btn.textContent.replace(/[₹,]/g, ''));
+          if (btnAmount === amount) {
+            btn.classList.remove('bg-white', 'text-green-700', 'border-green-200');
+            btn.classList.add('bg-green-500', 'text-white', 'border-green-500');
+          }
+        });
+      }
+
+      function clearDiscount() {
+        document.getElementById('discountAmount').value = '';
+        updateDiscount();
+      }
+
+      function updateStep4Summary() {
+        const parts = [];
+        if (floorNumber > 0) parts.push(`Floor ${floorNumber}`);
+        const distance = parseInt(document.getElementById('distanceKm').value) || 0;
+        if (distance > 0) parts.push(`${distance}km`);
+        const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
+        if (discount > 0) parts.push(`-₹${discount.toLocaleString('en-IN')}`);
+
+        document.getElementById('step4Summary').textContent =
+          parts.length > 0 ? parts.join(' • ') : 'Installation details & discount';
+      }
+
+      // Toggle step expansion
+      function toggleStep(step) {
+        const card = document.getElementById(`step${step}`);
+        const content = document.getElementById(`step${step}Content`);
+        const chevron = document.getElementById(`step${step}Chevron`);
+
+        if (card.classList.contains('collapsed')) {
+          card.classList.remove('collapsed');
+          card.classList.add('expanded');
+          content.classList.remove('hidden');
+          chevron.classList.add('rotate-180');
+        } else {
+          card.classList.remove('expanded');
+          card.classList.add('collapsed');
+          content.classList.add('hidden');
+          chevron.classList.remove('rotate-180');
         }
-        
-        // Distance cost
-        function updateDistanceCost() {
-            const distance = parseInt(document.getElementById('distanceKm').value) || 0;
-            const cost = distance * TRANSPORT_RATE_PER_KM;
-            document.getElementById('transportCost').textContent = `₹${cost.toLocaleString('en-IN')}`;
-            updateStep4Summary();
+      }
+
+      // Size selection
+      function setSize(size) {
+        systemSize = size;
+        document.getElementById('systemSizeInput').value = size;
+        updateSizeChips();
+        updateQuickPreview();
+      }
+
+      function handleSizeChange() {
+        const value = parseFloat(document.getElementById('systemSizeInput').value);
+        if (value && value > 0) {
+          systemSize = value;
+          updateSizeChips();
+          updateQuickPreview();
         }
-        
-        // Discount functions
-        function updateDiscount() {
-            const discountInput = document.getElementById('discountAmount');
-            const clearBtn = document.getElementById('discountClearBtn');
-            const value = parseFloat(discountInput.value) || 0;
-            
-            if (value > 0) {
-                clearBtn.classList.remove('hidden');
-                clearBtn.classList.add('flex');
-            } else {
-                clearBtn.classList.add('hidden');
-                clearBtn.classList.remove('flex');
-            }
-            
-            // Highlight active preset
-            document.querySelectorAll('.discount-preset').forEach(btn => {
-                btn.classList.remove('bg-green-500', 'text-white', 'border-green-500');
-                btn.classList.add('bg-white', 'text-green-700', 'border-green-200');
-            });
-            
-            updateStep4Summary();
+      }
+
+      function updateSizeChips() {
+        document.querySelectorAll('.size-chip').forEach((chip) => {
+          const chipSize = parseInt(chip.dataset.size);
+          if (chipSize === systemSize) {
+            chip.classList.add('active');
+            chip.classList.remove('bg-white', 'border-gray-200', 'text-gray-600');
+            chip.classList.add(
+              'bg-primary/10',
+              'border-primary',
+              'border-2',
+              'text-primary',
+              'font-semibold',
+            );
+          } else {
+            chip.classList.remove(
+              'active',
+              'bg-primary/10',
+              'border-primary',
+              'border-2',
+              'text-primary',
+              'font-semibold',
+            );
+            chip.classList.add('bg-white', 'border-gray-200', 'text-gray-600');
+          }
+        });
+      }
+
+      function updateQuickPreview() {
+        const generation = Math.round(systemSize * 120);
+        const savings = systemSize * 120 * 8;
+
+        document.getElementById('previewSizeQuick').textContent = `${systemSize} kW`;
+        document.getElementById('previewGenQuick').textContent = generation;
+        document.getElementById('previewSavingsQuick').textContent =
+          `₹${(savings / 1000).toFixed(1)}K`;
+
+        // Update step summary
+        const projectType = document.getElementById('projectType').value;
+        const phaseType = document.getElementById('phaseType').value;
+        const projectLabel =
+          projectType.split('_')[0].charAt(0).toUpperCase() + projectType.split('_')[0].slice(1);
+        const phaseLabel = phaseType === 'single_phase' ? 'Single Phase' : 'Three Phase';
+        document.getElementById('step2Summary').textContent =
+          `${systemSize} kW • ${projectLabel} • ${phaseLabel}`;
+      }
+
+      function updateConfig() {
+        updateQuickPreview();
+
+        // Show/hide subsidy section based on project type
+        const projectType = document.getElementById('projectType').value;
+        const subsidyCard = document.getElementById('subsidyCard');
+        const dcrSection = document.getElementById('dcrSection');
+
+        if (projectType === 'residential' || projectType === 'residential_apartment') {
+          subsidyCard.classList.remove('hidden');
+        } else {
+          subsidyCard.classList.add('hidden');
         }
-        
-        function setDiscount(amount) {
-            document.getElementById('discountAmount').value = amount;
-            updateDiscount();
-            
-            // Highlight the selected preset
-            document.querySelectorAll('.discount-preset').forEach(btn => {
-                const btnAmount = parseInt(btn.textContent.replace(/[₹,]/g, ''));
-                if (btnAmount === amount) {
-                    btn.classList.remove('bg-white', 'text-green-700', 'border-green-200');
-                    btn.classList.add('bg-green-500', 'text-white', 'border-green-500');
-                }
-            });
+
+        // Show/hide DCR based on subsidy toggle
+        const subsidyEnabled = document.getElementById('subsidyToggle').checked;
+        if (subsidyEnabled) {
+          dcrSection.classList.remove('hidden');
+        } else {
+          dcrSection.classList.add('hidden');
         }
-        
-        function clearDiscount() {
-            document.getElementById('discountAmount').value = '';
-            updateDiscount();
-        }
-        
-        function updateStep4Summary() {
-            const parts = [];
-            if (floorNumber > 0) parts.push(`Floor ${floorNumber}`);
-            const distance = parseInt(document.getElementById('distanceKm').value) || 0;
-            if (distance > 0) parts.push(`${distance}km`);
-            const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
-            if (discount > 0) parts.push(`-₹${discount.toLocaleString('en-IN')}`);
-            
-            document.getElementById('step4Summary').textContent = parts.length > 0 ? parts.join(' • ') : 'Installation details & discount';
-        }
-        
-        // Toggle step expansion
-        function toggleStep(step) {
-            const card = document.getElementById(`step${step}`);
-            const content = document.getElementById(`step${step}Content`);
-            const chevron = document.getElementById(`step${step}Chevron`);
-            
-            if (card.classList.contains('collapsed')) {
-                card.classList.remove('collapsed');
-                card.classList.add('expanded');
-                content.classList.remove('hidden');
-                chevron.classList.add('rotate-180');
-            } else {
-                card.classList.remove('expanded');
-                card.classList.add('collapsed');
-                content.classList.add('hidden');
-                chevron.classList.remove('rotate-180');
-            }
-        }
-        
-        // Size selection
-        function setSize(size) {
-            systemSize = size;
-            document.getElementById('systemSizeInput').value = size;
-            updateSizeChips();
-            updateQuickPreview();
-        }
-        
-        function handleSizeChange() {
-            const value = parseFloat(document.getElementById('systemSizeInput').value);
-            if (value && value > 0) {
-                systemSize = value;
-                updateSizeChips();
-                updateQuickPreview();
-            }
-        }
-        
-        function updateSizeChips() {
-            document.querySelectorAll('.size-chip').forEach(chip => {
-                const chipSize = parseInt(chip.dataset.size);
-                if (chipSize === systemSize) {
-                    chip.classList.add('active');
-                    chip.classList.remove('bg-white', 'border-gray-200', 'text-gray-600');
-                    chip.classList.add('bg-primary/10', 'border-primary', 'border-2', 'text-primary', 'font-semibold');
-                } else {
-                    chip.classList.remove('active', 'bg-primary/10', 'border-primary', 'border-2', 'text-primary', 'font-semibold');
-                    chip.classList.add('bg-white', 'border-gray-200', 'text-gray-600');
-                }
-            });
-        }
-        
-        function updateQuickPreview() {
-            const generation = Math.round(systemSize * 120);
-            const savings = (systemSize * 120 * 8);
-            
-            document.getElementById('previewSizeQuick').textContent = `${systemSize} kW`;
-            document.getElementById('previewGenQuick').textContent = generation;
-            document.getElementById('previewSavingsQuick').textContent = `₹${(savings/1000).toFixed(1)}K`;
-            
-            // Update step summary
-            const projectType = document.getElementById('projectType').value;
-            const phaseType = document.getElementById('phaseType').value;
-            const projectLabel = projectType.split('_')[0].charAt(0).toUpperCase() + projectType.split('_')[0].slice(1);
-            const phaseLabel = phaseType === 'single_phase' ? 'Single Phase' : 'Three Phase';
-            document.getElementById('step2Summary').textContent = `${systemSize} kW • ${projectLabel} • ${phaseLabel}`;
-        }
-        
-        function updateConfig() {
-            updateQuickPreview();
-            
-            // Show/hide subsidy section based on project type
-            const projectType = document.getElementById('projectType').value;
-            const subsidyCard = document.getElementById('subsidyCard');
-            const dcrSection = document.getElementById('dcrSection');
-            
-            if (projectType === 'residential' || projectType === 'residential_apartment') {
-                subsidyCard.classList.remove('hidden');
-            } else {
-                subsidyCard.classList.add('hidden');
-            }
-            
-            // Show/hide DCR based on subsidy toggle
-            const subsidyEnabled = document.getElementById('subsidyToggle').checked;
-            if (subsidyEnabled) {
-                dcrSection.classList.remove('hidden');
-            } else {
-                dcrSection.classList.add('hidden');
-            }
-        }
-        
-        function calculateQuote() {
-            // Simulate calculation with loading
-            const btn = document.getElementById('calculateBtn');
-            btn.innerHTML = `
+      }
+
+      function calculateQuote() {
+        // Simulate calculation with loading
+        const btn = document.getElementById('calculateBtn');
+        btn.innerHTML = `
                 <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
                 Calculating...
             `;
-            btn.disabled = true;
-            
-            setTimeout(() => {
-                // Update UI to show calculated quote
-                document.getElementById('emptyPreview').classList.add('hidden');
-                document.getElementById('quotePreview').classList.remove('hidden');
-                
-                // Update calculated values
-                updateCalculatedQuote();
-                
-                // Update progress to 100%
-                document.getElementById('progressBar').style.width = '100%';
-                document.getElementById('progressPercent').textContent = '100%';
-                
-                // Reset button
-                btn.innerHTML = `
+        btn.disabled = true;
+
+        setTimeout(() => {
+          // Update UI to show calculated quote
+          document.getElementById('emptyPreview').classList.add('hidden');
+          document.getElementById('quotePreview').classList.remove('hidden');
+
+          // Update calculated values
+          updateCalculatedQuote();
+
+          // Update progress to 100%
+          document.getElementById('progressBar').style.width = '100%';
+          document.getElementById('progressPercent').textContent = '100%';
+
+          // Reset button
+          btn.innerHTML = `
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                     Recalculate Quote
                 `;
-                btn.disabled = false;
-                btn.onclick = recalculate;
-                
-                isCalculated = true;
-            }, 1500);
+          btn.disabled = false;
+          btn.onclick = recalculate;
+
+          isCalculated = true;
+        }, 1500);
+      }
+
+      function updateCalculatedQuote() {
+        const size = systemSize;
+        const generation = Math.round(size * 120);
+        const savings = Math.round(size * 120 * 8);
+
+        // Determine panel wattage based on selection
+        let panelWattage = 540; // default
+        let panelTechLabel = 'Mono PERC';
+        let panelBrandLabel = '';
+
+        if (selectedPanelBrand) {
+          panelBrandLabel =
+            selectedPanelBrand.charAt(0).toUpperCase() + selectedPanelBrand.slice(1);
+          if (selectedPanelTech) {
+            panelWattage = selectedPanelTech.wattage;
+            panelTechLabel = selectedPanelTech.technology === 'topcon' ? 'TOPCon' : 'PERC';
+          } else if (
+            PANEL_TECHNOLOGIES[selectedPanelBrand] &&
+            PANEL_TECHNOLOGIES[selectedPanelBrand].length > 0
+          ) {
+            panelWattage = PANEL_TECHNOLOGIES[selectedPanelBrand][0].wattage;
+            panelTechLabel = PANEL_TECHNOLOGIES[selectedPanelBrand][0].label;
+          }
         }
-        
-        function updateCalculatedQuote() {
-            const size = systemSize;
-            const generation = Math.round(size * 120);
-            const savings = Math.round(size * 120 * 8);
-            
-            // Determine panel wattage based on selection
-            let panelWattage = 540; // default
-            let panelTechLabel = 'Mono PERC';
-            let panelBrandLabel = '';
-            
-            if (selectedPanelBrand) {
-                panelBrandLabel = selectedPanelBrand.charAt(0).toUpperCase() + selectedPanelBrand.slice(1);
-                if (selectedPanelTech) {
-                    panelWattage = selectedPanelTech.wattage;
-                    panelTechLabel = selectedPanelTech.technology === 'topcon' ? 'TOPCon' : 'PERC';
-                } else if (PANEL_TECHNOLOGIES[selectedPanelBrand] && PANEL_TECHNOLOGIES[selectedPanelBrand].length > 0) {
-                    panelWattage = PANEL_TECHNOLOGIES[selectedPanelBrand][0].wattage;
-                    panelTechLabel = PANEL_TECHNOLOGIES[selectedPanelBrand][0].label;
-                }
-            }
-            
-            const panelCount = Math.ceil(size * 1000 / panelWattage);
-            
-            // Get floor and distance values
-            const distance = parseInt(document.getElementById('distanceKm').value) || 0;
-            const transportCost = distance * TRANSPORT_RATE_PER_KM;
-            
-            // Pricing calculation (with floor and distance)
-            const panelCost = size * 1000 * 28;
-            const inverterCost = size * 1000 * 6;
-            const structureCost = size * 1000 * 3;
-            let installCost = size * 1000 * 5;
-            
-            // Add floor charges
-            if (floorNumber > 0) {
-                const floorMultiplier = 1 + (floorNumber * FLOOR_PERCENTAGE) / 100;
-                installCost = Math.round(installCost * floorMultiplier);
-            }
-            
-            // Add transport cost
-            installCost += transportCost;
-            
-            const subtotal = panelCost + inverterCost + structureCost + installCost;
-            const gst = subtotal * 0.138;
-            const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
-            
-            // Subsidy
-            const projectType = document.getElementById('projectType').value;
-            const subsidyEnabled = document.getElementById('subsidyToggle').checked;
-            let subsidy = 0;
-            if (subsidyEnabled && (projectType === 'residential' || projectType === 'residential_apartment')) {
-                if (size <= 2) subsidy = size * 30000;
-                else if (size <= 3) subsidy = 60000 + (size - 2) * 18000;
-                else subsidy = 78000;
-            }
-            
-            const total = subtotal + gst - discount - subsidy;
-            const pricePerWatt = total / (size * 1000);
-            
-            // Get inverter brand
-            const inverterBrand = document.getElementById('inverterBrand').value;
-            const inverterBrandLabel = inverterBrand ? inverterBrand.charAt(0).toUpperCase() + inverterBrand.slice(1) : 'Growatt';
-            
-            // Update display
-            document.getElementById('calcSize').textContent = `${size} kW`;
-            document.getElementById('calcPanels').textContent = panelCount;
-            document.getElementById('calcGen').textContent = `${generation}/mo`;
-            document.getElementById('calcSavings').textContent = `₹${(savings/1000).toFixed(1)}K/mo`;
-            
-            // Panel description with brand and technology
-            let panelDescText = `${panelTechLabel} ${panelWattage}W × ${panelCount}`;
-            if (panelBrandLabel) {
-                panelDescText = `${panelBrandLabel} ${panelTechLabel} ${panelWattage}W × ${panelCount}`;
-            }
-            document.getElementById('panelDesc').textContent = panelDescText;
-            document.getElementById('panelPrice').textContent = `₹${panelCost.toLocaleString('en-IN')}`;
-            document.getElementById('inverterDesc').textContent = `${inverterBrandLabel} ${size}kW String`;
-            document.getElementById('inverterPrice').textContent = `₹${inverterCost.toLocaleString('en-IN')}`;
-            document.getElementById('structureDesc').textContent = document.getElementById('structureType').selectedOptions[0].text;
-            document.getElementById('structurePrice').textContent = `₹${structureCost.toLocaleString('en-IN')}`;
-            document.getElementById('installPrice').textContent = `₹${installCost.toLocaleString('en-IN')}`;
-            
-            document.getElementById('subtotal').textContent = `₹${subtotal.toLocaleString('en-IN')}`;
-            document.getElementById('gstAmount').textContent = `₹${Math.round(gst).toLocaleString('en-IN')}`;
-            
-            if (discount > 0) {
-                document.getElementById('discountRow').classList.remove('hidden');
-                document.getElementById('discountDisplay').textContent = `-₹${discount.toLocaleString('en-IN')}`;
-            } else {
-                document.getElementById('discountRow').classList.add('hidden');
-            }
-            
-            if (subsidy > 0) {
-                document.getElementById('subsidyRow').classList.remove('hidden');
-                document.getElementById('subsidyDisplay').textContent = `-₹${subsidy.toLocaleString('en-IN')}`;
-            } else {
-                document.getElementById('subsidyRow').classList.add('hidden');
-            }
-            
-            document.getElementById('totalPrice').textContent = `₹${Math.round(total).toLocaleString('en-IN')}`;
-            document.getElementById('pricePerWatt').textContent = `₹${pricePerWatt.toFixed(2)}/Wp`;
-            
-            // Valid until date
-            const validDate = new Date();
-            validDate.setDate(validDate.getDate() + 7);
-            document.getElementById('validUntil').textContent = validDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
+
+        const panelCount = Math.ceil((size * 1000) / panelWattage);
+
+        // Get floor and distance values
+        const distance = parseInt(document.getElementById('distanceKm').value) || 0;
+        const transportCost = distance * TRANSPORT_RATE_PER_KM;
+
+        // Pricing calculation (with floor and distance)
+        const panelCost = size * 1000 * 28;
+        const inverterCost = size * 1000 * 6;
+        const structureCost = size * 1000 * 3;
+        let installCost = size * 1000 * 5;
+
+        // Add floor charges
+        if (floorNumber > 0) {
+          const floorMultiplier = 1 + (floorNumber * FLOOR_PERCENTAGE) / 100;
+          installCost = Math.round(installCost * floorMultiplier);
         }
-        
-        function recalculate() {
-            document.getElementById('emptyPreview').classList.remove('hidden');
-            document.getElementById('quotePreview').classList.add('hidden');
-            
-            const btn = document.getElementById('calculateBtn');
-            btn.innerHTML = `
+
+        // Add transport cost
+        installCost += transportCost;
+
+        const subtotal = panelCost + inverterCost + structureCost + installCost;
+        const gst = subtotal * 0.138;
+        const discount = parseFloat(document.getElementById('discountAmount').value) || 0;
+
+        // Subsidy
+        const projectType = document.getElementById('projectType').value;
+        const subsidyEnabled = document.getElementById('subsidyToggle').checked;
+        let subsidy = 0;
+        if (
+          subsidyEnabled &&
+          (projectType === 'residential' || projectType === 'residential_apartment')
+        ) {
+          if (size <= 2) subsidy = size * 30000;
+          else if (size <= 3) subsidy = 60000 + (size - 2) * 18000;
+          else subsidy = 78000;
+        }
+
+        const total = subtotal + gst - discount - subsidy;
+        const pricePerWatt = total / (size * 1000);
+
+        // Get inverter brand
+        const inverterBrand = document.getElementById('inverterBrand').value;
+        const inverterBrandLabel = inverterBrand
+          ? inverterBrand.charAt(0).toUpperCase() + inverterBrand.slice(1)
+          : 'Growatt';
+
+        // Update display
+        document.getElementById('calcSize').textContent = `${size} kW`;
+        document.getElementById('calcPanels').textContent = panelCount;
+        document.getElementById('calcGen').textContent = `${generation}/mo`;
+        document.getElementById('calcSavings').textContent = `₹${(savings / 1000).toFixed(1)}K/mo`;
+
+        // Panel description with brand and technology
+        let panelDescText = `${panelTechLabel} ${panelWattage}W × ${panelCount}`;
+        if (panelBrandLabel) {
+          panelDescText = `${panelBrandLabel} ${panelTechLabel} ${panelWattage}W × ${panelCount}`;
+        }
+        document.getElementById('panelDesc').textContent = panelDescText;
+        document.getElementById('panelPrice').textContent = `₹${panelCost.toLocaleString('en-IN')}`;
+        document.getElementById('inverterDesc').textContent =
+          `${inverterBrandLabel} ${size}kW String`;
+        document.getElementById('inverterPrice').textContent =
+          `₹${inverterCost.toLocaleString('en-IN')}`;
+        document.getElementById('structureDesc').textContent =
+          document.getElementById('structureType').selectedOptions[0].text;
+        document.getElementById('structurePrice').textContent =
+          `₹${structureCost.toLocaleString('en-IN')}`;
+        document.getElementById('installPrice').textContent =
+          `₹${installCost.toLocaleString('en-IN')}`;
+
+        document.getElementById('subtotal').textContent = `₹${subtotal.toLocaleString('en-IN')}`;
+        document.getElementById('gstAmount').textContent =
+          `₹${Math.round(gst).toLocaleString('en-IN')}`;
+
+        if (discount > 0) {
+          document.getElementById('discountRow').classList.remove('hidden');
+          document.getElementById('discountDisplay').textContent =
+            `-₹${discount.toLocaleString('en-IN')}`;
+        } else {
+          document.getElementById('discountRow').classList.add('hidden');
+        }
+
+        if (subsidy > 0) {
+          document.getElementById('subsidyRow').classList.remove('hidden');
+          document.getElementById('subsidyDisplay').textContent =
+            `-₹${subsidy.toLocaleString('en-IN')}`;
+        } else {
+          document.getElementById('subsidyRow').classList.add('hidden');
+        }
+
+        document.getElementById('totalPrice').textContent =
+          `₹${Math.round(total).toLocaleString('en-IN')}`;
+        document.getElementById('pricePerWatt').textContent = `₹${pricePerWatt.toFixed(2)}/Wp`;
+
+        // Valid until date
+        const validDate = new Date();
+        validDate.setDate(validDate.getDate() + 7);
+        document.getElementById('validUntil').textContent = validDate.toLocaleDateString('en-IN', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        });
+      }
+
+      function recalculate() {
+        document.getElementById('emptyPreview').classList.remove('hidden');
+        document.getElementById('quotePreview').classList.add('hidden');
+
+        const btn = document.getElementById('calculateBtn');
+        btn.innerHTML = `
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                 Calculate Quote
             `;
-            btn.onclick = calculateQuote;
-            isCalculated = false;
-        }
-        
-        function saveAndSend() {
-            const toast = document.createElement('div');
-            toast.className = 'fixed bottom-4 right-4 bg-gray-900 text-white px-4 py-2 rounded-lg shadow-2xl flex items-center gap-3 z-50 animate-pulse';
-            toast.innerHTML = `
+        btn.onclick = calculateQuote;
+        isCalculated = false;
+      }
+
+      function saveAndSend() {
+        const toast = document.createElement('div');
+        toast.className =
+          'fixed bottom-4 right-4 bg-gray-900 text-white px-4 py-2 rounded-lg shadow-2xl flex items-center gap-3 z-50 animate-pulse';
+        toast.innerHTML = `
                 <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                 Quote saved & sent to customer!
             `;
-            document.body.appendChild(toast);
-            setTimeout(() => {
-                toast.remove();
-                window.location.href = 'list.html';
-            }, 2000);
-        }
-        
-        function openCustomerDropdown() {
-            // Placeholder for customer dropdown
-            console.log('Open customer dropdown');
-        }
-        
-        function openPropertyDropdown() {
-            // Placeholder for property dropdown
-            console.log('Open property dropdown');
-        }
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            updateQuickPreview();
-            updateDistanceCost();
-            updateFloorCharges();
-        });
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.remove();
+          window.location.href = 'list.html';
+        }, 2000);
+      }
+
+      function openCustomerDropdown() {
+        // Placeholder for customer dropdown
+        console.log('Open customer dropdown');
+      }
+
+      function openPropertyDropdown() {
+        // Placeholder for property dropdown
+        console.log('Open property dropdown');
+      }
+
+      // Initialize
+      document.addEventListener('DOMContentLoaded', function () {
+        updateQuickPreview();
+        updateDistanceCost();
+        updateFloorCharges();
+      });
     </script>
-</body>
+  </body>
 </html>

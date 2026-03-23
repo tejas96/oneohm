@@ -4,7 +4,7 @@
     /* Base Options */
     "rootDir": ".",
     "baseUrl": ".",
-    
+
     /* Type Checking */
     "strict": true,
     "noImplicitAny": true,
@@ -23,7 +23,7 @@
     "noPropertyAccessFromIndexSignature": false,
     "allowUnusedLabels": false,
     "allowUnreachableCode": false,
-    
+
     /* Module Resolution */
     "moduleResolution": "node",
     "module": "esnext",
@@ -33,7 +33,7 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    
+
     /* Emit */
     "declaration": true,
     "declarationMap": true,
@@ -41,18 +41,18 @@
     "removeComments": false,
     "importHelpers": true,
     "downlevelIteration": true,
-    
+
     /* Decorators */
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    
+
     /* Interop Constraints */
     "forceConsistentCasingInFileNames": true,
-    
+
     /* Performance */
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    
+
     /* Path Mappings - Shared Package */
     "paths": {
       "@oneohm-epc/shared": ["libs/shared/src/index.ts"],

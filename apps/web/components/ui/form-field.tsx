@@ -14,8 +14,10 @@ type RenderFn = (props: {
   errorMessage?: string;
 }) => React.ReactNode;
 
-export interface FormFieldInputProps<T extends FieldValues>
-  extends Omit<InputProps, 'value' | 'onChange' | 'onBlur' | 'name' | 'error' | 'errorMessage'> {
+export interface FormFieldInputProps<T extends FieldValues> extends Omit<
+  InputProps,
+  'value' | 'onChange' | 'onBlur' | 'name' | 'error' | 'errorMessage'
+> {
   /** react-hook-form control */
   control: Control<T>;
   /** Field name from form schema */

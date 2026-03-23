@@ -1,342 +1,523 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Activity Logs - OneOhm Solar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#F97316',
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#F97316',
+            },
+          },
+        },
+      };
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+      body {
+        font-family: 'Inter', sans-serif;
+      }
     </style>
-</head>
-<body class="bg-gray-50">
+  </head>
+  <body class="bg-gray-50">
     <div class="flex h-screen">
-        <!-- Sidebar -->
-        <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
-            <div class="p-6 border-b border-gray-700">
-                <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
-                <p class="text-gray-400 text-sm mt-1">Admin Portal</p>
-            </div>
-            
-            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-                <a href="admin-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                    </svg>
-                    <span>Dashboard</span>
-                </a>
-                <a href="admin-users.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                    </svg>
-                    <span>Users</span>
-                </a>
-                <a href="activity-logs.html" class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                    </svg>
-                    <span>Activity Logs</span>
-                </a>
-                <a href="system-settings.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                    <span>Settings</span>
-                </a>
-            </nav>
-
-            <div class="p-4 border-t border-gray-700">
-                <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
-                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
-                        SA
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="font-semibold text-sm truncate">Super Admin</p>
-                        <p class="text-xs text-gray-400 truncate">Administrator</p>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Top Bar -->
-            <header class="bg-white border-b border-gray-200 px-8 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-900">Activity Logs</h2>
-                        <p class="text-sm text-gray-600">Monitor all system activities and user actions</p>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <button class="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold hover:bg-gray-50">
-                            Export Logs
-                        </button>
-                        <button class="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold hover:bg-gray-50">
-                            Clear Filters
-                        </button>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Filters -->
-            <div class="bg-white border-b border-gray-200 px-8 py-4">
-                <div class="flex items-center space-x-4">
-                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
-                        <option>All Activities</option>
-                        <option>User Login</option>
-                        <option>Data Changes</option>
-                        <option>System Actions</option>
-                        <option>Errors</option>
-                    </select>
-                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
-                        <option>All Users</option>
-                        <option>Admins Only</option>
-                        <option>Sales Team</option>
-                        <option>Finance Team</option>
-                    </select>
-                    <select class="px-4 py-2 border border-gray-300 rounded-lg">
-                        <option>Today</option>
-                        <option>Last 7 Days</option>
-                        <option>Last 30 Days</option>
-                        <option>Custom Range</option>
-                    </select>
-                    <div class="flex-1"></div>
-                    <input type="text" placeholder="Search logs..." class="px-4 py-2 border border-gray-300 rounded-lg w-64">
-                </div>
-            </div>
-
-            <!-- Activity Timeline -->
-            <main class="flex-1 overflow-y-auto p-8">
-                <div class="max-w-5xl mx-auto">
-                    <!-- Today Section -->
-                    <div class="mb-8">
-                        <h3 class="text-lg font-bold text-gray-900 mb-4 sticky top-0 bg-gray-50 py-2">Today - October 25, 2025</h3>
-                        <div class="space-y-3">
-                            <!-- Activity 1 - User Login -->
-                            <div class="bg-white border-2 border-gray-200 rounded-xl p-5 hover:border-blue-300">
-                                <div class="flex items-start space-x-4">
-                                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="flex items-start justify-between mb-2">
-                                            <div>
-                                                <p class="font-bold text-gray-900 mb-1">User Login</p>
-                                                <p class="text-sm text-gray-700"><span class="font-semibold">Ravi Kumar</span> (Sales Manager) logged into the system</p>
-                                            </div>
-                                            <span class="text-xs text-gray-500 whitespace-nowrap ml-4">2:45 PM</span>
-                                        </div>
-                                        <div class="flex items-center space-x-4 text-xs text-gray-600">
-                                            <span>IP: 192.168.1.45</span>
-                                            <span>•</span>
-                                            <span>Location: Pune, MH</span>
-                                            <span>•</span>
-                                            <span>Device: Chrome on Windows</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Activity 2 - Quote Created -->
-                            <div class="bg-white border-2 border-gray-200 rounded-xl p-5 hover:border-green-300">
-                                <div class="flex items-start space-x-4">
-                                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="flex items-start justify-between mb-2">
-                                            <div>
-                                                <p class="font-bold text-gray-900 mb-1">Quote Created</p>
-                                                <p class="text-sm text-gray-700"><span class="font-semibold">Priya Sharma</span> created quote <span class="font-mono text-primary">QT-2025-248</span> for customer Amit Patel</p>
-                                            </div>
-                                            <span class="text-xs text-gray-500 whitespace-nowrap ml-4">2:30 PM</span>
-                                        </div>
-                                        <div class="bg-green-50 rounded-lg p-3 mt-2">
-                                            <div class="grid grid-cols-3 gap-4 text-sm">
-                                                <div>
-                                                    <p class="text-xs text-gray-600">Quote ID</p>
-                                                    <p class="font-semibold text-gray-900">QT-2025-248</p>
-                                                </div>
-                                                <div>
-                                                    <p class="text-xs text-gray-600">Value</p>
-                                                    <p class="font-semibold text-green-600">₹6.8L</p>
-                                                </div>
-                                                <div>
-                                                    <p class="text-xs text-gray-600">System Size</p>
-                                                    <p class="font-semibold text-gray-900">10 kW</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Activity 3 - Payment Received -->
-                            <div class="bg-white border-2 border-gray-200 rounded-xl p-5 hover:border-purple-300">
-                                <div class="flex items-start space-x-4">
-                                    <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="flex items-start justify-between mb-2">
-                                            <div>
-                                                <p class="font-bold text-gray-900 mb-1">Payment Received</p>
-                                                <p class="text-sm text-gray-700"><span class="font-semibold">Finance Team</span> recorded payment of ₹2,50,000 for project <span class="font-mono text-primary">PRJ-2025-085</span></p>
-                                            </div>
-                                            <span class="text-xs text-gray-500 whitespace-nowrap ml-4">1:15 PM</span>
-                                        </div>
-                                        <div class="bg-purple-50 rounded-lg p-3 mt-2">
-                                            <div class="grid grid-cols-4 gap-4 text-sm">
-                                                <div>
-                                                    <p class="text-xs text-gray-600">Amount</p>
-                                                    <p class="font-semibold text-purple-600">₹2,50,000</p>
-                                                </div>
-                                                <div>
-                                                    <p class="text-xs text-gray-600">Method</p>
-                                                    <p class="font-semibold text-gray-900">Bank Transfer</p>
-                                                </div>
-                                                <div>
-                                                    <p class="text-xs text-gray-600">Phase</p>
-                                                    <p class="font-semibold text-gray-900">Installation</p>
-                                                </div>
-                                                <div>
-                                                    <p class="text-xs text-gray-600">Status</p>
-                                                    <p class="font-semibold text-green-600">Verified</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Activity 4 - Project Status Update -->
-                            <div class="bg-white border-2 border-gray-200 rounded-xl p-5 hover:border-yellow-300">
-                                <div class="flex items-start space-x-4">
-                                    <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="flex items-start justify-between mb-2">
-                                            <div>
-                                                <p class="font-bold text-gray-900 mb-1">Project Status Updated</p>
-                                                <p class="text-sm text-gray-700"><span class="font-semibold">Suresh Kumar</span> updated project <span class="font-mono text-primary">PRJ-2025-089</span> status</p>
-                                            </div>
-                                            <span class="text-xs text-gray-500 whitespace-nowrap ml-4">12:00 PM</span>
-                                        </div>
-                                        <div class="flex items-center space-x-3 mt-2">
-                                            <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">FROM: Site Survey</span>
-                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                                            </svg>
-                                            <span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full">TO: Design Approval</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Activity 5 - Lead Assigned -->
-                            <div class="bg-white border-2 border-gray-200 rounded-xl p-5 hover:border-orange-300">
-                                <div class="flex items-start space-x-4">
-                                    <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="flex items-start justify-between mb-2">
-                                            <div>
-                                                <p class="font-bold text-gray-900 mb-1">Lead Assigned</p>
-                                                <p class="text-sm text-gray-700"><span class="font-semibold">Admin</span> assigned lead <span class="font-mono text-primary">LD-2025-345</span> to <span class="font-semibold">Neha Telecaller</span></p>
-                                            </div>
-                                            <span class="text-xs text-gray-500 whitespace-nowrap ml-4">10:30 AM</span>
-                                        </div>
-                                        <div class="bg-orange-50 rounded-lg p-3 mt-2">
-                                            <p class="text-sm text-gray-700"><span class="font-semibold">Lead:</span> Kavita Singh • <span class="font-semibold">Source:</span> Website Form • <span class="font-semibold">Priority:</span> High</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Yesterday Section -->
-                    <div class="mb-8">
-                        <h3 class="text-lg font-bold text-gray-900 mb-4 sticky top-0 bg-gray-50 py-2">Yesterday - October 24, 2025</h3>
-                        <div class="space-y-3">
-                            <!-- Activity 6 - System Backup -->
-                            <div class="bg-white border-2 border-gray-200 rounded-xl p-5 hover:border-indigo-300">
-                                <div class="flex items-start space-x-4">
-                                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
-                                        </svg>
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="flex items-start justify-between mb-2">
-                                            <div>
-                                                <p class="font-bold text-gray-900 mb-1">Automatic System Backup</p>
-                                                <p class="text-sm text-gray-700">Scheduled database backup completed successfully</p>
-                                            </div>
-                                            <span class="text-xs text-gray-500 whitespace-nowrap ml-4">12:00 AM</span>
-                                        </div>
-                                        <div class="bg-indigo-50 rounded-lg p-3 mt-2">
-                                            <div class="grid grid-cols-3 gap-4 text-sm">
-                                                <div>
-                                                    <p class="text-xs text-gray-600">Backup Size</p>
-                                                    <p class="font-semibold text-gray-900">2.4 GB</p>
-                                                </div>
-                                                <div>
-                                                    <p class="text-xs text-gray-600">Duration</p>
-                                                    <p class="font-semibold text-gray-900">3m 42s</p>
-                                                </div>
-                                                <div>
-                                                    <p class="text-xs text-gray-600">Status</p>
-                                                    <p class="font-semibold text-green-600">Success</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pagination -->
-                    <div class="flex items-center justify-between mt-8">
-                        <p class="text-sm text-gray-600">Showing 1 to 6 of 245 activities</p>
-                        <div class="flex space-x-2">
-                            <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Previous</button>
-                            <button class="px-4 py-2 bg-primary text-white rounded-lg">1</button>
-                            <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">2</button>
-                            <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">3</button>
-                            <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Next</button>
-                        </div>
-                    </div>
-                </div>
-            </main>
+      <!-- Sidebar -->
+      <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
+        <div class="p-6 border-b border-gray-700">
+          <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
+          <p class="text-gray-400 text-sm mt-1">Admin Portal</p>
         </div>
-    </div>
-</body>
-</html>
 
+        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+          <a
+            href="admin-dashboard.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              ></path>
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a
+            href="admin-users.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+              ></path>
+            </svg>
+            <span>Users</span>
+          </a>
+          <a
+            href="activity-logs.html"
+            class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold"
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z"
+                clip-rule="evenodd"
+              ></path>
+            </svg>
+            <span>Activity Logs</span>
+          </a>
+          <a
+            href="system-settings.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              ></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              ></path>
+            </svg>
+            <span>Settings</span>
+          </a>
+        </nav>
+
+        <div class="p-4 border-t border-gray-700">
+          <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
+            <div
+              class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold"
+            >
+              SA
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm truncate">Super Admin</p>
+              <p class="text-xs text-gray-400 truncate">Administrator</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Top Bar -->
+        <header class="bg-white border-b border-gray-200 px-8 py-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900">Activity Logs</h2>
+              <p class="text-sm text-gray-600">Monitor all system activities and user actions</p>
+            </div>
+            <div class="flex items-center space-x-3">
+              <button
+                class="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold hover:bg-gray-50"
+              >
+                Export Logs
+              </button>
+              <button
+                class="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold hover:bg-gray-50"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <!-- Filters -->
+        <div class="bg-white border-b border-gray-200 px-8 py-4">
+          <div class="flex items-center space-x-4">
+            <select class="px-4 py-2 border border-gray-300 rounded-lg">
+              <option>All Activities</option>
+              <option>User Login</option>
+              <option>Data Changes</option>
+              <option>System Actions</option>
+              <option>Errors</option>
+            </select>
+            <select class="px-4 py-2 border border-gray-300 rounded-lg">
+              <option>All Users</option>
+              <option>Admins Only</option>
+              <option>Sales Team</option>
+              <option>Finance Team</option>
+            </select>
+            <select class="px-4 py-2 border border-gray-300 rounded-lg">
+              <option>Today</option>
+              <option>Last 7 Days</option>
+              <option>Last 30 Days</option>
+              <option>Custom Range</option>
+            </select>
+            <div class="flex-1"></div>
+            <input
+              type="text"
+              placeholder="Search logs..."
+              class="px-4 py-2 border border-gray-300 rounded-lg w-64"
+            />
+          </div>
+        </div>
+
+        <!-- Activity Timeline -->
+        <main class="flex-1 overflow-y-auto p-8">
+          <div class="max-w-5xl mx-auto">
+            <!-- Today Section -->
+            <div class="mb-8">
+              <h3 class="text-lg font-bold text-gray-900 mb-4 sticky top-0 bg-gray-50 py-2">
+                Today - October 25, 2025
+              </h3>
+              <div class="space-y-3">
+                <!-- Activity 1 - User Login -->
+                <div class="bg-white border-2 border-gray-200 rounded-xl p-5 hover:border-blue-300">
+                  <div class="flex items-start space-x-4">
+                    <div
+                      class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0"
+                    >
+                      <svg
+                        class="w-5 h-5 text-blue-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex items-start justify-between mb-2">
+                        <div>
+                          <p class="font-bold text-gray-900 mb-1">User Login</p>
+                          <p class="text-sm text-gray-700">
+                            <span class="font-semibold">Ravi Kumar</span> (Sales Manager) logged
+                            into the system
+                          </p>
+                        </div>
+                        <span class="text-xs text-gray-500 whitespace-nowrap ml-4">2:45 PM</span>
+                      </div>
+                      <div class="flex items-center space-x-4 text-xs text-gray-600">
+                        <span>IP: 192.168.1.45</span>
+                        <span>•</span>
+                        <span>Location: Pune, MH</span>
+                        <span>•</span>
+                        <span>Device: Chrome on Windows</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Activity 2 - Quote Created -->
+                <div
+                  class="bg-white border-2 border-gray-200 rounded-xl p-5 hover:border-green-300"
+                >
+                  <div class="flex items-start space-x-4">
+                    <div
+                      class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0"
+                    >
+                      <svg
+                        class="w-5 h-5 text-green-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex items-start justify-between mb-2">
+                        <div>
+                          <p class="font-bold text-gray-900 mb-1">Quote Created</p>
+                          <p class="text-sm text-gray-700">
+                            <span class="font-semibold">Priya Sharma</span> created quote
+                            <span class="font-mono text-primary">QT-2025-248</span> for customer
+                            Amit Patel
+                          </p>
+                        </div>
+                        <span class="text-xs text-gray-500 whitespace-nowrap ml-4">2:30 PM</span>
+                      </div>
+                      <div class="bg-green-50 rounded-lg p-3 mt-2">
+                        <div class="grid grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <p class="text-xs text-gray-600">Quote ID</p>
+                            <p class="font-semibold text-gray-900">QT-2025-248</p>
+                          </div>
+                          <div>
+                            <p class="text-xs text-gray-600">Value</p>
+                            <p class="font-semibold text-green-600">₹6.8L</p>
+                          </div>
+                          <div>
+                            <p class="text-xs text-gray-600">System Size</p>
+                            <p class="font-semibold text-gray-900">10 kW</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Activity 3 - Payment Received -->
+                <div
+                  class="bg-white border-2 border-gray-200 rounded-xl p-5 hover:border-purple-300"
+                >
+                  <div class="flex items-start space-x-4">
+                    <div
+                      class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0"
+                    >
+                      <svg
+                        class="w-5 h-5 text-purple-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex items-start justify-between mb-2">
+                        <div>
+                          <p class="font-bold text-gray-900 mb-1">Payment Received</p>
+                          <p class="text-sm text-gray-700">
+                            <span class="font-semibold">Finance Team</span> recorded payment of
+                            ₹2,50,000 for project
+                            <span class="font-mono text-primary">PRJ-2025-085</span>
+                          </p>
+                        </div>
+                        <span class="text-xs text-gray-500 whitespace-nowrap ml-4">1:15 PM</span>
+                      </div>
+                      <div class="bg-purple-50 rounded-lg p-3 mt-2">
+                        <div class="grid grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <p class="text-xs text-gray-600">Amount</p>
+                            <p class="font-semibold text-purple-600">₹2,50,000</p>
+                          </div>
+                          <div>
+                            <p class="text-xs text-gray-600">Method</p>
+                            <p class="font-semibold text-gray-900">Bank Transfer</p>
+                          </div>
+                          <div>
+                            <p class="text-xs text-gray-600">Phase</p>
+                            <p class="font-semibold text-gray-900">Installation</p>
+                          </div>
+                          <div>
+                            <p class="text-xs text-gray-600">Status</p>
+                            <p class="font-semibold text-green-600">Verified</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Activity 4 - Project Status Update -->
+                <div
+                  class="bg-white border-2 border-gray-200 rounded-xl p-5 hover:border-yellow-300"
+                >
+                  <div class="flex items-start space-x-4">
+                    <div
+                      class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0"
+                    >
+                      <svg
+                        class="w-5 h-5 text-yellow-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex items-start justify-between mb-2">
+                        <div>
+                          <p class="font-bold text-gray-900 mb-1">Project Status Updated</p>
+                          <p class="text-sm text-gray-700">
+                            <span class="font-semibold">Suresh Kumar</span> updated project
+                            <span class="font-mono text-primary">PRJ-2025-089</span> status
+                          </p>
+                        </div>
+                        <span class="text-xs text-gray-500 whitespace-nowrap ml-4">12:00 PM</span>
+                      </div>
+                      <div class="flex items-center space-x-3 mt-2">
+                        <span
+                          class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full"
+                          >FROM: Site Survey</span
+                        >
+                        <svg
+                          class="w-4 h-4 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M13 7l5 5m0 0l-5 5m5-5H6"
+                          ></path>
+                        </svg>
+                        <span
+                          class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full"
+                          >TO: Design Approval</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Activity 5 - Lead Assigned -->
+                <div
+                  class="bg-white border-2 border-gray-200 rounded-xl p-5 hover:border-orange-300"
+                >
+                  <div class="flex items-start space-x-4">
+                    <div
+                      class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0"
+                    >
+                      <svg
+                        class="w-5 h-5 text-orange-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex items-start justify-between mb-2">
+                        <div>
+                          <p class="font-bold text-gray-900 mb-1">Lead Assigned</p>
+                          <p class="text-sm text-gray-700">
+                            <span class="font-semibold">Admin</span> assigned lead
+                            <span class="font-mono text-primary">LD-2025-345</span> to
+                            <span class="font-semibold">Neha Telecaller</span>
+                          </p>
+                        </div>
+                        <span class="text-xs text-gray-500 whitespace-nowrap ml-4">10:30 AM</span>
+                      </div>
+                      <div class="bg-orange-50 rounded-lg p-3 mt-2">
+                        <p class="text-sm text-gray-700">
+                          <span class="font-semibold">Lead:</span> Kavita Singh •
+                          <span class="font-semibold">Source:</span> Website Form •
+                          <span class="font-semibold">Priority:</span> High
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Yesterday Section -->
+            <div class="mb-8">
+              <h3 class="text-lg font-bold text-gray-900 mb-4 sticky top-0 bg-gray-50 py-2">
+                Yesterday - October 24, 2025
+              </h3>
+              <div class="space-y-3">
+                <!-- Activity 6 - System Backup -->
+                <div
+                  class="bg-white border-2 border-gray-200 rounded-xl p-5 hover:border-indigo-300"
+                >
+                  <div class="flex items-start space-x-4">
+                    <div
+                      class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0"
+                    >
+                      <svg
+                        class="w-5 h-5 text-indigo-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                        ></path>
+                      </svg>
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex items-start justify-between mb-2">
+                        <div>
+                          <p class="font-bold text-gray-900 mb-1">Automatic System Backup</p>
+                          <p class="text-sm text-gray-700">
+                            Scheduled database backup completed successfully
+                          </p>
+                        </div>
+                        <span class="text-xs text-gray-500 whitespace-nowrap ml-4">12:00 AM</span>
+                      </div>
+                      <div class="bg-indigo-50 rounded-lg p-3 mt-2">
+                        <div class="grid grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <p class="text-xs text-gray-600">Backup Size</p>
+                            <p class="font-semibold text-gray-900">2.4 GB</p>
+                          </div>
+                          <div>
+                            <p class="text-xs text-gray-600">Duration</p>
+                            <p class="font-semibold text-gray-900">3m 42s</p>
+                          </div>
+                          <div>
+                            <p class="text-xs text-gray-600">Status</p>
+                            <p class="font-semibold text-green-600">Success</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="flex items-center justify-between mt-8">
+              <p class="text-sm text-gray-600">Showing 1 to 6 of 245 activities</p>
+              <div class="flex space-x-2">
+                <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                  Previous
+                </button>
+                <button class="px-4 py-2 bg-primary text-white rounded-lg">1</button>
+                <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                  2
+                </button>
+                <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                  3
+                </button>
+                <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

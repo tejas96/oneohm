@@ -91,16 +91,16 @@ oneohm-epc/
 
 ### Applications
 
-| App       | Technology   | Purpose              | Port |
-| --------- | ------------ | -------------------- | ---- |
-| `backend` | NestJS       | REST API server      | 8085 |
-| `web`     | Next.js 16   | Web application      | 3001 |
-| `ux`      | Static HTML  | Design documentation | -    |
+| App       | Technology  | Purpose              | Port |
+| --------- | ----------- | -------------------- | ---- |
+| `backend` | NestJS      | REST API server      | 8085 |
+| `web`     | Next.js 16  | Web application      | 3001 |
+| `ux`      | Static HTML | Design documentation | -    |
 
 ### Shared Package
 
-| Sub-path                        | Purpose                    | Used By     |
-| ------------------------------- | -------------------------- | ----------- |
+| Sub-path                       | Purpose                    | Used By     |
+| ------------------------------ | -------------------------- | ----------- |
 | `@oneohm-epc/shared/types`     | Enums, interfaces & types  | All apps    |
 | `@oneohm-epc/shared/utils`     | Utility functions          | All apps    |
 | `@oneohm-epc/shared/schemas`   | Zod validation schemas     | Web, Mobile |
@@ -238,7 +238,9 @@ export interface Product {
 
 ```typescript
 // libs/shared/src/utils/my-util.ts
-export const myHelper = () => { /* ... */ };
+export const myHelper = () => {
+  /* ... */
+};
 // Then re-export from libs/shared/src/utils/index.ts
 ```
 

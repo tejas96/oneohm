@@ -44,8 +44,7 @@ const textareaVariants = cva(
 );
 
 export interface TextareaProps
-  extends Omit<React.ComponentProps<'textarea'>, 'resize'>,
-    VariantProps<typeof textareaVariants> {
+  extends Omit<React.ComponentProps<'textarea'>, 'resize'>, VariantProps<typeof textareaVariants> {
   /** Show error styling - accepts boolean or error message string (truthy = error state) */
   error?: boolean | string;
 }

@@ -1,342 +1,503 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>New Lead - Requirements | OneOhm Solar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#76c044',
-                        'primary-dark': '#5ea031',
-                        secondary: '#0d74b8',
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#76c044',
+              'primary-dark': '#5ea031',
+              secondary: '#0d74b8',
+            },
+          },
+        },
+      };
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        * { -webkit-tap-highlight-color: transparent; }
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: linear-gradient(135deg, #f8fdf5 0%, #f0f9ff 100%);
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+        background: linear-gradient(135deg, #f8fdf5 0%, #f0f9ff 100%);
+      }
+      .glass-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+      }
+      .input-focus:focus {
+        box-shadow: 0 0 0 3px rgba(118, 192, 68, 0.15);
+      }
+      .btn-gradient {
+        background: linear-gradient(135deg, #76c044 0%, #5ea031 50%, #0d74b8 100%);
+        background-size: 200% 200%;
+        animation: gradientShift 3s ease infinite;
+      }
+      @keyframes gradientShift {
+        0%,
+        100% {
+          background-position: 0% 50%;
         }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
+        50% {
+          background-position: 100% 50%;
         }
-        .input-focus:focus { box-shadow: 0 0 0 3px rgba(118, 192, 68, 0.15); }
-        .btn-gradient {
-            background: linear-gradient(135deg, #76c044 0%, #5ea031 50%, #0d74b8 100%);
-            background-size: 200% 200%;
-            animation: gradientShift 3s ease infinite;
+      }
+      .fade-in {
+        animation: fadeIn 0.4s ease-out;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
         }
-        @keyframes gradientShift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        .fade-in { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .input-label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            letter-spacing: 0.025em;
-            text-transform: uppercase;
-        }
-        .stepper-btn {
-            transition: all 0.15s ease;
-        }
-        .stepper-btn:active {
-            transform: scale(0.95);
-        }
+      }
+      .input-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.025em;
+        text-transform: uppercase;
+      }
+      .stepper-btn {
+        transition: all 0.15s ease;
+      }
+      .stepper-btn:active {
+        transform: scale(0.95);
+      }
     </style>
-</head>
-<body class="min-h-screen">
+  </head>
+  <body class="min-h-screen">
     <div class="max-w-md mx-auto min-h-screen flex flex-col">
-        
-        <!-- Header -->
-        <header class="sticky top-0 z-50 px-4 pt-4">
-            <div class="glass-card rounded-2xl px-4 py-3 flex items-center justify-between shadow-lg">
-                <button onclick="history.back()" class="p-2 -ml-2 rounded-xl hover:bg-gray-100 transition-colors">
-                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                </button>
-                
-                <div class="flex items-center gap-2">
-                    <div class="flex items-center gap-1.5">
-                        <div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
-                        <div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
-                        <div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
-                    </div>
-                    <span class="text-xs font-medium text-gray-500 ml-2">Part 1 of 2</span>
-                </div>
-                
-                <button onclick="skipToReview()" class="text-sm font-semibold text-secondary">Skip</button>
+      <!-- Header -->
+      <header class="sticky top-0 z-50 px-4 pt-4">
+        <div class="glass-card rounded-2xl px-4 py-3 flex items-center justify-between shadow-lg">
+          <button
+            onclick="history.back()"
+            class="p-2 -ml-2 rounded-xl hover:bg-gray-100 transition-colors"
+          >
+            <svg
+              class="w-6 h-6 text-gray-700"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
+
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5">
+              <div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-primary"></div>
             </div>
-        </header>
+            <span class="text-xs font-medium text-gray-500 ml-2">Part 1 of 2</span>
+          </div>
 
-        <!-- Main Content -->
-        <main class="flex-1 px-6 py-8 fade-in">
-            
-            <!-- Title -->
-            <div class="mb-8">
-                <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary/10 rounded-full mb-4">
-                    <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                    </svg>
-                    <span class="text-xs font-semibold text-secondary uppercase tracking-wide">Optional</span>
-                </div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">Requirements</h1>
-                <p class="text-gray-500">Help us understand your needs better</p>
-            </div>
+          <button onclick="skipToReview()" class="text-sm font-semibold text-secondary">
+            Skip
+          </button>
+        </div>
+      </header>
 
-            <!-- Form -->
-            <form id="requirementsForm" class="space-y-6">
-                
-                <!-- Monthly Bill with Stepper -->
-                <div class="space-y-3">
-                    <label class="input-label text-gray-600">Monthly Electricity Bill</label>
-                    <div class="bg-white border-2 border-gray-100 rounded-2xl p-4">
-                        <div class="flex items-center justify-between">
-                            <button type="button" onclick="adjustBill(-500)" class="stepper-btn w-12 h-12 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
-                                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"/>
-                                </svg>
-                            </button>
-                            <div class="text-center">
-                                <div class="flex items-baseline justify-center gap-1">
-                                    <span class="text-lg text-gray-400">₹</span>
-                                    <input 
-                                        type="number" 
-                                        id="monthlyBill"
-                                        name="monthlyBill"
-                                        value="3000"
-                                        min="0"
-                                        class="w-24 text-3xl font-bold text-gray-900 text-center bg-transparent focus:outline-none"
-                                        oninput="updateRecommendation()"
-                                    />
-                                </div>
-                                <span class="text-xs text-gray-500">per month</span>
-                            </div>
-                            <button type="button" onclick="adjustBill(500)" class="stepper-btn w-12 h-12 rounded-xl bg-primary/10 hover:bg-primary/20 flex items-center justify-center">
-                                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
-                                </svg>
-                            </button>
-                        </div>
-                        
-                        <!-- Quick Select -->
-                        <div class="flex gap-2 mt-4 overflow-x-auto pb-1">
-                            <button type="button" onclick="setBill(1500)" class="flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-primary/10 hover:text-primary rounded-full transition-colors">₹1,500</button>
-                            <button type="button" onclick="setBill(3000)" class="flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-primary/10 text-primary rounded-full">₹3,000</button>
-                            <button type="button" onclick="setBill(5000)" class="flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-primary/10 hover:text-primary rounded-full transition-colors">₹5,000</button>
-                            <button type="button" onclick="setBill(10000)" class="flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-primary/10 hover:text-primary rounded-full transition-colors">₹10,000</button>
-                            <button type="button" onclick="setBill(20000)" class="flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-primary/10 hover:text-primary rounded-full transition-colors">₹20,000</button>
-                        </div>
-                    </div>
-                </div>
+      <!-- Main Content -->
+      <main class="flex-1 px-6 py-8 fade-in">
+        <!-- Title -->
+        <div class="mb-8">
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-secondary/10 rounded-full mb-4">
+            <svg
+              class="w-4 h-4 text-secondary"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
+            </svg>
+            <span class="text-xs font-semibold text-secondary uppercase tracking-wide"
+              >Optional</span
+            >
+          </div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-2">Requirements</h1>
+          <p class="text-gray-500">Help us understand your needs better</p>
+        </div>
 
-                <!-- Roof Area with Stepper -->
-                <div class="space-y-3">
-                    <label class="input-label text-gray-600">Available Roof Area</label>
-                    <div class="bg-white border-2 border-gray-100 rounded-2xl p-4">
-                        <div class="flex items-center justify-between">
-                            <button type="button" onclick="adjustArea(-50)" class="stepper-btn w-12 h-12 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
-                                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"/>
-                                </svg>
-                            </button>
-                            <div class="text-center">
-                                <div class="flex items-baseline justify-center gap-1">
-                                    <input 
-                                        type="number" 
-                                        id="roofArea"
-                                        name="roofArea"
-                                        value="500"
-                                        min="100"
-                                        class="w-20 text-3xl font-bold text-gray-900 text-center bg-transparent focus:outline-none"
-                                        oninput="updateRecommendation()"
-                                    />
-                                    <span class="text-sm text-gray-400">sq.ft</span>
-                                </div>
-                                <span class="text-xs text-gray-500">approx usable area</span>
-                            </div>
-                            <button type="button" onclick="adjustArea(50)" class="stepper-btn w-12 h-12 rounded-xl bg-primary/10 hover:bg-primary/20 flex items-center justify-center">
-                                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Consumer Number -->
-                <div class="space-y-2">
-                    <label class="input-label text-gray-600">Consumer Number</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
-                        </div>
-                        <input 
-                            type="text" 
-                            id="consumerNumber"
-                            name="consumerNumber"
-                            class="input-focus w-full pl-12 pr-4 py-4 bg-white border-2 border-gray-100 rounded-2xl text-gray-900 placeholder-gray-400 focus:border-primary focus:outline-none transition-all"
-                            placeholder="From your electricity bill"
-                        />
-                    </div>
-                    <p class="text-xs text-gray-500 ml-1">Found on your MSEDCL bill</p>
-                </div>
-
-                <!-- Notes -->
-                <div class="space-y-2">
-                    <label class="input-label text-gray-600">Additional Notes</label>
-                    <textarea 
-                        id="notes"
-                        name="notes"
-                        rows="3"
-                        class="input-focus w-full px-4 py-4 bg-white border-2 border-gray-100 rounded-2xl text-gray-900 placeholder-gray-400 focus:border-primary focus:outline-none transition-all resize-none"
-                        placeholder="Any specific requirements or concerns..."
-                    ></textarea>
-                </div>
-
-            </form>
-
-            <!-- Recommendation Card -->
-            <div id="recommendationCard" class="mt-6 p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl border border-primary/20">
-                <div class="flex items-start gap-3">
-                    <div class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center flex-shrink-0">
-                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-sm font-semibold text-gray-700">Estimated System Size</p>
-                        <p class="text-2xl font-bold text-primary" id="recommendedSize">~3 KW</p>
-                        <p class="text-xs text-gray-500 mt-1">Based on your bill & roof area</p>
-                    </div>
-                </div>
-            </div>
-
-        </main>
-
-        <!-- Footer -->
-        <footer class="sticky bottom-0 p-4 pb-8">
-            <div class="flex gap-3">
-                <button 
-                    onclick="history.back()"
-                    class="flex-1 py-4 px-6 bg-gray-100 hover:bg-gray-200 rounded-2xl text-gray-700 font-semibold transition-colors"
+        <!-- Form -->
+        <form id="requirementsForm" class="space-y-6">
+          <!-- Monthly Bill with Stepper -->
+          <div class="space-y-3">
+            <label class="input-label text-gray-600">Monthly Electricity Bill</label>
+            <div class="bg-white border-2 border-gray-100 rounded-2xl p-4">
+              <div class="flex items-center justify-between">
+                <button
+                  type="button"
+                  onclick="adjustBill(-500)"
+                  class="stepper-btn w-12 h-12 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
                 >
-                    Back
+                  <svg
+                    class="w-5 h-5 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2.5"
+                      d="M20 12H4"
+                    />
+                  </svg>
                 </button>
-                <button 
-                    onclick="handleNext()"
-                    class="flex-[2] btn-gradient py-4 px-6 rounded-2xl text-white font-semibold shadow-xl shadow-primary/25 flex items-center justify-center gap-2"
+                <div class="text-center">
+                  <div class="flex items-baseline justify-center gap-1">
+                    <span class="text-lg text-gray-400">₹</span>
+                    <input
+                      type="number"
+                      id="monthlyBill"
+                      name="monthlyBill"
+                      value="3000"
+                      min="0"
+                      class="w-24 text-3xl font-bold text-gray-900 text-center bg-transparent focus:outline-none"
+                      oninput="updateRecommendation()"
+                    />
+                  </div>
+                  <span class="text-xs text-gray-500">per month</span>
+                </div>
+                <button
+                  type="button"
+                  onclick="adjustBill(500)"
+                  class="stepper-btn w-12 h-12 rounded-xl bg-primary/10 hover:bg-primary/20 flex items-center justify-center"
                 >
-                    <span>Create Lead</span>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                    </svg>
+                  <svg
+                    class="w-5 h-5 text-primary"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2.5"
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
                 </button>
-            </div>
-        </footer>
+              </div>
 
+              <!-- Quick Select -->
+              <div class="flex gap-2 mt-4 overflow-x-auto pb-1">
+                <button
+                  type="button"
+                  onclick="setBill(1500)"
+                  class="flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-primary/10 hover:text-primary rounded-full transition-colors"
+                >
+                  ₹1,500
+                </button>
+                <button
+                  type="button"
+                  onclick="setBill(3000)"
+                  class="flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-primary/10 text-primary rounded-full"
+                >
+                  ₹3,000
+                </button>
+                <button
+                  type="button"
+                  onclick="setBill(5000)"
+                  class="flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-primary/10 hover:text-primary rounded-full transition-colors"
+                >
+                  ₹5,000
+                </button>
+                <button
+                  type="button"
+                  onclick="setBill(10000)"
+                  class="flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-primary/10 hover:text-primary rounded-full transition-colors"
+                >
+                  ₹10,000
+                </button>
+                <button
+                  type="button"
+                  onclick="setBill(20000)"
+                  class="flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-primary/10 hover:text-primary rounded-full transition-colors"
+                >
+                  ₹20,000
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Roof Area with Stepper -->
+          <div class="space-y-3">
+            <label class="input-label text-gray-600">Available Roof Area</label>
+            <div class="bg-white border-2 border-gray-100 rounded-2xl p-4">
+              <div class="flex items-center justify-between">
+                <button
+                  type="button"
+                  onclick="adjustArea(-50)"
+                  class="stepper-btn w-12 h-12 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
+                >
+                  <svg
+                    class="w-5 h-5 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2.5"
+                      d="M20 12H4"
+                    />
+                  </svg>
+                </button>
+                <div class="text-center">
+                  <div class="flex items-baseline justify-center gap-1">
+                    <input
+                      type="number"
+                      id="roofArea"
+                      name="roofArea"
+                      value="500"
+                      min="100"
+                      class="w-20 text-3xl font-bold text-gray-900 text-center bg-transparent focus:outline-none"
+                      oninput="updateRecommendation()"
+                    />
+                    <span class="text-sm text-gray-400">sq.ft</span>
+                  </div>
+                  <span class="text-xs text-gray-500">approx usable area</span>
+                </div>
+                <button
+                  type="button"
+                  onclick="adjustArea(50)"
+                  class="stepper-btn w-12 h-12 rounded-xl bg-primary/10 hover:bg-primary/20 flex items-center justify-center"
+                >
+                  <svg
+                    class="w-5 h-5 text-primary"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2.5"
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Consumer Number -->
+          <div class="space-y-2">
+            <label class="input-label text-gray-600">Consumer Number</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <svg
+                  class="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.5"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </div>
+              <input
+                type="text"
+                id="consumerNumber"
+                name="consumerNumber"
+                class="input-focus w-full pl-12 pr-4 py-4 bg-white border-2 border-gray-100 rounded-2xl text-gray-900 placeholder-gray-400 focus:border-primary focus:outline-none transition-all"
+                placeholder="From your electricity bill"
+              />
+            </div>
+            <p class="text-xs text-gray-500 ml-1">Found on your MSEDCL bill</p>
+          </div>
+
+          <!-- Notes -->
+          <div class="space-y-2">
+            <label class="input-label text-gray-600">Additional Notes</label>
+            <textarea
+              id="notes"
+              name="notes"
+              rows="3"
+              class="input-focus w-full px-4 py-4 bg-white border-2 border-gray-100 rounded-2xl text-gray-900 placeholder-gray-400 focus:border-primary focus:outline-none transition-all resize-none"
+              placeholder="Any specific requirements or concerns..."
+            ></textarea>
+          </div>
+        </form>
+
+        <!-- Recommendation Card -->
+        <div
+          id="recommendationCard"
+          class="mt-6 p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl border border-primary/20"
+        >
+          <div class="flex items-start gap-3">
+            <div
+              class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center flex-shrink-0"
+            >
+              <svg
+                class="w-5 h-5 text-primary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                />
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-gray-700">Estimated System Size</p>
+              <p class="text-2xl font-bold text-primary" id="recommendedSize">~3 KW</p>
+              <p class="text-xs text-gray-500 mt-1">Based on your bill & roof area</p>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Footer -->
+      <footer class="sticky bottom-0 p-4 pb-8">
+        <div class="flex gap-3">
+          <button
+            onclick="history.back()"
+            class="flex-1 py-4 px-6 bg-gray-100 hover:bg-gray-200 rounded-2xl text-gray-700 font-semibold transition-colors"
+          >
+            Back
+          </button>
+          <button
+            onclick="handleNext()"
+            class="flex-[2] btn-gradient py-4 px-6 rounded-2xl text-white font-semibold shadow-xl shadow-primary/25 flex items-center justify-center gap-2"
+          >
+            <span>Create Lead</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </button>
+        </div>
+      </footer>
     </div>
 
     <script>
-        function adjustBill(delta) {
-            const input = document.getElementById('monthlyBill');
-            let value = parseInt(input.value) || 3000;
-            value = Math.max(0, value + delta);
-            input.value = value;
-            updateRecommendation();
-        }
+      function adjustBill(delta) {
+        const input = document.getElementById('monthlyBill');
+        let value = parseInt(input.value) || 3000;
+        value = Math.max(0, value + delta);
+        input.value = value;
+        updateRecommendation();
+      }
 
-        function setBill(value) {
-            document.getElementById('monthlyBill').value = value;
-            updateRecommendation();
-            // Update button states
-            document.querySelectorAll('[onclick^="setBill"]').forEach(btn => {
-                btn.className = btn.className.replace('bg-primary/10 text-primary', 'bg-gray-100');
-            });
-            event.target.className = event.target.className.replace('bg-gray-100', 'bg-primary/10 text-primary');
-        }
-
-        function adjustArea(delta) {
-            const input = document.getElementById('roofArea');
-            let value = parseInt(input.value) || 500;
-            value = Math.max(100, value + delta);
-            input.value = value;
-            updateRecommendation();
-        }
-
-        function updateRecommendation() {
-            const bill = parseInt(document.getElementById('monthlyBill').value) || 0;
-            const area = parseInt(document.getElementById('roofArea').value) || 0;
-            
-            // Simple estimation: ₹1000 bill ≈ 1KW, 100 sq.ft ≈ 1KW
-            const sizeByBill = bill / 1000;
-            const sizeByArea = area / 100;
-            
-            // Take minimum of both constraints
-            const recommendedSize = Math.min(sizeByBill, sizeByArea);
-            const displaySize = Math.max(1, Math.round(recommendedSize));
-            
-            document.getElementById('recommendedSize').textContent = `~${displaySize} KW`;
-        }
-
-        function skipToReview() {
-            // Save minimal data and go to review
-            saveFormData();
-            window.location.href = 'part1-review.html';
-        }
-
-        function handleNext() {
-            saveFormData();
-            window.location.href = 'part1-review.html';
-        }
-
-        function saveFormData() {
-            const formData = {
-                monthlyBill: document.getElementById('monthlyBill').value,
-                roofArea: document.getElementById('roofArea').value,
-                consumerNumber: document.getElementById('consumerNumber').value,
-                notes: document.getElementById('notes').value
-            };
-            localStorage.setItem('leadData_requirements', JSON.stringify(formData));
-        }
-
-        function showToast(message) {
-            const toast = document.createElement('div');
-            toast.className = 'fixed top-20 left-1/2 -translate-x-1/2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full shadow-lg z-50';
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 2000);
-        }
-
-        // Load saved data
-        window.addEventListener('load', () => {
-            const saved = localStorage.getItem('leadData_requirements');
-            if (saved) {
-                const data = JSON.parse(saved);
-                if (data.monthlyBill) document.getElementById('monthlyBill').value = data.monthlyBill;
-                if (data.roofArea) document.getElementById('roofArea').value = data.roofArea;
-                if (data.consumerNumber) document.getElementById('consumerNumber').value = data.consumerNumber;
-                if (data.notes) document.getElementById('notes').value = data.notes;
-            }
-            updateRecommendation();
+      function setBill(value) {
+        document.getElementById('monthlyBill').value = value;
+        updateRecommendation();
+        // Update button states
+        document.querySelectorAll('[onclick^="setBill"]').forEach((btn) => {
+          btn.className = btn.className.replace('bg-primary/10 text-primary', 'bg-gray-100');
         });
-    </script>
-</body>
-</html>
+        event.target.className = event.target.className.replace(
+          'bg-gray-100',
+          'bg-primary/10 text-primary',
+        );
+      }
 
+      function adjustArea(delta) {
+        const input = document.getElementById('roofArea');
+        let value = parseInt(input.value) || 500;
+        value = Math.max(100, value + delta);
+        input.value = value;
+        updateRecommendation();
+      }
+
+      function updateRecommendation() {
+        const bill = parseInt(document.getElementById('monthlyBill').value) || 0;
+        const area = parseInt(document.getElementById('roofArea').value) || 0;
+
+        // Simple estimation: ₹1000 bill ≈ 1KW, 100 sq.ft ≈ 1KW
+        const sizeByBill = bill / 1000;
+        const sizeByArea = area / 100;
+
+        // Take minimum of both constraints
+        const recommendedSize = Math.min(sizeByBill, sizeByArea);
+        const displaySize = Math.max(1, Math.round(recommendedSize));
+
+        document.getElementById('recommendedSize').textContent = `~${displaySize} KW`;
+      }
+
+      function skipToReview() {
+        // Save minimal data and go to review
+        saveFormData();
+        window.location.href = 'part1-review.html';
+      }
+
+      function handleNext() {
+        saveFormData();
+        window.location.href = 'part1-review.html';
+      }
+
+      function saveFormData() {
+        const formData = {
+          monthlyBill: document.getElementById('monthlyBill').value,
+          roofArea: document.getElementById('roofArea').value,
+          consumerNumber: document.getElementById('consumerNumber').value,
+          notes: document.getElementById('notes').value,
+        };
+        localStorage.setItem('leadData_requirements', JSON.stringify(formData));
+      }
+
+      function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className =
+          'fixed top-20 left-1/2 -translate-x-1/2 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full shadow-lg z-50';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+      }
+
+      // Load saved data
+      window.addEventListener('load', () => {
+        const saved = localStorage.getItem('leadData_requirements');
+        if (saved) {
+          const data = JSON.parse(saved);
+          if (data.monthlyBill) document.getElementById('monthlyBill').value = data.monthlyBill;
+          if (data.roofArea) document.getElementById('roofArea').value = data.roofArea;
+          if (data.consumerNumber)
+            document.getElementById('consumerNumber').value = data.consumerNumber;
+          if (data.notes) document.getElementById('notes').value = data.notes;
+        }
+        updateRecommendation();
+      });
+    </script>
+  </body>
+</html>

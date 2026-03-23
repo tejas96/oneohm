@@ -1,348 +1,569 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Create Follow-up - OneOhm Solar EPC</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            DEFAULT: '#76c044',
-                            dark: '#5ea031',
-                            light: '#8fd35f',
-                        },
-                        secondary: {
-                            DEFAULT: '#0d74b8',
-                            dark: '#0a5c92',
-                        },
-                        success: '#22c55e',
-                        warning: '#eab308',
-                        error: '#dc2626',
-                        info: '#0ea5e9',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    },
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: '#76c044',
+                dark: '#5ea031',
+                light: '#8fd35f',
+              },
+              secondary: {
+                DEFAULT: '#0d74b8',
+                dark: '#0a5c92',
+              },
+              success: '#22c55e',
+              warning: '#eab308',
+              error: '#dc2626',
+              info: '#0ea5e9',
+            },
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+            },
+          },
+        },
+      };
     </script>
-</head>
-<body class="font-sans bg-gray-50 min-h-screen text-[13px]">
+  </head>
+  <body class="font-sans bg-gray-50 min-h-screen text-[13px]">
     <!-- Global Header -->
-    <header class="h-12 bg-white border-b border-gray-100 fixed top-0 left-0 right-0 z-50 flex items-center px-4">
-        <div class="flex items-center">
-            <a href="../dashboard/index.html">
-                <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto">
-            </a>
+    <header
+      class="h-12 bg-white border-b border-gray-100 fixed top-0 left-0 right-0 z-50 flex items-center px-4"
+    >
+      <div class="flex items-center">
+        <a href="../dashboard/index.html">
+          <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto" />
+        </a>
+      </div>
+      <div class="flex-1 ml-6 mr-4">
+        <div
+          class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors text-left cursor-pointer"
+        >
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <span class="text-gray-400 flex-1 text-sm">Search...</span>
         </div>
-        <div class="flex-1 ml-6 mr-4">
-            <div class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors text-left cursor-pointer">
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
-                <span class="text-gray-400 flex-1 text-sm">Search...</span>
-            </div>
-        </div>
-        <div class="flex items-center space-x-2">
-            <button class="relative p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                </svg>
-            </button>
-            <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors">
-                <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">RK</div>
-            </button>
-        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button class="relative p-2 hover:bg-gray-50 rounded-lg transition-colors">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
+          </svg>
+        </button>
+        <button
+          class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors"
+        >
+          <div
+            class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm"
+          >
+            RK
+          </div>
+        </button>
+      </div>
     </header>
-    
+
     <!-- Rail Sidebar -->
-    <aside class="w-12 bg-white border-r border-gray-100 fixed top-12 left-0 h-[calc(100vh-48px)] flex flex-col z-40">
-        <div class="flex-1 flex flex-col pt-2">
-            <a href="../dashboard/index.html" class="w-10 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all relative group">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                </svg>
-            </a>
-            <a href="customers.html" class="w-10 h-9 flex items-center justify-center text-primary bg-primary/10 border-l-[3px] border-primary transition-all relative group">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-            </a>
+    <aside
+      class="w-12 bg-white border-r border-gray-100 fixed top-12 left-0 h-[calc(100vh-48px)] flex flex-col z-40"
+    >
+      <div class="flex-1 flex flex-col pt-2">
+        <a
+          href="../dashboard/index.html"
+          class="w-10 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all relative group"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+            />
+          </svg>
+        </a>
+        <a
+          href="customers.html"
+          class="w-10 h-9 flex items-center justify-center text-primary bg-primary/10 border-l-[3px] border-primary transition-all relative group"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+        </a>
+      </div>
+      <div class="w-12 h-12 flex items-center justify-center cursor-pointer hover:bg-gray-50">
+        <div
+          class="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm"
+        >
+          RK
         </div>
-        <div class="w-12 h-12 flex items-center justify-center cursor-pointer hover:bg-gray-50">
-            <div class="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">RK</div>
-        </div>
+      </div>
     </aside>
-    
+
     <!-- Main Content -->
     <main class="ml-12 mt-12 min-h-[calc(100vh-48px)] bg-gray-50">
-        <div class="max-w-2xl mx-auto py-8 px-6">
-            <!-- Back Link & Title -->
-            <div class="mb-8">
-                <a href="followups.html" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back to Follow-ups
-                </a>
-                <h1 class="text-xl font-semibold text-gray-900">Create Follow-up</h1>
-                <p class="text-gray-500 text-sm mt-1">Schedule a follow-up task for a customer</p>
-            </div>
-            
-            <!-- Form Card -->
-            <div class="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
-                <!-- Property Selection (Followups are now property-level) -->
-                <div class="px-6 py-5 border-b border-gray-100">
-                    <h2 class="text-lg font-semibold text-gray-900">Property</h2>
-                    <p class="text-sm text-gray-500 mt-1">Select the property for this followup</p>
-                </div>
-                <div class="p-6 space-y-4">
-                    <!-- Selected Property -->
-                    <div class="p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                                </div>
-                                <div>
-                                    <div class="font-medium text-gray-900">Koramangala Residence</div>
-                                    <div class="text-xs text-gray-500">Rajesh Sharma • 456, 5th Block, Bangalore</div>
-                                </div>
-                            </div>
-                            <button class="text-primary text-sm font-medium hover:text-primary-dark">Change</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Customer Info (derived from property) -->
-                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div class="w-8 h-8 rounded-full bg-secondary/15 flex items-center justify-center text-secondary font-semibold text-xs">RS</div>
-                        <div>
-                            <div class="text-sm font-medium text-gray-700">Rajesh Sharma</div>
-                            <div class="text-xs text-gray-500">+91 98765 43210</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Follow-up Details -->
-                <div class="px-6 py-5 border-t border-b border-gray-100 bg-gray-50/50">
-                    <h2 class="text-lg font-semibold text-gray-900">Follow-up Details</h2>
-                </div>
-                <div class="p-6 space-y-5">
-                    <!-- Follow-up Type (updated to match FollowupType enum) -->
-                    <div class="space-y-3">
-                        <label class="block text-xs font-medium text-gray-500">Type <span class="text-red-500">*</span></label>
-                        <div class="grid grid-cols-5 gap-2">
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="followupType" value="visit" class="peer sr-only" checked>
-                                <div class="p-3 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-gray-300 text-center">
-                                    <svg class="w-5 h-5 mx-auto mb-1 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    </svg>
-                                    <div class="text-xs font-medium text-gray-700">Visit</div>
-                                </div>
-                            </label>
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="followupType" value="meeting" class="peer sr-only">
-                                <div class="p-3 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-gray-300 text-center">
-                                    <svg class="w-5 h-5 mx-auto mb-1 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    </svg>
-                                    <div class="text-xs font-medium text-gray-700">Meeting</div>
-                                </div>
-                            </label>
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="followupType" value="task" class="peer sr-only">
-                                <div class="p-3 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-gray-300 text-center">
-                                    <svg class="w-5 h-5 mx-auto mb-1 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                                    </svg>
-                                    <div class="text-xs font-medium text-gray-700">Task</div>
-                                </div>
-                            </label>
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="followupType" value="reminder" class="peer sr-only">
-                                <div class="p-3 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-gray-300 text-center">
-                                    <svg class="w-5 h-5 mx-auto mb-1 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                                    </svg>
-                                    <div class="text-xs font-medium text-gray-700">Reminder</div>
-                                </div>
-                            </label>
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="followupType" value="document_collection" class="peer sr-only">
-                                <div class="p-3 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-gray-300 text-center">
-                                    <svg class="w-5 h-5 mx-auto mb-1 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                    </svg>
-                                    <div class="text-xs font-medium text-gray-700">Docs</div>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <!-- Subject -->
-                    <div class="space-y-2">
-                        <label class="block text-xs font-medium text-gray-500">Subject <span class="text-red-500">*</span></label>
-                        <input type="text" id="subject" placeholder="e.g., Quote discussion, Document collection" 
-                            class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-                    </div>
-                    
-                    <!-- Date & Time -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                            <label class="block text-xs font-medium text-gray-500">Date <span class="text-red-500">*</span></label>
-                            <input type="date" id="followupDate" 
-                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-                        </div>
-                        <div class="space-y-2">
-                            <label class="block text-xs font-medium text-gray-500">Time <span class="text-red-500">*</span></label>
-                            <input type="time" id="followupTime" 
-                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-                        </div>
-                    </div>
-                    
-                    <!-- Quick Date Selection -->
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="setQuickDate(0)" class="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Today</button>
-                        <button onclick="setQuickDate(1)" class="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Tomorrow</button>
-                        <button onclick="setQuickDate(3)" class="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">In 3 days</button>
-                        <button onclick="setQuickDate(7)" class="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">In 1 week</button>
-                    </div>
-                    
-                    <!-- Priority -->
-                    <div class="space-y-3">
-                        <label class="block text-xs font-medium text-gray-500">Priority</label>
-                        <div class="flex gap-3">
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="priority" value="high" class="peer sr-only">
-                                <div class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-red-500 peer-checked:bg-red-50 text-xs font-medium text-gray-500 transition-all hover:border-gray-300">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-                                    High
-                                </div>
-                            </label>
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="priority" value="normal" class="peer sr-only" checked>
-                                <div class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-yellow-500 peer-checked:bg-yellow-50 text-xs font-medium text-gray-500 transition-all hover:border-gray-300">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
-                                    Normal
-                                </div>
-                            </label>
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="priority" value="low" class="peer sr-only">
-                                <div class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-blue-500 peer-checked:bg-blue-50 text-xs font-medium text-gray-500 transition-all hover:border-gray-300">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
-                                    Low
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <!-- Notes -->
-                    <div class="space-y-2">
-                        <label class="block text-xs font-medium text-gray-500">Notes</label>
-                        <textarea id="notes" rows="3" placeholder="Add any notes for this follow-up..."
-                            class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea>
-                    </div>
-                </div>
-                
-                <!-- Reschedule Section (shown when editing) -->
-                <div id="rescheduleSection" class="hidden">
-                    <div class="px-6 py-5 border-t border-b border-gray-100 bg-orange-50/50">
-                        <h2 class="text-lg font-semibold text-gray-900">Reschedule</h2>
-                        <p class="text-sm text-gray-500 mt-1">Provide a reason for rescheduling this follow-up</p>
-                    </div>
-                    <div class="p-6 space-y-4">
-                        <div class="space-y-2">
-                            <label class="block text-xs font-medium text-gray-500">Reason for Reschedule <span class="text-red-500">*</span></label>
-                            <select id="rescheduleReason" 
-                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]">
-                                <option value="">Select reason...</option>
-                                <option value="customer_unavailable">Customer Unavailable</option>
-                                <option value="customer_request">Customer Requested</option>
-                                <option value="agent_unavailable">Agent Unavailable</option>
-                                <option value="weather">Weather/External Factors</option>
-                                <option value="other">Other</option>
-                            </select>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="block text-xs font-medium text-gray-500">Additional Notes</label>
-                            <textarea id="rescheduleNotes" rows="2" placeholder="Add any additional context..."
-                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Footer Actions -->
-                <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-end gap-3">
-                    <a href="followups.html" class="px-4 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium text-sm transition-colors">
-                        Cancel
-                    </a>
-                    <button onclick="saveFollowup()" class="px-6 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark transition-colors flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
-                        Create Follow-up
-                    </button>
-                </div>
-            </div>
+      <div class="max-w-2xl mx-auto py-8 px-6">
+        <!-- Back Link & Title -->
+        <div class="mb-8">
+          <a
+            href="followups.html"
+            class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+            Back to Follow-ups
+          </a>
+          <h1 class="text-xl font-semibold text-gray-900">Create Follow-up</h1>
+          <p class="text-gray-500 text-sm mt-1">Schedule a follow-up task for a customer</p>
         </div>
+
+        <!-- Form Card -->
+        <div class="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
+          <!-- Property Selection (Followups are now property-level) -->
+          <div class="px-6 py-5 border-b border-gray-100">
+            <h2 class="text-lg font-semibold text-gray-900">Property</h2>
+            <p class="text-sm text-gray-500 mt-1">Select the property for this followup</p>
+          </div>
+          <div class="p-6 space-y-4">
+            <!-- Selected Property -->
+            <div class="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <svg
+                      class="w-5 h-5 text-primary"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="font-medium text-gray-900">Koramangala Residence</div>
+                    <div class="text-xs text-gray-500">
+                      Rajesh Sharma • 456, 5th Block, Bangalore
+                    </div>
+                  </div>
+                </div>
+                <button class="text-primary text-sm font-medium hover:text-primary-dark">
+                  Change
+                </button>
+              </div>
+            </div>
+
+            <!-- Customer Info (derived from property) -->
+            <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <div
+                class="w-8 h-8 rounded-full bg-secondary/15 flex items-center justify-center text-secondary font-semibold text-xs"
+              >
+                RS
+              </div>
+              <div>
+                <div class="text-sm font-medium text-gray-700">Rajesh Sharma</div>
+                <div class="text-xs text-gray-500">+91 98765 43210</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Follow-up Details -->
+          <div class="px-6 py-5 border-t border-b border-gray-100 bg-gray-50/50">
+            <h2 class="text-lg font-semibold text-gray-900">Follow-up Details</h2>
+          </div>
+          <div class="p-6 space-y-5">
+            <!-- Follow-up Type (updated to match FollowupType enum) -->
+            <div class="space-y-3">
+              <label class="block text-xs font-medium text-gray-500"
+                >Type <span class="text-red-500">*</span></label
+              >
+              <div class="grid grid-cols-5 gap-2">
+                <label class="relative cursor-pointer">
+                  <input
+                    type="radio"
+                    name="followupType"
+                    value="visit"
+                    class="peer sr-only"
+                    checked
+                  />
+                  <div
+                    class="p-3 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-gray-300 text-center"
+                  >
+                    <svg
+                      class="w-5 h-5 mx-auto mb-1 text-secondary"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      />
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                    <div class="text-xs font-medium text-gray-700">Visit</div>
+                  </div>
+                </label>
+                <label class="relative cursor-pointer">
+                  <input type="radio" name="followupType" value="meeting" class="peer sr-only" />
+                  <div
+                    class="p-3 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-gray-300 text-center"
+                  >
+                    <svg
+                      class="w-5 h-5 mx-auto mb-1 text-purple-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
+                    <div class="text-xs font-medium text-gray-700">Meeting</div>
+                  </div>
+                </label>
+                <label class="relative cursor-pointer">
+                  <input type="radio" name="followupType" value="task" class="peer sr-only" />
+                  <div
+                    class="p-3 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-gray-300 text-center"
+                  >
+                    <svg
+                      class="w-5 h-5 mx-auto mb-1 text-blue-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                      />
+                    </svg>
+                    <div class="text-xs font-medium text-gray-700">Task</div>
+                  </div>
+                </label>
+                <label class="relative cursor-pointer">
+                  <input type="radio" name="followupType" value="reminder" class="peer sr-only" />
+                  <div
+                    class="p-3 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-gray-300 text-center"
+                  >
+                    <svg
+                      class="w-5 h-5 mx-auto mb-1 text-amber-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                      />
+                    </svg>
+                    <div class="text-xs font-medium text-gray-700">Reminder</div>
+                  </div>
+                </label>
+                <label class="relative cursor-pointer">
+                  <input
+                    type="radio"
+                    name="followupType"
+                    value="document_collection"
+                    class="peer sr-only"
+                  />
+                  <div
+                    class="p-3 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-gray-300 text-center"
+                  >
+                    <svg
+                      class="w-5 h-5 mx-auto mb-1 text-green-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    <div class="text-xs font-medium text-gray-700">Docs</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Subject -->
+            <div class="space-y-2">
+              <label class="block text-xs font-medium text-gray-500"
+                >Subject <span class="text-red-500">*</span></label
+              >
+              <input
+                type="text"
+                id="subject"
+                placeholder="e.g., Quote discussion, Document collection"
+                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+              />
+            </div>
+
+            <!-- Date & Time -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <label class="block text-xs font-medium text-gray-500"
+                  >Date <span class="text-red-500">*</span></label
+                >
+                <input
+                  type="date"
+                  id="followupDate"
+                  class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                />
+              </div>
+              <div class="space-y-2">
+                <label class="block text-xs font-medium text-gray-500"
+                  >Time <span class="text-red-500">*</span></label
+                >
+                <input
+                  type="time"
+                  id="followupTime"
+                  class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                />
+              </div>
+            </div>
+
+            <!-- Quick Date Selection -->
+            <div class="flex flex-wrap gap-2">
+              <button
+                onclick="setQuickDate(0)"
+                class="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Today
+              </button>
+              <button
+                onclick="setQuickDate(1)"
+                class="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Tomorrow
+              </button>
+              <button
+                onclick="setQuickDate(3)"
+                class="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                In 3 days
+              </button>
+              <button
+                onclick="setQuickDate(7)"
+                class="px-3 py-1.5 text-xs font-medium text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                In 1 week
+              </button>
+            </div>
+
+            <!-- Priority -->
+            <div class="space-y-3">
+              <label class="block text-xs font-medium text-gray-500">Priority</label>
+              <div class="flex gap-3">
+                <label class="relative cursor-pointer">
+                  <input type="radio" name="priority" value="high" class="peer sr-only" />
+                  <div
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-red-500 peer-checked:bg-red-50 text-xs font-medium text-gray-500 transition-all hover:border-gray-300"
+                  >
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                    High
+                  </div>
+                </label>
+                <label class="relative cursor-pointer">
+                  <input type="radio" name="priority" value="normal" class="peer sr-only" checked />
+                  <div
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-yellow-500 peer-checked:bg-yellow-50 text-xs font-medium text-gray-500 transition-all hover:border-gray-300"
+                  >
+                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+                    Normal
+                  </div>
+                </label>
+                <label class="relative cursor-pointer">
+                  <input type="radio" name="priority" value="low" class="peer sr-only" />
+                  <div
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-blue-500 peer-checked:bg-blue-50 text-xs font-medium text-gray-500 transition-all hover:border-gray-300"
+                  >
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
+                    Low
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="space-y-2">
+              <label class="block text-xs font-medium text-gray-500">Notes</label>
+              <textarea
+                id="notes"
+                rows="3"
+                placeholder="Add any notes for this follow-up..."
+                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- Reschedule Section (shown when editing) -->
+          <div id="rescheduleSection" class="hidden">
+            <div class="px-6 py-5 border-t border-b border-gray-100 bg-orange-50/50">
+              <h2 class="text-lg font-semibold text-gray-900">Reschedule</h2>
+              <p class="text-sm text-gray-500 mt-1">
+                Provide a reason for rescheduling this follow-up
+              </p>
+            </div>
+            <div class="p-6 space-y-4">
+              <div class="space-y-2">
+                <label class="block text-xs font-medium text-gray-500"
+                  >Reason for Reschedule <span class="text-red-500">*</span></label
+                >
+                <select
+                  id="rescheduleReason"
+                  class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]"
+                >
+                  <option value="">Select reason...</option>
+                  <option value="customer_unavailable">Customer Unavailable</option>
+                  <option value="customer_request">Customer Requested</option>
+                  <option value="agent_unavailable">Agent Unavailable</option>
+                  <option value="weather">Weather/External Factors</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="space-y-2">
+                <label class="block text-xs font-medium text-gray-500">Additional Notes</label>
+                <textarea
+                  id="rescheduleNotes"
+                  rows="2"
+                  placeholder="Add any additional context..."
+                  class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer Actions -->
+          <div
+            class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-end gap-3"
+          >
+            <a
+              href="followups.html"
+              class="px-4 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium text-sm transition-colors"
+            >
+              Cancel
+            </a>
+            <button
+              onclick="saveFollowup()"
+              class="px-6 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark transition-colors flex items-center gap-2"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              Create Follow-up
+            </button>
+          </div>
+        </div>
+      </div>
     </main>
 
     <script>
-        function setQuickDate(daysFromNow) {
-            const date = new Date();
-            date.setDate(date.getDate() + daysFromNow);
-            document.getElementById('followupDate').value = date.toISOString().split('T')[0];
+      function setQuickDate(daysFromNow) {
+        const date = new Date();
+        date.setDate(date.getDate() + daysFromNow);
+        document.getElementById('followupDate').value = date.toISOString().split('T')[0];
+      }
+
+      function saveFollowup() {
+        const subject = document.getElementById('subject').value.trim();
+        const followupDate = document.getElementById('followupDate').value;
+        const followupTime = document.getElementById('followupTime').value;
+        const type = document.querySelector('input[name="followupType"]:checked')?.value;
+        const priority =
+          document.querySelector('input[name="priority"]:checked')?.value || 'normal';
+        const notes = document.getElementById('notes')?.value || '';
+
+        if (!subject) {
+          alert('Please enter a subject');
+          return;
         }
-        
-        function saveFollowup() {
-            const subject = document.getElementById('subject').value.trim();
-            const followupDate = document.getElementById('followupDate').value;
-            const followupTime = document.getElementById('followupTime').value;
-            const type = document.querySelector('input[name="followupType"]:checked')?.value;
-            const priority = document.querySelector('input[name="priority"]:checked')?.value || 'normal';
-            const notes = document.getElementById('notes')?.value || '';
-            
-            if (!subject) {
-                alert('Please enter a subject');
-                return;
-            }
-            if (!followupDate || !followupTime) {
-                alert('Please select date and time');
-                return;
-            }
-            
-            // Build the followup payload matching PropertyFollowup interface
-            const scheduledAt = new Date(`${followupDate}T${followupTime}:00.000Z`).toISOString();
-            const payload = {
-                type: type,           // visit, meeting, task, reminder, document_collection
-                subject: subject,
-                scheduledAt: scheduledAt,
-                assignedToUserId: 'current-user-id', // Would come from auth context
-                priority: priority,   // low, normal, high
-                notes: notes
-            };
-            
-            console.log('Creating followup:', payload);
-            // In production: POST /api/v1/customer-properties/:propertyId/followups
-            alert('Follow-up created successfully!');
-            window.location.href = 'followups.html';
+        if (!followupDate || !followupTime) {
+          alert('Please select date and time');
+          return;
         }
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set default date to tomorrow
-            setQuickDate(1);
-            // Set default time to 10:00 AM
-            document.getElementById('followupTime').value = '10:00';
-        });
+
+        // Build the followup payload matching PropertyFollowup interface
+        const scheduledAt = new Date(`${followupDate}T${followupTime}:00.000Z`).toISOString();
+        const payload = {
+          type: type, // visit, meeting, task, reminder, document_collection
+          subject: subject,
+          scheduledAt: scheduledAt,
+          assignedToUserId: 'current-user-id', // Would come from auth context
+          priority: priority, // low, normal, high
+          notes: notes,
+        };
+
+        console.log('Creating followup:', payload);
+        // In production: POST /api/v1/customer-properties/:propertyId/followups
+        alert('Follow-up created successfully!');
+        window.location.href = 'followups.html';
+      }
+
+      // Initialize
+      document.addEventListener('DOMContentLoaded', function () {
+        // Set default date to tomorrow
+        setQuickDate(1);
+        // Set default time to 10:00 AM
+        document.getElementById('followupTime').value = '10:00';
+      });
     </script>
-</body>
+  </body>
 </html>

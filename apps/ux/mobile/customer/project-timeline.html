@@ -1,279 +1,407 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Project Timeline - OneOhm Solar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#76c044',
-                        secondary: '#0d74b8',
-                        tagline: '#025580',
-                        success: '#76c044',
-                        warning: '#EAB308',
-                        error: '#DC2626',
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#76c044',
+              secondary: '#0d74b8',
+              tagline: '#025580',
+              success: '#76c044',
+              warning: '#EAB308',
+              error: '#DC2626',
+            },
+          },
+        },
+      };
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-        }
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+      body {
+        font-family: 'Inter', sans-serif;
+      }
     </style>
-</head>
-<body class="bg-gray-50">
+  </head>
+  <body class="bg-gray-50">
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl pb-20">
-        
-        <!-- Header -->
-        <div class="bg-gradient-to-r from-primary via-green-500 to-secondary px-6 py-6 pt-12">
-            <a href="dashboard-main.html" class="inline-flex items-center text-white mb-6">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-primary via-green-500 to-secondary px-6 py-6 pt-12">
+        <a href="dashboard-main.html" class="inline-flex items-center text-white mb-6">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            ></path>
+          </svg>
+        </a>
+        <h1 class="text-3xl font-bold text-white mb-2">Project Timeline</h1>
+        <p class="text-green-100">Track your solar project progress</p>
+      </div>
+
+      <!-- Content -->
+      <div class="px-6 py-8">
+        <!-- Project Info Card -->
+        <div class="bg-gradient-to-br from-primary/10 to-orange-100 rounded-2xl p-5 mb-6">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <p class="text-sm text-gray-600">Project ID</p>
+              <p class="text-lg font-bold text-gray-900">PROJ-2025-001</p>
+            </div>
+            <span class="px-4 py-2 bg-warning text-white text-sm font-semibold rounded-full"
+              >Phase 2</span
+            >
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <p class="text-xs text-gray-600">System Size</p>
+              <p class="font-semibold text-gray-900">5 kW</p>
+            </div>
+            <div>
+              <p class="text-xs text-gray-600">Completion</p>
+              <p class="font-semibold text-primary">45%</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="space-y-0 relative">
+          <!-- Vertical Line -->
+          <div class="absolute left-7 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+
+          <!-- Milestone 1 - Completed -->
+          <div class="relative pl-16 pb-8">
+            <div
+              class="absolute left-0 top-0 w-14 h-14 bg-success rounded-full flex items-center justify-center shadow-lg"
+            >
+              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                ></path>
+              </svg>
+            </div>
+            <div class="bg-white border-2 border-success/20 rounded-2xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-bold text-gray-900">Quote Sent</h3>
+                <span class="text-xs text-success font-semibold">Completed</span>
+              </div>
+              <p class="text-sm text-gray-600 mb-3">
+                Your detailed quotation has been prepared and shared
+              </p>
+              <div class="flex items-center space-x-2 text-xs text-gray-500">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
                 </svg>
-            </a>
-            <h1 class="text-3xl font-bold text-white mb-2">Project Timeline</h1>
-            <p class="text-green-100">Track your solar project progress</p>
-        </div>
-
-        <!-- Content -->
-        <div class="px-6 py-8">
-            
-            <!-- Project Info Card -->
-            <div class="bg-gradient-to-br from-primary/10 to-orange-100 rounded-2xl p-5 mb-6">
-                <div class="flex items-center justify-between mb-4">
-                    <div>
-                        <p class="text-sm text-gray-600">Project ID</p>
-                        <p class="text-lg font-bold text-gray-900">PROJ-2025-001</p>
-                    </div>
-                    <span class="px-4 py-2 bg-warning text-white text-sm font-semibold rounded-full">Phase 2</span>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <p class="text-xs text-gray-600">System Size</p>
-                        <p class="font-semibold text-gray-900">5 kW</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-600">Completion</p>
-                        <p class="font-semibold text-primary">45%</p>
-                    </div>
-                </div>
+                <span>Oct 10, 2025</span>
+              </div>
             </div>
+          </div>
 
-            <!-- Timeline -->
-            <div class="space-y-0 relative">
-                <!-- Vertical Line -->
-                <div class="absolute left-7 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-
-                <!-- Milestone 1 - Completed -->
-                <div class="relative pl-16 pb-8">
-                    <div class="absolute left-0 top-0 w-14 h-14 bg-success rounded-full flex items-center justify-center shadow-lg">
-                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <div class="bg-white border-2 border-success/20 rounded-2xl p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="font-bold text-gray-900">Quote Sent</h3>
-                            <span class="text-xs text-success font-semibold">Completed</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-3">Your detailed quotation has been prepared and shared</p>
-                        <div class="flex items-center space-x-2 text-xs text-gray-500">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            <span>Oct 10, 2025</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Milestone 2 - Completed -->
-                <div class="relative pl-16 pb-8">
-                    <div class="absolute left-0 top-0 w-14 h-14 bg-success rounded-full flex items-center justify-center shadow-lg">
-                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <div class="bg-white border-2 border-success/20 rounded-2xl p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="font-bold text-gray-900">PO Generated</h3>
-                            <span class="text-xs text-success font-semibold">Completed</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-3">Purchase order created after quote acceptance</p>
-                        <div class="flex items-center space-x-2 text-xs text-gray-500">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            <span>Oct 12, 2025</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Milestone 3 - Completed -->
-                <div class="relative pl-16 pb-8">
-                    <div class="absolute left-0 top-0 w-14 h-14 bg-success rounded-full flex items-center justify-center shadow-lg">
-                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <div class="bg-white border-2 border-success/20 rounded-2xl p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="font-bold text-gray-900">Payment 1 Received (30%)</h3>
-                            <span class="text-xs text-success font-semibold">Completed</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-2">Advance payment of ₹85,500 received</p>
-                        <div class="bg-success/10 rounded-lg p-2 mb-3">
-                            <p class="text-xs font-semibold text-success">Phase 1 Activities Unlocked:</p>
-                            <ul class="text-xs text-gray-700 mt-1 space-y-1 ml-4 list-disc">
-                                <li>DISCOM application</li>
-                                <li>Site survey</li>
-                                <li>Design confirmation</li>
-                            </ul>
-                        </div>
-                        <div class="flex items-center space-x-2 text-xs text-gray-500">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            <span>Oct 14, 2025</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Milestone 4 - Completed -->
-                <div class="relative pl-16 pb-8">
-                    <div class="absolute left-0 top-0 w-14 h-14 bg-success rounded-full flex items-center justify-center shadow-lg">
-                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    <div class="bg-white border-2 border-success/20 rounded-2xl p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="font-bold text-gray-900">Design Approved</h3>
-                            <span class="text-xs text-success font-semibold">Completed</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-3">Solar system design confirmed by customer</p>
-                        <div class="flex items-center space-x-2 text-xs text-gray-500">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                            </svg>
-                            <span>Oct 20, 2025</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Milestone 5 - In Progress -->
-                <div class="relative pl-16 pb-8">
-                    <div class="absolute left-0 top-0 w-14 h-14 bg-warning rounded-full flex items-center justify-center shadow-lg animate-pulse">
-                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <div class="bg-white border-2 border-warning rounded-2xl p-4 shadow-lg">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="font-bold text-gray-900">Payment 2 Pending (65%)</h3>
-                            <span class="text-xs text-warning font-semibold">In Progress</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-2">Awaiting payment of ₹1,85,250</p>
-                        <div class="bg-amber-50 rounded-lg p-3 mb-3">
-                            <p class="text-xs font-semibold text-amber-800 mb-2">⏰ Due by: Nov 5, 2025</p>
-                            <button class="w-full bg-primary hover:bg-green-600 text-white text-sm font-semibold py-2 px-4 rounded-lg transition-all">
-                                Upload Payment Proof
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Milestone 6 - Pending -->
-                <div class="relative pl-16 pb-8">
-                    <div class="absolute left-0 top-0 w-14 h-14 bg-gray-300 rounded-full flex items-center justify-center">
-                        <svg class="w-7 h-7 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                        </svg>
-                    </div>
-                    <div class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="font-bold text-gray-700">Installation</h3>
-                            <span class="text-xs text-gray-500 font-semibold">Pending</span>
-                        </div>
-                        <p class="text-sm text-gray-500">Unlocked after Payment 2</p>
-                    </div>
-                </div>
-
-                <!-- Milestone 7 - Pending -->
-                <div class="relative pl-16 pb-8">
-                    <div class="absolute left-0 top-0 w-14 h-14 bg-gray-300 rounded-full flex items-center justify-center">
-                        <svg class="w-7 h-7 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                        </svg>
-                    </div>
-                    <div class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="font-bold text-gray-700">Meter Installation</h3>
-                            <span class="text-xs text-gray-500 font-semibold">Pending</span>
-                        </div>
-                        <p class="text-sm text-gray-500">MSEDCL net meter installation</p>
-                    </div>
-                </div>
-
-                <!-- Milestone 8 - Pending -->
-                <div class="relative pl-16">
-                    <div class="absolute left-0 top-0 w-14 h-14 bg-gray-300 rounded-full flex items-center justify-center">
-                        <svg class="w-7 h-7 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <div class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <h3 class="font-bold text-gray-700">Project Completion</h3>
-                            <span class="text-xs text-gray-500 font-semibold">Pending</span>
-                        </div>
-                        <p class="text-sm text-gray-500">Final handover and warranty</p>
-                    </div>
-                </div>
-
+          <!-- Milestone 2 - Completed -->
+          <div class="relative pl-16 pb-8">
+            <div
+              class="absolute left-0 top-0 w-14 h-14 bg-success rounded-full flex items-center justify-center shadow-lg"
+            >
+              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                ></path>
+              </svg>
             </div>
-
-        </div>
-
-        <!-- Bottom Navigation -->
-        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg max-w-md mx-auto">
-            <div class="flex items-center justify-around py-3 px-6">
-                <a href="dashboard-main.html" class="flex flex-col items-center space-y-1 text-gray-400 hover:text-primary">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                    </svg>
-                    <span class="text-xs">Home</span>
-                </a>
-                <a href="project-timeline.html" class="flex flex-col items-center space-y-1 text-primary">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
-                        <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"></path>
-                    </svg>
-                    <span class="text-xs font-semibold">Project</span>
-                </a>
-                <a href="notifications.html" class="flex flex-col items-center space-y-1 text-gray-400 hover:text-primary relative">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                    </svg>
-                    <span class="absolute top-0 right-2 w-2 h-2 bg-error rounded-full"></span>
-                    <span class="text-xs">Alerts</span>
-                </a>
-                <a href="profile.html" class="flex flex-col items-center space-y-1 text-gray-400 hover:text-primary">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                    </svg>
-                    <span class="text-xs">Profile</span>
-                </a>
+            <div class="bg-white border-2 border-success/20 rounded-2xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-bold text-gray-900">PO Generated</h3>
+                <span class="text-xs text-success font-semibold">Completed</span>
+              </div>
+              <p class="text-sm text-gray-600 mb-3">
+                Purchase order created after quote acceptance
+              </p>
+              <div class="flex items-center space-x-2 text-xs text-gray-500">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
+                </svg>
+                <span>Oct 12, 2025</span>
+              </div>
             </div>
-        </div>
+          </div>
 
+          <!-- Milestone 3 - Completed -->
+          <div class="relative pl-16 pb-8">
+            <div
+              class="absolute left-0 top-0 w-14 h-14 bg-success rounded-full flex items-center justify-center shadow-lg"
+            >
+              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                ></path>
+              </svg>
+            </div>
+            <div class="bg-white border-2 border-success/20 rounded-2xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-bold text-gray-900">Payment 1 Received (30%)</h3>
+                <span class="text-xs text-success font-semibold">Completed</span>
+              </div>
+              <p class="text-sm text-gray-600 mb-2">Advance payment of ₹85,500 received</p>
+              <div class="bg-success/10 rounded-lg p-2 mb-3">
+                <p class="text-xs font-semibold text-success">Phase 1 Activities Unlocked:</p>
+                <ul class="text-xs text-gray-700 mt-1 space-y-1 ml-4 list-disc">
+                  <li>DISCOM application</li>
+                  <li>Site survey</li>
+                  <li>Design confirmation</li>
+                </ul>
+              </div>
+              <div class="flex items-center space-x-2 text-xs text-gray-500">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
+                </svg>
+                <span>Oct 14, 2025</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Milestone 4 - Completed -->
+          <div class="relative pl-16 pb-8">
+            <div
+              class="absolute left-0 top-0 w-14 h-14 bg-success rounded-full flex items-center justify-center shadow-lg"
+            >
+              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                ></path>
+              </svg>
+            </div>
+            <div class="bg-white border-2 border-success/20 rounded-2xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-bold text-gray-900">Design Approved</h3>
+                <span class="text-xs text-success font-semibold">Completed</span>
+              </div>
+              <p class="text-sm text-gray-600 mb-3">Solar system design confirmed by customer</p>
+              <div class="flex items-center space-x-2 text-xs text-gray-500">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  ></path>
+                </svg>
+                <span>Oct 20, 2025</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Milestone 5 - In Progress -->
+          <div class="relative pl-16 pb-8">
+            <div
+              class="absolute left-0 top-0 w-14 h-14 bg-warning rounded-full flex items-center justify-center shadow-lg animate-pulse"
+            >
+              <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
+            </div>
+            <div class="bg-white border-2 border-warning rounded-2xl p-4 shadow-lg">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-bold text-gray-900">Payment 2 Pending (65%)</h3>
+                <span class="text-xs text-warning font-semibold">In Progress</span>
+              </div>
+              <p class="text-sm text-gray-600 mb-2">Awaiting payment of ₹1,85,250</p>
+              <div class="bg-amber-50 rounded-lg p-3 mb-3">
+                <p class="text-xs font-semibold text-amber-800 mb-2">⏰ Due by: Nov 5, 2025</p>
+                <button
+                  class="w-full bg-primary hover:bg-green-600 text-white text-sm font-semibold py-2 px-4 rounded-lg transition-all"
+                >
+                  Upload Payment Proof
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Milestone 6 - Pending -->
+          <div class="relative pl-16 pb-8">
+            <div
+              class="absolute left-0 top-0 w-14 h-14 bg-gray-300 rounded-full flex items-center justify-center"
+            >
+              <svg
+                class="w-7 h-7 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                ></path>
+              </svg>
+            </div>
+            <div class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-bold text-gray-700">Installation</h3>
+                <span class="text-xs text-gray-500 font-semibold">Pending</span>
+              </div>
+              <p class="text-sm text-gray-500">Unlocked after Payment 2</p>
+            </div>
+          </div>
+
+          <!-- Milestone 7 - Pending -->
+          <div class="relative pl-16 pb-8">
+            <div
+              class="absolute left-0 top-0 w-14 h-14 bg-gray-300 rounded-full flex items-center justify-center"
+            >
+              <svg
+                class="w-7 h-7 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                ></path>
+              </svg>
+            </div>
+            <div class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-bold text-gray-700">Meter Installation</h3>
+                <span class="text-xs text-gray-500 font-semibold">Pending</span>
+              </div>
+              <p class="text-sm text-gray-500">MSEDCL net meter installation</p>
+            </div>
+          </div>
+
+          <!-- Milestone 8 - Pending -->
+          <div class="relative pl-16">
+            <div
+              class="absolute left-0 top-0 w-14 h-14 bg-gray-300 rounded-full flex items-center justify-center"
+            >
+              <svg
+                class="w-7 h-7 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
+            </div>
+            <div class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="font-bold text-gray-700">Project Completion</h3>
+                <span class="text-xs text-gray-500 font-semibold">Pending</span>
+              </div>
+              <p class="text-sm text-gray-500">Final handover and warranty</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Navigation -->
+      <div
+        class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg max-w-md mx-auto"
+      >
+        <div class="flex items-center justify-around py-3 px-6">
+          <a
+            href="dashboard-main.html"
+            class="flex flex-col items-center space-y-1 text-gray-400 hover:text-primary"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              ></path>
+            </svg>
+            <span class="text-xs">Home</span>
+          </a>
+          <a href="project-timeline.html" class="flex flex-col items-center space-y-1 text-primary">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
+              <path
+                fill-rule="evenodd"
+                d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"
+                clip-rule="evenodd"
+              ></path>
+            </svg>
+            <span class="text-xs font-semibold">Project</span>
+          </a>
+          <a
+            href="notifications.html"
+            class="flex flex-col items-center space-y-1 text-gray-400 hover:text-primary relative"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              ></path>
+            </svg>
+            <span class="absolute top-0 right-2 w-2 h-2 bg-error rounded-full"></span>
+            <span class="text-xs">Alerts</span>
+          </a>
+          <a
+            href="profile.html"
+            class="flex flex-col items-center space-y-1 text-gray-400 hover:text-primary"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              ></path>
+            </svg>
+            <span class="text-xs">Profile</span>
+          </a>
+        </div>
+      </div>
     </div>
-</body>
+  </body>
 </html>
-

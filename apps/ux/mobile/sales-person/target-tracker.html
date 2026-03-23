@@ -1,250 +1,316 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Target Tracker - OneOhm Solar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#76c044',
-                        secondary: '#0d74b8',
-                        tagline: '#025580',
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#76c044',
+              secondary: '#0d74b8',
+              tagline: '#025580',
+            },
+          },
+        },
+      };
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+      body {
+        font-family: 'Inter', sans-serif;
+      }
     </style>
-</head>
-<body class="bg-gray-50">
+  </head>
+  <body class="bg-gray-50">
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl pb-20">
-        <div class="bg-gradient-to-r from-green-600 to-emerald-700 px-6 py-6 pt-12">
-            <a href="dashboard-salesperson.html" class="inline-flex items-center text-white mb-6">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-            </a>
-            <h1 class="text-3xl font-bold text-white mb-2">Target Tracker</h1>
-            <p class="text-green-100">October 2025</p>
+      <div class="bg-gradient-to-r from-green-600 to-emerald-700 px-6 py-6 pt-12">
+        <a href="dashboard-salesperson.html" class="inline-flex items-center text-white mb-6">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            ></path>
+          </svg>
+        </a>
+        <h1 class="text-3xl font-bold text-white mb-2">Target Tracker</h1>
+        <p class="text-green-100">October 2025</p>
+      </div>
+
+      <div class="px-6 py-6">
+        <!-- Achievement Banner -->
+        <div
+          class="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-500 rounded-2xl p-6 mb-6 text-center text-white shadow-2xl"
+        >
+          <div class="text-6xl mb-3">🏆</div>
+          <h2 class="text-2xl font-bold mb-2">112% of Target!</h2>
+          <p class="text-sm opacity-90">Outstanding performance this month</p>
         </div>
 
-        <div class="px-6 py-6">
-            <!-- Achievement Banner -->
-            <div class="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-500 rounded-2xl p-6 mb-6 text-center text-white shadow-2xl">
-                <div class="text-6xl mb-3">🏆</div>
-                <h2 class="text-2xl font-bold mb-2">112% of Target!</h2>
-                <p class="text-sm opacity-90">Outstanding performance this month</p>
+        <!-- Monthly Target Progress -->
+        <div class="mb-6">
+          <h3 class="font-bold text-gray-900 mb-4">Monthly Targets</h3>
+
+          <!-- Revenue Target -->
+          <div class="bg-white border-2 border-gray-200 rounded-2xl p-5 mb-4">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <p class="text-sm text-gray-600 mb-1">Revenue Target</p>
+                <p class="text-2xl font-bold text-gray-900">₹22.4L / ₹20L</p>
+              </div>
+              <div class="text-right">
+                <p class="text-3xl font-bold text-green-600">112%</p>
+                <p class="text-xs text-green-600 font-semibold">+₹2.4L</p>
+              </div>
             </div>
-
-            <!-- Monthly Target Progress -->
-            <div class="mb-6">
-                <h3 class="font-bold text-gray-900 mb-4">Monthly Targets</h3>
-                
-                <!-- Revenue Target -->
-                <div class="bg-white border-2 border-gray-200 rounded-2xl p-5 mb-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-sm text-gray-600 mb-1">Revenue Target</p>
-                            <p class="text-2xl font-bold text-gray-900">₹22.4L / ₹20L</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-3xl font-bold text-green-600">112%</p>
-                            <p class="text-xs text-green-600 font-semibold">+₹2.4L</p>
-                        </div>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
-                        <div class="bg-gradient-to-r from-green-500 to-emerald-600 h-4 rounded-full transition-all" style="width: 112%"></div>
-                    </div>
-                    <p class="text-xs text-green-600 font-semibold">🎉 Target exceeded by 12%!</p>
-                </div>
-
-                <!-- Deals Target -->
-                <div class="bg-white border-2 border-gray-200 rounded-2xl p-5 mb-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-sm text-gray-600 mb-1">Deals Closed</p>
-                            <p class="text-2xl font-bold text-gray-900">11 / 10</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-3xl font-bold text-green-600">110%</p>
-                            <p class="text-xs text-green-600 font-semibold">+1 deal</p>
-                        </div>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
-                        <div class="bg-gradient-to-r from-blue-500 to-cyan-600 h-4 rounded-full" style="width: 110%"></div>
-                    </div>
-                    <p class="text-xs text-green-600 font-semibold">🎯 1 deal above target!</p>
-                </div>
-
-                <!-- Leads Target -->
-                <div class="bg-white border-2 border-yellow-200 rounded-2xl p-5">
-                    <div class="flex items-center justify-between mb-3">
-                        <div>
-                            <p class="text-sm text-gray-600 mb-1">New Leads</p>
-                            <p class="text-2xl font-bold text-gray-900">28 / 30</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-3xl font-bold text-yellow-600">93%</p>
-                            <p class="text-xs text-gray-600">2 to go</p>
-                        </div>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
-                        <div class="bg-gradient-to-r from-yellow-500 to-orange-500 h-4 rounded-full" style="width: 93%"></div>
-                    </div>
-                    <p class="text-xs text-gray-600">💪 Almost there! 2 more leads needed</p>
-                </div>
+            <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+              <div
+                class="bg-gradient-to-r from-green-500 to-emerald-600 h-4 rounded-full transition-all"
+                style="width: 112%"
+              ></div>
             </div>
+            <p class="text-xs text-green-600 font-semibold">🎉 Target exceeded by 12%!</p>
+          </div>
 
-            <!-- Quarterly Overview -->
-            <div class="mb-6">
-                <h3 class="font-bold text-gray-900 mb-4">Quarterly Overview (Q4 2025)</h3>
-                <div class="bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-2xl p-5">
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <p class="text-xs text-gray-600 mb-1">Total Revenue</p>
-                            <p class="text-xl font-bold text-purple-600">₹58.5L</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-600 mb-1">Target</p>
-                            <p class="text-xl font-bold text-gray-900">₹60L</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-600 mb-1">Deals Closed</p>
-                            <p class="text-xl font-bold text-purple-600">29</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-600 mb-1">Achievement</p>
-                            <p class="text-xl font-bold text-green-600">97.5%</p>
-                        </div>
-                    </div>
-                    <div class="w-full bg-purple-200 rounded-full h-3">
-                        <div class="bg-gradient-to-r from-purple-500 to-indigo-600 h-3 rounded-full" style="width: 97.5%"></div>
-                    </div>
-                </div>
+          <!-- Deals Target -->
+          <div class="bg-white border-2 border-gray-200 rounded-2xl p-5 mb-4">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <p class="text-sm text-gray-600 mb-1">Deals Closed</p>
+                <p class="text-2xl font-bold text-gray-900">11 / 10</p>
+              </div>
+              <div class="text-right">
+                <p class="text-3xl font-bold text-green-600">110%</p>
+                <p class="text-xs text-green-600 font-semibold">+1 deal</p>
+              </div>
             </div>
-
-            <!-- Monthly Breakdown -->
-            <div class="mb-6">
-                <h3 class="font-bold text-gray-900 mb-4">Month-wise Performance</h3>
-                <div class="space-y-3">
-                    <div class="bg-white border-2 border-gray-200 rounded-2xl p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div>
-                                <p class="font-semibold text-gray-900">October 2025</p>
-                                <p class="text-xs text-gray-600">11 deals • ₹22.4L</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-lg font-bold text-green-600">112%</p>
-                                <svg class="w-5 h-5 text-green-600 ml-auto" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-green-500 h-2 rounded-full" style="width: 112%"></div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white border-2 border-gray-200 rounded-2xl p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div>
-                                <p class="font-semibold text-gray-900">September 2025</p>
-                                <p class="text-xs text-gray-600">9 deals • ₹18.5L</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-lg font-bold text-green-600">103%</p>
-                                <svg class="w-5 h-5 text-green-600 ml-auto" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-green-500 h-2 rounded-full" style="width: 103%"></div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white border-2 border-gray-200 rounded-2xl p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div>
-                                <p class="font-semibold text-gray-900">August 2025</p>
-                                <p class="text-xs text-gray-600">9 deals • ₹17.6L</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-lg font-bold text-yellow-600">88%</p>
-                                <svg class="w-5 h-5 text-red-600 ml-auto" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M14.707 12.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                </svg>
-                            </div>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-yellow-500 h-2 rounded-full" style="width: 88%"></div>
-                        </div>
-                    </div>
-                </div>
+            <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+              <div
+                class="bg-gradient-to-r from-blue-500 to-cyan-600 h-4 rounded-full"
+                style="width: 110%"
+              ></div>
             </div>
+            <p class="text-xs text-green-600 font-semibold">🎯 1 deal above target!</p>
+          </div>
 
-            <!-- Incentive Calculator -->
-            <div class="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-6">
-                <h3 class="font-bold text-gray-900 mb-4 text-center">💰 Incentive This Month</h3>
-                <div class="text-center mb-4">
-                    <p class="text-4xl font-bold text-green-600">₹45,000</p>
-                    <p class="text-sm text-gray-600 mt-1">Based on 112% achievement</p>
-                </div>
-                <div class="space-y-2 text-sm">
-                    <div class="flex justify-between">
-                        <span class="text-gray-700">Base Incentive (100%)</span>
-                        <span class="font-semibold">₹35,000</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-gray-700">Bonus (112%)</span>
-                        <span class="font-semibold text-green-600">+₹10,000</span>
-                    </div>
-                    <div class="border-t-2 border-green-300 pt-2 flex justify-between">
-                        <span class="font-bold text-gray-900">Total Earnings</span>
-                        <span class="text-xl font-bold text-green-600">₹45,000</span>
-                    </div>
-                </div>
+          <!-- Leads Target -->
+          <div class="bg-white border-2 border-yellow-200 rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <p class="text-sm text-gray-600 mb-1">New Leads</p>
+                <p class="text-2xl font-bold text-gray-900">28 / 30</p>
+              </div>
+              <div class="text-right">
+                <p class="text-3xl font-bold text-yellow-600">93%</p>
+                <p class="text-xs text-gray-600">2 to go</p>
+              </div>
             </div>
+            <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+              <div
+                class="bg-gradient-to-r from-yellow-500 to-orange-500 h-4 rounded-full"
+                style="width: 93%"
+              ></div>
+            </div>
+            <p class="text-xs text-gray-600">💪 Almost there! 2 more leads needed</p>
+          </div>
         </div>
 
-        <!-- Bottom Navigation -->
-        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg max-w-md mx-auto">
-            <div class="flex items-center justify-around py-3 px-6">
-                <a href="dashboard-salesperson.html" class="flex flex-col items-center space-y-1 text-gray-400">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                    </svg>
-                    <span class="text-xs">Home</span>
-                </a>
-                <a href="lead-list.html" class="flex flex-col items-center space-y-1 text-gray-400">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                    </svg>
-                    <span class="text-xs">Leads</span>
-                </a>
-                <a href="target-tracker.html" class="flex flex-col items-center space-y-1 text-primary">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"></path>
-                    </svg>
-                    <span class="text-xs font-semibold">Targets</span>
-                </a>
-                <a href="performance.html" class="flex flex-col items-center space-y-1 text-gray-400">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
-                    </svg>
-                    <span class="text-xs">Performance</span>
-                </a>
+        <!-- Quarterly Overview -->
+        <div class="mb-6">
+          <h3 class="font-bold text-gray-900 mb-4">Quarterly Overview (Q4 2025)</h3>
+          <div
+            class="bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-2xl p-5"
+          >
+            <div class="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <p class="text-xs text-gray-600 mb-1">Total Revenue</p>
+                <p class="text-xl font-bold text-purple-600">₹58.5L</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-600 mb-1">Target</p>
+                <p class="text-xl font-bold text-gray-900">₹60L</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-600 mb-1">Deals Closed</p>
+                <p class="text-xl font-bold text-purple-600">29</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-600 mb-1">Achievement</p>
+                <p class="text-xl font-bold text-green-600">97.5%</p>
+              </div>
             </div>
+            <div class="w-full bg-purple-200 rounded-full h-3">
+              <div
+                class="bg-gradient-to-r from-purple-500 to-indigo-600 h-3 rounded-full"
+                style="width: 97.5%"
+              ></div>
+            </div>
+          </div>
         </div>
+
+        <!-- Monthly Breakdown -->
+        <div class="mb-6">
+          <h3 class="font-bold text-gray-900 mb-4">Month-wise Performance</h3>
+          <div class="space-y-3">
+            <div class="bg-white border-2 border-gray-200 rounded-2xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <p class="font-semibold text-gray-900">October 2025</p>
+                  <p class="text-xs text-gray-600">11 deals • ₹22.4L</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-lg font-bold text-green-600">112%</p>
+                  <svg
+                    class="w-5 h-5 text-green-600 ml-auto"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z"
+                      clip-rule="evenodd"
+                    ></path>
+                  </svg>
+                </div>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-green-500 h-2 rounded-full" style="width: 112%"></div>
+              </div>
+            </div>
+
+            <div class="bg-white border-2 border-gray-200 rounded-2xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <p class="font-semibold text-gray-900">September 2025</p>
+                  <p class="text-xs text-gray-600">9 deals • ₹18.5L</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-lg font-bold text-green-600">103%</p>
+                  <svg
+                    class="w-5 h-5 text-green-600 ml-auto"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z"
+                      clip-rule="evenodd"
+                    ></path>
+                  </svg>
+                </div>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-green-500 h-2 rounded-full" style="width: 103%"></div>
+              </div>
+            </div>
+
+            <div class="bg-white border-2 border-gray-200 rounded-2xl p-4">
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <p class="font-semibold text-gray-900">August 2025</p>
+                  <p class="text-xs text-gray-600">9 deals • ₹17.6L</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-lg font-bold text-yellow-600">88%</p>
+                  <svg class="w-5 h-5 text-red-600 ml-auto" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fill-rule="evenodd"
+                      d="M14.707 12.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l2.293-2.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    ></path>
+                  </svg>
+                </div>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-yellow-500 h-2 rounded-full" style="width: 88%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Incentive Calculator -->
+        <div
+          class="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-6"
+        >
+          <h3 class="font-bold text-gray-900 mb-4 text-center">💰 Incentive This Month</h3>
+          <div class="text-center mb-4">
+            <p class="text-4xl font-bold text-green-600">₹45,000</p>
+            <p class="text-sm text-gray-600 mt-1">Based on 112% achievement</p>
+          </div>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-gray-700">Base Incentive (100%)</span>
+              <span class="font-semibold">₹35,000</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-700">Bonus (112%)</span>
+              <span class="font-semibold text-green-600">+₹10,000</span>
+            </div>
+            <div class="border-t-2 border-green-300 pt-2 flex justify-between">
+              <span class="font-bold text-gray-900">Total Earnings</span>
+              <span class="text-xl font-bold text-green-600">₹45,000</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Navigation -->
+      <div
+        class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg max-w-md mx-auto"
+      >
+        <div class="flex items-center justify-around py-3 px-6">
+          <a
+            href="dashboard-salesperson.html"
+            class="flex flex-col items-center space-y-1 text-gray-400"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              ></path>
+            </svg>
+            <span class="text-xs">Home</span>
+          </a>
+          <a href="lead-list.html" class="flex flex-col items-center space-y-1 text-gray-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              ></path>
+            </svg>
+            <span class="text-xs">Leads</span>
+          </a>
+          <a href="target-tracker.html" class="flex flex-col items-center space-y-1 text-primary">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"
+              ></path>
+            </svg>
+            <span class="text-xs font-semibold">Targets</span>
+          </a>
+          <a href="performance.html" class="flex flex-col items-center space-y-1 text-gray-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+              ></path>
+            </svg>
+            <span class="text-xs">Performance</span>
+          </a>
+        </div>
+      </div>
     </div>
-</body>
+  </body>
 </html>
-

@@ -1,1692 +1,2380 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard - OneOhm Solar EPC</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            DEFAULT: '#76c044',
-                            dark: '#5ea031',
-                            light: '#8fd35f',
-                            50: '#f3fae8',
-                            100: '#e4f4cc',
-                            500: '#76c044',
-                            600: '#5ea031',
-                        },
-                        secondary: {
-                            DEFAULT: '#0d74b8',
-                            dark: '#0a5c92',
-                            light: '#2b8fd4',
-                        },
-                        success: '#22c55e',
-                        warning: '#eab308',
-                        error: '#dc2626',
-                        info: '#0ea5e9',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    },
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: '#76c044',
+                dark: '#5ea031',
+                light: '#8fd35f',
+                50: '#f3fae8',
+                100: '#e4f4cc',
+                500: '#76c044',
+                600: '#5ea031',
+              },
+              secondary: {
+                DEFAULT: '#0d74b8',
+                dark: '#0a5c92',
+                light: '#2b8fd4',
+              },
+              success: '#22c55e',
+              warning: '#eab308',
+              error: '#dc2626',
+              info: '#0ea5e9',
+            },
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+            },
+          },
+        },
+      };
     </script>
     <style>
-        body { font-family: 'Inter', system-ui, sans-serif; }
-        
-        /* ==================== GLOBAL HEADER ==================== */
-        .global-header {
-            height: 48px;
-            background: #ffffff;
-            border-bottom: 1px solid #f4f4f5;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 50;
-            display: flex;
-            align-items: center;
-            padding: 0 12px;
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+
+      /* ==================== GLOBAL HEADER ==================== */
+      .global-header {
+        height: 48px;
+        background: #ffffff;
+        border-bottom: 1px solid #f4f4f5;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+      }
+
+      /* ==================== RAIL (Icon Strip) ==================== */
+      .rail {
+        width: 48px;
+        background: #ffffff;
+        border-right: 1px solid #f4f4f5;
+        position: fixed;
+        top: 48px;
+        left: 0;
+        height: calc(100vh - 48px);
+        display: flex;
+        flex-direction: column;
+        z-index: 40;
+      }
+
+      .rail-top {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding-top: 6px;
+      }
+
+      .rail-bottom {
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 6px;
+        border-top: 1px solid #f4f4f5;
+      }
+
+      .rail-icon {
+        width: 48px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #71717a;
+        cursor: pointer;
+        position: relative;
+        transition: all 150ms ease;
+      }
+
+      .rail-icon:hover {
+        background: #f4f4f5;
+        color: #3f3f46;
+      }
+
+      .rail-icon.active {
+        background: rgba(118, 192, 68, 0.08);
+        color: #76c044;
+        border-left: 3px solid #76c044;
+      }
+
+      .rail-icon .badge {
+        position: absolute;
+        top: 6px;
+        right: 10px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        font-size: 10px;
+        font-weight: 600;
+        background: #ef4444;
+        color: white;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .rail-icon .tooltip {
+        position: absolute;
+        left: 60px;
+        background: #1f2937;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 150ms ease;
+        z-index: 100;
+      }
+
+      .rail-icon:hover .tooltip {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .rail-user {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+
+      .rail-user:hover {
+        background: #f9fafb;
+      }
+
+      /* ==================== PANEL (Expandable Detail) ==================== */
+      .panel {
+        width: 200px;
+        background: #ffffff;
+        border-right: 1px solid #f4f4f5;
+        position: fixed;
+        top: 48px;
+        left: 48px;
+        height: calc(100vh - 48px);
+        display: flex;
+        flex-direction: column;
+        z-index: 35;
+        transition:
+          transform 200ms ease,
+          opacity 200ms ease;
+      }
+
+      .panel.collapsed {
+        transform: translateX(-240px);
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .panel-header {
+        height: 48px;
+        padding: 0 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #f3f4f6;
+        flex-shrink: 0;
+      }
+
+      .panel-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #111827;
+      }
+
+      .panel-close-btn {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #9ca3af;
+        border-radius: 6px;
+        cursor: pointer;
+        opacity: 0;
+        transition: all 150ms ease;
+        background: none;
+        border: none;
+      }
+
+      .panel-header:hover .panel-close-btn {
+        opacity: 1;
+      }
+
+      .panel-close-btn:hover {
+        background: #f3f4f6;
+        color: #374151;
+      }
+
+      .panel-container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
+      .panel-container.hidden {
+        display: none !important;
+      }
+
+      .panel-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 0;
+      }
+
+      .panel-section {
+        padding: 0 8px;
+        margin-bottom: 8px;
+      }
+
+      .section-header {
+        font-size: 11px;
+        font-weight: 600;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 12px 8px 6px 8px;
+      }
+
+      .panel-item {
+        height: 36px;
+        padding: 0 12px;
+        display: flex;
+        align-items: center;
+        color: #374151;
+        font-size: 14px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: all 100ms ease;
+      }
+
+      .panel-item:hover {
+        background: #f9fafb;
+      }
+
+      .panel-item.active {
+        background: rgba(118, 192, 68, 0.12);
+        color: #5ea031;
+        font-weight: 500;
+      }
+
+      .panel-item svg {
+        width: 18px;
+        height: 18px;
+        margin-right: 10px;
+        flex-shrink: 0;
+      }
+
+      .panel-item .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 10px;
+        flex-shrink: 0;
+      }
+
+      .panel-item .status-dot.hot {
+        background: #ef4444;
+      }
+      .panel-item .status-dot.warm {
+        background: #eab308;
+      }
+      .panel-item .status-dot.cold {
+        background: #60a5fa;
+      }
+
+      .panel-item.sub-item {
+        padding-left: 28px;
+        font-size: 13px;
+        color: #6b7280;
+      }
+
+      .panel-item.sub-item:hover {
+        color: #374151;
+      }
+
+      .panel-item span:not(.badge):not(.panel-badge):not(.status-dot) {
+        flex: 1;
+      }
+
+      .panel-item .badge {
+        margin-left: auto;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 12px;
+        background: rgba(118, 192, 68, 0.15);
+        color: #76c044;
+      }
+
+      .panel-item .badge.warning {
+        background: #fef3c7;
+        color: #d97706;
+      }
+
+      .panel-item .badge.error {
+        background: #fee2e2;
+        color: #dc2626;
+      }
+
+      /* ==================== MAIN CONTENT ==================== */
+      .main-content {
+        margin-left: 248px;
+        margin-top: 48px;
+        min-height: calc(100vh - 48px);
+        background: #f3f4f6;
+        transition: margin-left 200ms ease;
+      }
+
+      .main-content.panel-collapsed {
+        margin-left: 48px;
+      }
+
+      /* ==================== GLASSMORPHISM ==================== */
+      .glass-card {
+        background: linear-gradient(135deg, #76c044 0%, #0d74b8 100%);
+        position: relative;
+        overflow: hidden;
+      }
+      .glass-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+      }
+
+      /* ==================== ANIMATIONS ==================== */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
         }
-        
-        /* ==================== RAIL (Icon Strip) ==================== */
-        .rail {
-            width: 48px;
-            background: #ffffff;
-            border-right: 1px solid #f4f4f5;
-            position: fixed;
-            top: 48px;
-            left: 0;
-            height: calc(100vh - 48px);
-            display: flex;
-            flex-direction: column;
-            z-index: 40;
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        
-        .rail-top {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding-top: 6px;
+      }
+      .animate-fade-in {
+        animation: fadeInUp 0.4s ease forwards;
+      }
+      .animation-delay-100 {
+        animation-delay: 0.1s;
+      }
+      .animation-delay-200 {
+        animation-delay: 0.2s;
+      }
+      .animation-delay-300 {
+        animation-delay: 0.3s;
+      }
+      .animation-delay-400 {
+        animation-delay: 0.4s;
+      }
+      .animation-delay-500 {
+        animation-delay: 0.5s;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
         }
-        
-        .rail-bottom {
-            display: flex;
-            flex-direction: column;
-            padding-bottom: 6px;
-            border-top: 1px solid #f4f4f5;
+        50% {
+          opacity: 0.5;
         }
-        
-        .rail-icon {
-            width: 48px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #71717a;
-            cursor: pointer;
-            position: relative;
-            transition: all 150ms ease;
-        }
-        
-        .rail-icon:hover {
-            background: #f4f4f5;
-            color: #3f3f46;
-        }
-        
-        .rail-icon.active {
-            background: rgba(118, 192, 68, 0.08);
-            color: #76c044;
-            border-left: 3px solid #76c044;
-        }
-        
-        .rail-icon .badge {
-            position: absolute;
-            top: 6px;
-            right: 10px;
-            min-width: 18px;
-            height: 18px;
-            padding: 0 5px;
-            font-size: 10px;
-            font-weight: 600;
-            background: #ef4444;
-            color: white;
-            border-radius: 9px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .rail-icon .tooltip {
-            position: absolute;
-            left: 60px;
-            background: #1f2937;
-            color: white;
-            padding: 6px 10px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 500;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 150ms ease;
-            z-index: 100;
-        }
-        
-        .rail-icon:hover .tooltip {
-            opacity: 1;
-            visibility: visible;
-        }
-        
-        .rail-user {
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        
-        .rail-user:hover {
-            background: #f9fafb;
-        }
-        
-        /* ==================== PANEL (Expandable Detail) ==================== */
-        .panel {
-            width: 200px;
-            background: #ffffff;
-            border-right: 1px solid #f4f4f5;
-            position: fixed;
-            top: 48px;
-            left: 48px;
-            height: calc(100vh - 48px);
-            display: flex;
-            flex-direction: column;
-            z-index: 35;
-            transition: transform 200ms ease, opacity 200ms ease;
-        }
-        
-        .panel.collapsed {
-            transform: translateX(-240px);
-            opacity: 0;
-            pointer-events: none;
-        }
-        
-        .panel-header {
-            height: 48px;
-            padding: 0 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid #f3f4f6;
-            flex-shrink: 0;
-        }
-        
-        .panel-title {
-            font-size: 15px;
-            font-weight: 600;
-            color: #111827;
-        }
-        
-        .panel-close-btn {
-            width: 28px;
-            height: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #9ca3af;
-            border-radius: 6px;
-            cursor: pointer;
-            opacity: 0;
-            transition: all 150ms ease;
-            background: none;
-            border: none;
-        }
-        
-        .panel-header:hover .panel-close-btn {
-            opacity: 1;
-        }
-        
-        .panel-close-btn:hover {
-            background: #f3f4f6;
-            color: #374151;
-        }
-        
-        
-        .panel-container {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        
-        .panel-container.hidden {
-            display: none !important;
-        }
-        
-        .panel-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 8px 0;
-        }
-        
-        .panel-section {
-            padding: 0 8px;
-            margin-bottom: 8px;
-        }
-        
-        .section-header {
-            font-size: 11px;
-            font-weight: 600;
-            color: #9ca3af;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 12px 8px 6px 8px;
-        }
-        
-        .panel-item {
-            height: 36px;
-            padding: 0 12px;
-            display: flex;
-            align-items: center;
-            color: #374151;
-            font-size: 14px;
-            cursor: pointer;
-            border-radius: 8px;
-            transition: all 100ms ease;
-        }
-        
-        .panel-item:hover {
-            background: #f9fafb;
-        }
-        
-        .panel-item.active {
-            background: rgba(118, 192, 68, 0.12);
-            color: #5ea031;
-            font-weight: 500;
-        }
-        
-        .panel-item svg {
-            width: 18px;
-            height: 18px;
-            margin-right: 10px;
-            flex-shrink: 0;
-        }
-        
-        .panel-item .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-right: 10px;
-            flex-shrink: 0;
-        }
-        
-        .panel-item .status-dot.hot { background: #ef4444; }
-        .panel-item .status-dot.warm { background: #eab308; }
-        .panel-item .status-dot.cold { background: #60a5fa; }
-        
-        .panel-item.sub-item {
-            padding-left: 28px;
-            font-size: 13px;
-            color: #6b7280;
-        }
-        
-        .panel-item.sub-item:hover {
-            color: #374151;
-        }
-        
-        .panel-item span:not(.badge):not(.panel-badge):not(.status-dot) {
-            flex: 1;
-        }
-        
-        .panel-item .badge {
-            margin-left: auto;
-            font-size: 12px;
-            font-weight: 600;
-            padding: 2px 8px;
-            border-radius: 12px;
-            background: rgba(118, 192, 68, 0.15);
-            color: #76c044;
-        }
-        
-        .panel-item .badge.warning {
-            background: #fef3c7;
-            color: #d97706;
-        }
-        
-        .panel-item .badge.error {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-        
-        /* ==================== MAIN CONTENT ==================== */
-        .main-content {
-            margin-left: 248px;
-            margin-top: 48px;
-            min-height: calc(100vh - 48px);
-            background: #f3f4f6;
-            transition: margin-left 200ms ease;
-        }
-        
-        .main-content.panel-collapsed {
-            margin-left: 48px;
-        }
-        
-        /* ==================== GLASSMORPHISM ==================== */
-        .glass-card {
-            background: linear-gradient(135deg, #76c044 0%, #0d74b8 100%);
-            position: relative;
-            overflow: hidden;
-        }
-        .glass-card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-        }
-        
-        /* ==================== ANIMATIONS ==================== */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .animate-fade-in {
-            animation: fadeInUp 0.4s ease forwards;
-        }
-        .animation-delay-100 { animation-delay: 0.1s; }
-        .animation-delay-200 { animation-delay: 0.2s; }
-        .animation-delay-300 { animation-delay: 0.3s; }
-        .animation-delay-400 { animation-delay: 0.4s; }
-        .animation-delay-500 { animation-delay: 0.5s; }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        .animate-pulse-slow {
-            animation: pulse 2s ease-in-out infinite;
-        }
-        
-        /* ==================== SCROLLBAR ==================== */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #E5E7EB;
-            border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #D1D5DB;
-        }
+      }
+      .animate-pulse-slow {
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      /* ==================== SCROLLBAR ==================== */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #e5e7eb;
+        border-radius: 3px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #d1d5db;
+      }
     </style>
-</head>
-<body class="bg-gray-100">
+  </head>
+  <body class="bg-gray-100">
     <!-- ==================== GLOBAL HEADER ==================== -->
     <header class="global-header">
-        <!-- Left: Logo -->
-        <div class="flex items-center">
-            <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto">
-                </div>
-        
-        <!-- Center: Search Bar -->
-        <div class="flex-1 ml-6 mr-4">
-            <button onclick="openCommandPalette()" class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors text-left">
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                <span class="text-gray-400 flex-1 text-sm">Search...</span>
-                <kbd class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-100 rounded">⌘K</kbd>
-                </button>
-            </div>
-            
-        <!-- Right: Actions -->
-        <div class="flex items-center space-x-2">
-            <!-- Live Activity -->
-            <div class="hidden lg:flex items-center space-x-2 text-sm text-gray-500 mr-2">
-                <span class="w-2 h-2 bg-primary rounded-full animate-pulse-slow"></span>
-                <span>3 online</span>
-            </div>
-                    
-                    <!-- Notifications -->
-            <button class="relative p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                            </svg>
-                <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
-            </button>
-            
-            <!-- Settings -->
-            <button class="p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                </svg>
-            </button>
-            
-            <!-- Profile -->
-            <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors">
-                <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
-                    RK
-                            </div>
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                </svg>
-                        </button>
-                        </div>
+      <!-- Left: Logo -->
+      <div class="flex items-center">
+        <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto" />
+      </div>
+
+      <!-- Center: Search Bar -->
+      <div class="flex-1 ml-6 mr-4">
+        <button
+          onclick="openCommandPalette()"
+          class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors text-left"
+        >
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <span class="text-gray-400 flex-1 text-sm">Search...</span>
+          <kbd
+            class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-100 rounded"
+            >⌘K</kbd
+          >
+        </button>
+      </div>
+
+      <!-- Right: Actions -->
+      <div class="flex items-center space-x-2">
+        <!-- Live Activity -->
+        <div class="hidden lg:flex items-center space-x-2 text-sm text-gray-500 mr-2">
+          <span class="w-2 h-2 bg-primary rounded-full animate-pulse-slow"></span>
+          <span>3 online</span>
+        </div>
+
+        <!-- Notifications -->
+        <button class="relative p-2 hover:bg-gray-50 rounded-lg transition-colors">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
+          </svg>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full"></span>
+        </button>
+
+        <!-- Settings -->
+        <button class="p-2 hover:bg-gray-50 rounded-lg transition-colors">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+        </button>
+
+        <!-- Profile -->
+        <button
+          class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors"
+        >
+          <div
+            class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm"
+          >
+            RK
+          </div>
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+      </div>
     </header>
-    
+
     <!-- ==================== RAIL (Icon Strip) ==================== -->
     <aside class="rail">
-        <div class="rail-top">
-            <!-- Home -->
-            <div class="rail-icon active" data-rail="home" onclick="switchRail('home')">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                </svg>
-                <span class="tooltip">Dashboard</span>
-                    </div>
-                    
-            <!-- Sales & CRM -->
-            <div class="rail-icon" data-rail="crm" onclick="switchRail('crm')">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
-                <span class="badge">12</span>
-                <span class="tooltip">Sales & CRM</span>
-            </div>
-            
-            <!-- Quotations -->
-            <div class="rail-icon" data-rail="quotes" onclick="switchRail('quotes')">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                <span class="tooltip">Quotations</span>
-                </div>
-                
-            <!-- Projects -->
-            <div class="rail-icon" data-rail="projects" onclick="switchRail('projects')">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
-                </svg>
-                <span class="tooltip">Projects</span>
-            </div>
-            
-            <!-- Inventory -->
-            <div class="rail-icon" data-rail="inventory" onclick="switchRail('inventory')">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                        </svg>
-                <span class="tooltip">Inventory</span>
-            </div>
-            
-            <!-- Finance -->
-            <div class="rail-icon" data-rail="finance" onclick="switchRail('finance')">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                        </svg>
-                <span class="tooltip">Finance</span>
-                </div>
-                
-            <!-- Service -->
-            <div class="rail-icon" data-rail="service" onclick="switchRail('service')">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-                <span class="tooltip">Service & AMC</span>
-            </div>
-            
-            <!-- Analytics -->
-            <div class="rail-icon" data-rail="analytics" onclick="switchRail('analytics')">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                                </svg>
-                <span class="tooltip">Analytics</span>
-                            </div>
-            
-            <!-- More -->
-            <div class="rail-icon" data-rail="more" onclick="switchRail('more')">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"/>
-                            </svg>
-                <span class="tooltip">More</span>
-                        </div>
-                    </div>
-                    
-        <div class="rail-bottom">
-            <!-- Toggle Panel -->
-            <div class="rail-icon" onclick="togglePanel()" id="panelToggleBtn">
-                <svg id="toggleIconExpand" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
-                        </svg>
-                <svg id="toggleIconCollapse" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
-                        </svg>
-                <span class="tooltip">Toggle Panel (⌘\)</span>
-                </div>
-                
-            <!-- Help -->
-            <div class="rail-icon" data-rail="help" onclick="switchRail('help')">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                <span class="tooltip">Help</span>
-            </div>
-            
-            <!-- Admin -->
-            <div class="rail-icon" data-rail="admin" onclick="switchRail('admin')">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-                            </svg>
-                <span class="tooltip">Admin</span>
-                        </div>
+      <div class="rail-top">
+        <!-- Home -->
+        <div class="rail-icon active" data-rail="home" onclick="switchRail('home')">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+            />
+          </svg>
+          <span class="tooltip">Dashboard</span>
         </div>
-                
-        <!-- User Avatar -->
-        <div class="rail-user">
-            <div class="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
-                RK
-                </div>
+
+        <!-- Sales & CRM -->
+        <div class="rail-icon" data-rail="crm" onclick="switchRail('crm')">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+          <span class="badge">12</span>
+          <span class="tooltip">Sales & CRM</span>
         </div>
+
+        <!-- Quotations -->
+        <div class="rail-icon" data-rail="quotes" onclick="switchRail('quotes')">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+          <span class="tooltip">Quotations</span>
+        </div>
+
+        <!-- Projects -->
+        <div class="rail-icon" data-rail="projects" onclick="switchRail('projects')">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+            />
+          </svg>
+          <span class="tooltip">Projects</span>
+        </div>
+
+        <!-- Inventory -->
+        <div class="rail-icon" data-rail="inventory" onclick="switchRail('inventory')">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+            />
+          </svg>
+          <span class="tooltip">Inventory</span>
+        </div>
+
+        <!-- Finance -->
+        <div class="rail-icon" data-rail="finance" onclick="switchRail('finance')">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+            />
+          </svg>
+          <span class="tooltip">Finance</span>
+        </div>
+
+        <!-- Service -->
+        <div class="rail-icon" data-rail="service" onclick="switchRail('service')">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+          <span class="tooltip">Service & AMC</span>
+        </div>
+
+        <!-- Analytics -->
+        <div class="rail-icon" data-rail="analytics" onclick="switchRail('analytics')">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            />
+          </svg>
+          <span class="tooltip">Analytics</span>
+        </div>
+
+        <!-- More -->
+        <div class="rail-icon" data-rail="more" onclick="switchRail('more')">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"
+            />
+          </svg>
+          <span class="tooltip">More</span>
+        </div>
+      </div>
+
+      <div class="rail-bottom">
+        <!-- Toggle Panel -->
+        <div class="rail-icon" onclick="togglePanel()" id="panelToggleBtn">
+          <svg
+            id="toggleIconExpand"
+            class="w-5 h-5 hidden"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 5l7 7-7 7M5 5l7 7-7 7"
+            />
+          </svg>
+          <svg
+            id="toggleIconCollapse"
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+            />
+          </svg>
+          <span class="tooltip">Toggle Panel (⌘\)</span>
+        </div>
+
+        <!-- Help -->
+        <div class="rail-icon" data-rail="help" onclick="switchRail('help')">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <span class="tooltip">Help</span>
+        </div>
+
+        <!-- Admin -->
+        <div class="rail-icon" data-rail="admin" onclick="switchRail('admin')">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+            />
+          </svg>
+          <span class="tooltip">Admin</span>
+        </div>
+      </div>
+
+      <!-- User Avatar -->
+      <div class="rail-user">
+        <div
+          class="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm"
+        >
+          RK
+        </div>
+      </div>
     </aside>
-    
+
     <!-- ==================== PANEL (Expandable Detail) ==================== -->
     <aside id="panel" class="panel">
-        <!-- Panel content will be dynamically updated -->
-        <div id="panel-home" class="panel-container">
-            <div class="panel-header">
-                <span class="panel-title">Home</span>
-                <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="panel-content custom-scrollbar">
-                <div class="panel-section">
-                    <div class="section-header">Quick Access</div>
-                    <a href="index.html" class="panel-item active">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                        </svg>
-                        Dashboard
-                    </a>
-                    <a href="#" class="panel-item">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                        </svg>
-                        My Tasks
-                    </a>
-                    <a href="#" class="panel-item">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                        Calendar
-                    </a>
-                </div>
-                <div class="panel-section">
-                    <div class="section-header">Inbox</div>
-                    <a href="../pages/notifications.html" class="panel-item">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                        </svg>
-                        Notifications
-                        <span class="badge error">3</span>
-                    </a>
-                    <a href="#" class="panel-item">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                        </svg>
-                        Messages
-                    </a>
-                </div>
-                <div class="panel-section">
-                    <div class="section-header">Favorites</div>
-                    <div class="panel-item text-gray-400">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-                        </svg>
-                        Click ⭐ to add favorites
-                </div>
-                </div>
-                <div class="panel-section">
-                    <div class="section-header">Recent</div>
-                    <a href="#" class="panel-item">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Quote #Q-2542
-                    </a>
-                    <a href="#" class="panel-item">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Project: Sharma Residence
-                    </a>
-                    <a href="#" class="panel-item">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        Lead: Ravi Sharma
-                    </a>
-                </div>
-            </div>
-                </div>
-                
-        <!-- CRM Panel (hidden by default) -->
-        <div id="panel-crm" class="panel-container hidden">
-            <div class="panel-header">
-                <span class="panel-title">Sales & CRM</span>
-                <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="panel-content custom-scrollbar">
-                <!-- Customers -->
-                <div class="panel-section">
-                    <div class="section-header">Customers</div>
-                    <a href="../crm/customers.html" class="panel-item">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                        </svg>
-                        <span>All Customers</span>
-                        <span class="badge">156</span>
-                    </a>
-                    <a href="../crm/customer-detail.html" class="panel-item">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                        </svg>
-                        <span>Customer 360</span>
-                    </a>
-                </div>
-                
-                <!-- Properties (with lead temperature filters) -->
-                <div class="panel-section">
-                    <div class="section-header">Properties</div>
-                    <a href="../crm/properties.html" class="panel-item">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                        </svg>
-                        <span>All Properties</span>
-                        <span class="badge">89</span>
-                    </a>
-                    <a href="../crm/properties.html?temp=hot" class="panel-item sub-item">
-                        <span class="status-dot hot"></span>
-                        <span>Hot</span>
-                        <span class="badge error">5</span>
-                    </a>
-                    <a href="../crm/properties.html?temp=warm" class="panel-item sub-item">
-                        <span class="status-dot warm"></span>
-                        <span>Warm</span>
-                        <span class="badge warning">18</span>
-                    </a>
-                    <a href="../crm/properties.html?temp=cold" class="panel-item sub-item">
-                        <span class="status-dot cold"></span>
-                        <span>Cold</span>
-                        <span class="badge">24</span>
-                    </a>
-                    <a href="../crm/site-visits.html" class="panel-item">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
-                        <span>Site Visits</span>
-                    </a>
-                </div>
-                
-                <!-- Pipeline -->
-                <div class="panel-section">
-                    <div class="section-header">Pipeline</div>
-                    <a href="../crm/pipeline.html" class="panel-item">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                        </svg>
-                        <span>Sales Pipeline</span>
-                    </a>
-                    <a href="../crm/pipeline.html" class="panel-item">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
-                        </svg>
-                        <span>Conversion Funnel</span>
-                    </a>
-                </div>
-                
-                <!-- Follow-ups -->
-                <div class="panel-section">
-                    <div class="section-header">Follow-ups</div>
-                    <a href="../crm/followups.html" class="panel-item">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <span>Today</span>
-                        <span class="badge warning">8</span>
-                    </a>
-                    <a href="../crm/followups.html?filter=overdue" class="panel-item">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                        </svg>
-                        <span>Overdue</span>
-                        <span class="badge error">3</span>
-                    </a>
-                    <a href="../crm/followups.html?filter=upcoming" class="panel-item">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                        <span>Upcoming</span>
-                    </a>
-                </div>
-            </div>
+      <!-- Panel content will be dynamically updated -->
+      <div id="panel-home" class="panel-container">
+        <div class="panel-header">
+          <span class="panel-title">Home</span>
+          <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+              />
+            </svg>
+          </button>
         </div>
-        
-        <!-- Quotes Panel -->
-        <div id="panel-quotes" class="panel-container hidden">
-            <div class="panel-header">
-                <span class="panel-title">Quotations</span>
-                <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
-                    </svg>
-                </button>
+        <div class="panel-content custom-scrollbar">
+          <div class="panel-section">
+            <div class="section-header">Quick Access</div>
+            <a href="index.html" class="panel-item active">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                />
+              </svg>
+              Dashboard
+            </a>
+            <a href="#" class="panel-item">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                />
+              </svg>
+              My Tasks
+            </a>
+            <a href="#" class="panel-item">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              Calendar
+            </a>
+          </div>
+          <div class="panel-section">
+            <div class="section-header">Inbox</div>
+            <a href="../pages/notifications.html" class="panel-item">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
+              Notifications
+              <span class="badge error">3</span>
+            </a>
+            <a href="#" class="panel-item">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+              Messages
+            </a>
+          </div>
+          <div class="panel-section">
+            <div class="section-header">Favorites</div>
+            <div class="panel-item text-gray-400">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                />
+              </svg>
+              Click ⭐ to add favorites
             </div>
-            <div class="panel-content custom-scrollbar">
-                <div class="panel-section">
-                    <div class="section-header">Quotes</div>
-                    <a href="../quotes/list.html" class="panel-item">All Quotes</a>
-                    <a href="../quotes/list.html?filter=my" class="panel-item">My Quotes</a>
-                    <a href="../quotes/list.html?status=pending" class="panel-item">Pending Approval <span class="badge warning">5</span></a>
-                    <a href="../quotes/list.html?status=approved" class="panel-item">Approved</a>
-                    <a href="../quotes/list.html?status=sent" class="panel-item">Sent to Customer</a>
-                    <a href="../quotes/list.html?status=expired" class="panel-item">Expired</a>
-                </div>
-                <div class="panel-section">
-                    <div class="section-header">Create</div>
-                    <a href="../quotes/builder.html" class="panel-item">Quick Quote</a>
-                    <a href="../quotes/builder.html" class="panel-item">Quote Builder</a>
-                    <a href="../quotes/detail.html?mode=template" class="panel-item">From Template</a>
-                </div>
-                <div class="panel-section">
-                    <div class="section-header">Configuration</div>
-                    <a href="#" class="panel-item">Products</a>
-                    <a href="#" class="panel-item">Pricing Rules</a>
-                    <a href="#" class="panel-item">Subsidy Config</a>
-                </div>
-            </div>
+          </div>
+          <div class="panel-section">
+            <div class="section-header">Recent</div>
+            <a href="#" class="panel-item">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Quote #Q-2542
+            </a>
+            <a href="#" class="panel-item">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Project: Sharma Residence
+            </a>
+            <a href="#" class="panel-item">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Lead: Ravi Sharma
+            </a>
+          </div>
         </div>
-                
-        <!-- Projects Panel -->
-        <div id="panel-projects" class="panel-container hidden">
-            <div class="panel-header">
-                <span class="panel-title">Projects</span>
-                <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="panel-content custom-scrollbar">
-                <!-- Overview Section -->
-                <div class="panel-section">
-                    <div class="section-header">Overview</div>
-                    <a href="projects.html" class="panel-item">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
-                        </svg>
-                        <span>Dashboard</span>
-                    </a>
-                    <a href="../projects/list.html" class="panel-item">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
-                        </svg>
-                        <span>All Projects</span>
-                        <span class="badge">42</span>
-                    </a>
-                    <a href="../projects/list.html?status=active" class="panel-item sub-item">
-                        <span class="status-dot" style="background: #22c55e;"></span>
-                        <span>Active</span>
-                        <span class="badge">24</span>
-                    </a>
-                    <a href="../projects/list.html?status=planning" class="panel-item sub-item">
-                        <span class="status-dot" style="background: #3b82f6;"></span>
-                        <span>Planning</span>
-                        <span class="badge">8</span>
-                    </a>
-                    <a href="../projects/list.html?status=on_hold" class="panel-item sub-item">
-                        <span class="status-dot" style="background: #f59e0b;"></span>
-                        <span>On Hold</span>
-                        <span class="badge warning">3</span>
-                    </a>
-                    <a href="../projects/list.html?status=completed" class="panel-item sub-item">
-                        <span class="status-dot" style="background: #6b7280;"></span>
-                        <span>Completed</span>
-                        <span class="badge">7</span>
-                    </a>
-                </div>
-                
-                <!-- My Work Section -->
-                <div class="panel-section">
-                    <div class="section-header">My Work</div>
-                    <a href="../projects/my-tasks.html" class="panel-item">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                        </svg>
-                        <span>My Tasks</span>
-                        <span class="badge">12</span>
-                    </a>
-                    <a href="../projects/list.html?milestones=due" class="panel-item">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <span>Milestones Due</span>
-                        <span class="badge warning">4</span>
-                    </a>
-                </div>
-                
-                <!-- Scheduling Section -->
-                <div class="panel-section">
-                    <div class="section-header">Scheduling</div>
-                    <a href="../projects/kanban.html" class="panel-item">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
-                        </svg>
-                        <span>Kanban Board</span>
-                    </a>
-                    <a href="../projects/timeline.html" class="panel-item">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                        <span>Timeline / Gantt</span>
-                    </a>
-                </div>
-                
-                <!-- Site Work Section -->
-                <div class="panel-section">
-                    <div class="section-header">Site Work</div>
-                    <a href="../projects/list.html?tab=surveys" class="panel-item">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-                        </svg>
-                        <span>Surveys</span>
-                    </a>
-                </div>
-                
-                <!-- Settings Section -->
-                <div class="panel-section">
-                    <div class="section-header">Settings</div>
-                    <a href="../projects/workflow-steps.html" class="panel-item">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
-                        </svg>
-                        <span>Workflow Steps</span>
-                    </a>
-                    <a href="../projects/settings.html" class="panel-item">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
-                        <span>Project Settings</span>
-                    </a>
-                </div>
-            </div>
+      </div>
+
+      <!-- CRM Panel (hidden by default) -->
+      <div id="panel-crm" class="panel-container hidden">
+        <div class="panel-header">
+          <span class="panel-title">Sales & CRM</span>
+          <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+              />
+            </svg>
+          </button>
         </div>
-        
-        <!-- Inventory Panel -->
-        <div id="panel-inventory" class="panel-container hidden">
-            <div class="panel-header">
-                <span class="panel-title">Inventory</span>
-                <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="panel-content custom-scrollbar">
-                <div class="panel-section">
-                    <div class="section-header">Stock</div>
-                    <a href="inventory.html" class="panel-item">Dashboard</a>
-                    <a href="#" class="panel-item">All Stock</a>
-                    <a href="#" class="panel-item">Low Stock Alerts <span class="badge error">3</span></a>
-                    <a href="#" class="panel-item">Movement History</a>
-                    </div>
-                <div class="panel-section">
-                    <div class="section-header">Purchasing</div>
-                    <a href="#" class="panel-item">Purchase Orders <span class="badge warning">2</span></a>
-                    <a href="#" class="panel-item">Pending Approval</a>
-                    <a href="#" class="panel-item">GRN</a>
-                </div>
-                <div class="panel-section">
-                    <div class="section-header">Vendors</div>
-                    <a href="#" class="panel-item">Vendor List</a>
-                    <a href="#" class="panel-item">Payments</a>
-                    <a href="#" class="panel-item">Performance</a>
-                </div>
-            </div>
+        <div class="panel-content custom-scrollbar">
+          <!-- Customers -->
+          <div class="panel-section">
+            <div class="section-header">Customers</div>
+            <a href="../crm/customers.html" class="panel-item">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
+              <span>All Customers</span>
+              <span class="badge">156</span>
+            </a>
+            <a href="../crm/customer-detail.html" class="panel-item">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+              <span>Customer 360</span>
+            </a>
+          </div>
+
+          <!-- Properties (with lead temperature filters) -->
+          <div class="panel-section">
+            <div class="section-header">Properties</div>
+            <a href="../crm/properties.html" class="panel-item">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                />
+              </svg>
+              <span>All Properties</span>
+              <span class="badge">89</span>
+            </a>
+            <a href="../crm/properties.html?temp=hot" class="panel-item sub-item">
+              <span class="status-dot hot"></span>
+              <span>Hot</span>
+              <span class="badge error">5</span>
+            </a>
+            <a href="../crm/properties.html?temp=warm" class="panel-item sub-item">
+              <span class="status-dot warm"></span>
+              <span>Warm</span>
+              <span class="badge warning">18</span>
+            </a>
+            <a href="../crm/properties.html?temp=cold" class="panel-item sub-item">
+              <span class="status-dot cold"></span>
+              <span>Cold</span>
+              <span class="badge">24</span>
+            </a>
+            <a href="../crm/site-visits.html" class="panel-item">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              <span>Site Visits</span>
+            </a>
+          </div>
+
+          <!-- Pipeline -->
+          <div class="panel-section">
+            <div class="section-header">Pipeline</div>
+            <a href="../crm/pipeline.html" class="panel-item">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+              <span>Sales Pipeline</span>
+            </a>
+            <a href="../crm/pipeline.html" class="panel-item">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                />
+              </svg>
+              <span>Conversion Funnel</span>
+            </a>
+          </div>
+
+          <!-- Follow-ups -->
+          <div class="panel-section">
+            <div class="section-header">Follow-ups</div>
+            <a href="../crm/followups.html" class="panel-item">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>Today</span>
+              <span class="badge warning">8</span>
+            </a>
+            <a href="../crm/followups.html?filter=overdue" class="panel-item">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              <span>Overdue</span>
+              <span class="badge error">3</span>
+            </a>
+            <a href="../crm/followups.html?filter=upcoming" class="panel-item">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <span>Upcoming</span>
+            </a>
+          </div>
         </div>
-        
-        <!-- Finance Panel -->
-        <div id="panel-finance" class="panel-container hidden">
-            <div class="panel-header">
-                <span class="panel-title">Finance</span>
-                <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="panel-content custom-scrollbar">
-                <div class="panel-section">
-                    <div class="section-header">Loan Applications</div>
-                    <a href="../loans/list.html" class="panel-item">All Applications <span class="badge">12</span></a>
-                    <a href="../loans/list.html?status=initiated" class="panel-item">Initiated <span class="badge info">5</span></a>
-                    <a href="../loans/list.html?status=applied" class="panel-item">Applied to Bank <span class="badge warning">4</span></a>
-                    <a href="../loans/list.html?status=approved" class="panel-item">Approved <span class="badge success">3</span></a>
-                </div>
-                <div class="panel-section">
-                    <div class="section-header">Payments</div>
-                    <a href="finance.html" class="panel-item">All Payments</a>
-                    <a href="#" class="panel-item">Pending Collection <span class="badge warning">8</span></a>
-                    <a href="#" class="panel-item">Received</a>
-                    <a href="#" class="panel-item">Reconciliation</a>
-            </div>
-                <div class="panel-section">
-                    <div class="section-header">Invoices</div>
-                    <a href="#" class="panel-item">All Invoices</a>
-                    <a href="#" class="panel-item">Generate Invoice</a>
-                    <a href="#" class="panel-item">Pending <span class="badge warning">4</span></a>
-                    <a href="#" class="panel-item">Overdue <span class="badge error">2</span></a>
-                </div>
-                <div class="panel-section">
-                    <div class="section-header">Reports</div>
-                    <a href="#" class="panel-item">Financial Summary</a>
-                    <a href="#" class="panel-item">GST Reports</a>
-                    <a href="#" class="panel-item">Collections</a>
-                </div>
-            </div>
+      </div>
+
+      <!-- Quotes Panel -->
+      <div id="panel-quotes" class="panel-container hidden">
+        <div class="panel-header">
+          <span class="panel-title">Quotations</span>
+          <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+              />
+            </svg>
+          </button>
         </div>
-        
-        <!-- Service Panel -->
-        <div id="panel-service" class="panel-container hidden">
-            <div class="panel-header">
-                <span class="panel-title">Service & AMC</span>
-                <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="panel-content custom-scrollbar">
-                <div class="panel-section">
-                    <div class="section-header">Service Requests</div>
-                    <a href="#" class="panel-item">All Requests</a>
-                    <a href="#" class="panel-item">Open <span class="badge warning">4</span></a>
-                    <a href="#" class="panel-item">In Progress</a>
-                    <a href="#" class="panel-item">Resolved</a>
-                </div>
-                <div class="panel-section">
-                    <div class="section-header">Maintenance</div>
-                    <a href="#" class="panel-item">Scheduled Tasks</a>
-                    <a href="#" class="panel-item">Preventive</a>
-                    <a href="#" class="panel-item">AMC Contracts</a>
-                </div>
-                <div class="panel-section">
-                    <div class="section-header">Compliance</div>
-                    <a href="#" class="panel-item">Applications</a>
-                    <a href="#" class="panel-item">Inspections</a>
-                    <a href="#" class="panel-item">Certifications</a>
-                </div>
-            </div>
-                </div>
-                
-        <!-- Analytics Panel -->
-        <div id="panel-analytics" class="panel-container hidden">
-            <div class="panel-header">
-                <span class="panel-title">Analytics</span>
-                <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="panel-content custom-scrollbar">
-                <div class="panel-section">
-                    <div class="section-header">Dashboards</div>
-                    <a href="#" class="panel-item">Overview</a>
-                    <a href="sales.html" class="panel-item">Sales Analytics</a>
-                    <a href="projects.html" class="panel-item">Project Analytics</a>
-                    <a href="finance.html" class="panel-item">Financial Analytics</a>
-                </div>
-                <div class="panel-section">
-                    <div class="section-header">Reports</div>
-                    <a href="#" class="panel-item">Custom Reports</a>
-                    <a href="#" class="panel-item">Scheduled Reports</a>
-                    <a href="#" class="panel-item">Export</a>
-                </div>
-            </div>
-                    </div>
-                    
-        <!-- More Panel -->
-        <div id="panel-more" class="panel-container hidden">
-            <div class="panel-header">
-                <span class="panel-title">More</span>
-                <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="panel-content custom-scrollbar">
-                <div class="panel-section">
-                    <div class="section-header">Resellers</div>
-                    <a href="#" class="panel-item">Network</a>
-                    <a href="#" class="panel-item">Commissions</a>
-                    <a href="#" class="panel-item">Referrals</a>
-                </div>
-                <div class="panel-section">
-                    <div class="section-header">Documents</div>
-                    <a href="#" class="panel-item">Library</a>
-                    <a href="#" class="panel-item">Templates</a>
-                </div>
-                <div class="panel-section">
-                    <div class="section-header">Workflows</div>
-                    <a href="#" class="panel-item">Approvals <span class="badge warning">3</span></a>
-                    <a href="#" class="panel-item">Designer</a>
-                    <a href="#" class="panel-item">Templates</a>
-                </div>
-            </div>
+        <div class="panel-content custom-scrollbar">
+          <div class="panel-section">
+            <div class="section-header">Quotes</div>
+            <a href="../quotes/list.html" class="panel-item">All Quotes</a>
+            <a href="../quotes/list.html?filter=my" class="panel-item">My Quotes</a>
+            <a href="../quotes/list.html?status=pending" class="panel-item"
+              >Pending Approval <span class="badge warning">5</span></a
+            >
+            <a href="../quotes/list.html?status=approved" class="panel-item">Approved</a>
+            <a href="../quotes/list.html?status=sent" class="panel-item">Sent to Customer</a>
+            <a href="../quotes/list.html?status=expired" class="panel-item">Expired</a>
+          </div>
+          <div class="panel-section">
+            <div class="section-header">Create</div>
+            <a href="../quotes/builder.html" class="panel-item">Quick Quote</a>
+            <a href="../quotes/builder.html" class="panel-item">Quote Builder</a>
+            <a href="../quotes/detail.html?mode=template" class="panel-item">From Template</a>
+          </div>
+          <div class="panel-section">
+            <div class="section-header">Configuration</div>
+            <a href="#" class="panel-item">Products</a>
+            <a href="#" class="panel-item">Pricing Rules</a>
+            <a href="#" class="panel-item">Subsidy Config</a>
+          </div>
         </div>
-        
-        <!-- Help Panel -->
-        <div id="panel-help" class="panel-container hidden">
-            <div class="panel-header">
-                <span class="panel-title">Help & Support</span>
-                <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="panel-content custom-scrollbar">
-                <div class="panel-section">
-                    <div class="section-header">Resources</div>
-                    <a href="#" class="panel-item">Getting Started</a>
-                    <a href="#" class="panel-item">Documentation</a>
-                    <a href="#" class="panel-item">Video Tutorials</a>
-                    <a href="#" class="panel-item">FAQs</a>
-                </div>
-                <div class="panel-section">
-                    <div class="section-header">Support</div>
-                    <a href="#" class="panel-item">Contact Support</a>
-                    <a href="#" class="panel-item">Report an Issue</a>
-                    <a href="#" class="panel-item">Feature Request</a>
-                </div>
-            </div>
+      </div>
+
+      <!-- Projects Panel -->
+      <div id="panel-projects" class="panel-container hidden">
+        <div class="panel-header">
+          <span class="panel-title">Projects</span>
+          <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+              />
+            </svg>
+          </button>
         </div>
-        
-        <!-- Settings Panel -->
-        <div id="panel-admin" class="panel-container hidden">
-            <div class="panel-header">
-                <span class="panel-title">Admin</span>
-                <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="panel-content custom-scrollbar">
-                <div class="panel-section">
-                    <div class="section-header">Users</div>
-                    <a href="#" class="panel-item">All Users</a>
-                    <a href="#" class="panel-item">Employees</a>
-                    <a href="#" class="panel-item">Roles & Permissions</a>
-                </div>
-                <div class="panel-section">
-                    <div class="section-header">Organization</div>
-                    <a href="#" class="panel-item">Profile</a>
-                    <a href="#" class="panel-item">Branches</a>
-                    <a href="#" class="panel-item">Preferences</a>
-                </div>
-                <div class="panel-section">
-                    <div class="section-header">Master Data</div>
-                    <a href="#" class="panel-item">Products</a>
-                    <a href="#" class="panel-item">Categories</a>
-                    <a href="#" class="panel-item">Pricing</a>
-                </div>
-                <div class="panel-section">
-                    <div class="section-header">System</div>
-                    <a href="#" class="panel-item">Activity Logs</a>
-                    <a href="#" class="panel-item">Audit Trail</a>
-                    <a href="#" class="panel-item">Security</a>
-                </div>
-            </div>
+        <div class="panel-content custom-scrollbar">
+          <!-- Overview Section -->
+          <div class="panel-section">
+            <div class="section-header">Overview</div>
+            <a href="projects.html" class="panel-item">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+                />
+              </svg>
+              <span>Dashboard</span>
+            </a>
+            <a href="../projects/list.html" class="panel-item">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                />
+              </svg>
+              <span>All Projects</span>
+              <span class="badge">42</span>
+            </a>
+            <a href="../projects/list.html?status=active" class="panel-item sub-item">
+              <span class="status-dot" style="background: #22c55e"></span>
+              <span>Active</span>
+              <span class="badge">24</span>
+            </a>
+            <a href="../projects/list.html?status=planning" class="panel-item sub-item">
+              <span class="status-dot" style="background: #3b82f6"></span>
+              <span>Planning</span>
+              <span class="badge">8</span>
+            </a>
+            <a href="../projects/list.html?status=on_hold" class="panel-item sub-item">
+              <span class="status-dot" style="background: #f59e0b"></span>
+              <span>On Hold</span>
+              <span class="badge warning">3</span>
+            </a>
+            <a href="../projects/list.html?status=completed" class="panel-item sub-item">
+              <span class="status-dot" style="background: #6b7280"></span>
+              <span>Completed</span>
+              <span class="badge">7</span>
+            </a>
+          </div>
+
+          <!-- My Work Section -->
+          <div class="panel-section">
+            <div class="section-header">My Work</div>
+            <a href="../projects/my-tasks.html" class="panel-item">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                />
+              </svg>
+              <span>My Tasks</span>
+              <span class="badge">12</span>
+            </a>
+            <a href="../projects/list.html?milestones=due" class="panel-item">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>Milestones Due</span>
+              <span class="badge warning">4</span>
+            </a>
+          </div>
+
+          <!-- Scheduling Section -->
+          <div class="panel-section">
+            <div class="section-header">Scheduling</div>
+            <a href="../projects/kanban.html" class="panel-item">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+                />
+              </svg>
+              <span>Kanban Board</span>
+            </a>
+            <a href="../projects/timeline.html" class="panel-item">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <span>Timeline / Gantt</span>
+            </a>
+          </div>
+
+          <!-- Site Work Section -->
+          <div class="panel-section">
+            <div class="section-header">Site Work</div>
+            <a href="../projects/list.html?tab=surveys" class="panel-item">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                />
+              </svg>
+              <span>Surveys</span>
+            </a>
+          </div>
+
+          <!-- Settings Section -->
+          <div class="panel-section">
+            <div class="section-header">Settings</div>
+            <a href="../projects/workflow-steps.html" class="panel-item">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+                />
+              </svg>
+              <span>Workflow Steps</span>
+            </a>
+            <a href="../projects/settings.html" class="panel-item">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              <span>Project Settings</span>
+            </a>
+          </div>
         </div>
+      </div>
+
+      <!-- Inventory Panel -->
+      <div id="panel-inventory" class="panel-container hidden">
+        <div class="panel-header">
+          <span class="panel-title">Inventory</span>
+          <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="panel-content custom-scrollbar">
+          <div class="panel-section">
+            <div class="section-header">Stock</div>
+            <a href="inventory.html" class="panel-item">Dashboard</a>
+            <a href="#" class="panel-item">All Stock</a>
+            <a href="#" class="panel-item">Low Stock Alerts <span class="badge error">3</span></a>
+            <a href="#" class="panel-item">Movement History</a>
+          </div>
+          <div class="panel-section">
+            <div class="section-header">Purchasing</div>
+            <a href="#" class="panel-item">Purchase Orders <span class="badge warning">2</span></a>
+            <a href="#" class="panel-item">Pending Approval</a>
+            <a href="#" class="panel-item">GRN</a>
+          </div>
+          <div class="panel-section">
+            <div class="section-header">Vendors</div>
+            <a href="#" class="panel-item">Vendor List</a>
+            <a href="#" class="panel-item">Payments</a>
+            <a href="#" class="panel-item">Performance</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Finance Panel -->
+      <div id="panel-finance" class="panel-container hidden">
+        <div class="panel-header">
+          <span class="panel-title">Finance</span>
+          <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="panel-content custom-scrollbar">
+          <div class="panel-section">
+            <div class="section-header">Loan Applications</div>
+            <a href="../loans/list.html" class="panel-item"
+              >All Applications <span class="badge">12</span></a
+            >
+            <a href="../loans/list.html?status=initiated" class="panel-item"
+              >Initiated <span class="badge info">5</span></a
+            >
+            <a href="../loans/list.html?status=applied" class="panel-item"
+              >Applied to Bank <span class="badge warning">4</span></a
+            >
+            <a href="../loans/list.html?status=approved" class="panel-item"
+              >Approved <span class="badge success">3</span></a
+            >
+          </div>
+          <div class="panel-section">
+            <div class="section-header">Payments</div>
+            <a href="finance.html" class="panel-item">All Payments</a>
+            <a href="#" class="panel-item"
+              >Pending Collection <span class="badge warning">8</span></a
+            >
+            <a href="#" class="panel-item">Received</a>
+            <a href="#" class="panel-item">Reconciliation</a>
+          </div>
+          <div class="panel-section">
+            <div class="section-header">Invoices</div>
+            <a href="#" class="panel-item">All Invoices</a>
+            <a href="#" class="panel-item">Generate Invoice</a>
+            <a href="#" class="panel-item">Pending <span class="badge warning">4</span></a>
+            <a href="#" class="panel-item">Overdue <span class="badge error">2</span></a>
+          </div>
+          <div class="panel-section">
+            <div class="section-header">Reports</div>
+            <a href="#" class="panel-item">Financial Summary</a>
+            <a href="#" class="panel-item">GST Reports</a>
+            <a href="#" class="panel-item">Collections</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Service Panel -->
+      <div id="panel-service" class="panel-container hidden">
+        <div class="panel-header">
+          <span class="panel-title">Service & AMC</span>
+          <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="panel-content custom-scrollbar">
+          <div class="panel-section">
+            <div class="section-header">Service Requests</div>
+            <a href="#" class="panel-item">All Requests</a>
+            <a href="#" class="panel-item">Open <span class="badge warning">4</span></a>
+            <a href="#" class="panel-item">In Progress</a>
+            <a href="#" class="panel-item">Resolved</a>
+          </div>
+          <div class="panel-section">
+            <div class="section-header">Maintenance</div>
+            <a href="#" class="panel-item">Scheduled Tasks</a>
+            <a href="#" class="panel-item">Preventive</a>
+            <a href="#" class="panel-item">AMC Contracts</a>
+          </div>
+          <div class="panel-section">
+            <div class="section-header">Compliance</div>
+            <a href="#" class="panel-item">Applications</a>
+            <a href="#" class="panel-item">Inspections</a>
+            <a href="#" class="panel-item">Certifications</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics Panel -->
+      <div id="panel-analytics" class="panel-container hidden">
+        <div class="panel-header">
+          <span class="panel-title">Analytics</span>
+          <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="panel-content custom-scrollbar">
+          <div class="panel-section">
+            <div class="section-header">Dashboards</div>
+            <a href="#" class="panel-item">Overview</a>
+            <a href="sales.html" class="panel-item">Sales Analytics</a>
+            <a href="projects.html" class="panel-item">Project Analytics</a>
+            <a href="finance.html" class="panel-item">Financial Analytics</a>
+          </div>
+          <div class="panel-section">
+            <div class="section-header">Reports</div>
+            <a href="#" class="panel-item">Custom Reports</a>
+            <a href="#" class="panel-item">Scheduled Reports</a>
+            <a href="#" class="panel-item">Export</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- More Panel -->
+      <div id="panel-more" class="panel-container hidden">
+        <div class="panel-header">
+          <span class="panel-title">More</span>
+          <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="panel-content custom-scrollbar">
+          <div class="panel-section">
+            <div class="section-header">Resellers</div>
+            <a href="#" class="panel-item">Network</a>
+            <a href="#" class="panel-item">Commissions</a>
+            <a href="#" class="panel-item">Referrals</a>
+          </div>
+          <div class="panel-section">
+            <div class="section-header">Documents</div>
+            <a href="#" class="panel-item">Library</a>
+            <a href="#" class="panel-item">Templates</a>
+          </div>
+          <div class="panel-section">
+            <div class="section-header">Workflows</div>
+            <a href="#" class="panel-item">Approvals <span class="badge warning">3</span></a>
+            <a href="#" class="panel-item">Designer</a>
+            <a href="#" class="panel-item">Templates</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Help Panel -->
+      <div id="panel-help" class="panel-container hidden">
+        <div class="panel-header">
+          <span class="panel-title">Help & Support</span>
+          <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="panel-content custom-scrollbar">
+          <div class="panel-section">
+            <div class="section-header">Resources</div>
+            <a href="#" class="panel-item">Getting Started</a>
+            <a href="#" class="panel-item">Documentation</a>
+            <a href="#" class="panel-item">Video Tutorials</a>
+            <a href="#" class="panel-item">FAQs</a>
+          </div>
+          <div class="panel-section">
+            <div class="section-header">Support</div>
+            <a href="#" class="panel-item">Contact Support</a>
+            <a href="#" class="panel-item">Report an Issue</a>
+            <a href="#" class="panel-item">Feature Request</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Panel -->
+      <div id="panel-admin" class="panel-container hidden">
+        <div class="panel-header">
+          <span class="panel-title">Admin</span>
+          <button class="panel-close-btn" onclick="togglePanel()" title="Close panel (⌘\)">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+              />
+            </svg>
+          </button>
+        </div>
+        <div class="panel-content custom-scrollbar">
+          <div class="panel-section">
+            <div class="section-header">Users</div>
+            <a href="#" class="panel-item">All Users</a>
+            <a href="#" class="panel-item">Employees</a>
+            <a href="#" class="panel-item">Roles & Permissions</a>
+          </div>
+          <div class="panel-section">
+            <div class="section-header">Organization</div>
+            <a href="#" class="panel-item">Profile</a>
+            <a href="#" class="panel-item">Branches</a>
+            <a href="#" class="panel-item">Preferences</a>
+          </div>
+          <div class="panel-section">
+            <div class="section-header">Master Data</div>
+            <a href="#" class="panel-item">Products</a>
+            <a href="#" class="panel-item">Categories</a>
+            <a href="#" class="panel-item">Pricing</a>
+          </div>
+          <div class="panel-section">
+            <div class="section-header">System</div>
+            <a href="#" class="panel-item">Activity Logs</a>
+            <a href="#" class="panel-item">Audit Trail</a>
+            <a href="#" class="panel-item">Security</a>
+          </div>
+        </div>
+      </div>
     </aside>
-    
+
     <!-- ==================== MAIN CONTENT ==================== -->
     <main id="mainContent" class="main-content">
-        <div class="p-5">
-                <!-- Greeting Section -->
-                <div class="mb-6 animate-fade-in opacity-0">
-                    <h1 class="text-xl font-semibold text-gray-800" id="greeting">Good Morning, Rajesh!</h1>
-                    <p class="text-gray-500 text-[13px] mt-0.5">You have <span class="font-medium text-primary">3 pending approvals</span> and <span class="font-medium text-secondary">5 hot leads</span> to follow up</p>
-                    <div class="flex space-x-2 mt-3">
-                        <a href="#" class="px-3 py-1.5 bg-primary text-white rounded-md text-[13px] font-medium hover:bg-primary-dark transition-colors">View Approvals</a>
-                        <a href="../crm/customers.html" class="px-3 py-1.5 bg-white border border-gray-100 text-gray-700 rounded-md text-[13px] font-medium hover:bg-gray-50 transition-colors">View Leads</a>
-                    </div>
-                </div>
-                
-                <!-- Bento Grid Dashboard -->
-                <div class="grid grid-cols-12 gap-4">
-                    <!-- Hero Metric Card (Large - spans 5 cols) -->
-                    <div class="col-span-12 lg:col-span-5 glass-card rounded-lg p-4 text-white animate-fade-in opacity-0 animation-delay-100 min-h-[200px]">
-                        <div class="relative z-10">
-                            <p class="text-white/80 text-xs font-medium">Total Revenue This Month</p>
-                            <p class="text-3xl font-semibold mt-1.5">₹45,67,890</p>
-                            <div class="flex items-center mt-1.5">
-                                <span class="flex items-center text-xs bg-white/20 px-2 py-0.5 rounded-full">
-                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-                                    </svg>
-                                    23.5% vs last month
-                                </span>
-                            </div>
-                            <!-- Mini Chart Placeholder -->
-                            <div class="mt-6 h-20 flex items-end space-x-1">
-                                <div class="w-full bg-white/20 rounded-t h-8"></div>
-                                <div class="w-full bg-white/20 rounded-t h-12"></div>
-                                <div class="w-full bg-white/20 rounded-t h-6"></div>
-                                <div class="w-full bg-white/20 rounded-t h-16"></div>
-                                <div class="w-full bg-white/20 rounded-t h-10"></div>
-                                <div class="w-full bg-white/20 rounded-t h-14"></div>
-                                <div class="w-full bg-white/30 rounded-t h-20"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- KPI Cards Grid (4 cards in 2x2) -->
-                    <div class="col-span-12 lg:col-span-7 grid grid-cols-2 gap-3">
-                        <!-- KPI 1: New Leads -->
-                        <div class="bg-white rounded-lg p-4 border border-gray-100 hover:shadow-sm transition-shadow animate-fade-in opacity-0 animation-delay-200">
-                            <div class="flex items-start justify-between">
-                                <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    </svg>
-                                </div>
-                                <span class="text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">+12 today</span>
-                            </div>
-                            <p class="text-2xl font-semibold text-gray-800 mt-3">156</p>
-                            <p class="text-xs text-gray-500 mt-0.5">New Leads</p>
-                        </div>
-                        
-                        <!-- KPI 2: Active Projects -->
-                        <div class="bg-white rounded-lg p-4 border border-gray-100 hover:shadow-sm transition-shadow animate-fade-in opacity-0 animation-delay-200">
-                            <div class="flex items-start justify-between">
-                                <div class="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                                    </svg>
-                                </div>
-                                <span class="text-[11px] font-medium text-secondary bg-secondary/10 px-1.5 py-0.5 rounded">72% on track</span>
-                            </div>
-                            <p class="text-2xl font-semibold text-gray-800 mt-3">24</p>
-                            <p class="text-xs text-gray-500 mt-0.5">Active Projects</p>
-                        </div>
-                        
-                        <!-- KPI 3: Pending Quotes -->
-                        <div class="bg-white rounded-lg p-4 border border-gray-100 hover:shadow-sm transition-shadow animate-fade-in opacity-0 animation-delay-300">
-                            <div class="flex items-start justify-between">
-                                <div class="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
-                                    <svg class="w-4 h-4 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                                    </svg>
-                                </div>
-                                <span class="text-[11px] font-medium text-warning bg-warning/10 px-1.5 py-0.5 rounded">₹8.2L value</span>
-                            </div>
-                            <p class="text-2xl font-semibold text-gray-800 mt-3">18</p>
-                            <p class="text-xs text-gray-500 mt-0.5">Pending Quotes</p>
-                        </div>
-                        
-                        <!-- KPI 4: Conversion Rate -->
-                        <div class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-300">
-                            <div class="flex items-start justify-between">
-                                <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-                                    </svg>
-                                </div>
-                                <span class="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full">↑ 5.2%</span>
-                            </div>
-                            <p class="text-3xl font-bold text-gray-800 mt-4">32%</p>
-                            <p class="text-sm text-gray-500 mt-1">Conversion Rate</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Chart Card (Wide) -->
-                    <div class="col-span-12 lg:col-span-8 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="font-semibold text-gray-800">Revenue Trend</h3>
-                            <div class="flex space-x-2">
-                                <button class="px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-lg">Monthly</button>
-                                <button class="px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50 rounded-lg">Weekly</button>
-                            </div>
-                        </div>
-                        <!-- Chart Placeholder -->
-                        <div class="h-64 flex items-end space-x-2 px-4">
-                            <div class="flex-1 flex flex-col items-center">
-                                <div class="w-full bg-primary/20 rounded-t" style="height: 40%"></div>
-                                <span class="text-xs text-gray-400 mt-2">Jan</span>
-                            </div>
-                            <div class="flex-1 flex flex-col items-center">
-                                <div class="w-full bg-primary/20 rounded-t" style="height: 55%"></div>
-                                <span class="text-xs text-gray-400 mt-2">Feb</span>
-                            </div>
-                            <div class="flex-1 flex flex-col items-center">
-                                <div class="w-full bg-primary/20 rounded-t" style="height: 45%"></div>
-                                <span class="text-xs text-gray-400 mt-2">Mar</span>
-                            </div>
-                            <div class="flex-1 flex flex-col items-center">
-                                <div class="w-full bg-primary/20 rounded-t" style="height: 70%"></div>
-                                <span class="text-xs text-gray-400 mt-2">Apr</span>
-                            </div>
-                            <div class="flex-1 flex flex-col items-center">
-                                <div class="w-full bg-primary/20 rounded-t" style="height: 60%"></div>
-                                <span class="text-xs text-gray-400 mt-2">May</span>
-                            </div>
-                            <div class="flex-1 flex flex-col items-center">
-                                <div class="w-full bg-primary/20 rounded-t" style="height: 75%"></div>
-                                <span class="text-xs text-gray-400 mt-2">Jun</span>
-                            </div>
-                            <div class="flex-1 flex flex-col items-center">
-                                <div class="w-full bg-primary/20 rounded-t" style="height: 65%"></div>
-                                <span class="text-xs text-gray-400 mt-2">Jul</span>
-                            </div>
-                            <div class="flex-1 flex flex-col items-center">
-                                <div class="w-full bg-primary/20 rounded-t" style="height: 80%"></div>
-                                <span class="text-xs text-gray-400 mt-2">Aug</span>
-                            </div>
-                            <div class="flex-1 flex flex-col items-center">
-                                <div class="w-full bg-primary/20 rounded-t" style="height: 70%"></div>
-                                <span class="text-xs text-gray-400 mt-2">Sep</span>
-                            </div>
-                            <div class="flex-1 flex flex-col items-center">
-                                <div class="w-full bg-primary/20 rounded-t" style="height: 85%"></div>
-                                <span class="text-xs text-gray-400 mt-2">Oct</span>
-                            </div>
-                            <div class="flex-1 flex flex-col items-center">
-                                <div class="w-full bg-primary/20 rounded-t" style="height: 75%"></div>
-                                <span class="text-xs text-gray-400 mt-2">Nov</span>
-                            </div>
-                            <div class="flex-1 flex flex-col items-center">
-                                <div class="w-full bg-primary rounded-t" style="height: 95%"></div>
-                                <span class="text-xs text-gray-500 font-medium mt-2">Dec</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Quick Actions Card -->
-                    <div class="col-span-12 lg:col-span-4 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400">
-                        <h3 class="font-semibold text-gray-800 mb-4 flex items-center">
-                            <svg class="w-5 h-5 text-primary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                            </svg>
-                            Quick Actions
-                        </h3>
-                        <div class="space-y-3">
-                            <button class="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-primary/5 hover:border-primary/20 rounded-lg border border-gray-100 transition-colors text-left">
-                                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                                    </svg>
-                                </div>
-                                <span class="font-medium text-gray-700">New Lead</span>
-                            </button>
-                            <button class="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-secondary/5 hover:border-secondary/20 rounded-lg border border-gray-100 transition-colors text-left">
-                                <div class="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                    </svg>
-                                </div>
-                                <span class="font-medium text-gray-700">Create Quote</span>
-                            </button>
-                            <button class="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-warning/5 hover:border-warning/20 rounded-lg border border-gray-100 transition-colors text-left">
-                                <div class="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                                    </svg>
-                                </div>
-                                <span class="font-medium text-gray-700">Start Project</span>
-                            </button>
-                            <button class="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-purple-50 hover:border-purple-200 rounded-lg border border-gray-100 transition-colors text-left">
-                                <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                                    </svg>
-                                </div>
-                                <span class="font-medium text-gray-700">Add Payment</span>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Activity Feed -->
-                    <div class="col-span-12 lg:col-span-5 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-500">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-semibold text-gray-800">Recent Activity</h3>
-                            <a href="#" class="text-sm text-primary hover:text-primary-dark font-medium">View All</a>
-                        </div>
-                        <div class="space-y-4">
-                            <div class="flex items-start space-x-3">
-                                <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-medium flex-shrink-0">RK</div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm text-gray-800"><span class="font-medium">Rajesh</span> created Quote <span class="text-primary font-medium">Q-2542</span></p>
-                                    <p class="text-xs text-gray-400 mt-0.5">2 minutes ago</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3">
-                                <div class="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center text-secondary text-xs font-medium flex-shrink-0">PS</div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm text-gray-800"><span class="font-medium">Priya</span> approved PO <span class="text-secondary font-medium">PO-1823</span></p>
-                                    <p class="text-xs text-gray-400 mt-0.5">15 minutes ago</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3">
-                                <div class="w-8 h-8 rounded-full bg-warning/20 flex items-center justify-center text-warning text-xs font-medium flex-shrink-0">AK</div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm text-gray-800"><span class="font-medium">Amit</span> added new lead <span class="font-medium">Sharma Industries</span></p>
-                                    <p class="text-xs text-gray-400 mt-0.5">1 hour ago</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3">
-                                <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-xs font-medium flex-shrink-0">SM</div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm text-gray-800"><span class="font-medium">Sunita</span> completed project <span class="text-primary font-medium">PRJ-2024</span></p>
-                                    <p class="text-xs text-gray-400 mt-0.5">2 hours ago</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3">
-                                <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-xs font-medium flex-shrink-0">VK</div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm text-gray-800"><span class="font-medium">Vikram</span> received payment <span class="text-primary font-medium">₹2.5L</span></p>
-                                    <p class="text-xs text-gray-400 mt-0.5">3 hours ago</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Alerts Card -->
-                    <div class="col-span-12 lg:col-span-4 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-500">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-semibold text-gray-800 flex items-center">
-                                <svg class="w-5 h-5 text-error mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                                </svg>
-                                Requires Attention
-                            </h3>
-                            <span class="bg-error/10 text-error text-xs font-medium px-2 py-1 rounded-full">5</span>
-                        </div>
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between p-3 bg-error/5 rounded-lg border border-error/10">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-2 h-2 bg-error rounded-full"></div>
-                                    <span class="text-sm text-gray-700">3 Overdue Follow-ups</span>
-                                </div>
-                                <a href="#" class="text-xs text-error font-medium hover:underline">View</a>
-                            </div>
-                            <div class="flex items-center justify-between p-3 bg-warning/5 rounded-lg border border-warning/10">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-2 h-2 bg-warning rounded-full"></div>
-                                    <span class="text-sm text-gray-700">2 Pending Approvals</span>
-                                </div>
-                                <a href="#" class="text-xs text-warning font-medium hover:underline">Review</a>
-                            </div>
-                            <div class="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-100">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
-                                    <span class="text-sm text-gray-700">Low Stock: Panel XYZ</span>
-                                </div>
-                                <a href="#" class="text-xs text-orange-600 font-medium hover:underline">Order</a>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Calendar Card -->
-                    <div class="col-span-12 lg:col-span-3 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-500">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-semibold text-gray-800">Today</h3>
-                        <span class="text-sm text-gray-500">Jan 30, 2026</span>
-                        </div>
-                        <div class="space-y-3">
-                            <div class="p-3 bg-primary/5 rounded-lg border-l-4 border-primary">
-                                <p class="text-sm font-medium text-gray-800">10:00 - Site Visit</p>
-                                <p class="text-xs text-gray-500 mt-0.5">Sharma Residence, Pune</p>
-                            </div>
-                            <div class="p-3 bg-secondary/5 rounded-lg border-l-4 border-secondary">
-                                <p class="text-sm font-medium text-gray-800">14:00 - Team Meeting</p>
-                                <p class="text-xs text-gray-500 mt-0.5">Weekly sync-up</p>
-                            </div>
-                            <div class="p-3 bg-warning/5 rounded-lg border-l-4 border-warning">
-                                <p class="text-sm font-medium text-gray-800">16:30 - Client Call</p>
-                                <p class="text-xs text-gray-500 mt-0.5">Tata Solar - Quote Discussion</p>
-                            </div>
-                        </div>
-                        <a href="#" class="block mt-4 text-center text-sm text-primary hover:text-primary-dark font-medium">View Calendar →</a>
-                    </div>
-                </div>
+      <div class="p-5">
+        <!-- Greeting Section -->
+        <div class="mb-6 animate-fade-in opacity-0">
+          <h1 class="text-xl font-semibold text-gray-800" id="greeting">Good Morning, Rajesh!</h1>
+          <p class="text-gray-500 text-[13px] mt-0.5">
+            You have <span class="font-medium text-primary">3 pending approvals</span> and
+            <span class="font-medium text-secondary">5 hot leads</span> to follow up
+          </p>
+          <div class="flex space-x-2 mt-3">
+            <a
+              href="#"
+              class="px-3 py-1.5 bg-primary text-white rounded-md text-[13px] font-medium hover:bg-primary-dark transition-colors"
+              >View Approvals</a
+            >
+            <a
+              href="../crm/customers.html"
+              class="px-3 py-1.5 bg-white border border-gray-100 text-gray-700 rounded-md text-[13px] font-medium hover:bg-gray-50 transition-colors"
+              >View Leads</a
+            >
+          </div>
         </div>
+
+        <!-- Bento Grid Dashboard -->
+        <div class="grid grid-cols-12 gap-4">
+          <!-- Hero Metric Card (Large - spans 5 cols) -->
+          <div
+            class="col-span-12 lg:col-span-5 glass-card rounded-lg p-4 text-white animate-fade-in opacity-0 animation-delay-100 min-h-[200px]"
+          >
+            <div class="relative z-10">
+              <p class="text-white/80 text-xs font-medium">Total Revenue This Month</p>
+              <p class="text-3xl font-semibold mt-1.5">₹45,67,890</p>
+              <div class="flex items-center mt-1.5">
+                <span class="flex items-center text-xs bg-white/20 px-2 py-0.5 rounded-full">
+                  <svg
+                    class="w-3.5 h-3.5 mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                    />
+                  </svg>
+                  23.5% vs last month
+                </span>
+              </div>
+              <!-- Mini Chart Placeholder -->
+              <div class="mt-6 h-20 flex items-end space-x-1">
+                <div class="w-full bg-white/20 rounded-t h-8"></div>
+                <div class="w-full bg-white/20 rounded-t h-12"></div>
+                <div class="w-full bg-white/20 rounded-t h-6"></div>
+                <div class="w-full bg-white/20 rounded-t h-16"></div>
+                <div class="w-full bg-white/20 rounded-t h-10"></div>
+                <div class="w-full bg-white/20 rounded-t h-14"></div>
+                <div class="w-full bg-white/30 rounded-t h-20"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI Cards Grid (4 cards in 2x2) -->
+          <div class="col-span-12 lg:col-span-7 grid grid-cols-2 gap-3">
+            <!-- KPI 1: New Leads -->
+            <div
+              class="bg-white rounded-lg p-4 border border-gray-100 hover:shadow-sm transition-shadow animate-fade-in opacity-0 animation-delay-200"
+            >
+              <div class="flex items-start justify-between">
+                <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <svg
+                    class="w-4 h-4 text-primary"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                </div>
+                <span
+                  class="text-[11px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded"
+                  >+12 today</span
+                >
+              </div>
+              <p class="text-2xl font-semibold text-gray-800 mt-3">156</p>
+              <p class="text-xs text-gray-500 mt-0.5">New Leads</p>
+            </div>
+
+            <!-- KPI 2: Active Projects -->
+            <div
+              class="bg-white rounded-lg p-4 border border-gray-100 hover:shadow-sm transition-shadow animate-fade-in opacity-0 animation-delay-200"
+            >
+              <div class="flex items-start justify-between">
+                <div class="w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center">
+                  <svg
+                    class="w-4 h-4 text-secondary"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    />
+                  </svg>
+                </div>
+                <span
+                  class="text-[11px] font-medium text-secondary bg-secondary/10 px-1.5 py-0.5 rounded"
+                  >72% on track</span
+                >
+              </div>
+              <p class="text-2xl font-semibold text-gray-800 mt-3">24</p>
+              <p class="text-xs text-gray-500 mt-0.5">Active Projects</p>
+            </div>
+
+            <!-- KPI 3: Pending Quotes -->
+            <div
+              class="bg-white rounded-lg p-4 border border-gray-100 hover:shadow-sm transition-shadow animate-fade-in opacity-0 animation-delay-300"
+            >
+              <div class="flex items-start justify-between">
+                <div class="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
+                  <svg
+                    class="w-4 h-4 text-warning"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </svg>
+                </div>
+                <span
+                  class="text-[11px] font-medium text-warning bg-warning/10 px-1.5 py-0.5 rounded"
+                  >₹8.2L value</span
+                >
+              </div>
+              <p class="text-2xl font-semibold text-gray-800 mt-3">18</p>
+              <p class="text-xs text-gray-500 mt-0.5">Pending Quotes</p>
+            </div>
+
+            <!-- KPI 4: Conversion Rate -->
+            <div
+              class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-300"
+            >
+              <div class="flex items-start justify-between">
+                <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                  <svg
+                    class="w-5 h-5 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                    />
+                  </svg>
+                </div>
+                <span class="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full"
+                  >↑ 5.2%</span
+                >
+              </div>
+              <p class="text-3xl font-bold text-gray-800 mt-4">32%</p>
+              <p class="text-sm text-gray-500 mt-1">Conversion Rate</p>
+            </div>
+          </div>
+
+          <!-- Chart Card (Wide) -->
+          <div
+            class="col-span-12 lg:col-span-8 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400"
+          >
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="font-semibold text-gray-800">Revenue Trend</h3>
+              <div class="flex space-x-2">
+                <button
+                  class="px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-lg"
+                >
+                  Monthly
+                </button>
+                <button
+                  class="px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-50 rounded-lg"
+                >
+                  Weekly
+                </button>
+              </div>
+            </div>
+            <!-- Chart Placeholder -->
+            <div class="h-64 flex items-end space-x-2 px-4">
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary/20 rounded-t" style="height: 40%"></div>
+                <span class="text-xs text-gray-400 mt-2">Jan</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary/20 rounded-t" style="height: 55%"></div>
+                <span class="text-xs text-gray-400 mt-2">Feb</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary/20 rounded-t" style="height: 45%"></div>
+                <span class="text-xs text-gray-400 mt-2">Mar</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary/20 rounded-t" style="height: 70%"></div>
+                <span class="text-xs text-gray-400 mt-2">Apr</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary/20 rounded-t" style="height: 60%"></div>
+                <span class="text-xs text-gray-400 mt-2">May</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary/20 rounded-t" style="height: 75%"></div>
+                <span class="text-xs text-gray-400 mt-2">Jun</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary/20 rounded-t" style="height: 65%"></div>
+                <span class="text-xs text-gray-400 mt-2">Jul</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary/20 rounded-t" style="height: 80%"></div>
+                <span class="text-xs text-gray-400 mt-2">Aug</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary/20 rounded-t" style="height: 70%"></div>
+                <span class="text-xs text-gray-400 mt-2">Sep</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary/20 rounded-t" style="height: 85%"></div>
+                <span class="text-xs text-gray-400 mt-2">Oct</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary/20 rounded-t" style="height: 75%"></div>
+                <span class="text-xs text-gray-400 mt-2">Nov</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary rounded-t" style="height: 95%"></div>
+                <span class="text-xs text-gray-500 font-medium mt-2">Dec</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions Card -->
+          <div
+            class="col-span-12 lg:col-span-4 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400"
+          >
+            <h3 class="font-semibold text-gray-800 mb-4 flex items-center">
+              <svg
+                class="w-5 h-5 text-primary mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
+              Quick Actions
+            </h3>
+            <div class="space-y-3">
+              <button
+                class="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-primary/5 hover:border-primary/20 rounded-lg border border-gray-100 transition-colors text-left"
+              >
+                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <svg
+                    class="w-5 h-5 text-primary"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                </div>
+                <span class="font-medium text-gray-700">New Lead</span>
+              </button>
+              <button
+                class="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-secondary/5 hover:border-secondary/20 rounded-lg border border-gray-100 transition-colors text-left"
+              >
+                <div class="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
+                  <svg
+                    class="w-5 h-5 text-secondary"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </div>
+                <span class="font-medium text-gray-700">Create Quote</span>
+              </button>
+              <button
+                class="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-warning/5 hover:border-warning/20 rounded-lg border border-gray-100 transition-colors text-left"
+              >
+                <div class="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                  <svg
+                    class="w-5 h-5 text-warning"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    />
+                  </svg>
+                </div>
+                <span class="font-medium text-gray-700">Start Project</span>
+              </button>
+              <button
+                class="w-full flex items-center space-x-3 p-3 bg-gray-50 hover:bg-purple-50 hover:border-purple-200 rounded-lg border border-gray-100 transition-colors text-left"
+              >
+                <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                  <svg
+                    class="w-5 h-5 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                  </svg>
+                </div>
+                <span class="font-medium text-gray-700">Add Payment</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Activity Feed -->
+          <div
+            class="col-span-12 lg:col-span-5 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-500"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-gray-800">Recent Activity</h3>
+              <a href="#" class="text-sm text-primary hover:text-primary-dark font-medium"
+                >View All</a
+              >
+            </div>
+            <div class="space-y-4">
+              <div class="flex items-start space-x-3">
+                <div
+                  class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-medium flex-shrink-0"
+                >
+                  RK
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm text-gray-800">
+                    <span class="font-medium">Rajesh</span> created Quote
+                    <span class="text-primary font-medium">Q-2542</span>
+                  </p>
+                  <p class="text-xs text-gray-400 mt-0.5">2 minutes ago</p>
+                </div>
+              </div>
+              <div class="flex items-start space-x-3">
+                <div
+                  class="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center text-secondary text-xs font-medium flex-shrink-0"
+                >
+                  PS
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm text-gray-800">
+                    <span class="font-medium">Priya</span> approved PO
+                    <span class="text-secondary font-medium">PO-1823</span>
+                  </p>
+                  <p class="text-xs text-gray-400 mt-0.5">15 minutes ago</p>
+                </div>
+              </div>
+              <div class="flex items-start space-x-3">
+                <div
+                  class="w-8 h-8 rounded-full bg-warning/20 flex items-center justify-center text-warning text-xs font-medium flex-shrink-0"
+                >
+                  AK
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm text-gray-800">
+                    <span class="font-medium">Amit</span> added new lead
+                    <span class="font-medium">Sharma Industries</span>
+                  </p>
+                  <p class="text-xs text-gray-400 mt-0.5">1 hour ago</p>
+                </div>
+              </div>
+              <div class="flex items-start space-x-3">
+                <div
+                  class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-xs font-medium flex-shrink-0"
+                >
+                  SM
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm text-gray-800">
+                    <span class="font-medium">Sunita</span> completed project
+                    <span class="text-primary font-medium">PRJ-2024</span>
+                  </p>
+                  <p class="text-xs text-gray-400 mt-0.5">2 hours ago</p>
+                </div>
+              </div>
+              <div class="flex items-start space-x-3">
+                <div
+                  class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-xs font-medium flex-shrink-0"
+                >
+                  VK
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm text-gray-800">
+                    <span class="font-medium">Vikram</span> received payment
+                    <span class="text-primary font-medium">₹2.5L</span>
+                  </p>
+                  <p class="text-xs text-gray-400 mt-0.5">3 hours ago</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alerts Card -->
+          <div
+            class="col-span-12 lg:col-span-4 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-500"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-gray-800 flex items-center">
+                <svg
+                  class="w-5 h-5 text-error mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                  />
+                </svg>
+                Requires Attention
+              </h3>
+              <span class="bg-error/10 text-error text-xs font-medium px-2 py-1 rounded-full"
+                >5</span
+              >
+            </div>
+            <div class="space-y-3">
+              <div
+                class="flex items-center justify-between p-3 bg-error/5 rounded-lg border border-error/10"
+              >
+                <div class="flex items-center space-x-3">
+                  <div class="w-2 h-2 bg-error rounded-full"></div>
+                  <span class="text-sm text-gray-700">3 Overdue Follow-ups</span>
+                </div>
+                <a href="#" class="text-xs text-error font-medium hover:underline">View</a>
+              </div>
+              <div
+                class="flex items-center justify-between p-3 bg-warning/5 rounded-lg border border-warning/10"
+              >
+                <div class="flex items-center space-x-3">
+                  <div class="w-2 h-2 bg-warning rounded-full"></div>
+                  <span class="text-sm text-gray-700">2 Pending Approvals</span>
+                </div>
+                <a href="#" class="text-xs text-warning font-medium hover:underline">Review</a>
+              </div>
+              <div
+                class="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-100"
+              >
+                <div class="flex items-center space-x-3">
+                  <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
+                  <span class="text-sm text-gray-700">Low Stock: Panel XYZ</span>
+                </div>
+                <a href="#" class="text-xs text-orange-600 font-medium hover:underline">Order</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Calendar Card -->
+          <div
+            class="col-span-12 lg:col-span-3 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-500"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-gray-800">Today</h3>
+              <span class="text-sm text-gray-500">Jan 30, 2026</span>
+            </div>
+            <div class="space-y-3">
+              <div class="p-3 bg-primary/5 rounded-lg border-l-4 border-primary">
+                <p class="text-sm font-medium text-gray-800">10:00 - Site Visit</p>
+                <p class="text-xs text-gray-500 mt-0.5">Sharma Residence, Pune</p>
+              </div>
+              <div class="p-3 bg-secondary/5 rounded-lg border-l-4 border-secondary">
+                <p class="text-sm font-medium text-gray-800">14:00 - Team Meeting</p>
+                <p class="text-xs text-gray-500 mt-0.5">Weekly sync-up</p>
+              </div>
+              <div class="p-3 bg-warning/5 rounded-lg border-l-4 border-warning">
+                <p class="text-sm font-medium text-gray-800">16:30 - Client Call</p>
+                <p class="text-xs text-gray-500 mt-0.5">Tata Solar - Quote Discussion</p>
+              </div>
+            </div>
+            <a
+              href="#"
+              class="block mt-4 text-center text-sm text-primary hover:text-primary-dark font-medium"
+              >View Calendar →</a
+            >
+          </div>
+        </div>
+      </div>
     </main>
-    
+
     <!-- ==================== COMMAND PALETTE MODAL ==================== -->
     <div id="commandPalette" class="fixed inset-0 z-[100] hidden">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeCommandPalette()"></div>
-        <div class="relative max-w-xl mx-auto mt-24">
-            <div class="bg-white rounded-lg shadow-2xl overflow-hidden">
-                <!-- Search Input -->
-                <div class="flex items-center px-4 border-b border-gray-100">
-                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                    <input type="text" id="commandInput" placeholder="Search commands, leads, projects..." class="w-full px-4 py-4 outline-none text-gray-800 placeholder-gray-400" autofocus>
-                    <kbd class="px-2 py-1 text-xs font-medium text-gray-400 bg-gray-100 rounded">ESC</kbd>
-                </div>
-                
-                <!-- Results -->
-                <div class="max-h-96 overflow-y-auto p-2">
-                    <!-- Recent -->
-                    <div class="px-3 py-2">
-                        <p class="text-xs font-semibold text-gray-400 uppercase">Recent</p>
-                    </div>
-                    <a href="#" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg">
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <span class="text-sm text-gray-700">Lead: Ravi Sharma</span>
-                    </a>
-                    <a href="#" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg">
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <span class="text-sm text-gray-700">Project: PRJ-2025-042</span>
-                    </a>
-                    
-                    <!-- Navigation -->
-                    <div class="px-3 py-2 mt-2">
-                        <p class="text-xs font-semibold text-gray-400 uppercase">Navigation</p>
-                    </div>
-                    <a href="index.html" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg">
-                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                        </svg>
-                        <span class="text-sm text-gray-700">Go to Dashboard</span>
-                    </a>
-                    <a href="../crm/customers.html" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg">
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        </svg>
-                        <span class="text-sm text-gray-700">Go to Leads</span>
-                    </a>
-                    <a href="../quotes/list.html" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg">
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                        </svg>
-                        <span class="text-sm text-gray-700">Go to Quotes</span>
-                    </a>
-                    
-                    <!-- Actions -->
-                    <div class="px-3 py-2 mt-2">
-                        <p class="text-xs font-semibold text-gray-400 uppercase">Actions</p>
-                    </div>
-                    <a href="../crm/create-customer.html" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg">
-                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                        </svg>
-                        <span class="text-sm text-gray-700">Create New Lead</span>
-                    </a>
-                    <a href="#" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg">
-                        <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                        </svg>
-                        <span class="text-sm text-gray-700">Generate Quote</span>
-                    </a>
-                    <a href="#" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg">
-                        <svg class="w-5 h-5 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                        </svg>
-                        <span class="text-sm text-gray-700">Start Project</span>
-                    </a>
-                </div>
-                
-                <!-- Footer -->
-                <div class="px-3 py-2 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
-                    <div class="flex items-center space-x-4">
-                        <span>↑↓ Navigate</span>
-                        <span>↵ Select</span>
-                        <span>ESC Close</span>
-                    </div>
-                    <span>Powered by OneOhm</span>
-                </div>
+      <div
+        class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onclick="closeCommandPalette()"
+      ></div>
+      <div class="relative max-w-xl mx-auto mt-24">
+        <div class="bg-white rounded-lg shadow-2xl overflow-hidden">
+          <!-- Search Input -->
+          <div class="flex items-center px-4 border-b border-gray-100">
+            <svg
+              class="w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <input
+              type="text"
+              id="commandInput"
+              placeholder="Search commands, leads, projects..."
+              class="w-full px-4 py-4 outline-none text-gray-800 placeholder-gray-400"
+              autofocus
+            />
+            <kbd class="px-2 py-1 text-xs font-medium text-gray-400 bg-gray-100 rounded">ESC</kbd>
+          </div>
+
+          <!-- Results -->
+          <div class="max-h-96 overflow-y-auto p-2">
+            <!-- Recent -->
+            <div class="px-3 py-2">
+              <p class="text-xs font-semibold text-gray-400 uppercase">Recent</p>
             </div>
+            <a href="#" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg">
+              <svg
+                class="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span class="text-sm text-gray-700">Lead: Ravi Sharma</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg">
+              <svg
+                class="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span class="text-sm text-gray-700">Project: PRJ-2025-042</span>
+            </a>
+
+            <!-- Navigation -->
+            <div class="px-3 py-2 mt-2">
+              <p class="text-xs font-semibold text-gray-400 uppercase">Navigation</p>
+            </div>
+            <a
+              href="index.html"
+              class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"
+            >
+              <svg
+                class="w-5 h-5 text-primary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                />
+              </svg>
+              <span class="text-sm text-gray-700">Go to Dashboard</span>
+            </a>
+            <a
+              href="../crm/customers.html"
+              class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"
+            >
+              <svg
+                class="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+              <span class="text-sm text-gray-700">Go to Leads</span>
+            </a>
+            <a
+              href="../quotes/list.html"
+              class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"
+            >
+              <svg
+                class="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
+              </svg>
+              <span class="text-sm text-gray-700">Go to Quotes</span>
+            </a>
+
+            <!-- Actions -->
+            <div class="px-3 py-2 mt-2">
+              <p class="text-xs font-semibold text-gray-400 uppercase">Actions</p>
+            </div>
+            <a
+              href="../crm/create-customer.html"
+              class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"
+            >
+              <svg
+                class="w-5 h-5 text-primary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+              <span class="text-sm text-gray-700">Create New Lead</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg">
+              <svg
+                class="w-5 h-5 text-secondary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+              <span class="text-sm text-gray-700">Generate Quote</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg">
+              <svg
+                class="w-5 h-5 text-warning"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+              <span class="text-sm text-gray-700">Start Project</span>
+            </a>
+          </div>
+
+          <!-- Footer -->
+          <div
+            class="px-3 py-2 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400"
+          >
+            <div class="flex items-center space-x-4">
+              <span>↑↓ Navigate</span>
+              <span>↵ Select</span>
+              <span>ESC Close</span>
+            </div>
+            <span>Powered by OneOhm</span>
+          </div>
         </div>
+      </div>
     </div>
-    
+
     <!-- ==================== JAVASCRIPT ==================== -->
     <script>
-        // ==================== STATE ====================
-        let activeRail = 'home';
-        let panelVisible = true;
-        
-        // ==================== RAIL SWITCHING ====================
-        function switchRail(railId) {
-            // Update active state on rail icons
-            document.querySelectorAll('.rail-icon').forEach(icon => {
-                icon.classList.remove('active');
-            });
-            const activeIcon = document.querySelector(`[data-rail="${railId}"]`);
-            if (activeIcon) {
-                activeIcon.classList.add('active');
-            }
-            
-            // Show/hide panel containers
-            document.querySelectorAll('.panel-container').forEach(panel => {
-                panel.classList.add('hidden');
-            });
-            const activePanel = document.getElementById(`panel-${railId}`);
-            if (activePanel) {
-                activePanel.classList.remove('hidden');
-            }
-            
-            // Ensure panel is visible when switching rails
-            if (!panelVisible) {
-                panelVisible = true;
-                const panel = document.getElementById('panel');
-                const mainContent = document.getElementById('mainContent');
-                const expandIcon = document.getElementById('toggleIconExpand');
-                const collapseIcon = document.getElementById('toggleIconCollapse');
-                
-                panel.classList.remove('collapsed');
-                mainContent.classList.remove('panel-collapsed');
-                expandIcon.classList.add('hidden');
-                collapseIcon.classList.remove('hidden');
-                localStorage.setItem('panelVisible', panelVisible);
-            }
-            
-            activeRail = railId;
-            
-            // Save state
-            localStorage.setItem('activeRail', railId);
-        }
-        
-        // ==================== PANEL TOGGLE ====================
-        function togglePanel() {
-            const panel = document.getElementById('panel');
-            const mainContent = document.getElementById('mainContent');
-            const expandIcon = document.getElementById('toggleIconExpand');
-            const collapseIcon = document.getElementById('toggleIconCollapse');
-            
-            panelVisible = !panelVisible;
-            
-            if (panelVisible) {
-                panel.classList.remove('collapsed');
-                mainContent.classList.remove('panel-collapsed');
-                expandIcon.classList.add('hidden');
-                collapseIcon.classList.remove('hidden');
-            } else {
-                panel.classList.add('collapsed');
-                mainContent.classList.add('panel-collapsed');
-                expandIcon.classList.remove('hidden');
-                collapseIcon.classList.add('hidden');
-            }
-            
-            // Save state
-            localStorage.setItem('panelVisible', panelVisible);
-        }
-        
-        // ==================== COMMAND PALETTE ====================
-        function openCommandPalette() {
-            document.getElementById('commandPalette').classList.remove('hidden');
-            document.getElementById('commandInput').focus();
-        }
-        
-        function closeCommandPalette() {
-            document.getElementById('commandPalette').classList.add('hidden');
-        }
-        
-        // ==================== KEYBOARD SHORTCUTS ====================
-        document.addEventListener('keydown', function(e) {
-            // Cmd+K or Ctrl+K to open command palette
-            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-                e.preventDefault();
-                openCommandPalette();
-            }
-            
-            // Cmd+\ or Ctrl+\ to toggle panel
-            if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
-                e.preventDefault();
-                togglePanel();
-            }
-            
-            // ESC to close command palette
-            if (e.key === 'Escape') {
-                closeCommandPalette();
-            }
+      // ==================== STATE ====================
+      let activeRail = 'home';
+      let panelVisible = true;
+
+      // ==================== RAIL SWITCHING ====================
+      function switchRail(railId) {
+        // Update active state on rail icons
+        document.querySelectorAll('.rail-icon').forEach((icon) => {
+          icon.classList.remove('active');
         });
-        
-        // ==================== GREETING ====================
-        function updateGreeting() {
-            const hour = new Date().getHours();
-            const greetingEl = document.getElementById('greeting');
-            let greeting = 'Good Morning';
-            
-            if (hour >= 12 && hour < 17) {
-                greeting = 'Good Afternoon';
-            } else if (hour >= 17) {
-                greeting = 'Good Evening';
-            }
-            
-            greetingEl.textContent = greeting + ', Rajesh!';
+        const activeIcon = document.querySelector(`[data-rail="${railId}"]`);
+        if (activeIcon) {
+          activeIcon.classList.add('active');
         }
-        
-        // ==================== INITIALIZATION ====================
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check URL parameters first (for navigation from other pages)
-            const urlParams = new URLSearchParams(window.location.search);
-            const railParam = urlParams.get('rail');
-            
-            if (railParam) {
-                // URL parameter takes priority - switch to specified rail
-                switchRail(railParam);
-            } else {
-                // Fall back to localStorage
-                const savedRail = localStorage.getItem('activeRail');
-                if (savedRail) {
-                    switchRail(savedRail);
-                }
-            }
-            
-            // Restore panel state
-            const savedPanelVisible = localStorage.getItem('panelVisible');
-            if (savedPanelVisible === 'false') {
-                panelVisible = true; // Will be toggled to false
-                togglePanel();
-            }
-            
-            // Update greeting
-            updateGreeting();
+
+        // Show/hide panel containers
+        document.querySelectorAll('.panel-container').forEach((panel) => {
+          panel.classList.add('hidden');
         });
+        const activePanel = document.getElementById(`panel-${railId}`);
+        if (activePanel) {
+          activePanel.classList.remove('hidden');
+        }
+
+        // Ensure panel is visible when switching rails
+        if (!panelVisible) {
+          panelVisible = true;
+          const panel = document.getElementById('panel');
+          const mainContent = document.getElementById('mainContent');
+          const expandIcon = document.getElementById('toggleIconExpand');
+          const collapseIcon = document.getElementById('toggleIconCollapse');
+
+          panel.classList.remove('collapsed');
+          mainContent.classList.remove('panel-collapsed');
+          expandIcon.classList.add('hidden');
+          collapseIcon.classList.remove('hidden');
+          localStorage.setItem('panelVisible', panelVisible);
+        }
+
+        activeRail = railId;
+
+        // Save state
+        localStorage.setItem('activeRail', railId);
+      }
+
+      // ==================== PANEL TOGGLE ====================
+      function togglePanel() {
+        const panel = document.getElementById('panel');
+        const mainContent = document.getElementById('mainContent');
+        const expandIcon = document.getElementById('toggleIconExpand');
+        const collapseIcon = document.getElementById('toggleIconCollapse');
+
+        panelVisible = !panelVisible;
+
+        if (panelVisible) {
+          panel.classList.remove('collapsed');
+          mainContent.classList.remove('panel-collapsed');
+          expandIcon.classList.add('hidden');
+          collapseIcon.classList.remove('hidden');
+        } else {
+          panel.classList.add('collapsed');
+          mainContent.classList.add('panel-collapsed');
+          expandIcon.classList.remove('hidden');
+          collapseIcon.classList.add('hidden');
+        }
+
+        // Save state
+        localStorage.setItem('panelVisible', panelVisible);
+      }
+
+      // ==================== COMMAND PALETTE ====================
+      function openCommandPalette() {
+        document.getElementById('commandPalette').classList.remove('hidden');
+        document.getElementById('commandInput').focus();
+      }
+
+      function closeCommandPalette() {
+        document.getElementById('commandPalette').classList.add('hidden');
+      }
+
+      // ==================== KEYBOARD SHORTCUTS ====================
+      document.addEventListener('keydown', function (e) {
+        // Cmd+K or Ctrl+K to open command palette
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+          e.preventDefault();
+          openCommandPalette();
+        }
+
+        // Cmd+\ or Ctrl+\ to toggle panel
+        if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+          e.preventDefault();
+          togglePanel();
+        }
+
+        // ESC to close command palette
+        if (e.key === 'Escape') {
+          closeCommandPalette();
+        }
+      });
+
+      // ==================== GREETING ====================
+      function updateGreeting() {
+        const hour = new Date().getHours();
+        const greetingEl = document.getElementById('greeting');
+        let greeting = 'Good Morning';
+
+        if (hour >= 12 && hour < 17) {
+          greeting = 'Good Afternoon';
+        } else if (hour >= 17) {
+          greeting = 'Good Evening';
+        }
+
+        greetingEl.textContent = greeting + ', Rajesh!';
+      }
+
+      // ==================== INITIALIZATION ====================
+      document.addEventListener('DOMContentLoaded', function () {
+        // Check URL parameters first (for navigation from other pages)
+        const urlParams = new URLSearchParams(window.location.search);
+        const railParam = urlParams.get('rail');
+
+        if (railParam) {
+          // URL parameter takes priority - switch to specified rail
+          switchRail(railParam);
+        } else {
+          // Fall back to localStorage
+          const savedRail = localStorage.getItem('activeRail');
+          if (savedRail) {
+            switchRail(savedRail);
+          }
+        }
+
+        // Restore panel state
+        const savedPanelVisible = localStorage.getItem('panelVisible');
+        if (savedPanelVisible === 'false') {
+          panelVisible = true; // Will be toggled to false
+          togglePanel();
+        }
+
+        // Update greeting
+        updateGreeting();
+      });
     </script>
-</body>
+  </body>
 </html>

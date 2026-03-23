@@ -1,328 +1,446 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Trend Analysis - OneOhm Solar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#F97316',
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#F97316',
+            },
+          },
+        },
+      };
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+      body {
+        font-family: 'Inter', sans-serif;
+      }
     </style>
-</head>
-<body class="bg-gray-50">
+  </head>
+  <body class="bg-gray-50">
     <div class="flex h-screen">
-        <!-- Sidebar -->
-        <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
-            <div class="p-6 border-b border-gray-700">
-                <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
-                <p class="text-gray-400 text-sm mt-1">Trend Analysis</p>
-            </div>
-            
-            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-                <a href="analytics-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                    <span>Analytics Dashboard</span>
-                </a>
-                <a href="trend-analysis.html" class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd"></path>
-                    </svg>
-                    <span>Trend Analysis</span>
-                </a>
-            </nav>
+      <!-- Sidebar -->
+      <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
+        <div class="p-6 border-b border-gray-700">
+          <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
+          <p class="text-gray-400 text-sm mt-1">Trend Analysis</p>
+        </div>
 
-            <div class="p-4 border-t border-gray-700">
-                <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
-                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">SA</div>
-                    <div class="flex-1 min-w-0">
-                        <p class="font-semibold text-sm truncate">Super Admin</p>
-                        <p class="text-xs text-gray-400 truncate">Administrator</p>
-                    </div>
-                </div>
+        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+          <a
+            href="analytics-dashboard.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              ></path>
+            </svg>
+            <span>Analytics Dashboard</span>
+          </a>
+          <a
+            href="trend-analysis.html"
+            class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold"
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z"
+                clip-rule="evenodd"
+              ></path>
+            </svg>
+            <span>Trend Analysis</span>
+          </a>
+        </nav>
+
+        <div class="p-4 border-t border-gray-700">
+          <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
+            <div
+              class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold"
+            >
+              SA
             </div>
-        </aside>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm truncate">Super Admin</p>
+              <p class="text-xs text-gray-400 truncate">Administrator</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Top Bar -->
+        <header class="bg-white border-b border-gray-200 px-8 py-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900">Business Trends & Patterns</h2>
+              <p class="text-sm text-gray-600">
+                Identify trends, patterns, and growth opportunities
+              </p>
+            </div>
+            <div class="flex items-center space-x-3">
+              <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                <option>Last 12 Months</option>
+                <option>Last 6 Months</option>
+                <option>Last 24 Months</option>
+              </select>
+              <button
+                class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600"
+              >
+                Export Analysis
+              </button>
+            </div>
+          </div>
+        </header>
 
         <!-- Main Content -->
-        <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Top Bar -->
-            <header class="bg-white border-b border-gray-200 px-8 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-900">Business Trends & Patterns</h2>
-                        <p class="text-sm text-gray-600">Identify trends, patterns, and growth opportunities</p>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <select class="px-4 py-2 border border-gray-300 rounded-lg">
-                            <option>Last 12 Months</option>
-                            <option>Last 6 Months</option>
-                            <option>Last 24 Months</option>
-                        </select>
-                        <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600">Export Analysis</button>
-                    </div>
+        <main class="flex-1 overflow-y-auto p-8">
+          <!-- Trend Summary Cards -->
+          <div class="grid grid-cols-4 gap-4 mb-6">
+            <div
+              class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-green-200 p-5"
+            >
+              <div class="flex items-start justify-between mb-2">
+                <span class="text-sm font-semibold text-gray-700">Revenue Trend</span>
+                <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fill-rule="evenodd"
+                    d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+              </div>
+              <p class="text-3xl font-bold text-green-600">↗ +22%</p>
+              <p class="text-xs text-gray-600 mt-1">Consistent growth over 12 months</p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 p-5"
+            >
+              <div class="flex items-start justify-between mb-2">
+                <span class="text-sm font-semibold text-gray-700">Market Share</span>
+                <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"></path>
+                  <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"></path>
+                </svg>
+              </div>
+              <p class="text-3xl font-bold text-blue-600">18.5%</p>
+              <p class="text-xs text-gray-600 mt-1">↗ +3.2% increase YoY</p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200 p-5"
+            >
+              <div class="flex items-start justify-between mb-2">
+                <span class="text-sm font-semibold text-gray-700">Customer Growth</span>
+                <svg class="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"
+                  ></path>
+                </svg>
+              </div>
+              <p class="text-3xl font-bold text-purple-600">+2,450</p>
+              <p class="text-xs text-gray-600 mt-1">42% growth in customer base</p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl border-2 border-yellow-200 p-5"
+            >
+              <div class="flex items-start justify-between mb-2">
+                <span class="text-sm font-semibold text-gray-700">Efficiency</span>
+                <svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fill-rule="evenodd"
+                    d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+              </div>
+              <p class="text-3xl font-bold text-yellow-600">↗ +15%</p>
+              <p class="text-xs text-gray-600 mt-1">Operational efficiency improved</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-6 mb-6">
+            <!-- Year-over-Year Comparison -->
+            <div class="bg-white rounded-xl border-2 border-gray-200 p-6">
+              <h3 class="font-bold text-gray-900 text-lg mb-4">Year-over-Year Growth Comparison</h3>
+              <div class="space-y-6">
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-700">FY 2024-25</span>
+                    <span class="text-sm font-bold text-primary">₹2.8Cr (Current)</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div class="bg-primary h-4 rounded-full" style="width: 100%"></div>
+                  </div>
                 </div>
-            </header>
-
-            <!-- Main Content -->
-            <main class="flex-1 overflow-y-auto p-8">
-                <!-- Trend Summary Cards -->
-                <div class="grid grid-cols-4 gap-4 mb-6">
-                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-green-200 p-5">
-                        <div class="flex items-start justify-between mb-2">
-                            <span class="text-sm font-semibold text-gray-700">Revenue Trend</span>
-                            <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <p class="text-3xl font-bold text-green-600">↗ +22%</p>
-                        <p class="text-xs text-gray-600 mt-1">Consistent growth over 12 months</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200 p-5">
-                        <div class="flex items-start justify-between mb-2">
-                            <span class="text-sm font-semibold text-gray-700">Market Share</span>
-                            <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"></path>
-                                <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"></path>
-                            </svg>
-                        </div>
-                        <p class="text-3xl font-bold text-blue-600">18.5%</p>
-                        <p class="text-xs text-gray-600 mt-1">↗ +3.2% increase YoY</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200 p-5">
-                        <div class="flex items-start justify-between mb-2">
-                            <span class="text-sm font-semibold text-gray-700">Customer Growth</span>
-                            <svg class="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
-                            </svg>
-                        </div>
-                        <p class="text-3xl font-bold text-purple-600">+2,450</p>
-                        <p class="text-xs text-gray-600 mt-1">42% growth in customer base</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl border-2 border-yellow-200 p-5">
-                        <div class="flex items-start justify-between mb-2">
-                            <span class="text-sm font-semibold text-gray-700">Efficiency</span>
-                            <svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <p class="text-3xl font-bold text-yellow-600">↗ +15%</p>
-                        <p class="text-xs text-gray-600 mt-1">Operational efficiency improved</p>
-                    </div>
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-700">FY 2023-24</span>
+                    <span class="text-sm font-bold text-blue-600">₹2.3Cr</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div class="bg-blue-500 h-4 rounded-full" style="width: 82%"></div>
+                  </div>
                 </div>
-
-                <div class="grid grid-cols-2 gap-6 mb-6">
-                    <!-- Year-over-Year Comparison -->
-                    <div class="bg-white rounded-xl border-2 border-gray-200 p-6">
-                        <h3 class="font-bold text-gray-900 text-lg mb-4">Year-over-Year Growth Comparison</h3>
-                        <div class="space-y-6">
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-700">FY 2024-25</span>
-                                    <span class="text-sm font-bold text-primary">₹2.8Cr (Current)</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-4">
-                                    <div class="bg-primary h-4 rounded-full" style="width: 100%"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-700">FY 2023-24</span>
-                                    <span class="text-sm font-bold text-blue-600">₹2.3Cr</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-4">
-                                    <div class="bg-blue-500 h-4 rounded-full" style="width: 82%"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-700">FY 2022-23</span>
-                                    <span class="text-sm font-bold text-gray-600">₹1.8Cr</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-4">
-                                    <div class="bg-gray-400 h-4 rounded-full" style="width: 64%"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
-                            <p class="text-sm font-semibold text-green-700">📈 Compound Annual Growth Rate (CAGR): 24.8%</p>
-                        </div>
-                    </div>
-
-                    <!-- Monthly Trend Pattern -->
-                    <div class="bg-white rounded-xl border-2 border-gray-200 p-6">
-                        <h3 class="font-bold text-gray-900 text-lg mb-4">Monthly Revenue Trend (Last 12 Months)</h3>
-                        <div class="h-48 flex items-end justify-between space-x-1">
-                            <div class="flex-1 bg-gradient-to-t from-blue-400 to-blue-300 rounded-t" style="height: 35%"></div>
-                            <div class="flex-1 bg-gradient-to-t from-blue-400 to-blue-300 rounded-t" style="height: 42%"></div>
-                            <div class="flex-1 bg-gradient-to-t from-blue-400 to-blue-300 rounded-t" style="height: 38%"></div>
-                            <div class="flex-1 bg-gradient-to-t from-blue-400 to-blue-300 rounded-t" style="height: 48%"></div>
-                            <div class="flex-1 bg-gradient-to-t from-blue-400 to-blue-300 rounded-t" style="height: 55%"></div>
-                            <div class="flex-1 bg-gradient-to-t from-blue-400 to-blue-300 rounded-t" style="height: 52%"></div>
-                            <div class="flex-1 bg-gradient-to-t from-blue-400 to-blue-300 rounded-t" style="height: 62%"></div>
-                            <div class="flex-1 bg-gradient-to-t from-primary to-orange-400 rounded-t" style="height: 68%"></div>
-                            <div class="flex-1 bg-gradient-to-t from-primary to-orange-400 rounded-t" style="height: 75%"></div>
-                            <div class="flex-1 bg-gradient-to-t from-primary to-orange-400 rounded-t" style="height: 82%"></div>
-                            <div class="flex-1 bg-gradient-to-t from-primary to-orange-400 rounded-t" style="height: 88%"></div>
-                            <div class="flex-1 bg-gradient-to-t from-green-500 to-green-400 rounded-t" style="height: 100%"></div>
-                        </div>
-                        <div class="flex justify-between mt-4 text-xs text-gray-600">
-                            <span>Nov</span>
-                            <span>Dec</span>
-                            <span>Jan</span>
-                            <span>Feb</span>
-                            <span>Mar</span>
-                            <span>Apr</span>
-                            <span>May</span>
-                            <span>Jun</span>
-                            <span>Jul</span>
-                            <span>Aug</span>
-                            <span>Sep</span>
-                            <span>Oct</span>
-                        </div>
-                        <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                            <p class="text-sm text-blue-700"><strong>Trend:</strong> Steady upward trajectory with 18% average monthly growth</p>
-                        </div>
-                    </div>
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-700">FY 2022-23</span>
+                    <span class="text-sm font-bold text-gray-600">₹1.8Cr</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div class="bg-gray-400 h-4 rounded-full" style="width: 64%"></div>
+                  </div>
                 </div>
+              </div>
+              <div class="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                <p class="text-sm font-semibold text-green-700">
+                  📈 Compound Annual Growth Rate (CAGR): 24.8%
+                </p>
+              </div>
+            </div>
 
-                <!-- Segment Analysis -->
-                <div class="bg-white rounded-xl border-2 border-gray-200 p-6 mb-6">
-                    <h3 class="font-bold text-gray-900 text-lg mb-4">Customer Segment Growth Trends</h3>
-                    <div class="grid grid-cols-3 gap-6">
-                        <div>
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-sm font-semibold text-gray-700">Residential</span>
-                                <span class="text-sm font-bold text-blue-600">↗ +28%</span>
-                            </div>
-                            <div class="h-32 flex items-end space-x-1">
-                                <div class="flex-1 bg-blue-300 rounded-t" style="height: 45%"></div>
-                                <div class="flex-1 bg-blue-300 rounded-t" style="height: 52%"></div>
-                                <div class="flex-1 bg-blue-400 rounded-t" style="height: 62%"></div>
-                                <div class="flex-1 bg-blue-400 rounded-t" style="height: 75%"></div>
-                                <div class="flex-1 bg-blue-500 rounded-t" style="height: 88%"></div>
-                                <div class="flex-1 bg-blue-600 rounded-t" style="height: 100%"></div>
-                            </div>
-                            <p class="text-xs text-gray-600 mt-2">Strong growth in urban areas</p>
-                        </div>
-                        <div>
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-sm font-semibold text-gray-700">Commercial</span>
-                                <span class="text-sm font-bold text-green-600">↗ +35%</span>
-                            </div>
-                            <div class="h-32 flex items-end space-x-1">
-                                <div class="flex-1 bg-green-300 rounded-t" style="height: 40%"></div>
-                                <div class="flex-1 bg-green-300 rounded-t" style="height: 48%"></div>
-                                <div class="flex-1 bg-green-400 rounded-t" style="height: 58%"></div>
-                                <div class="flex-1 bg-green-400 rounded-t" style="height: 72%"></div>
-                                <div class="flex-1 bg-green-500 rounded-t" style="height: 85%"></div>
-                                <div class="flex-1 bg-green-600 rounded-t" style="height: 100%"></div>
-                            </div>
-                            <p class="text-xs text-gray-600 mt-2">Highest growth segment</p>
-                        </div>
-                        <div>
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-sm font-semibold text-gray-700">Industrial</span>
-                                <span class="text-sm font-bold text-purple-600">↗ +18%</span>
-                            </div>
-                            <div class="h-32 flex items-end space-x-1">
-                                <div class="flex-1 bg-purple-300 rounded-t" style="height: 55%"></div>
-                                <div class="flex-1 bg-purple-300 rounded-t" style="height: 58%"></div>
-                                <div class="flex-1 bg-purple-400 rounded-t" style="height: 62%"></div>
-                                <div class="flex-1 bg-purple-400 rounded-t" style="height: 70%"></div>
-                                <div class="flex-1 bg-purple-500 rounded-t" style="height: 82%"></div>
-                                <div class="flex-1 bg-purple-600 rounded-t" style="height: 100%"></div>
-                            </div>
-                            <p class="text-xs text-gray-600 mt-2">Steady growth, high value</p>
-                        </div>
-                    </div>
+            <!-- Monthly Trend Pattern -->
+            <div class="bg-white rounded-xl border-2 border-gray-200 p-6">
+              <h3 class="font-bold text-gray-900 text-lg mb-4">
+                Monthly Revenue Trend (Last 12 Months)
+              </h3>
+              <div class="h-48 flex items-end justify-between space-x-1">
+                <div
+                  class="flex-1 bg-gradient-to-t from-blue-400 to-blue-300 rounded-t"
+                  style="height: 35%"
+                ></div>
+                <div
+                  class="flex-1 bg-gradient-to-t from-blue-400 to-blue-300 rounded-t"
+                  style="height: 42%"
+                ></div>
+                <div
+                  class="flex-1 bg-gradient-to-t from-blue-400 to-blue-300 rounded-t"
+                  style="height: 38%"
+                ></div>
+                <div
+                  class="flex-1 bg-gradient-to-t from-blue-400 to-blue-300 rounded-t"
+                  style="height: 48%"
+                ></div>
+                <div
+                  class="flex-1 bg-gradient-to-t from-blue-400 to-blue-300 rounded-t"
+                  style="height: 55%"
+                ></div>
+                <div
+                  class="flex-1 bg-gradient-to-t from-blue-400 to-blue-300 rounded-t"
+                  style="height: 52%"
+                ></div>
+                <div
+                  class="flex-1 bg-gradient-to-t from-blue-400 to-blue-300 rounded-t"
+                  style="height: 62%"
+                ></div>
+                <div
+                  class="flex-1 bg-gradient-to-t from-primary to-orange-400 rounded-t"
+                  style="height: 68%"
+                ></div>
+                <div
+                  class="flex-1 bg-gradient-to-t from-primary to-orange-400 rounded-t"
+                  style="height: 75%"
+                ></div>
+                <div
+                  class="flex-1 bg-gradient-to-t from-primary to-orange-400 rounded-t"
+                  style="height: 82%"
+                ></div>
+                <div
+                  class="flex-1 bg-gradient-to-t from-primary to-orange-400 rounded-t"
+                  style="height: 88%"
+                ></div>
+                <div
+                  class="flex-1 bg-gradient-to-t from-green-500 to-green-400 rounded-t"
+                  style="height: 100%"
+                ></div>
+              </div>
+              <div class="flex justify-between mt-4 text-xs text-gray-600">
+                <span>Nov</span>
+                <span>Dec</span>
+                <span>Jan</span>
+                <span>Feb</span>
+                <span>Mar</span>
+                <span>Apr</span>
+                <span>May</span>
+                <span>Jun</span>
+                <span>Jul</span>
+                <span>Aug</span>
+                <span>Sep</span>
+                <span>Oct</span>
+              </div>
+              <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <p class="text-sm text-blue-700">
+                  <strong>Trend:</strong> Steady upward trajectory with 18% average monthly growth
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Segment Analysis -->
+          <div class="bg-white rounded-xl border-2 border-gray-200 p-6 mb-6">
+            <h3 class="font-bold text-gray-900 text-lg mb-4">Customer Segment Growth Trends</h3>
+            <div class="grid grid-cols-3 gap-6">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-semibold text-gray-700">Residential</span>
+                  <span class="text-sm font-bold text-blue-600">↗ +28%</span>
                 </div>
-
-                <!-- Key Insights -->
-                <div class="grid grid-cols-2 gap-6">
-                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-green-200 p-6">
-                        <h3 class="font-bold text-gray-900 text-lg mb-4">📊 Positive Trends Identified</h3>
-                        <div class="space-y-3">
-                            <div class="flex items-start space-x-3 p-3 bg-white rounded-lg">
-                                <span class="text-xl">✅</span>
-                                <div>
-                                    <p class="font-semibold text-gray-900 text-sm">Revenue Acceleration</p>
-                                    <p class="text-xs text-gray-600">Monthly revenue growth accelerated from 12% to 22% in Q4</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3 p-3 bg-white rounded-lg">
-                                <span class="text-xl">✅</span>
-                                <div>
-                                    <p class="font-semibold text-gray-900 text-sm">Customer Retention</p>
-                                    <p class="text-xs text-gray-600">Retention rate improved to 94%, up from 88% last year</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3 p-3 bg-white rounded-lg">
-                                <span class="text-xl">✅</span>
-                                <div>
-                                    <p class="font-semibold text-gray-900 text-sm">Market Expansion</p>
-                                    <p class="text-xs text-gray-600">Successfully expanded to 3 new cities with strong adoption</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3 p-3 bg-white rounded-lg">
-                                <span class="text-xl">✅</span>
-                                <div>
-                                    <p class="font-semibold text-gray-900 text-sm">Operational Efficiency</p>
-                                    <p class="text-xs text-gray-600">Cost per project reduced by 15% while maintaining quality</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl border-2 border-yellow-200 p-6">
-                        <h3 class="font-bold text-gray-900 text-lg mb-4">⚡ Action Items from Trend Analysis</h3>
-                        <div class="space-y-3">
-                            <div class="flex items-start space-x-3 p-3 bg-white rounded-lg border-l-4 border-yellow-500">
-                                <span class="text-xl">💡</span>
-                                <div>
-                                    <p class="font-semibold text-gray-900 text-sm">Capitalize on Commercial Growth</p>
-                                    <p class="text-xs text-gray-600">Allocate 30% more resources to commercial segment to maximize ROI</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3 p-3 bg-white rounded-lg border-l-4 border-orange-500">
-                                <span class="text-xl">💡</span>
-                                <div>
-                                    <p class="font-semibold text-gray-900 text-sm">Seasonal Planning</p>
-                                    <p class="text-xs text-gray-600">Prepare for Q4 peak season with inventory and workforce planning</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3 p-3 bg-white rounded-lg border-l-4 border-red-500">
-                                <span class="text-xl">💡</span>
-                                <div>
-                                    <p class="font-semibold text-gray-900 text-sm">Address Industrial Segment</p>
-                                    <p class="text-xs text-gray-600">Investigate slower growth in industrial - potential pricing issue</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3 p-3 bg-white rounded-lg border-l-4 border-blue-500">
-                                <span class="text-xl">💡</span>
-                                <div>
-                                    <p class="font-semibold text-gray-900 text-sm">Digital Marketing Focus</p>
-                                    <p class="text-xs text-gray-600">Digital leads convert 42% faster - increase digital spend by 40%</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="h-32 flex items-end space-x-1">
+                  <div class="flex-1 bg-blue-300 rounded-t" style="height: 45%"></div>
+                  <div class="flex-1 bg-blue-300 rounded-t" style="height: 52%"></div>
+                  <div class="flex-1 bg-blue-400 rounded-t" style="height: 62%"></div>
+                  <div class="flex-1 bg-blue-400 rounded-t" style="height: 75%"></div>
+                  <div class="flex-1 bg-blue-500 rounded-t" style="height: 88%"></div>
+                  <div class="flex-1 bg-blue-600 rounded-t" style="height: 100%"></div>
                 </div>
-            </main>
-        </div>
+                <p class="text-xs text-gray-600 mt-2">Strong growth in urban areas</p>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-semibold text-gray-700">Commercial</span>
+                  <span class="text-sm font-bold text-green-600">↗ +35%</span>
+                </div>
+                <div class="h-32 flex items-end space-x-1">
+                  <div class="flex-1 bg-green-300 rounded-t" style="height: 40%"></div>
+                  <div class="flex-1 bg-green-300 rounded-t" style="height: 48%"></div>
+                  <div class="flex-1 bg-green-400 rounded-t" style="height: 58%"></div>
+                  <div class="flex-1 bg-green-400 rounded-t" style="height: 72%"></div>
+                  <div class="flex-1 bg-green-500 rounded-t" style="height: 85%"></div>
+                  <div class="flex-1 bg-green-600 rounded-t" style="height: 100%"></div>
+                </div>
+                <p class="text-xs text-gray-600 mt-2">Highest growth segment</p>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-semibold text-gray-700">Industrial</span>
+                  <span class="text-sm font-bold text-purple-600">↗ +18%</span>
+                </div>
+                <div class="h-32 flex items-end space-x-1">
+                  <div class="flex-1 bg-purple-300 rounded-t" style="height: 55%"></div>
+                  <div class="flex-1 bg-purple-300 rounded-t" style="height: 58%"></div>
+                  <div class="flex-1 bg-purple-400 rounded-t" style="height: 62%"></div>
+                  <div class="flex-1 bg-purple-400 rounded-t" style="height: 70%"></div>
+                  <div class="flex-1 bg-purple-500 rounded-t" style="height: 82%"></div>
+                  <div class="flex-1 bg-purple-600 rounded-t" style="height: 100%"></div>
+                </div>
+                <p class="text-xs text-gray-600 mt-2">Steady growth, high value</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Key Insights -->
+          <div class="grid grid-cols-2 gap-6">
+            <div
+              class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border-2 border-green-200 p-6"
+            >
+              <h3 class="font-bold text-gray-900 text-lg mb-4">📊 Positive Trends Identified</h3>
+              <div class="space-y-3">
+                <div class="flex items-start space-x-3 p-3 bg-white rounded-lg">
+                  <span class="text-xl">✅</span>
+                  <div>
+                    <p class="font-semibold text-gray-900 text-sm">Revenue Acceleration</p>
+                    <p class="text-xs text-gray-600">
+                      Monthly revenue growth accelerated from 12% to 22% in Q4
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3 p-3 bg-white rounded-lg">
+                  <span class="text-xl">✅</span>
+                  <div>
+                    <p class="font-semibold text-gray-900 text-sm">Customer Retention</p>
+                    <p class="text-xs text-gray-600">
+                      Retention rate improved to 94%, up from 88% last year
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3 p-3 bg-white rounded-lg">
+                  <span class="text-xl">✅</span>
+                  <div>
+                    <p class="font-semibold text-gray-900 text-sm">Market Expansion</p>
+                    <p class="text-xs text-gray-600">
+                      Successfully expanded to 3 new cities with strong adoption
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3 p-3 bg-white rounded-lg">
+                  <span class="text-xl">✅</span>
+                  <div>
+                    <p class="font-semibold text-gray-900 text-sm">Operational Efficiency</p>
+                    <p class="text-xs text-gray-600">
+                      Cost per project reduced by 15% while maintaining quality
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl border-2 border-yellow-200 p-6"
+            >
+              <h3 class="font-bold text-gray-900 text-lg mb-4">
+                ⚡ Action Items from Trend Analysis
+              </h3>
+              <div class="space-y-3">
+                <div
+                  class="flex items-start space-x-3 p-3 bg-white rounded-lg border-l-4 border-yellow-500"
+                >
+                  <span class="text-xl">💡</span>
+                  <div>
+                    <p class="font-semibold text-gray-900 text-sm">
+                      Capitalize on Commercial Growth
+                    </p>
+                    <p class="text-xs text-gray-600">
+                      Allocate 30% more resources to commercial segment to maximize ROI
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="flex items-start space-x-3 p-3 bg-white rounded-lg border-l-4 border-orange-500"
+                >
+                  <span class="text-xl">💡</span>
+                  <div>
+                    <p class="font-semibold text-gray-900 text-sm">Seasonal Planning</p>
+                    <p class="text-xs text-gray-600">
+                      Prepare for Q4 peak season with inventory and workforce planning
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="flex items-start space-x-3 p-3 bg-white rounded-lg border-l-4 border-red-500"
+                >
+                  <span class="text-xl">💡</span>
+                  <div>
+                    <p class="font-semibold text-gray-900 text-sm">Address Industrial Segment</p>
+                    <p class="text-xs text-gray-600">
+                      Investigate slower growth in industrial - potential pricing issue
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="flex items-start space-x-3 p-3 bg-white rounded-lg border-l-4 border-blue-500"
+                >
+                  <span class="text-xl">💡</span>
+                  <div>
+                    <p class="font-semibold text-gray-900 text-sm">Digital Marketing Focus</p>
+                    <p class="text-xs text-gray-600">
+                      Digital leads convert 42% faster - increase digital spend by 40%
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
-</body>
+  </body>
 </html>
-

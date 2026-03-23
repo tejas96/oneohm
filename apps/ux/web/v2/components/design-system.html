@@ -1,484 +1,874 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OneOhm Design System</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: { DEFAULT: '#76c044', dark: '#5ea031', light: '#a3d977' },
-                        secondary: { DEFAULT: '#1a1a2e', dark: '#0f0f1a' },
-                    },
-                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: { DEFAULT: '#76c044', dark: '#5ea031', light: '#a3d977' },
+              secondary: { DEFAULT: '#1a1a2e', dark: '#0f0f1a' },
+            },
+            fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          },
+        },
+      };
     </script>
     <style>
-        .component-card:hover { transform: translateY(-2px); }
+      .component-card:hover {
+        transform: translateY(-2px);
+      }
     </style>
-</head>
-<body class="bg-gray-50 min-h-screen font-sans text-[13px]">
+  </head>
+  <body class="bg-gray-50 min-h-screen font-sans text-[13px]">
     <!-- Header -->
     <header class="bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-5 py-2">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 bg-gradient-to-br from-primary to-primary-dark rounded-lg flex items-center justify-center shadow-sm shadow-primary/20">
-                            <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h1 class="text-base font-semibold text-gray-900">OneOhm</h1>
-                            <p class="text-[11px] text-gray-400">Design System v2.1 - Refined</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="flex items-center gap-3">
-                    <a href="../dashboard/index.html" class="text-[13px] text-gray-500 hover:text-primary flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                        </svg>
-                        Back to App
-                    </a>
-                </div>
+      <div class="max-w-7xl mx-auto px-5 py-2">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2.5">
+              <div
+                class="w-8 h-8 bg-gradient-to-br from-primary to-primary-dark rounded-lg flex items-center justify-center shadow-sm shadow-primary/20"
+              >
+                <svg
+                  class="w-4 h-4 text-white"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h1 class="text-base font-semibold text-gray-900">OneOhm</h1>
+                <p class="text-[11px] text-gray-400">Design System v2.1 - Refined</p>
+              </div>
             </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <a
+              href="../dashboard/index.html"
+              class="text-[13px] text-gray-500 hover:text-primary flex items-center gap-1.5"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                />
+              </svg>
+              Back to App
+            </a>
+          </div>
         </div>
+      </div>
     </header>
 
     <main class="max-w-7xl mx-auto px-5 py-6">
-        <!-- Hero Section -->
-        <div class="text-center mb-8">
-            <h2 class="text-2xl font-semibold text-gray-900 mb-2">UI Component Library</h2>
-            <p class="text-gray-500 text-[13px] max-w-2xl mx-auto">A refined collection of reusable components following Shadcn UI patterns. Built with 13px base typography and compact spacing for data-dense applications.</p>
+      <!-- Hero Section -->
+      <div class="text-center mb-8">
+        <h2 class="text-2xl font-semibold text-gray-900 mb-2">UI Component Library</h2>
+        <p class="text-gray-500 text-[13px] max-w-2xl mx-auto">
+          A refined collection of reusable components following Shadcn UI patterns. Built with 13px
+          base typography and compact spacing for data-dense applications.
+        </p>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        <div class="bg-white rounded-lg border border-gray-100 p-3 text-center">
+          <div class="text-2xl font-semibold text-primary">22</div>
+          <div class="text-xs text-gray-500">Components</div>
         </div>
-
-        <!-- Quick Stats -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-            <div class="bg-white rounded-lg border border-gray-100 p-3 text-center">
-                <div class="text-2xl font-semibold text-primary">22</div>
-                <div class="text-xs text-gray-500">Components</div>
-            </div>
-            <div class="bg-white rounded-lg border border-gray-100 p-3 text-center">
-                <div class="text-2xl font-semibold text-gray-800">13px</div>
-                <div class="text-xs text-gray-500">Base Font</div>
-            </div>
-            <div class="bg-white rounded-lg border border-gray-100 p-3 text-center">
-                <div class="text-2xl font-semibold text-blue-600">A11y</div>
-                <div class="text-xs text-gray-500">Accessible</div>
-            </div>
-            <div class="bg-white rounded-lg border border-gray-100 p-3 text-center">
-                <div class="text-2xl font-semibold text-purple-600">Compact</div>
-                <div class="text-xs text-gray-500">Density</div>
-            </div>
+        <div class="bg-white rounded-lg border border-gray-100 p-3 text-center">
+          <div class="text-2xl font-semibold text-gray-800">13px</div>
+          <div class="text-xs text-gray-500">Base Font</div>
         </div>
+        <div class="bg-white rounded-lg border border-gray-100 p-3 text-center">
+          <div class="text-2xl font-semibold text-blue-600">A11y</div>
+          <div class="text-xs text-gray-500">Accessible</div>
+        </div>
+        <div class="bg-white rounded-lg border border-gray-100 p-3 text-center">
+          <div class="text-2xl font-semibold text-purple-600">Compact</div>
+          <div class="text-xs text-gray-500">Density</div>
+        </div>
+      </div>
 
-        <!-- Foundation Section -->
-        <section class="mb-8">
-            <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <span class="w-6 h-6 bg-gray-100 rounded flex items-center justify-center">
-                    <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
-                    </svg>
-                </span>
-                Foundation
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <a href="theme.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-md hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-2.5 mb-2">
-                        <div class="w-8 h-8 bg-gradient-to-br from-primary/20 to-blue-500/20 rounded-md flex items-center justify-center">
-                            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-gray-900">Theme</h4>
-                            <p class="text-xs text-gray-500">Design tokens</p>
-                        </div>
-                    </div>
-                    <p class="text-sm text-gray-500">Colors, typography, spacing, shadows, and border radius variables.</p>
-                </a>
-
-                <a href="icons.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-10 h-10 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-gray-900">Icons</h4>
-                            <p class="text-xs text-gray-500">SVG icon set</p>
-                        </div>
-                    </div>
-                    <p class="text-sm text-gray-500">Complete icon library organized by category with copy-paste code.</p>
-                </a>
-
-                <a href="ui.js" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all" target="_blank">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-10 h-10 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-gray-900">UI.js</h4>
-                            <p class="text-xs text-gray-500">JavaScript API</p>
-                        </div>
-                    </div>
-                    <p class="text-sm text-gray-500">Interactive JavaScript API for toasts, modals, dropdowns, and more.</p>
-                </a>
+      <!-- Foundation Section -->
+      <section class="mb-8">
+        <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <span class="w-6 h-6 bg-gray-100 rounded flex items-center justify-center">
+            <svg
+              class="w-3.5 h-3.5 text-gray-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+              />
+            </svg>
+          </span>
+          Foundation
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <a
+            href="theme.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-md hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-2.5 mb-2">
+              <div
+                class="w-8 h-8 bg-gradient-to-br from-primary/20 to-blue-500/20 rounded-md flex items-center justify-center"
+              >
+                <svg
+                  class="w-4 h-4 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-semibold text-gray-900">Theme</h4>
+                <p class="text-xs text-gray-500">Design tokens</p>
+              </div>
             </div>
-        </section>
-
-        <!-- Form Components -->
-        <section class="mb-12">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <span class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                </span>
-                Form Components
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <a href="buttons.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Buttons</h4>
-                            <p class="text-xs text-gray-500">6 variants, 3 sizes</p>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="forms.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Form Elements</h4>
-                            <p class="text-xs text-gray-500">Inputs, selects, toggles</p>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="search.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Search</h4>
-                            <p class="text-xs text-gray-500">Search bars, filters</p>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="dropdown.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Dropdown</h4>
-                            <p class="text-xs text-gray-500">Menus, actions</p>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </section>
-
-        <!-- Data Display -->
-        <section class="mb-12">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <span class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-                    </svg>
-                </span>
-                Data Display
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <a href="cards.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Cards</h4>
-                            <p class="text-xs text-gray-500">Containers, layouts</p>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="tables.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-cyan-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Tables</h4>
-                            <p class="text-xs text-gray-500">Data tables, lists</p>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="badges.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-pink-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Badges</h4>
-                            <p class="text-xs text-gray-500">Status, tags, labels</p>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="avatars.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Avatars</h4>
-                            <p class="text-xs text-gray-500">User images, initials</p>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="pagination.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Pagination</h4>
-                            <p class="text-xs text-gray-500">Page navigation</p>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="empty-states.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Empty States</h4>
-                            <p class="text-xs text-gray-500">No data, errors</p>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </section>
-
-        <!-- Feedback -->
-        <section class="mb-12">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <span class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                    <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                    </svg>
-                </span>
-                Feedback & Overlays
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <a href="modals.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Modals</h4>
-                            <p class="text-xs text-gray-500">Dialogs, confirmations</p>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="toasts.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Toasts</h4>
-                            <p class="text-xs text-gray-500">Notifications</p>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="alerts.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Alerts</h4>
-                            <p class="text-xs text-gray-500">Inline banners</p>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="tooltips.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Tooltips</h4>
-                            <p class="text-xs text-gray-500">Hover hints</p>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="loading.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-teal-600 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Loading</h4>
-                            <p class="text-xs text-gray-500">Spinners, skeletons</p>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </section>
-
-        <!-- Navigation -->
-        <section class="mb-12">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <span class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                    </svg>
-                </span>
-                Navigation & Layout
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <a href="tabs.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Tabs</h4>
-                            <p class="text-xs text-gray-500">Tab navigation</p>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="breadcrumbs.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Breadcrumbs</h4>
-                            <p class="text-xs text-gray-500">Path navigation</p>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="stepper.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Stepper</h4>
-                            <p class="text-xs text-gray-500">Multi-step wizard</p>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="progress.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Progress</h4>
-                            <p class="text-xs text-gray-500">Bars, indicators</p>
-                        </div>
-                    </div>
-                </a>
-
-                <a href="accordion.html" class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 bg-lime-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 text-lime-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-gray-900">Accordion</h4>
-                            <p class="text-xs text-gray-500">Collapsible sections</p>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </section>
-
-        <!-- Footer -->
-        <footer class="text-center py-8 border-t border-gray-100">
             <p class="text-sm text-gray-500">
-                OneOhm Design System • Built with 
-                <span class="text-primary">♥</span> 
-                using Tailwind CSS
+              Colors, typography, spacing, shadows, and border radius variables.
             </p>
-            <p class="text-xs text-gray-400 mt-2">Version 2.0 • Last updated: February 2026</p>
-        </footer>
+          </a>
+
+          <a
+            href="icons.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3 mb-3">
+              <div
+                class="w-10 h-10 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  class="w-5 h-5 text-purple-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-semibold text-gray-900">Icons</h4>
+                <p class="text-xs text-gray-500">SVG icon set</p>
+              </div>
+            </div>
+            <p class="text-sm text-gray-500">
+              Complete icon library organized by category with copy-paste code.
+            </p>
+          </a>
+
+          <a
+            href="ui.js"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+            target="_blank"
+          >
+            <div class="flex items-center gap-3 mb-3">
+              <div
+                class="w-10 h-10 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-lg flex items-center justify-center"
+              >
+                <svg
+                  class="w-5 h-5 text-yellow-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-semibold text-gray-900">UI.js</h4>
+                <p class="text-xs text-gray-500">JavaScript API</p>
+              </div>
+            </div>
+            <p class="text-sm text-gray-500">
+              Interactive JavaScript API for toasts, modals, dropdowns, and more.
+            </p>
+          </a>
+        </div>
+      </section>
+
+      <!-- Form Components -->
+      <section class="mb-12">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <span class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+            <svg
+              class="w-4 h-4 text-blue-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+          </span>
+          Form Components
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <a
+            href="buttons.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Buttons</h4>
+                <p class="text-xs text-gray-500">6 variants, 3 sizes</p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="forms.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Form Elements</h4>
+                <p class="text-xs text-gray-500">Inputs, selects, toggles</p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="search.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-amber-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Search</h4>
+                <p class="text-xs text-gray-500">Search bars, filters</p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="dropdown.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-purple-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Dropdown</h4>
+                <p class="text-xs text-gray-500">Menus, actions</p>
+              </div>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- Data Display -->
+      <section class="mb-12">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <span class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+            <svg
+              class="w-4 h-4 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 10h16M4 14h16M4 18h16"
+              />
+            </svg>
+          </span>
+          Data Display
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <a
+            href="cards.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-indigo-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Cards</h4>
+                <p class="text-xs text-gray-500">Containers, layouts</p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="tables.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-cyan-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-cyan-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Tables</h4>
+                <p class="text-xs text-gray-500">Data tables, lists</p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="badges.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-pink-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-pink-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Badges</h4>
+                <p class="text-xs text-gray-500">Status, tags, labels</p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="avatars.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-rose-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-rose-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Avatars</h4>
+                <p class="text-xs text-gray-500">User images, initials</p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="pagination.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-gray-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Pagination</h4>
+                <p class="text-xs text-gray-500">Page navigation</p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="empty-states.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-gray-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Empty States</h4>
+                <p class="text-xs text-gray-500">No data, errors</p>
+              </div>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- Feedback -->
+      <section class="mb-12">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <span class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+            <svg
+              class="w-4 h-4 text-amber-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              />
+            </svg>
+          </span>
+          Feedback & Overlays
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <a
+            href="modals.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-violet-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Modals</h4>
+                <p class="text-xs text-gray-500">Dialogs, confirmations</p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="toasts.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Toasts</h4>
+                <p class="text-xs text-gray-500">Notifications</p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="alerts.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Alerts</h4>
+                <p class="text-xs text-gray-500">Inline banners</p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="tooltips.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-gray-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Tooltips</h4>
+                <p class="text-xs text-gray-500">Hover hints</p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="loading.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-teal-600 animate-spin"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Loading</h4>
+                <p class="text-xs text-gray-500">Spinners, skeletons</p>
+              </div>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- Navigation -->
+      <section class="mb-12">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <span class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+            <svg
+              class="w-4 h-4 text-purple-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </span>
+          Navigation & Layout
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <a
+            href="tabs.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-indigo-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 6h16M4 10h16M4 14h16M4 18h16"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Tabs</h4>
+                <p class="text-xs text-gray-500">Tab navigation</p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="breadcrumbs.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-orange-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Breadcrumbs</h4>
+                <p class="text-xs text-gray-500">Path navigation</p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="stepper.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-emerald-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Stepper</h4>
+                <p class="text-xs text-gray-500">Multi-step wizard</p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="progress.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-sky-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-sky-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Progress</h4>
+                <p class="text-xs text-gray-500">Bars, indicators</p>
+              </div>
+            </div>
+          </a>
+
+          <a
+            href="accordion.html"
+            class="component-card bg-white rounded-lg border border-gray-100 p-4 hover:shadow-lg hover:border-primary/30 transition-all"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-lime-100 rounded-lg flex items-center justify-center">
+                <svg
+                  class="w-4 h-4 text-lime-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-900">Accordion</h4>
+                <p class="text-xs text-gray-500">Collapsible sections</p>
+              </div>
+            </div>
+          </a>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="text-center py-8 border-t border-gray-100">
+        <p class="text-sm text-gray-500">
+          OneOhm Design System • Built with
+          <span class="text-primary">♥</span>
+          using Tailwind CSS
+        </p>
+        <p class="text-xs text-gray-400 mt-2">Version 2.0 • Last updated: February 2026</p>
+      </footer>
     </main>
-</body>
+  </body>
 </html>

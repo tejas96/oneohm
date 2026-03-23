@@ -1,208 +1,307 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Subsidy Tracker - OneOhm Solar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#76c044',
-                        secondary: '#0d74b8',
-                        tagline: '#025580',
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#76c044',
+              secondary: '#0d74b8',
+              tagline: '#025580',
+            },
+          },
+        },
+      };
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+      body {
+        font-family: 'Inter', sans-serif;
+      }
     </style>
-</head>
-<body class="bg-gray-50">
+  </head>
+  <body class="bg-gray-50">
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl pb-20">
-        <div class="bg-gradient-to-r from-primary via-green-500 to-secondary px-6 py-6 pt-12">
-            <a href="dashboard-main.html" class="inline-flex items-center text-white mb-6">
+      <div class="bg-gradient-to-r from-primary via-green-500 to-secondary px-6 py-6 pt-12">
+        <a href="dashboard-main.html" class="inline-flex items-center text-white mb-6">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            ></path>
+          </svg>
+        </a>
+        <h1 class="text-3xl font-bold text-white mb-2">Subsidy Tracker</h1>
+        <p class="text-green-100">Track your government subsidy</p>
+      </div>
+
+      <!-- Subsidy Summary -->
+      <div class="px-6 -mt-6 mb-6">
+        <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-gray-600">TOTAL SUBSIDY AMOUNT</h3>
+            <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full"
+              >PM SURYA GHAR</span
+            >
+          </div>
+          <div class="text-center mb-4">
+            <p class="text-4xl font-bold text-green-600 mb-2">₹78,000</p>
+            <p class="text-sm text-gray-600">Based on 10 kW system capacity</p>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="text-center p-3 bg-gray-50 rounded-lg">
+              <p class="text-xs text-gray-500 mb-1">System Cost</p>
+              <p class="font-bold text-gray-900">₹5,45,000</p>
+            </div>
+            <div class="text-center p-3 bg-green-50 rounded-lg">
+              <p class="text-xs text-gray-500 mb-1">After Subsidy</p>
+              <p class="font-bold text-green-600">₹4,67,000</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-6 space-y-6">
+        <!-- Application Status -->
+        <div>
+          <h3 class="font-bold text-gray-900 mb-4">Application Status</h3>
+          <div class="space-y-4">
+            <!-- Step 1 - Completed -->
+            <div class="flex items-start space-x-4">
+              <div
+                class="flex-shrink-0 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white"
+              >
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  ></path>
                 </svg>
-            </a>
-            <h1 class="text-3xl font-bold text-white mb-2">Subsidy Tracker</h1>
-            <p class="text-green-100">Track your government subsidy</p>
-        </div>
-
-        <!-- Subsidy Summary -->
-        <div class="px-6 -mt-6 mb-6">
-            <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-sm font-semibold text-gray-600">TOTAL SUBSIDY AMOUNT</h3>
-                    <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">PM SURYA GHAR</span>
-                </div>
-                <div class="text-center mb-4">
-                    <p class="text-4xl font-bold text-green-600 mb-2">₹78,000</p>
-                    <p class="text-sm text-gray-600">Based on 10 kW system capacity</p>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="text-center p-3 bg-gray-50 rounded-lg">
-                        <p class="text-xs text-gray-500 mb-1">System Cost</p>
-                        <p class="font-bold text-gray-900">₹5,45,000</p>
-                    </div>
-                    <div class="text-center p-3 bg-green-50 rounded-lg">
-                        <p class="text-xs text-gray-500 mb-1">After Subsidy</p>
-                        <p class="font-bold text-green-600">₹4,67,000</p>
-                    </div>
-                </div>
+              </div>
+              <div class="flex-1 pb-8 border-l-2 border-green-500 pl-6 ml-5 -mt-2">
+                <h4 class="font-bold text-gray-900 mb-1">Application Submitted</h4>
+                <p class="text-sm text-gray-600 mb-2">
+                  Your subsidy application has been submitted successfully
+                </p>
+                <p class="text-xs text-gray-500">Completed on Oct 12, 2025</p>
+              </div>
             </div>
+
+            <!-- Step 2 - Completed -->
+            <div class="flex items-start space-x-4">
+              <div
+                class="flex-shrink-0 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white"
+              >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  ></path>
+                </svg>
+              </div>
+              <div class="flex-1 pb-8 border-l-2 border-green-500 pl-6 ml-5 -mt-2">
+                <h4 class="font-bold text-gray-900 mb-1">Document Verification</h4>
+                <p class="text-sm text-gray-600 mb-2">All documents verified and approved</p>
+                <p class="text-xs text-gray-500">Completed on Oct 18, 2025</p>
+              </div>
+            </div>
+
+            <!-- Step 3 - In Progress -->
+            <div class="flex items-start space-x-4">
+              <div
+                class="flex-shrink-0 w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white"
+              >
+                <svg
+                  class="w-6 h-6 animate-spin"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  ></path>
+                </svg>
+              </div>
+              <div class="flex-1 pb-8 border-l-2 border-gray-300 pl-6 ml-5 -mt-2">
+                <h4 class="font-bold text-gray-900 mb-1">Installation Inspection</h4>
+                <p class="text-sm text-gray-600 mb-2">
+                  Physical inspection of installed system in progress
+                </p>
+                <p class="text-xs text-primary font-semibold">In Progress</p>
+              </div>
+            </div>
+
+            <!-- Step 4 - Pending -->
+            <div class="flex items-start space-x-4">
+              <div
+                class="flex-shrink-0 w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center text-white"
+              >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+              </div>
+              <div class="flex-1 pb-8 border-l-2 border-gray-300 pl-6 ml-5 -mt-2">
+                <h4 class="font-bold text-gray-400 mb-1">Final Approval</h4>
+                <p class="text-sm text-gray-500 mb-2">Awaiting final approval from authorities</p>
+                <p class="text-xs text-gray-400">Pending</p>
+              </div>
+            </div>
+
+            <!-- Step 5 - Pending -->
+            <div class="flex items-start space-x-4">
+              <div
+                class="flex-shrink-0 w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center text-white"
+              >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                  ></path>
+                </svg>
+              </div>
+              <div class="flex-1 pl-6 ml-5 -mt-2">
+                <h4 class="font-bold text-gray-400 mb-1">Subsidy Disbursement</h4>
+                <p class="text-sm text-gray-500 mb-2">
+                  Amount will be credited to your bank account
+                </p>
+                <p class="text-xs text-gray-400">Pending</p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="px-6 space-y-6">
-            <!-- Application Status -->
+        <!-- Documents Uploaded -->
+        <div>
+          <h3 class="font-bold text-gray-900 mb-4">Uploaded Documents</h3>
+          <div class="space-y-3">
+            <div
+              class="flex items-center justify-between p-4 bg-white border-2 border-gray-200 rounded-2xl"
+            >
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <svg
+                    class="w-5 h-5 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    ></path>
+                  </svg>
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-900 text-sm">Aadhar Card</p>
+                  <p class="text-xs text-gray-500">Verified</p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="flex items-center justify-between p-4 bg-white border-2 border-gray-200 rounded-2xl"
+            >
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <svg
+                    class="w-5 h-5 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    ></path>
+                  </svg>
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-900 text-sm">Electricity Bill</p>
+                  <p class="text-xs text-gray-500">Verified</p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="flex items-center justify-between p-4 bg-white border-2 border-gray-200 rounded-2xl"
+            >
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <svg
+                    class="w-5 h-5 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    ></path>
+                  </svg>
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-900 text-sm">Bank Account Details</p>
+                  <p class="text-xs text-gray-500">Verified</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info Box -->
+        <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+          <div class="flex items-start space-x-3">
+            <svg class="w-5 h-5 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clip-rule="evenodd"
+              ></path>
+            </svg>
             <div>
-                <h3 class="font-bold text-gray-900 mb-4">Application Status</h3>
-                <div class="space-y-4">
-                    <!-- Step 1 - Completed -->
-                    <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                        </div>
-                        <div class="flex-1 pb-8 border-l-2 border-green-500 pl-6 ml-5 -mt-2">
-                            <h4 class="font-bold text-gray-900 mb-1">Application Submitted</h4>
-                            <p class="text-sm text-gray-600 mb-2">Your subsidy application has been submitted successfully</p>
-                            <p class="text-xs text-gray-500">Completed on Oct 12, 2025</p>
-                        </div>
-                    </div>
-
-                    <!-- Step 2 - Completed -->
-                    <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                        </div>
-                        <div class="flex-1 pb-8 border-l-2 border-green-500 pl-6 ml-5 -mt-2">
-                            <h4 class="font-bold text-gray-900 mb-1">Document Verification</h4>
-                            <p class="text-sm text-gray-600 mb-2">All documents verified and approved</p>
-                            <p class="text-xs text-gray-500">Completed on Oct 18, 2025</p>
-                        </div>
-                    </div>
-
-                    <!-- Step 3 - In Progress -->
-                    <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white">
-                            <svg class="w-6 h-6 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                            </svg>
-                        </div>
-                        <div class="flex-1 pb-8 border-l-2 border-gray-300 pl-6 ml-5 -mt-2">
-                            <h4 class="font-bold text-gray-900 mb-1">Installation Inspection</h4>
-                            <p class="text-sm text-gray-600 mb-2">Physical inspection of installed system in progress</p>
-                            <p class="text-xs text-primary font-semibold">In Progress</p>
-                        </div>
-                    </div>
-
-                    <!-- Step 4 - Pending -->
-                    <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center text-white">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                        <div class="flex-1 pb-8 border-l-2 border-gray-300 pl-6 ml-5 -mt-2">
-                            <h4 class="font-bold text-gray-400 mb-1">Final Approval</h4>
-                            <p class="text-sm text-gray-500 mb-2">Awaiting final approval from authorities</p>
-                            <p class="text-xs text-gray-400">Pending</p>
-                        </div>
-                    </div>
-
-                    <!-- Step 5 - Pending -->
-                    <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0 w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center text-white">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                            </svg>
-                        </div>
-                        <div class="flex-1 pl-6 ml-5 -mt-2">
-                            <h4 class="font-bold text-gray-400 mb-1">Subsidy Disbursement</h4>
-                            <p class="text-sm text-gray-500 mb-2">Amount will be credited to your bank account</p>
-                            <p class="text-xs text-gray-400">Pending</p>
-                        </div>
-                    </div>
-                </div>
+              <p class="text-sm font-semibold text-blue-900 mb-1">Estimated Timeline</p>
+              <p class="text-xs text-blue-800">
+                The subsidy amount will be credited within 60-90 days after final approval. You'll
+                receive SMS and email notifications for each update.
+              </p>
             </div>
-
-            <!-- Documents Uploaded -->
-            <div>
-                <h3 class="font-bold text-gray-900 mb-4">Uploaded Documents</h3>
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between p-4 bg-white border-2 border-gray-200 rounded-2xl">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <p class="font-semibold text-gray-900 text-sm">Aadhar Card</p>
-                                <p class="text-xs text-gray-500">Verified</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center justify-between p-4 bg-white border-2 border-gray-200 rounded-2xl">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <p class="font-semibold text-gray-900 text-sm">Electricity Bill</p>
-                                <p class="text-xs text-gray-500">Verified</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center justify-between p-4 bg-white border-2 border-gray-200 rounded-2xl">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <p class="font-semibold text-gray-900 text-sm">Bank Account Details</p>
-                                <p class="text-xs text-gray-500">Verified</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Info Box -->
-            <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4">
-                <div class="flex items-start space-x-3">
-                    <svg class="w-5 h-5 text-blue-600 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                    </svg>
-                    <div>
-                        <p class="text-sm font-semibold text-blue-900 mb-1">Estimated Timeline</p>
-                        <p class="text-xs text-blue-800">The subsidy amount will be credited within 60-90 days after final approval. You'll receive SMS and email notifications for each update.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Help Button -->
-            <button class="w-full py-4 bg-white border-2 border-gray-200 text-gray-700 rounded-2xl font-bold hover:border-primary transition-all">
-                Need Help? Contact Support
-            </button>
+          </div>
         </div>
+
+        <!-- Help Button -->
+        <button
+          class="w-full py-4 bg-white border-2 border-gray-200 text-gray-700 rounded-2xl font-bold hover:border-primary transition-all"
+        >
+          Need Help? Contact Support
+        </button>
+      </div>
     </div>
-</body>
+  </body>
 </html>
-

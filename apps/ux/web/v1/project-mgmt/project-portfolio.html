@@ -1,386 +1,514 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Project Portfolio - OneOhm Solar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#F97316',
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#F97316',
+            },
+          },
+        },
+      };
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+      body {
+        font-family: 'Inter', sans-serif;
+      }
     </style>
-</head>
-<body class="bg-gray-50">
+  </head>
+  <body class="bg-gray-50">
     <div class="flex h-screen">
-        <!-- Sidebar -->
-        <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
-            <div class="p-6 border-b border-gray-700">
-                <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
-                <p class="text-gray-400 text-sm mt-1">Project Portfolio</p>
-            </div>
-            
-            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-                <a href="../admin/admin-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                    </svg>
-                    <span>Dashboard</span>
-                </a>
-                <a href="project-portfolio.html" class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"></path>
-                    </svg>
-                    <span>Project Portfolio</span>
-                </a>
-                <a href="advanced-gantt.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                    <span>Advanced Gantt</span>
-                </a>
-                <a href="critical-path.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                    </svg>
-                    <span>Critical Path</span>
-                </a>
-                <a href="resource-optimization.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-                    <span>Resource Optimization</span>
-                </a>
-                <a href="risk-management.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                    </svg>
-                    <span>Risk Management</span>
-                </a>
-            </nav>
+      <!-- Sidebar -->
+      <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
+        <div class="p-6 border-b border-gray-700">
+          <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
+          <p class="text-gray-400 text-sm mt-1">Project Portfolio</p>
+        </div>
 
-            <div class="p-4 border-t border-gray-700">
-                <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
-                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">SA</div>
-                    <div class="flex-1 min-w-0">
-                        <p class="font-semibold text-sm truncate">Super Admin</p>
-                        <p class="text-xs text-gray-400 truncate">Administrator</p>
-                    </div>
-                </div>
+        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+          <a
+            href="../admin/admin-dashboard.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              ></path>
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a
+            href="project-portfolio.html"
+            class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold"
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"
+              ></path>
+            </svg>
+            <span>Project Portfolio</span>
+          </a>
+          <a
+            href="advanced-gantt.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              ></path>
+            </svg>
+            <span>Advanced Gantt</span>
+          </a>
+          <a
+            href="critical-path.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              ></path>
+            </svg>
+            <span>Critical Path</span>
+          </a>
+          <a
+            href="resource-optimization.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              ></path>
+            </svg>
+            <span>Resource Optimization</span>
+          </a>
+          <a
+            href="risk-management.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              ></path>
+            </svg>
+            <span>Risk Management</span>
+          </a>
+        </nav>
+
+        <div class="p-4 border-t border-gray-700">
+          <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
+            <div
+              class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold"
+            >
+              SA
             </div>
-        </aside>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm truncate">Super Admin</p>
+              <p class="text-xs text-gray-400 truncate">Administrator</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Top Bar -->
+        <header class="bg-white border-b border-gray-200 px-8 py-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900">Project Portfolio View</h2>
+              <p class="text-sm text-gray-600">Multi-project dashboard with strategic overview</p>
+            </div>
+            <div class="flex items-center space-x-3">
+              <select class="px-4 py-2 border border-gray-300 rounded-lg">
+                <option>All Projects</option>
+                <option>Active Only</option>
+                <option>Critical Projects</option>
+              </select>
+              <button
+                class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600"
+              >
+                Export Portfolio Report
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <!-- Portfolio KPIs -->
+        <div class="bg-white border-b border-gray-200 px-8 py-6">
+          <div class="grid grid-cols-6 gap-4">
+            <div
+              class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 border-blue-200"
+            >
+              <p class="text-sm text-gray-600 mb-1">Total Projects</p>
+              <p class="text-3xl font-bold text-blue-600">156</p>
+              <p class="text-xs text-gray-600 mt-1">Active portfolio</p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200"
+            >
+              <p class="text-sm text-gray-600 mb-1">On Track</p>
+              <p class="text-3xl font-bold text-green-600">112</p>
+              <p class="text-xs text-gray-600 mt-1">72% of portfolio</p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 border-2 border-yellow-200"
+            >
+              <p class="text-sm text-gray-600 mb-1">At Risk</p>
+              <p class="text-3xl font-bold text-yellow-600">28</p>
+              <p class="text-xs text-gray-600 mt-1">Needs attention</p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-red-50 to-pink-50 rounded-xl p-4 border-2 border-red-200"
+            >
+              <p class="text-sm text-gray-600 mb-1">Delayed</p>
+              <p class="text-3xl font-bold text-red-600">16</p>
+              <p class="text-xs text-gray-600 mt-1">Critical issues</p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-4 border-2 border-purple-200"
+            >
+              <p class="text-sm text-gray-600 mb-1">Total Value</p>
+              <p class="text-3xl font-bold text-purple-600">₹42Cr</p>
+              <p class="text-xs text-gray-600 mt-1">Portfolio value</p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border-2 border-gray-300"
+            >
+              <p class="text-sm text-gray-600 mb-1">Avg Completion</p>
+              <p class="text-3xl font-bold text-gray-700">68%</p>
+              <p class="text-xs text-gray-600 mt-1">Portfolio progress</p>
+            </div>
+          </div>
+        </div>
 
         <!-- Main Content -->
-        <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Top Bar -->
-            <header class="bg-white border-b border-gray-200 px-8 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-900">Project Portfolio View</h2>
-                        <p class="text-sm text-gray-600">Multi-project dashboard with strategic overview</p>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <select class="px-4 py-2 border border-gray-300 rounded-lg">
-                            <option>All Projects</option>
-                            <option>Active Only</option>
-                            <option>Critical Projects</option>
-                        </select>
-                        <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600">Export Portfolio Report</button>
-                    </div>
-                </div>
-            </header>
+        <main class="flex-1 overflow-y-auto p-8">
+          <!-- View Toggle -->
+          <div class="flex space-x-2 mb-6">
+            <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold">
+              Grid View
+            </button>
+            <button
+              class="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50"
+            >
+              List View
+            </button>
+            <button
+              class="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50"
+            >
+              Timeline View
+            </button>
+          </div>
 
-            <!-- Portfolio KPIs -->
-            <div class="bg-white border-b border-gray-200 px-8 py-6">
-                <div class="grid grid-cols-6 gap-4">
-                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 border-blue-200">
-                        <p class="text-sm text-gray-600 mb-1">Total Projects</p>
-                        <p class="text-3xl font-bold text-blue-600">156</p>
-                        <p class="text-xs text-gray-600 mt-1">Active portfolio</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200">
-                        <p class="text-sm text-gray-600 mb-1">On Track</p>
-                        <p class="text-3xl font-bold text-green-600">112</p>
-                        <p class="text-xs text-gray-600 mt-1">72% of portfolio</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 border-2 border-yellow-200">
-                        <p class="text-sm text-gray-600 mb-1">At Risk</p>
-                        <p class="text-3xl font-bold text-yellow-600">28</p>
-                        <p class="text-xs text-gray-600 mt-1">Needs attention</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-red-50 to-pink-50 rounded-xl p-4 border-2 border-red-200">
-                        <p class="text-sm text-gray-600 mb-1">Delayed</p>
-                        <p class="text-3xl font-bold text-red-600">16</p>
-                        <p class="text-xs text-gray-600 mt-1">Critical issues</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-4 border-2 border-purple-200">
-                        <p class="text-sm text-gray-600 mb-1">Total Value</p>
-                        <p class="text-3xl font-bold text-purple-600">₹42Cr</p>
-                        <p class="text-xs text-gray-600 mt-1">Portfolio value</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border-2 border-gray-300">
-                        <p class="text-sm text-gray-600 mb-1">Avg Completion</p>
-                        <p class="text-3xl font-bold text-gray-700">68%</p>
-                        <p class="text-xs text-gray-600 mt-1">Portfolio progress</p>
-                    </div>
+          <!-- Project Cards Grid -->
+          <div class="grid grid-cols-3 gap-6">
+            <!-- Critical Project Card -->
+            <div
+              class="bg-white rounded-xl border-2 border-red-300 p-6 hover:shadow-2xl cursor-pointer transition-all"
+            >
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                  <h3 class="font-bold text-lg text-gray-900 mb-1">Commercial Plaza 50kW</h3>
+                  <p class="text-sm text-gray-600">PRJ-2024-458</p>
                 </div>
+                <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold"
+                  >🔴 DELAYED</span
+                >
+              </div>
+              <div class="grid grid-cols-2 gap-3 mb-4">
+                <div>
+                  <p class="text-xs text-gray-500">Budget</p>
+                  <p class="font-bold text-gray-900">₹42L</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500">Timeline</p>
+                  <p class="font-semibold text-red-600">45 days (5 days late)</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500">Manager</p>
+                  <p class="font-semibold text-gray-900">Rajesh Kumar</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500">Team</p>
+                  <p class="font-semibold text-gray-900">8 members</p>
+                </div>
+              </div>
+              <div class="mb-3">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-sm font-semibold text-gray-700">Progress</span>
+                  <span class="text-sm font-bold text-red-600">65%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                  <div class="bg-red-500 h-3 rounded-full" style="width: 65%"></div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between pt-3 border-t border-gray-200">
+                <span class="text-xs text-gray-500">Due: Oct 25, 2024</span>
+                <button
+                  class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700"
+                >
+                  View Details
+                </button>
+              </div>
             </div>
 
-            <!-- Main Content -->
-            <main class="flex-1 overflow-y-auto p-8">
-                <!-- View Toggle -->
-                <div class="flex space-x-2 mb-6">
-                    <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold">Grid View</button>
-                    <button class="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">List View</button>
-                    <button class="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">Timeline View</button>
+            <!-- At Risk Project Card -->
+            <div
+              class="bg-white rounded-xl border-2 border-yellow-300 p-6 hover:shadow-2xl cursor-pointer transition-all"
+            >
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                  <h3 class="font-bold text-lg text-gray-900 mb-1">Residential Villa 10kW</h3>
+                  <p class="text-sm text-gray-600">PRJ-2024-482</p>
                 </div>
-
-                <!-- Project Cards Grid -->
-                <div class="grid grid-cols-3 gap-6">
-                    <!-- Critical Project Card -->
-                    <div class="bg-white rounded-xl border-2 border-red-300 p-6 hover:shadow-2xl cursor-pointer transition-all">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex-1">
-                                <h3 class="font-bold text-lg text-gray-900 mb-1">Commercial Plaza 50kW</h3>
-                                <p class="text-sm text-gray-600">PRJ-2024-458</p>
-                            </div>
-                            <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">🔴 DELAYED</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3 mb-4">
-                            <div>
-                                <p class="text-xs text-gray-500">Budget</p>
-                                <p class="font-bold text-gray-900">₹42L</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Timeline</p>
-                                <p class="font-semibold text-red-600">45 days (5 days late)</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Manager</p>
-                                <p class="font-semibold text-gray-900">Rajesh Kumar</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Team</p>
-                                <p class="font-semibold text-gray-900">8 members</p>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-sm font-semibold text-gray-700">Progress</span>
-                                <span class="text-sm font-bold text-red-600">65%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-3">
-                                <div class="bg-red-500 h-3 rounded-full" style="width: 65%"></div>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between pt-3 border-t border-gray-200">
-                            <span class="text-xs text-gray-500">Due: Oct 25, 2024</span>
-                            <button class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700">View Details</button>
-                        </div>
-                    </div>
-
-                    <!-- At Risk Project Card -->
-                    <div class="bg-white rounded-xl border-2 border-yellow-300 p-6 hover:shadow-2xl cursor-pointer transition-all">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex-1">
-                                <h3 class="font-bold text-lg text-gray-900 mb-1">Residential Villa 10kW</h3>
-                                <p class="text-sm text-gray-600">PRJ-2024-482</p>
-                            </div>
-                            <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">🟡 AT RISK</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3 mb-4">
-                            <div>
-                                <p class="text-xs text-gray-500">Budget</p>
-                                <p class="font-bold text-gray-900">₹18L</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Timeline</p>
-                                <p class="font-semibold text-yellow-600">22 days</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Manager</p>
-                                <p class="font-semibold text-gray-900">Priya Sharma</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Team</p>
-                                <p class="font-semibold text-gray-900">5 members</p>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-sm font-semibold text-gray-700">Progress</span>
-                                <span class="text-sm font-bold text-yellow-600">42%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-3">
-                                <div class="bg-yellow-500 h-3 rounded-full" style="width: 42%"></div>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between pt-3 border-t border-gray-200">
-                            <span class="text-xs text-gray-500">Due: Nov 5, 2024</span>
-                            <button class="px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm font-semibold hover:bg-yellow-700">View Details</button>
-                        </div>
-                    </div>
-
-                    <!-- On Track Project Card -->
-                    <div class="bg-white rounded-xl border-2 border-green-300 p-6 hover:shadow-2xl cursor-pointer transition-all">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex-1">
-                                <h3 class="font-bold text-lg text-gray-900 mb-1">Industrial Unit 100kW</h3>
-                                <p class="text-sm text-gray-600">PRJ-2024-495</p>
-                            </div>
-                            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">🟢 ON TRACK</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3 mb-4">
-                            <div>
-                                <p class="text-xs text-gray-500">Budget</p>
-                                <p class="font-bold text-gray-900">₹85L</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Timeline</p>
-                                <p class="font-semibold text-green-600">35 days</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Manager</p>
-                                <p class="font-semibold text-gray-900">Amit Singh</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Team</p>
-                                <p class="font-semibold text-gray-900">12 members</p>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-sm font-semibold text-gray-700">Progress</span>
-                                <span class="text-sm font-bold text-green-600">78%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-3">
-                                <div class="bg-green-500 h-3 rounded-full" style="width: 78%"></div>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between pt-3 border-t border-gray-200">
-                            <span class="text-xs text-gray-500">Due: Nov 15, 2024</span>
-                            <button class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700">View Details</button>
-                        </div>
-                    </div>
-
-                    <!-- Additional Projects -->
-                    <div class="bg-white rounded-xl border-2 border-green-300 p-6 hover:shadow-2xl cursor-pointer transition-all">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex-1">
-                                <h3 class="font-bold text-lg text-gray-900 mb-1">School Building 25kW</h3>
-                                <p class="text-sm text-gray-600">PRJ-2024-501</p>
-                            </div>
-                            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">🟢 ON TRACK</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3 mb-4">
-                            <div>
-                                <p class="text-xs text-gray-500">Budget</p>
-                                <p class="font-bold text-gray-900">₹32L</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Timeline</p>
-                                <p class="font-semibold text-green-600">28 days</p>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-sm font-semibold text-gray-700">Progress</span>
-                                <span class="text-sm font-bold text-green-600">52%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-3">
-                                <div class="bg-green-500 h-3 rounded-full" style="width: 52%"></div>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between pt-3 border-t border-gray-200">
-                            <span class="text-xs text-gray-500">Due: Nov 20, 2024</span>
-                            <button class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700">View Details</button>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-xl border-2 border-blue-300 p-6 hover:shadow-2xl cursor-pointer transition-all">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex-1">
-                                <h3 class="font-bold text-lg text-gray-900 mb-1">Apartment Complex 75kW</h3>
-                                <p class="text-sm text-gray-600">PRJ-2024-508</p>
-                            </div>
-                            <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">🔵 PLANNING</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3 mb-4">
-                            <div>
-                                <p class="text-xs text-gray-500">Budget</p>
-                                <p class="font-bold text-gray-900">₹68L</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Timeline</p>
-                                <p class="font-semibold text-blue-600">42 days</p>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-sm font-semibold text-gray-700">Progress</span>
-                                <span class="text-sm font-bold text-blue-600">12%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-3">
-                                <div class="bg-blue-500 h-3 rounded-full" style="width: 12%"></div>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between pt-3 border-t border-gray-200">
-                            <span class="text-xs text-gray-500">Due: Dec 8, 2024</span>
-                            <button class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700">View Details</button>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-xl border-2 border-green-300 p-6 hover:shadow-2xl cursor-pointer transition-all">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex-1">
-                                <h3 class="font-bold text-lg text-gray-900 mb-1">Hospital Wing 150kW</h3>
-                                <p class="text-sm text-gray-600">PRJ-2024-512</p>
-                            </div>
-                            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">🟢 ON TRACK</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3 mb-4">
-                            <div>
-                                <p class="text-xs text-gray-500">Budget</p>
-                                <p class="font-bold text-gray-900">₹1.2Cr</p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-500">Timeline</p>
-                                <p class="font-semibold text-green-600">52 days</p>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-sm font-semibold text-gray-700">Progress</span>
-                                <span class="text-sm font-bold text-green-600">85%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-3">
-                                <div class="bg-green-500 h-3 rounded-full" style="width: 85%"></div>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between pt-3 border-t border-gray-200">
-                            <span class="text-xs text-gray-500">Due: Nov 28, 2024</span>
-                            <button class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700">View Details</button>
-                        </div>
-                    </div>
+                <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold"
+                  >🟡 AT RISK</span
+                >
+              </div>
+              <div class="grid grid-cols-2 gap-3 mb-4">
+                <div>
+                  <p class="text-xs text-gray-500">Budget</p>
+                  <p class="font-bold text-gray-900">₹18L</p>
                 </div>
-
-                <!-- Load More -->
-                <div class="mt-8 text-center">
-                    <button class="px-8 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">Load More Projects (150 remaining)</button>
+                <div>
+                  <p class="text-xs text-gray-500">Timeline</p>
+                  <p class="font-semibold text-yellow-600">22 days</p>
                 </div>
-            </main>
-        </div>
+                <div>
+                  <p class="text-xs text-gray-500">Manager</p>
+                  <p class="font-semibold text-gray-900">Priya Sharma</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500">Team</p>
+                  <p class="font-semibold text-gray-900">5 members</p>
+                </div>
+              </div>
+              <div class="mb-3">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-sm font-semibold text-gray-700">Progress</span>
+                  <span class="text-sm font-bold text-yellow-600">42%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                  <div class="bg-yellow-500 h-3 rounded-full" style="width: 42%"></div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between pt-3 border-t border-gray-200">
+                <span class="text-xs text-gray-500">Due: Nov 5, 2024</span>
+                <button
+                  class="px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm font-semibold hover:bg-yellow-700"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+
+            <!-- On Track Project Card -->
+            <div
+              class="bg-white rounded-xl border-2 border-green-300 p-6 hover:shadow-2xl cursor-pointer transition-all"
+            >
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                  <h3 class="font-bold text-lg text-gray-900 mb-1">Industrial Unit 100kW</h3>
+                  <p class="text-sm text-gray-600">PRJ-2024-495</p>
+                </div>
+                <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold"
+                  >🟢 ON TRACK</span
+                >
+              </div>
+              <div class="grid grid-cols-2 gap-3 mb-4">
+                <div>
+                  <p class="text-xs text-gray-500">Budget</p>
+                  <p class="font-bold text-gray-900">₹85L</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500">Timeline</p>
+                  <p class="font-semibold text-green-600">35 days</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500">Manager</p>
+                  <p class="font-semibold text-gray-900">Amit Singh</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500">Team</p>
+                  <p class="font-semibold text-gray-900">12 members</p>
+                </div>
+              </div>
+              <div class="mb-3">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-sm font-semibold text-gray-700">Progress</span>
+                  <span class="text-sm font-bold text-green-600">78%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                  <div class="bg-green-500 h-3 rounded-full" style="width: 78%"></div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between pt-3 border-t border-gray-200">
+                <span class="text-xs text-gray-500">Due: Nov 15, 2024</span>
+                <button
+                  class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+
+            <!-- Additional Projects -->
+            <div
+              class="bg-white rounded-xl border-2 border-green-300 p-6 hover:shadow-2xl cursor-pointer transition-all"
+            >
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                  <h3 class="font-bold text-lg text-gray-900 mb-1">School Building 25kW</h3>
+                  <p class="text-sm text-gray-600">PRJ-2024-501</p>
+                </div>
+                <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold"
+                  >🟢 ON TRACK</span
+                >
+              </div>
+              <div class="grid grid-cols-2 gap-3 mb-4">
+                <div>
+                  <p class="text-xs text-gray-500">Budget</p>
+                  <p class="font-bold text-gray-900">₹32L</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500">Timeline</p>
+                  <p class="font-semibold text-green-600">28 days</p>
+                </div>
+              </div>
+              <div class="mb-3">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-sm font-semibold text-gray-700">Progress</span>
+                  <span class="text-sm font-bold text-green-600">52%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                  <div class="bg-green-500 h-3 rounded-full" style="width: 52%"></div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between pt-3 border-t border-gray-200">
+                <span class="text-xs text-gray-500">Due: Nov 20, 2024</span>
+                <button
+                  class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+
+            <div
+              class="bg-white rounded-xl border-2 border-blue-300 p-6 hover:shadow-2xl cursor-pointer transition-all"
+            >
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                  <h3 class="font-bold text-lg text-gray-900 mb-1">Apartment Complex 75kW</h3>
+                  <p class="text-sm text-gray-600">PRJ-2024-508</p>
+                </div>
+                <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold"
+                  >🔵 PLANNING</span
+                >
+              </div>
+              <div class="grid grid-cols-2 gap-3 mb-4">
+                <div>
+                  <p class="text-xs text-gray-500">Budget</p>
+                  <p class="font-bold text-gray-900">₹68L</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500">Timeline</p>
+                  <p class="font-semibold text-blue-600">42 days</p>
+                </div>
+              </div>
+              <div class="mb-3">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-sm font-semibold text-gray-700">Progress</span>
+                  <span class="text-sm font-bold text-blue-600">12%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                  <div class="bg-blue-500 h-3 rounded-full" style="width: 12%"></div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between pt-3 border-t border-gray-200">
+                <span class="text-xs text-gray-500">Due: Dec 8, 2024</span>
+                <button
+                  class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+
+            <div
+              class="bg-white rounded-xl border-2 border-green-300 p-6 hover:shadow-2xl cursor-pointer transition-all"
+            >
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                  <h3 class="font-bold text-lg text-gray-900 mb-1">Hospital Wing 150kW</h3>
+                  <p class="text-sm text-gray-600">PRJ-2024-512</p>
+                </div>
+                <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold"
+                  >🟢 ON TRACK</span
+                >
+              </div>
+              <div class="grid grid-cols-2 gap-3 mb-4">
+                <div>
+                  <p class="text-xs text-gray-500">Budget</p>
+                  <p class="font-bold text-gray-900">₹1.2Cr</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500">Timeline</p>
+                  <p class="font-semibold text-green-600">52 days</p>
+                </div>
+              </div>
+              <div class="mb-3">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-sm font-semibold text-gray-700">Progress</span>
+                  <span class="text-sm font-bold text-green-600">85%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                  <div class="bg-green-500 h-3 rounded-full" style="width: 85%"></div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between pt-3 border-t border-gray-200">
+                <span class="text-xs text-gray-500">Due: Nov 28, 2024</span>
+                <button
+                  class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Load More -->
+          <div class="mt-8 text-center">
+            <button
+              class="px-8 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50"
+            >
+              Load More Projects (150 remaining)
+            </button>
+          </div>
+        </main>
+      </div>
     </div>
-</body>
+  </body>
 </html>
-

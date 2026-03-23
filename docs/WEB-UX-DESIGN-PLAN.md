@@ -28,13 +28,13 @@ OneOhm is a comprehensive **Solar EPC (Engineering, Procurement, Construction)**
 
 ### Current State Assessment
 
-| Aspect | Status |
-|--------|--------|
-| Backend Modules | 20+ modules fully developed |
-| Mobile UX | 93 HTML mockups complete |
-| Web UX | 58 HTML mockups (partial) |
-| Design System | Basic Tailwind setup with orange primary |
-| User Roles | 8 distinct roles identified |
+| Aspect          | Status                                   |
+| --------------- | ---------------------------------------- |
+| Backend Modules | 20+ modules fully developed              |
+| Mobile UX       | 93 HTML mockups complete                 |
+| Web UX          | 58 HTML mockups (partial)                |
+| Design System   | Basic Tailwind setup with orange primary |
+| User Roles      | 8 distinct roles identified              |
 
 ### Technology Stack
 
@@ -50,28 +50,28 @@ OneOhm is a comprehensive **Solar EPC (Engineering, Procurement, Construction)**
 
 ### Backend Modules (20+)
 
-| Module | Description |
-|--------|-------------|
-| `customers` | Customer management, properties, site visits |
-| `iam` | Identity & Access Management (roles, permissions) |
-| `quotes` | Quote generation, versions, pricing |
-| `projects` | Project management, milestones, tasks |
-| `inventory` | Warehouses, vendors, purchase orders, stock |
-| `payments` | Payment management |
-| `approvals` | Approval workflows |
-| `documents` | Document management |
-| `employees` | Employee management |
-| `master-data` | Configuration data |
-| `integrations` | External service integrations |
-| `loan-finance` | Loan financing |
-| `service-maintenance` | AMC and service |
-| `resellers` | Reseller management |
-| `audit` | Audit logging |
-| `compliance` | Compliance tracking |
-| `customer-feedback` | Feedback collection |
-| `organizations` | Multi-org support |
-| `storage` | File storage |
-| `security-events` | Security monitoring |
+| Module                | Description                                       |
+| --------------------- | ------------------------------------------------- |
+| `customers`           | Customer management, properties, site visits      |
+| `iam`                 | Identity & Access Management (roles, permissions) |
+| `quotes`              | Quote generation, versions, pricing               |
+| `projects`            | Project management, milestones, tasks             |
+| `inventory`           | Warehouses, vendors, purchase orders, stock       |
+| `payments`            | Payment management                                |
+| `approvals`           | Approval workflows                                |
+| `documents`           | Document management                               |
+| `employees`           | Employee management                               |
+| `master-data`         | Configuration data                                |
+| `integrations`        | External service integrations                     |
+| `loan-finance`        | Loan financing                                    |
+| `service-maintenance` | AMC and service                                   |
+| `resellers`           | Reseller management                               |
+| `audit`               | Audit logging                                     |
+| `compliance`          | Compliance tracking                               |
+| `customer-feedback`   | Feedback collection                               |
+| `organizations`       | Multi-org support                                 |
+| `storage`             | File storage                                      |
+| `security-events`     | Security monitoring                               |
 
 ### Existing Web UX Screens (58 files)
 
@@ -153,37 +153,37 @@ apps/ux/web/
 
 ### Identified User Roles
 
-| Role | Primary Responsibility | Platform |
-|------|----------------------|----------|
-| **Super Admin** | Full system management | Web |
-| **Admin** | Operations management | Web |
-| **Sales Manager** | Sales team oversight | Web |
-| **Sales Person** | Direct sales activities | Web + Mobile |
-| **Telecaller** | Telemarketing | Web |
-| **Field Worker** | Field operations | Mobile (primary) |
-| **Execution Engineer** | Project execution | Mobile + Web |
-| **Liaison** | External coordination | Mobile + Web |
-| **Finance Manager** | Financial oversight | Web |
-| **Project Manager** | Project oversight | Web |
-| **Inventory Manager** | Stock management | Web |
-| **Customer** | Self-service | Mobile + Web (limited) |
+| Role                   | Primary Responsibility  | Platform               |
+| ---------------------- | ----------------------- | ---------------------- |
+| **Super Admin**        | Full system management  | Web                    |
+| **Admin**              | Operations management   | Web                    |
+| **Sales Manager**      | Sales team oversight    | Web                    |
+| **Sales Person**       | Direct sales activities | Web + Mobile           |
+| **Telecaller**         | Telemarketing           | Web                    |
+| **Field Worker**       | Field operations        | Mobile (primary)       |
+| **Execution Engineer** | Project execution       | Mobile + Web           |
+| **Liaison**            | External coordination   | Mobile + Web           |
+| **Finance Manager**    | Financial oversight     | Web                    |
+| **Project Manager**    | Project oversight       | Web                    |
+| **Inventory Manager**  | Stock management        | Web                    |
+| **Customer**           | Self-service            | Mobile + Web (limited) |
 
 ### Web Access Matrix
 
-| Module | Admin | Sales Mgr | Finance | Project Mgr | Inventory Mgr |
-|--------|-------|-----------|---------|-------------|---------------|
-| Dashboard | ✅ Full | ✅ Sales | ✅ Finance | ✅ Projects | ✅ Inventory |
-| CRM/Leads | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Customers | ✅ | ✅ | ✅ View | ✅ View | ❌ |
-| Quotes | ✅ | ✅ | ✅ View | ✅ | ❌ |
-| Projects | ✅ | ❌ | ❌ | ✅ | ❌ |
-| Inventory | ✅ | ❌ | ❌ | ✅ View | ✅ |
-| Finance | ✅ | ❌ | ✅ | ❌ | ❌ |
-| Vendors | ✅ | ❌ | ✅ | ✅ | ✅ |
-| Approvals | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Analytics | ✅ | ✅ Sales | ✅ Finance | ✅ Projects | ✅ Inventory |
-| Users/Roles | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Settings | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Module      | Admin   | Sales Mgr | Finance    | Project Mgr | Inventory Mgr |
+| ----------- | ------- | --------- | ---------- | ----------- | ------------- |
+| Dashboard   | ✅ Full | ✅ Sales  | ✅ Finance | ✅ Projects | ✅ Inventory  |
+| CRM/Leads   | ✅      | ✅        | ❌         | ❌          | ❌            |
+| Customers   | ✅      | ✅        | ✅ View    | ✅ View     | ❌            |
+| Quotes      | ✅      | ✅        | ✅ View    | ✅          | ❌            |
+| Projects    | ✅      | ❌        | ❌         | ✅          | ❌            |
+| Inventory   | ✅      | ❌        | ❌         | ✅ View     | ✅            |
+| Finance     | ✅      | ❌        | ✅         | ❌          | ❌            |
+| Vendors     | ✅      | ❌        | ✅         | ✅          | ✅            |
+| Approvals   | ✅      | ✅        | ✅         | ✅          | ✅            |
+| Analytics   | ✅      | ✅ Sales  | ✅ Finance | ✅ Projects | ✅ Inventory  |
+| Users/Roles | ✅      | ❌        | ❌         | ❌          | ❌            |
+| Settings    | ✅      | ❌        | ❌         | ❌          | ❌            |
 
 ---
 
@@ -215,48 +215,48 @@ apps/ux/web/
 ```css
 :root {
   /* Primary - Sunset Orange (existing) */
-  --primary-50: #FFF7ED;
-  --primary-100: #FFEDD5;
-  --primary-200: #FED7AA;
-  --primary-300: #FDBA74;
-  --primary-400: #FB923C;
-  --primary-500: #F97316;
-  --primary-600: #EA580C;
-  --primary-700: #C2410C;
-  --primary-800: #9A3412;
-  --primary-900: #7C2D12;
+  --primary-50: #fff7ed;
+  --primary-100: #ffedd5;
+  --primary-200: #fed7aa;
+  --primary-300: #fdba74;
+  --primary-400: #fb923c;
+  --primary-500: #f97316;
+  --primary-600: #ea580c;
+  --primary-700: #c2410c;
+  --primary-800: #9a3412;
+  --primary-900: #7c2d12;
 
   /* Secondary - Solar Gold */
-  --gold-400: #FBBF24;
-  --gold-500: #F59E0B;
-  --gold-600: #D97706;
+  --gold-400: #fbbf24;
+  --gold-500: #f59e0b;
+  --gold-600: #d97706;
 
   /* Accent - Electric Teal */
-  --teal-400: #2DD4BF;
-  --teal-500: #14B8A6;
-  --teal-600: #0D9488;
+  --teal-400: #2dd4bf;
+  --teal-500: #14b8a6;
+  --teal-600: #0d9488;
 
   /* Neutral - Slate (warmer than gray) */
-  --slate-50: #F8FAFC;
-  --slate-100: #F1F5F9;
-  --slate-200: #E2E8F0;
-  --slate-300: #CBD5E1;
-  --slate-400: #94A3B8;
-  --slate-500: #64748B;
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
   --slate-600: #475569;
   --slate-700: #334155;
-  --slate-800: #1E293B;
-  --slate-900: #0F172A;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
 
   /* Semantic Colors */
-  --success: #22C55E;
-  --success-light: #DCFCE7;
-  --warning: #EAB308;
-  --warning-light: #FEF9C3;
-  --error: #EF4444;
-  --error-light: #FEE2E2;
-  --info: #3B82F6;
-  --info-light: #DBEAFE;
+  --success: #22c55e;
+  --success-light: #dcfce7;
+  --warning: #eab308;
+  --warning-light: #fef9c3;
+  --error: #ef4444;
+  --error-light: #fee2e2;
+  --info: #3b82f6;
+  --info-light: #dbeafe;
 }
 ```
 
@@ -272,7 +272,7 @@ apps/ux/web/
 
 /* Gradient backgrounds */
 .gradient-warm {
-  background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
 }
 
 /* Shadow system */
@@ -323,6 +323,7 @@ apps/ux/web/
 ### Current State Issues
 
 The existing sidebar has only **8 flat items**:
+
 - Dashboard
 - Leads
 - Projects
@@ -334,23 +335,23 @@ The existing sidebar has only **8 flat items**:
 
 ### Gap Analysis
 
-| What's Present | What's Missing |
-|----------------|----------------|
-| Dashboard | ❌ Customer Management |
-| Leads | ❌ Sales Pipeline |
-| Projects | ❌ Project Kanban/Gantt |
-| Quotes | ❌ Quote Builder |
-| Payments | ❌ Invoices/GST |
-| Users & Teams | ❌ Roles & Permissions |
-| Inventory | ❌ Vendors/PO |
-| Reports | ❌ Analytics (8 screens!) |
-| — | ❌ Approvals/Workflow |
-| — | ❌ Service & AMC |
-| — | ❌ Documents |
-| — | ❌ Resellers |
-| — | ❌ Settings/Config |
-| — | ❌ Notifications |
-| — | ❌ Help/Support |
+| What's Present | What's Missing            |
+| -------------- | ------------------------- |
+| Dashboard      | ❌ Customer Management    |
+| Leads          | ❌ Sales Pipeline         |
+| Projects       | ❌ Project Kanban/Gantt   |
+| Quotes         | ❌ Quote Builder          |
+| Payments       | ❌ Invoices/GST           |
+| Users & Teams  | ❌ Roles & Permissions    |
+| Inventory      | ❌ Vendors/PO             |
+| Reports        | ❌ Analytics (8 screens!) |
+| —              | ❌ Approvals/Workflow     |
+| —              | ❌ Service & AMC          |
+| —              | ❌ Documents              |
+| —              | ❌ Resellers              |
+| —              | ❌ Settings/Config        |
+| —              | ❌ Notifications          |
+| —              | ❌ Help/Support           |
 
 ### Proposed Navigation Structure
 
@@ -501,6 +502,7 @@ ONEOHM SIDEBAR NAVIGATION
 ### Navigation Design Features
 
 #### 1. Visual Hierarchy
+
 - Section headers: Uppercase, smaller, muted color
 - Primary items: Normal weight, full opacity
 - Sub-items: Slightly indented, smaller
@@ -508,12 +510,14 @@ ONEOHM SIDEBAR NAVIGATION
 - Hover: Subtle background change
 
 #### 2. Badge System
+
 - 🔴 Red badge: Urgent items (overdue, pending approvals)
 - 🟢 Green badge: New items
 - 🔵 Blue badge: Information
 - 💰 Value badge: Show pending amounts (₹2.5L)
 
 #### 3. Quick Actions Footer
+
 ```
 ┌─────────────────────────────────┐
 │ ⚡ Quick Actions                │
@@ -522,6 +526,7 @@ ONEOHM SIDEBAR NAVIGATION
 ```
 
 #### 4. Collapse/Expand Toggle
+
 - Full sidebar with text labels
 - Collapsed state with icons only
 - Tooltips on hover in collapsed state
@@ -529,16 +534,16 @@ ONEOHM SIDEBAR NAVIGATION
 ### Role-Based Navigation Visibility
 
 | Menu Section | Admin | Sales | Finance | Project Mgr | Field Worker |
-|--------------|-------|-------|---------|-------------|--------------|
-| Dashboard | ✅ | ✅ | ✅ | ✅ | ✅ |
-| CRM | ✅ | ✅ | ❌ | ❌ | ✅ (limited) |
-| Quotes | ✅ | ✅ | ❌ | ✅ | ✅ |
-| Projects | ✅ | ❌ | ❌ | ✅ | ✅ |
-| Inventory | ✅ | ❌ | ❌ | ✅ | ❌ |
-| Finance | ✅ | ❌ | ✅ | ❌ | ❌ |
-| Approvals | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Analytics | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Admin | ✅ | ❌ | ❌ | ❌ | ❌ |
+| ------------ | ----- | ----- | ------- | ----------- | ------------ |
+| Dashboard    | ✅    | ✅    | ✅      | ✅          | ✅           |
+| CRM          | ✅    | ✅    | ❌      | ❌          | ✅ (limited) |
+| Quotes       | ✅    | ✅    | ❌      | ✅          | ✅           |
+| Projects     | ✅    | ❌    | ❌      | ✅          | ✅           |
+| Inventory    | ✅    | ❌    | ❌      | ✅          | ❌           |
+| Finance      | ✅    | ❌    | ✅      | ❌          | ❌           |
+| Approvals    | ✅    | ✅    | ✅      | ✅          | ❌           |
+| Analytics    | ✅    | ✅    | ✅      | ✅          | ❌           |
+| Admin        | ✅    | ❌    | ❌      | ❌          | ❌           |
 
 ---
 
@@ -548,15 +553,16 @@ ONEOHM SIDEBAR NAVIGATION
 
 #### 1. Dashboard Hub - Role-Based Home
 
-| Component | Description |
-|-----------|-------------|
-| KPI Cards | Real-time metrics with sparklines |
-| Activity Feed | Timeline of recent actions |
-| Quick Actions | Role-specific shortcuts |
-| Alerts Panel | Pending approvals, overdue items |
-| Calendar Widget | Upcoming meetings/visits |
+| Component       | Description                       |
+| --------------- | --------------------------------- |
+| KPI Cards       | Real-time metrics with sparklines |
+| Activity Feed   | Timeline of recent actions        |
+| Quick Actions   | Role-specific shortcuts           |
+| Alerts Panel    | Pending approvals, overdue items  |
+| Calendar Widget | Upcoming meetings/visits          |
 
 **Design Features:**
+
 - Drag-and-drop widget customization
 - Dark/Light mode toggle
 - Real-time data refresh indicators
@@ -573,22 +579,24 @@ Leads List → Lead Detail → Site Visit → Quote → Project
 
 **Key Screens:**
 
-| Screen | UX Innovation |
-|--------|---------------|
-| Lead List | Infinite scroll + smart filters + bulk actions |
-| Lead Detail | Unified timeline (calls, visits, quotes, notes) |
-| Customer 360 | Complete relationship view with all properties |
-| Pipeline | Drag-drop Kanban with deal value visualization |
+| Screen       | UX Innovation                                   |
+| ------------ | ----------------------------------------------- |
+| Lead List    | Infinite scroll + smart filters + bulk actions  |
+| Lead Detail  | Unified timeline (calls, visits, quotes, notes) |
+| Customer 360 | Complete relationship view with all properties  |
+| Pipeline     | Drag-drop Kanban with deal value visualization  |
 
 #### 3. Quote Builder - Advanced Quote Generation
 
 **Flow:**
+
 ```
-Select Customer/Property → System Configuration → Auto-calculate → 
+Select Customer/Property → System Configuration → Auto-calculate →
 Customize Items → Add Discounts → Preview → Send/Download
 ```
 
 **Key Features:**
+
 - Real-time pricing calculation
 - DCR/Non-DCR panel auto-split
 - Subsidy eligibility checker
@@ -600,14 +608,15 @@ Customize Items → Add Discounts → Preview → Send/Download
 
 **Views:**
 
-| View | Purpose |
-|------|---------|
-| Kanban | Task status tracking |
-| Gantt | Timeline visualization |
-| Calendar | Resource scheduling |
-| List | Detailed task management |
+| View     | Purpose                  |
+| -------- | ------------------------ |
+| Kanban   | Task status tracking     |
+| Gantt    | Timeline visualization   |
+| Calendar | Resource scheduling      |
+| List     | Detailed task management |
 
 **Key Components:**
+
 - Milestone progress tracker
 - Material requirement indicator
 - Team workload view
@@ -619,6 +628,7 @@ Customize Items → Add Discounts → Preview → Send/Download
 #### 5. Inventory Management
 
 **Dashboard Elements:**
+
 - Stock level gauges
 - Low stock alerts
 - PO tracking status
@@ -626,17 +636,18 @@ Customize Items → Add Discounts → Preview → Send/Download
 
 **Key Screens:**
 
-| Screen | Features |
-|--------|----------|
+| Screen          | Features                                |
+| --------------- | --------------------------------------- |
 | Stock Dashboard | Visual stock levels, reorder indicators |
-| Material Master | Product catalog with images, specs |
-| Purchase Orders | Create, track, receive workflow |
-| BOM Builder | Drag-drop component assembly |
-| MRP Planning | Auto-requisition based on projects |
+| Material Master | Product catalog with images, specs      |
+| Purchase Orders | Create, track, receive workflow         |
+| BOM Builder     | Drag-drop component assembly            |
+| MRP Planning    | Auto-requisition based on projects      |
 
 #### 6. Finance & Payments
 
 **Key Features:**
+
 - Payment collection tracker
 - Invoice generation (GSTIN compliant)
 - Payment milestone tracking
@@ -649,17 +660,18 @@ Customize Items → Add Discounts → Preview → Send/Download
 
 **Report Types:**
 
-| Report | Visualization |
-|--------|---------------|
-| Sales Performance | Bar charts, trend lines |
-| Project Status | Donut charts, progress bars |
-| Revenue Analysis | Area charts, comparisons |
-| Team Performance | Leaderboards, heat maps |
-| Conversion Funnel | Funnel visualization |
+| Report            | Visualization               |
+| ----------------- | --------------------------- |
+| Sales Performance | Bar charts, trend lines     |
+| Project Status    | Donut charts, progress bars |
+| Revenue Analysis  | Area charts, comparisons    |
+| Team Performance  | Leaderboards, heat maps     |
+| Conversion Funnel | Funnel visualization        |
 
 #### 8. Administration
 
 **Key Screens:**
+
 - User Management (CRUD, role assignment)
 - Role & Permission Matrix
 - Organization Settings
@@ -674,6 +686,7 @@ Customize Items → Add Discounts → Preview → Send/Download
 ### 1. Command Palette (⌘K / Ctrl+K)
 
 Quick access to any screen, action, or data:
+
 ```
 > Search leads...
 > Create new quote for [customer]
@@ -690,6 +703,7 @@ Quick access to any screen, action, or data:
 ### 3. Contextual Quick Actions
 
 Floating action button with context-aware options:
+
 - On Leads page: + New Lead, Import, Export
 - On Projects page: + New Project, Site Visit, Report
 
@@ -704,6 +718,7 @@ Floating action button with context-aware options:
 ### 5. Guided Workflows
 
 Multi-step wizards for complex operations:
+
 - Lead Creation Wizard
 - Quote Builder Flow
 - Project Setup Wizard
@@ -716,11 +731,13 @@ Multi-step wizards for complex operations:
 ### Option A: Continue Static HTML + Tailwind (Current)
 
 **Pros:**
+
 - Quick to build
 - Easy to preview
 - No build step required
 
 **Cons:**
+
 - No interactivity
 - Hard to maintain
 - Code duplication
@@ -728,12 +745,14 @@ Multi-step wizards for complex operations:
 ### Option B: Next.js + Tailwind + shadcn/ui (Recommended)
 
 **Pros:**
+
 - Already have Next.js web app setup
 - Component reusability
 - Real interactivity
 - Easy backend integration later
 
 **Recommended Stack:**
+
 ```
 Framework:    Next.js 14 (App Router)
 Styling:      Tailwind CSS + shadcn/ui
@@ -800,16 +819,16 @@ Animations:   Framer Motion
 
 ### Current vs Proposed Comparison
 
-| Module | Current State | Proposed Additions |
-|--------|---------------|-------------------|
+| Module    | Current State | Proposed Additions               |
+| --------- | ------------- | -------------------------------- |
 | Dashboard | Basic metrics | Role-based, customizable widgets |
-| Leads | List + detail | Kanban, timeline, bulk actions |
-| Quotes | Basic list | Builder wizard, versioning, PDF |
-| Projects | Basic view | Gantt, Kanban, resource view |
-| Inventory | Stock view | MRP, BOM builder, alerts |
-| Finance | Reports | Payment tracking, aging, GST |
-| Analytics | Basic charts | Interactive, drill-down, exports |
-| Settings | Minimal | Full IAM, integrations, audit |
+| Leads     | List + detail | Kanban, timeline, bulk actions   |
+| Quotes    | Basic list    | Builder wizard, versioning, PDF  |
+| Projects  | Basic view    | Gantt, Kanban, resource view     |
+| Inventory | Stock view    | MRP, BOM builder, alerts         |
+| Finance   | Reports       | Payment tracking, aging, GST     |
+| Analytics | Basic charts  | Interactive, drill-down, exports |
+| Settings  | Minimal       | Full IAM, integrations, audit    |
 
 ---
 
@@ -818,6 +837,7 @@ Animations:   Framer Motion
 ### A. Domain Enumerations
 
 #### Customer Status
+
 ```typescript
 enum CustomerStatus {
   LEAD = 'lead',
@@ -828,15 +848,17 @@ enum CustomerStatus {
 ```
 
 #### Lead Temperature
+
 ```typescript
 enum LeadTemperature {
-  HOT = 'hot',    // Follow-up in 3 days
-  WARM = 'warm',  // Follow-up in 10 days
-  COLD = 'cold',  // Follow-up in 15 days
+  HOT = 'hot', // Follow-up in 3 days
+  WARM = 'warm', // Follow-up in 10 days
+  COLD = 'cold', // Follow-up in 15 days
 }
 ```
 
 #### Project Status
+
 ```typescript
 enum ProjectStatus {
   DRAFT = 'draft',
@@ -851,6 +873,7 @@ enum ProjectStatus {
 ```
 
 #### Quote Status
+
 ```typescript
 enum QuoteStatus {
   DRAFT = 'draft',
@@ -863,6 +886,7 @@ enum QuoteStatus {
 ```
 
 #### Milestone Types
+
 ```typescript
 enum MilestoneType {
   SITE_SURVEY = 'site_survey',
@@ -896,4 +920,4 @@ enum MilestoneType {
 
 ---
 
-*Document maintained by the OneOhm Development Team*
+_Document maintained by the OneOhm Development Team_

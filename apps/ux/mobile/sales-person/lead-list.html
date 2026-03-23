@@ -1,211 +1,290 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Lead List - OneOhm Solar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#76c044',
-                        secondary: '#0d74b8',
-                        tagline: '#025580',
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#76c044',
+              secondary: '#0d74b8',
+              tagline: '#025580',
+            },
+          },
+        },
+      };
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+      body {
+        font-family: 'Inter', sans-serif;
+      }
     </style>
-</head>
-<body class="bg-gray-50">
+  </head>
+  <body class="bg-gray-50">
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl pb-20">
-        <div class="bg-gradient-to-r from-primary via-green-500 to-secondary px-6 py-6 pt-12">
-            <a href="dashboard-salesperson.html" class="inline-flex items-center text-white mb-6">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+      <div class="bg-gradient-to-r from-primary via-green-500 to-secondary px-6 py-6 pt-12">
+        <a href="dashboard-salesperson.html" class="inline-flex items-center text-white mb-6">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            ></path>
+          </svg>
+        </a>
+        <h1 class="text-3xl font-bold text-white mb-2">My Leads</h1>
+        <p class="text-green-100">28 active leads</p>
+      </div>
+
+      <div class="px-6 py-6">
+        <!-- Search & Filter -->
+        <div class="mb-6 space-y-3">
+          <div class="relative">
+            <input
+              type="text"
+              placeholder="Search leads..."
+              class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:outline-none"
+            />
+            <svg
+              class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              ></path>
+            </svg>
+          </div>
+          <div class="flex space-x-2">
+            <button class="flex-1 py-2 px-4 bg-primary text-white rounded-lg font-semibold text-sm">
+              All (28)
+            </button>
+            <button
+              class="flex-1 py-2 px-4 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm"
+            >
+              Hot (5)
+            </button>
+            <button
+              class="flex-1 py-2 px-4 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm"
+            >
+              Cold (8)
+            </button>
+          </div>
+        </div>
+
+        <!-- Leads List -->
+        <div class="space-y-4">
+          <div class="bg-white border-2 border-red-200 rounded-2xl p-4">
+            <div class="flex items-start justify-between mb-3">
+              <div class="flex-1">
+                <div class="flex items-center space-x-2 mb-2">
+                  <h3 class="font-bold text-gray-900">Arjun Malhotra</h3>
+                  <span class="px-2 py-0.5 bg-red-100 text-red-600 text-xs font-bold rounded"
+                    >HOT</span
+                  >
+                </div>
+                <p class="text-sm text-gray-600">Commercial • 30 kW</p>
+                <p class="text-xs text-gray-500 mt-1">Gurgaon, Haryana</p>
+              </div>
+              <div class="text-right">
+                <p class="font-bold text-primary text-sm">₹18L</p>
+                <p class="text-xs text-gray-500">Budget</p>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-3 mb-3 text-xs text-gray-600">
+              <div class="flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                  ></path>
                 </svg>
-            </a>
-            <h1 class="text-3xl font-bold text-white mb-2">My Leads</h1>
-            <p class="text-green-100">28 active leads</p>
-        </div>
-
-        <div class="px-6 py-6">
-            <!-- Search & Filter -->
-            <div class="mb-6 space-y-3">
-                <div class="relative">
-                    <input 
-                        type="text" 
-                        placeholder="Search leads..." 
-                        class="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-2xl focus:border-primary focus:outline-none"
-                    >
-                    <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                </div>
-                <div class="flex space-x-2">
-                    <button class="flex-1 py-2 px-4 bg-primary text-white rounded-lg font-semibold text-sm">All (28)</button>
-                    <button class="flex-1 py-2 px-4 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm">Hot (5)</button>
-                    <button class="flex-1 py-2 px-4 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm">Cold (8)</button>
-                </div>
+                +91 98765 11111
+              </div>
             </div>
 
-            <!-- Leads List -->
-            <div class="space-y-4">
-                <div class="bg-white border-2 border-red-200 rounded-2xl p-4">
-                    <div class="flex items-start justify-between mb-3">
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-2 mb-2">
-                                <h3 class="font-bold text-gray-900">Arjun Malhotra</h3>
-                                <span class="px-2 py-0.5 bg-red-100 text-red-600 text-xs font-bold rounded">HOT</span>
-                            </div>
-                            <p class="text-sm text-gray-600">Commercial • 30 kW</p>
-                            <p class="text-xs text-gray-500 mt-1">Gurgaon, Haryana</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-bold text-primary text-sm">₹18L</p>
-                            <p class="text-xs text-gray-500">Budget</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center space-x-3 mb-3 text-xs text-gray-600">
-                        <div class="flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                            </svg>
-                            +91 98765 11111
-                        </div>
-                    </div>
-
-                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-2 mb-3">
-                        <p class="text-xs text-amber-800">Last contact: 2 days ago • Ready to buy, comparing quotes</p>
-                    </div>
-
-                    <div class="flex space-x-2">
-                        <button class="flex-1 py-2 bg-primary text-white rounded-lg font-semibold text-sm">
-                            Call Now
-                        </button>
-                        <button class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm">
-                            Create Quote
-                        </button>
-                    </div>
-                </div>
-
-                <div class="bg-white border-2 border-green-200 rounded-2xl p-4">
-                    <div class="flex items-start justify-between mb-3">
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-2 mb-2">
-                                <h3 class="font-bold text-gray-900">Meera Gupta</h3>
-                                <span class="px-2 py-0.5 bg-orange-100 text-orange-600 text-xs font-bold rounded">WARM</span>
-                            </div>
-                            <p class="text-sm text-gray-600">Residential • 8 kW</p>
-                            <p class="text-xs text-gray-500 mt-1">Bangalore, Karnataka</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-bold text-primary text-sm">₹4.5L</p>
-                            <p class="text-xs text-gray-500">Budget</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center space-x-3 mb-3 text-xs text-gray-600">
-                        <div class="flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                            </svg>
-                            +91 98765 22222
-                        </div>
-                    </div>
-
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-2 mb-3">
-                        <p class="text-xs text-blue-800">Last contact: 4 days ago • Interested, comparing options</p>
-                    </div>
-
-                    <div class="flex space-x-2">
-                        <button class="flex-1 py-2 bg-primary text-white rounded-lg font-semibold text-sm">
-                            Follow Up
-                        </button>
-                        <button class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm">
-                            View Details
-                        </button>
-                    </div>
-                </div>
-
-                <div class="bg-white border-2 border-gray-200 rounded-2xl p-4">
-                    <div class="flex items-start justify-between mb-3">
-                        <div class="flex-1">
-                            <div class="flex items-center space-x-2 mb-2">
-                                <h3 class="font-bold text-gray-900">Vikram Singh</h3>
-                                <span class="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs font-bold rounded">COLD</span>
-                            </div>
-                            <p class="text-sm text-gray-600">Residential • 5 kW</p>
-                            <p class="text-xs text-gray-500 mt-1">Jaipur, Rajasthan</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="font-bold text-primary text-sm">₹3L</p>
-                            <p class="text-xs text-gray-500">Budget</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center space-x-3 mb-3 text-xs text-gray-600">
-                        <div class="flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                            </svg>
-                            +91 98765 33333
-                        </div>
-                    </div>
-
-                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-2 mb-3">
-                        <p class="text-xs text-gray-700">Last contact: 2 weeks ago • Need follow-up</p>
-                    </div>
-
-                    <div class="flex space-x-2">
-                        <button class="flex-1 py-2 bg-primary text-white rounded-lg font-semibold text-sm">
-                            Call
-                        </button>
-                        <button class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm">
-                            View Details
-                        </button>
-                    </div>
-                </div>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-2 mb-3">
+              <p class="text-xs text-amber-800">
+                Last contact: 2 days ago • Ready to buy, comparing quotes
+              </p>
             </div>
-        </div>
 
-        <!-- Bottom Navigation -->
-        <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg max-w-md mx-auto">
-            <div class="flex items-center justify-around py-3 px-6">
-                <a href="dashboard-salesperson.html" class="flex flex-col items-center space-y-1 text-gray-400">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                    </svg>
-                    <span class="text-xs">Home</span>
-                </a>
-                <a href="lead-list.html" class="flex flex-col items-center space-y-1 text-primary">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
-                    </svg>
-                    <span class="text-xs font-semibold">Leads</span>
-                </a>
-                <a href="quote-list.html" class="flex flex-col items-center space-y-1 text-gray-400">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <span class="text-xs">Quotes</span>
-                </a>
-                <a href="performance.html" class="flex flex-col items-center space-y-1 text-gray-400">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                    <span class="text-xs">Performance</span>
-                </a>
+            <div class="flex space-x-2">
+              <button class="flex-1 py-2 bg-primary text-white rounded-lg font-semibold text-sm">
+                Call Now
+              </button>
+              <button
+                class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm"
+              >
+                Create Quote
+              </button>
             </div>
+          </div>
+
+          <div class="bg-white border-2 border-green-200 rounded-2xl p-4">
+            <div class="flex items-start justify-between mb-3">
+              <div class="flex-1">
+                <div class="flex items-center space-x-2 mb-2">
+                  <h3 class="font-bold text-gray-900">Meera Gupta</h3>
+                  <span class="px-2 py-0.5 bg-orange-100 text-orange-600 text-xs font-bold rounded"
+                    >WARM</span
+                  >
+                </div>
+                <p class="text-sm text-gray-600">Residential • 8 kW</p>
+                <p class="text-xs text-gray-500 mt-1">Bangalore, Karnataka</p>
+              </div>
+              <div class="text-right">
+                <p class="font-bold text-primary text-sm">₹4.5L</p>
+                <p class="text-xs text-gray-500">Budget</p>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-3 mb-3 text-xs text-gray-600">
+              <div class="flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                  ></path>
+                </svg>
+                +91 98765 22222
+              </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-2 mb-3">
+              <p class="text-xs text-blue-800">
+                Last contact: 4 days ago • Interested, comparing options
+              </p>
+            </div>
+
+            <div class="flex space-x-2">
+              <button class="flex-1 py-2 bg-primary text-white rounded-lg font-semibold text-sm">
+                Follow Up
+              </button>
+              <button
+                class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm"
+              >
+                View Details
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-white border-2 border-gray-200 rounded-2xl p-4">
+            <div class="flex items-start justify-between mb-3">
+              <div class="flex-1">
+                <div class="flex items-center space-x-2 mb-2">
+                  <h3 class="font-bold text-gray-900">Vikram Singh</h3>
+                  <span class="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs font-bold rounded"
+                    >COLD</span
+                  >
+                </div>
+                <p class="text-sm text-gray-600">Residential • 5 kW</p>
+                <p class="text-xs text-gray-500 mt-1">Jaipur, Rajasthan</p>
+              </div>
+              <div class="text-right">
+                <p class="font-bold text-primary text-sm">₹3L</p>
+                <p class="text-xs text-gray-500">Budget</p>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-3 mb-3 text-xs text-gray-600">
+              <div class="flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                  ></path>
+                </svg>
+                +91 98765 33333
+              </div>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-2 mb-3">
+              <p class="text-xs text-gray-700">Last contact: 2 weeks ago • Need follow-up</p>
+            </div>
+
+            <div class="flex space-x-2">
+              <button class="flex-1 py-2 bg-primary text-white rounded-lg font-semibold text-sm">
+                Call
+              </button>
+              <button
+                class="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold text-sm"
+              >
+                View Details
+              </button>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- Bottom Navigation -->
+      <div
+        class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg max-w-md mx-auto"
+      >
+        <div class="flex items-center justify-around py-3 px-6">
+          <a
+            href="dashboard-salesperson.html"
+            class="flex flex-col items-center space-y-1 text-gray-400"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              ></path>
+            </svg>
+            <span class="text-xs">Home</span>
+          </a>
+          <a href="lead-list.html" class="flex flex-col items-center space-y-1 text-primary">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"
+              ></path>
+            </svg>
+            <span class="text-xs font-semibold">Leads</span>
+          </a>
+          <a href="quote-list.html" class="flex flex-col items-center space-y-1 text-gray-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              ></path>
+            </svg>
+            <span class="text-xs">Quotes</span>
+          </a>
+          <a href="performance.html" class="flex flex-col items-center space-y-1 text-gray-400">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              ></path>
+            </svg>
+            <span class="text-xs">Performance</span>
+          </a>
+        </div>
+      </div>
     </div>
-</body>
+  </body>
 </html>
-

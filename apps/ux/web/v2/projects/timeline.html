@@ -1,1018 +1,1655 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Timeline / Gantt - OneOhm Projects</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: { DEFAULT: '#76c044', dark: '#5ea031', light: '#8fd35f' },
-                        secondary: { DEFAULT: '#0d74b8', dark: '#0a5c92' },
-                    },
-                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: { DEFAULT: '#76c044', dark: '#5ea031', light: '#8fd35f' },
+              secondary: { DEFAULT: '#0d74b8', dark: '#0a5c92' },
+            },
+            fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          },
+        },
+      };
     </script>
     <style>
-        body { font-family: 'Inter', system-ui, sans-serif; }
-        .global-header { height: 48px; background: #fff; border-bottom: 1px solid #f4f4f5; position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; align-items: center; padding: 0 12px; }
-        .rail { width: 48px; background: #fff; border-right: 1px solid #f4f4f5; position: fixed; top: 48px; left: 0; height: calc(100vh - 48px); z-index: 40; }
-        .panel { width: 200px; background: #fff; border-right: 1px solid #f4f4f5; position: fixed; top: 48px; left: 48px; height: calc(100vh - 48px); z-index: 35; }
-        .main-content { margin-left: 248px; margin-top: 48px; min-height: calc(100vh - 48px); background: #fafafa; }
-        
-        /* Gantt Styles */
-        .gantt-wrapper {
-            display: flex;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            overflow: hidden;
-            background: #fff;
-        }
-        .gantt-tasks {
-            width: 320px;
-            min-width: 320px;
-            border-right: 2px solid #e5e7eb;
-            background: #fff;
-        }
-        .gantt-timeline-wrapper {
-            flex: 1;
-            overflow-x: auto;
-        }
-        .gantt-timeline {
-            min-width: 1200px;
-        }
-        .gantt-header {
-            height: 56px;
-            background: #f9fafb;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            align-items: center;
-        }
-        .gantt-row {
-            height: 48px;
-            border-bottom: 1px solid #f4f4f5;
-            display: flex;
-            align-items: center;
-            transition: background 0.15s;
-        }
-        .gantt-row:hover {
-            background: #f9fafb;
-        }
-        .gantt-row.phase {
-            background: linear-gradient(90deg, #f0f9ff 0%, #fff 100%);
-            border-bottom: 1px solid #e0f2fe;
-        }
-        .gantt-row.phase.amber {
-            background: linear-gradient(90deg, #fffbeb 0%, #fff 100%);
-            border-bottom: 1px solid #fef3c7;
-        }
-        .gantt-row.phase.green {
-            background: linear-gradient(90deg, #f0fdf4 0%, #fff 100%);
-            border-bottom: 1px solid #dcfce7;
-        }
-        
-        /* Timeline Grid */
-        .timeline-grid {
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-        .timeline-header-row {
-            display: flex;
-            height: 28px;
-        }
-        .timeline-subheader-row {
-            display: flex;
-            height: 28px;
-        }
-        .week-header {
-            flex: 0 0 420px;
-            border-right: 1px solid #e5e7eb;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 500;
-            color: #374151;
-            background: #f9fafb;
-        }
-        .day-cell {
-            flex: 0 0 60px;
-            border-right: 1px solid #f4f4f5;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            color: #6b7280;
-            background: #f9fafb;
-        }
-        .day-cell.weekend {
-            background: #fafafa;
-            color: #9ca3af;
-        }
-        .day-cell.today {
-            background: #fef2f2;
-            color: #dc2626;
-            font-weight: 600;
-        }
-        
-        /* Task Bar Styles */
-        .timeline-row {
-            height: 48px;
-            display: flex;
-            position: relative;
-        }
-        .timeline-cell {
-            flex: 0 0 60px;
-            border-right: 1px solid #f4f4f5;
-            position: relative;
-        }
-        .timeline-cell.weekend {
-            background: #fafafa;
-        }
-        .today-marker {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: #ef4444;
-            z-index: 20;
-            box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
-        }
-        .task-bar {
-            position: absolute;
-            height: 28px;
-            top: 10px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            padding: 0 8px;
-            font-size: 11px;
-            font-weight: 500;
-            color: #fff;
-            overflow: hidden;
-            white-space: nowrap;
-            cursor: pointer;
-            transition: transform 0.15s, box-shadow 0.15s;
-            z-index: 10;
-        }
-        .task-bar:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        .task-bar.completed {
-            background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
-        }
-        .task-bar.in-progress {
-            background: linear-gradient(90deg, #76c044 0%, #5ea031 100%);
-        }
-        .task-bar.pending {
-            background: linear-gradient(90deg, #94a3b8 0%, #64748b 100%);
-        }
-        .task-bar.delayed {
-            background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
-        }
-        .task-bar.at-risk {
-            background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
-        }
-        .progress-fill {
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            background: rgba(255,255,255,0.25);
-            border-radius: 6px 0 0 6px;
-        }
-        
-        /* Milestone */
-        .milestone-marker {
-            position: absolute;
-            top: 12px;
-            width: 24px;
-            height: 24px;
-            z-index: 15;
-            cursor: pointer;
-        }
-        .milestone-diamond {
-            width: 16px;
-            height: 16px;
-            transform: rotate(45deg);
-            margin: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-        .milestone-marker:hover .milestone-diamond {
-            transform: rotate(45deg) scale(1.1);
-        }
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+      .global-header {
+        height: 48px;
+        background: #fff;
+        border-bottom: 1px solid #f4f4f5;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+      }
+      .rail {
+        width: 48px;
+        background: #fff;
+        border-right: 1px solid #f4f4f5;
+        position: fixed;
+        top: 48px;
+        left: 0;
+        height: calc(100vh - 48px);
+        z-index: 40;
+      }
+      .panel {
+        width: 200px;
+        background: #fff;
+        border-right: 1px solid #f4f4f5;
+        position: fixed;
+        top: 48px;
+        left: 48px;
+        height: calc(100vh - 48px);
+        z-index: 35;
+      }
+      .main-content {
+        margin-left: 248px;
+        margin-top: 48px;
+        min-height: calc(100vh - 48px);
+        background: #fafafa;
+      }
+
+      /* Gantt Styles */
+      .gantt-wrapper {
+        display: flex;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #fff;
+      }
+      .gantt-tasks {
+        width: 320px;
+        min-width: 320px;
+        border-right: 2px solid #e5e7eb;
+        background: #fff;
+      }
+      .gantt-timeline-wrapper {
+        flex: 1;
+        overflow-x: auto;
+      }
+      .gantt-timeline {
+        min-width: 1200px;
+      }
+      .gantt-header {
+        height: 56px;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+      }
+      .gantt-row {
+        height: 48px;
+        border-bottom: 1px solid #f4f4f5;
+        display: flex;
+        align-items: center;
+        transition: background 0.15s;
+      }
+      .gantt-row:hover {
+        background: #f9fafb;
+      }
+      .gantt-row.phase {
+        background: linear-gradient(90deg, #f0f9ff 0%, #fff 100%);
+        border-bottom: 1px solid #e0f2fe;
+      }
+      .gantt-row.phase.amber {
+        background: linear-gradient(90deg, #fffbeb 0%, #fff 100%);
+        border-bottom: 1px solid #fef3c7;
+      }
+      .gantt-row.phase.green {
+        background: linear-gradient(90deg, #f0fdf4 0%, #fff 100%);
+        border-bottom: 1px solid #dcfce7;
+      }
+
+      /* Timeline Grid */
+      .timeline-grid {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+      .timeline-header-row {
+        display: flex;
+        height: 28px;
+      }
+      .timeline-subheader-row {
+        display: flex;
+        height: 28px;
+      }
+      .week-header {
+        flex: 0 0 420px;
+        border-right: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 500;
+        color: #374151;
+        background: #f9fafb;
+      }
+      .day-cell {
+        flex: 0 0 60px;
+        border-right: 1px solid #f4f4f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        color: #6b7280;
+        background: #f9fafb;
+      }
+      .day-cell.weekend {
+        background: #fafafa;
+        color: #9ca3af;
+      }
+      .day-cell.today {
+        background: #fef2f2;
+        color: #dc2626;
+        font-weight: 600;
+      }
+
+      /* Task Bar Styles */
+      .timeline-row {
+        height: 48px;
+        display: flex;
+        position: relative;
+      }
+      .timeline-cell {
+        flex: 0 0 60px;
+        border-right: 1px solid #f4f4f5;
+        position: relative;
+      }
+      .timeline-cell.weekend {
+        background: #fafafa;
+      }
+      .today-marker {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #ef4444;
+        z-index: 20;
+        box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+      }
+      .task-bar {
+        position: absolute;
+        height: 28px;
+        top: 10px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        padding: 0 8px;
+        font-size: 11px;
+        font-weight: 500;
+        color: #fff;
+        overflow: hidden;
+        white-space: nowrap;
+        cursor: pointer;
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s;
+        z-index: 10;
+      }
+      .task-bar:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+      .task-bar.completed {
+        background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+      }
+      .task-bar.in-progress {
+        background: linear-gradient(90deg, #76c044 0%, #5ea031 100%);
+      }
+      .task-bar.pending {
+        background: linear-gradient(90deg, #94a3b8 0%, #64748b 100%);
+      }
+      .task-bar.delayed {
+        background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+      }
+      .task-bar.at-risk {
+        background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+      }
+      .progress-fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.25);
+        border-radius: 6px 0 0 6px;
+      }
+
+      /* Milestone */
+      .milestone-marker {
+        position: absolute;
+        top: 12px;
+        width: 24px;
+        height: 24px;
+        z-index: 15;
+        cursor: pointer;
+      }
+      .milestone-diamond {
+        width: 16px;
+        height: 16px;
+        transform: rotate(45deg);
+        margin: 4px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+      .milestone-marker:hover .milestone-diamond {
+        transform: rotate(45deg) scale(1.1);
+      }
     </style>
-</head>
-<body class="bg-gray-50">
+  </head>
+  <body class="bg-gray-50">
     <!-- Header -->
     <header class="global-header">
-        <div class="flex items-center">
-            <a href="../dashboard/index.html?rail=home"><img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto"></a>
-        </div>
-        <div class="flex-1 ml-6 mr-4">
-            <button class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-100 text-left">
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <span class="text-gray-400 flex-1 text-sm">Search projects...</span>
-                <kbd class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-100 rounded">⌘K</kbd>
-            </button>
-        </div>
-        <div class="flex items-center space-x-2">
-            <button class="relative p-2 hover:bg-gray-50 rounded-lg">
-                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
-                <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
-            <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg">
-                <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">RK</div>
-            </button>
-        </div>
+      <div class="flex items-center">
+        <a href="../dashboard/index.html?rail=home"
+          ><img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto"
+        /></a>
+      </div>
+      <div class="flex-1 ml-6 mr-4">
+        <button
+          class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-100 text-left"
+        >
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <span class="text-gray-400 flex-1 text-sm">Search projects...</span>
+          <kbd
+            class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-100 rounded"
+            >⌘K</kbd
+          >
+        </button>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button class="relative p-2 hover:bg-gray-50 rounded-lg">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
+          </svg>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+        </button>
+        <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg">
+          <div
+            class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm"
+          >
+            RK
+          </div>
+        </button>
+      </div>
     </header>
 
     <!-- Rail -->
     <aside class="rail flex flex-col items-center pt-2">
-        <a href="../dashboard/index.html?rail=home" class="w-10 h-9 flex items-center justify-center text-gray-400 hover:bg-gray-50 rounded-lg mb-1" title="Home">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-        </a>
-        <a href="list.html" class="w-10 h-9 flex items-center justify-center text-primary bg-primary/10 rounded-lg mb-1 border-l-2 border-primary">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
-        </a>
+      <a
+        href="../dashboard/index.html?rail=home"
+        class="w-10 h-9 flex items-center justify-center text-gray-400 hover:bg-gray-50 rounded-lg mb-1"
+        title="Home"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+          />
+        </svg>
+      </a>
+      <a
+        href="list.html"
+        class="w-10 h-9 flex items-center justify-center text-primary bg-primary/10 rounded-lg mb-1 border-l-2 border-primary"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+          />
+        </svg>
+      </a>
     </aside>
 
     <!-- Panel -->
     <aside class="panel">
-        <div class="h-12 px-4 flex items-center border-b border-gray-100">
-            <span class="text-[15px] font-semibold text-gray-900">Projects</span>
+      <div class="h-12 px-4 flex items-center border-b border-gray-100">
+        <span class="text-[15px] font-semibold text-gray-900">Projects</span>
+      </div>
+      <div class="p-2">
+        <div class="px-2 py-3 text-[10px] font-medium text-gray-400 uppercase tracking-wide">
+          Overview
         </div>
-        <div class="p-2">
-            <div class="px-2 py-3 text-[10px] font-medium text-gray-400 uppercase tracking-wide">Overview</div>
-            <a href="../dashboard/projects.html" class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg">
-                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
-                Dashboard
-            </a>
-            <a href="list.html" class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg">
-                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
-                All Projects
-            </a>
-            <div class="px-2 py-3 mt-2 text-[10px] font-medium text-gray-400 uppercase tracking-wide">My Work</div>
-            <a href="my-tasks.html" class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg">
-                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-                My Tasks
-                <span class="ml-auto text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded font-semibold">12</span>
-            </a>
-            <div class="px-2 py-3 mt-2 text-[10px] font-medium text-gray-400 uppercase tracking-wide">Scheduling</div>
-            <a href="kanban.html" class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg">
-                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
-                Kanban Board
-            </a>
-            <a href="timeline.html" class="h-8 px-3 flex items-center text-[13px] text-primary bg-primary/10 rounded-lg font-medium">
-                <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                Timeline / Gantt
-            </a>
+        <a
+          href="../dashboard/projects.html"
+          class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg"
+        >
+          <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+            />
+          </svg>
+          Dashboard
+        </a>
+        <a
+          href="list.html"
+          class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg"
+        >
+          <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+            />
+          </svg>
+          All Projects
+        </a>
+        <div class="px-2 py-3 mt-2 text-[10px] font-medium text-gray-400 uppercase tracking-wide">
+          My Work
         </div>
+        <a
+          href="my-tasks.html"
+          class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg"
+        >
+          <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+            />
+          </svg>
+          My Tasks
+          <span
+            class="ml-auto text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded font-semibold"
+            >12</span
+          >
+        </a>
+        <div class="px-2 py-3 mt-2 text-[10px] font-medium text-gray-400 uppercase tracking-wide">
+          Scheduling
+        </div>
+        <a
+          href="kanban.html"
+          class="h-8 px-3 flex items-center text-[13px] text-gray-700 hover:bg-gray-50 rounded-lg"
+        >
+          <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+            />
+          </svg>
+          Kanban Board
+        </a>
+        <a
+          href="timeline.html"
+          class="h-8 px-3 flex items-center text-[13px] text-primary bg-primary/10 rounded-lg font-medium"
+        >
+          <svg class="w-4 h-4 mr-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+          Timeline / Gantt
+        </a>
+      </div>
     </aside>
 
     <!-- Main Content -->
     <main class="main-content">
-        <div class="p-5">
-            <!-- Header -->
-            <div class="flex items-center justify-between mb-5">
-                <div>
-                    <h1 class="text-xl font-semibold text-gray-900">Timeline / Gantt View</h1>
-                    <p class="text-[13px] text-gray-500 mt-0.5">Project schedules and task dependencies</p>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <select class="px-3 py-2 border border-gray-200 rounded-lg text-[13px] text-gray-700 bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary">
-                        <option>All Projects</option>
-                        <option selected>PROJ-001 · Smith Solar Installation</option>
-                        <option>PROJ-002 · Jones Rooftop</option>
-                        <option>PROJ-003 · Kumar Commercial</option>
-                    </select>
-                    <div class="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
-                        <button class="px-4 py-2 text-[13px] text-gray-600 hover:bg-gray-50 border-r border-gray-200">Day</button>
-                        <button class="px-4 py-2 text-[13px] text-white bg-primary font-medium">Week</button>
-                        <button class="px-4 py-2 text-[13px] text-gray-600 hover:bg-gray-50">Month</button>
-                    </div>
-                    <button class="px-4 py-2 border border-gray-200 rounded-lg text-[13px] text-gray-700 bg-white hover:bg-gray-50 font-medium">
-                        📍 Today
-                    </button>
-                </div>
+      <div class="p-5">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h1 class="text-xl font-semibold text-gray-900">Timeline / Gantt View</h1>
+            <p class="text-[13px] text-gray-500 mt-0.5">Project schedules and task dependencies</p>
+          </div>
+          <div class="flex items-center space-x-3">
+            <select
+              class="px-3 py-2 border border-gray-200 rounded-lg text-[13px] text-gray-700 bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            >
+              <option>All Projects</option>
+              <option selected>PROJ-001 · Smith Solar Installation</option>
+              <option>PROJ-002 · Jones Rooftop</option>
+              <option>PROJ-003 · Kumar Commercial</option>
+            </select>
+            <div
+              class="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden"
+            >
+              <button
+                class="px-4 py-2 text-[13px] text-gray-600 hover:bg-gray-50 border-r border-gray-200"
+              >
+                Day
+              </button>
+              <button class="px-4 py-2 text-[13px] text-white bg-primary font-medium">Week</button>
+              <button class="px-4 py-2 text-[13px] text-gray-600 hover:bg-gray-50">Month</button>
             </div>
-
-            <!-- Legend -->
-            <div class="flex items-center flex-wrap gap-6 mb-5 p-3 bg-white rounded-lg border border-gray-100">
-                <span class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Legend:</span>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-4 rounded bg-gradient-to-r from-green-500 to-green-600"></div>
-                    <span class="text-[12px] text-gray-600">Completed</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-4 rounded bg-gradient-to-r from-primary to-primary-dark"></div>
-                    <span class="text-[12px] text-gray-600">In Progress</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-4 rounded bg-gradient-to-r from-amber-500 to-amber-600"></div>
-                    <span class="text-[12px] text-gray-600">At Risk</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-4 rounded bg-gradient-to-r from-red-500 to-red-600"></div>
-                    <span class="text-[12px] text-gray-600">Delayed</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-4 rounded bg-gradient-to-r from-slate-400 to-slate-500"></div>
-                    <span class="text-[12px] text-gray-600">Pending</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-4 h-4 bg-purple-600 transform rotate-45 rounded-sm"></div>
-                    <span class="text-[12px] text-gray-600">Milestone</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-0.5 h-5 bg-red-500"></div>
-                    <span class="text-[12px] text-gray-600">Today</span>
-                </div>
-            </div>
-
-            <!-- Gantt Chart -->
-            <div class="gantt-wrapper">
-                <!-- Left Panel: Task List -->
-                <div class="gantt-tasks">
-                    <!-- Header -->
-                    <div class="gantt-header px-4">
-                        <span class="text-[13px] font-semibold text-gray-700">Tasks & Milestones</span>
-                    </div>
-                    
-                    <!-- Phase 1 -->
-                    <div class="gantt-row phase">
-                        <div class="px-4 flex items-center">
-                            <svg class="w-4 h-4 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                            <span class="text-[13px] font-semibold text-blue-800">Phase 1: Pre-Installation</span>
-                            <span class="ml-auto text-[11px] text-blue-600 font-medium">3 tasks</span>
-                        </div>
-                    </div>
-                    
-                    <div class="gantt-row">
-                        <div class="px-4 pl-10 flex items-center w-full">
-                            <div class="w-5 h-5 rounded border-2 border-green-500 bg-green-500 flex items-center justify-center mr-3">
-                                <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-[13px] text-gray-800 truncate">Site Survey</div>
-                                <div class="text-[11px] text-gray-400">Feb 3 - Feb 5</div>
-                            </div>
-                            <span class="px-2 py-0.5 text-[10px] font-medium bg-green-100 text-green-700 rounded-full">Done</span>
-                        </div>
-                    </div>
-                    
-                    <div class="gantt-row">
-                        <div class="px-4 pl-10 flex items-center w-full">
-                            <div class="w-5 h-5 rounded-full border-2 border-primary bg-primary/20 flex items-center justify-center mr-3">
-                                <div class="w-2 h-2 bg-primary rounded-full"></div>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-[13px] text-gray-800 truncate">Permit Application</div>
-                                <div class="text-[11px] text-gray-400">Feb 5 - Feb 10</div>
-                            </div>
-                            <span class="px-2 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded-full">60%</span>
-                        </div>
-                    </div>
-                    
-                    <div class="gantt-row">
-                        <div class="px-4 pl-10 flex items-center w-full">
-                            <div class="w-5 h-5 rounded-full border-2 border-primary bg-primary/20 flex items-center justify-center mr-3">
-                                <div class="w-2 h-2 bg-primary rounded-full"></div>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-[13px] text-gray-800 truncate">Material Procurement</div>
-                                <div class="text-[11px] text-gray-400">Feb 6 - Feb 10</div>
-                            </div>
-                            <span class="px-2 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded-full">40%</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Milestone -->
-                    <div class="gantt-row bg-purple-50/50">
-                        <div class="px-4 pl-10 flex items-center w-full">
-                            <div class="w-5 h-5 flex items-center justify-center mr-3">
-                                <div class="w-3 h-3 bg-purple-600 transform rotate-45 rounded-sm"></div>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-[13px] text-purple-800 font-medium truncate">💎 30% Advance Payment</div>
-                                <div class="text-[11px] text-purple-500">Feb 11</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Phase 2 -->
-                    <div class="gantt-row phase amber">
-                        <div class="px-4 flex items-center">
-                            <svg class="w-4 h-4 text-amber-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                            <span class="text-[13px] font-semibold text-amber-800">Phase 2: Installation</span>
-                            <span class="ml-auto text-[11px] text-amber-600 font-medium">4 tasks</span>
-                        </div>
-                    </div>
-                    
-                    <div class="gantt-row">
-                        <div class="px-4 pl-10 flex items-center w-full">
-                            <div class="w-5 h-5 rounded-full border-2 border-gray-300 mr-3"></div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-[13px] text-gray-800 truncate">Structure Installation</div>
-                                <div class="text-[11px] text-gray-400">Feb 12 - Feb 15</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="gantt-row">
-                        <div class="px-4 pl-10 flex items-center w-full">
-                            <div class="w-5 h-5 rounded-full border-2 border-red-400 mr-3"></div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-[13px] text-gray-800 truncate">Panel Mounting</div>
-                                <div class="text-[11px] text-gray-400">Feb 15 - Feb 19</div>
-                            </div>
-                            <span class="px-2 py-0.5 text-[10px] font-medium bg-red-100 text-red-700 rounded-full">Delayed</span>
-                        </div>
-                    </div>
-                    
-                    <div class="gantt-row">
-                        <div class="px-4 pl-10 flex items-center w-full">
-                            <div class="w-5 h-5 rounded-full border-2 border-gray-300 mr-3"></div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-[13px] text-gray-800 truncate">Electrical Wiring</div>
-                                <div class="text-[11px] text-gray-400">Feb 19 - Feb 22</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="gantt-row">
-                        <div class="px-4 pl-10 flex items-center w-full">
-                            <div class="w-5 h-5 rounded-full border-2 border-gray-300 mr-3"></div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-[13px] text-gray-800 truncate">Inverter Setup</div>
-                                <div class="text-[11px] text-gray-400">Feb 22 - Feb 24</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Milestone -->
-                    <div class="gantt-row bg-purple-50/50">
-                        <div class="px-4 pl-10 flex items-center w-full">
-                            <div class="w-5 h-5 flex items-center justify-center mr-3">
-                                <div class="w-3 h-3 bg-purple-600 transform rotate-45 rounded-sm"></div>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-[13px] text-purple-800 font-medium truncate">💎 40% Installation Payment</div>
-                                <div class="text-[11px] text-purple-500">Feb 24</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Phase 3 -->
-                    <div class="gantt-row phase green">
-                        <div class="px-4 flex items-center">
-                            <svg class="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                            <span class="text-[13px] font-semibold text-green-800">Phase 3: Commissioning</span>
-                            <span class="ml-auto text-[11px] text-green-600 font-medium">5 tasks</span>
-                        </div>
-                    </div>
-                    
-                    <div class="gantt-row">
-                        <div class="px-4 pl-10 flex items-center w-full">
-                            <div class="w-5 h-5 rounded-full border-2 border-gray-300 mr-3"></div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-[13px] text-gray-800 truncate">System Testing</div>
-                                <div class="text-[11px] text-gray-400">Feb 25 - Feb 26</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="gantt-row">
-                        <div class="px-4 pl-10 flex items-center w-full">
-                            <div class="w-5 h-5 rounded-full border-2 border-gray-300 mr-3"></div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-[13px] text-gray-800 truncate">Net Metering Application</div>
-                                <div class="text-[11px] text-gray-400">Feb 26 - Mar 2</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="gantt-row">
-                        <div class="px-4 pl-10 flex items-center w-full">
-                            <div class="w-5 h-5 rounded-full border-2 border-gray-300 mr-3"></div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-[13px] text-gray-800 truncate">DISCOM Inspection</div>
-                                <div class="text-[11px] text-gray-400">Mar 2 - Mar 4</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="gantt-row">
-                        <div class="px-4 pl-10 flex items-center w-full">
-                            <div class="w-5 h-5 rounded-full border-2 border-gray-300 mr-3"></div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-[13px] text-gray-800 truncate">Grid Synchronization</div>
-                                <div class="text-[11px] text-gray-400">Mar 4 - Mar 5</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="gantt-row">
-                        <div class="px-4 pl-10 flex items-center w-full">
-                            <div class="w-5 h-5 rounded-full border-2 border-gray-300 mr-3"></div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-[13px] text-gray-800 truncate">Customer Handover</div>
-                                <div class="text-[11px] text-gray-400">Mar 5 - Mar 6</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Final Milestones -->
-                    <div class="gantt-row bg-purple-50/50">
-                        <div class="px-4 pl-10 flex items-center w-full">
-                            <div class="w-5 h-5 flex items-center justify-center mr-3">
-                                <div class="w-3 h-3 bg-purple-600 transform rotate-45 rounded-sm"></div>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-[13px] text-purple-800 font-medium truncate">💎 30% Final Payment</div>
-                                <div class="text-[11px] text-purple-500">Mar 5</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="gantt-row bg-green-50/50">
-                        <div class="px-4 pl-10 flex items-center w-full">
-                            <div class="w-5 h-5 flex items-center justify-center mr-3">
-                                <div class="w-3 h-3 bg-green-600 transform rotate-45 rounded-sm"></div>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="text-[13px] text-green-800 font-medium truncate">🏆 Project Complete</div>
-                                <div class="text-[11px] text-green-500">Mar 6</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Right Panel: Timeline -->
-                <div class="gantt-timeline-wrapper">
-                    <div class="gantt-timeline">
-                        <!-- Header: Week names -->
-                        <div class="gantt-header">
-                            <div class="timeline-header-row w-full">
-                                <div class="week-header">
-                                    <span>Week 1: Feb 3 - Feb 9</span>
-                                </div>
-                                <div class="week-header">
-                                    <span>Week 2: Feb 10 - Feb 16</span>
-                                </div>
-                                <div class="week-header">
-                                    <span>Week 3: Feb 17 - Feb 23</span>
-                                </div>
-                                <div class="week-header">
-                                    <span>Week 4: Feb 24 - Mar 2</span>
-                                </div>
-                                <div class="week-header" style="flex: 0 0 240px;">
-                                    <span>Week 5: Mar 3 - Mar 9</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Subheader: Day names -->
-                        <div class="flex border-b border-gray-200" style="height: 28px;">
-                            <!-- Week 1 -->
-                            <div class="day-cell">M</div>
-                            <div class="day-cell">T</div>
-                            <div class="day-cell">W</div>
-                            <div class="day-cell">T</div>
-                            <div class="day-cell today">F</div>
-                            <div class="day-cell weekend">S</div>
-                            <div class="day-cell weekend">S</div>
-                            <!-- Week 2 -->
-                            <div class="day-cell">M</div>
-                            <div class="day-cell">T</div>
-                            <div class="day-cell">W</div>
-                            <div class="day-cell">T</div>
-                            <div class="day-cell">F</div>
-                            <div class="day-cell weekend">S</div>
-                            <div class="day-cell weekend">S</div>
-                            <!-- Week 3 -->
-                            <div class="day-cell">M</div>
-                            <div class="day-cell">T</div>
-                            <div class="day-cell">W</div>
-                            <div class="day-cell">T</div>
-                            <div class="day-cell">F</div>
-                            <div class="day-cell weekend">S</div>
-                            <div class="day-cell weekend">S</div>
-                            <!-- Week 4 -->
-                            <div class="day-cell">M</div>
-                            <div class="day-cell">T</div>
-                            <div class="day-cell">W</div>
-                            <div class="day-cell">T</div>
-                            <div class="day-cell">F</div>
-                            <div class="day-cell weekend">S</div>
-                            <div class="day-cell weekend">S</div>
-                            <!-- Week 5 -->
-                            <div class="day-cell">M</div>
-                            <div class="day-cell">T</div>
-                            <div class="day-cell">W</div>
-                            <div class="day-cell">T</div>
-                        </div>
-                        
-                        <!-- Timeline Rows -->
-                        <!-- Phase 1 Header -->
-                        <div class="timeline-row" style="background: linear-gradient(90deg, #dbeafe 0%, #fff 100%);">
-                            <div class="w-full relative">
-                                <div class="today-marker" style="left: 270px;"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Task 1: Site Survey (Day 1-3) -->
-                        <div class="timeline-row">
-                            <div class="w-full relative" style="display: flex;">
-                                <!-- Grid cells for visual reference -->
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <div class="timeline-cell"></div>
-                                <!-- Task Bar -->
-                                <div class="task-bar completed" style="left: 4px; width: 176px;">
-                                    <div class="progress-fill" style="width: 100%;"></div>
-                                    <span class="relative z-10">Site Survey</span>
-                                </div>
-                                <div class="today-marker" style="left: 270px;"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Task 2: Permit Application (Day 3-7) -->
-                        <div class="timeline-row">
-                            <div class="w-full relative" style="display: flex;">
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="task-bar in-progress" style="left: 124px; width: 296px;">
-                                    <div class="progress-fill" style="width: 60%;"></div>
-                                    <span class="relative z-10">Permit Application</span>
-                                </div>
-                                <div class="today-marker" style="left: 270px;"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Task 3: Material Procurement -->
-                        <div class="timeline-row">
-                            <div class="w-full relative" style="display: flex;">
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="task-bar in-progress" style="left: 184px; width: 236px;">
-                                    <div class="progress-fill" style="width: 40%;"></div>
-                                    <span class="relative z-10">Material Procurement</span>
-                                </div>
-                                <div class="today-marker" style="left: 270px;"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Milestone 1: 30% Payment -->
-                        <div class="timeline-row" style="background: rgba(147, 51, 234, 0.05);">
-                            <div class="w-full relative" style="display: flex;">
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="milestone-marker" style="left: 440px;">
-                                    <div class="milestone-diamond bg-purple-600"></div>
-                                </div>
-                                <div class="today-marker" style="left: 270px;"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Phase 2 Header -->
-                        <div class="timeline-row" style="background: linear-gradient(90deg, #fef3c7 0%, #fff 100%);"></div>
-                        
-                        <!-- Task 4: Structure Installation -->
-                        <div class="timeline-row">
-                            <div class="w-full relative" style="display: flex;">
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="task-bar pending" style="left: 484px; width: 176px;">
-                                    <span>Structure Installation</span>
-                                </div>
-                                <div class="today-marker" style="left: 270px;"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Task 5: Panel Mounting (Delayed) -->
-                        <div class="timeline-row">
-                            <div class="w-full relative" style="display: flex;">
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="task-bar delayed" style="left: 660px; width: 236px;">
-                                    <span>Panel Mounting</span>
-                                </div>
-                                <div class="today-marker" style="left: 270px;"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Task 6: Electrical Wiring -->
-                        <div class="timeline-row">
-                            <div class="w-full relative" style="display: flex;">
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="task-bar pending" style="left: 896px; width: 176px;">
-                                    <span>Electrical Wiring</span>
-                                </div>
-                                <div class="today-marker" style="left: 270px;"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Task 7: Inverter Setup -->
-                        <div class="timeline-row">
-                            <div class="w-full relative" style="display: flex;">
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="task-bar pending" style="left: 1072px; width: 116px;">
-                                    <span>Inverter</span>
-                                </div>
-                                <div class="today-marker" style="left: 270px;"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Milestone 2 -->
-                        <div class="timeline-row" style="background: rgba(147, 51, 234, 0.05);">
-                            <div class="w-full relative" style="display: flex;">
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="milestone-marker" style="left: 1188px;">
-                                    <div class="milestone-diamond bg-purple-600"></div>
-                                </div>
-                                <div class="today-marker" style="left: 270px;"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Phase 3 Header -->
-                        <div class="timeline-row" style="background: linear-gradient(90deg, #dcfce7 0%, #fff 100%);"></div>
-                        
-                        <!-- Remaining tasks with similar structure -->
-                        <div class="timeline-row">
-                            <div class="w-full relative" style="display: flex;">
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="task-bar pending" style="left: 1248px; width: 116px;">
-                                    <span>Testing</span>
-                                </div>
-                                <div class="today-marker" style="left: 270px;"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="timeline-row">
-                            <div class="w-full relative" style="display: flex;">
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="task-bar pending" style="left: 1308px; width: 296px;">
-                                    <span>Net Metering Application</span>
-                                </div>
-                                <div class="today-marker" style="left: 270px;"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="timeline-row">
-                            <div class="w-full relative" style="display: flex;">
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="task-bar pending" style="left: 1604px; width: 116px;">
-                                    <span>Inspection</span>
-                                </div>
-                                <div class="today-marker" style="left: 270px;"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="timeline-row">
-                            <div class="w-full relative" style="display: flex;">
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="task-bar pending" style="left: 1720px; width: 116px;">
-                                    <span>Grid Sync</span>
-                                </div>
-                                <div class="today-marker" style="left: 270px;"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="timeline-row">
-                            <div class="w-full relative" style="display: flex;">
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="task-bar pending" style="left: 1780px; width: 116px;">
-                                    <span>Handover</span>
-                                </div>
-                                <div class="today-marker" style="left: 270px;"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Final milestones -->
-                        <div class="timeline-row" style="background: rgba(147, 51, 234, 0.05);">
-                            <div class="w-full relative" style="display: flex;">
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="milestone-marker" style="left: 1780px;">
-                                    <div class="milestone-diamond bg-purple-600"></div>
-                                </div>
-                                <div class="today-marker" style="left: 270px;"></div>
-                            </div>
-                        </div>
-                        
-                        <div class="timeline-row" style="background: rgba(34, 197, 94, 0.05);">
-                            <div class="w-full relative" style="display: flex;">
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="timeline-cell weekend"></div><div class="timeline-cell weekend"></div>
-                                <div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div><div class="timeline-cell"></div>
-                                <div class="milestone-marker" style="left: 1840px;">
-                                    <div class="milestone-diamond bg-green-600"></div>
-                                </div>
-                                <div class="today-marker" style="left: 270px;"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Summary Stats -->
-            <div class="grid grid-cols-4 gap-4 mt-6">
-                <div class="bg-white rounded-lg border border-gray-100 p-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <div class="text-[12px] text-gray-500 mb-1">Total Duration</div>
-                            <div class="text-xl font-semibold text-gray-900">32 Days</div>
-                        </div>
-                        <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white rounded-lg border border-gray-100 p-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <div class="text-[12px] text-gray-500 mb-1">Completed Tasks</div>
-                            <div class="text-xl font-semibold text-primary">1 / 12</div>
-                        </div>
-                        <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white rounded-lg border border-gray-100 p-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <div class="text-[12px] text-gray-500 mb-1">Milestones Reached</div>
-                            <div class="text-xl font-semibold text-purple-600">0 / 4</div>
-                        </div>
-                        <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white rounded-lg border border-gray-100 p-4">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <div class="text-[12px] text-gray-500 mb-1">Expected Completion</div>
-                            <div class="text-xl font-semibold text-gray-900">Mar 6, 2026</div>
-                        </div>
-                        <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <button
+              class="px-4 py-2 border border-gray-200 rounded-lg text-[13px] text-gray-700 bg-white hover:bg-gray-50 font-medium"
+            >
+              📍 Today
+            </button>
+          </div>
         </div>
+
+        <!-- Legend -->
+        <div
+          class="flex items-center flex-wrap gap-6 mb-5 p-3 bg-white rounded-lg border border-gray-100"
+        >
+          <span class="text-[11px] font-medium text-gray-500 uppercase tracking-wide">Legend:</span>
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-4 rounded bg-gradient-to-r from-green-500 to-green-600"></div>
+            <span class="text-[12px] text-gray-600">Completed</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-4 rounded bg-gradient-to-r from-primary to-primary-dark"></div>
+            <span class="text-[12px] text-gray-600">In Progress</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-4 rounded bg-gradient-to-r from-amber-500 to-amber-600"></div>
+            <span class="text-[12px] text-gray-600">At Risk</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-4 rounded bg-gradient-to-r from-red-500 to-red-600"></div>
+            <span class="text-[12px] text-gray-600">Delayed</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-4 rounded bg-gradient-to-r from-slate-400 to-slate-500"></div>
+            <span class="text-[12px] text-gray-600">Pending</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-4 h-4 bg-purple-600 transform rotate-45 rounded-sm"></div>
+            <span class="text-[12px] text-gray-600">Milestone</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-0.5 h-5 bg-red-500"></div>
+            <span class="text-[12px] text-gray-600">Today</span>
+          </div>
+        </div>
+
+        <!-- Gantt Chart -->
+        <div class="gantt-wrapper">
+          <!-- Left Panel: Task List -->
+          <div class="gantt-tasks">
+            <!-- Header -->
+            <div class="gantt-header px-4">
+              <span class="text-[13px] font-semibold text-gray-700">Tasks & Milestones</span>
+            </div>
+
+            <!-- Phase 1 -->
+            <div class="gantt-row phase">
+              <div class="px-4 flex items-center">
+                <svg
+                  class="w-4 h-4 text-blue-600 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+                <span class="text-[13px] font-semibold text-blue-800"
+                  >Phase 1: Pre-Installation</span
+                >
+                <span class="ml-auto text-[11px] text-blue-600 font-medium">3 tasks</span>
+              </div>
+            </div>
+
+            <div class="gantt-row">
+              <div class="px-4 pl-10 flex items-center w-full">
+                <div
+                  class="w-5 h-5 rounded border-2 border-green-500 bg-green-500 flex items-center justify-center mr-3"
+                >
+                  <svg
+                    class="w-3 h-3 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="3"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] text-gray-800 truncate">Site Survey</div>
+                  <div class="text-[11px] text-gray-400">Feb 3 - Feb 5</div>
+                </div>
+                <span
+                  class="px-2 py-0.5 text-[10px] font-medium bg-green-100 text-green-700 rounded-full"
+                  >Done</span
+                >
+              </div>
+            </div>
+
+            <div class="gantt-row">
+              <div class="px-4 pl-10 flex items-center w-full">
+                <div
+                  class="w-5 h-5 rounded-full border-2 border-primary bg-primary/20 flex items-center justify-center mr-3"
+                >
+                  <div class="w-2 h-2 bg-primary rounded-full"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] text-gray-800 truncate">Permit Application</div>
+                  <div class="text-[11px] text-gray-400">Feb 5 - Feb 10</div>
+                </div>
+                <span
+                  class="px-2 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded-full"
+                  >60%</span
+                >
+              </div>
+            </div>
+
+            <div class="gantt-row">
+              <div class="px-4 pl-10 flex items-center w-full">
+                <div
+                  class="w-5 h-5 rounded-full border-2 border-primary bg-primary/20 flex items-center justify-center mr-3"
+                >
+                  <div class="w-2 h-2 bg-primary rounded-full"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] text-gray-800 truncate">Material Procurement</div>
+                  <div class="text-[11px] text-gray-400">Feb 6 - Feb 10</div>
+                </div>
+                <span
+                  class="px-2 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded-full"
+                  >40%</span
+                >
+              </div>
+            </div>
+
+            <!-- Milestone -->
+            <div class="gantt-row bg-purple-50/50">
+              <div class="px-4 pl-10 flex items-center w-full">
+                <div class="w-5 h-5 flex items-center justify-center mr-3">
+                  <div class="w-3 h-3 bg-purple-600 transform rotate-45 rounded-sm"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] text-purple-800 font-medium truncate">
+                    💎 30% Advance Payment
+                  </div>
+                  <div class="text-[11px] text-purple-500">Feb 11</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Phase 2 -->
+            <div class="gantt-row phase amber">
+              <div class="px-4 flex items-center">
+                <svg
+                  class="w-4 h-4 text-amber-600 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+                <span class="text-[13px] font-semibold text-amber-800">Phase 2: Installation</span>
+                <span class="ml-auto text-[11px] text-amber-600 font-medium">4 tasks</span>
+              </div>
+            </div>
+
+            <div class="gantt-row">
+              <div class="px-4 pl-10 flex items-center w-full">
+                <div class="w-5 h-5 rounded-full border-2 border-gray-300 mr-3"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] text-gray-800 truncate">Structure Installation</div>
+                  <div class="text-[11px] text-gray-400">Feb 12 - Feb 15</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="gantt-row">
+              <div class="px-4 pl-10 flex items-center w-full">
+                <div class="w-5 h-5 rounded-full border-2 border-red-400 mr-3"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] text-gray-800 truncate">Panel Mounting</div>
+                  <div class="text-[11px] text-gray-400">Feb 15 - Feb 19</div>
+                </div>
+                <span
+                  class="px-2 py-0.5 text-[10px] font-medium bg-red-100 text-red-700 rounded-full"
+                  >Delayed</span
+                >
+              </div>
+            </div>
+
+            <div class="gantt-row">
+              <div class="px-4 pl-10 flex items-center w-full">
+                <div class="w-5 h-5 rounded-full border-2 border-gray-300 mr-3"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] text-gray-800 truncate">Electrical Wiring</div>
+                  <div class="text-[11px] text-gray-400">Feb 19 - Feb 22</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="gantt-row">
+              <div class="px-4 pl-10 flex items-center w-full">
+                <div class="w-5 h-5 rounded-full border-2 border-gray-300 mr-3"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] text-gray-800 truncate">Inverter Setup</div>
+                  <div class="text-[11px] text-gray-400">Feb 22 - Feb 24</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Milestone -->
+            <div class="gantt-row bg-purple-50/50">
+              <div class="px-4 pl-10 flex items-center w-full">
+                <div class="w-5 h-5 flex items-center justify-center mr-3">
+                  <div class="w-3 h-3 bg-purple-600 transform rotate-45 rounded-sm"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] text-purple-800 font-medium truncate">
+                    💎 40% Installation Payment
+                  </div>
+                  <div class="text-[11px] text-purple-500">Feb 24</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Phase 3 -->
+            <div class="gantt-row phase green">
+              <div class="px-4 flex items-center">
+                <svg
+                  class="w-4 h-4 text-green-600 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+                <span class="text-[13px] font-semibold text-green-800">Phase 3: Commissioning</span>
+                <span class="ml-auto text-[11px] text-green-600 font-medium">5 tasks</span>
+              </div>
+            </div>
+
+            <div class="gantt-row">
+              <div class="px-4 pl-10 flex items-center w-full">
+                <div class="w-5 h-5 rounded-full border-2 border-gray-300 mr-3"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] text-gray-800 truncate">System Testing</div>
+                  <div class="text-[11px] text-gray-400">Feb 25 - Feb 26</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="gantt-row">
+              <div class="px-4 pl-10 flex items-center w-full">
+                <div class="w-5 h-5 rounded-full border-2 border-gray-300 mr-3"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] text-gray-800 truncate">Net Metering Application</div>
+                  <div class="text-[11px] text-gray-400">Feb 26 - Mar 2</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="gantt-row">
+              <div class="px-4 pl-10 flex items-center w-full">
+                <div class="w-5 h-5 rounded-full border-2 border-gray-300 mr-3"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] text-gray-800 truncate">DISCOM Inspection</div>
+                  <div class="text-[11px] text-gray-400">Mar 2 - Mar 4</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="gantt-row">
+              <div class="px-4 pl-10 flex items-center w-full">
+                <div class="w-5 h-5 rounded-full border-2 border-gray-300 mr-3"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] text-gray-800 truncate">Grid Synchronization</div>
+                  <div class="text-[11px] text-gray-400">Mar 4 - Mar 5</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="gantt-row">
+              <div class="px-4 pl-10 flex items-center w-full">
+                <div class="w-5 h-5 rounded-full border-2 border-gray-300 mr-3"></div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] text-gray-800 truncate">Customer Handover</div>
+                  <div class="text-[11px] text-gray-400">Mar 5 - Mar 6</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Final Milestones -->
+            <div class="gantt-row bg-purple-50/50">
+              <div class="px-4 pl-10 flex items-center w-full">
+                <div class="w-5 h-5 flex items-center justify-center mr-3">
+                  <div class="w-3 h-3 bg-purple-600 transform rotate-45 rounded-sm"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] text-purple-800 font-medium truncate">
+                    💎 30% Final Payment
+                  </div>
+                  <div class="text-[11px] text-purple-500">Mar 5</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="gantt-row bg-green-50/50">
+              <div class="px-4 pl-10 flex items-center w-full">
+                <div class="w-5 h-5 flex items-center justify-center mr-3">
+                  <div class="w-3 h-3 bg-green-600 transform rotate-45 rounded-sm"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] text-green-800 font-medium truncate">
+                    🏆 Project Complete
+                  </div>
+                  <div class="text-[11px] text-green-500">Mar 6</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Panel: Timeline -->
+          <div class="gantt-timeline-wrapper">
+            <div class="gantt-timeline">
+              <!-- Header: Week names -->
+              <div class="gantt-header">
+                <div class="timeline-header-row w-full">
+                  <div class="week-header">
+                    <span>Week 1: Feb 3 - Feb 9</span>
+                  </div>
+                  <div class="week-header">
+                    <span>Week 2: Feb 10 - Feb 16</span>
+                  </div>
+                  <div class="week-header">
+                    <span>Week 3: Feb 17 - Feb 23</span>
+                  </div>
+                  <div class="week-header">
+                    <span>Week 4: Feb 24 - Mar 2</span>
+                  </div>
+                  <div class="week-header" style="flex: 0 0 240px">
+                    <span>Week 5: Mar 3 - Mar 9</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Subheader: Day names -->
+              <div class="flex border-b border-gray-200" style="height: 28px">
+                <!-- Week 1 -->
+                <div class="day-cell">M</div>
+                <div class="day-cell">T</div>
+                <div class="day-cell">W</div>
+                <div class="day-cell">T</div>
+                <div class="day-cell today">F</div>
+                <div class="day-cell weekend">S</div>
+                <div class="day-cell weekend">S</div>
+                <!-- Week 2 -->
+                <div class="day-cell">M</div>
+                <div class="day-cell">T</div>
+                <div class="day-cell">W</div>
+                <div class="day-cell">T</div>
+                <div class="day-cell">F</div>
+                <div class="day-cell weekend">S</div>
+                <div class="day-cell weekend">S</div>
+                <!-- Week 3 -->
+                <div class="day-cell">M</div>
+                <div class="day-cell">T</div>
+                <div class="day-cell">W</div>
+                <div class="day-cell">T</div>
+                <div class="day-cell">F</div>
+                <div class="day-cell weekend">S</div>
+                <div class="day-cell weekend">S</div>
+                <!-- Week 4 -->
+                <div class="day-cell">M</div>
+                <div class="day-cell">T</div>
+                <div class="day-cell">W</div>
+                <div class="day-cell">T</div>
+                <div class="day-cell">F</div>
+                <div class="day-cell weekend">S</div>
+                <div class="day-cell weekend">S</div>
+                <!-- Week 5 -->
+                <div class="day-cell">M</div>
+                <div class="day-cell">T</div>
+                <div class="day-cell">W</div>
+                <div class="day-cell">T</div>
+              </div>
+
+              <!-- Timeline Rows -->
+              <!-- Phase 1 Header -->
+              <div
+                class="timeline-row"
+                style="background: linear-gradient(90deg, #dbeafe 0%, #fff 100%)"
+              >
+                <div class="w-full relative">
+                  <div class="today-marker" style="left: 270px"></div>
+                </div>
+              </div>
+
+              <!-- Task 1: Site Survey (Day 1-3) -->
+              <div class="timeline-row">
+                <div class="w-full relative" style="display: flex">
+                  <!-- Grid cells for visual reference -->
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <!-- Task Bar -->
+                  <div class="task-bar completed" style="left: 4px; width: 176px">
+                    <div class="progress-fill" style="width: 100%"></div>
+                    <span class="relative z-10">Site Survey</span>
+                  </div>
+                  <div class="today-marker" style="left: 270px"></div>
+                </div>
+              </div>
+
+              <!-- Task 2: Permit Application (Day 3-7) -->
+              <div class="timeline-row">
+                <div class="w-full relative" style="display: flex">
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="task-bar in-progress" style="left: 124px; width: 296px">
+                    <div class="progress-fill" style="width: 60%"></div>
+                    <span class="relative z-10">Permit Application</span>
+                  </div>
+                  <div class="today-marker" style="left: 270px"></div>
+                </div>
+              </div>
+
+              <!-- Task 3: Material Procurement -->
+              <div class="timeline-row">
+                <div class="w-full relative" style="display: flex">
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="task-bar in-progress" style="left: 184px; width: 236px">
+                    <div class="progress-fill" style="width: 40%"></div>
+                    <span class="relative z-10">Material Procurement</span>
+                  </div>
+                  <div class="today-marker" style="left: 270px"></div>
+                </div>
+              </div>
+
+              <!-- Milestone 1: 30% Payment -->
+              <div class="timeline-row" style="background: rgba(147, 51, 234, 0.05)">
+                <div class="w-full relative" style="display: flex">
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="milestone-marker" style="left: 440px">
+                    <div class="milestone-diamond bg-purple-600"></div>
+                  </div>
+                  <div class="today-marker" style="left: 270px"></div>
+                </div>
+              </div>
+
+              <!-- Phase 2 Header -->
+              <div
+                class="timeline-row"
+                style="background: linear-gradient(90deg, #fef3c7 0%, #fff 100%)"
+              ></div>
+
+              <!-- Task 4: Structure Installation -->
+              <div class="timeline-row">
+                <div class="w-full relative" style="display: flex">
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="task-bar pending" style="left: 484px; width: 176px">
+                    <span>Structure Installation</span>
+                  </div>
+                  <div class="today-marker" style="left: 270px"></div>
+                </div>
+              </div>
+
+              <!-- Task 5: Panel Mounting (Delayed) -->
+              <div class="timeline-row">
+                <div class="w-full relative" style="display: flex">
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="task-bar delayed" style="left: 660px; width: 236px">
+                    <span>Panel Mounting</span>
+                  </div>
+                  <div class="today-marker" style="left: 270px"></div>
+                </div>
+              </div>
+
+              <!-- Task 6: Electrical Wiring -->
+              <div class="timeline-row">
+                <div class="w-full relative" style="display: flex">
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="task-bar pending" style="left: 896px; width: 176px">
+                    <span>Electrical Wiring</span>
+                  </div>
+                  <div class="today-marker" style="left: 270px"></div>
+                </div>
+              </div>
+
+              <!-- Task 7: Inverter Setup -->
+              <div class="timeline-row">
+                <div class="w-full relative" style="display: flex">
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="task-bar pending" style="left: 1072px; width: 116px">
+                    <span>Inverter</span>
+                  </div>
+                  <div class="today-marker" style="left: 270px"></div>
+                </div>
+              </div>
+
+              <!-- Milestone 2 -->
+              <div class="timeline-row" style="background: rgba(147, 51, 234, 0.05)">
+                <div class="w-full relative" style="display: flex">
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="milestone-marker" style="left: 1188px">
+                    <div class="milestone-diamond bg-purple-600"></div>
+                  </div>
+                  <div class="today-marker" style="left: 270px"></div>
+                </div>
+              </div>
+
+              <!-- Phase 3 Header -->
+              <div
+                class="timeline-row"
+                style="background: linear-gradient(90deg, #dcfce7 0%, #fff 100%)"
+              ></div>
+
+              <!-- Remaining tasks with similar structure -->
+              <div class="timeline-row">
+                <div class="w-full relative" style="display: flex">
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="task-bar pending" style="left: 1248px; width: 116px">
+                    <span>Testing</span>
+                  </div>
+                  <div class="today-marker" style="left: 270px"></div>
+                </div>
+              </div>
+
+              <div class="timeline-row">
+                <div class="w-full relative" style="display: flex">
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="task-bar pending" style="left: 1308px; width: 296px">
+                    <span>Net Metering Application</span>
+                  </div>
+                  <div class="today-marker" style="left: 270px"></div>
+                </div>
+              </div>
+
+              <div class="timeline-row">
+                <div class="w-full relative" style="display: flex">
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="task-bar pending" style="left: 1604px; width: 116px">
+                    <span>Inspection</span>
+                  </div>
+                  <div class="today-marker" style="left: 270px"></div>
+                </div>
+              </div>
+
+              <div class="timeline-row">
+                <div class="w-full relative" style="display: flex">
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="task-bar pending" style="left: 1720px; width: 116px">
+                    <span>Grid Sync</span>
+                  </div>
+                  <div class="today-marker" style="left: 270px"></div>
+                </div>
+              </div>
+
+              <div class="timeline-row">
+                <div class="w-full relative" style="display: flex">
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="task-bar pending" style="left: 1780px; width: 116px">
+                    <span>Handover</span>
+                  </div>
+                  <div class="today-marker" style="left: 270px"></div>
+                </div>
+              </div>
+
+              <!-- Final milestones -->
+              <div class="timeline-row" style="background: rgba(147, 51, 234, 0.05)">
+                <div class="w-full relative" style="display: flex">
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="milestone-marker" style="left: 1780px">
+                    <div class="milestone-diamond bg-purple-600"></div>
+                  </div>
+                  <div class="today-marker" style="left: 270px"></div>
+                </div>
+              </div>
+
+              <div class="timeline-row" style="background: rgba(34, 197, 94, 0.05)">
+                <div class="w-full relative" style="display: flex">
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell weekend"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="timeline-cell"></div>
+                  <div class="milestone-marker" style="left: 1840px">
+                    <div class="milestone-diamond bg-green-600"></div>
+                  </div>
+                  <div class="today-marker" style="left: 270px"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-4 gap-4 mt-6">
+          <div class="bg-white rounded-lg border border-gray-100 p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-[12px] text-gray-500 mb-1">Total Duration</div>
+                <div class="text-xl font-semibold text-gray-900">32 Days</div>
+              </div>
+              <div class="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                <svg
+                  class="w-5 h-5 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-lg border border-gray-100 p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-[12px] text-gray-500 mb-1">Completed Tasks</div>
+                <div class="text-xl font-semibold text-primary">1 / 12</div>
+              </div>
+              <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <svg
+                  class="w-5 h-5 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-lg border border-gray-100 p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-[12px] text-gray-500 mb-1">Milestones Reached</div>
+                <div class="text-xl font-semibold text-purple-600">0 / 4</div>
+              </div>
+              <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                <svg
+                  class="w-5 h-5 text-purple-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div class="bg-white rounded-lg border border-gray-100 p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-[12px] text-gray-500 mb-1">Expected Completion</div>
+                <div class="text-xl font-semibold text-gray-900">Mar 6, 2026</div>
+              </div>
+              <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                <svg
+                  class="w-5 h-5 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
-</body>
+  </body>
 </html>

@@ -1,298 +1,447 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pending Approvals - OneOhm Solar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#F97316',
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#F97316',
+            },
+          },
+        },
+      };
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+      body {
+        font-family: 'Inter', sans-serif;
+      }
     </style>
-</head>
-<body class="bg-gray-50">
+  </head>
+  <body class="bg-gray-50">
     <div class="flex h-screen">
-        <!-- Sidebar -->
-        <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
-            <div class="p-6 border-b border-gray-700">
-                <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
-                <p class="text-gray-400 text-sm mt-1">My Approvals</p>
-            </div>
-            
-            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-                <a href="../admin/admin-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                    </svg>
-                    <span>Dashboard</span>
-                </a>
-                <a href="pending-approvals.html" class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
-                    </svg>
-                    <span>Pending Approvals</span>
-                    <span class="ml-auto px-2 py-1 bg-red-500 text-white rounded-full text-xs font-bold">12</span>
-                </a>
-                <a href="approval-queue.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                    </svg>
-                    <span>All Approvals</span>
-                </a>
-                <a href="approval-history.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <span>History</span>
-                </a>
-            </nav>
+      <!-- Sidebar -->
+      <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
+        <div class="p-6 border-b border-gray-700">
+          <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
+          <p class="text-gray-400 text-sm mt-1">My Approvals</p>
+        </div>
 
-            <div class="p-4 border-t border-gray-700">
-                <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
-                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">RK</div>
-                    <div class="flex-1 min-w-0">
-                        <p class="font-semibold text-sm truncate">Rajesh Kumar</p>
-                        <p class="text-xs text-gray-400 truncate">Finance Head</p>
-                    </div>
-                </div>
+        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+          <a
+            href="../admin/admin-dashboard.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              ></path>
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a
+            href="pending-approvals.html"
+            class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold"
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                clip-rule="evenodd"
+              ></path>
+            </svg>
+            <span>Pending Approvals</span>
+            <span class="ml-auto px-2 py-1 bg-red-500 text-white rounded-full text-xs font-bold"
+              >12</span
+            >
+          </a>
+          <a
+            href="approval-queue.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              ></path>
+            </svg>
+            <span>All Approvals</span>
+          </a>
+          <a
+            href="approval-history.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              ></path>
+            </svg>
+            <span>History</span>
+          </a>
+        </nav>
+
+        <div class="p-4 border-t border-gray-700">
+          <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
+            <div
+              class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold"
+            >
+              RK
             </div>
-        </aside>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm truncate">Rajesh Kumar</p>
+              <p class="text-xs text-gray-400 truncate">Finance Head</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Top Bar -->
+        <header class="bg-white border-b border-gray-200 px-8 py-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900">My Pending Approvals</h2>
+              <p class="text-sm text-gray-600">Review and action requests assigned to you</p>
+            </div>
+            <div class="flex items-center space-x-3">
+              <button
+                class="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50"
+              >
+                Bulk Approve
+              </button>
+              <button
+                class="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700"
+              >
+                Bulk Reject
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <!-- Quick Stats -->
+        <div class="bg-white border-b border-gray-200 px-8 py-4">
+          <div class="grid grid-cols-4 gap-4">
+            <div class="flex items-center space-x-3 p-3 bg-red-50 rounded-lg border border-red-200">
+              <div
+                class="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center text-white font-bold"
+              >
+                12
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-gray-900">Awaiting Action</p>
+                <p class="text-xs text-red-600">Requires your approval</p>
+              </div>
+            </div>
+            <div
+              class="flex items-center space-x-3 p-3 bg-orange-50 rounded-lg border border-orange-200"
+            >
+              <div
+                class="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center text-white font-bold"
+              >
+                3
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-gray-900">Overdue</p>
+                <p class="text-xs text-orange-600">Past SLA deadline</p>
+              </div>
+            </div>
+            <div
+              class="flex items-center space-x-3 p-3 bg-green-50 rounded-lg border border-green-200"
+            >
+              <div
+                class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center text-white font-bold"
+              >
+                58
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-gray-900">Approved This Month</p>
+                <p class="text-xs text-green-600">Successfully processed</p>
+              </div>
+            </div>
+            <div
+              class="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg border border-blue-200"
+            >
+              <div
+                class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold"
+              >
+                3.2h
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-gray-900">Avg Response Time</p>
+                <p class="text-xs text-blue-600">Your performance</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- Main Content -->
-        <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Top Bar -->
-            <header class="bg-white border-b border-gray-200 px-8 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-900">My Pending Approvals</h2>
-                        <p class="text-sm text-gray-600">Review and action requests assigned to you</p>
+        <main class="flex-1 overflow-y-auto p-8">
+          <!-- Approval Cards -->
+          <div class="space-y-4">
+            <!-- Overdue Approval -->
+            <div class="bg-white rounded-xl border-2 border-red-300 p-6 shadow-lg">
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex items-start space-x-4">
+                  <div
+                    class="w-16 h-16 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0"
+                  >
+                    <svg class="w-8 h-8 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
+                      <path
+                        fill-rule="evenodd"
+                        d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"
+                        clip-rule="evenodd"
+                      ></path>
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <div class="flex items-center space-x-3 mb-2">
+                      <h3 class="font-bold text-xl text-gray-900">Purchase Order #PO-2024-1248</h3>
+                      <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold"
+                        >⚠️ OVERDUE</span
+                      >
+                      <span
+                        class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold"
+                        >High Priority</span
+                      >
                     </div>
-                    <div class="flex items-center space-x-3">
-                        <button class="px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">Bulk Approve</button>
-                        <button class="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700">Bulk Reject</button>
+                    <p class="text-gray-600 mb-3">
+                      Material procurement for Project #PRJ-458 - Residential Solar Installation
+                    </p>
+                    <div class="grid grid-cols-4 gap-4 mb-4">
+                      <div>
+                        <p class="text-xs text-gray-500">Requested By</p>
+                        <p class="font-semibold text-gray-900">Amit Singh</p>
+                        <p class="text-xs text-gray-500">Operations Manager</p>
+                      </div>
+                      <div>
+                        <p class="text-xs text-gray-500">Amount</p>
+                        <p class="font-bold text-2xl text-gray-900">₹8,50,000</p>
+                      </div>
+                      <div>
+                        <p class="text-xs text-gray-500">Vendor</p>
+                        <p class="font-semibold text-gray-900">SolarTech India</p>
+                      </div>
+                      <div>
+                        <p class="text-xs text-gray-500">Time Elapsed</p>
+                        <p class="font-bold text-xl text-red-600">2d 8h</p>
+                        <p class="text-xs text-red-600">SLA: 48h (Overdue)</p>
+                      </div>
                     </div>
+                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                      <p class="text-sm font-semibold text-gray-900 mb-2">Items:</p>
+                      <ul class="text-sm text-gray-700 space-y-1">
+                        <li>• Solar Panels (350W) - 40 units @ ₹15,000 each</li>
+                        <li>• Inverter (10kW) - 2 units @ ₹85,000 each</li>
+                        <li>• Mounting Structure - Complete set</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
-            </header>
-
-            <!-- Quick Stats -->
-            <div class="bg-white border-b border-gray-200 px-8 py-4">
-                <div class="grid grid-cols-4 gap-4">
-                    <div class="flex items-center space-x-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                        <div class="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center text-white font-bold">12</div>
-                        <div>
-                            <p class="text-sm font-semibold text-gray-900">Awaiting Action</p>
-                            <p class="text-xs text-red-600">Requires your approval</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
-                        <div class="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center text-white font-bold">3</div>
-                        <div>
-                            <p class="text-sm font-semibold text-gray-900">Overdue</p>
-                            <p class="text-xs text-orange-600">Past SLA deadline</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                        <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center text-white font-bold">58</div>
-                        <div>
-                            <p class="text-sm font-semibold text-gray-900">Approved This Month</p>
-                            <p class="text-xs text-green-600">Successfully processed</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold">3.2h</div>
-                        <div>
-                            <p class="text-sm font-semibold text-gray-900">Avg Response Time</p>
-                            <p class="text-xs text-blue-600">Your performance</p>
-                        </div>
-                    </div>
+              </div>
+              <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                <div class="flex items-center space-x-2 text-sm text-gray-600">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                      clip-rule="evenodd"
+                    ></path>
+                  </svg>
+                  <span>Previous Approvals: Manager ✓, Team Lead ✓</span>
                 </div>
+                <div class="flex space-x-3">
+                  <button
+                    class="px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700"
+                  >
+                    ✕ Reject
+                  </button>
+                  <button
+                    class="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700"
+                  >
+                    ✓ Approve
+                  </button>
+                  <button
+                    class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300"
+                  >
+                    View Full Details
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <!-- Main Content -->
-            <main class="flex-1 overflow-y-auto p-8">
-                <!-- Approval Cards -->
-                <div class="space-y-4">
-                    <!-- Overdue Approval -->
-                    <div class="bg-white rounded-xl border-2 border-red-300 p-6 shadow-lg">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex items-start space-x-4">
-                                <div class="w-16 h-16 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <svg class="w-8 h-8 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
-                                        <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"></path>
-                                    </svg>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="flex items-center space-x-3 mb-2">
-                                        <h3 class="font-bold text-xl text-gray-900">Purchase Order #PO-2024-1248</h3>
-                                        <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">⚠️ OVERDUE</span>
-                                        <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">High Priority</span>
-                                    </div>
-                                    <p class="text-gray-600 mb-3">Material procurement for Project #PRJ-458 - Residential Solar Installation</p>
-                                    <div class="grid grid-cols-4 gap-4 mb-4">
-                                        <div>
-                                            <p class="text-xs text-gray-500">Requested By</p>
-                                            <p class="font-semibold text-gray-900">Amit Singh</p>
-                                            <p class="text-xs text-gray-500">Operations Manager</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs text-gray-500">Amount</p>
-                                            <p class="font-bold text-2xl text-gray-900">₹8,50,000</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs text-gray-500">Vendor</p>
-                                            <p class="font-semibold text-gray-900">SolarTech India</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs text-gray-500">Time Elapsed</p>
-                                            <p class="font-bold text-xl text-red-600">2d 8h</p>
-                                            <p class="text-xs text-red-600">SLA: 48h (Overdue)</p>
-                                        </div>
-                                    </div>
-                                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                                        <p class="text-sm font-semibold text-gray-900 mb-2">Items:</p>
-                                        <ul class="text-sm text-gray-700 space-y-1">
-                                            <li>• Solar Panels (350W) - 40 units @ ₹15,000 each</li>
-                                            <li>• Inverter (10kW) - 2 units @ ₹85,000 each</li>
-                                            <li>• Mounting Structure - Complete set</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between pt-4 border-t border-gray-200">
-                            <div class="flex items-center space-x-2 text-sm text-gray-600">
-                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
-                                <span>Previous Approvals: Manager ✓, Team Lead ✓</span>
-                            </div>
-                            <div class="flex space-x-3">
-                                <button class="px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700">✕ Reject</button>
-                                <button class="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700">✓ Approve</button>
-                                <button class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300">View Full Details</button>
-                            </div>
-                        </div>
+            <!-- Normal Priority Approval -->
+            <div class="bg-white rounded-xl border-2 border-yellow-300 p-6 shadow">
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex items-start space-x-4">
+                  <div
+                    class="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0"
+                  >
+                    <svg class="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
+                      <path
+                        fill-rule="evenodd"
+                        d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clip-rule="evenodd"
+                      ></path>
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <div class="flex items-center space-x-3 mb-2">
+                      <h3 class="font-bold text-xl text-gray-900">Quote Approval #QUO-2024-5689</h3>
+                      <span
+                        class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold"
+                        >PENDING</span
+                      >
                     </div>
-
-                    <!-- Normal Priority Approval -->
-                    <div class="bg-white rounded-xl border-2 border-yellow-300 p-6 shadow">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex items-start space-x-4">
-                                <div class="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <svg class="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
-                                        <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                    </svg>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="flex items-center space-x-3 mb-2">
-                                        <h3 class="font-bold text-xl text-gray-900">Quote Approval #QUO-2024-5689</h3>
-                                        <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">PENDING</span>
-                                    </div>
-                                    <p class="text-gray-600 mb-3">Commercial solar installation - 50kW system for Retail Plaza</p>
-                                    <div class="grid grid-cols-4 gap-4 mb-4">
-                                        <div>
-                                            <p class="text-xs text-gray-500">Requested By</p>
-                                            <p class="font-semibold text-gray-900">Priya Sharma</p>
-                                            <p class="text-xs text-gray-500">Sales Executive</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs text-gray-500">Quote Value</p>
-                                            <p class="font-bold text-2xl text-gray-900">₹42,00,000</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs text-gray-500">Customer</p>
-                                            <p class="font-semibold text-gray-900">Retail Plaza Pvt Ltd</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs text-gray-500">Time Elapsed</p>
-                                            <p class="font-bold text-xl text-yellow-600">18h</p>
-                                            <p class="text-xs text-gray-500">SLA: 24h</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between pt-4 border-t border-gray-200">
-                            <div class="flex items-center space-x-2 text-sm text-gray-600">
-                                <span>Approval Level: 2 of 2 (Final)</span>
-                            </div>
-                            <div class="flex space-x-3">
-                                <button class="px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700">✕ Reject</button>
-                                <button class="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700">✓ Approve</button>
-                                <button class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300">View Details</button>
-                            </div>
-                        </div>
+                    <p class="text-gray-600 mb-3">
+                      Commercial solar installation - 50kW system for Retail Plaza
+                    </p>
+                    <div class="grid grid-cols-4 gap-4 mb-4">
+                      <div>
+                        <p class="text-xs text-gray-500">Requested By</p>
+                        <p class="font-semibold text-gray-900">Priya Sharma</p>
+                        <p class="text-xs text-gray-500">Sales Executive</p>
+                      </div>
+                      <div>
+                        <p class="text-xs text-gray-500">Quote Value</p>
+                        <p class="font-bold text-2xl text-gray-900">₹42,00,000</p>
+                      </div>
+                      <div>
+                        <p class="text-xs text-gray-500">Customer</p>
+                        <p class="font-semibold text-gray-900">Retail Plaza Pvt Ltd</p>
+                      </div>
+                      <div>
+                        <p class="text-xs text-gray-500">Time Elapsed</p>
+                        <p class="font-bold text-xl text-yellow-600">18h</p>
+                        <p class="text-xs text-gray-500">SLA: 24h</p>
+                      </div>
                     </div>
-
-                    <!-- Low Value Quick Approval -->
-                    <div class="bg-white rounded-xl border-2 border-gray-200 p-6 shadow">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex items-start space-x-4">
-                                <div class="w-16 h-16 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <svg class="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
-                                    </svg>
-                                </div>
-                                <div class="flex-1">
-                                    <div class="flex items-center space-x-3 mb-2">
-                                        <h3 class="font-bold text-xl text-gray-900">Expense Claim #EXP-2024-3421</h3>
-                                        <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">In Progress</span>
-                                    </div>
-                                    <p class="text-gray-600 mb-3">Field visit expenses - Site survey and customer meeting</p>
-                                    <div class="grid grid-cols-4 gap-4 mb-4">
-                                        <div>
-                                            <p class="text-xs text-gray-500">Requested By</p>
-                                            <p class="font-semibold text-gray-900">Vivek Gupta</p>
-                                            <p class="text-xs text-gray-500">Field Worker</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs text-gray-500">Amount</p>
-                                            <p class="font-bold text-2xl text-gray-900">₹4,250</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs text-gray-500">Category</p>
-                                            <p class="font-semibold text-gray-900">Travel & Food</p>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs text-gray-500">Time Elapsed</p>
-                                            <p class="font-bold text-xl text-gray-600">6h</p>
-                                            <p class="text-xs text-gray-500">SLA: 12h</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between pt-4 border-t border-gray-200">
-                            <div class="flex items-center space-x-2 text-sm text-gray-600">
-                                <span>✓ Receipts attached (3 documents)</span>
-                            </div>
-                            <div class="flex space-x-3">
-                                <button class="px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700">✕ Reject</button>
-                                <button class="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700">✓ Quick Approve</button>
-                                <button class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300">View Details</button>
-                            </div>
-                        </div>
-                    </div>
+                  </div>
                 </div>
-
-                <!-- Load More -->
-                <div class="mt-6 text-center">
-                    <button class="px-8 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">Load More (9 remaining)</button>
+              </div>
+              <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                <div class="flex items-center space-x-2 text-sm text-gray-600">
+                  <span>Approval Level: 2 of 2 (Final)</span>
                 </div>
-            </main>
-        </div>
+                <div class="flex space-x-3">
+                  <button
+                    class="px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700"
+                  >
+                    ✕ Reject
+                  </button>
+                  <button
+                    class="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700"
+                  >
+                    ✓ Approve
+                  </button>
+                  <button
+                    class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300"
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Low Value Quick Approval -->
+            <div class="bg-white rounded-xl border-2 border-gray-200 p-6 shadow">
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex items-start space-x-4">
+                  <div
+                    class="w-16 h-16 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0"
+                  >
+                    <svg class="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fill-rule="evenodd"
+                        d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
+                        clip-rule="evenodd"
+                      ></path>
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <div class="flex items-center space-x-3 mb-2">
+                      <h3 class="font-bold text-xl text-gray-900">Expense Claim #EXP-2024-3421</h3>
+                      <span
+                        class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold"
+                        >In Progress</span
+                      >
+                    </div>
+                    <p class="text-gray-600 mb-3">
+                      Field visit expenses - Site survey and customer meeting
+                    </p>
+                    <div class="grid grid-cols-4 gap-4 mb-4">
+                      <div>
+                        <p class="text-xs text-gray-500">Requested By</p>
+                        <p class="font-semibold text-gray-900">Vivek Gupta</p>
+                        <p class="text-xs text-gray-500">Field Worker</p>
+                      </div>
+                      <div>
+                        <p class="text-xs text-gray-500">Amount</p>
+                        <p class="font-bold text-2xl text-gray-900">₹4,250</p>
+                      </div>
+                      <div>
+                        <p class="text-xs text-gray-500">Category</p>
+                        <p class="font-semibold text-gray-900">Travel & Food</p>
+                      </div>
+                      <div>
+                        <p class="text-xs text-gray-500">Time Elapsed</p>
+                        <p class="font-bold text-xl text-gray-600">6h</p>
+                        <p class="text-xs text-gray-500">SLA: 12h</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                <div class="flex items-center space-x-2 text-sm text-gray-600">
+                  <span>✓ Receipts attached (3 documents)</span>
+                </div>
+                <div class="flex space-x-3">
+                  <button
+                    class="px-6 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700"
+                  >
+                    ✕ Reject
+                  </button>
+                  <button
+                    class="px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700"
+                  >
+                    ✓ Quick Approve
+                  </button>
+                  <button
+                    class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300"
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Load More -->
+          <div class="mt-6 text-center">
+            <button
+              class="px-8 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50"
+            >
+              Load More (9 remaining)
+            </button>
+          </div>
+        </main>
+      </div>
     </div>
-</body>
+  </body>
 </html>
-

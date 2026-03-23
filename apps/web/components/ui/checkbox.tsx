@@ -37,7 +37,8 @@ const CHECK_ICON_SIZES = {
 } as const;
 
 export interface CheckboxProps
-  extends Omit<React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>, 'checked'>,
+  extends
+    Omit<React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>, 'checked'>,
     VariantProps<typeof checkboxVariants> {
   /** Checked state */
   checked?: boolean;

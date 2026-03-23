@@ -1,261 +1,371 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Create Lead - Step 4 - OneOhm Solar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#76c044',
-                        secondary: '#0d74b8',
-                        tagline: '#025580',
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#76c044',
+              secondary: '#0d74b8',
+              tagline: '#025580',
+            },
+          },
+        },
+      };
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-        }
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+      body {
+        font-family: 'Inter', sans-serif;
+      }
     </style>
-</head>
-<body class="bg-gray-50">
+  </head>
+  <body class="bg-gray-50">
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl pb-8">
-        
-        <!-- Header -->
-        <div class="bg-gradient-to-r from-primary via-green-500 to-secondary px-6 py-6 pt-12">
-            <div class="flex items-center justify-between mb-6">
-                <a href="lead-step3.html" class="inline-flex items-center text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                    </svg>
-                </a>
-                <div class="flex items-center space-x-2">
-                    <div class="w-8 h-1 bg-white rounded-full"></div>
-                    <div class="w-8 h-1 bg-white rounded-full"></div>
-                    <div class="w-8 h-1 bg-white rounded-full"></div>
-                    <div class="w-8 h-1 bg-white rounded-full"></div>
-                    <div class="w-8 h-1 bg-white/30 rounded-full"></div>
-                    <div class="w-8 h-1 bg-white/30 rounded-full"></div>
-                </div>
-            </div>
-            <div class="mb-4">
-                <p class="text-green-100 text-sm mb-1">Step 4 of 6</p>
-                <h1 class="text-3xl font-bold text-white mb-2">Product Preferences</h1>
-                <p class="text-green-100">Choose your solar components</p>
-            </div>
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-primary via-green-500 to-secondary px-6 py-6 pt-12">
+        <div class="flex items-center justify-between mb-6">
+          <a href="lead-step3.html" class="inline-flex items-center text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              ></path>
+            </svg>
+          </a>
+          <div class="flex items-center space-x-2">
+            <div class="w-8 h-1 bg-white rounded-full"></div>
+            <div class="w-8 h-1 bg-white rounded-full"></div>
+            <div class="w-8 h-1 bg-white rounded-full"></div>
+            <div class="w-8 h-1 bg-white rounded-full"></div>
+            <div class="w-8 h-1 bg-white/30 rounded-full"></div>
+            <div class="w-8 h-1 bg-white/30 rounded-full"></div>
+          </div>
         </div>
-
-        <!-- Content -->
-        <div class="px-6 py-8">
-            <form id="leadForm" class="space-y-6" onsubmit="handleSubmit(event)">
-                
-                <!-- Panel Type -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-3">
-                        Solar Panel Type *
-                    </label>
-                    <div class="space-y-3">
-                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-primary transition-all">
-                            <input type="radio" name="panelType" value="DCR PERC" class="w-5 h-5 text-primary" checked />
-                            <div class="ml-3 flex-1">
-                                <div class="font-semibold text-gray-900">DCR PERC</div>
-                                <div class="text-sm text-gray-500">530-550Wp • Subsidy eligible</div>
-                            </div>
-                            <span class="text-xs px-2 py-1 bg-success/10 text-success rounded-full">Recommended</span>
-                        </label>
-                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-primary transition-all">
-                            <input type="radio" name="panelType" value="DCR TOPCon" class="w-5 h-5 text-primary" />
-                            <div class="ml-3 flex-1">
-                                <div class="font-semibold text-gray-900">DCR TOPCon</div>
-                                <div class="text-sm text-gray-500">560-580Wp • High efficiency</div>
-                            </div>
-                        </label>
-                        <label class="flex items-center p-4 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-primary transition-all">
-                            <input type="radio" name="panelType" value="Non-DCR TOPCon" class="w-5 h-5 text-primary" />
-                            <div class="ml-3 flex-1">
-                                <div class="font-semibold text-gray-900">Non-DCR TOPCon</div>
-                                <div class="text-sm text-gray-500">560-620Wp • Commercial</div>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Panel Brand -->
-                <div>
-                    <label for="panelBrand" class="block text-sm font-medium text-gray-700 mb-2">
-                        Panel Brand *
-                    </label>
-                    <select id="panelBrand" name="panelBrand" class="block w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all" required>
-                        <option value="">Select brand</option>
-                        <option value="Adani" selected>Adani Solar</option>
-                        <option value="Waaree">Waaree Energies</option>
-                        <option value="Renewsys">Renewsys</option>
-                        <option value="Premier">Premier Energies</option>
-                        <option value="Axitec">Axitec</option>
-                    </select>
-                </div>
-
-                <!-- Number of Panels (Auto) -->
-                <div class="bg-gray-100 border-2 border-gray-200 rounded-2xl p-4">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium text-gray-700">Number of Panels</span>
-                        <span class="text-2xl font-bold text-primary" id="panelCount">10</span>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-1">Auto-calculated based on system size</p>
-                </div>
-
-                <!-- Inverter Type -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-3">
-                        Inverter Type *
-                    </label>
-                    <div class="grid grid-cols-3 gap-3">
-                        <label class="relative">
-                            <input type="radio" name="inverterType" value="On-Grid" class="peer sr-only" checked />
-                            <div class="peer-checked:border-primary peer-checked:bg-primary/5 border-2 border-gray-200 rounded-2xl p-3 cursor-pointer hover:border-primary transition-all text-center">
-                                <svg class="w-6 h-6 text-primary mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                </svg>
-                                <span class="text-xs font-semibold text-gray-900">On-Grid</span>
-                            </div>
-                        </label>
-                        <label class="relative">
-                            <input type="radio" name="inverterType" value="Hybrid" class="peer sr-only" />
-                            <div class="peer-checked:border-primary peer-checked:bg-primary/5 border-2 border-gray-200 rounded-2xl p-3 cursor-pointer hover:border-primary transition-all text-center">
-                                <svg class="w-6 h-6 text-primary mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
-                                </svg>
-                                <span class="text-xs font-semibold text-gray-900">Hybrid</span>
-                            </div>
-                        </label>
-                        <label class="relative">
-                            <input type="radio" name="inverterType" value="Off-Grid" class="peer sr-only" />
-                            <div class="peer-checked:border-primary peer-checked:bg-primary/5 border-2 border-gray-200 rounded-2xl p-3 cursor-pointer hover:border-primary transition-all text-center">
-                                <svg class="w-6 h-6 text-primary mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                                </svg>
-                                <span class="text-xs font-semibold text-gray-900">Off-Grid</span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Inverter Brand -->
-                <div>
-                    <label for="inverterBrand" class="block text-sm font-medium text-gray-700 mb-2">
-                        Inverter Brand *
-                    </label>
-                    <select id="inverterBrand" name="inverterBrand" class="block w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all" required>
-                        <option value="">Select brand</option>
-                        <option value="Sungrow" selected>Sungrow</option>
-                        <option value="Goodwe">Goodwe</option>
-                        <option value="SolarEdge">SolarEdge</option>
-                    </select>
-                </div>
-
-                <!-- Battery Required -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-3">
-                        Battery Required? *
-                    </label>
-                    <div class="flex space-x-3">
-                        <label class="flex-1 relative">
-                            <input type="radio" name="battery" value="yes" class="peer sr-only" />
-                            <div class="peer-checked:border-success peer-checked:bg-success/5 border-2 border-gray-200 rounded-2xl p-4 cursor-pointer hover:border-success transition-all text-center">
-                                <span class="text-sm font-semibold text-gray-900">Yes</span>
-                            </div>
-                        </label>
-                        <label class="flex-1 relative">
-                            <input type="radio" name="battery" value="no" class="peer sr-only" checked />
-                            <div class="peer-checked:border-gray-400 peer-checked:bg-gray-100 border-2 border-gray-200 rounded-2xl p-4 cursor-pointer hover:border-gray-400 transition-all text-center">
-                                <span class="text-sm font-semibold text-gray-900">No</span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Structure Type -->
-                <div>
-                    <label for="structureType" class="block text-sm font-medium text-gray-700 mb-2">
-                        Structure Type *
-                    </label>
-                    <select id="structureType" name="structureType" class="block w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all" required>
-                        <option value="">Select structure type</option>
-                        <option value="Aluminum Rail Mount" selected>Aluminum Rail Mount</option>
-                        <option value="3x5 Ballast">3×5 Ballast (No penetration)</option>
-                        <option value="RCC Elevated">RCC Elevated</option>
-                        <option value="Ground Mount">Ground Mount</option>
-                    </select>
-                </div>
-
-                <!-- Info Box -->
-                <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                    <div class="flex items-start space-x-3">
-                        <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                        </svg>
-                        <p class="text-sm text-amber-800 leading-relaxed">
-                            <strong class="font-semibold">Need help choosing?</strong> Our team will review and recommend the best configuration for your needs.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Buttons -->
-                <div class="flex space-x-3 pt-4">
-                    <a href="lead-step3.html" class="flex-1">
-                        <button type="button" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-4 px-6 rounded-2xl transition-all">
-                            Back
-                        </button>
-                    </a>
-                    <button type="submit" class="flex-1 bg-gradient-to-r from-primary via-green-500 to-secondary text-white font-semibold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center space-x-2">
-                        <span>Next Step</span>
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                        </svg>
-                    </button>
-                </div>
-
-            </form>
+        <div class="mb-4">
+          <p class="text-green-100 text-sm mb-1">Step 4 of 6</p>
+          <h1 class="text-3xl font-bold text-white mb-2">Product Preferences</h1>
+          <p class="text-green-100">Choose your solar components</p>
         </div>
+      </div>
+
+      <!-- Content -->
+      <div class="px-6 py-8">
+        <form id="leadForm" class="space-y-6" onsubmit="handleSubmit(event)">
+          <!-- Panel Type -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-3"> Solar Panel Type * </label>
+            <div class="space-y-3">
+              <label
+                class="flex items-center p-4 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-primary transition-all"
+              >
+                <input
+                  type="radio"
+                  name="panelType"
+                  value="DCR PERC"
+                  class="w-5 h-5 text-primary"
+                  checked
+                />
+                <div class="ml-3 flex-1">
+                  <div class="font-semibold text-gray-900">DCR PERC</div>
+                  <div class="text-sm text-gray-500">530-550Wp • Subsidy eligible</div>
+                </div>
+                <span class="text-xs px-2 py-1 bg-success/10 text-success rounded-full"
+                  >Recommended</span
+                >
+              </label>
+              <label
+                class="flex items-center p-4 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-primary transition-all"
+              >
+                <input
+                  type="radio"
+                  name="panelType"
+                  value="DCR TOPCon"
+                  class="w-5 h-5 text-primary"
+                />
+                <div class="ml-3 flex-1">
+                  <div class="font-semibold text-gray-900">DCR TOPCon</div>
+                  <div class="text-sm text-gray-500">560-580Wp • High efficiency</div>
+                </div>
+              </label>
+              <label
+                class="flex items-center p-4 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-primary transition-all"
+              >
+                <input
+                  type="radio"
+                  name="panelType"
+                  value="Non-DCR TOPCon"
+                  class="w-5 h-5 text-primary"
+                />
+                <div class="ml-3 flex-1">
+                  <div class="font-semibold text-gray-900">Non-DCR TOPCon</div>
+                  <div class="text-sm text-gray-500">560-620Wp • Commercial</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Panel Brand -->
+          <div>
+            <label for="panelBrand" class="block text-sm font-medium text-gray-700 mb-2">
+              Panel Brand *
+            </label>
+            <select
+              id="panelBrand"
+              name="panelBrand"
+              class="block w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+              required
+            >
+              <option value="">Select brand</option>
+              <option value="Adani" selected>Adani Solar</option>
+              <option value="Waaree">Waaree Energies</option>
+              <option value="Renewsys">Renewsys</option>
+              <option value="Premier">Premier Energies</option>
+              <option value="Axitec">Axitec</option>
+            </select>
+          </div>
+
+          <!-- Number of Panels (Auto) -->
+          <div class="bg-gray-100 border-2 border-gray-200 rounded-2xl p-4">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-medium text-gray-700">Number of Panels</span>
+              <span class="text-2xl font-bold text-primary" id="panelCount">10</span>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">Auto-calculated based on system size</p>
+          </div>
+
+          <!-- Inverter Type -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-3"> Inverter Type * </label>
+            <div class="grid grid-cols-3 gap-3">
+              <label class="relative">
+                <input
+                  type="radio"
+                  name="inverterType"
+                  value="On-Grid"
+                  class="peer sr-only"
+                  checked
+                />
+                <div
+                  class="peer-checked:border-primary peer-checked:bg-primary/5 border-2 border-gray-200 rounded-2xl p-3 cursor-pointer hover:border-primary transition-all text-center"
+                >
+                  <svg
+                    class="w-6 h-6 text-primary mx-auto mb-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    ></path>
+                  </svg>
+                  <span class="text-xs font-semibold text-gray-900">On-Grid</span>
+                </div>
+              </label>
+              <label class="relative">
+                <input type="radio" name="inverterType" value="Hybrid" class="peer sr-only" />
+                <div
+                  class="peer-checked:border-primary peer-checked:bg-primary/5 border-2 border-gray-200 rounded-2xl p-3 cursor-pointer hover:border-primary transition-all text-center"
+                >
+                  <svg
+                    class="w-6 h-6 text-primary mx-auto mb-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
+                    ></path>
+                  </svg>
+                  <span class="text-xs font-semibold text-gray-900">Hybrid</span>
+                </div>
+              </label>
+              <label class="relative">
+                <input type="radio" name="inverterType" value="Off-Grid" class="peer sr-only" />
+                <div
+                  class="peer-checked:border-primary peer-checked:bg-primary/5 border-2 border-gray-200 rounded-2xl p-3 cursor-pointer hover:border-primary transition-all text-center"
+                >
+                  <svg
+                    class="w-6 h-6 text-primary mx-auto mb-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                    ></path>
+                  </svg>
+                  <span class="text-xs font-semibold text-gray-900">Off-Grid</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Inverter Brand -->
+          <div>
+            <label for="inverterBrand" class="block text-sm font-medium text-gray-700 mb-2">
+              Inverter Brand *
+            </label>
+            <select
+              id="inverterBrand"
+              name="inverterBrand"
+              class="block w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+              required
+            >
+              <option value="">Select brand</option>
+              <option value="Sungrow" selected>Sungrow</option>
+              <option value="Goodwe">Goodwe</option>
+              <option value="SolarEdge">SolarEdge</option>
+            </select>
+          </div>
+
+          <!-- Battery Required -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-3">
+              Battery Required? *
+            </label>
+            <div class="flex space-x-3">
+              <label class="flex-1 relative">
+                <input type="radio" name="battery" value="yes" class="peer sr-only" />
+                <div
+                  class="peer-checked:border-success peer-checked:bg-success/5 border-2 border-gray-200 rounded-2xl p-4 cursor-pointer hover:border-success transition-all text-center"
+                >
+                  <span class="text-sm font-semibold text-gray-900">Yes</span>
+                </div>
+              </label>
+              <label class="flex-1 relative">
+                <input type="radio" name="battery" value="no" class="peer sr-only" checked />
+                <div
+                  class="peer-checked:border-gray-400 peer-checked:bg-gray-100 border-2 border-gray-200 rounded-2xl p-4 cursor-pointer hover:border-gray-400 transition-all text-center"
+                >
+                  <span class="text-sm font-semibold text-gray-900">No</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Structure Type -->
+          <div>
+            <label for="structureType" class="block text-sm font-medium text-gray-700 mb-2">
+              Structure Type *
+            </label>
+            <select
+              id="structureType"
+              name="structureType"
+              class="block w-full px-4 py-3 border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+              required
+            >
+              <option value="">Select structure type</option>
+              <option value="Aluminum Rail Mount" selected>Aluminum Rail Mount</option>
+              <option value="3x5 Ballast">3×5 Ballast (No penetration)</option>
+              <option value="RCC Elevated">RCC Elevated</option>
+              <option value="Ground Mount">Ground Mount</option>
+            </select>
+          </div>
+
+          <!-- Info Box -->
+          <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div class="flex items-start space-x-3">
+              <svg
+                class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                  clip-rule="evenodd"
+                ></path>
+              </svg>
+              <p class="text-sm text-amber-800 leading-relaxed">
+                <strong class="font-semibold">Need help choosing?</strong> Our team will review and
+                recommend the best configuration for your needs.
+              </p>
+            </div>
+          </div>
+
+          <!-- Buttons -->
+          <div class="flex space-x-3 pt-4">
+            <a href="lead-step3.html" class="flex-1">
+              <button
+                type="button"
+                class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-4 px-6 rounded-2xl transition-all"
+              >
+                Back
+              </button>
+            </a>
+            <button
+              type="submit"
+              class="flex-1 bg-gradient-to-r from-primary via-green-500 to-secondary text-white font-semibold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center space-x-2"
+            >
+              <span>Next Step</span>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 7l5 5m0 0l-5 5m5-5H6"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <script>
-        function handleSubmit(event) {
-            event.preventDefault();
-            const formData = {
-                panelType: document.querySelector('input[name="panelType"]:checked').value,
-                panelBrand: document.getElementById('panelBrand').value,
-                panelCount: document.getElementById('panelCount').textContent,
-                inverterType: document.querySelector('input[name="inverterType"]:checked').value,
-                inverterBrand: document.getElementById('inverterBrand').value,
-                battery: document.querySelector('input[name="battery"]:checked').value,
-                structureType: document.getElementById('structureType').value
-            };
-            localStorage.setItem('leadFormStep4', JSON.stringify(formData));
-            console.log('Step 4 data saved:', formData);
-            window.location.href = 'lead-step5.html';
+      function handleSubmit(event) {
+        event.preventDefault();
+        const formData = {
+          panelType: document.querySelector('input[name="panelType"]:checked').value,
+          panelBrand: document.getElementById('panelBrand').value,
+          panelCount: document.getElementById('panelCount').textContent,
+          inverterType: document.querySelector('input[name="inverterType"]:checked').value,
+          inverterBrand: document.getElementById('inverterBrand').value,
+          battery: document.querySelector('input[name="battery"]:checked').value,
+          structureType: document.getElementById('structureType').value,
+        };
+        localStorage.setItem('leadFormStep4', JSON.stringify(formData));
+        console.log('Step 4 data saved:', formData);
+        window.location.href = 'lead-step5.html';
+      }
+
+      window.addEventListener('load', () => {
+        const savedData = localStorage.getItem('leadFormStep4');
+        if (savedData) {
+          const data = JSON.parse(savedData);
+          if (data.panelType)
+            document.querySelector(`input[name="panelType"][value="${data.panelType}"]`).checked =
+              true;
+          if (data.panelBrand) document.getElementById('panelBrand').value = data.panelBrand;
+          if (data.inverterType)
+            document.querySelector(
+              `input[name="inverterType"][value="${data.inverterType}"]`,
+            ).checked = true;
+          if (data.inverterBrand)
+            document.getElementById('inverterBrand').value = data.inverterBrand;
+          if (data.battery)
+            document.querySelector(`input[name="battery"][value="${data.battery}"]`).checked = true;
+          if (data.structureType)
+            document.getElementById('structureType').value = data.structureType;
         }
-
-        window.addEventListener('load', () => {
-            const savedData = localStorage.getItem('leadFormStep4');
-            if (savedData) {
-                const data = JSON.parse(savedData);
-                if (data.panelType) document.querySelector(`input[name="panelType"][value="${data.panelType}"]`).checked = true;
-                if (data.panelBrand) document.getElementById('panelBrand').value = data.panelBrand;
-                if (data.inverterType) document.querySelector(`input[name="inverterType"][value="${data.inverterType}"]`).checked = true;
-                if (data.inverterBrand) document.getElementById('inverterBrand').value = data.inverterBrand;
-                if (data.battery) document.querySelector(`input[name="battery"][value="${data.battery}"]`).checked = true;
-                if (data.structureType) document.getElementById('structureType').value = data.structureType;
-            }
-        });
+      });
     </script>
-</body>
+  </body>
 </html>
-

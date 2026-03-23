@@ -1,372 +1,602 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Schedule Site Visit - OneOhm Solar EPC</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            DEFAULT: '#76c044',
-                            dark: '#5ea031',
-                            light: '#8fd35f',
-                        },
-                        secondary: {
-                            DEFAULT: '#0d74b8',
-                            dark: '#0a5c92',
-                        },
-                        success: '#22c55e',
-                        warning: '#eab308',
-                        error: '#dc2626',
-                        info: '#0ea5e9',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    },
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: '#76c044',
+                dark: '#5ea031',
+                light: '#8fd35f',
+              },
+              secondary: {
+                DEFAULT: '#0d74b8',
+                dark: '#0a5c92',
+              },
+              success: '#22c55e',
+              warning: '#eab308',
+              error: '#dc2626',
+              info: '#0ea5e9',
+            },
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+            },
+          },
+        },
+      };
     </script>
-</head>
-<body class="font-sans bg-gray-50 min-h-screen text-[13px]">
+  </head>
+  <body class="font-sans bg-gray-50 min-h-screen text-[13px]">
     <!-- Global Header -->
-    <header class="h-12 bg-white border-b border-gray-100 fixed top-0 left-0 right-0 z-50 flex items-center px-4">
-        <div class="flex items-center">
-            <a href="../dashboard/index.html">
-                <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto">
-            </a>
+    <header
+      class="h-12 bg-white border-b border-gray-100 fixed top-0 left-0 right-0 z-50 flex items-center px-4"
+    >
+      <div class="flex items-center">
+        <a href="../dashboard/index.html">
+          <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto" />
+        </a>
+      </div>
+      <div class="flex-1 ml-6 mr-4">
+        <div
+          class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors text-left cursor-pointer"
+        >
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <span class="text-gray-400 flex-1 text-sm">Search...</span>
         </div>
-        <div class="flex-1 ml-6 mr-4">
-            <div class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors text-left cursor-pointer">
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
-                <span class="text-gray-400 flex-1 text-sm">Search...</span>
-            </div>
-        </div>
-        <div class="flex items-center space-x-2">
-            <button class="relative p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                </svg>
-            </button>
-            <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors">
-                <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">RK</div>
-            </button>
-        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button class="relative p-2 hover:bg-gray-50 rounded-lg transition-colors">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
+          </svg>
+        </button>
+        <button
+          class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors"
+        >
+          <div
+            class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm"
+          >
+            RK
+          </div>
+        </button>
+      </div>
     </header>
-    
+
     <!-- Rail Sidebar -->
-    <aside class="w-12 bg-white border-r border-gray-100 fixed top-12 left-0 h-[calc(100vh-48px)] flex flex-col z-40">
-        <div class="flex-1 flex flex-col pt-2">
-            <a href="../dashboard/index.html" class="w-10 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all relative group">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                </svg>
-            </a>
-            <a href="customers.html" class="w-10 h-9 flex items-center justify-center text-primary bg-primary/10 border-l-[3px] border-primary transition-all relative group">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-            </a>
-            <a href="../quotes/list.html" class="w-10 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all relative group">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-            </a>
+    <aside
+      class="w-12 bg-white border-r border-gray-100 fixed top-12 left-0 h-[calc(100vh-48px)] flex flex-col z-40"
+    >
+      <div class="flex-1 flex flex-col pt-2">
+        <a
+          href="../dashboard/index.html"
+          class="w-10 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all relative group"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+            />
+          </svg>
+        </a>
+        <a
+          href="customers.html"
+          class="w-10 h-9 flex items-center justify-center text-primary bg-primary/10 border-l-[3px] border-primary transition-all relative group"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+        </a>
+        <a
+          href="../quotes/list.html"
+          class="w-10 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all relative group"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+        </a>
+      </div>
+      <div class="w-12 h-12 flex items-center justify-center cursor-pointer hover:bg-gray-50">
+        <div
+          class="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm"
+        >
+          RK
         </div>
-        <div class="w-12 h-12 flex items-center justify-center cursor-pointer hover:bg-gray-50">
-            <div class="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">RK</div>
-        </div>
+      </div>
     </aside>
-    
+
     <!-- Main Content -->
     <main class="ml-12 mt-12 min-h-[calc(100vh-48px)] bg-gray-50">
-        <div class="max-w-3xl mx-auto py-8 px-6">
-            <!-- Back Link & Title -->
-            <div class="mb-8">
-                <a href="site-visits.html" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                    </svg>
-                    Back to Site Visits
-                </a>
-                <h1 class="text-xl font-semibold text-gray-900">Schedule Site Visit</h1>
-                <p class="text-gray-500 text-sm mt-1">Schedule a technical assessment visit for a property</p>
-            </div>
-            
-            <!-- Form Card -->
-            <div class="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
-                <!-- Select Property Section -->
-                <div class="px-6 py-5 border-b border-gray-100">
-                    <h2 class="text-lg font-semibold text-gray-900">Select Property</h2>
-                    <p class="text-sm text-gray-500 mt-1">Choose a customer and property for the site visit</p>
-                </div>
-                <div class="p-6 space-y-5">
-                    <!-- Customer Search -->
-                    <div class="space-y-2">
-                        <label class="block text-xs font-medium text-gray-500">Customer <span class="text-red-500">*</span></label>
-                        <div class="relative">
-                            <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                            </svg>
-                            <input type="text" id="customerSearch" placeholder="Search by name, phone, or email..." 
-                                class="w-full pl-10 pr-4 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                                oninput="searchCustomers(this.value)">
-                        </div>
-                        <!-- Customer Search Results -->
-                        <div id="customerResults" class="hidden mt-2 border border-gray-100 rounded-lg divide-y divide-gray-100 max-h-60 overflow-y-auto">
-                            <!-- Results populated by JS -->
-                        </div>
-                        <!-- Selected Customer Card -->
-                        <div id="selectedCustomer" class="hidden mt-3 p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">RS</div>
-                                    <div>
-                                        <div class="font-medium text-gray-900">Rajesh Sharma</div>
-                                        <div class="text-xs text-gray-500">+91 98765 43210</div>
-                                    </div>
-                                </div>
-                                <button onclick="clearCustomer()" class="text-gray-400 hover:text-gray-500 p-1">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Property Selection -->
-                    <div id="propertySelection" class="space-y-2 hidden">
-                        <label class="block text-xs font-medium text-gray-500">Property <span class="text-red-500">*</span></label>
-                        <div class="grid grid-cols-2 gap-3">
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="property" value="home" class="peer sr-only" checked>
-                                <div class="p-4 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-gray-300">
-                                    <div class="flex items-start gap-3">
-                                        <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                                            </svg>
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="font-medium text-gray-900">Home</div>
-                                            <div class="text-xs text-gray-500 truncate">123 MG Road, Pune</div>
-                                            <span class="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">Primary</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </label>
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="property" value="office" class="peer sr-only">
-                                <div class="p-4 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-gray-300">
-                                    <div class="flex items-start gap-3">
-                                        <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
-                                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                                            </svg>
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="font-medium text-gray-900">Office</div>
-                                            <div class="text-xs text-gray-500 truncate">Tech Park, Hinjewadi</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Schedule Section -->
-                <div class="px-6 py-5 border-t border-b border-gray-100 bg-gray-50/50">
-                    <h2 class="text-lg font-semibold text-gray-900">Schedule Details</h2>
-                    <p class="text-sm text-gray-500 mt-1">Set the date, time, and assign a technician</p>
-                </div>
-                <div class="p-6 space-y-5">
-                    <!-- Date & Time -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-2">
-                            <label class="block text-xs font-medium text-gray-500">Visit Date <span class="text-red-500">*</span></label>
-                            <input type="date" id="visitDate" 
-                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all">
-                        </div>
-                        <div class="space-y-2">
-                            <label class="block text-xs font-medium text-gray-500">Visit Time <span class="text-red-500">*</span></label>
-                            <select id="visitTime" 
-                                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]">
-                                <option value="">Select time slot...</option>
-                                <option value="09:00">09:00 AM - 10:00 AM</option>
-                                <option value="10:00">10:00 AM - 11:00 AM</option>
-                                <option value="11:00">11:00 AM - 12:00 PM</option>
-                                <option value="12:00">12:00 PM - 01:00 PM</option>
-                                <option value="14:00">02:00 PM - 03:00 PM</option>
-                                <option value="15:00">03:00 PM - 04:00 PM</option>
-                                <option value="16:00">04:00 PM - 05:00 PM</option>
-                                <option value="17:00">05:00 PM - 06:00 PM</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <!-- Assigned Technician -->
-                    <div class="space-y-2">
-                        <label class="block text-xs font-medium text-gray-500">Assign Technician <span class="text-red-500">*</span></label>
-                        <select id="technician" 
-                            class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]">
-                            <option value="">Select technician...</option>
-                            <option value="tech1">Amit Patel (Senior Technician)</option>
-                            <option value="tech2">Suresh Kumar (Technician)</option>
-                            <option value="tech3">Vikram Singh (Junior Technician)</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Visit Type -->
-                    <div class="space-y-3">
-                        <label class="block text-xs font-medium text-gray-500">Visit Type <span class="text-red-500">*</span></label>
-                        <div class="flex flex-wrap gap-3">
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="visitType" value="initial_assessment" class="peer sr-only" checked>
-                                <div class="px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary peer-checked:text-white text-xs font-medium text-gray-500 transition-all hover:border-gray-300">
-                                    Initial Assessment
-                                </div>
-                            </label>
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="visitType" value="technical_survey" class="peer sr-only">
-                                <div class="px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary peer-checked:text-white text-xs font-medium text-gray-500 transition-all hover:border-gray-300">
-                                    Technical Survey
-                                </div>
-                            </label>
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="visitType" value="follow_up" class="peer sr-only">
-                                <div class="px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary peer-checked:text-white text-xs font-medium text-gray-500 transition-all hover:border-gray-300">
-                                    Follow-up Visit
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <!-- Priority -->
-                    <div class="space-y-3">
-                        <label class="block text-xs font-medium text-gray-500">Priority</label>
-                        <div class="flex gap-3">
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="priority" value="high" class="peer sr-only">
-                                <div class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-red-500 peer-checked:bg-red-50 text-xs font-medium text-gray-500 transition-all hover:border-gray-300">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-                                    High
-                                </div>
-                            </label>
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="priority" value="normal" class="peer sr-only" checked>
-                                <div class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-yellow-500 peer-checked:bg-yellow-50 text-xs font-medium text-gray-500 transition-all hover:border-gray-300">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
-                                    Normal
-                                </div>
-                            </label>
-                            <label class="relative cursor-pointer">
-                                <input type="radio" name="priority" value="low" class="peer sr-only">
-                                <div class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-blue-500 peer-checked:bg-blue-50 text-xs font-medium text-gray-500 transition-all hover:border-gray-300">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
-                                    Low
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Notes Section -->
-                <div class="px-6 py-5 border-t border-b border-gray-100 bg-gray-50/50">
-                    <h2 class="text-lg font-semibold text-gray-900">Additional Information</h2>
-                    <p class="text-sm text-gray-500 mt-1">Add notes and special instructions</p>
-                </div>
-                <div class="p-6 space-y-5">
-                    <!-- Notes -->
-                    <div class="space-y-2">
-                        <label class="block text-xs font-medium text-gray-500">Visit Notes</label>
-                        <textarea id="visitNotes" rows="4" placeholder="Add any special instructions or notes for the technician..." 
-                            class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"></textarea>
-                    </div>
-                    
-                    <!-- Send Reminder -->
-                    <div class="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                        <label class="flex items-center justify-between cursor-pointer">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <div class="font-medium text-gray-900">Send SMS Reminder</div>
-                                    <div class="text-xs text-gray-500">Customer will receive a reminder 1 day before visit</div>
-                                </div>
-                            </div>
-                            <div class="relative">
-                                <input type="checkbox" id="sendReminder" class="sr-only peer" checked>
-                                <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-primary transition-colors"></div>
-                                <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"></div>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- Footer Actions -->
-                <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
-                    <button type="button" class="px-4 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg font-medium text-sm transition-colors flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                        Check Calendar
-                    </button>
-                    <div class="flex items-center gap-3">
-                        <a href="site-visits.html" class="px-4 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium text-sm transition-colors">
-                            Cancel
-                        </a>
-                        <button onclick="scheduleVisit()" class="px-6 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark transition-colors flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                            Schedule Visit
-                        </button>
-                    </div>
-                </div>
-            </div>
+      <div class="max-w-3xl mx-auto py-8 px-6">
+        <!-- Back Link & Title -->
+        <div class="mb-8">
+          <a
+            href="site-visits.html"
+            class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+            Back to Site Visits
+          </a>
+          <h1 class="text-xl font-semibold text-gray-900">Schedule Site Visit</h1>
+          <p class="text-gray-500 text-sm mt-1">
+            Schedule a technical assessment visit for a property
+          </p>
         </div>
+
+        <!-- Form Card -->
+        <div class="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
+          <!-- Select Property Section -->
+          <div class="px-6 py-5 border-b border-gray-100">
+            <h2 class="text-lg font-semibold text-gray-900">Select Property</h2>
+            <p class="text-sm text-gray-500 mt-1">
+              Choose a customer and property for the site visit
+            </p>
+          </div>
+          <div class="p-6 space-y-5">
+            <!-- Customer Search -->
+            <div class="space-y-2">
+              <label class="block text-xs font-medium text-gray-500"
+                >Customer <span class="text-red-500">*</span></label
+              >
+              <div class="relative">
+                <svg
+                  class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                <input
+                  type="text"
+                  id="customerSearch"
+                  placeholder="Search by name, phone, or email..."
+                  class="w-full pl-10 pr-4 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                  oninput="searchCustomers(this.value)"
+                />
+              </div>
+              <!-- Customer Search Results -->
+              <div
+                id="customerResults"
+                class="hidden mt-2 border border-gray-100 rounded-lg divide-y divide-gray-100 max-h-60 overflow-y-auto"
+              >
+                <!-- Results populated by JS -->
+              </div>
+              <!-- Selected Customer Card -->
+              <div
+                id="selectedCustomer"
+                class="hidden mt-3 p-4 bg-primary/5 border border-primary/20 rounded-lg"
+              >
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm"
+                    >
+                      RS
+                    </div>
+                    <div>
+                      <div class="font-medium text-gray-900">Rajesh Sharma</div>
+                      <div class="text-xs text-gray-500">+91 98765 43210</div>
+                    </div>
+                  </div>
+                  <button onclick="clearCustomer()" class="text-gray-400 hover:text-gray-500 p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Property Selection -->
+            <div id="propertySelection" class="space-y-2 hidden">
+              <label class="block text-xs font-medium text-gray-500"
+                >Property <span class="text-red-500">*</span></label
+              >
+              <div class="grid grid-cols-2 gap-3">
+                <label class="relative cursor-pointer">
+                  <input type="radio" name="property" value="home" class="peer sr-only" checked />
+                  <div
+                    class="p-4 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-gray-300"
+                  >
+                    <div class="flex items-start gap-3">
+                      <div
+                        class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0"
+                      >
+                        <svg
+                          class="w-5 h-5 text-blue-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                          />
+                        </svg>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="font-medium text-gray-900">Home</div>
+                        <div class="text-xs text-gray-500 truncate">123 MG Road, Pune</div>
+                        <span
+                          class="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded"
+                          >Primary</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </label>
+                <label class="relative cursor-pointer">
+                  <input type="radio" name="property" value="office" class="peer sr-only" />
+                  <div
+                    class="p-4 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary/5 transition-all hover:border-gray-300"
+                  >
+                    <div class="flex items-start gap-3">
+                      <div
+                        class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0"
+                      >
+                        <svg
+                          class="w-5 h-5 text-purple-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                          />
+                        </svg>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="font-medium text-gray-900">Office</div>
+                        <div class="text-xs text-gray-500 truncate">Tech Park, Hinjewadi</div>
+                      </div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Schedule Section -->
+          <div class="px-6 py-5 border-t border-b border-gray-100 bg-gray-50/50">
+            <h2 class="text-lg font-semibold text-gray-900">Schedule Details</h2>
+            <p class="text-sm text-gray-500 mt-1">Set the date, time, and assign a technician</p>
+          </div>
+          <div class="p-6 space-y-5">
+            <!-- Date & Time -->
+            <div class="grid grid-cols-2 gap-4">
+              <div class="space-y-2">
+                <label class="block text-xs font-medium text-gray-500"
+                  >Visit Date <span class="text-red-500">*</span></label
+                >
+                <input
+                  type="date"
+                  id="visitDate"
+                  class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                />
+              </div>
+              <div class="space-y-2">
+                <label class="block text-xs font-medium text-gray-500"
+                  >Visit Time <span class="text-red-500">*</span></label
+                >
+                <select
+                  id="visitTime"
+                  class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]"
+                >
+                  <option value="">Select time slot...</option>
+                  <option value="09:00">09:00 AM - 10:00 AM</option>
+                  <option value="10:00">10:00 AM - 11:00 AM</option>
+                  <option value="11:00">11:00 AM - 12:00 PM</option>
+                  <option value="12:00">12:00 PM - 01:00 PM</option>
+                  <option value="14:00">02:00 PM - 03:00 PM</option>
+                  <option value="15:00">03:00 PM - 04:00 PM</option>
+                  <option value="16:00">04:00 PM - 05:00 PM</option>
+                  <option value="17:00">05:00 PM - 06:00 PM</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Assigned Technician -->
+            <div class="space-y-2">
+              <label class="block text-xs font-medium text-gray-500"
+                >Assign Technician <span class="text-red-500">*</span></label
+              >
+              <select
+                id="technician"
+                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none bg-white bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_12px_center]"
+              >
+                <option value="">Select technician...</option>
+                <option value="tech1">Amit Patel (Senior Technician)</option>
+                <option value="tech2">Suresh Kumar (Technician)</option>
+                <option value="tech3">Vikram Singh (Junior Technician)</option>
+              </select>
+            </div>
+
+            <!-- Visit Type -->
+            <div class="space-y-3">
+              <label class="block text-xs font-medium text-gray-500"
+                >Visit Type <span class="text-red-500">*</span></label
+              >
+              <div class="flex flex-wrap gap-3">
+                <label class="relative cursor-pointer">
+                  <input
+                    type="radio"
+                    name="visitType"
+                    value="initial_assessment"
+                    class="peer sr-only"
+                    checked
+                  />
+                  <div
+                    class="px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary peer-checked:text-white text-xs font-medium text-gray-500 transition-all hover:border-gray-300"
+                  >
+                    Initial Assessment
+                  </div>
+                </label>
+                <label class="relative cursor-pointer">
+                  <input
+                    type="radio"
+                    name="visitType"
+                    value="technical_survey"
+                    class="peer sr-only"
+                  />
+                  <div
+                    class="px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary peer-checked:text-white text-xs font-medium text-gray-500 transition-all hover:border-gray-300"
+                  >
+                    Technical Survey
+                  </div>
+                </label>
+                <label class="relative cursor-pointer">
+                  <input type="radio" name="visitType" value="follow_up" class="peer sr-only" />
+                  <div
+                    class="px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-primary peer-checked:bg-primary peer-checked:text-white text-xs font-medium text-gray-500 transition-all hover:border-gray-300"
+                  >
+                    Follow-up Visit
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Priority -->
+            <div class="space-y-3">
+              <label class="block text-xs font-medium text-gray-500">Priority</label>
+              <div class="flex gap-3">
+                <label class="relative cursor-pointer">
+                  <input type="radio" name="priority" value="high" class="peer sr-only" />
+                  <div
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-red-500 peer-checked:bg-red-50 text-xs font-medium text-gray-500 transition-all hover:border-gray-300"
+                  >
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                    High
+                  </div>
+                </label>
+                <label class="relative cursor-pointer">
+                  <input type="radio" name="priority" value="normal" class="peer sr-only" checked />
+                  <div
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-yellow-500 peer-checked:bg-yellow-50 text-xs font-medium text-gray-500 transition-all hover:border-gray-300"
+                  >
+                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+                    Normal
+                  </div>
+                </label>
+                <label class="relative cursor-pointer">
+                  <input type="radio" name="priority" value="low" class="peer sr-only" />
+                  <div
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-gray-100 peer-checked:border-blue-500 peer-checked:bg-blue-50 text-xs font-medium text-gray-500 transition-all hover:border-gray-300"
+                  >
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-400"></span>
+                    Low
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes Section -->
+          <div class="px-6 py-5 border-t border-b border-gray-100 bg-gray-50/50">
+            <h2 class="text-lg font-semibold text-gray-900">Additional Information</h2>
+            <p class="text-sm text-gray-500 mt-1">Add notes and special instructions</p>
+          </div>
+          <div class="p-6 space-y-5">
+            <!-- Notes -->
+            <div class="space-y-2">
+              <label class="block text-xs font-medium text-gray-500">Visit Notes</label>
+              <textarea
+                id="visitNotes"
+                rows="4"
+                placeholder="Add any special instructions or notes for the technician..."
+                class="w-full px-3 py-2 border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+              ></textarea>
+            </div>
+
+            <!-- Send Reminder -->
+            <div class="p-4 bg-blue-50 rounded-lg border border-blue-100">
+              <label class="flex items-center justify-between cursor-pointer">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <svg
+                      class="w-5 h-5 text-blue-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <div class="font-medium text-gray-900">Send SMS Reminder</div>
+                    <div class="text-xs text-gray-500">
+                      Customer will receive a reminder 1 day before visit
+                    </div>
+                  </div>
+                </div>
+                <div class="relative">
+                  <input type="checkbox" id="sendReminder" class="sr-only peer" checked />
+                  <div
+                    class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-primary transition-colors"
+                  ></div>
+                  <div
+                    class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"
+                  ></div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Footer Actions -->
+          <div
+            class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between"
+          >
+            <button
+              type="button"
+              class="px-4 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg font-medium text-sm transition-colors flex items-center gap-2"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              Check Calendar
+            </button>
+            <div class="flex items-center gap-3">
+              <a
+                href="site-visits.html"
+                class="px-4 py-2 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium text-sm transition-colors"
+              >
+                Cancel
+              </a>
+              <button
+                onclick="scheduleVisit()"
+                class="px-6 py-2 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-dark transition-colors flex items-center gap-2"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                Schedule Visit
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <script>
-        // Sample customer data
-        const customers = [
-            { id: 1, name: 'Rajesh Sharma', phone: '+91 98765 43210', email: 'rajesh.sharma@gmail.com', initials: 'RS' },
-            { id: 2, name: 'Priya Patel', phone: '+91 87654 32109', email: 'priya.p@outlook.com', initials: 'PP' },
-            { id: 3, name: 'Amit Kumar', phone: '+91 76543 21098', email: 'amit.kumar@yahoo.com', initials: 'AK' },
-        ];
-        
-        let selectedCustomerId = null;
-        
-        function searchCustomers(query) {
-            const resultsEl = document.getElementById('customerResults');
-            
-            if (!query || query.length < 2) {
-                resultsEl.classList.add('hidden');
-                return;
-            }
-            
-            const filtered = customers.filter(c => 
-                c.name.toLowerCase().includes(query.toLowerCase()) ||
-                c.phone.includes(query) ||
-                c.email.toLowerCase().includes(query.toLowerCase())
-            );
-            
-            if (filtered.length === 0) {
-                resultsEl.innerHTML = '<div class="p-4 text-sm text-gray-500 text-center">No customers found</div>';
-            } else {
-                resultsEl.innerHTML = filtered.map(c => `
+      // Sample customer data
+      const customers = [
+        {
+          id: 1,
+          name: 'Rajesh Sharma',
+          phone: '+91 98765 43210',
+          email: 'rajesh.sharma@gmail.com',
+          initials: 'RS',
+        },
+        {
+          id: 2,
+          name: 'Priya Patel',
+          phone: '+91 87654 32109',
+          email: 'priya.p@outlook.com',
+          initials: 'PP',
+        },
+        {
+          id: 3,
+          name: 'Amit Kumar',
+          phone: '+91 76543 21098',
+          email: 'amit.kumar@yahoo.com',
+          initials: 'AK',
+        },
+      ];
+
+      let selectedCustomerId = null;
+
+      function searchCustomers(query) {
+        const resultsEl = document.getElementById('customerResults');
+
+        if (!query || query.length < 2) {
+          resultsEl.classList.add('hidden');
+          return;
+        }
+
+        const filtered = customers.filter(
+          (c) =>
+            c.name.toLowerCase().includes(query.toLowerCase()) ||
+            c.phone.includes(query) ||
+            c.email.toLowerCase().includes(query.toLowerCase()),
+        );
+
+        if (filtered.length === 0) {
+          resultsEl.innerHTML =
+            '<div class="p-4 text-sm text-gray-500 text-center">No customers found</div>';
+        } else {
+          resultsEl.innerHTML = filtered
+            .map(
+              (c) => `
                     <button onclick="selectCustomer(${c.id})" class="w-full p-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors">
                         <div class="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center text-primary font-semibold text-sm">${c.initials}</div>
                         <div class="flex-1">
@@ -374,73 +604,75 @@
                             <div class="text-xs text-gray-500">${c.phone}</div>
                         </div>
                     </button>
-                `).join('');
-            }
-            
-            resultsEl.classList.remove('hidden');
+                `,
+            )
+            .join('');
         }
-        
-        function selectCustomer(id) {
-            selectedCustomerId = id;
-            const customer = customers.find(c => c.id === id);
-            
-            // Hide search and results
-            document.getElementById('customerSearch').classList.add('hidden');
-            document.getElementById('customerResults').classList.add('hidden');
-            
-            // Show selected customer
-            const selectedEl = document.getElementById('selectedCustomer');
-            selectedEl.querySelector('.font-medium').textContent = customer.name;
-            selectedEl.querySelector('.text-xs').textContent = customer.phone;
-            selectedEl.classList.remove('hidden');
-            
-            // Show property selection
-            document.getElementById('propertySelection').classList.remove('hidden');
+
+        resultsEl.classList.remove('hidden');
+      }
+
+      function selectCustomer(id) {
+        selectedCustomerId = id;
+        const customer = customers.find((c) => c.id === id);
+
+        // Hide search and results
+        document.getElementById('customerSearch').classList.add('hidden');
+        document.getElementById('customerResults').classList.add('hidden');
+
+        // Show selected customer
+        const selectedEl = document.getElementById('selectedCustomer');
+        selectedEl.querySelector('.font-medium').textContent = customer.name;
+        selectedEl.querySelector('.text-xs').textContent = customer.phone;
+        selectedEl.classList.remove('hidden');
+
+        // Show property selection
+        document.getElementById('propertySelection').classList.remove('hidden');
+      }
+
+      function clearCustomer() {
+        selectedCustomerId = null;
+
+        // Show search
+        const searchEl = document.getElementById('customerSearch');
+        searchEl.value = '';
+        searchEl.classList.remove('hidden');
+
+        // Hide selected customer and property selection
+        document.getElementById('selectedCustomer').classList.add('hidden');
+        document.getElementById('propertySelection').classList.add('hidden');
+      }
+
+      function scheduleVisit() {
+        const visitDate = document.getElementById('visitDate').value;
+        const visitTime = document.getElementById('visitTime').value;
+        const technician = document.getElementById('technician').value;
+
+        if (!selectedCustomerId) {
+          alert('Please select a customer');
+          return;
         }
-        
-        function clearCustomer() {
-            selectedCustomerId = null;
-            
-            // Show search
-            const searchEl = document.getElementById('customerSearch');
-            searchEl.value = '';
-            searchEl.classList.remove('hidden');
-            
-            // Hide selected customer and property selection
-            document.getElementById('selectedCustomer').classList.add('hidden');
-            document.getElementById('propertySelection').classList.add('hidden');
+        if (!visitDate || !visitTime) {
+          alert('Please select date and time');
+          return;
         }
-        
-        function scheduleVisit() {
-            const visitDate = document.getElementById('visitDate').value;
-            const visitTime = document.getElementById('visitTime').value;
-            const technician = document.getElementById('technician').value;
-            
-            if (!selectedCustomerId) {
-                alert('Please select a customer');
-                return;
-            }
-            if (!visitDate || !visitTime) {
-                alert('Please select date and time');
-                return;
-            }
-            if (!technician) {
-                alert('Please assign a technician');
-                return;
-            }
-            
-            // In production, this would submit to the API
-            alert('Site visit scheduled successfully!');
-            window.location.href = 'site-visits.html';
+        if (!technician) {
+          alert('Please assign a technician');
+          return;
         }
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set minimum date to today
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('visitDate').min = today;
-            document.getElementById('visitDate').value = today;
-        });
+
+        // In production, this would submit to the API
+        alert('Site visit scheduled successfully!');
+        window.location.href = 'site-visits.html';
+      }
+
+      // Initialize
+      document.addEventListener('DOMContentLoaded', function () {
+        // Set minimum date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('visitDate').min = today;
+        document.getElementById('visitDate').value = today;
+      });
     </script>
-</body>
+  </body>
 </html>

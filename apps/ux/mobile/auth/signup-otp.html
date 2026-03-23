@@ -1,229 +1,284 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Verify OTP - OneOhm Solar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#76c044',
-                        secondary: '#0d74b8',
-                        tagline: '#025580',
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#76c044',
+              secondary: '#0d74b8',
+              tagline: '#025580',
+            },
+          },
+        },
+      };
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        /* OTP Input Styling */
-        .otp-input {
-            width: 3rem;
-            height: 3.5rem;
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-        .otp-input::-webkit-outer-spin-button,
-        .otp-input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+      /* OTP Input Styling */
+      .otp-input {
+        width: 3rem;
+        height: 3.5rem;
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
+      .otp-input::-webkit-outer-spin-button,
+      .otp-input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
     </style>
-</head>
-<body class="bg-gray-50">
+  </head>
+  <body class="bg-gray-50">
     <!-- Mobile Container -->
     <div class="max-w-md mx-auto bg-white min-h-screen shadow-xl">
-        
-        <!-- Header -->
-        <div class="bg-gradient-to-r from-primary via-green-500 to-secondary px-6 py-6 pt-12">
-            <!-- Back Button -->
-            <a href="signup-phone.html" class="inline-flex items-center text-white mb-6">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-            </a>
+      <!-- Header -->
+      <div class="bg-gradient-to-r from-primary via-green-500 to-secondary px-6 py-6 pt-12">
+        <!-- Back Button -->
+        <a href="signup-phone.html" class="inline-flex items-center text-white mb-6">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            ></path>
+          </svg>
+        </a>
 
-            <!-- Title -->
-            <h1 class="text-3xl font-bold text-white mb-2">Verify OTP</h1>
-            <p class="text-green-100">Enter the 6-digit code sent to</p>
-            <p class="text-white font-semibold mt-1">+91 98765 43210</p>
+        <!-- Title -->
+        <h1 class="text-3xl font-bold text-white mb-2">Verify OTP</h1>
+        <p class="text-green-100">Enter the 6-digit code sent to</p>
+        <p class="text-white font-semibold mt-1">+91 98765 43210</p>
+      </div>
+
+      <!-- Content -->
+      <div class="px-6 py-8">
+        <!-- OTP Input Form -->
+        <form id="otpForm" class="space-y-6" onsubmit="handleSubmit(event)">
+          <!-- OTP Input Boxes -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-4"> Enter OTP * </label>
+            <div class="flex justify-between gap-2">
+              <input
+                type="number"
+                maxlength="1"
+                class="otp-input border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                data-index="0"
+              />
+              <input
+                type="number"
+                maxlength="1"
+                class="otp-input border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                data-index="1"
+              />
+              <input
+                type="number"
+                maxlength="1"
+                class="otp-input border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                data-index="2"
+              />
+              <input
+                type="number"
+                maxlength="1"
+                class="otp-input border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                data-index="3"
+              />
+              <input
+                type="number"
+                maxlength="1"
+                class="otp-input border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                data-index="4"
+              />
+              <input
+                type="number"
+                maxlength="1"
+                class="otp-input border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                data-index="5"
+              />
+            </div>
+          </div>
+
+          <!-- Timer and Resend -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2 text-sm">
+              <svg
+                class="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
+              <span id="timer" class="text-gray-600 font-medium">02:00</span>
+            </div>
+            <button type="button" id="resendBtn" class="text-sm text-gray-400 font-medium" disabled>
+              Resend OTP
+            </button>
+          </div>
+
+          <!-- Verify Button -->
+          <button
+            type="submit"
+            id="verifyBtn"
+            class="w-full bg-gradient-to-r from-primary via-green-500 to-secondary text-white font-semibold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled
+          >
+            Verify & Continue
+          </button>
+        </form>
+
+        <!-- Info Box -->
+        <div class="mt-8 bg-amber-50 border border-amber-100 rounded-lg p-4">
+          <div class="flex items-start space-x-3">
+            <svg
+              class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clip-rule="evenodd"
+              ></path>
+            </svg>
+            <p class="text-sm text-amber-800 leading-relaxed">
+              <strong class="font-semibold">Didn't receive the code?</strong><br />
+              Check your SMS inbox. You can resend after 2 minutes.
+            </p>
+          </div>
         </div>
 
-        <!-- Content -->
-        <div class="px-6 py-8">
-            
-            <!-- OTP Input Form -->
-            <form id="otpForm" class="space-y-6" onsubmit="handleSubmit(event)">
-                
-                <!-- OTP Input Boxes -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-4">
-                        Enter OTP *
-                    </label>
-                    <div class="flex justify-between gap-2">
-                        <input type="number" maxlength="1" class="otp-input border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all" data-index="0" />
-                        <input type="number" maxlength="1" class="otp-input border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all" data-index="1" />
-                        <input type="number" maxlength="1" class="otp-input border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all" data-index="2" />
-                        <input type="number" maxlength="1" class="otp-input border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all" data-index="3" />
-                        <input type="number" maxlength="1" class="otp-input border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all" data-index="4" />
-                        <input type="number" maxlength="1" class="otp-input border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-primary focus:border-primary transition-all" data-index="5" />
-                    </div>
-                </div>
-
-                <!-- Timer and Resend -->
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-2 text-sm">
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span id="timer" class="text-gray-600 font-medium">02:00</span>
-                    </div>
-                    <button type="button" id="resendBtn" class="text-sm text-gray-400 font-medium" disabled>
-                        Resend OTP
-                    </button>
-                </div>
-
-                <!-- Verify Button -->
-                <button 
-                    type="submit" 
-                    id="verifyBtn"
-                    class="w-full bg-gradient-to-r from-primary via-green-500 to-secondary text-white font-semibold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled
-                >
-                    Verify & Continue
-                </button>
-
-            </form>
-
-            <!-- Info Box -->
-            <div class="mt-8 bg-amber-50 border border-amber-100 rounded-lg p-4">
-                <div class="flex items-start space-x-3">
-                    <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                    </svg>
-                    <p class="text-sm text-amber-800 leading-relaxed">
-                        <strong class="font-semibold">Didn't receive the code?</strong><br>
-                        Check your SMS inbox. You can resend after 2 minutes.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Change Number -->
-            <div class="mt-8 text-center">
-                <a href="signup-phone.html" class="text-sm text-primary font-medium hover:underline flex items-center justify-center space-x-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                    </svg>
-                    <span>Change Phone Number</span>
-                </a>
-            </div>
-
+        <!-- Change Number -->
+        <div class="mt-8 text-center">
+          <a
+            href="signup-phone.html"
+            class="text-sm text-primary font-medium hover:underline flex items-center justify-center space-x-1"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              ></path>
+            </svg>
+            <span>Change Phone Number</span>
+          </a>
         </div>
+      </div>
     </div>
 
     <script>
-        // OTP Input Handling
-        const inputs = document.querySelectorAll('.otp-input');
-        const verifyBtn = document.getElementById('verifyBtn');
-        const timerElement = document.getElementById('timer');
-        const resendBtn = document.getElementById('resendBtn');
-        
-        // Auto-focus and move to next input
-        inputs.forEach((input, index) => {
-            input.addEventListener('input', (e) => {
-                if (e.target.value.length === 1) {
-                    if (index < inputs.length - 1) {
-                        inputs[index + 1].focus();
-                    }
-                }
-                
-                // Enable verify button if all inputs filled
-                const allFilled = Array.from(inputs).every(inp => inp.value.length === 1);
-                verifyBtn.disabled = !allFilled;
-                
-                // Only allow single digit
-                if (e.target.value.length > 1) {
-                    e.target.value = e.target.value.slice(0, 1);
-                }
-            });
-            
-            // Handle backspace
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
-                    inputs[index - 1].focus();
-                }
-            });
-            
-            // Prevent non-numeric input
-            input.addEventListener('keypress', (e) => {
-                if (!/[0-9]/.test(e.key)) {
-                    e.preventDefault();
-                }
-            });
-        });
-        
-        // Timer countdown
-        let timeLeft = 120; // 2 minutes
-        const countdown = setInterval(() => {
-            timeLeft--;
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
-            timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            
-            if (timeLeft <= 0) {
-                clearInterval(countdown);
-                timerElement.textContent = '00:00';
-                resendBtn.disabled = false;
-                resendBtn.classList.remove('text-gray-400');
-                resendBtn.classList.add('text-primary', 'hover:underline');
-            }
-        }, 1000);
-        
-        // Resend OTP
-        resendBtn.addEventListener('click', () => {
-            if (!resendBtn.disabled) {
-                console.log('Resending OTP...');
-                alert('OTP sent successfully!');
-                // Reset timer
-                timeLeft = 120;
-                resendBtn.disabled = true;
-                resendBtn.classList.remove('text-primary', 'hover:underline');
-                resendBtn.classList.add('text-gray-400');
-            }
-        });
-        
-        // Form submission
-        function handleSubmit(event) {
-            event.preventDefault();
-            
-            const otp = Array.from(inputs).map(input => input.value).join('');
-            
-            if (otp.length !== 6) {
-                alert('Please enter complete OTP');
-                return;
-            }
-            
-            // In real app, this would verify OTP via API
-            console.log('Verifying OTP:', otp);
-            
-            // Mock verification (accept any OTP for demo)
-            if (otp.length === 6) {
-                // Redirect to complete profile page
-                window.location.href = 'signup-profile.html';
-            }
-        }
-        
-        // Focus first input on load
-        inputs[0].focus();
-    </script>
-</body>
-</html>
+      // OTP Input Handling
+      const inputs = document.querySelectorAll('.otp-input');
+      const verifyBtn = document.getElementById('verifyBtn');
+      const timerElement = document.getElementById('timer');
+      const resendBtn = document.getElementById('resendBtn');
 
+      // Auto-focus and move to next input
+      inputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+          if (e.target.value.length === 1) {
+            if (index < inputs.length - 1) {
+              inputs[index + 1].focus();
+            }
+          }
+
+          // Enable verify button if all inputs filled
+          const allFilled = Array.from(inputs).every((inp) => inp.value.length === 1);
+          verifyBtn.disabled = !allFilled;
+
+          // Only allow single digit
+          if (e.target.value.length > 1) {
+            e.target.value = e.target.value.slice(0, 1);
+          }
+        });
+
+        // Handle backspace
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace' && e.target.value === '' && index > 0) {
+            inputs[index - 1].focus();
+          }
+        });
+
+        // Prevent non-numeric input
+        input.addEventListener('keypress', (e) => {
+          if (!/[0-9]/.test(e.key)) {
+            e.preventDefault();
+          }
+        });
+      });
+
+      // Timer countdown
+      let timeLeft = 120; // 2 minutes
+      const countdown = setInterval(() => {
+        timeLeft--;
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+        if (timeLeft <= 0) {
+          clearInterval(countdown);
+          timerElement.textContent = '00:00';
+          resendBtn.disabled = false;
+          resendBtn.classList.remove('text-gray-400');
+          resendBtn.classList.add('text-primary', 'hover:underline');
+        }
+      }, 1000);
+
+      // Resend OTP
+      resendBtn.addEventListener('click', () => {
+        if (!resendBtn.disabled) {
+          console.log('Resending OTP...');
+          alert('OTP sent successfully!');
+          // Reset timer
+          timeLeft = 120;
+          resendBtn.disabled = true;
+          resendBtn.classList.remove('text-primary', 'hover:underline');
+          resendBtn.classList.add('text-gray-400');
+        }
+      });
+
+      // Form submission
+      function handleSubmit(event) {
+        event.preventDefault();
+
+        const otp = Array.from(inputs)
+          .map((input) => input.value)
+          .join('');
+
+        if (otp.length !== 6) {
+          alert('Please enter complete OTP');
+          return;
+        }
+
+        // In real app, this would verify OTP via API
+        console.log('Verifying OTP:', otp);
+
+        // Mock verification (accept any OTP for demo)
+        if (otp.length === 6) {
+          // Redirect to complete profile page
+          window.location.href = 'signup-profile.html';
+        }
+      }
+
+      // Focus first input on load
+      inputs[0].focus();
+    </script>
+  </body>
+</html>

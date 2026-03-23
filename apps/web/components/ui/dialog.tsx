@@ -90,7 +90,8 @@ const dialogContentVariants = cva(
 );
 
 export interface DialogContentProps
-  extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
+  extends
+    React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
     VariantProps<typeof dialogContentVariants> {
   /** @deprecated Close button is now rendered inside DialogHeader. Use hideCloseButton on DialogHeader instead. */
   hideCloseButton?: boolean;

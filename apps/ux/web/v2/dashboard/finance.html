@@ -1,251 +1,1132 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Finance Dashboard - OneOhm Solar EPC</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            DEFAULT: '#76c044',
-                            dark: '#5ea031',
-                            light: '#8fd35f',
-                        },
-                        secondary: {
-                            DEFAULT: '#0d74b8',
-                            dark: '#0a5c92',
-                        },
-                        success: '#22c55e',
-                        warning: '#eab308',
-                        error: '#dc2626',
-                        info: '#0ea5e9',
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    },
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                DEFAULT: '#76c044',
+                dark: '#5ea031',
+                light: '#8fd35f',
+              },
+              secondary: {
+                DEFAULT: '#0d74b8',
+                dark: '#0a5c92',
+              },
+              success: '#22c55e',
+              warning: '#eab308',
+              error: '#dc2626',
+              info: '#0ea5e9',
+            },
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+            },
+          },
+        },
+      };
     </script>
     <style>
-        body { font-family: 'Inter', system-ui, sans-serif; }
-        .global-header { height: 48px; background: #ffffff; border-bottom: 1px solid #f4f4f5; position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; align-items: center; padding: 0 12px; }
-        .rail { width: 48px; background: #ffffff; border-right: 1px solid #f4f4f5; position: fixed; top: 48px; left: 0; height: calc(100vh - 48px); display: flex; flex-direction: column; z-index: 40; }
-        .rail-top { flex: 1; display: flex; flex-direction: column; padding-top: 6px; }
-        .rail-bottom { display: flex; flex-direction: column; padding-bottom: 6px; border-top: 1px solid #f4f4f5; }
-        .rail-icon { width: 48px; height: 36px; display: flex; align-items: center; justify-content: center; color: #71717a; cursor: pointer; position: relative; transition: all 150ms ease; }
-        .rail-icon:hover { background: #f4f4f5; color: #3f3f46; }
-        .rail-icon.active { background: rgba(118, 192, 68, 0.08); color: #76c044; border-left: 3px solid #76c044; }
-        .rail-icon .badge { position: absolute; top: 6px; right: 10px; min-width: 18px; height: 18px; padding: 0 5px; font-size: 10px; font-weight: 600; background: #ef4444; color: white; border-radius: 9px; display: flex; align-items: center; justify-content: center; }
-        .rail-icon .tooltip { position: absolute; left: 60px; background: #1f2937; color: white; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; white-space: nowrap; opacity: 0; visibility: hidden; transition: all 150ms ease; z-index: 100; }
-        .rail-icon:hover .tooltip { opacity: 1; visibility: visible; }
-        .rail-user { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .rail-user:hover { background: #f9fafb; }
-        .panel { width: 200px; background: #ffffff; border-right: 1px solid #f4f4f5; position: fixed; top: 48px; left: 48px; height: calc(100vh - 48px); display: flex; flex-direction: column; z-index: 35; transition: transform 200ms ease, opacity 200ms ease; }
-        .panel.collapsed { transform: translateX(-240px); opacity: 0; pointer-events: none; }
-        .panel-header { height: 40px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f4f4f5; flex-shrink: 0; }
-        .panel-title { font-size: 14px; font-weight: 600; color: #18181b; }
-        .panel-content { flex: 1; overflow-y: auto; padding: 6px 0; }
-        .panel-section { padding: 0 6px; margin-bottom: 6px; }
-        .section-header { font-size: 10px; font-weight: 500; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 8px 4px 8px; }
-        .panel-item { height: 30px; padding: 0 10px; display: flex; align-items: center; color: #52525b; font-size: 13px; cursor: pointer; border-radius: 6px; transition: all 100ms ease; }
-        .panel-item:hover { background: #f4f4f5; }
-        .panel-item.active { background: rgba(118, 192, 68, 0.12); color: #5ea031; font-weight: 500; }
-        .panel-item .badge { margin-left: auto; font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 4px; background: rgba(118, 192, 68, 0.15); color: #76c044; }
-        .panel-item .badge.warning { background: #fef3c7; color: #d97706; }
-        .panel-item .badge.error { background: #fee2e2; color: #dc2626; }
-        .main-content { margin-left: 248px; margin-top: 48px; min-height: calc(100vh - 48px); background: #f3f4f6; transition: margin-left 200ms ease; }
-        .main-content.panel-collapsed { margin-left: 48px; }
-        .glass-card { background: linear-gradient(135deg, #025580 0%, #0d74b8 100%); position: relative; overflow: hidden; }
-        .glass-card::before { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeInUp 0.4s ease forwards; }
-        .animation-delay-100 { animation-delay: 0.1s; }
-        .animation-delay-200 { animation-delay: 0.2s; }
-        .animation-delay-300 { animation-delay: 0.3s; }
-        .animation-delay-400 { animation-delay: 0.4s; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .animate-pulse-slow { animation: pulse 2s ease-in-out infinite; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 3px; }
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+      .global-header {
+        height: 48px;
+        background: #ffffff;
+        border-bottom: 1px solid #f4f4f5;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+      }
+      .rail {
+        width: 48px;
+        background: #ffffff;
+        border-right: 1px solid #f4f4f5;
+        position: fixed;
+        top: 48px;
+        left: 0;
+        height: calc(100vh - 48px);
+        display: flex;
+        flex-direction: column;
+        z-index: 40;
+      }
+      .rail-top {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding-top: 6px;
+      }
+      .rail-bottom {
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 6px;
+        border-top: 1px solid #f4f4f5;
+      }
+      .rail-icon {
+        width: 48px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #71717a;
+        cursor: pointer;
+        position: relative;
+        transition: all 150ms ease;
+      }
+      .rail-icon:hover {
+        background: #f4f4f5;
+        color: #3f3f46;
+      }
+      .rail-icon.active {
+        background: rgba(118, 192, 68, 0.08);
+        color: #76c044;
+        border-left: 3px solid #76c044;
+      }
+      .rail-icon .badge {
+        position: absolute;
+        top: 6px;
+        right: 10px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        font-size: 10px;
+        font-weight: 600;
+        background: #ef4444;
+        color: white;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .rail-icon .tooltip {
+        position: absolute;
+        left: 60px;
+        background: #1f2937;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 150ms ease;
+        z-index: 100;
+      }
+      .rail-icon:hover .tooltip {
+        opacity: 1;
+        visibility: visible;
+      }
+      .rail-user {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      .rail-user:hover {
+        background: #f9fafb;
+      }
+      .panel {
+        width: 200px;
+        background: #ffffff;
+        border-right: 1px solid #f4f4f5;
+        position: fixed;
+        top: 48px;
+        left: 48px;
+        height: calc(100vh - 48px);
+        display: flex;
+        flex-direction: column;
+        z-index: 35;
+        transition:
+          transform 200ms ease,
+          opacity 200ms ease;
+      }
+      .panel.collapsed {
+        transform: translateX(-240px);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .panel-header {
+        height: 40px;
+        padding: 0 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #f4f4f5;
+        flex-shrink: 0;
+      }
+      .panel-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #18181b;
+      }
+      .panel-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 6px 0;
+      }
+      .panel-section {
+        padding: 0 6px;
+        margin-bottom: 6px;
+      }
+      .section-header {
+        font-size: 10px;
+        font-weight: 500;
+        color: #a1a1aa;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 10px 8px 4px 8px;
+      }
+      .panel-item {
+        height: 30px;
+        padding: 0 10px;
+        display: flex;
+        align-items: center;
+        color: #52525b;
+        font-size: 13px;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: all 100ms ease;
+      }
+      .panel-item:hover {
+        background: #f4f4f5;
+      }
+      .panel-item.active {
+        background: rgba(118, 192, 68, 0.12);
+        color: #5ea031;
+        font-weight: 500;
+      }
+      .panel-item .badge {
+        margin-left: auto;
+        font-size: 11px;
+        font-weight: 500;
+        padding: 1px 6px;
+        border-radius: 4px;
+        background: rgba(118, 192, 68, 0.15);
+        color: #76c044;
+      }
+      .panel-item .badge.warning {
+        background: #fef3c7;
+        color: #d97706;
+      }
+      .panel-item .badge.error {
+        background: #fee2e2;
+        color: #dc2626;
+      }
+      .main-content {
+        margin-left: 248px;
+        margin-top: 48px;
+        min-height: calc(100vh - 48px);
+        background: #f3f4f6;
+        transition: margin-left 200ms ease;
+      }
+      .main-content.panel-collapsed {
+        margin-left: 48px;
+      }
+      .glass-card {
+        background: linear-gradient(135deg, #025580 0%, #0d74b8 100%);
+        position: relative;
+        overflow: hidden;
+      }
+      .glass-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+      }
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .animate-fade-in {
+        animation: fadeInUp 0.4s ease forwards;
+      }
+      .animation-delay-100 {
+        animation-delay: 0.1s;
+      }
+      .animation-delay-200 {
+        animation-delay: 0.2s;
+      }
+      .animation-delay-300 {
+        animation-delay: 0.3s;
+      }
+      .animation-delay-400 {
+        animation-delay: 0.4s;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+      .animate-pulse-slow {
+        animation: pulse 2s ease-in-out infinite;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #e5e7eb;
+        border-radius: 3px;
+      }
     </style>
-</head>
-<body class="bg-gray-100">
+  </head>
+  <body class="bg-gray-100">
     <header class="global-header">
-        <div class="flex items-center">
-            <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto">
+      <div class="flex items-center">
+        <img src="../assets/oneohmlogo.png" alt="OneOhm" class="h-9 w-auto" />
+      </div>
+      <div class="flex-1 ml-6 mr-4">
+        <button
+          onclick="openCommandPalette()"
+          class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors text-left"
+        >
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          <span class="text-gray-400 flex-1 text-sm">Search...</span>
+          <kbd
+            class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-100 rounded"
+            >⌘K</kbd
+          >
+        </button>
+      </div>
+      <div class="flex items-center space-x-2">
+        <div class="hidden lg:flex items-center space-x-2 text-sm text-gray-500 mr-2">
+          <span class="w-2 h-2 bg-primary rounded-full animate-pulse-slow"></span
+          ><span>3 online</span>
         </div>
-        <div class="flex-1 ml-6 mr-4">
-            <button onclick="openCommandPalette()" class="w-full max-w-md flex items-center space-x-3 px-3 py-1.5 bg-gray-50 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors text-left">
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <span class="text-gray-400 flex-1 text-sm">Search...</span>
-                <kbd class="hidden sm:inline-flex items-center px-2 py-0.5 text-xs font-medium text-gray-400 bg-white border border-gray-100 rounded">⌘K</kbd>
-            </button>
-        </div>
-        <div class="flex items-center space-x-2">
-            <div class="hidden lg:flex items-center space-x-2 text-sm text-gray-500 mr-2"><span class="w-2 h-2 bg-primary rounded-full animate-pulse-slow"></span><span>3 online</span></div>
-            <button class="relative p-2 hover:bg-gray-50 rounded-lg transition-colors"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></button>
-            <button class="p-2 hover:bg-gray-50 rounded-lg transition-colors"><svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></button>
-            <button class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors"><div class="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold text-sm">FM</div><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></button>
-        </div>
+        <button class="relative p-2 hover:bg-gray-50 rounded-lg transition-colors">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+            />
+          </svg>
+        </button>
+        <button class="p-2 hover:bg-gray-50 rounded-lg transition-colors">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+        </button>
+        <button
+          class="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded-lg transition-colors"
+        >
+          <div
+            class="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold text-sm"
+          >
+            FM
+          </div>
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
+      </div>
     </header>
-    
+
     <aside class="rail">
-        <div class="rail-top">
-            <a href="index.html?rail=home" class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg><span class="tooltip">Home</span></a>
-            <a href="sales.html" class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg><span class="badge">12</span><span class="tooltip">Sales & CRM</span></a>
-            <div class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><span class="tooltip">Quotations</span></div>
-            <a href="projects.html" class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg><span class="tooltip">Projects</span></a>
-            <a href="inventory.html" class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg><span class="tooltip">Inventory</span></a>
-            <div class="rail-icon active"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg><span class="tooltip">Finance</span></div>
-            <div class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg><span class="tooltip">Service & AMC</span></div>
-            <div class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg><span class="tooltip">Analytics</span></div>
+      <div class="rail-top">
+        <a href="index.html?rail=home" class="rail-icon"
+          ><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+            /></svg
+          ><span class="tooltip">Home</span></a
+        >
+        <a href="sales.html" class="rail-icon"
+          ><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+            /></svg
+          ><span class="badge">12</span><span class="tooltip">Sales & CRM</span></a
+        >
+        <div class="rail-icon">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            /></svg
+          ><span class="tooltip">Quotations</span>
         </div>
-        <div class="rail-bottom">
-            <div class="rail-icon" onclick="togglePanel()"><svg id="toggleIconExpand" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg><svg id="toggleIconCollapse" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg><span class="tooltip">Toggle Panel (⌘\)</span></div>
-            <div class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span class="tooltip">Help</span></div>
-            <div class="rail-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg><span class="tooltip">Admin</span></div>
+        <a href="projects.html" class="rail-icon"
+          ><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+            /></svg
+          ><span class="tooltip">Projects</span></a
+        >
+        <a href="inventory.html" class="rail-icon"
+          ><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+            /></svg
+          ><span class="tooltip">Inventory</span></a
+        >
+        <div class="rail-icon active">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+            /></svg
+          ><span class="tooltip">Finance</span>
         </div>
-        <div class="rail-user"><div class="w-9 h-9 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold text-sm">FM</div></div>
+        <div class="rail-icon">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            /></svg
+          ><span class="tooltip">Service & AMC</span>
+        </div>
+        <div class="rail-icon">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            /></svg
+          ><span class="tooltip">Analytics</span>
+        </div>
+      </div>
+      <div class="rail-bottom">
+        <div class="rail-icon" onclick="togglePanel()">
+          <svg
+            id="toggleIconExpand"
+            class="w-5 h-5 hidden"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 5l7 7-7 7M5 5l7 7-7 7"
+            /></svg
+          ><svg
+            id="toggleIconCollapse"
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+            /></svg
+          ><span class="tooltip">Toggle Panel (⌘\)</span>
+        </div>
+        <div class="rail-icon">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            /></svg
+          ><span class="tooltip">Help</span>
+        </div>
+        <div class="rail-icon">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+            /></svg
+          ><span class="tooltip">Admin</span>
+        </div>
+      </div>
+      <div class="rail-user">
+        <div
+          class="w-9 h-9 rounded-full bg-secondary/20 flex items-center justify-center text-secondary font-bold text-sm"
+        >
+          FM
+        </div>
+      </div>
     </aside>
-    
+
     <aside id="panel" class="panel">
-        <div class="panel-header"><span class="panel-title">Finance</span></div>
-        <div class="panel-content custom-scrollbar">
-            <div class="panel-section">
-                <div class="section-header">Payments</div>
-                <a href="finance.html" class="panel-item active">All Payments</a>
-                <a href="#" class="panel-item">Pending Collection <span class="badge warning">8</span></a>
-                <a href="#" class="panel-item">Received</a>
-                <a href="#" class="panel-item">Reconciliation</a>
-            </div>
-            <div class="panel-section">
-                <div class="section-header">Invoices</div>
-                <a href="#" class="panel-item">All Invoices</a>
-                <a href="#" class="panel-item">Generate Invoice</a>
-                <a href="#" class="panel-item">Pending <span class="badge warning">4</span></a>
-                <a href="#" class="panel-item">Overdue <span class="badge error">2</span></a>
-            </div>
-            <div class="panel-section">
-                <div class="section-header">Reports</div>
-                <a href="#" class="panel-item">Financial Summary</a>
-                <a href="#" class="panel-item">GST Reports</a>
-                <a href="#" class="panel-item">Collections</a>
-            </div>
+      <div class="panel-header"><span class="panel-title">Finance</span></div>
+      <div class="panel-content custom-scrollbar">
+        <div class="panel-section">
+          <div class="section-header">Payments</div>
+          <a href="finance.html" class="panel-item active">All Payments</a>
+          <a href="#" class="panel-item">Pending Collection <span class="badge warning">8</span></a>
+          <a href="#" class="panel-item">Received</a>
+          <a href="#" class="panel-item">Reconciliation</a>
         </div>
+        <div class="panel-section">
+          <div class="section-header">Invoices</div>
+          <a href="#" class="panel-item">All Invoices</a>
+          <a href="#" class="panel-item">Generate Invoice</a>
+          <a href="#" class="panel-item">Pending <span class="badge warning">4</span></a>
+          <a href="#" class="panel-item">Overdue <span class="badge error">2</span></a>
+        </div>
+        <div class="panel-section">
+          <div class="section-header">Reports</div>
+          <a href="#" class="panel-item">Financial Summary</a>
+          <a href="#" class="panel-item">GST Reports</a>
+          <a href="#" class="panel-item">Collections</a>
+        </div>
+      </div>
     </aside>
-    
+
     <main id="mainContent" class="main-content">
-        <div class="p-5">
-            <div class="mb-5 animate-fade-in opacity-0">
-                <h1 class="text-xl font-semibold text-gray-800">Finance Dashboard</h1>
-                <p class="text-gray-500 mt-1 text-[13px]">Track collections, outstanding payments, and financial health</p>
+      <div class="p-5">
+        <div class="mb-5 animate-fade-in opacity-0">
+          <h1 class="text-xl font-semibold text-gray-800">Finance Dashboard</h1>
+          <p class="text-gray-500 mt-1 text-[13px]">
+            Track collections, outstanding payments, and financial health
+          </p>
+        </div>
+
+        <div class="grid grid-cols-12 gap-4">
+          <div
+            class="col-span-12 lg:col-span-5 glass-card rounded-lg p-4 text-white animate-fade-in opacity-0 animation-delay-100 min-h-[240px]"
+          >
+            <div class="relative z-10">
+              <p class="text-white/80 text-sm font-medium">Total Collections (This Month)</p>
+              <p class="text-4xl font-bold mt-2">₹32.5L</p>
+              <div class="flex items-center mt-2">
+                <span class="flex items-center text-sm bg-white/20 px-2 py-1 rounded-full"
+                  ><svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                    /></svg
+                  >28.5% vs last month</span
+                >
+              </div>
+              <div class="mt-6 grid grid-cols-2 gap-4">
+                <div class="p-3 bg-white/10 rounded-lg">
+                  <p class="text-xl font-semibold">₹18.2L</p>
+                  <p class="text-xs text-white/70">Outstanding</p>
+                </div>
+                <div class="p-3 bg-white/10 rounded-lg">
+                  <p class="text-xl font-semibold">15</p>
+                  <p class="text-xs text-white/70">Pending Invoices</p>
+                </div>
+              </div>
             </div>
-            
-            <div class="grid grid-cols-12 gap-4">
-                <div class="col-span-12 lg:col-span-5 glass-card rounded-lg p-4 text-white animate-fade-in opacity-0 animation-delay-100 min-h-[240px]">
-                    <div class="relative z-10">
-                        <p class="text-white/80 text-sm font-medium">Total Collections (This Month)</p>
-                        <p class="text-4xl font-bold mt-2">₹32.5L</p>
-                        <div class="flex items-center mt-2"><span class="flex items-center text-sm bg-white/20 px-2 py-1 rounded-full"><svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>28.5% vs last month</span></div>
-                        <div class="mt-6 grid grid-cols-2 gap-4">
-                            <div class="p-3 bg-white/10 rounded-lg"><p class="text-xl font-semibold">₹18.2L</p><p class="text-xs text-white/70">Outstanding</p></div>
-                            <div class="p-3 bg-white/10 rounded-lg"><p class="text-xl font-semibold">15</p><p class="text-xs text-white/70">Pending Invoices</p></div>
+          </div>
+
+          <div class="col-span-12 lg:col-span-7 grid grid-cols-2 gap-4">
+            <div
+              class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-200"
+            >
+              <div class="flex items-start justify-between">
+                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <svg
+                    class="w-5 h-5 text-primary"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <span class="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full"
+                  >↑ 5.2%</span
+                >
+              </div>
+              <p class="text-3xl font-bold text-gray-800 mt-4">78%</p>
+              <p class="text-sm text-gray-500 mt-1">Collection Rate</p>
+            </div>
+            <div
+              class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-200"
+            >
+              <div class="flex items-start justify-between">
+                <div class="w-10 h-10 rounded-lg bg-error/10 flex items-center justify-center">
+                  <svg
+                    class="w-5 h-5 text-error"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <span class="text-xs font-medium text-error bg-error/10 px-2 py-1 rounded-full"
+                  >Action Needed</span
+                >
+              </div>
+              <p class="text-3xl font-bold text-gray-800 mt-4">₹5.8L</p>
+              <p class="text-sm text-gray-500 mt-1">Overdue Amount</p>
+            </div>
+            <div
+              class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-300"
+            >
+              <div class="flex items-start justify-between">
+                <div class="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                  <svg
+                    class="w-5 h-5 text-warning"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <span class="text-xs font-medium text-warning bg-warning/10 px-2 py-1 rounded-full"
+                  >Due Soon</span
+                >
+              </div>
+              <p class="text-3xl font-bold text-gray-800 mt-4">₹12.4L</p>
+              <p class="text-sm text-gray-500 mt-1">Due This Week</p>
+            </div>
+            <div
+              class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-300"
+            >
+              <div class="flex items-start justify-between">
+                <div class="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
+                  <svg
+                    class="w-5 h-5 text-secondary"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <span class="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full"
+                  >↓ 3 days</span
+                >
+              </div>
+              <p class="text-3xl font-bold text-gray-800 mt-4">22</p>
+              <p class="text-sm text-gray-500 mt-1">Avg Collection Days</p>
+            </div>
+          </div>
+
+          <div
+            class="col-span-12 lg:col-span-7 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400"
+          >
+            <h3 class="font-semibold text-gray-800 mb-6">Receivables Aging</h3>
+            <div class="space-y-4">
+              <div>
+                <div class="flex justify-between mb-2">
+                  <span class="text-sm text-gray-500">Current (0-30 days)</span
+                  ><span class="text-sm font-medium text-primary">₹8.5L</span>
+                </div>
+                <div class="h-4 bg-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-primary rounded-full" style="width: 47%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between mb-2">
+                  <span class="text-sm text-gray-500">31-60 Days</span
+                  ><span class="text-sm font-medium text-secondary">₹4.2L</span>
+                </div>
+                <div class="h-4 bg-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-secondary rounded-full" style="width: 23%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between mb-2">
+                  <span class="text-sm text-gray-500">61-90 Days</span
+                  ><span class="text-sm font-medium text-warning">₹2.8L</span>
+                </div>
+                <div class="h-4 bg-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-warning rounded-full" style="width: 15%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between mb-2">
+                  <span class="text-sm text-gray-500">90+ Days (Overdue)</span
+                  ><span class="text-sm font-medium text-error">₹2.7L</span>
+                </div>
+                <div class="h-4 bg-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-error rounded-full" style="width: 15%"></div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium text-gray-800">Total Outstanding</p>
+                  <p class="text-xs text-gray-500">Across all aging buckets</p>
+                </div>
+                <p class="text-xl font-semibold text-gray-800">₹18.2L</p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="col-span-12 lg:col-span-5 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-gray-800">Expected Payments</h3>
+              <span class="text-sm text-gray-500">This Week</span>
+            </div>
+            <div class="space-y-4">
+              <div
+                class="flex items-center justify-between p-3 bg-primary/5 rounded-lg border-l-4 border-primary"
+              >
+                <div>
+                  <p class="text-sm font-medium text-gray-800">Sharma Residence</p>
+                  <p class="text-xs text-gray-500">2nd Installment</p>
+                </div>
+                <div class="text-right">
+                  <p class="font-bold text-gray-800">₹2.5L</p>
+                  <p class="text-xs text-primary">Today</p>
+                </div>
+              </div>
+              <div
+                class="flex items-center justify-between p-3 bg-secondary/5 rounded-lg border-l-4 border-secondary"
+              >
+                <div>
+                  <p class="text-sm font-medium text-gray-800">Tata Industries</p>
+                  <p class="text-xs text-gray-500">1st Installment</p>
+                </div>
+                <div class="text-right">
+                  <p class="font-bold text-gray-800">₹12L</p>
+                  <p class="text-xs text-secondary">Jan 30</p>
+                </div>
+              </div>
+              <div
+                class="flex items-center justify-between p-3 bg-warning/5 rounded-lg border-l-4 border-warning"
+              >
+                <div>
+                  <p class="text-sm font-medium text-gray-800">Green Valley School</p>
+                  <p class="text-xs text-gray-500">Final Payment</p>
+                </div>
+                <div class="text-right">
+                  <p class="font-bold text-gray-800">₹4.5L</p>
+                  <p class="text-xs text-warning">Jan 31</p>
+                </div>
+              </div>
+              <div
+                class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-gray-300"
+              >
+                <div>
+                  <p class="text-sm font-medium text-gray-800">Kumar Hospital</p>
+                  <p class="text-xs text-gray-500">Advance</p>
+                </div>
+                <div class="text-right">
+                  <p class="font-bold text-gray-800">₹3.2L</p>
+                  <p class="text-xs text-gray-500">Feb 2</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="col-span-12 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400"
+          >
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="font-semibold text-gray-800">Recent Transactions</h3>
+              <a href="#" class="text-sm text-secondary hover:text-secondary-dark font-medium"
+                >View All →</a
+              >
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr
+                    class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"
+                  >
+                    <th class="pb-4">Transaction</th>
+                    <th class="pb-4">Project</th>
+                    <th class="pb-4">Type</th>
+                    <th class="pb-4">Amount</th>
+                    <th class="pb-4">Status</th>
+                    <th class="pb-4">Date</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  <tr class="hover:bg-gray-50">
+                    <td class="py-4">
+                      <div class="flex items-center space-x-3">
+                        <div
+                          class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"
+                        >
+                          <svg
+                            class="w-5 h-5 text-primary"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M12 4v16m8-8H4"
+                            />
+                          </svg>
                         </div>
-                    </div>
-                </div>
-                
-                <div class="col-span-12 lg:col-span-7 grid grid-cols-2 gap-4">
-                    <div class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-200">
-                        <div class="flex items-start justify-between"><div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center"><svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><span class="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full">↑ 5.2%</span></div>
-                        <p class="text-3xl font-bold text-gray-800 mt-4">78%</p>
-                        <p class="text-sm text-gray-500 mt-1">Collection Rate</p>
-                    </div>
-                    <div class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-200">
-                        <div class="flex items-start justify-between"><div class="w-10 h-10 rounded-lg bg-error/10 flex items-center justify-center"><svg class="w-5 h-5 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><span class="text-xs font-medium text-error bg-error/10 px-2 py-1 rounded-full">Action Needed</span></div>
-                        <p class="text-3xl font-bold text-gray-800 mt-4">₹5.8L</p>
-                        <p class="text-sm text-gray-500 mt-1">Overdue Amount</p>
-                    </div>
-                    <div class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-300">
-                        <div class="flex items-start justify-between"><div class="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center"><svg class="w-5 h-5 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><span class="text-xs font-medium text-warning bg-warning/10 px-2 py-1 rounded-full">Due Soon</span></div>
-                        <p class="text-3xl font-bold text-gray-800 mt-4">₹12.4L</p>
-                        <p class="text-sm text-gray-500 mt-1">Due This Week</p>
-                    </div>
-                    <div class="bg-white rounded-lg p-4 border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in opacity-0 animation-delay-300">
-                        <div class="flex items-start justify-between"><div class="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center"><svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div><span class="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">↓ 3 days</span></div>
-                        <p class="text-3xl font-bold text-gray-800 mt-4">22</p>
-                        <p class="text-sm text-gray-500 mt-1">Avg Collection Days</p>
-                    </div>
-                </div>
-                
-                <div class="col-span-12 lg:col-span-7 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400">
-                    <h3 class="font-semibold text-gray-800 mb-6">Receivables Aging</h3>
-                    <div class="space-y-4">
-                        <div><div class="flex justify-between mb-2"><span class="text-sm text-gray-500">Current (0-30 days)</span><span class="text-sm font-medium text-primary">₹8.5L</span></div><div class="h-4 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-primary rounded-full" style="width: 47%"></div></div></div>
-                        <div><div class="flex justify-between mb-2"><span class="text-sm text-gray-500">31-60 Days</span><span class="text-sm font-medium text-secondary">₹4.2L</span></div><div class="h-4 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-secondary rounded-full" style="width: 23%"></div></div></div>
-                        <div><div class="flex justify-between mb-2"><span class="text-sm text-gray-500">61-90 Days</span><span class="text-sm font-medium text-warning">₹2.8L</span></div><div class="h-4 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-warning rounded-full" style="width: 15%"></div></div></div>
-                        <div><div class="flex justify-between mb-2"><span class="text-sm text-gray-500">90+ Days (Overdue)</span><span class="text-sm font-medium text-error">₹2.7L</span></div><div class="h-4 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-error rounded-full" style="width: 15%"></div></div></div>
-                    </div>
-                    <div class="mt-6 p-4 bg-gray-50 rounded-lg"><div class="flex items-center justify-between"><div><p class="text-sm font-medium text-gray-800">Total Outstanding</p><p class="text-xs text-gray-500">Across all aging buckets</p></div><p class="text-xl font-semibold text-gray-800">₹18.2L</p></div></div>
-                </div>
-                
-                <div class="col-span-12 lg:col-span-5 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400">
-                    <div class="flex items-center justify-between mb-4"><h3 class="font-semibold text-gray-800">Expected Payments</h3><span class="text-sm text-gray-500">This Week</span></div>
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between p-3 bg-primary/5 rounded-lg border-l-4 border-primary"><div><p class="text-sm font-medium text-gray-800">Sharma Residence</p><p class="text-xs text-gray-500">2nd Installment</p></div><div class="text-right"><p class="font-bold text-gray-800">₹2.5L</p><p class="text-xs text-primary">Today</p></div></div>
-                        <div class="flex items-center justify-between p-3 bg-secondary/5 rounded-lg border-l-4 border-secondary"><div><p class="text-sm font-medium text-gray-800">Tata Industries</p><p class="text-xs text-gray-500">1st Installment</p></div><div class="text-right"><p class="font-bold text-gray-800">₹12L</p><p class="text-xs text-secondary">Jan 30</p></div></div>
-                        <div class="flex items-center justify-between p-3 bg-warning/5 rounded-lg border-l-4 border-warning"><div><p class="text-sm font-medium text-gray-800">Green Valley School</p><p class="text-xs text-gray-500">Final Payment</p></div><div class="text-right"><p class="font-bold text-gray-800">₹4.5L</p><p class="text-xs text-warning">Jan 31</p></div></div>
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-gray-300"><div><p class="text-sm font-medium text-gray-800">Kumar Hospital</p><p class="text-xs text-gray-500">Advance</p></div><div class="text-right"><p class="font-bold text-gray-800">₹3.2L</p><p class="text-xs text-gray-500">Feb 2</p></div></div>
-                    </div>
-                </div>
-                
-                <div class="col-span-12 bg-white rounded-lg p-4 border border-gray-100 shadow-sm animate-fade-in opacity-0 animation-delay-400">
-                    <div class="flex items-center justify-between mb-6"><h3 class="font-semibold text-gray-800">Recent Transactions</h3><a href="#" class="text-sm text-secondary hover:text-secondary-dark font-medium">View All →</a></div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead><tr class="text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"><th class="pb-4">Transaction</th><th class="pb-4">Project</th><th class="pb-4">Type</th><th class="pb-4">Amount</th><th class="pb-4">Status</th><th class="pb-4">Date</th></tr></thead>
-                            <tbody class="divide-y divide-gray-100">
-                                <tr class="hover:bg-gray-50"><td class="py-4"><div class="flex items-center space-x-3"><div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"><svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg></div><div><p class="font-medium text-gray-800">TXN-2025-1842</p><p class="text-xs text-gray-500">Payment Received</p></div></div></td><td class="py-4"><span class="text-sm text-gray-500">Sharma Residence</span></td><td class="py-4"><span class="text-sm text-gray-500">2nd Installment</span></td><td class="py-4"><span class="text-sm font-medium text-primary">+ ₹2,50,000</span></td><td class="py-4"><span class="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">Completed</span></td><td class="py-4"><span class="text-sm text-gray-500">Today, 10:30 AM</span></td></tr>
-                                <tr class="hover:bg-gray-50"><td class="py-4"><div class="flex items-center space-x-3"><div class="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center"><svg class="w-5 h-5 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg></div><div><p class="font-medium text-gray-800">PO-2025-0456</p><p class="text-xs text-gray-500">Vendor Payment</p></div></div></td><td class="py-4"><span class="text-sm text-gray-500">Tata Industries</span></td><td class="py-4"><span class="text-sm text-gray-500">Material Purchase</span></td><td class="py-4"><span class="text-sm font-medium text-error">- ₹8,50,000</span></td><td class="py-4"><span class="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">Completed</span></td><td class="py-4"><span class="text-sm text-gray-500">Yesterday</span></td></tr>
-                                <tr class="hover:bg-gray-50"><td class="py-4"><div class="flex items-center space-x-3"><div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"><svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg></div><div><p class="font-medium text-gray-800">TXN-2025-1838</p><p class="text-xs text-gray-500">Payment Received</p></div></div></td><td class="py-4"><span class="text-sm text-gray-500">Green Valley School</span></td><td class="py-4"><span class="text-sm text-gray-500">Advance</span></td><td class="py-4"><span class="text-sm font-medium text-primary">+ ₹5,40,000</span></td><td class="py-4"><span class="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">Completed</span></td><td class="py-4"><span class="text-sm text-gray-500">Jan 25, 2026</span></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                        <div>
+                          <p class="font-medium text-gray-800">TXN-2025-1842</p>
+                          <p class="text-xs text-gray-500">Payment Received</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="py-4">
+                      <span class="text-sm text-gray-500">Sharma Residence</span>
+                    </td>
+                    <td class="py-4"><span class="text-sm text-gray-500">2nd Installment</span></td>
+                    <td class="py-4">
+                      <span class="text-sm font-medium text-primary">+ ₹2,50,000</span>
+                    </td>
+                    <td class="py-4">
+                      <span
+                        class="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full"
+                        >Completed</span
+                      >
+                    </td>
+                    <td class="py-4"><span class="text-sm text-gray-500">Today, 10:30 AM</span></td>
+                  </tr>
+                  <tr class="hover:bg-gray-50">
+                    <td class="py-4">
+                      <div class="flex items-center space-x-3">
+                        <div
+                          class="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center"
+                        >
+                          <svg
+                            class="w-5 h-5 text-error"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M20 12H4"
+                            />
+                          </svg>
+                        </div>
+                        <div>
+                          <p class="font-medium text-gray-800">PO-2025-0456</p>
+                          <p class="text-xs text-gray-500">Vendor Payment</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="py-4"><span class="text-sm text-gray-500">Tata Industries</span></td>
+                    <td class="py-4">
+                      <span class="text-sm text-gray-500">Material Purchase</span>
+                    </td>
+                    <td class="py-4">
+                      <span class="text-sm font-medium text-error">- ₹8,50,000</span>
+                    </td>
+                    <td class="py-4">
+                      <span
+                        class="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full"
+                        >Completed</span
+                      >
+                    </td>
+                    <td class="py-4"><span class="text-sm text-gray-500">Yesterday</span></td>
+                  </tr>
+                  <tr class="hover:bg-gray-50">
+                    <td class="py-4">
+                      <div class="flex items-center space-x-3">
+                        <div
+                          class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"
+                        >
+                          <svg
+                            class="w-5 h-5 text-primary"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M12 4v16m8-8H4"
+                            />
+                          </svg>
+                        </div>
+                        <div>
+                          <p class="font-medium text-gray-800">TXN-2025-1838</p>
+                          <p class="text-xs text-gray-500">Payment Received</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="py-4">
+                      <span class="text-sm text-gray-500">Green Valley School</span>
+                    </td>
+                    <td class="py-4"><span class="text-sm text-gray-500">Advance</span></td>
+                    <td class="py-4">
+                      <span class="text-sm font-medium text-primary">+ ₹5,40,000</span>
+                    </td>
+                    <td class="py-4">
+                      <span
+                        class="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full"
+                        >Completed</span
+                      >
+                    </td>
+                    <td class="py-4"><span class="text-sm text-gray-500">Jan 25, 2026</span></td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
+          </div>
         </div>
+      </div>
     </main>
-    
+
     <div id="commandPalette" class="fixed inset-0 z-[100] hidden">
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeCommandPalette()"></div>
-        <div class="relative max-w-xl mx-auto mt-24">
-            <div class="bg-white rounded-lg shadow-2xl overflow-hidden">
-                <div class="flex items-center px-4 border-b border-gray-100"><svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg><input type="text" id="commandInput" placeholder="Search..." class="w-full px-4 py-4 outline-none text-gray-800 placeholder-gray-400" autofocus><kbd class="px-2 py-1 text-xs font-medium text-gray-400 bg-gray-100 rounded">ESC</kbd></div>
-                <div class="max-h-96 overflow-y-auto p-2">
-                    <div class="px-3 py-2"><p class="text-xs font-semibold text-gray-400 uppercase">Navigation</p></div>
-                    <a href="index.html?rail=home" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"><svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg><span class="text-sm text-gray-700">Home</span></a>
-                    <a href="sales.html" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"><svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg><span class="text-sm text-gray-700">Sales</span></a>
-                    <a href="projects.html" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"><svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg><span class="text-sm text-gray-700">Projects</span></a>
-                    <a href="inventory.html" class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"><svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg><span class="text-sm text-gray-700">Inventory</span></a>
-                </div>
-                <div class="px-3 py-2 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400"><div class="flex items-center space-x-4"><span>↑↓ Navigate</span><span>↵ Select</span><span>ESC Close</span></div><span>Powered by OneOhm</span></div>
+      <div
+        class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onclick="closeCommandPalette()"
+      ></div>
+      <div class="relative max-w-xl mx-auto mt-24">
+        <div class="bg-white rounded-lg shadow-2xl overflow-hidden">
+          <div class="flex items-center px-4 border-b border-gray-100">
+            <svg
+              class="w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              /></svg
+            ><input
+              type="text"
+              id="commandInput"
+              placeholder="Search..."
+              class="w-full px-4 py-4 outline-none text-gray-800 placeholder-gray-400"
+              autofocus
+            /><kbd class="px-2 py-1 text-xs font-medium text-gray-400 bg-gray-100 rounded">ESC</kbd>
+          </div>
+          <div class="max-h-96 overflow-y-auto p-2">
+            <div class="px-3 py-2">
+              <p class="text-xs font-semibold text-gray-400 uppercase">Navigation</p>
             </div>
+            <a
+              href="index.html?rail=home"
+              class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"
+              ><svg
+                class="w-5 h-5 text-primary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                /></svg
+              ><span class="text-sm text-gray-700">Home</span></a
+            >
+            <a
+              href="sales.html"
+              class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"
+              ><svg
+                class="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                /></svg
+              ><span class="text-sm text-gray-700">Sales</span></a
+            >
+            <a
+              href="projects.html"
+              class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"
+              ><svg
+                class="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                /></svg
+              ><span class="text-sm text-gray-700">Projects</span></a
+            >
+            <a
+              href="inventory.html"
+              class="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 rounded-lg"
+              ><svg
+                class="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                /></svg
+              ><span class="text-sm text-gray-700">Inventory</span></a
+            >
+          </div>
+          <div
+            class="px-3 py-2 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400"
+          >
+            <div class="flex items-center space-x-4">
+              <span>↑↓ Navigate</span><span>↵ Select</span><span>ESC Close</span>
+            </div>
+            <span>Powered by OneOhm</span>
+          </div>
         </div>
+      </div>
     </div>
-    
+
     <script>
-        let panelVisible = true;
-        function togglePanel() { const panel = document.getElementById('panel'); const mainContent = document.getElementById('mainContent'); const expandIcon = document.getElementById('toggleIconExpand'); const collapseIcon = document.getElementById('toggleIconCollapse'); panelVisible = !panelVisible; if (panelVisible) { panel.classList.remove('collapsed'); mainContent.classList.remove('panel-collapsed'); expandIcon.classList.add('hidden'); collapseIcon.classList.remove('hidden'); } else { panel.classList.add('collapsed'); mainContent.classList.add('panel-collapsed'); expandIcon.classList.remove('hidden'); collapseIcon.classList.add('hidden'); } localStorage.setItem('panelVisible', panelVisible); }
-        function openCommandPalette() { document.getElementById('commandPalette').classList.remove('hidden'); document.getElementById('commandInput').focus(); }
-        function closeCommandPalette() { document.getElementById('commandPalette').classList.add('hidden'); }
-        document.addEventListener('keydown', function(e) { if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); openCommandPalette(); } if ((e.metaKey || e.ctrlKey) && e.key === '\\') { e.preventDefault(); togglePanel(); } if (e.key === 'Escape') { closeCommandPalette(); } });
-        document.addEventListener('DOMContentLoaded', function() { const savedPanelVisible = localStorage.getItem('panelVisible'); if (savedPanelVisible === 'false') { panelVisible = true; togglePanel(); } });
+      let panelVisible = true;
+      function togglePanel() {
+        const panel = document.getElementById('panel');
+        const mainContent = document.getElementById('mainContent');
+        const expandIcon = document.getElementById('toggleIconExpand');
+        const collapseIcon = document.getElementById('toggleIconCollapse');
+        panelVisible = !panelVisible;
+        if (panelVisible) {
+          panel.classList.remove('collapsed');
+          mainContent.classList.remove('panel-collapsed');
+          expandIcon.classList.add('hidden');
+          collapseIcon.classList.remove('hidden');
+        } else {
+          panel.classList.add('collapsed');
+          mainContent.classList.add('panel-collapsed');
+          expandIcon.classList.remove('hidden');
+          collapseIcon.classList.add('hidden');
+        }
+        localStorage.setItem('panelVisible', panelVisible);
+      }
+      function openCommandPalette() {
+        document.getElementById('commandPalette').classList.remove('hidden');
+        document.getElementById('commandInput').focus();
+      }
+      function closeCommandPalette() {
+        document.getElementById('commandPalette').classList.add('hidden');
+      }
+      document.addEventListener('keydown', function (e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+          e.preventDefault();
+          openCommandPalette();
+        }
+        if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+          e.preventDefault();
+          togglePanel();
+        }
+        if (e.key === 'Escape') {
+          closeCommandPalette();
+        }
+      });
+      document.addEventListener('DOMContentLoaded', function () {
+        const savedPanelVisible = localStorage.getItem('panelVisible');
+        if (savedPanelVisible === 'false') {
+          panelVisible = true;
+          togglePanel();
+        }
+      });
     </script>
-</body>
+  </body>
 </html>

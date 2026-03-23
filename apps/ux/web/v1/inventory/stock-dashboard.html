@@ -1,437 +1,629 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Stock Dashboard - OneOhm Solar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#F97316',
-                    }
-                }
-            }
-        }
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#F97316',
+            },
+          },
+        },
+      };
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+      body {
+        font-family: 'Inter', sans-serif;
+      }
     </style>
-</head>
-<body class="bg-gray-50">
+  </head>
+  <body class="bg-gray-50">
     <div class="flex h-screen">
-        <!-- Sidebar -->
-        <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
-            <div class="p-6 border-b border-gray-700">
-                <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
-                <p class="text-gray-400 text-sm mt-1">Stock Management</p>
-            </div>
-            
-            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-                <a href="../admin/admin-dashboard.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                    </svg>
-                    <span>Dashboard</span>
-                </a>
-                <a href="material-master.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
-                    </svg>
-                    <span>Material Master</span>
-                </a>
-                <a href="bom-builder.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                    </svg>
-                    <span>BOM Builder</span>
-                </a>
-                <a href="stock-dashboard.html" class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
-                    </svg>
-                    <span>Stock Dashboard</span>
-                </a>
-                <a href="mrp-planning.html" class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                    </svg>
-                    <span>MRP Planning</span>
-                </a>
-            </nav>
-
-            <div class="p-4 border-t border-gray-700">
-                <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
-                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
-                        SA
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="font-semibold text-sm truncate">Super Admin</p>
-                        <p class="text-xs text-gray-400 truncate">Administrator</p>
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- Main Content -->
-        <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Top Bar -->
-            <header class="bg-white border-b border-gray-200 px-8 py-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-900">Stock Dashboard</h2>
-                        <p class="text-sm text-gray-600">Real-time inventory monitoring and analytics</p>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <button class="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold hover:bg-gray-50">
-                            <span class="flex items-center space-x-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                </svg>
-                                <span>Refresh</span>
-                            </span>
-                        </button>
-                        <button class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600">
-                            <span class="flex items-center space-x-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                </svg>
-                                <span>Stock Adjustment</span>
-                            </span>
-                        </button>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Key Metrics -->
-            <div class="bg-white border-b border-gray-200 px-8 py-6">
-                <div class="grid grid-cols-6 gap-4">
-                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 text-white shadow-lg">
-                        <div class="flex items-center justify-between mb-2">
-                            <p class="text-3xl font-bold">₹84L</p>
-                            <svg class="w-8 h-8 opacity-80" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path>
-                                <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <p class="text-sm opacity-90">Total Stock Value</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-5 text-white shadow-lg">
-                        <div class="flex items-center justify-between mb-2">
-                            <p class="text-3xl font-bold">198</p>
-                            <svg class="w-8 h-8 opacity-80" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
-                                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <p class="text-sm opacity-90">Items In Stock</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-5 text-white shadow-lg">
-                        <div class="flex items-center justify-between mb-2">
-                            <p class="text-3xl font-bold">12</p>
-                            <svg class="w-8 h-8 opacity-80" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <p class="text-sm opacity-90">Low Stock Alerts</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl p-5 text-white shadow-lg">
-                        <div class="flex items-center justify-between mb-2">
-                            <p class="text-3xl font-bold">35</p>
-                            <svg class="w-8 h-8 opacity-80" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <p class="text-sm opacity-90">Out of Stock</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-5 text-white shadow-lg">
-                        <div class="flex items-center justify-between mb-2">
-                            <p class="text-3xl font-bold">₹12L</p>
-                            <svg class="w-8 h-8 opacity-80" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"></path>
-                            </svg>
-                        </div>
-                        <p class="text-sm opacity-90">Pending Orders</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl p-5 text-white shadow-lg">
-                        <div class="flex items-center justify-between mb-2">
-                            <p class="text-3xl font-bold">85%</p>
-                            <svg class="w-8 h-8 opacity-80" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11 4a1 1 0 10-2 0v4a1 1 0 102 0V7zm-3 1a1 1 0 10-2 0v3a1 1 0 102 0V8zM8 9a1 1 0 00-2 0v2a1 1 0 102 0V9z" clip-rule="evenodd"></path>
-                            </svg>
-                        </div>
-                        <p class="text-sm opacity-90">Stock Turnover</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Main Content Grid -->
-            <main class="flex-1 overflow-y-auto p-8">
-                <div class="grid grid-cols-3 gap-6 mb-6">
-                    <!-- Stock by Category Chart -->
-                    <div class="col-span-2 bg-white rounded-xl border-2 border-gray-200 p-6">
-                        <h3 class="font-bold text-gray-900 text-lg mb-4">Stock by Category</h3>
-                        <div class="space-y-4">
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-700">Solar Panels</span>
-                                    <span class="text-sm font-bold text-blue-600">450 units (₹74.2L)</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-3">
-                                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full" style="width: 88%"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-700">Inverters</span>
-                                    <span class="text-sm font-bold text-green-600">85 units (₹24.5L)</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-3">
-                                    <div class="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full" style="width: 68%"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-700">Mounting Structures</span>
-                                    <span class="text-sm font-bold text-purple-600">320 sets (₹14.4L)</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-3">
-                                    <div class="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full" style="width: 75%"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-700">Batteries</span>
-                                    <span class="text-sm font-bold text-yellow-600">45 units (₹8.3L)</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-3">
-                                    <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 h-3 rounded-full" style="width: 35%"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-700">Cables & Wires</span>
-                                    <span class="text-sm font-bold text-red-600">15,600m (₹7.0L)</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-3">
-                                    <div class="bg-gradient-to-r from-red-500 to-red-600 h-3 rounded-full" style="width: 92%"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <span class="text-sm font-semibold text-gray-700">Other Components</span>
-                                    <span class="text-sm font-bold text-indigo-600">Multiple (₹5.6L)</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-3">
-                                    <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 h-3 rounded-full" style="width: 58%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Recent Stock Movements -->
-                    <div class="bg-white rounded-xl border-2 border-gray-200 p-6">
-                        <h3 class="font-bold text-gray-900 text-lg mb-4">Recent Stock Movements</h3>
-                        <div class="space-y-4">
-                            <div class="flex items-start space-x-3 pb-3 border-b border-gray-100">
-                                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path>
-                                    </svg>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-semibold text-gray-900">Stock In</p>
-                                    <p class="text-xs text-gray-600">50x Waaree 540W Panels</p>
-                                    <p class="text-xs text-gray-400">2 hours ago</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3 pb-3 border-b border-gray-100">
-                                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"></path>
-                                    </svg>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-semibold text-gray-900">Stock Out</p>
-                                    <p class="text-xs text-gray-600">15x Panels (PRJ-2025-085)</p>
-                                    <p class="text-xs text-gray-400">5 hours ago</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3 pb-3 border-b border-gray-100">
-                                <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <svg class="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                                    </svg>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-semibold text-gray-900">Low Stock Alert</p>
-                                    <p class="text-xs text-gray-600">Luminous 5kW Inverters (8 left)</p>
-                                    <p class="text-xs text-gray-400">1 day ago</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3 pb-3 border-b border-gray-100">
-                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z"></path>
-                                        <path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5zM15 11h2a1 1 0 110 2h-2v-2z"></path>
-                                    </svg>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-semibold text-gray-900">Stock Adjustment</p>
-                                    <p class="text-xs text-gray-600">Physical count completed</p>
-                                    <p class="text-xs text-gray-400">2 days ago</p>
-                                </div>
-                            </div>
-                            <div class="flex items-start space-x-3">
-                                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"></path>
-                                    </svg>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-semibold text-gray-900">Purchase Order</p>
-                                    <p class="text-xs text-gray-600">PO-2025-042 Received</p>
-                                    <p class="text-xs text-gray-400">3 days ago</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Low Stock Alerts -->
-                <div class="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl border-2 border-red-200 p-6 mb-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-bold text-gray-900 text-lg flex items-center space-x-2">
-                            <svg class="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                            </svg>
-                            <span>Critical Stock Alerts (12)</span>
-                        </h3>
-                        <button class="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 text-sm">
-                            Generate Purchase Orders
-                        </button>
-                    </div>
-                    <div class="grid grid-cols-3 gap-4">
-                        <div class="bg-white rounded-lg p-4 border-2 border-red-300">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="font-mono text-sm font-bold text-gray-900">MAT-INV-012</span>
-                                <span class="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full">URGENT</span>
-                            </div>
-                            <p class="font-semibold text-gray-900 mb-1">Luminous 5kW Inverter</p>
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-gray-600">Current: <span class="font-bold text-red-600">8 units</span></span>
-                                <span class="text-gray-600">Min: <span class="font-bold">20</span></span>
-                            </div>
-                            <button class="mt-3 w-full py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-orange-600">
-                                Reorder Now
-                            </button>
-                        </div>
-                        <div class="bg-white rounded-lg p-4 border-2 border-yellow-300">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="font-mono text-sm font-bold text-gray-900">MAT-BAT-008</span>
-                                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full">LOW</span>
-                            </div>
-                            <p class="font-semibold text-gray-900 mb-1">Exide 150Ah Battery</p>
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-gray-600">Current: <span class="font-bold text-yellow-600">5 units</span></span>
-                                <span class="text-gray-600">Min: <span class="font-bold">15</span></span>
-                            </div>
-                            <button class="mt-3 w-full py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-orange-600">
-                                Reorder Now
-                            </button>
-                        </div>
-                        <div class="bg-white rounded-lg p-4 border-2 border-yellow-300">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="font-mono text-sm font-bold text-gray-900">MAT-JB-015</span>
-                                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full">LOW</span>
-                            </div>
-                            <p class="font-semibold text-gray-900 mb-1">DC Junction Box 4-in-1</p>
-                            <div class="flex items-center justify-between text-sm">
-                                <span class="text-gray-600">Current: <span class="font-bold text-yellow-600">12 units</span></span>
-                                <span class="text-gray-600">Min: <span class="font-bold">30</span></span>
-                            </div>
-                            <button class="mt-3 w-full py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-orange-600">
-                                Reorder Now
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Top Moving Items -->
-                <div class="bg-white rounded-xl border-2 border-gray-200 p-6">
-                    <h3 class="font-bold text-gray-900 text-lg mb-4">Top Moving Items (Last 30 Days)</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead class="bg-gray-50 border-b-2 border-gray-200">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Rank</th>
-                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Material</th>
-                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Category</th>
-                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Units Moved</th>
-                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Turnover Rate</th>
-                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Current Stock</th>
-                                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200">
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4">
-                                        <span class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold">1</span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <p class="font-semibold text-gray-900">Waaree 540W Poly Panel</p>
-                                        <p class="text-xs text-gray-500">MAT-SP-001</p>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-700">Solar Panels</td>
-                                    <td class="px-6 py-4 font-bold text-blue-600">250 units</td>
-                                    <td class="px-6 py-4 font-semibold text-green-600">92%</td>
-                                    <td class="px-6 py-4 font-semibold text-gray-900">450 units</td>
-                                    <td class="px-6 py-4">
-                                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">Healthy</span>
-                                    </td>
-                                </tr>
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4">
-                                        <span class="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold">2</span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <p class="font-semibold text-gray-900">Galvanized Steel Mounting</p>
-                                        <p class="text-xs text-gray-500">MAT-MS-025</p>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-700">Mounting</td>
-                                    <td class="px-6 py-4 font-bold text-blue-600">180 sets</td>
-                                    <td class="px-6 py-4 font-semibold text-green-600">85%</td>
-                                    <td class="px-6 py-4 font-semibold text-gray-900">320 sets</td>
-                                    <td class="px-6 py-4">
-                                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">Healthy</span>
-                                    </td>
-                                </tr>
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4">
-                                        <span class="w-8 h-8 bg-orange-400 rounded-full flex items-center justify-center text-white font-bold">3</span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <p class="font-semibold text-gray-900">DC Solar Cable 4mm² Red</p>
-                                        <p class="text-xs text-gray-500">MAT-CBL-042</p>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-700">Cables</td>
-                                    <td class="px-6 py-4 font-bold text-blue-600">8,500m</td>
-                                    <td class="px-6 py-4 font-semibold text-green-600">78%</td>
-                                    <td class="px-6 py-4 font-semibold text-gray-900">2,500m</td>
-                                    <td class="px-6 py-4">
-                                        <span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full">Monitor</span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </main>
+      <!-- Sidebar -->
+      <aside class="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white flex flex-col">
+        <div class="p-6 border-b border-gray-700">
+          <h1 class="text-2xl font-bold text-primary">OneOhm</h1>
+          <p class="text-gray-400 text-sm mt-1">Stock Management</p>
         </div>
-    </div>
-</body>
-</html>
 
+        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+          <a
+            href="../admin/admin-dashboard.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              ></path>
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a
+            href="material-master.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"
+              ></path>
+            </svg>
+            <span>Material Master</span>
+          </a>
+          <a
+            href="bom-builder.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              ></path>
+            </svg>
+            <span>BOM Builder</span>
+          </a>
+          <a
+            href="stock-dashboard.html"
+            class="flex items-center space-x-3 px-4 py-3 bg-primary/20 text-primary rounded-lg font-semibold"
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"
+              ></path>
+            </svg>
+            <span>Stock Dashboard</span>
+          </a>
+          <a
+            href="mrp-planning.html"
+            class="flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-700/50 rounded-lg"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+              ></path>
+            </svg>
+            <span>MRP Planning</span>
+          </a>
+        </nav>
+
+        <div class="p-4 border-t border-gray-700">
+          <div class="flex items-center space-x-3 px-4 py-3 bg-gray-700/50 rounded-lg">
+            <div
+              class="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold"
+            >
+              SA
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm truncate">Super Admin</p>
+              <p class="text-xs text-gray-400 truncate">Administrator</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Top Bar -->
+        <header class="bg-white border-b border-gray-200 px-8 py-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900">Stock Dashboard</h2>
+              <p class="text-sm text-gray-600">Real-time inventory monitoring and analytics</p>
+            </div>
+            <div class="flex items-center space-x-3">
+              <button
+                class="px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold hover:bg-gray-50"
+              >
+                <span class="flex items-center space-x-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    ></path>
+                  </svg>
+                  <span>Refresh</span>
+                </span>
+              </button>
+              <button
+                class="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-orange-600"
+              >
+                <span class="flex items-center space-x-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    ></path>
+                  </svg>
+                  <span>Stock Adjustment</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <!-- Key Metrics -->
+        <div class="bg-white border-b border-gray-200 px-8 py-6">
+          <div class="grid grid-cols-6 gap-4">
+            <div
+              class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 text-white shadow-lg"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-3xl font-bold">₹84L</p>
+                <svg class="w-8 h-8 opacity-80" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path>
+                  <path
+                    fill-rule="evenodd"
+                    d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+              </div>
+              <p class="text-sm opacity-90">Total Stock Value</p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-5 text-white shadow-lg"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-3xl font-bold">198</p>
+                <svg class="w-8 h-8 opacity-80" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"></path>
+                  <path
+                    fill-rule="evenodd"
+                    d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+              </div>
+              <p class="text-sm opacity-90">Items In Stock</p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-5 text-white shadow-lg"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-3xl font-bold">12</p>
+                <svg class="w-8 h-8 opacity-80" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fill-rule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+              </div>
+              <p class="text-sm opacity-90">Low Stock Alerts</p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl p-5 text-white shadow-lg"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-3xl font-bold">35</p>
+                <svg class="w-8 h-8 opacity-80" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fill-rule="evenodd"
+                    d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+              </div>
+              <p class="text-sm opacity-90">Out of Stock</p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-5 text-white shadow-lg"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-3xl font-bold">₹12L</p>
+                <svg class="w-8 h-8 opacity-80" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"
+                  ></path>
+                </svg>
+              </div>
+              <p class="text-sm opacity-90">Pending Orders</p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl p-5 text-white shadow-lg"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-3xl font-bold">85%</p>
+                <svg class="w-8 h-8 opacity-80" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fill-rule="evenodd"
+                    d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11 4a1 1 0 10-2 0v4a1 1 0 102 0V7zm-3 1a1 1 0 10-2 0v3a1 1 0 102 0V8zM8 9a1 1 0 00-2 0v2a1 1 0 102 0V9z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+              </div>
+              <p class="text-sm opacity-90">Stock Turnover</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <main class="flex-1 overflow-y-auto p-8">
+          <div class="grid grid-cols-3 gap-6 mb-6">
+            <!-- Stock by Category Chart -->
+            <div class="col-span-2 bg-white rounded-xl border-2 border-gray-200 p-6">
+              <h3 class="font-bold text-gray-900 text-lg mb-4">Stock by Category</h3>
+              <div class="space-y-4">
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-700">Solar Panels</span>
+                    <span class="text-sm font-bold text-blue-600">450 units (₹74.2L)</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div
+                      class="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full"
+                      style="width: 88%"
+                    ></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-700">Inverters</span>
+                    <span class="text-sm font-bold text-green-600">85 units (₹24.5L)</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div
+                      class="bg-gradient-to-r from-green-500 to-green-600 h-3 rounded-full"
+                      style="width: 68%"
+                    ></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-700">Mounting Structures</span>
+                    <span class="text-sm font-bold text-purple-600">320 sets (₹14.4L)</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div
+                      class="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full"
+                      style="width: 75%"
+                    ></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-700">Batteries</span>
+                    <span class="text-sm font-bold text-yellow-600">45 units (₹8.3L)</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div
+                      class="bg-gradient-to-r from-yellow-500 to-yellow-600 h-3 rounded-full"
+                      style="width: 35%"
+                    ></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-700">Cables & Wires</span>
+                    <span class="text-sm font-bold text-red-600">15,600m (₹7.0L)</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div
+                      class="bg-gradient-to-r from-red-500 to-red-600 h-3 rounded-full"
+                      style="width: 92%"
+                    ></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-semibold text-gray-700">Other Components</span>
+                    <span class="text-sm font-bold text-indigo-600">Multiple (₹5.6L)</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div
+                      class="bg-gradient-to-r from-indigo-500 to-indigo-600 h-3 rounded-full"
+                      style="width: 58%"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Stock Movements -->
+            <div class="bg-white rounded-xl border-2 border-gray-200 p-6">
+              <h3 class="font-bold text-gray-900 text-lg mb-4">Recent Stock Movements</h3>
+              <div class="space-y-4">
+                <div class="flex items-start space-x-3 pb-3 border-b border-gray-100">
+                  <div
+                    class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0"
+                  >
+                    <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fill-rule="evenodd"
+                        d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                        clip-rule="evenodd"
+                      ></path>
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-gray-900">Stock In</p>
+                    <p class="text-xs text-gray-600">50x Waaree 540W Panels</p>
+                    <p class="text-xs text-gray-400">2 hours ago</p>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3 pb-3 border-b border-gray-100">
+                  <div
+                    class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0"
+                  >
+                    <svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fill-rule="evenodd"
+                        d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z"
+                        clip-rule="evenodd"
+                      ></path>
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-gray-900">Stock Out</p>
+                    <p class="text-xs text-gray-600">15x Panels (PRJ-2025-085)</p>
+                    <p class="text-xs text-gray-400">5 hours ago</p>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3 pb-3 border-b border-gray-100">
+                  <div
+                    class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0"
+                  >
+                    <svg class="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fill-rule="evenodd"
+                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                        clip-rule="evenodd"
+                      ></path>
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-gray-900">Low Stock Alert</p>
+                    <p class="text-xs text-gray-600">Luminous 5kW Inverters (8 left)</p>
+                    <p class="text-xs text-gray-400">1 day ago</p>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3 pb-3 border-b border-gray-100">
+                  <div
+                    class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0"
+                  >
+                    <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z"></path>
+                      <path
+                        d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5zM15 11h2a1 1 0 110 2h-2v-2z"
+                      ></path>
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-gray-900">Stock Adjustment</p>
+                    <p class="text-xs text-gray-600">Physical count completed</p>
+                    <p class="text-xs text-gray-400">2 days ago</p>
+                  </div>
+                </div>
+                <div class="flex items-start space-x-3">
+                  <div
+                    class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0"
+                  >
+                    <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"
+                      ></path>
+                    </svg>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-gray-900">Purchase Order</p>
+                    <p class="text-xs text-gray-600">PO-2025-042 Received</p>
+                    <p class="text-xs text-gray-400">3 days ago</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Low Stock Alerts -->
+          <div
+            class="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl border-2 border-red-200 p-6 mb-6"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-bold text-gray-900 text-lg flex items-center space-x-2">
+                <svg class="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fill-rule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clip-rule="evenodd"
+                  ></path>
+                </svg>
+                <span>Critical Stock Alerts (12)</span>
+              </h3>
+              <button
+                class="px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 text-sm"
+              >
+                Generate Purchase Orders
+              </button>
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+              <div class="bg-white rounded-lg p-4 border-2 border-red-300">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-mono text-sm font-bold text-gray-900">MAT-INV-012</span>
+                  <span class="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-full"
+                    >URGENT</span
+                  >
+                </div>
+                <p class="font-semibold text-gray-900 mb-1">Luminous 5kW Inverter</p>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-gray-600"
+                    >Current: <span class="font-bold text-red-600">8 units</span></span
+                  >
+                  <span class="text-gray-600">Min: <span class="font-bold">20</span></span>
+                </div>
+                <button
+                  class="mt-3 w-full py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-orange-600"
+                >
+                  Reorder Now
+                </button>
+              </div>
+              <div class="bg-white rounded-lg p-4 border-2 border-yellow-300">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-mono text-sm font-bold text-gray-900">MAT-BAT-008</span>
+                  <span
+                    class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full"
+                    >LOW</span
+                  >
+                </div>
+                <p class="font-semibold text-gray-900 mb-1">Exide 150Ah Battery</p>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-gray-600"
+                    >Current: <span class="font-bold text-yellow-600">5 units</span></span
+                  >
+                  <span class="text-gray-600">Min: <span class="font-bold">15</span></span>
+                </div>
+                <button
+                  class="mt-3 w-full py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-orange-600"
+                >
+                  Reorder Now
+                </button>
+              </div>
+              <div class="bg-white rounded-lg p-4 border-2 border-yellow-300">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-mono text-sm font-bold text-gray-900">MAT-JB-015</span>
+                  <span
+                    class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full"
+                    >LOW</span
+                  >
+                </div>
+                <p class="font-semibold text-gray-900 mb-1">DC Junction Box 4-in-1</p>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-gray-600"
+                    >Current: <span class="font-bold text-yellow-600">12 units</span></span
+                  >
+                  <span class="text-gray-600">Min: <span class="font-bold">30</span></span>
+                </div>
+                <button
+                  class="mt-3 w-full py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-orange-600"
+                >
+                  Reorder Now
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Moving Items -->
+          <div class="bg-white rounded-xl border-2 border-gray-200 p-6">
+            <h3 class="font-bold text-gray-900 text-lg mb-4">Top Moving Items (Last 30 Days)</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-gray-50 border-b-2 border-gray-200">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">
+                      Rank
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">
+                      Material
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">
+                      Category
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">
+                      Units Moved
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">
+                      Turnover Rate
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">
+                      Current Stock
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                      <span
+                        class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center text-white font-bold"
+                        >1</span
+                      >
+                    </td>
+                    <td class="px-6 py-4">
+                      <p class="font-semibold text-gray-900">Waaree 540W Poly Panel</p>
+                      <p class="text-xs text-gray-500">MAT-SP-001</p>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-700">Solar Panels</td>
+                    <td class="px-6 py-4 font-bold text-blue-600">250 units</td>
+                    <td class="px-6 py-4 font-semibold text-green-600">92%</td>
+                    <td class="px-6 py-4 font-semibold text-gray-900">450 units</td>
+                    <td class="px-6 py-4">
+                      <span
+                        class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full"
+                        >Healthy</span
+                      >
+                    </td>
+                  </tr>
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                      <span
+                        class="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white font-bold"
+                        >2</span
+                      >
+                    </td>
+                    <td class="px-6 py-4">
+                      <p class="font-semibold text-gray-900">Galvanized Steel Mounting</p>
+                      <p class="text-xs text-gray-500">MAT-MS-025</p>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-700">Mounting</td>
+                    <td class="px-6 py-4 font-bold text-blue-600">180 sets</td>
+                    <td class="px-6 py-4 font-semibold text-green-600">85%</td>
+                    <td class="px-6 py-4 font-semibold text-gray-900">320 sets</td>
+                    <td class="px-6 py-4">
+                      <span
+                        class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full"
+                        >Healthy</span
+                      >
+                    </td>
+                  </tr>
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                      <span
+                        class="w-8 h-8 bg-orange-400 rounded-full flex items-center justify-center text-white font-bold"
+                        >3</span
+                      >
+                    </td>
+                    <td class="px-6 py-4">
+                      <p class="font-semibold text-gray-900">DC Solar Cable 4mm² Red</p>
+                      <p class="text-xs text-gray-500">MAT-CBL-042</p>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-700">Cables</td>
+                    <td class="px-6 py-4 font-bold text-blue-600">8,500m</td>
+                    <td class="px-6 py-4 font-semibold text-green-600">78%</td>
+                    <td class="px-6 py-4 font-semibold text-gray-900">2,500m</td>
+                    <td class="px-6 py-4">
+                      <span
+                        class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full"
+                        >Monitor</span
+                      >
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

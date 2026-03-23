@@ -20,18 +20,14 @@
       "listen": "prerequest",
       "script": {
         "type": "text/javascript",
-        "exec": [
-          ""
-        ]
+        "exec": [""]
       }
     },
     {
       "listen": "test",
       "script": {
         "type": "text/javascript",
-        "exec": [
-          ""
-        ]
+        "exec": [""]
       }
     }
   ],
@@ -92,13 +88,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
             },
             "description": "Login with email and password. Uses LocalStrategy (Passport). Recommended for admin and employee users.\n\nReturns JWT access token and refresh token."
           },
@@ -139,13 +130,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/refresh",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "refresh"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
             },
             "description": "Refresh the access token using a valid refresh token.\n\nReturns a new access token."
           },
@@ -164,13 +150,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/auth/me",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "me"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
             },
             "description": "Get the current authenticated user's profile information.\n\nRequires valid JWT access token."
           },
@@ -214,13 +195,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/logout",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "logout"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
             },
             "description": "Logout the current user and invalidate the refresh token.\n\nRequires valid JWT access token.\n\nReturns 204 No Content on success."
           },
@@ -250,14 +226,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/otp/request",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "otp",
-                "request"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "otp", "request"]
             },
             "description": "Request OTP for phone or email authentication.\n\nCreates user account if doesn't exist (Firebase-like behavior).\n\n**Request Body Options:**\n```json\n// For phone OTP\n{\n  \"phone\": \"+919876543210\",\n  \"countryCode\": \"+91\"\n}\n\n// For email OTP\n{\n  \"email\": \"user@example.com\"\n}\n```"
           },
@@ -304,14 +274,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/auth/otp/verify",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "otp",
-                "verify"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "otp", "verify"]
             },
             "description": "Verify OTP and login.\n\nReturns JWT access token and refresh token.\n\n**Request Body Options:**\n```json\n// For phone OTP verification\n{\n  \"phone\": \"+919876543210\",\n  \"otp\": \"123456\"\n}\n\n// For email OTP verification\n{\n  \"email\": \"user@example.com\",\n  \"otp\": \"123456\"\n}\n```"
           },
@@ -322,4 +286,3 @@
     }
   ]
 }
-
