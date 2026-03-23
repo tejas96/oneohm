@@ -126,10 +126,10 @@ export function getInitials(name?: string): string {
 }
 
 /**
- * Get full name from first and last name
+ * Get full name from first, last, and optionally middle name
  */
-export function getFullName(firstName?: string, lastName?: string): string {
-  return `${firstName || ''} ${lastName || ''}`.trim() || '';
+export function getFullName(firstName?: string, lastName?: string, middleName?: string): string {
+  return [firstName, middleName, lastName].filter(Boolean).join(' ');
 }
 
 /**
