@@ -22,6 +22,12 @@ export class CreateCustomerDto {
   @MaxLength(100)
   firstName!: string;
 
+  @ApiPropertyOptional({ example: 'Kumar', description: 'Customer middle name' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  middleName?: string;
+
   @ApiPropertyOptional({ example: 'Kumar', description: 'Customer last name' })
   @IsString()
   @IsOptional()
@@ -109,6 +115,25 @@ export class CreateCustomerDto {
   @IsOptional()
   @MaxLength(50)
   referralCode?: string;
+
+  // ==================== Customer Group ====================
+  @ApiPropertyOptional({
+    example: 'GRP-0001',
+    description: 'Group code to assign this customer to an existing group',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(20)
+  groupCode?: string;
+
+  @ApiPropertyOptional({
+    example: 'Sunshine Apartments',
+    description: 'Group name. If provided without groupCode, a new group will be created.',
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  groupName?: string;
 
   // ==================== Status ====================
   @ApiPropertyOptional({

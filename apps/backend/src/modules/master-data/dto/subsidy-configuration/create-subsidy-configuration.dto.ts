@@ -24,10 +24,11 @@ export class SubsidyTierDto {
   @Min(0)
   fromKw!: number;
 
-  @ApiProperty({ example: 2, description: 'Ending KW (exclusive)' })
+  @ApiProperty({ example: 2, description: 'Ending KW (exclusive), null for open-ended' })
   @IsNumber()
   @Min(0)
-  toKw!: number;
+  @IsOptional()
+  toKw?: number | null;
 
   @ApiProperty({ example: 30000, description: 'Rate per KW in INR' })
   @IsNumber()

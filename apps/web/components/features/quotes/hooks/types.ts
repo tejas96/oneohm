@@ -1,10 +1,8 @@
 import type {
   CalculatorInputs,
-  ItemCategory,
   PaymentMilestone,
   PricingBreakdown,
   ProjectType,
-  QuoteConfigSnapshot,
   QuoteStatus,
   SystemType,
 } from '@oneohm-epc/shared/types';
@@ -54,9 +52,7 @@ export interface QuoteDetail {
   pricingBreakdown?: PricingBreakdown;
   paymentMilestones?: PaymentMilestone[];
   projectCompletionWeeks?: number;
-  configSnapshot?: QuoteConfigSnapshot;
   versions?: QuoteVersionDetail[];
-  lineItems?: QuoteLineItemDetail[];
 }
 
 // ============================================================================
@@ -78,31 +74,8 @@ export interface QuoteVersionDetail {
   projectCompletionWeeks: number;
   changeSummary?: string;
   isCurrent: boolean;
-  configSnapshot?: QuoteConfigSnapshot;
   createdBy: string;
   createdAt: string;
-  lineItems?: QuoteLineItemDetail[];
-}
-
-// ============================================================================
-// Quote Line Item Types
-// ============================================================================
-
-export interface QuoteLineItemDetail {
-  id: string;
-  quoteVersionId: string;
-  productId?: string;
-  itemCategory: ItemCategory;
-  itemName: string;
-  itemDescription?: string;
-  specifications?: Record<string, unknown>;
-  quantity: number;
-  unitOfMeasure?: string;
-  unitPrice: number;
-  lineTotal: number;
-  taxRate?: number;
-  taxAmount?: number;
-  displayOrder: number;
 }
 
 // ============================================================================

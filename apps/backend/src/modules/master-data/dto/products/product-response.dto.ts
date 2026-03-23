@@ -1,15 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  ProductStatus,
-  ProductType,
-  UnitOfMeasure,
-  ProductSpecifications,
-} from '@oneohm-epc/shared/types';
-import { Expose, Type } from 'class-transformer';
+import { ProductStatus, UnitOfMeasure } from '@oneohm-epc/shared/types';
+import { Expose, Transform, Type } from 'class-transformer';
 
-/**
- * DTO for product response
- */
 export class ProductResponseDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   @Expose()
@@ -19,9 +11,26 @@ export class ProductResponseDto {
   @Expose()
   organizationId!: string;
 
-  @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440002' })
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440002' })
   @Expose()
-  categoryId?: string;
+  productTypeId!: string;
+
+  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440003' })
+  @Expose()
+  brandId!: string;
+
+  @ApiPropertyOptional({
+    description: 'Brand relation (when loaded)',
+    example: { id: '550e8400-e29b-41d4-a716-446655440003', name: 'Jinko Solar' },
+  })
+  @Expose()
+  @Transform(({ obj }) => {
+    const brand = obj?.brand;
+    return brand && typeof brand === 'object' && brand.id
+      ? { id: brand.id, name: brand.name }
+      : undefined;
+  })
+  brand?: { id: string; name: string };
 
   @ApiProperty({ example: 'Jinko Solar Tiger Neo 550W' })
   @Expose()
@@ -35,31 +44,24 @@ export class ProductResponseDto {
   @Expose()
   description?: string;
 
-  @ApiProperty({ enum: ProductType, example: ProductType.SOLAR_PANEL })
-  @Expose()
-  type!: ProductType;
-
-  @ApiPropertyOptional({
-    description: 'Product specifications (type-specific JSONB)',
-    example: {
-      panel: { isDcr: true, technology: 'perc', wattage: 550, minWattage: 530, maxWattage: 550 },
-      common: { efficiency: 21.5, dimensions: '2278x1134x35mm', weight: 27.5 },
-    },
-  })
-  @Expose()
-  specifications?: ProductSpecifications;
-
-  @ApiPropertyOptional({ example: 'Jinko Solar' })
-  @Expose()
-  brand?: string;
-
-  @ApiPropertyOptional({ example: 'Jinko Solar Co. Ltd' })
-  @Expose()
-  manufacturer?: string;
-
   @ApiPropertyOptional({ example: 'JKM550M-7RL4-V' })
   @Expose()
   modelNumber?: string;
+
+  @ApiPropertyOptional({
+    description: 'Flat JSONB specifications',
+    example: {
+      technology: 'perc',
+      is_dcr: true,
+      wattage: 550,
+      min_wattage: 530,
+      max_wattage: 550,
+      efficiency: 21.5,
+    },
+  })
+  @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
+  specifications?: Record<string, unknown>;
 
   @ApiProperty({ enum: UnitOfMeasure, example: UnitOfMeasure.PIECES })
   @Expose()
@@ -90,9 +92,6 @@ export class ProductResponseDto {
   updatedAt!: Date;
 }
 
-/**
- * DTO for paginated products response
- */
 export class ProductsListResponseDto {
   @ApiProperty({ type: [ProductResponseDto] })
   @Expose()

@@ -12,6 +12,7 @@ export {
   formatCurrencyCompact,
   formatCurrencyDecimal,
   formatDate,
+  formatLabel,
   formatNumber,
   getDueDateColor,
   formatRelativeDate,

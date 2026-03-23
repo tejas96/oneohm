@@ -2,18 +2,20 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CustomerStatus, LeadSource } from '@oneohm-epc/shared/types';
-import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type JSX } from 'react';
-import { useForm } from 'react-hook-form';
+import { type JSX, useMemo } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 
 import { useCreateCustomer, useCheckAvailability } from '../hooks/use-create-customer';
 import {
   useCustomer,
   useUpdateCustomer,
   useUpdateCustomerStatus,
+  useCustomerGroups,
   type Customer,
+  type CustomerGroup,
 } from '../hooks/use-customers';
 import {
   createCustomerProfileSchema,
@@ -21,19 +23,7 @@ import {
 } from '../schemas/customer.schema';
 
 import { EmptyState } from '@/components/shared';
-import {
-  Button,
-  Card,
-  CardContent,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  showToast,
-} from '@/components/ui';
+import { Button, Card, CardContent, MUIInput, MUISelect, showToast } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
 import { getErrorMessage } from '@/lib/utils';
 
@@ -50,6 +40,7 @@ interface CustomerFormContentProps {
   mode: 'create' | 'edit';
   customerId?: string;
   customer?: Customer;
+  groups: CustomerGroup[];
 }
 
 // ============================================================================
@@ -77,29 +68,33 @@ const STATUS_OPTIONS = [
   { value: CustomerStatus.INACTIVE, label: 'Inactive' },
 ];
 
+const KNOWN_LEAD_SOURCE_VALUES = new Set<string>(Object.values(LeadSource));
+
 // ============================================================================
 // Helpers
 // ============================================================================
 
-/** Filter input to only allow digits, preserving cursor position */
-const handleNumericInput = (e: React.FormEvent<HTMLInputElement>, maxLength: number): void => {
-  const input = e.currentTarget;
-  const cursorPos = input.selectionStart ?? 0;
-  const originalValue = input.value;
-  const filtered = originalValue.replace(/\D/g, '').slice(0, maxLength);
-
-  if (filtered !== originalValue) {
-    input.value = filtered;
-    // Calculate new cursor position (adjust for removed characters)
-    const removedBefore = originalValue.slice(0, cursorPos).replace(/\D/g, '').length;
-    requestAnimationFrame(() => {
-      input.setSelectionRange(removedBefore, removedBefore);
-    });
-  }
-};
-
 /** Strip +91 prefix from phone number for display */
 const stripPhonePrefix = (phone?: string): string => phone?.replace(/^\+91/, '') ?? '';
+
+/** Return true when the given string matches a known LeadSource enum value */
+function isKnownLeadSource(value?: string | null): boolean {
+  return !!value && KNOWN_LEAD_SOURCE_VALUES.has(value);
+}
+
+/**
+ * Given a raw leadSource value stored in DB, return the form state:
+ * - If it matches a known enum → { leadSource: enumValue, leadSourceOther: '' }
+ * - If it doesn't (custom text) → { leadSource: 'other', leadSourceOther: storedValue }
+ */
+function resolveLeadSourceForForm(raw?: string | null): {
+  leadSource: string;
+  leadSourceOther: string;
+} {
+  if (!raw) return { leadSource: '', leadSourceOther: '' };
+  if (isKnownLeadSource(raw)) return { leadSource: raw, leadSourceOther: '' };
+  return { leadSource: LeadSource.OTHER, leadSourceOther: raw };
+}
 
 // ============================================================================
 // Loading Skeleton
@@ -117,23 +112,16 @@ function CustomerFormSkeleton(): JSX.Element {
         <CardContent className="p-4 space-y-6">
           <div className="space-y-4">
             <div className="h-4 w-40 bg-muted rounded animate-pulse" />
-            <div className="grid grid-cols-2 gap-4">
-              <div className="h-input-lg bg-muted rounded animate-pulse" />
-              <div className="h-input-lg bg-muted rounded animate-pulse" />
+            <div className="grid grid-cols-3 gap-4">
+              <div className="h-14 bg-muted rounded animate-pulse" />
+              <div className="h-14 bg-muted rounded animate-pulse" />
+              <div className="h-14 bg-muted rounded animate-pulse" />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="h-input-lg bg-muted rounded animate-pulse" />
-              <div className="h-input-lg bg-muted rounded animate-pulse" />
+              <div className="h-14 bg-muted rounded animate-pulse" />
+              <div className="h-14 bg-muted rounded animate-pulse" />
             </div>
-            <div className="h-input-lg bg-muted rounded animate-pulse" />
-          </div>
-          <div className="space-y-4">
-            <div className="h-4 w-24 bg-muted rounded animate-pulse" />
-            <div className="h-input-lg bg-muted rounded animate-pulse" />
-            <div className="grid grid-cols-2 gap-4">
-              <div className="h-input-lg bg-muted rounded animate-pulse" />
-              <div className="h-input-lg bg-muted rounded animate-pulse" />
-            </div>
+            <div className="h-14 bg-muted rounded animate-pulse" />
           </div>
         </CardContent>
       </Card>
@@ -149,6 +137,7 @@ function CustomerFormContent({
   mode,
   customerId,
   customer,
+  groups,
 }: CustomerFormContentProps): JSX.Element {
   const router = useRouter();
   const isEditMode = mode === 'edit';
@@ -159,11 +148,14 @@ function CustomerFormContent({
   const updateCustomerStatus = useUpdateCustomerStatus();
   const availability = useCheckAvailability();
 
-  // Compute default values - customer is guaranteed to be available in edit mode
+  // Compute default values
+  const defaultLeadSource = resolveLeadSourceForForm(customer?.leadSource);
+
   const defaultFormValues: CreateCustomerProfileFormData =
     isEditMode && customer
       ? {
           firstName: customer.firstName,
+          middleName: customer.middleName ?? '',
           lastName: customer.lastName ?? '',
           phone: stripPhonePrefix(customer.phone),
           email: customer.email ?? '',
@@ -172,12 +164,16 @@ function CustomerFormContent({
           city: customer.city ?? '',
           state: customer.state ?? '',
           pincode: customer.pincode ?? '',
-          leadSource: customer.leadSource ? (customer.leadSource as LeadSource) : undefined,
+          leadSource: defaultLeadSource.leadSource,
+          leadSourceOther: defaultLeadSource.leadSourceOther,
           referralCode: customer.referralCode ?? '',
           status: customer.status,
+          groupCode: customer.groupCode ?? '',
+          groupName: customer.groupName ?? '',
         }
       : {
           firstName: '',
+          middleName: '',
           lastName: '',
           phone: '',
           email: '',
@@ -186,9 +182,12 @@ function CustomerFormContent({
           city: '',
           state: '',
           pincode: '',
-          leadSource: undefined,
+          leadSource: '',
+          leadSourceOther: '',
           referralCode: '',
           status: undefined,
+          groupCode: '',
+          groupName: '',
         };
 
   const form = useForm<CreateCustomerProfileFormData>({
@@ -197,7 +196,23 @@ function CustomerFormContent({
     mode: 'onChange',
   });
 
-  // Check phone availability on blur (exclude current customer in edit mode)
+  const watchedLeadSource = form.watch('leadSource');
+  const watchedGroupCode = form.watch('groupCode');
+  const showOtherSourceInput = watchedLeadSource === LeadSource.OTHER;
+
+  // Group options for autocomplete
+  const groupOptions = useMemo(
+    () =>
+      groups.map((g) => ({
+        label: `${g.groupName} (${g.groupCode})`,
+        value: g.groupCode,
+        groupName: g.groupName,
+        groupCode: g.groupCode,
+      })),
+    [groups],
+  );
+
+  // Check phone availability on blur
   const handlePhoneBlur = (): void => {
     const phone = form.getValues('phone');
     if (phone.length === 10) {
@@ -205,7 +220,7 @@ function CustomerFormContent({
     }
   };
 
-  // Check email availability on blur (exclude current customer in edit mode)
+  // Check email availability on blur
   const handleEmailBlur = (): void => {
     const email = form.getValues('email');
     if (email) {
@@ -214,7 +229,6 @@ function CustomerFormContent({
   };
 
   const onSubmit = async (data: CreateCustomerProfileFormData): Promise<void> => {
-    // Prevent submit if availability errors exist
     if (availability.hasErrors) {
       showToast.error('Please fix the duplicate phone/email errors');
       return;
@@ -222,26 +236,35 @@ function CustomerFormContent({
 
     try {
       if (isEditMode && customerId) {
-        const { status, ...profileFields } = data;
+        const { status, leadSourceOther, groupCode, groupName, ...profileFields } = data;
+
+        // Resolve leadSource for update
+        const resolvedLeadSource =
+          data.leadSource === LeadSource.OTHER
+            ? (leadSourceOther ?? undefined)
+            : (data.leadSource ?? undefined);
+
         const updatePayload = {
           ...profileFields,
           phone: `+91${data.phone}`,
           alternatePhone: data.alternatePhone ? `+91${data.alternatePhone}` : undefined,
-          leadSource: data.leadSource ?? undefined,
+          leadSource: resolvedLeadSource,
+          // Send null to explicitly clear group; omit entirely when no group was ever set
+          groupCode: groupCode || (customer?.groupCode ? null : undefined),
+          groupName: groupName || (customer?.groupName ? null : undefined),
         };
+
         await updateCustomer.mutateAsync({ id: customerId, data: updatePayload });
         if (status && status !== customer?.status) {
           await updateCustomerStatus.mutateAsync({ id: customerId, status });
         }
         showToast.success('Customer updated successfully');
       } else {
-        // useCreateCustomer already adds +91 prefix
         await createCustomer.mutateAsync(data);
         showToast.success('Customer created successfully');
       }
       router.push(ROUTES.CUSTOMERS.LIST);
     } catch (error: unknown) {
-      // Check if it's an organizationId error and provide helpful message
       const axiosErr = error as { response?: { data?: { message?: string }; status?: number } };
       const isOrgIdError =
         axiosErr.response?.status === 400 &&
@@ -262,17 +285,17 @@ function CustomerFormContent({
   const isSubmitting =
     createCustomer.isPending || updateCustomer.isPending || updateCustomerStatus.isPending;
 
-  // Combine form validation errors with availability errors
   const phoneError =
     form.formState.errors.phone?.message ?? availability.state.phoneError ?? undefined;
   const emailError =
     form.formState.errors.email?.message ?? availability.state.emailError ?? undefined;
 
-  // Page header text
   const pageTitle = isEditMode ? 'Edit Customer' : 'Create New Customer';
   const pageDescription = isEditMode
     ? `Update details for ${customer?.firstName ?? ''} ${customer?.lastName ?? ''}`.trim()
     : 'Add a new customer to your database';
+
+  const isLeadSourceLocked = isEditMode && !!customer?.leadSource;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -299,93 +322,70 @@ function CustomerFormContent({
                 Personal Information
               </h3>
 
-              {/* Name row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">
-                    First Name <span className="text-error">*</span>
-                  </Label>
-                  <Input
-                    id="firstName"
-                    placeholder="Enter first name"
-                    {...form.register('firstName')}
-                    error={!!form.formState.errors.firstName}
-                    errorMessage={form.formState.errors.firstName?.message}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">
-                    Last Name <span className="text-error">*</span>
-                  </Label>
-                  <Input
-                    id="lastName"
-                    placeholder="Enter last name"
-                    {...form.register('lastName')}
-                    error={!!form.formState.errors.lastName}
-                    errorMessage={form.formState.errors.lastName?.message}
-                  />
-                </div>
+              {/* Name row — 3 columns on sm+ */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <MUIInput
+                  id="firstName"
+                  fieldLabel="First Name"
+                  required
+                  placeholder="Enter first name"
+                  error={form.formState.errors.firstName?.message}
+                  {...form.register('firstName')}
+                />
+                <MUIInput
+                  id="middleName"
+                  fieldLabel="Middle Name"
+                  placeholder="Enter middle name"
+                  error={form.formState.errors.middleName?.message}
+                  {...form.register('middleName')}
+                />
+                <MUIInput
+                  id="lastName"
+                  fieldLabel="Last Name"
+                  required
+                  placeholder="Enter last name"
+                  error={form.formState.errors.lastName?.message}
+                  {...form.register('lastName')}
+                />
               </div>
 
               {/* Phone row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">
-                    Phone Number <span className="text-error">*</span>
-                  </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    inputMode="numeric"
-                    prefix="+91"
-                    placeholder="98765 43210"
-                    maxLength={10}
-                    {...form.register('phone')}
-                    onInput={(e) => handleNumericInput(e, 10)}
-                    onBlur={handlePhoneBlur}
-                    error={!!phoneError}
-                    errorMessage={phoneError}
-                    suffix={
-                      availability.state.isCheckingPhone ? (
-                        <Loader2 className="size-icon-sm animate-spin text-foreground-secondary" />
-                      ) : undefined
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="alternatePhone">Alternate Phone</Label>
-                  <Input
-                    id="alternatePhone"
-                    type="tel"
-                    inputMode="numeric"
-                    prefix="+91"
-                    placeholder="98765 43210"
-                    maxLength={10}
-                    {...form.register('alternatePhone')}
-                    onInput={(e) => handleNumericInput(e, 10)}
-                  />
-                </div>
+                <MUIInput
+                  id="phone"
+                  fieldLabel="Phone Number"
+                  required
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder="98765 43210"
+                  error={phoneError}
+                  loading={availability.state.isCheckingPhone || undefined}
+                  startIcon={<span className="text-sm text-foreground-secondary">+91</span>}
+                  inputProps={{ maxLength: 10 }}
+                  {...form.register('phone', { onBlur: handlePhoneBlur })}
+                />
+                <MUIInput
+                  id="alternatePhone"
+                  fieldLabel="Alternate Phone"
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder="98765 43210"
+                  startIcon={<span className="text-sm text-foreground-secondary">+91</span>}
+                  inputProps={{ maxLength: 10 }}
+                  {...form.register('alternatePhone')}
+                />
               </div>
 
               {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="customer@email.com"
-                  {...form.register('email', {
-                    onBlur: handleEmailBlur,
-                  })}
-                  error={!!emailError}
-                  errorMessage={emailError}
-                  suffix={
-                    availability.state.isCheckingEmail ? (
-                      <Loader2 className="size-icon-sm animate-spin text-foreground-secondary" />
-                    ) : undefined
-                  }
-                />
-              </div>
+              <MUIInput
+                id="email"
+                fieldLabel="Email Address"
+                type="email"
+                placeholder="customer@email.com"
+                error={emailError}
+                loading={availability.state.isCheckingEmail || undefined}
+                {...form.register('email', { onBlur: handleEmailBlur })}
+              />
             </div>
 
             {/* Address Section */}
@@ -394,154 +394,222 @@ function CustomerFormContent({
                 Address
               </h3>
 
-              {/* Street Address */}
-              <div className="space-y-2">
-                <Label htmlFor="address">Street Address</Label>
-                <Input
-                  id="address"
-                  placeholder="Enter street address"
-                  {...form.register('address')}
-                  error={!!form.formState.errors.address}
-                  errorMessage={form.formState.errors.address?.message}
+              <MUIInput
+                id="address"
+                fieldLabel="Street Address"
+                placeholder="Enter street address"
+                error={form.formState.errors.address?.message}
+                {...form.register('address')}
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <MUIInput
+                  id="city"
+                  fieldLabel="City"
+                  required
+                  placeholder="Enter city"
+                  error={form.formState.errors.city?.message}
+                  {...form.register('city')}
+                />
+                <Controller
+                  name="state"
+                  control={form.control}
+                  render={({ field }) => (
+                    <MUISelect
+                      fieldLabel="State"
+                      required
+                      placeholder="Select state..."
+                      value={field.value}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      error={form.formState.errors.state?.message}
+                      options={INDIAN_STATES_AND_UTS.map((s) => ({ value: s, label: s }))}
+                    />
+                  )}
                 />
               </div>
 
-              {/* City & State */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="city">
-                    City <span className="text-error">*</span>
-                  </Label>
-                  <Input
-                    id="city"
-                    placeholder="Enter city"
-                    {...form.register('city')}
-                    error={!!form.formState.errors.city}
-                    errorMessage={form.formState.errors.city?.message}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="state">
-                    State <span className="text-error">*</span>
-                  </Label>
-                  <Select
-                    value={form.watch('state')}
-                    onValueChange={(v) => form.setValue('state', v, { shouldValidate: true })}
-                  >
-                    <SelectTrigger
-                      id="state"
-                      className={form.formState.errors.state ? 'border-error' : ''}
-                    >
-                      <SelectValue placeholder="Select state..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {INDIAN_STATES_AND_UTS.map((state) => (
-                        <SelectItem key={state} value={state}>
-                          {state}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {form.formState.errors.state && (
-                    <p className="text-xs text-error mt-1">{form.formState.errors.state.message}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Pincode & Country */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="pincode">
-                    Pincode <span className="text-error">*</span>
-                  </Label>
-                  <Input
-                    id="pincode"
-                    placeholder="123456"
-                    inputMode="numeric"
-                    maxLength={6}
-                    {...form.register('pincode')}
-                    onInput={(e) => handleNumericInput(e, 6)}
-                    error={!!form.formState.errors.pincode}
-                    errorMessage={form.formState.errors.pincode?.message}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="country">Country</Label>
-                  <Input id="country" value="India" disabled className="bg-muted" />
-                </div>
+                <MUIInput
+                  id="pincode"
+                  fieldLabel="Pincode"
+                  required
+                  placeholder="123456"
+                  inputMode="numeric"
+                  error={form.formState.errors.pincode?.message}
+                  inputProps={{ maxLength: 6 }}
+                  {...form.register('pincode')}
+                />
+                <MUIInput id="country" fieldLabel="Country" value="India" disabled />
               </div>
             </div>
 
-            {/* Source Tracking Section - disabled in edit mode (immutable) */}
+            {/* Source Tracking Section */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium text-foreground-secondary uppercase tracking-wide">
                 Source Tracking
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="leadSource">Lead Source</Label>
-                  <Select
-                    value={form.watch('leadSource') ?? ''}
-                    onValueChange={(v) => form.setValue('leadSource', v as LeadSource)}
-                    disabled={isEditMode && !!customer?.leadSource}
-                  >
-                    <SelectTrigger
-                      id="leadSource"
-                      className={isEditMode && !!customer?.leadSource ? 'bg-muted' : ''}
-                    >
-                      <SelectValue placeholder="Select source..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LEAD_SOURCE_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="referralCode">Referral Code</Label>
-                  <Input
-                    id="referralCode"
-                    placeholder="Enter referral code"
-                    {...form.register('referralCode')}
-                    disabled={isEditMode && !!customer?.referralCode}
-                    className={isEditMode && !!customer?.referralCode ? 'bg-muted' : ''}
+                <div className="space-y-3">
+                  <Controller
+                    name="leadSource"
+                    control={form.control}
+                    render={({ field }) => (
+                      <MUISelect
+                        fieldLabel="Lead Source"
+                        placeholder="Select source..."
+                        value={field.value ?? ''}
+                        onChange={(e) => {
+                          field.onChange(e.target.value);
+                          // Clear other-source text when switching away from "other"
+                          if (e.target.value !== LeadSource.OTHER) {
+                            form.setValue('leadSourceOther', '');
+                          }
+                        }}
+                        disabled={isLeadSourceLocked}
+                        error={form.formState.errors.leadSource?.message}
+                        options={LEAD_SOURCE_OPTIONS}
+                      />
+                    )}
                   />
+                  {/* Conditional "Specify Source" input when "Other" is selected */}
+                  {showOtherSourceInput && (
+                    <MUIInput
+                      id="leadSourceOther"
+                      fieldLabel="Specify Source"
+                      required
+                      placeholder="e.g. Newspaper, Radio"
+                      disabled={isLeadSourceLocked}
+                      error={form.formState.errors.leadSourceOther?.message}
+                      inputProps={{ maxLength: 50 }}
+                      {...form.register('leadSourceOther')}
+                    />
+                  )}
                 </div>
+                <MUIInput
+                  id="referralCode"
+                  fieldLabel="Referral Code"
+                  placeholder="Enter referral code"
+                  disabled={isEditMode && !!customer?.referralCode}
+                  {...form.register('referralCode')}
+                />
               </div>
             </div>
 
-            {/* Status Section - Only in Edit Mode, editable */}
+            {/* Customer Group Section */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-foreground-secondary uppercase tracking-wide">
+                Customer Group
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Controller
+                  name="groupName"
+                  control={form.control}
+                  render={({ field }) => {
+                    const selectedOption =
+                      groupOptions.find((g) => g.groupCode === watchedGroupCode) ??
+                      (field.value
+                        ? { label: field.value, value: '', groupName: field.value, groupCode: '' }
+                        : null);
+
+                    const setGroup = (code: string, name: string): void => {
+                      form.setValue('groupCode', code);
+                      form.setValue('groupName', name);
+                    };
+
+                    return (
+                      <MUIInput
+                        mode="autocomplete"
+                        fieldLabel="Customer Group"
+                        tooltip="Optional. Select an existing group or type a new name to create one."
+                        freeSolo
+                        options={groupOptions}
+                        value={selectedOption}
+                        filterOptions={(opts, { inputValue }) => {
+                          type O = {
+                            label?: string;
+                            groupName?: string;
+                            groupCode?: string;
+                            value?: string;
+                          };
+                          const q = inputValue.trim().toLowerCase();
+                          const matches = (opts as O[]).filter((o) =>
+                            (o.label ?? '').toLowerCase().includes(q),
+                          );
+                          const hasExact = (opts as O[]).some(
+                            (o) => (o.label ?? '').toLowerCase() === q,
+                          );
+                          if (q && !hasExact) {
+                            matches.push({
+                              label: `Create "${inputValue.trim()}"`,
+                              value: '',
+                              groupName: inputValue.trim(),
+                              groupCode: '',
+                            });
+                          }
+                          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+                          return matches as typeof opts;
+                        }}
+                        onInputChange={(text) => {
+                          if (!groupOptions.find((g) => g.label === text)) {
+                            setGroup('', text);
+                          }
+                        }}
+                        onChange={(selected) => {
+                          if (!selected) {
+                            setGroup('', '');
+                          } else if (typeof selected === 'string') {
+                            setGroup('', selected);
+                          } else {
+                            const opt = selected as { groupCode: string; groupName: string };
+                            setGroup(opt.groupCode, opt.groupName);
+                          }
+                        }}
+                        getOptionLabel={(opt) =>
+                          typeof opt === 'string'
+                            ? opt
+                            : String((opt as { label?: string }).label ?? '')
+                        }
+                        isOptionEqualToValue={(option, val) => {
+                          if (typeof option === 'string' || typeof val === 'string')
+                            return option === val;
+                          return (
+                            (option as { value?: string }).value ===
+                            (val as { value?: string }).value
+                          );
+                        }}
+                        noOptionsText="Type a name to create a new group"
+                        clearable
+                        onClear={() => setGroup('', '')}
+                        textFieldProps={{ placeholder: 'Search or create a group...' }}
+                      />
+                    );
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Status Section - Edit Mode Only */}
             {isEditMode && (
               <div className="space-y-4">
                 <h3 className="text-sm font-medium text-foreground-secondary uppercase tracking-wide">
                   Status
                 </h3>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="status">Customer Status</Label>
-                    <Select
-                      value={form.watch('status') as string | undefined}
-                      onValueChange={(v) =>
-                        form.setValue('status', v as CustomerStatus, { shouldValidate: true })
-                      }
-                    >
-                      <SelectTrigger id="status">
-                        <SelectValue placeholder="Select status..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATUS_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Controller
+                    name="status"
+                    control={form.control}
+                    render={({ field }) => (
+                      <MUISelect
+                        fieldLabel="Customer Status"
+                        placeholder="Select status..."
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        options={STATUS_OPTIONS}
+                      />
+                    )}
+                  />
                 </div>
               </div>
             )}
@@ -576,14 +644,14 @@ export function CustomerForm({ mode, customerId }: CustomerFormProps): JSX.Eleme
   const router = useRouter();
   const isEditMode = mode === 'edit';
 
-  // Fetch customer data for edit mode
   const {
     data: customer,
     isLoading: isLoadingCustomer,
     error: customerError,
   } = useCustomer(customerId ?? '');
 
-  // Show error FIRST if customer not found in edit mode (check before loading)
+  const { data: groups = [] } = useCustomerGroups();
+
   if (isEditMode && customerError) {
     return (
       <div className="max-w-3xl mx-auto">
@@ -601,18 +669,17 @@ export function CustomerForm({ mode, customerId }: CustomerFormProps): JSX.Eleme
     );
   }
 
-  // Show loading skeleton while fetching customer data in edit mode
   if (isEditMode && (isLoadingCustomer || !customer)) {
     return <CustomerFormSkeleton />;
   }
 
-  // Render the form with customer data (guaranteed to be available in edit mode)
   return (
     <CustomerFormContent
       key={isEditMode ? `edit-${customer?.id}` : 'create'}
       mode={mode}
       customerId={customerId}
       customer={customer}
+      groups={groups}
     />
   );
 }

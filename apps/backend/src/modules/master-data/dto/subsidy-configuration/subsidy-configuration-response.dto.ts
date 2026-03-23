@@ -1,8 +1,28 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SubsidySchemeType, ProjectType, SubsidyTier } from '@oneohm-epc/shared/types';
+import { SubsidySchemeType, ProjectType } from '@oneohm-epc/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../../common/utils';
+
+/**
+ * DTO for subsidy tier response
+ */
+export class SubsidyTierResponseDto {
+  @ApiProperty({ example: 0 })
+  @Expose()
+  @Transform(({ value }) => toNum(value))
+  fromKw!: number;
+
+  @ApiProperty({ example: 2 })
+  @Expose()
+  @Transform(({ value }) => toNum(value))
+  toKw!: number;
+
+  @ApiProperty({ example: 30000 })
+  @Expose()
+  @Transform(({ value }) => toNum(value))
+  ratePerKw!: number;
+}
 
 /**
  * DTO for subsidy configuration response
@@ -51,13 +71,15 @@ export class SubsidyConfigurationResponseDto {
   autoSplitEnabled!: boolean;
 
   @ApiProperty({
+    type: [SubsidyTierResponseDto],
     example: [
       { fromKw: 0, toKw: 2, ratePerKw: 30000 },
       { fromKw: 2, toKw: 3, ratePerKw: 18000 },
     ],
   })
   @Expose()
-  tiers!: SubsidyTier[];
+  @Type(() => SubsidyTierResponseDto)
+  tiers!: SubsidyTierResponseDto[];
 
   @ApiProperty({ example: true })
   @Expose()

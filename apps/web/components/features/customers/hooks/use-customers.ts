@@ -44,6 +44,7 @@ export interface CustomerFilters {
   createdBy?: string; // 'me' for field workers or actual userId
   fromDate?: string; // ISO date string (YYYY-MM-DD)
   toDate?: string; // ISO date string (YYYY-MM-DD)
+  groupSearch?: string; // filter by group name or code (partial match)
   // Sorting
   sortBy?: CustomerSortField;
   sortOrder?: SortOrder;
@@ -53,6 +54,7 @@ export interface Customer {
   id: string;
   organizationId: string;
   firstName: string;
+  middleName?: string;
   lastName?: string;
   email?: string;
   phone: string;
@@ -64,6 +66,8 @@ export interface Customer {
   pincode?: string;
   leadSource?: string;
   referralCode?: string;
+  groupCode?: string;
+  groupName?: string;
   status: CustomerStatus;
   propertyCount: number;
   createdAt: string;
@@ -71,6 +75,8 @@ export interface Customer {
   createdBy?: string;
   updatedBy?: string;
   creatorName?: string;
+  assigneeId?: string;
+  assigneeName?: string;
 }
 
 export type { PaginationMeta };
@@ -89,6 +95,7 @@ export interface CustomerStatsResponse {
 
 export interface UpdateCustomerData {
   firstName?: string;
+  middleName?: string;
   lastName?: string;
   email?: string;
   phone?: string;
@@ -99,6 +106,8 @@ export interface UpdateCustomerData {
   pincode?: string;
   leadSource?: string;
   referralCode?: string;
+  groupCode?: string | null;
+  groupName?: string | null;
   status?: CustomerStatus;
 }
 
@@ -138,6 +147,7 @@ export function useCustomers(
       if (filters.createdBy) params.append('createdBy', filters.createdBy);
       if (filters.fromDate) params.append('fromDate', filters.fromDate);
       if (filters.toDate) params.append('toDate', filters.toDate);
+      if (filters.groupSearch) params.append('groupSearch', filters.groupSearch);
 
       // Sorting
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
@@ -260,6 +270,41 @@ export function useUpdateCustomerStatus(): UseMutationResult<
 }
 
 /**
+ * Hook to assign or unassign a customer to a user.
+ * Pass assigneeId as a UUID to assign, or null to unassign.
+ */
+export function useAssignCustomer(): UseMutationResult<
+  Customer,
+  AxiosError,
+  { id: string; assigneeId: string | null }
+> {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
+
+  return useMutation({
+    mutationFn: async ({ id, assigneeId }): Promise<Customer> => {
+      const { data: response } = await apiClient.patch<Customer>(
+        `/customers/${id}/assignee`,
+        { assigneeId },
+        { headers: { 'X-Organization-Id': organizationId } },
+      );
+      return response;
+    },
+    onSuccess: (updatedCustomer) => {
+      // Update the detail cache immediately so the UI reflects the new assignee without a refetch
+      queryClient.setQueryData(
+        customerKeys.detail(organizationId, updatedCustomer.id),
+        updatedCustomer,
+      );
+      // Do NOT invalidate the list queries here — assigning an employee to a customer
+      // does not change what appears in the customer list, and triggering a full list
+      // refetch would cause a spurious /customers pagination request every time.
+    },
+  });
+}
+
+/**
  * Hook to delete a customer
  */
 export function useDeleteCustomer(): UseMutationResult<void, AxiosError, string> {
@@ -280,5 +325,30 @@ export function useDeleteCustomer(): UseMutationResult<void, AxiosError, string>
         queryKey: [...customerKeys.all(organizationId), 'stats'],
       });
     },
+  });
+}
+
+export interface CustomerGroup {
+  groupCode: string;
+  groupName: string;
+}
+
+/**
+ * Hook to fetch distinct customer groups for the organization.
+ * Used to populate the group selector on the customer form.
+ */
+export function useCustomerGroups(): UseQueryResult<CustomerGroup[], AxiosError> {
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
+
+  return useQuery({
+    queryKey: [...customerKeys.all(organizationId), 'groups'] as const,
+    queryFn: async (): Promise<CustomerGroup[]> => {
+      const { data } = await apiClient.get<CustomerGroup[]>('/customers/groups', {
+        headers: { 'X-Organization-Id': organizationId },
+      });
+      return data;
+    },
+    enabled: !!organizationId,
   });
 }

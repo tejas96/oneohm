@@ -1,10 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CustomerSortField, CustomerStatus, SortOrder } from '@oneohm-epc/shared/types';
+import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@oneohm-epc/shared/types';
 import { IsNull, Repository } from 'typeorm';
 
 import { CustomerQueryDto } from '../dto/customer-query.dto';
 import { CustomerProfileEntity } from '../entities/customer-profile.entity';
+
+/**
+ * Known lead source enum values used to identify "other" / custom sources
+ * when filtering. Any lead_source value NOT in this list is considered "other".
+ */
+const KNOWN_LEAD_SOURCE_VALUES = Object.values(LeadSource) as string[];
 
 /**
  * Field mapping for safe sorting (prevents SQL injection via sortBy)
@@ -28,7 +34,7 @@ export class CustomerProfileRepository {
   async findById(id: string): Promise<CustomerProfileEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['user', 'organization', 'creator'],
+      relations: ['user', 'organization', 'creator', 'assignee'],
     });
   }
 
@@ -89,22 +95,28 @@ export class CustomerProfileRepository {
   }
 
   /**
-   * Find customers created by a specific user
-   * Used for field workers to see only their own customers
+   * Find customers created by or assigned to a specific user.
+   * Used for field workers to see their own and assigned customers.
    */
   async findByCreatedBy(
     organizationId: string,
-    createdBy: string,
+    userId: string,
     page = 1,
     limit = 20,
   ): Promise<[CustomerProfileEntity[], number]> {
-    return this.repository.findAndCount({
-      where: { organizationId, createdBy, deletedAt: IsNull() },
-      relations: ['user', 'organization', 'properties'],
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { createdAt: 'DESC' },
-    });
+    return this.repository
+      .createQueryBuilder('customer')
+      .leftJoinAndSelect('customer.user', 'user')
+      .leftJoinAndSelect('customer.organization', 'organization')
+      .leftJoinAndSelect('customer.properties', 'properties', 'properties.deleted_at IS NULL')
+      .leftJoinAndSelect('customer.assignee', 'assignee')
+      .where('customer.organizationId = :organizationId', { organizationId })
+      .andWhere('customer.deletedAt IS NULL')
+      .andWhere('(customer.createdBy = :userId OR customer.assigneeId = :userId)', { userId })
+      .orderBy('customer.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
   }
 
   async findByPhone(organizationId: string, phone: string): Promise<CustomerProfileEntity[]> {
@@ -143,7 +155,7 @@ export class CustomerProfileRepository {
     return this.repository
       .createQueryBuilder('customer')
       .innerJoin('customer.properties', 'property')
-      .where('customer.organization_id = :organizationId', { organizationId })
+      .where('customer.organizationId = :organizationId', { organizationId })
       .andWhere('property.consumerNumber = :consumerNumber', { consumerNumber })
       .andWhere('customer.deletedAt IS NULL')
       .andWhere('property.deletedAt IS NULL')
@@ -167,8 +179,8 @@ export class CustomerProfileRepository {
       .createQueryBuilder('customer')
       .select('customer.status', 'status')
       .addSelect('COUNT(*)', 'count')
-      .where('customer.organization_id = :organizationId', { organizationId })
-      .andWhere('customer.deleted_at IS NULL')
+      .where('customer.organizationId = :organizationId', { organizationId })
+      .andWhere('customer.deletedAt IS NULL')
       .groupBy('customer.status')
       .getRawMany<{ status: CustomerStatus; count: string }>();
 
@@ -183,7 +195,7 @@ export class CustomerProfileRepository {
    * Searches within the organization context
    *
    * @param organizationId - Organization to search in
-   * @param searchQuery - Search term (searches first name, last name, phone, email)
+   * @param searchQuery - Search term (searches first name, last name, phone, email, group)
    * @param createdBy - Optional: filter by creator (for field workers)
    * @param page - Page number
    * @param limit - Items per page
@@ -204,8 +216,9 @@ export class CustomerProfileRepository {
       .leftJoinAndSelect('customer.user', 'user')
       .leftJoinAndSelect('customer.organization', 'organization')
       .leftJoinAndSelect('customer.properties', 'properties', 'properties.deleted_at IS NULL')
-      .where('customer.organization_id = :organizationId', { organizationId })
-      .andWhere('customer.deleted_at IS NULL')
+      .leftJoinAndSelect('customer.assignee', 'assignee')
+      .where('customer.organizationId = :organizationId', { organizationId })
+      .andWhere('customer.deletedAt IS NULL')
       .andWhere(
         `(
           LOWER(customer.first_name) LIKE :searchTerm OR
@@ -213,21 +226,31 @@ export class CustomerProfileRepository {
           LOWER(CONCAT(customer.first_name, ' ', customer.last_name)) LIKE :searchTerm OR
           customer.phone LIKE :searchTerm OR
           LOWER(customer.email) LIKE :searchTerm OR
-          LOWER(customer.city) LIKE :searchTerm
+          LOWER(customer.city) LIKE :searchTerm OR
+          LOWER(COALESCE(customer.group_code, '')) LIKE :searchTerm OR
+          LOWER(COALESCE(customer.group_name, '')) LIKE :searchTerm
         )`,
         { searchTerm },
       );
 
-    // Filter by creator if specified (for field workers)
+    // Filter by creator OR assignee (for field workers — covers both own-created and assigned)
     if (createdBy) {
-      qb.andWhere('customer.created_by = :createdBy', { createdBy });
+      qb.andWhere('(customer.createdBy = :createdBy OR customer.assigneeId = :createdBy)', {
+        createdBy,
+      });
     }
 
-    qb.orderBy('customer.createdAt', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit);
+    qb.orderBy('customer.createdAt', 'DESC');
 
-    return qb.getManyAndCount();
+    // Split getCount + getMany to avoid TypeORM getManyAndCount crash
+    // when leftJoinAndSelect is combined with orderBy on a joined alias.
+    const total = await qb.getCount();
+    const data = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
+
+    return [data, total];
   }
 
   /**
@@ -248,8 +271,9 @@ export class CustomerProfileRepository {
       .leftJoinAndSelect('customer.organization', 'organization')
       .leftJoinAndSelect('customer.properties', 'properties', 'properties.deleted_at IS NULL')
       .leftJoinAndSelect('customer.creator', 'creator')
-      .where('customer.organization_id = :organizationId', { organizationId })
-      .andWhere('customer.deleted_at IS NULL');
+      .leftJoinAndSelect('customer.assignee', 'assignee')
+      .where('customer.organizationId = :organizationId', { organizationId })
+      .andWhere('customer.deletedAt IS NULL');
 
     // ===== Search (case-insensitive, multiple fields) =====
     if (query.search && query.search.length >= 2) {
@@ -261,7 +285,9 @@ export class CustomerProfileRepository {
           LOWER(CONCAT(customer.first_name, ' ', customer.last_name)) LIKE :searchTerm OR
           customer.phone LIKE :searchTerm OR
           LOWER(customer.email) LIKE :searchTerm OR
-          LOWER(customer.city) LIKE :searchTerm
+          LOWER(customer.city) LIKE :searchTerm OR
+          LOWER(COALESCE(customer.group_code, '')) LIKE :searchTerm OR
+          LOWER(COALESCE(customer.group_name, '')) LIKE :searchTerm
         )`,
         { searchTerm },
       );
@@ -281,20 +307,42 @@ export class CustomerProfileRepository {
     }
 
     if (query.leadSource) {
-      qb.andWhere('customer.lead_source = :leadSource', { leadSource: query.leadSource });
+      if (String(query.leadSource) === String(LeadSource.OTHER)) {
+        // "Other" means any lead_source that is not one of the standard enum values
+        const knownValues = KNOWN_LEAD_SOURCE_VALUES.filter(
+          (v) => String(v) !== String(LeadSource.OTHER),
+        );
+        qb.andWhere(
+          `customer.lead_source IS NOT NULL AND LOWER(customer.lead_source) NOT IN (:...knownValues)`,
+          { knownValues },
+        );
+      } else {
+        qb.andWhere('customer.leadSource = :leadSource', { leadSource: query.leadSource });
+      }
+    }
+
+    if (query.groupSearch) {
+      const groupSearchTerm = `%${query.groupSearch.toLowerCase()}%`;
+      qb.andWhere(
+        `(LOWER(COALESCE(customer.group_code, '')) LIKE :groupSearchTerm OR LOWER(COALESCE(customer.group_name, '')) LIKE :groupSearchTerm)`,
+        { groupSearchTerm },
+      );
     }
 
     if (query.createdBy) {
-      qb.andWhere('customer.created_by = :createdBy', { createdBy: query.createdBy });
+      // Return customers where user is the creator OR the assignee (for field worker "my leads" view)
+      qb.andWhere('(customer.createdBy = :createdBy OR customer.assigneeId = :createdBy)', {
+        createdBy: query.createdBy,
+      });
     }
 
     if (query.fromDate) {
-      qb.andWhere('customer.created_at >= :fromDate', { fromDate: query.fromDate });
+      qb.andWhere('customer.createdAt >= :fromDate', { fromDate: query.fromDate });
     }
 
     if (query.toDate) {
       // Add time to make toDate inclusive (end of day)
-      qb.andWhere('customer.created_at <= :toDate', {
+      qb.andWhere('customer.createdAt <= :toDate', {
         toDate: `${query.toDate}T23:59:59.999Z`,
       });
     }
@@ -304,9 +352,77 @@ export class CustomerProfileRepository {
     const sortDirection = query.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
     qb.orderBy(sortColumn, sortDirection);
 
-    // ===== Pagination =====
-    qb.skip((query.page - 1) * query.limit).take(query.limit);
+    // Split getCount + getMany to avoid TypeORM getManyAndCount crash
+    // when leftJoinAndSelect is combined with orderBy on a joined alias.
+    const total = await qb.getCount();
+    const data = await qb
+      .skip((query.page - 1) * query.limit)
+      .take(query.limit)
+      .getMany();
 
-    return qb.getManyAndCount();
+    return [data, total];
+  }
+
+  /**
+   * Returns all distinct (group_code, group_name) pairs for an organization.
+   * Used to populate the group selector in the customer form.
+   */
+  async findDistinctGroups(
+    organizationId: string,
+  ): Promise<{ groupCode: string; groupName: string }[]> {
+    const rows = await this.repository
+      .createQueryBuilder('customer')
+      .select('customer.groupCode', 'groupCode')
+      .addSelect('customer.groupName', 'groupName')
+      .where('customer.organizationId = :organizationId', { organizationId })
+      .andWhere('customer.groupCode IS NOT NULL')
+      .andWhere('customer.deletedAt IS NULL')
+      .distinctOn(['customer.groupCode'])
+      .orderBy('customer.groupCode', 'ASC')
+      .getRawMany<{ groupCode: string; groupName: string }>();
+
+    return rows;
+  }
+
+  /**
+   * Generates the next available group code for an organization.
+   * Format: GRP-XXXX (e.g. GRP-0001, GRP-0042).
+   * Uses withDeleted() so codes from soft-deleted records are never reused.
+   */
+  async generateGroupCode(organizationId: string): Promise<string> {
+    const pattern = 'GRP-%';
+
+    const result = await this.repository
+      .createQueryBuilder('customer')
+      .withDeleted()
+      .select('customer.groupCode', 'code')
+      .where('customer.organizationId = :organizationId', { organizationId })
+      .andWhere('customer.groupCode LIKE :pattern', { pattern })
+      .orderBy('customer.groupCode', 'DESC')
+      .limit(1)
+      .getRawOne<{ code: string }>();
+
+    let nextSeq = 1;
+    if (result?.code) {
+      const parts = result.code.split('-');
+      const lastPart = parts[parts.length - 1];
+      if (lastPart) {
+        const parsed = parseInt(lastPart, 10);
+        nextSeq = Number.isNaN(parsed) ? 1 : parsed + 1;
+      }
+    }
+
+    return `GRP-${String(nextSeq).padStart(4, '0')}`;
+  }
+
+  /**
+   * Checks whether a group code exists for the given organization.
+   * Used for validation when a client provides a groupCode explicitly.
+   */
+  async groupCodeExists(organizationId: string, groupCode: string): Promise<boolean> {
+    const count = await this.repository.count({
+      where: { organizationId, groupCode, deletedAt: IsNull() },
+    });
+    return count > 0;
   }
 }

@@ -286,7 +286,7 @@ The backend is organized into feature modules following NestJS best practices:
 | **quotes** | Quote generation & calculator | Quote, QuoteVersion, QuoteLineItem |
 | **projects** | Project lifecycle management | Project, Task, Phase, Timeline |
 | **inventory** | Stock & warehouse management | Product, Warehouse, StockMovement |
-| **master-data** | Product catalog & pricing | ProductCategory, PricingRule, SubsidyRule |
+| **master-data** | Product catalog & pricing | Product, ProductPrice, SubsidyConfiguration |
 
 ### Operations Modules
 

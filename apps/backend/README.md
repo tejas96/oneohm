@@ -123,10 +123,10 @@ apps/backend/
 
 ### Sales & Quotation
 
-| Module          | Description               | Key Entities                                               |
-| --------------- | ------------------------- | ---------------------------------------------------------- |
-| **quotes**      | Quote management          | `Quote`, `QuoteVersion`, `QuoteLineItem`                   |
-| **master-data** | Product catalog & pricing | `ProductCategory`, `Product`, `PricingRule`, `SubsidyRule` |
+| Module          | Description               | Key Entities                                      |
+| --------------- | ------------------------- | ------------------------------------------------- |
+| **quotes**      | Quote management          | `Quote`, `QuoteVersion`, `QuoteLineItem`          |
+| **master-data** | Product catalog & pricing | `Product`, `ProductPrice`, `SubsidyConfiguration` |
 
 ### Project Management
 

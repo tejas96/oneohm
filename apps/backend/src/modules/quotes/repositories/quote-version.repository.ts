@@ -28,7 +28,6 @@ export class QuoteVersionRepository {
   async getCurrentVersion(quoteId: string): Promise<QuoteVersionEntity | null> {
     return this.repository.findOne({
       where: { quoteId, isCurrent: true },
-      relations: ['lineItems', 'lineItems.product'],
     });
   }
 
@@ -38,7 +37,6 @@ export class QuoteVersionRepository {
   async getVersionHistory(quoteId: string): Promise<QuoteVersionEntity[]> {
     return this.repository.find({
       where: { quoteId },
-      relations: ['lineItems'],
       order: { versionNumber: 'DESC' },
     });
   }
@@ -49,7 +47,6 @@ export class QuoteVersionRepository {
   async findByIdAndQuoteId(versionId: string, quoteId: string): Promise<QuoteVersionEntity | null> {
     return this.repository.findOne({
       where: { id: versionId, quoteId },
-      relations: ['lineItems', 'lineItems.product'],
     });
   }
 

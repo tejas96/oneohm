@@ -5,7 +5,6 @@ import {
   DcrPreference,
   PanelTechnology,
   StructureType,
-  ProductType,
   ProductStatus,
   SubsidySchemeType,
 } from '@oneohm-epc/shared/types';
@@ -14,7 +13,8 @@ import { QuoteCalculatorService } from './quote-calculator.service';
 import { ProductEntity } from '../../master-data/entities/product.entity';
 import {
   ProductRepository,
-  PricingRuleRepository,
+  ProductPriceRepository,
+  ProductTypeRepository,
   SubsidyConfigurationRepository,
   InstallationPricingRepository,
   QuoteConfigurationRepository,
@@ -24,7 +24,7 @@ import { CalculateQuoteDto } from '../dto/calculator';
 describe('QuoteCalculatorService', () => {
   let service: QuoteCalculatorService;
   let productRepo: ProductRepository;
-  let pricingRuleRepo: PricingRuleRepository;
+  let productPriceRepo: ProductPriceRepository;
   let subsidyConfigRepo: SubsidyConfigurationRepository;
   let installationPricingRepo: InstallationPricingRepository;
   let quoteConfigRepo: QuoteConfigurationRepository;
@@ -32,80 +32,80 @@ describe('QuoteCalculatorService', () => {
   const mockOrganizationId = 'test-org-123';
 
   // Mock data
+  const mockProductType = { id: 'pt-solar-panel', code: 'solar_panel', name: 'Solar Panel' };
+  const mockInverterType = { id: 'pt-inverter', code: 'inverter', name: 'Inverter' };
+  const mockStructureType = {
+    id: 'pt-structure',
+    code: 'mounting_structure',
+    name: 'Mounting Structure',
+  };
+
   const mockDcrPanel: Partial<ProductEntity> = {
     id: 'panel-dcr-001',
     name: 'Adani PERC DCR 540W',
-    brand: 'Adani',
-    type: ProductType.SOLAR_PANEL,
+    productTypeId: mockProductType.id,
+    brandId: 'brand-adani',
+    brand: { id: 'brand-adani', name: 'Adani' } as any,
     status: ProductStatus.ACTIVE,
     specifications: {
-      panel: {
-        isDcr: true,
-        technology: PanelTechnology.PERC,
-        wattage: 540,
-        minWattage: 530,
-        maxWattage: 550,
-      },
+      is_dcr: true,
+      technology: PanelTechnology.PERC,
+      wattage: 540,
+      min_wattage: 530,
+      max_wattage: 550,
     },
   };
 
   const mockNonDcrPanel: Partial<ProductEntity> = {
     id: 'panel-nondcr-001',
     name: 'Adani PERC Non-DCR 540W',
-    brand: 'Adani',
-    type: ProductType.SOLAR_PANEL,
+    productTypeId: mockProductType.id,
+    brandId: 'brand-adani',
+    brand: { id: 'brand-adani', name: 'Adani' } as any,
     status: ProductStatus.ACTIVE,
     specifications: {
-      panel: {
-        isDcr: false,
-        technology: PanelTechnology.PERC,
-        wattage: 540,
-        minWattage: 530,
-        maxWattage: 550,
-      },
+      is_dcr: false,
+      technology: PanelTechnology.PERC,
+      wattage: 540,
+      min_wattage: 530,
+      max_wattage: 550,
     },
   };
 
   const mockInverter5kw: Partial<ProductEntity> = {
     id: 'inv-5kw-001',
     name: 'Sungrow 5KW 1-Phase',
-    brand: 'Sungrow',
-    type: ProductType.INVERTER,
+    productTypeId: mockInverterType.id,
+    brandId: 'brand-sungrow',
+    brand: { id: 'brand-sungrow', name: 'Sungrow' } as any,
     status: ProductStatus.ACTIVE,
     specifications: {
-      inverter: {
-        capacityKw: 5,
-        phaseType: PhaseType.SINGLE_PHASE,
-        minSystemSizeKw: 4,
-        maxSystemSizeKw: 7,
-      },
+      capacity_kw: 5,
+      phase_type: PhaseType.SINGLE_PHASE,
+      min_system_size_kw: 4,
+      max_system_size_kw: 7,
     },
   };
 
   const mockStructure: Partial<ProductEntity> = {
     id: 'struct-001',
     name: 'Aluminum Rail Mount',
-    brand: 'Generic',
-    type: ProductType.MOUNTING_STRUCTURE,
+    productTypeId: mockStructureType.id,
+    brandId: 'brand-generic',
+    brand: { id: 'brand-generic', name: 'Generic' } as any,
     status: ProductStatus.ACTIVE,
     specifications: {
-      structure: {
-        structureType: StructureType.ALUMINUM_RAIL,
-        material: 'Aluminum',
-      },
+      structure_type: StructureType.ALUMINUM_RAIL,
+      material: 'Aluminum',
     },
   };
 
-  const mockPricingRule = {
+  const mockProductPrice = {
     id: 'price-001',
     productId: 'panel-dcr-001',
-    formula: {
-      pricePerWatt: 24,
-      basePrice: 45000,
-      pricePerKw: 9000,
-      multiplier: 1,
-      gstRate: 12,
-    },
+    unitPrice: 24,
+    gstRate: 12,
+    costMultiplier: 1,
     isActive: true,
   };
 
@@ -148,6 +148,10 @@ describe('QuoteCalculatorService', () => {
       struct_aluminum_rail: 3500,
       transport: 35,
     },
+    getDisplayLabel: () => '3-5KW',
+    getFixedCostsTotal: () => 28000,
+    getVariableFloorBase: () => 1516,
+    getCostComponentKeys: () => Object.keys(mockInstallationPricing.costComponents),
   };
 
   const mockQuoteConfig = {
@@ -156,17 +160,14 @@ describe('QuoteCalculatorService', () => {
     maxVersions: 3,
     defaultCompletionWeeks: 4,
     gstConfig: {
-      rate1: 12,
+      rate1: 5,
       rate1Percentage: 70,
       rate2: 18,
       rate2Percentage: 30,
     },
-    wattageRounding: {
-      roundTo: 10,
-      roundUpThreshold: 5,
-    },
     paymentMilestones: [],
     showInventoryStock: true,
+    profitMarginTiers: [],
   };
 
   beforeEach(async () => {
@@ -182,16 +183,28 @@ describe('QuoteCalculatorService', () => {
           },
         },
         {
-          provide: PricingRuleRepository,
+          provide: ProductPriceRepository,
           useValue: {
-            findByProductId: jest.fn(),
-            findByProductIdWithContext: jest.fn(),
+            findActiveForProduct: jest.fn(),
+            findActiveForProducts: jest.fn(),
+          },
+        },
+        {
+          provide: ProductTypeRepository,
+          useValue: {
+            findByCode: jest.fn().mockImplementation((code: string) => {
+              if (code === 'solar_panel') return Promise.resolve(mockProductType);
+              if (code === 'inverter') return Promise.resolve(mockInverterType);
+              if (code === 'mounting_structure') return Promise.resolve(mockStructureType);
+              return Promise.resolve(null);
+            }),
           },
         },
         {
           provide: SubsidyConfigurationRepository,
           useValue: {
-            findActiveByProjectType: jest.fn(),
+            findAllActiveByProjectType: jest.fn(),
+            findByIds: jest.fn(),
           },
         },
         {
@@ -211,7 +224,7 @@ describe('QuoteCalculatorService', () => {
 
     service = module.get<QuoteCalculatorService>(QuoteCalculatorService);
     productRepo = module.get<ProductRepository>(ProductRepository);
-    pricingRuleRepo = module.get<PricingRuleRepository>(PricingRuleRepository);
+    productPriceRepo = module.get<ProductPriceRepository>(ProductPriceRepository);
     subsidyConfigRepo = module.get<SubsidyConfigurationRepository>(SubsidyConfigurationRepository);
     installationPricingRepo = module.get<InstallationPricingRepository>(
       InstallationPricingRepository,
@@ -224,8 +237,8 @@ describe('QuoteCalculatorService', () => {
       // Setup mocks
       jest.spyOn(quoteConfigRepo, 'getOrCreateDefault').mockResolvedValue(mockQuoteConfig as any);
       jest
-        .spyOn(subsidyConfigRepo, 'findActiveByProjectType')
-        .mockResolvedValue(mockSubsidyConfig as any);
+        .spyOn(subsidyConfigRepo, 'findAllActiveByProjectType')
+        .mockResolvedValue([mockSubsidyConfig] as any);
       jest
         .spyOn(installationPricingRepo, 'findBySystemSize')
         .mockResolvedValue(mockInstallationPricing as any);
@@ -246,10 +259,10 @@ describe('QuoteCalculatorService', () => {
         .spyOn(productRepo, 'findMountingStructure')
         .mockResolvedValue(mockStructure as ProductEntity);
 
-      // Mock pricing rule - use findByProductIdWithContext
+      // Mock product price - use findActiveForProduct
       jest
-        .spyOn(pricingRuleRepo, 'findByProductIdWithContext')
-        .mockResolvedValue(mockPricingRule as any);
+        .spyOn(productPriceRepo, 'findActiveForProduct')
+        .mockResolvedValue(mockProductPrice as any);
 
       const input: CalculateQuoteDto = {
         customerId: 'customer-001',
@@ -284,8 +297,8 @@ describe('QuoteCalculatorService', () => {
     it('should not split system when DCR_ONLY preference is set', async () => {
       jest.spyOn(quoteConfigRepo, 'getOrCreateDefault').mockResolvedValue(mockQuoteConfig as any);
       jest
-        .spyOn(subsidyConfigRepo, 'findActiveByProjectType')
-        .mockResolvedValue(mockSubsidyConfig as any);
+        .spyOn(subsidyConfigRepo, 'findAllActiveByProjectType')
+        .mockResolvedValue([mockSubsidyConfig] as any);
       jest
         .spyOn(installationPricingRepo, 'findBySystemSize')
         .mockResolvedValue(mockInstallationPricing as any);
@@ -303,10 +316,10 @@ describe('QuoteCalculatorService', () => {
         .spyOn(productRepo, 'findMountingStructure')
         .mockResolvedValue(mockStructure as ProductEntity);
 
-      // Mock pricing rule
+      // Mock product price
       jest
-        .spyOn(pricingRuleRepo, 'findByProductIdWithContext')
-        .mockResolvedValue(mockPricingRule as any);
+        .spyOn(productPriceRepo, 'findActiveForProduct')
+        .mockResolvedValue(mockProductPrice as any);
 
       const input: CalculateQuoteDto = {
         customerId: 'customer-001',
@@ -327,7 +340,7 @@ describe('QuoteCalculatorService', () => {
 
     it('should use Non-DCR panels when subsidy is not applicable', async () => {
       jest.spyOn(quoteConfigRepo, 'getOrCreateDefault').mockResolvedValue(mockQuoteConfig as any);
-      jest.spyOn(subsidyConfigRepo, 'findActiveByProjectType').mockResolvedValue(null);
+      jest.spyOn(subsidyConfigRepo, 'findAllActiveByProjectType').mockResolvedValue([]);
       jest
         .spyOn(installationPricingRepo, 'findBySystemSize')
         .mockResolvedValue(mockInstallationPricing as any);
@@ -345,10 +358,10 @@ describe('QuoteCalculatorService', () => {
         .spyOn(productRepo, 'findMountingStructure')
         .mockResolvedValue(mockStructure as ProductEntity);
 
-      // Mock pricing rule
+      // Mock product price
       jest
-        .spyOn(pricingRuleRepo, 'findByProductIdWithContext')
-        .mockResolvedValue(mockPricingRule as any);
+        .spyOn(productPriceRepo, 'findActiveForProduct')
+        .mockResolvedValue(mockProductPrice as any);
 
       const input: CalculateQuoteDto = {
         customerId: 'customer-001',
@@ -369,37 +382,14 @@ describe('QuoteCalculatorService', () => {
     });
   });
 
-  describe('wattage rounding', () => {
-    it('should round 547W to 550W (7 >= 5)', () => {
-      const config = { roundTo: 10, roundUpThreshold: 5 };
-      const result = (service as any).roundWattage(547, config);
-      expect(result).toBe(550);
-    });
-
-    it('should round 544W to 540W (4 < 5)', () => {
-      const config = { roundTo: 10, roundUpThreshold: 5 };
-      const result = (service as any).roundWattage(544, config);
-      expect(result).toBe(540);
-    });
-
-    it('should round 545W to 550W (5 >= 5)', () => {
-      const config = { roundTo: 10, roundUpThreshold: 5 };
-      const result = (service as any).roundWattage(545, config);
-      expect(result).toBe(550);
-    });
-  });
-
   describe('subsidy calculation', () => {
-    it('should calculate tiered subsidy correctly for 3KW', async () => {
-      jest
-        .spyOn(subsidyConfigRepo, 'findActiveByProjectType')
-        .mockResolvedValue(mockSubsidyConfig as any);
-
-      const result = await (service as any).calculateSubsidy(
-        mockOrganizationId,
-        3, // 3KW DCR
-        ProjectType.RESIDENTIAL,
-        true,
+    it('should calculate tiered subsidy correctly for 3KW', () => {
+      // Call the private method directly with the mock config
+      const result = (service as any).calculateSubsidyFromConfigs(
+        [mockSubsidyConfig],
+        3, // dcrSizeKw
+        3, // totalSystemSizeKw
+        true, // subsidyApplicable
       );
 
       // Tier 1: 0-2KW @ 30000 = 60000
@@ -407,19 +397,15 @@ describe('QuoteCalculatorService', () => {
       // Total: 78000
       expect(result.isApplicable).toBe(true);
       expect(result.amount).toBe(78000);
-      expect(result.breakdown?.length).toBe(2);
+      expect(result.schemes[0].breakdown?.length).toBe(2);
     });
 
-    it('should calculate partial tier subsidy for 2.5KW', async () => {
-      jest
-        .spyOn(subsidyConfigRepo, 'findActiveByProjectType')
-        .mockResolvedValue(mockSubsidyConfig as any);
-
-      const result = await (service as any).calculateSubsidy(
-        mockOrganizationId,
-        2.5, // 2.5KW DCR
-        ProjectType.RESIDENTIAL,
-        true,
+    it('should calculate partial tier subsidy for 2.5KW', () => {
+      const result = (service as any).calculateSubsidyFromConfigs(
+        [mockSubsidyConfig],
+        2.5, // dcrSizeKw
+        2.5, // totalSystemSizeKw
+        true, // subsidyApplicable
       );
 
       // Tier 1: 0-2KW @ 30000 = 60000
@@ -427,19 +413,19 @@ describe('QuoteCalculatorService', () => {
       // Total: 69000
       expect(result.isApplicable).toBe(true);
       expect(result.amount).toBe(69000);
-      expect(result.breakdown?.length).toBe(2);
-      expect(result.breakdown?.[0].kw).toBe(2);
-      expect(result.breakdown?.[0].amount).toBe(60000);
-      expect(result.breakdown?.[1].kw).toBe(0.5);
-      expect(result.breakdown?.[1].amount).toBe(9000);
+      expect(result.schemes[0].breakdown?.length).toBe(2);
+      expect(result.schemes[0].breakdown?.[0].kw).toBe(2);
+      expect(result.schemes[0].breakdown?.[0].amount).toBe(60000);
+      expect(result.schemes[0].breakdown?.[1].kw).toBe(0.5);
+      expect(result.schemes[0].breakdown?.[1].amount).toBe(9000);
     });
 
-    it('should return zero subsidy when not applicable', async () => {
-      const result = await (service as any).calculateSubsidy(
-        mockOrganizationId,
-        5,
-        ProjectType.COMMERCIAL,
-        false,
+    it('should return zero subsidy when not applicable', () => {
+      const result = (service as any).calculateSubsidyFromConfigs(
+        [mockSubsidyConfig],
+        5, // dcrSizeKw
+        5, // totalSystemSizeKw
+        false, // subsidyApplicable = false
       );
 
       expect(result.isApplicable).toBe(false);
@@ -511,13 +497,12 @@ describe('QuoteCalculatorService', () => {
   describe('inverter combination algorithm', () => {
     it('should combine inverters correctly for 60KW system', () => {
       const mockInverters = [
-        { id: 'inv-50', specifications: { inverter: { capacityKw: 50 } } },
-        { id: 'inv-30', specifications: { inverter: { capacityKw: 30 } } },
-        { id: 'inv-20', specifications: { inverter: { capacityKw: 20 } } },
-        { id: 'inv-10', specifications: { inverter: { capacityKw: 10 } } },
+        { id: 'inv-50', specifications: { capacity_kw: 50 } },
+        { id: 'inv-30', specifications: { capacity_kw: 30 } },
+        { id: 'inv-20', specifications: { capacity_kw: 20 } },
+        { id: 'inv-10', specifications: { capacity_kw: 10 } },
       ] as ProductEntity[];
 
-      // 60KW system: should use 50KW + 10KW
       const result = (service as any).findOptimalInverterCombination(
         mockInverters,
         60,
@@ -527,7 +512,7 @@ describe('QuoteCalculatorService', () => {
       expect(result.length).toBe(2);
       const totalCapacity = result.reduce(
         (sum: number, item: { inverter: ProductEntity; quantity: number }) =>
-          sum + Number(item.inverter.specifications?.inverter?.capacityKw || 0) * item.quantity,
+          sum + Number(item.inverter.specifications?.capacity_kw || 0) * item.quantity,
         0,
       );
       expect(totalCapacity).toBeGreaterThanOrEqual(60);
@@ -535,11 +520,10 @@ describe('QuoteCalculatorService', () => {
 
     it('should handle exact capacity match', () => {
       const mockInverters = [
-        { id: 'inv-10', specifications: { inverter: { capacityKw: 10 } } },
-        { id: 'inv-5', specifications: { inverter: { capacityKw: 5 } } },
+        { id: 'inv-10', specifications: { capacity_kw: 10 } },
+        { id: 'inv-5', specifications: { capacity_kw: 5 } },
       ] as ProductEntity[];
 
-      // 10KW system: should use exactly 10KW
       const result = (service as any).findOptimalInverterCombination(
         mockInverters,
         10,
@@ -553,7 +537,7 @@ describe('QuoteCalculatorService', () => {
 
     it('should handle multiple same-capacity inverters', () => {
       const mockInverters = [
-        { id: 'inv-10', specifications: { inverter: { capacityKw: 10 } } },
+        { id: 'inv-10', specifications: { capacity_kw: 10 } },
       ] as ProductEntity[];
 
       // 30KW system: should use 3x 10KW
@@ -575,13 +559,11 @@ describe('QuoteCalculatorService', () => {
       const panelWithNominal = {
         ...mockDcrPanel,
         specifications: {
-          panel: {
-            isDcr: true,
-            technology: PanelTechnology.PERC,
-            wattage: 545, // nominal
-            minWattage: 530,
-            maxWattage: 560,
-          },
+          is_dcr: true,
+          technology: PanelTechnology.PERC,
+          wattage: 545,
+          min_wattage: 530,
+          max_wattage: 560,
         },
       };
 
@@ -589,18 +571,17 @@ describe('QuoteCalculatorService', () => {
         .spyOn(productRepo, 'findSolarPanel')
         .mockResolvedValue(panelWithNominal as ProductEntity);
       jest
-        .spyOn(pricingRuleRepo, 'findByProductIdWithContext')
-        .mockResolvedValue(mockPricingRule as any);
+        .spyOn(productPriceRepo, 'findActiveForProduct')
+        .mockResolvedValue(mockProductPrice as any);
 
       const result = await (service as any).calculatePanelQuantity(
         panelWithNominal,
         3, // 3KW
         mockOrganizationId,
-        mockQuoteConfig,
+        ProjectType.RESIDENTIAL,
       );
 
-      // 545W rounded (545 % 10 = 5, >= threshold 5) = 550W
-      expect(result.wattagePerPanel).toBe(550);
+      expect(result.wattagePerPanel).toBe(545);
     });
   });
 });

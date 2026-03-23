@@ -52,6 +52,9 @@ export class CustomerProfileEntity extends BaseEntity {
   @Column({ name: 'first_name', type: 'varchar', length: 100 })
   firstName!: string;
 
+  @Column({ name: 'middle_name', type: 'varchar', length: 100, nullable: true })
+  middleName?: string;
+
   @Column({ name: 'last_name', type: 'varchar', length: 100, nullable: true })
   lastName?: string;
 
@@ -88,6 +91,13 @@ export class CustomerProfileEntity extends BaseEntity {
   @Column({ name: 'referral_code', type: 'varchar', length: 50, nullable: true })
   referralCode?: string;
 
+  // ==================== Customer Group ====================
+  @Column({ name: 'group_code', type: 'varchar', length: 20, nullable: true })
+  groupCode?: string;
+
+  @Column({ name: 'group_name', type: 'varchar', length: 100, nullable: true })
+  groupName?: string;
+
   // ==================== Status ====================
   @Column({
     type: 'varchar',
@@ -113,4 +123,12 @@ export class CustomerProfileEntity extends BaseEntity {
   @ManyToOne(() => UserEntity, { createForeignKeyConstraints: false })
   @JoinColumn({ name: 'updated_by' })
   updater?: UserEntity;
+
+  // ==================== Assignee ====================
+  @Column({ name: 'assignee_id', type: 'uuid', nullable: true })
+  assigneeId?: string;
+
+  @ManyToOne(() => UserEntity, { createForeignKeyConstraints: false })
+  @JoinColumn({ name: 'assignee_id' })
+  assignee?: UserEntity;
 }

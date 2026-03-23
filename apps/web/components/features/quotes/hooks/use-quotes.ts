@@ -160,7 +160,7 @@ export function useQuotes(
 }
 
 /**
- * Fetch a single quote by ID with all versions and line items.
+ * Fetch a single quote by ID with all versions.
  */
 export function useQuote(id: string): UseQueryResult<QuoteListItem, AxiosError> {
   const { user } = useAuth();

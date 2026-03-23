@@ -13,7 +13,7 @@ import { useOrgContext } from './use-org-context';
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
 
-interface UseResourceMutationsReturn<T extends { id: string }> {
+export interface UseResourceMutationsReturn<T extends { id: string }> {
   create: UseMutationResult<T, unknown, Partial<T>>;
   update: UseMutationResult<T, unknown, { id: string; data: Partial<T> }>;
   remove: UseMutationResult<void, unknown, string>;
@@ -39,8 +39,9 @@ export function useResourceMutations<T extends { id: string }>(
   configRef.current = config;
 
   const invalidateResource = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: keys.lists(organizationId) });
-    void queryClient.invalidateQueries({ queryKey: keys.stats(organizationId) });
+    // Invalidate every query bucket under this resource key (list/detail/by-parent/infinite/stats).
+    // This keeps sub-resource lists (e.g. product prices by productId) in sync after mutations.
+    void queryClient.invalidateQueries({ queryKey: keys.all(organizationId) });
     configRef.current.invalidateRelated?.forEach((related) => {
       const relatedKeys = createResourceKeys(related);
       void queryClient.invalidateQueries({ queryKey: relatedKeys.all(organizationId) });

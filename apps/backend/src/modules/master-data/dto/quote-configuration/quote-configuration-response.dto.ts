@@ -1,8 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { GstConfig, WattageRoundingConfig, PaymentMilestoneConfig } from '@oneohm-epc/shared/types';
+import { GstConfig, PaymentMilestoneConfig, ProfitMarginTier } from '@oneohm-epc/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
-
-import { toNum } from '../../../../common/utils';
 
 /**
  * DTO for quote configuration response
@@ -29,16 +27,11 @@ export class QuoteConfigurationResponseDto {
   defaultCompletionWeeks!: number;
 
   @ApiProperty({
-    example: { rate1: 12, rate1Percentage: 70, rate2: 18, rate2Percentage: 30 },
+    example: { rate1: 5, rate1Percentage: 70, rate2: 18, rate2Percentage: 30 },
   })
   @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   gstConfig!: GstConfig;
-
-  @ApiProperty({
-    example: { roundTo: 10, roundUpThreshold: 5 },
-  })
-  @Expose()
-  wattageRounding!: WattageRoundingConfig;
 
   @ApiProperty({
     example: [
@@ -48,16 +41,22 @@ export class QuoteConfigurationResponseDto {
     ],
   })
   @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   paymentMilestones!: PaymentMilestoneConfig[];
+
+  @ApiProperty({
+    example: [
+      { minSystemSizeKw: 0, maxSystemSizeKw: 5, marginPercent: 10 },
+      { minSystemSizeKw: 5, maxSystemSizeKw: null, marginPercent: 8 },
+    ],
+  })
+  @Expose()
+  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
+  profitMarginTiers!: ProfitMarginTier[];
 
   @ApiProperty({ example: true })
   @Expose()
   showInventoryStock!: boolean;
-
-  @ApiPropertyOptional({ example: 15 })
-  @Expose()
-  @Transform(({ value }) => toNum(value))
-  minProfitMarginPercent?: number;
 
   @ApiProperty({ example: true })
   @Expose()

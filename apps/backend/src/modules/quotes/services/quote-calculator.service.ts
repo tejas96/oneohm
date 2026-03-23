@@ -1,14 +1,17 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { PRODUCT_TYPE_INVERTER, PRODUCT_TYPE_SOLAR_PANEL } from '@oneohm-epc/shared/constants';
 import {
   ProjectType,
   PhaseType,
   DcrPreference,
   StructureType,
+  PanelTechnology,
   CalculatedPanelConfig,
   CalculatedInverterConfig,
   CalculatedInstallationCost,
   CalculatedSubsidy,
-  QuoteConfigSnapshot,
+  ProfitMarginTier,
+  SubsidySchemeResult,
   ValidationWarning,
 } from '@oneohm-epc/shared/types';
 
@@ -18,7 +21,8 @@ import { QuoteConfiguration } from '../../master-data/entities/quote-configurati
 import { SubsidyConfiguration } from '../../master-data/entities/subsidy-configuration.entity';
 import {
   ProductRepository,
-  PricingRuleRepository,
+  ProductPriceRepository,
+  ProductTypeRepository,
   SubsidyConfigurationRepository,
   InstallationPricingRepository,
   QuoteConfigurationRepository,
@@ -29,6 +33,20 @@ import {
   PanelOverrideDto,
   InverterOverrideDto,
 } from '../dto/calculator';
+
+const WATTS_PER_KW = 1000;
+const PERCENT_DIVISOR = 100;
+const OVERSIZED_PANEL_THRESHOLD = 1.25;
+const OVERSIZED_INVERTER_THRESHOLD = 1.2;
+const MAX_COMBINATION_ANCHOR = 3;
+const MAX_MULTIPLIER_COUNT = 5;
+const TRIPLE_COMBINATION_CAP = 1.5;
+const MAX_SEARCH_ITERATIONS = 10000;
+const INVERTER_SEARCH_WINDOW = 10;
+const INVERTER_SEARCH_STEP = 5;
+const SUGGESTION_COUNT = 3;
+const MIN_EFFECTIVE_PRICE = 0;
+const CENTS_ROUNDING_FACTOR = 100;
 
 /**
  * Quote Calculator Service v2
@@ -53,7 +71,8 @@ import {
 export class QuoteCalculatorService {
   constructor(
     private readonly productRepo: ProductRepository,
-    private readonly pricingRuleRepo: PricingRuleRepository,
+    private readonly productPriceRepo: ProductPriceRepository,
+    private readonly productTypeRepo: ProductTypeRepository,
     private readonly subsidyConfigRepo: SubsidyConfigurationRepository,
     private readonly installationPricingRepo: InstallationPricingRepository,
     private readonly quoteConfigRepo: QuoteConfigurationRepository,
@@ -90,13 +109,19 @@ export class QuoteCalculatorService {
     }
     this.validateInstallationPricing(installationPricing);
 
-    // 3. Determine DCR/Non-DCR split based on subsidy eligibility
-    const { dcrSizeKw, nonDcrSizeKw } = await this.calculateSystemSplit(
-      organizationId,
+    // 3. Resolve subsidy configurations upfront
+    const subsidyConfigs = input.subsidyApplicable
+      ? input.selectedSubsidyIds?.length
+        ? await this.subsidyConfigRepo.findByIds(organizationId, input.selectedSubsidyIds)
+        : await this.subsidyConfigRepo.findAllActiveByProjectType(organizationId, input.projectType)
+      : [];
+
+    // 4. Determine DCR/Non-DCR split based on subsidy eligibility
+    const { dcrSizeKw, nonDcrSizeKw } = this.calculateSystemSplit(
       input.systemSizeKw,
-      input.projectType,
       input.subsidyApplicable,
       input.dcrPreference || DcrPreference.AUTO_SPLIT,
+      subsidyConfigs,
     );
 
     // 4. Calculate panel configuration
@@ -117,9 +142,9 @@ export class QuoteCalculatorService {
         input.preferredPanelBrand,
         input.preferredPanelTechnology,
         input.projectType,
-        quoteConfig,
         warnings,
         input.subsidyApplicable,
+        subsidyConfigs,
       );
 
       // Check if error was returned
@@ -144,7 +169,6 @@ export class QuoteCalculatorService {
         input.preferredPanelTechnology,
         input.preferredPanelWattage,
         input.projectType,
-        quoteConfig,
         input.panelOverrides,
         warnings,
       );
@@ -152,13 +176,13 @@ export class QuoteCalculatorService {
       // Calculate actual DCR/Non-DCR sizes from panels
       const dcrPanel = panels.find((p) => p.isDcr);
       const nonDcrPanel = panels.find((p) => !p.isDcr);
-      actualDcrSizeKw = dcrPanel ? dcrPanel.totalWattage / 1000 : 0;
-      actualNonDcrSizeKw = nonDcrPanel ? nonDcrPanel.totalWattage / 1000 : 0;
+      actualDcrSizeKw = dcrPanel ? dcrPanel.totalWattage / WATTS_PER_KW : 0;
+      actualNonDcrSizeKw = nonDcrPanel ? nonDcrPanel.totalWattage / WATTS_PER_KW : 0;
     }
 
     // Calculate actual wattage from panels
     const actualTotalWattage = panels.reduce((sum, p) => sum + p.totalWattage, 0);
-    const actualSystemSizeKw = actualTotalWattage / 1000;
+    const actualSystemSizeKw = actualTotalWattage / WATTS_PER_KW;
 
     // 5. Calculate inverter configuration
     // Supports: auto-calculation, inverterOverrides (specific products), or manual count (quantity constraint)
@@ -216,22 +240,20 @@ export class QuoteCalculatorService {
       input.distanceKm || 0,
     );
 
-    // 8. Calculate subsidy using ACTUAL DCR size (important for manual count scenarios)
-    // This ensures subsidy is calculated correctly when user changes panel counts
-    const subsidy = await this.calculateSubsidy(
-      organizationId,
-      actualDcrSizeKw, // Use actual, not requested
-      input.projectType,
+    const subsidy = this.calculateSubsidyFromConfigs(
+      subsidyConfigs,
+      actualDcrSizeKw,
+      actualSystemSizeKw,
       input.subsidyApplicable,
       input.dcrPreference,
     );
 
-    // 9. Resolve margin percentage before pricing so it can be applied pre-tax
-    const profitabilityPercent = Number(
-      installationPricing.costComponents?.profitability_percent || 0,
+    const profitabilityPercent = this.resolveProfitMargin(
+      quoteConfig.profitMarginTiers ?? [],
+      input.systemSizeKw,
     );
 
-    // 10. Calculate pricing summary – margin is applied to raw base BEFORE GST
+    // 9. Calculate pricing summary – margin is applied to raw base BEFORE GST
     //     so that tax is computed on the full pre-tax value (components + margin)
     const { profitabilityAmount, ...pricing } = this.calculatePricing(
       panels,
@@ -242,8 +264,7 @@ export class QuoteCalculatorService {
       profitabilityPercent,
     );
 
-    // 11. Calculate effective price (final price with margin already included, minus subsidy)
-    const effectivePrice = pricing.finalPrice - subsidy.amount;
+    const effectivePrice = Math.max(MIN_EFFECTIVE_PRICE, pricing.finalPrice - subsidy.amount);
 
     // Determine if any overrides or manual counts were used
     const hasOverrides = !!(
@@ -278,87 +299,6 @@ export class QuoteCalculatorService {
       profitabilityPercent,
       profitabilityAmount,
       calculatedAt: new Date().toISOString(),
-    };
-  }
-
-  /**
-   * Create configuration snapshot for audit trail
-   */
-  async createConfigSnapshot(
-    organizationId: string,
-    panels: CalculatedPanelConfig[],
-    inverters: CalculatedInverterConfig,
-    structure: {
-      productId: string;
-      name: string;
-      unitPrice: number;
-      gstRate?: number;
-      structureType?: string;
-    },
-    installation: CalculatedInstallationCost,
-    subsidyConfig: SubsidyConfiguration | null,
-    quoteConfig: QuoteConfiguration,
-  ): Promise<QuoteConfigSnapshot> {
-    return {
-      panels: panels.map((p) => ({
-        productId: p.productId,
-        name: p.name,
-        brand: p.brand,
-        pricePerWatt: p.pricePerWatt,
-        isDcr: p.isDcr,
-        technology: p.technology,
-        gstRate: p.gstRate,
-        wattage: p.wattagePerPanel,
-      })),
-      inverters: inverters.inverters.map((inv) => ({
-        productId: inv.productId,
-        name: inv.name,
-        brand: inv.brand,
-        capacityKw: inv.capacityKw,
-        unitPrice: inv.unitPrice,
-        gstRate: inv.gstRate,
-      })),
-      structure: {
-        productId: structure.productId,
-        name: structure.name,
-        pricePerKw: structure.unitPrice,
-        gstRate: structure.gstRate,
-        structureType: structure.structureType,
-      },
-      installationPricing: {
-        minSystemSizeKw: 0,
-        maxSystemSizeKw: null,
-        electricalWorkCost: installation.electricalWork,
-        fixedMaterialCost: installation.fixedMaterial,
-        variableFloorCost: installation.variableFloor,
-        msedclCharges: installation.msedclCharges,
-        supervisionCharges: installation.supervision,
-        floorIncrementPercent: 0,
-        transportCostPerKm: 0,
-        gstRate: installation.gstRate,
-      },
-      subsidyConfig: subsidyConfig
-        ? {
-            schemeName: subsidyConfig.schemeName,
-            schemeType: subsidyConfig.schemeType,
-            projectType: subsidyConfig.projectType,
-            maxSubsidyKw: Number(subsidyConfig.maxSubsidyKw),
-            requiresDcr: subsidyConfig.requiresDcr,
-            autoSplitEnabled: subsidyConfig.autoSplitEnabled,
-            tiers: subsidyConfig.tiers,
-            isActive: subsidyConfig.isActive,
-          }
-        : null,
-      quoteConfig: {
-        defaultValidityDays: quoteConfig.defaultValidityDays,
-        maxVersions: quoteConfig.maxVersions,
-        defaultCompletionWeeks: quoteConfig.defaultCompletionWeeks,
-        gstConfig: quoteConfig.gstConfig,
-        wattageRounding: quoteConfig.wattageRounding,
-        paymentMilestones: quoteConfig.paymentMilestones,
-        showInventoryStock: quoteConfig.showInventoryStock,
-      },
-      snapshotAt: new Date().toISOString(),
     };
   }
 
@@ -415,41 +355,30 @@ export class QuoteCalculatorService {
   /**
    * Calculate DCR/Non-DCR system split based on subsidy eligibility
    */
-  private async calculateSystemSplit(
-    organizationId: string,
+  private calculateSystemSplit(
     systemSizeKw: number,
-    projectType: ProjectType,
     subsidyApplicable: boolean,
     dcrPreference: DcrPreference,
-  ): Promise<{ dcrSizeKw: number; nonDcrSizeKw: number }> {
-    // If customer explicitly wants only DCR
+    subsidyConfigs: SubsidyConfiguration[],
+  ): { dcrSizeKw: number; nonDcrSizeKw: number } {
     if (dcrPreference === DcrPreference.DCR_ONLY) {
       return { dcrSizeKw: systemSizeKw, nonDcrSizeKw: 0 };
     }
 
-    // If customer explicitly wants only Non-DCR - skip subsidy entirely
     if (dcrPreference === DcrPreference.NON_DCR_ONLY) {
       return { dcrSizeKw: 0, nonDcrSizeKw: systemSizeKw };
     }
 
-    // If no subsidy, default to non-DCR (usually cheaper)
-    if (!subsidyApplicable) {
+    if (!subsidyApplicable || subsidyConfigs.length === 0) {
       return { dcrSizeKw: 0, nonDcrSizeKw: systemSizeKw };
     }
 
-    // Get subsidy configuration to determine max eligible kW
-    const subsidyConfig = await this.subsidyConfigRepo.findActiveByProjectType(
-      organizationId,
-      projectType,
-    );
-
-    if (!subsidyConfig?.autoSplitEnabled) {
-      // No auto-split, use all DCR if subsidy applicable
+    const dcrConfigs = subsidyConfigs.filter((c) => c.requiresDcr && c.autoSplitEnabled);
+    if (dcrConfigs.length === 0) {
       return { dcrSizeKw: systemSizeKw, nonDcrSizeKw: 0 };
     }
 
-    // Auto-split: DCR up to max subsidy, rest Non-DCR
-    const maxSubsidyKw = Number(subsidyConfig.maxSubsidyKw);
+    const maxSubsidyKw = Math.max(...dcrConfigs.map((c) => Number(c.maxSubsidyKw)));
     if (systemSizeKw <= maxSubsidyKw) {
       return { dcrSizeKw: systemSizeKw, nonDcrSizeKw: 0 };
     }
@@ -472,7 +401,6 @@ export class QuoteCalculatorService {
     preferredTechnology: string | undefined,
     preferredWattage: number | undefined,
     projectType: ProjectType,
-    quoteConfig: QuoteConfiguration,
     overrides: PanelOverrideDto[] | undefined,
     warnings: ValidationWarning[],
   ): Promise<CalculatedPanelConfig[]> {
@@ -503,7 +431,6 @@ export class QuoteCalculatorService {
         dcrSizeKw,
         organizationId,
         projectType,
-        quoteConfig,
       );
       panels.push(dcrConfig);
     }
@@ -527,7 +454,6 @@ export class QuoteCalculatorService {
         nonDcrSizeKw,
         organizationId,
         projectType,
-        quoteConfig,
       );
       panels.push(nonDcrConfig);
     }
@@ -547,37 +473,49 @@ export class QuoteCalculatorService {
     const panels: CalculatedPanelConfig[] = [];
     const brands = new Set<string>();
 
+    // Batch query for all product prices to avoid N+1 queries
+    const productIds = overrides.map((o) => o.productId);
+    const productPricesMap = await this.productPriceRepo.findActiveForProducts(
+      organizationId,
+      productIds,
+      projectType,
+    );
+
     for (const override of overrides) {
-      const panel = await this.productRepo.findById(override.productId, organizationId);
+      const panel = await this.productRepo.findById(override.productId, organizationId, {
+        requireActive: true,
+      });
       if (!panel) {
         throw new BadRequestException(`Panel product ${override.productId} not found`);
       }
 
-      const specs = panel.specifications?.panel;
+      const specs = panel.specifications;
       if (!specs) {
         throw new BadRequestException(`Panel ${panel.name} has invalid specifications`);
       }
 
       // Track brands for validation
-      if (panel.brand) {
-        brands.add(panel.brand.toLowerCase());
+      if (panel.brand?.name) {
+        brands.add(panel.brand.name.toLowerCase());
       }
 
-      // Get pricing with project type context
-      const pricingRule = await this.getPricingRule(organizationId, panel.id, projectType);
-      const { pricePerWatt, gstRate } = this.validatePanelPricing(pricingRule, panel.name);
+      // Get pricing from batch-fetched data
+      const productPrice = productPricesMap.get(panel.id);
+      const { pricePerWatt, gstRate } = this.validatePanelPricing(productPrice, panel.name);
 
-      const wattage = specs.wattage || ((specs.minWattage || 0) + (specs.maxWattage || 0)) / 2;
+      const wattage =
+        Number(specs.wattage || 0) ||
+        (Number(specs.min_wattage || 0) + Number(specs.max_wattage || 0)) / 2;
       const totalWattage = override.quantity * wattage;
       const lineTotal = totalWattage * pricePerWatt;
-      const gstAmount = (lineTotal * gstRate) / 100;
+      const gstAmount = (lineTotal * gstRate) / PERCENT_DIVISOR;
 
       panels.push({
         productId: panel.id,
         name: panel.name,
-        brand: panel.brand || 'Unknown',
-        isDcr: specs.isDcr ?? false,
-        technology: specs.technology,
+        brand: panel.brand?.name || 'Unknown',
+        isDcr: specs.is_dcr === true || specs.is_dcr === 'true',
+        technology: specs.technology as PanelTechnology | undefined,
         wattagePerPanel: wattage,
         quantity: override.quantity,
         totalWattage,
@@ -619,9 +557,9 @@ export class QuoteCalculatorService {
     preferredBrand: string | undefined,
     preferredTechnology: string | undefined,
     projectType: ProjectType,
-    quoteConfig: QuoteConfiguration,
     warnings: ValidationWarning[],
     subsidyApplicable: boolean,
+    subsidyConfigs: SubsidyConfiguration[],
   ): Promise<
     | {
         panels: CalculatedPanelConfig[];
@@ -634,15 +572,10 @@ export class QuoteCalculatorService {
     let actualDcrSizeKw = 0;
     let actualNonDcrSizeKw = 0;
 
-    // Compute DCR floor: min(maxSubsidyKw, originalDcrSizeKw) when subsidy applies
     let minDcrCapacityKw = 0;
-    if (subsidyApplicable && originalDcrSizeKw > 0) {
-      const subsidyConfig = await this.subsidyConfigRepo.findActiveByProjectType(
-        organizationId,
-        projectType,
-      );
-      if (subsidyConfig) {
-        const maxSubsidyKw = Number(subsidyConfig.maxSubsidyKw);
+    if (subsidyApplicable && originalDcrSizeKw > 0 && subsidyConfigs.length > 0) {
+      const maxSubsidyKw = Math.max(...subsidyConfigs.map((c) => Number(c.maxSubsidyKw) || 0));
+      if (maxSubsidyKw > 0) {
         minDcrCapacityKw = Math.min(maxSubsidyKw, originalDcrSizeKw);
       }
     }
@@ -658,7 +591,6 @@ export class QuoteCalculatorService {
         preferredBrand,
         preferredTechnology,
         projectType,
-        quoteConfig,
         warnings,
       );
 
@@ -690,10 +622,9 @@ export class QuoteCalculatorService {
         originalDcrSizeKw,
         organizationId,
         projectType,
-        quoteConfig,
       );
       panels.push(dcrConfig);
-      actualDcrSizeKw = dcrConfig.totalWattage / 1000;
+      actualDcrSizeKw = dcrConfig.totalWattage / WATTS_PER_KW;
     }
 
     // Handle Non-DCR panels (floor is always 0 — no subsidy constraint)
@@ -707,7 +638,6 @@ export class QuoteCalculatorService {
         preferredBrand,
         preferredTechnology,
         projectType,
-        quoteConfig,
         warnings,
       );
 
@@ -739,10 +669,9 @@ export class QuoteCalculatorService {
         originalNonDcrSizeKw,
         organizationId,
         projectType,
-        quoteConfig,
       );
       panels.push(nonDcrConfig);
-      actualNonDcrSizeKw = nonDcrConfig.totalWattage / 1000;
+      actualNonDcrSizeKw = nonDcrConfig.totalWattage / WATTS_PER_KW;
     }
 
     return { panels, actualDcrSizeKw, actualNonDcrSizeKw };
@@ -752,7 +681,7 @@ export class QuoteCalculatorService {
    * Find suitable panel for a specific count that meets capacity requirement
    *
    * The logic:
-   * 1. Calculate required wattage per panel: requiredKw * 1000 / targetCount
+   * 1. Calculate required wattage per panel: requiredKw * WATTS_PER_KW / targetCount
    * 2. Find panels with wattage >= required wattage per panel
    * 3. Pick the one with minimum overage (smallest wattage that still works)
    * 4. If no panel can meet the requirement:
@@ -768,19 +697,20 @@ export class QuoteCalculatorService {
     preferredBrand: string | undefined,
     preferredTechnology: string | undefined,
     projectType: ProjectType,
-    quoteConfig: QuoteConfiguration,
     warnings: ValidationWarning[],
   ): Promise<
     { panel: CalculatedPanelConfig; actualSizeKw: number } | { error: string; suggestion: number }
   > {
     // Calculate required wattage per panel to meet capacity with target count
     // Math.ceil ensures we find panels that can actually meet the capacity requirement
-    const requiredWattagePerPanel = Math.ceil((requiredSizeKw * 1000) / targetCount);
+    const requiredWattagePerPanel = Math.ceil((requiredSizeKw * WATTS_PER_KW) / targetCount);
 
     // Find all panels with wattage >= required
+    const productTypeId = await this.getProductTypeId(organizationId, PRODUCT_TYPE_SOLAR_PANEL);
     const suitablePanels = await this.productRepo.findAllSolarPanels(
       organizationId,
       isDcr,
+      productTypeId,
       preferredBrand,
       preferredTechnology,
       requiredWattagePerPanel, // minWattage filter
@@ -790,6 +720,7 @@ export class QuoteCalculatorService {
       const bestPanel = await this.productRepo.findSolarPanel(
         organizationId,
         isDcr,
+        productTypeId,
         preferredBrand,
         preferredTechnology,
       );
@@ -800,18 +731,18 @@ export class QuoteCalculatorService {
         );
       }
 
-      const specs = bestPanel.specifications?.panel;
-      const bestWattage =
-        specs?.wattage || ((specs?.minWattage || 0) + (specs?.maxWattage || 0)) / 2;
-      const roundedWattage = this.roundWattage(bestWattage, quoteConfig.wattageRounding);
-      const actualCapacityKw = (targetCount * roundedWattage) / 1000;
+      const specs = bestPanel.specifications as Record<string, unknown> | undefined;
+      const nominalWattage =
+        Number(specs?.wattage || 0) ||
+        (Number(specs?.min_wattage || 0) + Number(specs?.max_wattage || 0)) / 2;
+      const actualCapacityKw = (targetCount * nominalWattage) / WATTS_PER_KW;
 
       if (minCapacityKw > 0 && actualCapacityKw < minCapacityKw) {
-        const suggestedCount = Math.ceil((minCapacityKw * 1000) / roundedWattage);
+        const suggestedCount = Math.ceil((minCapacityKw * WATTS_PER_KW) / nominalWattage);
         return {
           error:
             `Cannot reduce ${isDcr ? 'DCR' : 'Non-DCR'} panels below subsidy limit. ` +
-            `${targetCount} panels at ${roundedWattage}W would provide ${actualCapacityKw.toFixed(2)}kW, ` +
+            `${targetCount} panels at ${nominalWattage}W would provide ${actualCapacityKw.toFixed(2)}kW, ` +
             `but minimum ${minCapacityKw}kW is required for subsidy eligibility. ` +
             `Minimum ${suggestedCount} panels needed.`,
           suggestion: suggestedCount,
@@ -822,11 +753,11 @@ export class QuoteCalculatorService {
         throw new BadRequestException(`Panel ${bestPanel.name} missing specifications`);
       }
 
-      const pricingRule = await this.getPricingRule(organizationId, bestPanel.id, projectType);
-      const { pricePerWatt, gstRate } = this.validatePanelPricing(pricingRule, bestPanel.name);
-      const totalWattage = targetCount * roundedWattage;
+      const productPrice = await this.getProductPrice(organizationId, bestPanel.id, projectType);
+      const { pricePerWatt, gstRate } = this.validatePanelPricing(productPrice, bestPanel.name);
+      const totalWattage = targetCount * nominalWattage;
       const lineTotal = totalWattage * pricePerWatt;
-      const gstAmount = (lineTotal * gstRate) / 100;
+      const gstAmount = (lineTotal * gstRate) / PERCENT_DIVISOR;
 
       warnings.push({
         code: 'PANEL_CAPACITY_UNDERSIZED',
@@ -839,10 +770,10 @@ export class QuoteCalculatorService {
       const panelConfig: CalculatedPanelConfig = {
         productId: bestPanel.id,
         name: bestPanel.name,
-        brand: bestPanel.brand || 'Unknown',
-        isDcr: specs.isDcr ?? false,
-        technology: specs.technology,
-        wattagePerPanel: roundedWattage,
+        brand: bestPanel.brand?.name || 'Unknown',
+        isDcr: specs.is_dcr === true || specs.is_dcr === 'true',
+        technology: specs.technology as PanelTechnology | undefined,
+        wattagePerPanel: nominalWattage,
         quantity: targetCount,
         totalWattage,
         pricePerWatt,
@@ -858,26 +789,27 @@ export class QuoteCalculatorService {
 
     // Pick panel with minimum wattage (least overage) - sorted ascending by findAllSolarPanels
     const selectedPanel = suitablePanels[0]!;
-    const specs = selectedPanel.specifications?.panel;
+    const specs = selectedPanel.specifications;
 
     if (!specs) {
       throw new BadRequestException(`Panel ${selectedPanel.name} missing specifications`);
     }
 
-    const nominalWattage = specs.wattage ?? ((specs.minWattage ?? 0) + (specs.maxWattage ?? 0)) / 2;
-    const roundedWattage = this.roundWattage(nominalWattage, quoteConfig.wattageRounding);
-    const totalWattage = targetCount * roundedWattage;
-    const actualSizeKw = totalWattage / 1000;
+    const nominalWattage =
+      Number(specs.wattage ?? 0) ||
+      (Number(specs.min_wattage ?? 0) + Number(specs.max_wattage ?? 0)) / 2;
+    const totalWattage = targetCount * nominalWattage;
+    const actualSizeKw = totalWattage / WATTS_PER_KW;
 
     // Get pricing
-    const pricingRule = await this.getPricingRule(organizationId, selectedPanel.id, projectType);
-    const { pricePerWatt, gstRate } = this.validatePanelPricing(pricingRule, selectedPanel.name);
+    const productPrice = await this.getProductPrice(organizationId, selectedPanel.id, projectType);
+    const { pricePerWatt, gstRate } = this.validatePanelPricing(productPrice, selectedPanel.name);
 
     const lineTotal = totalWattage * pricePerWatt;
-    const gstAmount = (lineTotal * gstRate) / 100;
+    const gstAmount = (lineTotal * gstRate) / PERCENT_DIVISOR;
 
     // Add info warning if capacity significantly exceeds required
-    if (actualSizeKw > requiredSizeKw * 1.25) {
+    if (actualSizeKw > requiredSizeKw * OVERSIZED_PANEL_THRESHOLD) {
       warnings.push({
         code: 'PANEL_CAPACITY_OVERSIZED',
         message: `${isDcr ? 'DCR' : 'Non-DCR'} panel capacity (${actualSizeKw.toFixed(2)}kW) is significantly more than required (${requiredSizeKw}kW) to meet the quantity constraint.`,
@@ -888,10 +820,10 @@ export class QuoteCalculatorService {
     const panelConfig: CalculatedPanelConfig = {
       productId: selectedPanel.id,
       name: selectedPanel.name,
-      brand: selectedPanel.brand || 'Unknown',
-      isDcr: specs.isDcr ?? false,
-      technology: specs.technology,
-      wattagePerPanel: roundedWattage,
+      brand: selectedPanel.brand?.name || 'Unknown',
+      isDcr: specs.is_dcr === true || specs.is_dcr === 'true',
+      technology: specs.technology as PanelTechnology | undefined,
+      wattagePerPanel: nominalWattage,
       quantity: targetCount,
       totalWattage,
       pricePerWatt,
@@ -915,9 +847,11 @@ export class QuoteCalculatorService {
     preferredTechnology?: string,
     preferredWattage?: number,
   ): Promise<ProductEntity | null> {
+    const productTypeId = await this.getProductTypeId(organizationId, 'solar_panel');
     return this.productRepo.findSolarPanel(
       organizationId,
       isDcr,
+      productTypeId,
       preferredBrand,
       preferredTechnology,
       preferredWattage,
@@ -932,41 +866,41 @@ export class QuoteCalculatorService {
     requiredKw: number,
     organizationId: string,
     projectType: ProjectType,
-    quoteConfig: QuoteConfiguration,
   ): Promise<CalculatedPanelConfig> {
-    const specs = panel.specifications?.panel;
+    const specs = panel.specifications;
     if (!specs) {
       throw new BadRequestException(`Panel ${panel.name} missing specifications`);
     }
 
     // Validate panel specs exist
-    if (!specs.wattage && (!specs.minWattage || !specs.maxWattage)) {
+    if (!specs.wattage && (!specs.min_wattage || !specs.max_wattage)) {
       throw new BadRequestException(`Panel ${panel.name} missing wattage specifications`);
     }
 
     // Use nominal wattage if available, otherwise calculate from min/max
-    const nominalWattage = specs.wattage ?? ((specs.minWattage ?? 0) + (specs.maxWattage ?? 0)) / 2;
-    const roundedWattage = this.roundWattage(nominalWattage, quoteConfig.wattageRounding);
+    const nominalWattage =
+      Number(specs.wattage ?? 0) ||
+      (Number(specs.min_wattage ?? 0) + Number(specs.max_wattage ?? 0)) / 2;
 
     // Calculate number of panels needed
-    const requiredWattage = requiredKw * 1000;
-    const panelCount = Math.ceil(requiredWattage / roundedWattage);
-    const totalWattage = panelCount * roundedWattage;
+    const requiredWattage = requiredKw * WATTS_PER_KW;
+    const panelCount = Math.ceil(requiredWattage / nominalWattage);
+    const totalWattage = panelCount * nominalWattage;
 
     // Get pricing with project type context
-    const pricingRule = await this.getPricingRule(organizationId, panel.id, projectType);
-    const { pricePerWatt, gstRate } = this.validatePanelPricing(pricingRule, panel.name);
+    const productPrice = await this.getProductPrice(organizationId, panel.id, projectType);
+    const { pricePerWatt, gstRate } = this.validatePanelPricing(productPrice, panel.name);
 
     const lineTotal = totalWattage * pricePerWatt;
-    const gstAmount = (lineTotal * gstRate) / 100;
+    const gstAmount = (lineTotal * gstRate) / PERCENT_DIVISOR;
 
     return {
       productId: panel.id,
       name: panel.name,
-      brand: panel.brand || 'Unknown',
-      isDcr: specs.isDcr ?? false,
-      technology: specs.technology,
-      wattagePerPanel: roundedWattage,
+      brand: panel.brand?.name || 'Unknown',
+      isDcr: specs.is_dcr === true || specs.is_dcr === 'true',
+      technology: specs.technology as PanelTechnology | undefined,
+      wattagePerPanel: nominalWattage,
       quantity: panelCount,
       totalWattage,
       pricePerWatt,
@@ -976,22 +910,6 @@ export class QuoteCalculatorService {
       productWarrantyYears: panel.productWarrantyYears,
       performanceWarrantyYears: panel.performanceWarrantyYears,
     };
-  }
-
-  /**
-   * Round wattage according to configuration
-   */
-  private roundWattage(
-    wattage: number,
-    config: { roundTo: number; roundUpThreshold: number },
-  ): number {
-    const { roundTo, roundUpThreshold } = config;
-    const remainder = wattage % roundTo;
-
-    if (remainder >= roundUpThreshold) {
-      return wattage - remainder + roundTo;
-    }
-    return wattage - remainder;
   }
 
   /**
@@ -1042,8 +960,8 @@ export class QuoteCalculatorService {
     const inverterPricing = new Map<string, { basePrice: number; gstRate: number }>();
     await Promise.all(
       availableInverters.map(async (inv) => {
-        const pricingRule = await this.getPricingRule(organizationId, inv.id, projectType);
-        const validated = this.validateInverterPricing(pricingRule, inv.name);
+        const productPrice = await this.getProductPrice(organizationId, inv.id, projectType);
+        const validated = this.validateInverterPricing(productPrice, inv.name);
         inverterPricing.set(inv.id, validated);
       }),
     );
@@ -1059,13 +977,13 @@ export class QuoteCalculatorService {
     const invertersWithPricing = combination.map(({ inverter, quantity }) => {
       const pricing = inverterPricing.get(inverter.id)!;
       const lineTotal = pricing.basePrice * quantity;
-      const gstAmount = (lineTotal * pricing.gstRate) / 100;
+      const gstAmount = (lineTotal * pricing.gstRate) / PERCENT_DIVISOR;
 
       return {
         productId: inverter.id,
         name: inverter.name,
-        brand: inverter.brand || 'Unknown',
-        capacityKw: Number(inverter.specifications?.inverter?.capacityKw || 0),
+        brand: inverter.brand?.name || 'Unknown',
+        capacityKw: Number(inverter.specifications?.capacity_kw || 0),
         quantity,
         unitPrice: pricing.basePrice,
         lineTotal,
@@ -1103,31 +1021,41 @@ export class QuoteCalculatorService {
     const invertersWithPricing: CalculatedInverterConfig['inverters'] = [];
     let totalCapacityKw = 0;
 
+    // Batch query for all product prices to avoid N+1 queries
+    const productIds = overrides.map((o) => o.productId);
+    const productPricesMap = await this.productPriceRepo.findActiveForProducts(
+      organizationId,
+      productIds,
+      projectType,
+    );
+
     for (const override of overrides) {
-      const inverter = await this.productRepo.findById(override.productId, organizationId);
+      const inverter = await this.productRepo.findById(override.productId, organizationId, {
+        requireActive: true,
+      });
       if (!inverter) {
         throw new BadRequestException(`Inverter product ${override.productId} not found`);
       }
 
-      const specs = inverter.specifications?.inverter;
+      const specs = inverter.specifications;
       if (!specs) {
         throw new BadRequestException(`Inverter ${inverter.name} has invalid specifications`);
       }
 
-      const capacityKw = Number(specs.capacityKw || 0);
+      const capacityKw = Number(specs.capacity_kw || 0);
       totalCapacityKw += capacityKw * override.quantity;
 
-      // Get pricing with project type context
-      const pricingRule = await this.getPricingRule(organizationId, inverter.id, projectType);
-      const { basePrice, gstRate } = this.validateInverterPricing(pricingRule, inverter.name);
+      // Get pricing from batch-fetched data
+      const productPrice = productPricesMap.get(inverter.id);
+      const { basePrice, gstRate } = this.validateInverterPricing(productPrice, inverter.name);
 
       const lineTotal = basePrice * override.quantity;
-      const gstAmount = (lineTotal * gstRate) / 100;
+      const gstAmount = (lineTotal * gstRate) / PERCENT_DIVISOR;
 
       invertersWithPricing.push({
         productId: inverter.id,
         name: inverter.name,
-        brand: inverter.brand || 'Unknown',
+        brand: inverter.brand?.name || 'Unknown',
         capacityKw,
         quantity: override.quantity,
         unitPrice: basePrice,
@@ -1145,7 +1073,7 @@ export class QuoteCalculatorService {
         message: `Total inverter capacity (${totalCapacityKw}KW) is less than system size (${systemSizeKw}KW). This may affect system performance.`,
         severity: 'warning',
       });
-    } else if (totalCapacityKw > systemSizeKw * 1.2) {
+    } else if (totalCapacityKw > systemSizeKw * OVERSIZED_INVERTER_THRESHOLD) {
       warnings.push({
         code: 'INVERTER_CAPACITY_OVERSIZED',
         message: `Total inverter capacity (${totalCapacityKw}KW) is significantly more than system size (${systemSizeKw}KW). Consider reducing inverter capacity.`,
@@ -1200,7 +1128,7 @@ export class QuoteCalculatorService {
 
     // Pre-fetch pricing for all available inverters in a single batch query (N+1 optimization)
     const productIds = availableInverters.map((inv) => inv.id);
-    const pricingRulesMap = await this.pricingRuleRepo.findByProductIdsWithContext(
+    const productPricesMap = await this.productPriceRepo.findActiveForProducts(
       organizationId,
       productIds,
       projectType,
@@ -1208,8 +1136,8 @@ export class QuoteCalculatorService {
 
     const inverterPricing = new Map<string, { basePrice: number; gstRate: number }>();
     for (const inv of availableInverters) {
-      const pricingRule = pricingRulesMap.get(inv.id) ?? null;
-      const validated = this.validateInverterPricing(pricingRule, inv.name);
+      const productPrice = productPricesMap.get(inv.id) ?? null;
+      const validated = this.validateInverterPricing(productPrice, inv.name);
       inverterPricing.set(inv.id, validated);
     }
 
@@ -1240,13 +1168,13 @@ export class QuoteCalculatorService {
     const invertersWithPricing = combination.map(({ inverter, quantity }) => {
       const pricing = inverterPricing.get(inverter.id)!;
       const lineTotal = pricing.basePrice * quantity;
-      const gstAmount = (lineTotal * pricing.gstRate) / 100;
+      const gstAmount = (lineTotal * pricing.gstRate) / PERCENT_DIVISOR;
 
       return {
         productId: inverter.id,
         name: inverter.name,
-        brand: inverter.brand || 'Unknown',
-        capacityKw: Number(inverter.specifications?.inverter?.capacityKw || 0),
+        brand: inverter.brand?.name || 'Unknown',
+        capacityKw: Number(inverter.specifications?.capacity_kw || 0),
         quantity,
         unitPrice: pricing.basePrice,
         lineTotal,
@@ -1264,7 +1192,7 @@ export class QuoteCalculatorService {
     const totalGst = invertersWithPricing.reduce((sum, inv) => sum + inv.gstAmount, 0);
 
     // Add info warning if capacity significantly exceeds required
-    if (totalCapacityKw > systemSizeKw * 1.2) {
+    if (totalCapacityKw > systemSizeKw * OVERSIZED_INVERTER_THRESHOLD) {
       warnings.push({
         code: 'INVERTER_CAPACITY_OVERSIZED',
         message: `Total inverter capacity (${totalCapacityKw}kW) is significantly more than system size (${systemSizeKw}kW) to meet the quantity constraint.`,
@@ -1298,7 +1226,7 @@ export class QuoteCalculatorService {
     type Combination = Array<{ inverter: ProductEntity; quantity: number }>;
 
     const getInverterCapacity = (inv: ProductEntity): number => {
-      return Number(inv.specifications?.inverter?.capacityKw || 0);
+      return Number(inv.specifications?.capacity_kw || 0);
     };
 
     // Sort by capacity descending for more efficient search
@@ -1311,8 +1239,6 @@ export class QuoteCalculatorService {
     let bestCombination: Combination | null = null;
     let bestOverage = Infinity;
 
-    // Safety limit to prevent runaway recursion in edge cases
-    const MAX_ITERATIONS = 10000;
     let iterations = 0;
 
     // Recursive backtracking
@@ -1323,7 +1249,7 @@ export class QuoteCalculatorService {
       currentCapacity: number,
     ): void => {
       // Safety guard: stop if too many iterations
-      if (++iterations > MAX_ITERATIONS) return;
+      if (++iterations > MAX_SEARCH_ITERATIONS) return;
 
       // Prune: already exceeded target count
       if (currentCount > targetCount) return;
@@ -1390,7 +1316,7 @@ export class QuoteCalculatorService {
     targetCount: number,
   ): number[] {
     const validQuantities: number[] = [];
-    const maxSearch = Math.max(10, targetCount + 5);
+    const maxSearch = Math.max(INVERTER_SEARCH_WINDOW, targetCount + INVERTER_SEARCH_STEP);
 
     // Search around the target quantity
     for (let qty = 1; qty <= maxSearch; qty++) {
@@ -1403,7 +1329,7 @@ export class QuoteCalculatorService {
     // Sort by closeness to target and return top 3
     return validQuantities
       .sort((a, b) => Math.abs(a - targetCount) - Math.abs(b - targetCount))
-      .slice(0, 3);
+      .slice(0, SUGGESTION_COUNT);
   }
 
   /**
@@ -1415,9 +1341,11 @@ export class QuoteCalculatorService {
     preferredBrand?: string,
     preferredCapacityKw?: number,
   ): Promise<ProductEntity[]> {
+    const productTypeId = await this.getProductTypeId(organizationId, PRODUCT_TYPE_INVERTER);
     return this.productRepo.findInvertersByPhase(
       organizationId,
       phaseType,
+      productTypeId,
       preferredBrand,
       preferredCapacityKw,
     );
@@ -1437,14 +1365,15 @@ export class QuoteCalculatorService {
    * - 13.5KW 3-phase: 15KW single (better than 12KW + 8KW = 20KW)
    * - 25KW 3-phase: 20KW + 8KW = 28KW or 33KW single (33KW better? no, 28KW better)
    */
+  /** @internal test-only */
   private findOptimalInverterCombination(
     inverters: ProductEntity[],
     requiredKw: number,
   ): Array<{ inverter: ProductEntity; quantity: number }> {
     // Sort by capacity ascending for easier processing
     const sortedAsc = [...inverters].sort((a, b) => {
-      const capA = Number(a.specifications?.inverter?.capacityKw || 0);
-      const capB = Number(b.specifications?.inverter?.capacityKw || 0);
+      const capA = Number(a.specifications?.capacity_kw || 0);
+      const capB = Number(b.specifications?.capacity_kw || 0);
       return capA - capB;
     });
 
@@ -1453,7 +1382,7 @@ export class QuoteCalculatorService {
 
     // 1. Try to find exact match
     const exactMatch = sortedAsc.find(
-      (inv) => Number(inv.specifications?.inverter?.capacityKw || 0) === requiredKw,
+      (inv) => Number(inv.specifications?.capacity_kw || 0) === requiredKw,
     );
     if (exactMatch) {
       return [{ inverter: exactMatch, quantity: 1 }];
@@ -1461,16 +1390,16 @@ export class QuoteCalculatorService {
 
     // 2. Find smallest single inverter >= required (Option A)
     const singleInverter = sortedAsc.find(
-      (inv) => Number(inv.specifications?.inverter?.capacityKw || 0) >= requiredKw,
+      (inv) => Number(inv.specifications?.capacity_kw || 0) >= requiredKw,
     );
     const singleCapacity = singleInverter
-      ? Number(singleInverter.specifications?.inverter?.capacityKw || 0)
+      ? Number(singleInverter.specifications?.capacity_kw || 0)
       : Infinity;
 
     // 3. Build optimal combination (Option B)
     const combination = this.buildOptimalCombination(sortedDesc, sortedAsc, requiredKw);
     const comboCapacity = combination.reduce(
-      (sum, c) => sum + Number(c.inverter.specifications?.inverter?.capacityKw || 0) * c.quantity,
+      (sum, c) => sum + Number(c.inverter.specifications?.capacity_kw || 0) * c.quantity,
       0,
     );
 
@@ -1515,7 +1444,7 @@ export class QuoteCalculatorService {
 
     const getCombinationTotal = (combo: Combination): number => {
       return combo.reduce(
-        (sum, c) => sum + Number(c.inverter.specifications?.inverter?.capacityKw || 0) * c.quantity,
+        (sum, c) => sum + Number(c.inverter.specifications?.capacity_kw || 0) * c.quantity,
         0,
       );
     };
@@ -1525,13 +1454,17 @@ export class QuoteCalculatorService {
 
     // Strategy 1: Try each inverter as the "anchor" (starting point)
     for (const anchor of sortedDesc) {
-      const anchorCapacity = Number(anchor.specifications?.inverter?.capacityKw || 0);
+      const anchorCapacity = Number(anchor.specifications?.capacity_kw || 0);
       if (anchorCapacity <= 0) continue;
 
       // Try 1, 2, or more of this anchor (up to what makes sense)
       const maxAnchorCount = Math.ceil(requiredKw / anchorCapacity);
 
-      for (let anchorCount = 1; anchorCount <= maxAnchorCount && anchorCount <= 3; anchorCount++) {
+      for (
+        let anchorCount = 1;
+        anchorCount <= maxAnchorCount && anchorCount <= MAX_COMBINATION_ANCHOR;
+        anchorCount++
+      ) {
         const combination: Combination = [{ inverter: anchor, quantity: anchorCount }];
         let remaining = requiredKw - anchorCapacity * anchorCount;
 
@@ -1549,7 +1482,7 @@ export class QuoteCalculatorService {
         for (const filler of sortedAsc) {
           if (filler.id === anchor.id) continue; // Already used as anchor
 
-          const fillerCapacity = Number(filler.specifications?.inverter?.capacityKw || 0);
+          const fillerCapacity = Number(filler.specifications?.capacity_kw || 0);
           if (fillerCapacity <= 0) continue;
 
           if (fillerCapacity >= remaining) {
@@ -1571,8 +1504,7 @@ export class QuoteCalculatorService {
         if (remaining > 0) {
           const smallestSuitable = sortedAsc.find(
             (inv) =>
-              inv.id !== anchor.id &&
-              Number(inv.specifications?.inverter?.capacityKw || 0) >= remaining,
+              inv.id !== anchor.id && Number(inv.specifications?.capacity_kw || 0) >= remaining,
           );
           if (smallestSuitable) {
             const existing = combination.find((c) => c.inverter.id === smallestSuitable.id);
@@ -1602,8 +1534,8 @@ export class QuoteCalculatorService {
         const inv2 = sortedDesc[j];
         if (!inv1 || !inv2) continue;
 
-        const cap1 = Number(inv1.specifications?.inverter?.capacityKw || 0);
-        const cap2 = Number(inv2.specifications?.inverter?.capacityKw || 0);
+        const cap1 = Number(inv1.specifications?.capacity_kw || 0);
+        const cap2 = Number(inv2.specifications?.capacity_kw || 0);
 
         // Try 1 of each
         const total = cap1 + cap2;
@@ -1640,7 +1572,7 @@ export class QuoteCalculatorService {
     const combination: Array<{ inverter: ProductEntity; quantity: number }> = [];
 
     for (const inverter of sortedDesc) {
-      const capacity = Number(inverter.specifications?.inverter?.capacityKw || 0);
+      const capacity = Number(inverter.specifications?.capacity_kw || 0);
       if (capacity <= 0) continue;
 
       const count = Math.floor(remainingKw / capacity);
@@ -1654,7 +1586,7 @@ export class QuoteCalculatorService {
 
     if (remainingKw > 0) {
       const smallestSuitable = sortedAsc.find(
-        (inv) => Number(inv.specifications?.inverter?.capacityKw || 0) >= remainingKw,
+        (inv) => Number(inv.specifications?.capacity_kw || 0) >= remainingKw,
       );
 
       if (smallestSuitable) {
@@ -1696,7 +1628,7 @@ export class QuoteCalculatorService {
     type Combination = Array<{ inverter: ProductEntity; quantity: number }>;
 
     const getInverterCapacity = (inv: ProductEntity): number => {
-      return Number(inv.specifications?.inverter?.capacityKw || 0);
+      return Number(inv.specifications?.capacity_kw || 0);
     };
 
     const getCombinationCost = (combo: Combination): number => {
@@ -1787,7 +1719,7 @@ export class QuoteCalculatorService {
           const cap3 = getInverterCapacity(inv3);
 
           const capacity = cap1 + cap2 + cap3;
-          if (capacity >= requiredKw && capacity <= requiredKw * 1.5) {
+          if (capacity >= requiredKw && capacity <= requiredKw * TRIPLE_COMBINATION_CAP) {
             // Build combination with proper quantities
             const comboMap = new Map<string, { inverter: ProductEntity; quantity: number }>();
             [inv1, inv2, inv3].forEach((inv) => {
@@ -1816,7 +1748,7 @@ export class QuoteCalculatorService {
       if (capacity <= 0) continue;
 
       const minCount = Math.ceil(requiredKw / capacity);
-      for (let count = minCount; count <= minCount + 1 && count <= 5; count++) {
+      for (let count = minCount; count <= minCount + 1 && count <= MAX_MULTIPLIER_COUNT; count++) {
         const totalCapacity = capacity * count;
         if (totalCapacity >= requiredKw) {
           const combo: Combination = [{ inverter: inv, quantity: count }];
@@ -1874,8 +1806,10 @@ export class QuoteCalculatorService {
     gstRate: number;
   }> {
     // 1. Find structure product
+    const productTypeId = await this.getProductTypeId(organizationId, 'mounting_structure');
     const structureProduct = await this.productRepo.findMountingStructure(
       organizationId,
+      productTypeId,
       structureType,
     );
 
@@ -1884,14 +1818,18 @@ export class QuoteCalculatorService {
     }
 
     // 2. Get pricing rule and validate
-    const pricingRule = await this.getPricingRule(organizationId, structureProduct.id, projectType);
+    const productPrice = await this.getProductPrice(
+      organizationId,
+      structureProduct.id,
+      projectType,
+    );
     const { basePrice, gstRate, multiplier } = this.validateStructurePricing(
-      pricingRule,
+      productPrice,
       structureProduct.name,
     );
 
     const structureCost = basePrice * multiplier * systemSizeKw;
-    const gstAmount = (structureCost * gstRate) / 100;
+    const gstAmount = (structureCost * gstRate) / PERCENT_DIVISOR;
 
     return {
       productId: structureProduct.id,
@@ -1910,69 +1848,54 @@ export class QuoteCalculatorService {
    */
   private calculateInstallationCosts(
     pricing: InstallationPricing,
-    structureType: StructureType,
+    _structureType: StructureType,
     floorNumber: number,
     distanceKm: number,
   ): CalculatedInstallationCost {
     const costs = pricing.costComponents || {};
-
-    // Extract all cost components
-    const electricalWork = Number(costs.electrical_work || 0);
-    const fixedMaterial = Number(costs.fixed_material || 0);
-    const installationLabor = Number(costs.installation_labor || 0);
-    const loadingUnloading = Number(costs.loading_unloading || 0);
-    const msedclCharges = Number(costs.msedcl_charges || 0);
-    const supervision = Number(costs.supervision || 0);
+    const SPECIAL_KEYS = new Set(['variable_floor', 'profitability_percent']);
     const transport = distanceKm * Number(pricing.transportRatePerKm || 0);
 
-    // Calculate floor-based variable cost
     let variableFloor = 0;
     if (floorNumber > 0) {
       const baseFloorCost = Number(costs.variable_floor || 0);
       const incrementPercent = Number(pricing.floorIncrementPercent || 0);
-      variableFloor = baseFloorCost * (1 + (incrementPercent * floorNumber) / 100);
+      variableFloor = baseFloorCost * (1 + (incrementPercent * floorNumber) / PERCENT_DIVISOR);
     }
 
-    // Structure cost is calculated separately in calculateStructure based on structureType
-    // Using per-structure-type costs: struct_aluminum_rail, struct_rcc_elevated, struct_super_ground
-    // Setting to 0 here as it's handled in the structure line item
-    const structureCost = 0;
-
-    // Build breakdown for detailed display
+    let componentsSum = 0;
     const breakdown: Record<string, number> = {};
-    for (const [key, value] of Object.entries(costs)) {
-      if (typeof value === 'number' && value > 0) {
-        breakdown[key] = value;
-      }
+    for (const [key, raw] of Object.entries(costs)) {
+      if (SPECIAL_KEYS.has(key)) continue;
+      const n = Number(raw);
+      if (!Number.isFinite(n)) continue;
+      componentsSum += n;
+      breakdown[key] = n;
     }
+
     breakdown['transport'] = transport;
     if (variableFloor > 0) {
       breakdown['variable_floor_adjusted'] = variableFloor;
     }
 
-    // Total (excluding structure_cost as it's in the structure line item)
-    const totalBeforeTax =
-      electricalWork +
-      fixedMaterial +
-      variableFloor +
-      installationLabor +
-      loadingUnloading +
-      msedclCharges +
-      supervision +
-      transport;
-
+    const totalBeforeTax = componentsSum + variableFloor + transport;
     const gstRate = Number(pricing.gstRate);
-    const gstAmount = (totalBeforeTax * gstRate) / 100;
+    const gstAmount = (totalBeforeTax * gstRate) / PERCENT_DIVISOR;
+
+    const pick = (k: string): number => {
+      const v = Number(costs[k]);
+      return Number.isFinite(v) ? v : 0;
+    };
 
     return {
-      electricalWork,
-      fixedMaterial,
+      electricalWork: pick('electrical_work'),
+      fixedMaterial: pick('fixed_material'),
       variableFloor,
-      structureCost,
-      installationLabor,
-      loadingUnloading,
-      msedclCharges,
-      supervision,
+      structureCost: 0,
+      installationLabor: pick('installation_labor'),
+      loadingUnloading: pick('loading_unloading'),
+      msedclCharges: pick('msedcl_charges'),
+      supervision: pick('supervision'),
       transport,
       totalBeforeTax,
       gstAmount,
@@ -1986,95 +1909,98 @@ export class QuoteCalculatorService {
    * Calculate subsidy with tiered rates and max amount cap
    * Skips calculation entirely for NON_DCR_ONLY preference
    */
-  private async calculateSubsidy(
-    organizationId: string,
+  private calculateSubsidyFromConfigs(
+    configs: SubsidyConfiguration[],
     dcrSizeKw: number,
-    projectType: ProjectType,
+    totalSystemSizeKw: number,
     subsidyApplicable: boolean,
     dcrPreference?: DcrPreference,
-  ): Promise<CalculatedSubsidy> {
-    // Skip subsidy entirely for NON_DCR_ONLY
-    if (dcrPreference === DcrPreference.NON_DCR_ONLY) {
-      return {
-        isApplicable: false,
-        amount: 0,
-      };
+  ): CalculatedSubsidy {
+    const noSubsidy: CalculatedSubsidy = { isApplicable: false, amount: 0, schemes: [] };
+
+    if (dcrPreference === DcrPreference.NON_DCR_ONLY) return noSubsidy;
+    if (!subsidyApplicable || configs.length === 0) return noSubsidy;
+
+    const schemes: SubsidySchemeResult[] = [];
+
+    for (const config of configs) {
+      const eligibleKw = config.requiresDcr
+        ? Math.min(dcrSizeKw, Number(config.maxSubsidyKw))
+        : Math.min(totalSystemSizeKw, Number(config.maxSubsidyKw));
+
+      if (eligibleKw <= 0) continue;
+
+      const result = this.calculateTieredSubsidy(config, eligibleKw);
+      schemes.push(result);
     }
 
-    if (!subsidyApplicable || dcrSizeKw <= 0) {
-      return {
-        isApplicable: false,
-        amount: 0,
-      };
-    }
+    if (schemes.length === 0) return noSubsidy;
 
-    const subsidyConfig = await this.subsidyConfigRepo.findActiveByProjectType(
-      organizationId,
-      projectType,
-    );
+    const totalAmount = schemes.reduce((sum, s) => sum + s.amount, 0);
+    const firstScheme = schemes[0];
 
-    if (!subsidyConfig) {
-      return {
-        isApplicable: false,
-        amount: 0,
-      };
-    }
+    return {
+      isApplicable: true,
+      amount: Math.round(totalAmount * CENTS_ROUNDING_FACTOR) / CENTS_ROUNDING_FACTOR,
+      schemes,
+      schemeName: firstScheme?.schemeName,
+      eligibleKw: firstScheme?.eligibleKw,
+      breakdown: firstScheme?.breakdown,
+    };
+  }
 
-    // Calculate tiered subsidy
-    const breakdown: CalculatedSubsidy['breakdown'] = [];
+  private calculateTieredSubsidy(
+    config: SubsidyConfiguration,
+    eligibleKw: number,
+  ): SubsidySchemeResult {
+    const breakdown: SubsidySchemeResult['breakdown'] = [];
     let totalAmount = 0;
-    let remainingKw = Math.min(dcrSizeKw, Number(subsidyConfig.maxSubsidyKw));
+    let remainingKw = eligibleKw;
 
-    // Sort tiers by fromKw
-    const sortedTiers = [...(subsidyConfig.tiers || [])].sort((a, b) => a.fromKw - b.fromKw);
+    const sortedTiers = [...(config.tiers || [])].sort((a, b) => a.fromKw - b.fromKw);
 
     for (const tier of sortedTiers) {
       if (remainingKw <= 0) break;
 
-      const tierFromKw = tier.fromKw;
       const tierToKw = tier.toKw !== null ? tier.toKw : Infinity;
-      const tierRatePerKw = tier.ratePerKw;
-
-      // Calculate kW in this tier
-      const tierMaxKw = tierToKw - tierFromKw;
+      const tierMaxKw = tierToKw - tier.fromKw;
       const kwInTier = Math.min(remainingKw, tierMaxKw);
 
       if (kwInTier > 0) {
-        const tierAmount = Math.round(kwInTier * tierRatePerKw * 100) / 100;
+        const tierAmount =
+          Math.round(kwInTier * tier.ratePerKw * CENTS_ROUNDING_FACTOR) / CENTS_ROUNDING_FACTOR;
         totalAmount += tierAmount;
         remainingKw -= kwInTier;
 
         breakdown.push({
-          fromKw: tierFromKw,
-          toKw: tierToKw === Infinity ? tierFromKw + kwInTier : tierToKw,
-          kw: Math.round(kwInTier * 100) / 100,
-          ratePerKw: tierRatePerKw,
+          fromKw: tier.fromKw,
+          toKw: tierToKw === Infinity ? tier.fromKw + kwInTier : tierToKw,
+          kw: Math.round(kwInTier * CENTS_ROUNDING_FACTOR) / CENTS_ROUNDING_FACTOR,
+          ratePerKw: tier.ratePerKw,
           amount: tierAmount,
         });
       }
     }
 
-    // Apply max subsidy amount cap
-    const maxSubsidyAmount = Number(subsidyConfig.maxSubsidyAmount) || Infinity;
-    const cappedAmount = Math.round(Math.min(totalAmount, maxSubsidyAmount) * 100) / 100;
+    const maxSubsidyAmount = Number(config.maxSubsidyAmount) || Infinity;
+    const cappedAmount =
+      Math.round(Math.min(totalAmount, maxSubsidyAmount) * CENTS_ROUNDING_FACTOR) /
+      CENTS_ROUNDING_FACTOR;
 
     return {
-      isApplicable: true,
-      schemeName: subsidyConfig.schemeName,
-      eligibleKw: Math.round(dcrSizeKw * 100) / 100,
+      schemeId: config.id,
+      schemeName: config.schemeName,
+      eligibleKw: Math.round(eligibleKw * CENTS_ROUNDING_FACTOR) / CENTS_ROUNDING_FACTOR,
       amount: cappedAmount,
       breakdown,
     };
   }
 
   /**
-   * Calculate final pricing using actual per-item GST rates
-   *
-   * GST Rates (as per product pricing rules):
-   * - Panels: 5% GST (solar equipment)
-   * - Inverters: 5% GST (solar equipment)
-   * - Structure: 18% GST (from installation pricing)
-   * - Installation: 18% GST (services)
+   * Calculate final pricing: pre-tax base (components + margin), then total GST from
+   * quoteConfig.gstConfig (organization-configurable rate1, rate2, and portion percentages).
+   * Per-line product GST from master data is not mixed into this summary; summary amounts use
+   * quote-level gstConfig only.
    */
   private calculatePricing(
     panels: CalculatedPanelConfig[],
@@ -2093,141 +2019,154 @@ export class QuoteCalculatorService {
     finalPrice: number;
     profitabilityAmount: number;
   } {
+    // GST split validation is also enforced by the shared assertGstSplitPercentagesTotal100;
+    // keeping it here gives a NestJS-friendly BadRequestException to the HTTP layer.
+    const gstConfig = quoteConfig.gstConfig;
+    if (!gstConfig) {
+      throw new BadRequestException('Quote configuration is missing GST config.');
+    }
+    const totalPercentage = (gstConfig.rate1Percentage ?? 0) + (gstConfig.rate2Percentage ?? 0);
+    if (Math.abs(totalPercentage - 100) > 0.01) {
+      throw new BadRequestException(
+        `GST split percentages must total 100% (currently ${totalPercentage}%)`,
+      );
+    }
+
     const panelsTotal = panels.reduce((sum, p) => sum + p.lineTotal, 0);
     const rawBasePrice =
       panelsTotal + inverters.totalCost + structure.lineTotal + installation.totalBeforeTax;
 
-    const profitabilityAmount = Math.round((rawBasePrice * profitabilityPercent) / 100);
+    // Round profitabilityAmount to paise (2 dp) for consistency with all other amounts.
+    const profitabilityAmount =
+      Math.round(
+        ((rawBasePrice * profitabilityPercent) / PERCENT_DIVISOR) * CENTS_ROUNDING_FACTOR,
+      ) / CENTS_ROUNDING_FACTOR;
     const basePrice = rawBasePrice + profitabilityAmount;
 
-    const { rate1, rate1Percentage, rate2, rate2Percentage } = quoteConfig.gstConfig;
-    const portion1 = (basePrice * rate1Percentage) / 100;
-    const portion2 = (basePrice * rate2Percentage) / 100;
+    const { rate1, rate1Percentage, rate2, rate2Percentage } = gstConfig;
+    const portion1 = (basePrice * rate1Percentage) / PERCENT_DIVISOR;
+    const portion2 = (basePrice * rate2Percentage) / PERCENT_DIVISOR;
 
-    const gst5Amount = (portion1 * rate1) / 100;
-    const gst18Amount = (portion2 * rate2) / 100;
+    const gst5Amount = (portion1 * rate1) / PERCENT_DIVISOR;
+    const gst18Amount = (portion2 * rate2) / PERCENT_DIVISOR;
 
-    const totalGst = gst5Amount + gst18Amount;
-    const totalPrice = basePrice + totalGst;
+    // Round each GST component independently first, then derive totals from
+    // the rounded parts so that stored line items always sum to the stored total
+    // (eliminates the ±1 rounding gap between individual rows and their sum).
+    const roundedGst5 = Math.round(gst5Amount * CENTS_ROUNDING_FACTOR) / CENTS_ROUNDING_FACTOR;
+    const roundedGst18 = Math.round(gst18Amount * CENTS_ROUNDING_FACTOR) / CENTS_ROUNDING_FACTOR;
+    const roundedTotalGst =
+      Math.round((roundedGst5 + roundedGst18) * CENTS_ROUNDING_FACTOR) / CENTS_ROUNDING_FACTOR;
+    const roundedBasePrice = Math.round(basePrice * CENTS_ROUNDING_FACTOR) / CENTS_ROUNDING_FACTOR;
+    const roundedTotalPrice =
+      Math.round((roundedBasePrice + roundedTotalGst) * CENTS_ROUNDING_FACTOR) /
+      CENTS_ROUNDING_FACTOR;
 
     return {
-      basePrice: Math.round(basePrice * 100) / 100,
-      gst5Amount: Math.round(gst5Amount * 100) / 100,
-      gst18Amount: Math.round(gst18Amount * 100) / 100,
-      totalGst: Math.round(totalGst * 100) / 100,
-      totalPrice: Math.round(totalPrice * 100) / 100,
+      basePrice: roundedBasePrice,
+      gst5Amount: roundedGst5,
+      gst18Amount: roundedGst18,
+      totalGst: roundedTotalGst,
+      totalPrice: roundedTotalPrice,
       discountAmount: 0,
-      finalPrice: Math.round(totalPrice * 100) / 100,
-      profitabilityAmount: Math.round(profitabilityAmount * 100) / 100,
+      finalPrice: roundedTotalPrice,
+      profitabilityAmount:
+        Math.round(profitabilityAmount * CENTS_ROUNDING_FACTOR) / CENTS_ROUNDING_FACTOR,
     };
   }
 
-  /**
-   * Get pricing rule for a product (with project type context)
-   */
-  private async getPricingRule(
+  private async getProductTypeId(organizationId: string, code: string): Promise<string> {
+    const pt = await this.productTypeRepo.findByCode(code, organizationId);
+    if (!pt) throw new BadRequestException(`Product type '${code}' not configured.`);
+    return pt.id;
+  }
+
+  private async getProductPrice(
     organizationId: string,
     productId: string,
-    projectType?: ProjectType,
-  ): Promise<{
-    formula: { pricePerWatt?: number; basePrice?: number; pricePerKw?: number; gstRate?: number };
-  } | null> {
-    return this.pricingRuleRepo.findByProductIdWithContext(organizationId, productId, projectType);
+    projectType?: string,
+  ): Promise<{ unitPrice: number; gstRate: number; costMultiplier: number } | null> {
+    return this.productPriceRepo.findActiveForProduct(organizationId, productId, projectType);
   }
 
-  /**
-   * Validate and extract panel pricing from a pricing rule.
-   * Throws BadRequestException if pricing rule, gstRate, or pricePerWatt is missing.
-   */
   private validatePanelPricing(
-    pricingRule: { formula: { pricePerWatt?: number; gstRate?: number } } | null | undefined,
+    productPrice: { unitPrice: number; gstRate: number } | null | undefined,
     productName: string,
   ): { pricePerWatt: number; gstRate: number } {
-    if (!pricingRule) {
+    if (!productPrice) {
       throw new BadRequestException(
-        `Pricing rule not found for product '${productName}'. Please configure pricing in master data.`,
+        `Pricing not found for product '${productName}'. Please configure pricing in master data.`,
       );
     }
-    if (pricingRule.formula.gstRate == null) {
+    if (productPrice.gstRate == null) {
       throw new BadRequestException(
-        `GST rate not configured for product '${productName}'. Please update the pricing rule.`,
+        `GST rate not configured for product '${productName}'. Please update the pricing.`,
       );
     }
-    if (pricingRule.formula.pricePerWatt == null) {
+    if (productPrice.unitPrice == null) {
       throw new BadRequestException(
-        `Price per watt not configured for product '${productName}'. Please update the pricing rule.`,
+        `Price per watt not configured for product '${productName}'. Please update the pricing.`,
       );
     }
     return {
-      pricePerWatt: pricingRule.formula.pricePerWatt,
-      gstRate: pricingRule.formula.gstRate,
+      pricePerWatt: Number(productPrice.unitPrice),
+      gstRate: Number(productPrice.gstRate),
     };
   }
 
-  /**
-   * Validate and extract inverter pricing from a pricing rule.
-   * Throws BadRequestException if pricing rule, gstRate, or basePrice is missing.
-   */
   private validateInverterPricing(
-    pricingRule: { formula: { basePrice?: number; gstRate?: number } } | null | undefined,
+    productPrice: { unitPrice: number; gstRate: number } | null | undefined,
     productName: string,
   ): { basePrice: number; gstRate: number } {
-    if (!pricingRule) {
+    if (!productPrice) {
       throw new BadRequestException(
-        `Pricing rule not found for product '${productName}'. Please configure pricing in master data.`,
+        `Pricing not found for product '${productName}'. Please configure pricing in master data.`,
       );
     }
-    if (pricingRule.formula.gstRate == null) {
+    if (productPrice.gstRate == null) {
       throw new BadRequestException(
-        `GST rate not configured for product '${productName}'. Please update the pricing rule.`,
+        `GST rate not configured for product '${productName}'. Please update the pricing.`,
       );
     }
-    if (pricingRule.formula.basePrice == null) {
+    if (productPrice.unitPrice == null) {
       throw new BadRequestException(
-        `Base price not configured for product '${productName}'. Please update the pricing rule.`,
+        `Base price not configured for product '${productName}'. Please update the pricing.`,
       );
     }
     return {
-      basePrice: pricingRule.formula.basePrice,
-      gstRate: pricingRule.formula.gstRate,
+      basePrice: Number(productPrice.unitPrice),
+      gstRate: Number(productPrice.gstRate),
     };
   }
 
-  /**
-   * Validate and extract structure pricing from a pricing rule.
-   * Throws BadRequestException if pricing rule, gstRate, or basePrice is missing.
-   */
   private validateStructurePricing(
-    pricingRule:
-      | { formula: { basePrice?: number; gstRate?: number; multiplier?: number } }
-      | null
-      | undefined,
+    productPrice: { unitPrice: number; gstRate: number; costMultiplier: number } | null | undefined,
     productName: string,
   ): { basePrice: number; gstRate: number; multiplier: number } {
-    if (!pricingRule) {
+    if (!productPrice) {
       throw new BadRequestException(
-        `Pricing rule not found for product '${productName}'. Please configure pricing in master data.`,
+        `Pricing not found for product '${productName}'. Please configure pricing in master data.`,
       );
     }
-    if (pricingRule.formula.basePrice == null) {
+    if (Number(productPrice.unitPrice) <= 0) {
       throw new BadRequestException(
-        `Base price not configured for structure '${productName}'. Please update the pricing rule.`,
+        `Base price not configured for structure '${productName}'. Please update the pricing.`,
       );
     }
-    if (pricingRule.formula.gstRate == null) {
+    if (productPrice.gstRate == null) {
       throw new BadRequestException(
-        `GST rate not configured for product '${productName}'. Please update the pricing rule.`,
+        `GST rate not configured for product '${productName}'. Please update the pricing.`,
       );
     }
-    if (pricingRule.formula.multiplier == null) {
+    if (productPrice.costMultiplier == null) {
       throw new BadRequestException(
-        `Multiplier not configured for structure '${productName}'. Please update the pricing rule.`,
+        `Multiplier not configured for structure '${productName}'. Please update the pricing.`,
       );
     }
     return {
-      basePrice: pricingRule.formula.basePrice,
-      gstRate: pricingRule.formula.gstRate,
-      multiplier: pricingRule.formula.multiplier,
+      basePrice: Number(productPrice.unitPrice),
+      gstRate: Number(productPrice.gstRate),
+      multiplier: Number(productPrice.costMultiplier),
     };
   }
 
@@ -2236,15 +2175,25 @@ export class QuoteCalculatorService {
    * Throws BadRequestException if gstRate is missing.
    */
   private validateInstallationPricing(pricing: InstallationPricing): void {
+    const label = pricing.getDisplayLabel();
     if (pricing.gstRate == null) {
       throw new BadRequestException(
-        `GST rate not configured for installation pricing '${pricing.name || pricing.id}'. Please update the installation pricing configuration.`,
+        `GST rate not configured for installation pricing '${label}'. Please update the installation pricing configuration.`,
       );
     }
     if (pricing.costComponents == null) {
       throw new BadRequestException(
-        `Cost components not configured for installation pricing '${pricing.name || pricing.id}'. Please update the installation pricing configuration.`,
+        `Cost components not configured for installation pricing '${label}'. Please update the installation pricing configuration.`,
       );
     }
+  }
+
+  private resolveProfitMargin(tiers: ProfitMarginTier[], systemSizeKw: number): number {
+    const tier = tiers.find(
+      (t) =>
+        systemSizeKw >= t.minSystemSizeKw &&
+        (t.maxSystemSizeKw === null || systemSizeKw <= t.maxSystemSizeKw),
+    );
+    return tier?.marginPercent ?? 0;
   }
 }

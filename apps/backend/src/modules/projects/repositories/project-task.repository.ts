@@ -147,12 +147,12 @@ export class ProjectTaskRepository {
       );
     }
 
-    qb.orderBy('task.kanbanOrder', 'ASC')
-      .addOrderBy('task.createdAt', 'DESC')
-      .skip(skip)
-      .take(limit);
+    qb.orderBy('task.kanbanOrder', 'ASC').addOrderBy('task.createdAt', 'DESC');
 
-    const [data, total] = await qb.getManyAndCount();
+    // Split getCount + getMany to avoid TypeORM getManyAndCount crash
+    // when leftJoinAndSelect is combined with addOrderBy on joined aliases.
+    const total = await qb.getCount();
+    const data = await qb.skip(skip).take(limit).getMany();
     return { data: this.resolveMany(data), total };
   }
 

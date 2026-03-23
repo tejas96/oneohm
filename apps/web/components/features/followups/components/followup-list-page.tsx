@@ -2,15 +2,25 @@
 
 import { FollowupType, FollowupStatus, FollowupPriority } from '@oneohm-epc/shared/types';
 import { ColumnDef } from '@tanstack/react-table';
-import { Calendar, Plus, MoreHorizontal, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import {
+  Calendar,
+  Plus,
+  MoreHorizontal,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  Search,
+  X,
+} from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import * as React from 'react';
 
-import { DataTable, FilterTabs, EmptyState } from '@/components/shared';
+import { DataTable, FilterTabs, EmptyState, TablePagination } from '@/components/shared';
 import {
   Badge,
   Button,
+  Input,
   Typography,
   DropdownMenu,
   DropdownMenuContent,
@@ -19,12 +29,14 @@ import {
   showToast,
 } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { useDebounce } from '@/lib/hooks';
 
 // ============================================================================
 // Types
 // ============================================================================
 
 const DEFAULT_PAGE_SIZE = 10;
+const SEARCH_DEBOUNCE_MS = 550;
 
 interface Followup {
   id: string;
@@ -39,6 +51,13 @@ interface Followup {
 }
 
 type FilterTab = 'today' | 'overdue' | 'upcoming' | 'completed';
+
+function getValidTab(value: string | null): FilterTab {
+  if (value === 'today' || value === 'overdue' || value === 'upcoming' || value === 'completed') {
+    return value;
+  }
+  return 'today';
+}
 
 // ============================================================================
 // Mock Data
@@ -135,7 +154,48 @@ const isUpcoming = (date: Date, status: FollowupStatus): boolean => {
 
 export function FollowupListPage(): React.JSX.Element {
   const router = useRouter();
-  const [activeTab, setActiveTab] = React.useState<FilterTab>('today');
+  const searchParams = useSearchParams();
+
+  const initialPage = Number(searchParams.get('page')) || 1;
+  const initialLimit = Number(searchParams.get('limit')) || DEFAULT_PAGE_SIZE;
+  const initialSearch = searchParams.get('search') || '';
+  const initialTab = getValidTab(searchParams.get('tab'));
+
+  const [page, setPage] = React.useState(initialPage);
+  const [pageSize, setPageSize] = React.useState(initialLimit);
+  const [searchInput, setSearchInput] = React.useState(initialSearch);
+  const [activeTab, setActiveTab] = React.useState<FilterTab>(initialTab);
+
+  const debouncedSearch = useDebounce(searchInput, SEARCH_DEBOUNCE_MS);
+
+  const searchParamsString = searchParams.toString();
+  React.useEffect(() => {
+    setPage(Number(searchParams.get('page')) || 1);
+    setPageSize(Number(searchParams.get('limit')) || DEFAULT_PAGE_SIZE);
+    setSearchInput(searchParams.get('search') || '');
+    setActiveTab(getValidTab(searchParams.get('tab')));
+  }, [searchParamsString]);
+
+  const isInitialMount = React.useRef(true);
+  React.useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    setPage(1);
+  }, [debouncedSearch, activeTab, pageSize]);
+
+  React.useEffect(() => {
+    const params = new URLSearchParams();
+    if (page > 1) params.set('page', String(page));
+    if (pageSize !== DEFAULT_PAGE_SIZE) params.set('limit', String(pageSize));
+    if (debouncedSearch) params.set('search', debouncedSearch);
+    if (activeTab !== 'today') params.set('tab', activeTab);
+
+    const query = params.toString();
+    const newUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+    window.history.replaceState({}, '', newUrl);
+  }, [page, pageSize, debouncedSearch, activeTab]);
 
   // Calculate counts
   const counts = {
@@ -175,22 +235,41 @@ export function FollowupListPage(): React.JSX.Element {
     },
   ];
 
+  const normalizedSearch = debouncedSearch.trim().toLowerCase();
+
   // Filtered data
   const filteredFollowups = mockFollowups.filter((f) => {
     const date = new Date(f.scheduledAt);
-    switch (activeTab) {
-      case 'today':
-        return isToday(date) && f.status === FollowupStatus.PENDING;
-      case 'overdue':
-        return isOverdue(date, f.status);
-      case 'upcoming':
-        return isUpcoming(date, f.status);
-      case 'completed':
-        return f.status === FollowupStatus.COMPLETED;
-      default:
-        return true;
-    }
+    const matchesTab = (() => {
+      switch (activeTab) {
+        case 'today':
+          return isToday(date) && f.status === FollowupStatus.PENDING;
+        case 'overdue':
+          return isOverdue(date, f.status);
+        case 'upcoming':
+          return isUpcoming(date, f.status);
+        case 'completed':
+          return f.status === FollowupStatus.COMPLETED;
+        default:
+          return true;
+      }
+    })();
+
+    if (!matchesTab) return false;
+
+    if (!normalizedSearch) return true;
+
+    return (
+      f.subject.toLowerCase().includes(normalizedSearch) ||
+      f.propertyName.toLowerCase().includes(normalizedSearch) ||
+      f.customerName.toLowerCase().includes(normalizedSearch)
+    );
   });
+
+  const totalItems = filteredFollowups.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const startIndex = (page - 1) * pageSize;
+  const pagedFollowups = filteredFollowups.slice(startIndex, startIndex + pageSize);
 
   const handleMarkComplete = (_followup: Followup) => {
     // TODO: Phase 2 - API call to mark followup as completed
@@ -299,23 +378,58 @@ export function FollowupListPage(): React.JSX.Element {
       {/* Filter Tabs */}
       <FilterTabs tabs={filterTabs} value={activeTab} onChange={setActiveTab} variant="pills" />
 
+      <div className="flex items-center gap-3">
+        <div className="relative w-72">
+          <Input
+            type="text"
+            placeholder="Search follow-ups..."
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            leftIcon={<Search className="size-icon-sm" />}
+            className="h-8 text-sm"
+          />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={() => setSearchInput('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded"
+            >
+              <X className="size-3.5 text-foreground-tertiary" />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Data Table */}
       {filteredFollowups.length > 0 ? (
-        <DataTable
-          columns={columns}
-          data={filteredFollowups}
-          enableSearch
-          searchPlaceholder="Search follow-ups..."
-          enablePagination
-          pageSize={DEFAULT_PAGE_SIZE}
-          getRowClassName={(row) => {
-            const date = new Date(row.scheduledAt);
-            if (isOverdue(date, row.status)) {
-              return 'bg-error/5 hover:bg-error/10';
-            }
-            return '';
-          }}
-        />
+        <>
+          <DataTable
+            columns={columns}
+            data={pagedFollowups}
+            enableSearch={false}
+            enablePagination={false}
+            getRowClassName={(row) => {
+              const date = new Date(row.scheduledAt);
+              if (isOverdue(date, row.status)) {
+                return 'bg-error/5 hover:bg-error/10';
+              }
+              return '';
+            }}
+          />
+          <TablePagination
+            currentPage={page}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalItems={totalItems}
+            itemLabel="follow-ups"
+            variant="full"
+            onPageChange={setPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPage(1);
+            }}
+          />
+        </>
       ) : (
         <EmptyState
           icon={<Calendar className="size-icon-lg" />}

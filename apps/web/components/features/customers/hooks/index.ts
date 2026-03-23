@@ -16,6 +16,7 @@ export {
   useDeleteCustomer,
   useUpdateCustomerStatus,
   useCustomerStats,
+  useAssignCustomer,
 } from './use-customers';
 export type {
   Customer,

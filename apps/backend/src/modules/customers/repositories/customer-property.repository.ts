@@ -264,10 +264,15 @@ export class CustomerPropertyRepository {
     const sortDirection = query.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
     qb.orderBy(sortColumn, sortDirection, needsQuoteJoin ? 'NULLS LAST' : undefined);
 
-    // ===== Pagination =====
-    qb.skip((query.page - 1) * query.limit).take(query.limit);
+    // Split getCount + getMany to avoid TypeORM getManyAndCount crash
+    // when leftJoinAndSelect is combined with orderBy on a joined alias.
+    const total = await qb.getCount();
+    const data = await qb
+      .skip((query.page - 1) * query.limit)
+      .take(query.limit)
+      .getMany();
 
-    return qb.getManyAndCount();
+    return [data, total];
   }
 
   /**

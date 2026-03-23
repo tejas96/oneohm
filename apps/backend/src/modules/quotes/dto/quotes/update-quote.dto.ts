@@ -7,7 +7,6 @@ import {
 } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import {
-  ArrayMinSize,
   IsArray,
   IsDateString,
   IsEnum,
@@ -21,7 +20,6 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-import { QuoteLineItemDto } from '../line-items/quote-line-item.dto';
 import { PaymentMilestoneDto } from '../versions/payment-milestone.dto';
 
 /**
@@ -97,7 +95,24 @@ export class UpdateQuoteDto {
   @IsObject()
   calculatorInputs?: CalculatorInputs;
 
-  // ==================== Pricing Breakdown ====================
+  // ==================== Pricing ====================
+  @ApiPropertyOptional({
+    description:
+      'Pre-calculated final price (post-discount, post-GST). When provided, avoids re-deriving from pricingBreakdown.',
+  })
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @IsOptional()
+  finalPrice?: number;
+
+  @ApiPropertyOptional({
+    description: 'Pre-calculated effective price (finalPrice minus subsidy, floored at 0)',
+  })
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @IsOptional()
+  effectivePrice?: number;
+
   @ApiPropertyOptional({
     description: 'Pre-calculated pricing breakdown',
   })
@@ -139,17 +154,6 @@ export class UpdateQuoteDto {
   @Type(() => PaymentMilestoneDto)
   @IsOptional()
   paymentMilestones?: PaymentMilestoneDto[];
-
-  @ApiPropertyOptional({
-    type: [QuoteLineItemDto],
-    description: 'Updated line items',
-  })
-  @IsArray()
-  @ArrayMinSize(1)
-  @ValidateNested({ each: true })
-  @Type(() => QuoteLineItemDto)
-  @IsOptional()
-  lineItems?: QuoteLineItemDto[];
 
   @ApiPropertyOptional({
     example: 'Updated system size and added battery backup',

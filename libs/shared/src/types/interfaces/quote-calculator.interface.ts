@@ -3,240 +3,6 @@ import { SubsidySchemeType, DcrPreference } from '../enums/quote.enum';
 
 /**
  * ============================================================================
- * PRODUCT SPECIFICATIONS INTERFACES (JSONB)
- * ============================================================================
- */
-
-/**
- * Base specifications common to all products
- */
-export interface BaseProductSpecifications {
-  /** Warranty period in years */
-  warrantyYears?: number;
-  /** Product certification details */
-  certifications?: string[];
-  /** Additional notes */
-  notes?: string;
-}
-
-/**
- * Solar Panel Specifications
- * Used in products.specifications for type='solar_panel'
- */
-export interface SolarPanelSpecifications extends BaseProductSpecifications {
-  /** Wattage rating (nominal) */
-  wattage: number;
-  /** Minimum wattage in the batch */
-  minWattage: number;
-  /** Maximum wattage in the batch */
-  maxWattage: number;
-  /** Whether panel qualifies for DCR subsidy */
-  isDcr: boolean;
-  /** Panel technology */
-  technology: PanelTechnology;
-  /** Panel efficiency percentage */
-  efficiency?: number;
-  /** Dimensions in mm */
-  dimensions?: {
-    length: number;
-    width: number;
-    height: number;
-  };
-  /** Weight in kg */
-  weightKg?: number;
-}
-
-/**
- * Inverter Specifications
- * Used in products.specifications for type='inverter'
- */
-export interface InverterSpecifications extends BaseProductSpecifications {
-  /** Inverter capacity in kW */
-  capacityKw: number;
-  /** Phase type (1-phase or 3-phase) */
-  phaseType: PhaseType;
-  /** Minimum system size this inverter is suitable for */
-  minSystemSizeKw: number;
-  /** Maximum system size this inverter is suitable for */
-  maxSystemSizeKw: number;
-  /** Number of MPPT channels */
-  mpptCount?: number;
-  /** Maximum DC input voltage */
-  maxDcVoltage?: number;
-  /** Efficiency percentage */
-  efficiency?: number;
-  /** Whether inverter has built-in monitoring */
-  hasMonitoring?: boolean;
-}
-
-/**
- * Mounting Structure Specifications
- * Used in products.specifications for type='mounting_structure'
- */
-export interface StructureSpecifications extends BaseProductSpecifications {
-  /** Type of structure */
-  structureType: StructureType;
-  /** Material composition */
-  material: string;
-  /** Maximum wind speed rating in km/h */
-  maxWindSpeed?: number;
-  /** Suitable for panel wattage range */
-  suitableForPanelWattage?: {
-    min: number;
-    max: number;
-  };
-}
-
-/**
- * Union type for all product specifications (for quote calculator)
- * @deprecated Use ProductSpecifications from product.interface.ts for entity typing
- */
-export type QuoteProductSpecifications =
-  | SolarPanelSpecifications
-  | InverterSpecifications
-  | StructureSpecifications
-  | BaseProductSpecifications;
-
-/**
- * ============================================================================
- * PRICING FORMULA INTERFACES (JSONB)
- * ============================================================================
- */
-
-/**
- * Panel Pricing Formula
- * Used in pricing_rules.formula for solar panels
- */
-export interface PanelPricingFormula {
-  /** Price per watt in INR */
-  pricePerWatt: number;
-  /** GST rate percentage (e.g., 12) */
-  gstRate: number;
-  /** Whether this is a DCR panel price */
-  isDcr: boolean;
-  /** Technology this price applies to */
-  technology?: PanelTechnology;
-}
-
-/**
- * Inverter Pricing Formula
- * Used in pricing_rules.formula for inverters
- */
-export interface InverterPricingFormula {
-  /** Base price in INR */
-  basePrice: number;
-  /** Price per kW if applicable */
-  pricePerKw?: number;
-  /** GST rate percentage */
-  gstRate: number;
-  /** Phase type this price applies to */
-  phaseType: PhaseType;
-  /** Capacity range this price applies to */
-  capacityRange?: {
-    min: number;
-    max: number;
-  };
-}
-
-/**
- * Structure Pricing Formula
- * Used in pricing_rules.formula for structures
- */
-export interface StructurePricingFormula {
-  /** Base price in INR */
-  basePrice: number;
-  /** Price per kW in INR */
-  pricePerKw: number;
-  /** GST rate percentage */
-  gstRate: number;
-  /** Structure type this price applies to */
-  structureType: StructureType;
-}
-
-/**
- * Union type for all pricing formulas
- */
-export type PricingFormula =
-  | PanelPricingFormula
-  | InverterPricingFormula
-  | StructurePricingFormula
-  | Record<string, unknown>;
-
-/**
- * General Pricing Rule Formula (JSONB)
- *
- * Comprehensive interface for pricing_rules.formula column.
- * Supports all product types and pricing strategies.
- *
- * @example
- * // Panel pricing
- * { pricePerWatt: 25.75, gstRate: 5, isDcr: true }
- *
- * // Inverter pricing
- * { basePrice: 15800, gstRate: 5, phaseType: 'single_phase' }
- *
- * // With volume discounts
- * {
- *   pricePerWatt: 25,
- *   gstRate: 5,
- *   volumeDiscounts: [
- *     { minQuantity: 100, discountPercentage: 5 },
- *     { minQuantity: 500, discountPercentage: 10 }
- *   ]
- * }
- */
-export interface PricingRuleFormula {
-  /** Base price in INR (used for inverters, structures, fixed-price items) */
-  basePrice?: number;
-  /** Price per watt in INR (used for solar panels) */
-  pricePerWatt?: number;
-  /** Price per kW in INR (used for structures, services) */
-  pricePerKw?: number;
-  /** Price per kWh in INR (used for batteries) */
-  pricePerKwh?: number;
-  /** GST rate percentage (e.g., 5, 12, 18) */
-  gstRate?: number;
-  /** Currency code */
-  currency?: string;
-  /** Whether this is DCR panel pricing */
-  isDcr?: boolean;
-  /** Phase type for inverter pricing */
-  phaseType?: PhaseType;
-  /** Structure type for structure pricing */
-  structureType?: StructureType;
-  /** Cost multiplier for structures: basePrice × multiplier × systemSizeKw */
-  multiplier?: number;
-  /** Capacity range for inverter/battery pricing */
-  capacityRange?: {
-    min: number;
-    max: number;
-  };
-  /** Margin percentage to add */
-  marginPercentage?: number;
-  /** Volume-based discounts */
-  volumeDiscounts?: Array<{
-    minQuantity: number;
-    discountPercentage: number;
-  }>;
-  /** Customer type multipliers */
-  customerTypeMultipliers?: {
-    retail?: number;
-    reseller?: number;
-    wholesale?: number;
-  };
-  /** Additional costs breakdown */
-  additionalCosts?: {
-    installation?: number;
-    transportation?: number;
-    handling?: number;
-    [key: string]: number | undefined;
-  };
-  /** Allow any additional custom fields */
-  [key: string]: unknown;
-}
-
-/**
- * ============================================================================
  * SUBSIDY CONFIGURATION INTERFACES
  * ============================================================================
  */
@@ -337,10 +103,6 @@ export interface InstallationCostComponents {
   /** Documentation charges */
   documentation?: number;
 
-  // ==================== Profitability ====================
-  /** Profitability percentage for this system size tier */
-  profitability_percent?: number;
-
   /** Allow any additional custom cost components */
   [key: string]: number | undefined;
 }
@@ -409,13 +171,15 @@ export interface GstConfig {
 }
 
 /**
- * Wattage Rounding Configuration
+ * Profit Margin Tier - Defines margin for a specific system size range
  */
-export interface WattageRoundingConfig {
-  /** Round to nearest (e.g., 10 for nearest 10W) */
-  roundTo: number;
-  /** Threshold for rounding up (e.g., 5 means >=5 rounds up) */
-  roundUpThreshold: number;
+export interface ProfitMarginTier {
+  /** Minimum system size in kW (inclusive) */
+  minSystemSizeKw: number;
+  /** Maximum system size in kW (inclusive, null for unlimited) */
+  maxSystemSizeKw: number | null;
+  /** Profit margin percentage */
+  marginPercent: number;
 }
 
 /**
@@ -431,14 +195,12 @@ export interface QuoteConfiguration {
   defaultCompletionWeeks: number;
   /** GST configuration */
   gstConfig: GstConfig;
-  /** Wattage rounding rules */
-  wattageRounding: WattageRoundingConfig;
   /** Default payment milestones */
   paymentMilestones: PaymentMilestoneConfig[];
   /** Whether to show real-time inventory */
   showInventoryStock: boolean;
-  /** Minimum profit margin percentage */
-  minProfitMarginPercent?: number;
+  /** System-size-based profit margin tiers */
+  profitMarginTiers: ProfitMarginTier[];
 }
 
 /**
@@ -584,18 +346,37 @@ export interface ValidationWarning {
 }
 
 /**
- * Calculated Subsidy
+ * Per-scheme subsidy calculation result
+ */
+export interface SubsidySchemeResult {
+  schemeId: string;
+  schemeName: string;
+  eligibleKw: number;
+  amount: number;
+  breakdown: {
+    fromKw: number;
+    toKw: number;
+    kw: number;
+    ratePerKw: number;
+    amount: number;
+  }[];
+}
+
+/**
+ * Calculated Subsidy (supports multiple schemes)
  */
 export interface CalculatedSubsidy {
   /** Whether subsidy is applicable */
   isApplicable: boolean;
-  /** Scheme name */
-  schemeName?: string;
-  /** Eligible system size for subsidy */
-  eligibleKw?: number;
-  /** Total subsidy amount */
+  /** Total subsidy amount across all selected schemes */
   amount: number;
-  /** Breakdown by tier */
+  /** Per-scheme breakdown */
+  schemes: SubsidySchemeResult[];
+  /** @deprecated Single-scheme compat fields */
+  schemeName?: string;
+  /** @deprecated */
+  eligibleKw?: number;
+  /** @deprecated */
   breakdown?: {
     fromKw: number;
     toKw: number;
@@ -664,46 +445,3 @@ export interface QuoteCalculationResult {
  * QUOTE VERSION SNAPSHOT INTERFACES
  * ============================================================================
  */
-
-/**
- * Configuration Snapshot
- * Captured at time of quote creation for audit trail
- */
-export interface QuoteConfigSnapshot {
-  /** Panel products used */
-  panels: {
-    productId: string;
-    name: string;
-    brand: string;
-    pricePerWatt: number;
-    isDcr: boolean;
-    technology?: string;
-    gstRate?: number;
-    wattage?: number;
-  }[];
-  /** Inverter products used */
-  inverters: {
-    productId: string;
-    name: string;
-    brand: string;
-    capacityKw: number;
-    unitPrice: number;
-    gstRate?: number;
-  }[];
-  /** Structure product used */
-  structure: {
-    productId: string;
-    name: string;
-    pricePerKw: number;
-    gstRate?: number;
-    structureType?: string;
-  };
-  /** Installation pricing at time of quote */
-  installationPricing: InstallationPricingConfig;
-  /** Subsidy configuration at time of quote */
-  subsidyConfig: SubsidyConfig | null;
-  /** Quote configuration at time of quote */
-  quoteConfig: QuoteConfiguration;
-  /** Timestamp of snapshot */
-  snapshotAt: string;
-}

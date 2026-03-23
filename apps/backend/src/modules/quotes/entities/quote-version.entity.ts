@@ -3,12 +3,10 @@ import {
   PaymentMilestone,
   PricingBreakdown,
   ProjectType,
-  QuoteConfigSnapshot,
   SystemType,
 } from '@oneohm-epc/shared/types';
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
-import { QuoteLineItemEntity } from './quote-line-item.entity';
 import { QuoteEntity } from './quote.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { UserEntity } from '../../users/entities/user.entity';
@@ -27,9 +25,6 @@ export class QuoteVersionEntity extends BaseEntity {
   @ManyToOne(() => QuoteEntity, (quote) => quote.versions, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'quote_id' })
   quote!: QuoteEntity;
-
-  @OneToMany(() => QuoteLineItemEntity, (lineItem) => lineItem.quoteVersion, { cascade: true })
-  lineItems!: QuoteLineItemEntity[];
 
   // ==================== Version Info ====================
   @Column({ type: 'integer', name: 'version_number' })
@@ -92,10 +87,6 @@ export class QuoteVersionEntity extends BaseEntity {
 
   @Column({ type: 'boolean', name: 'is_current', default: true })
   isCurrent!: boolean;
-
-  // ==================== Configuration Snapshot ====================
-  @Column({ type: 'jsonb', name: 'config_snapshot', nullable: true })
-  configSnapshot?: QuoteConfigSnapshot;
 
   // ==================== Audit ====================
   @Column({ type: 'uuid', name: 'created_by' })

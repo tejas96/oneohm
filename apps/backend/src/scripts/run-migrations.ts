@@ -29,13 +29,50 @@ const getDataSourceConfig = () => {
   // Works in both dev (src/scripts/) and prod (dist/src/scripts/)
   const migrationsPath = join(__dirname, '..', 'database', 'migrations', '*{.js,.ts}');
 
+  // Fly.io injects DATABASE_URL for attached Postgres clusters.
+  // Prefer individual vars when available so local dev keeps working.
+  let host: string | undefined = process.env.DATABASE_HOST;
+  let port = parseInt(process.env.DATABASE_PORT || '5432', 10);
+  let username: string | undefined = process.env.DATABASE_USER;
+  let password: string | undefined = process.env.DATABASE_PASSWORD;
+  let database: string | undefined = process.env.DATABASE_NAME;
+
+  if ((!host || !username || !password || !database) && process.env.DATABASE_URL) {
+    try {
+      const url = new URL(process.env.DATABASE_URL);
+      host = host || url.hostname || undefined;
+      port = port || (url.port ? parseInt(url.port, 10) : 5432);
+      username = username || (url.username ? decodeURIComponent(url.username) : undefined);
+      password = password || (url.password ? decodeURIComponent(url.password) : undefined);
+      const dbPath = url.pathname.replace(/^\//, '');
+      database = database || dbPath || undefined;
+    } catch {
+      // If DATABASE_URL is malformed, fall through and let the connection attempt fail clearly
+    }
+  }
+
+  if (!host || !username || !password || !database) {
+    const missing = [
+      !host && 'DATABASE_HOST',
+      !username && 'DATABASE_USER',
+      !password && 'DATABASE_PASSWORD',
+      !database && 'DATABASE_NAME',
+    ]
+      .filter(Boolean)
+      .join(', ');
+    throw new Error(
+      `Migration runner: database config incomplete. Missing: ${missing}. ` +
+        'Set individual DATABASE_* secrets or DATABASE_URL on Fly.',
+    );
+  }
+
   return {
     type: 'postgres' as const,
-    host: process.env.DATABASE_HOST || 'localhost',
-    port: parseInt(process.env.DATABASE_PORT || '5432', 10),
-    username: process.env.DATABASE_USER || 'postgres',
-    password: process.env.DATABASE_PASSWORD || 'postgres',
-    database: process.env.DATABASE_NAME || 'oneohm_epc',
+    host,
+    port,
+    username,
+    password,
+    database,
     ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
     migrations: [migrationsPath],
     migrationsTableName: 'typeorm_migrations',
@@ -83,13 +120,13 @@ async function runMigrations(): Promise<void> {
   console.log('🚀 OneOhm EPC - Database Migration');
   console.log('================================================');
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📍 Database Host: ${process.env.DATABASE_HOST || 'localhost'}`);
-  console.log(`📍 Database Name: ${process.env.DATABASE_NAME || 'oneohm_epc'}`);
   console.log(`📍 SSL Enabled: ${process.env.DATABASE_SSL === 'true'}`);
   console.log('================================================');
   console.log('');
 
   const config = getDataSourceConfig();
+  console.log(`📍 Database Host: ${config.host}`);
+  console.log(`📍 Database Name: ${config.database}`);
   const dataSource = new DataSource(config);
 
   try {

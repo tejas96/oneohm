@@ -45,7 +45,7 @@ export interface PaginationProps {
 // Constants
 // ============================================================================
 
-const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const DEFAULT_PAGE_SIZE_OPTIONS = [10, 20, 25, 50, 100];
 
 // ============================================================================
 // Helper Functions
@@ -320,7 +320,7 @@ export function Pagination({
             value={pageSize.toString()}
             onValueChange={(value) => onPageSizeChange(Number(value))}
           >
-            <SelectTrigger className="h-9 w-select-compact">
+            <SelectTrigger variant="borderless" className="h-9 w-select-compact">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -515,7 +515,7 @@ export function TablePagination({
             value={pageSize.toString()}
             onValueChange={(value) => onPageSizeChange(Number(value))}
           >
-            <SelectTrigger className="h-8 w-16 text-sm">
+            <SelectTrigger variant="borderless" className="h-8 w-16 text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-import { ProjectType, PhaseType, DcrPreference, PanelTechnology } from '../types/enums';
+import {
+  ProjectType,
+  PhaseType,
+  DcrPreference,
+  PanelTechnology,
+  StructureType,
+} from '../types/enums';
 
 export const quoteBuilderSchema = z.object({
   customerId: z.string().uuid('Please select a customer'),
@@ -15,14 +21,16 @@ export const quoteBuilderSchema = z.object({
   phaseType: z.nativeEnum(PhaseType, {
     errorMap: () => ({ message: 'Please select phase type' }),
   }),
-  subsidyApplicable: z.boolean().default(true),
+  selectedSubsidyIds: z.array(z.string()).optional(),
   dcrPreference: z.nativeEnum(DcrPreference).default(DcrPreference.DCR_ONLY),
   preferredPanelBrand: z.string().optional(),
   preferredPanelTechnology: z.nativeEnum(PanelTechnology).optional(),
   preferredPanelWattage: z.number().min(100).max(1000).optional(),
   preferredInverterBrand: z.string().optional(),
   preferredInverterCapacityKw: z.number().min(1).optional(),
-  structureType: z.string().min(1, 'Please select structure type'),
+  structureType: z.union([z.nativeEnum(StructureType), z.literal('')], {
+    errorMap: () => ({ message: 'Please select structure type' }),
+  }),
   floorNumber: z
     .number({ coerce: true })
     .min(0, 'Floor number cannot be negative')

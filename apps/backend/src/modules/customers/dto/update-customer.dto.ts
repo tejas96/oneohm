@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { IsEmail, IsOptional, IsString, Matches, MaxLength, ValidateIf } from 'class-validator';
 
 /**
  * DTO for updating customer profile information
@@ -13,6 +13,12 @@ export class UpdateCustomerDto {
   @IsOptional()
   @MaxLength(100)
   firstName?: string;
+
+  @ApiPropertyOptional({ example: 'Kumar', description: 'Customer middle name' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(100)
+  middleName?: string;
 
   @ApiPropertyOptional({ example: 'Kumar', description: 'Customer last name' })
   @IsString()
@@ -101,4 +107,29 @@ export class UpdateCustomerDto {
   @IsOptional()
   @MaxLength(50)
   referralCode?: string;
+
+  // ==================== Customer Group ====================
+  @ApiPropertyOptional({
+    example: 'GRP-0001',
+    description:
+      'Group code to assign this customer to an existing group. Send null to remove from group.',
+    nullable: true,
+  })
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @IsString()
+  @MaxLength(20)
+  groupCode?: string | null;
+
+  @ApiPropertyOptional({
+    example: 'Sunshine Apartments',
+    description:
+      'Group name. If provided without groupCode, a new group will be created. Send null to remove from group.',
+    nullable: true,
+  })
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @IsString()
+  @MaxLength(100)
+  groupName?: string | null;
 }

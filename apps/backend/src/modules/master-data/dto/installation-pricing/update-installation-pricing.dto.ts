@@ -1,33 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ProjectType, InstallationCostComponents } from '@oneohm-epc/shared/types';
-import {
-  IsBoolean,
-  IsDateString,
-  IsEnum,
-  IsNumber,
-  IsObject,
-  IsOptional,
-  IsString,
-  MaxLength,
-  Min,
-} from 'class-validator';
+import { InstallationCostComponents } from '@oneohm-epc/shared/types';
+import { IsBoolean, IsDateString, IsNumber, IsObject, IsOptional, Min } from 'class-validator';
 
-/**
- * DTO for updating an installation pricing configuration
- */
 export class UpdateInstallationPricingDto {
-  @ApiPropertyOptional({ example: 'Installation Charges 3KW', description: 'Display name' })
-  @IsString()
-  @IsOptional()
-  @MaxLength(100)
-  name?: string;
-
-  @ApiPropertyOptional({ example: 'INST-3KW', description: 'Unique code' })
-  @IsString()
-  @IsOptional()
-  @MaxLength(50)
-  code?: string;
-
   @ApiPropertyOptional({ example: 3, description: 'Minimum system size in KW' })
   @IsNumber()
   @Min(0)
@@ -38,16 +13,7 @@ export class UpdateInstallationPricingDto {
   @IsNumber()
   @Min(0)
   @IsOptional()
-  maxSystemSizeKw?: number;
-
-  @ApiPropertyOptional({
-    enum: ProjectType,
-    example: ProjectType.RESIDENTIAL,
-    description: 'Project type',
-  })
-  @IsEnum(ProjectType)
-  @IsOptional()
-  projectType?: ProjectType;
+  maxSystemSizeKw?: number | null;
 
   @ApiPropertyOptional({
     example: {
@@ -92,9 +58,4 @@ export class UpdateInstallationPricingDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
-
-  @ApiPropertyOptional({ example: 'Updated notes' })
-  @IsString()
-  @IsOptional()
-  notes?: string;
 }

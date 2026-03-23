@@ -58,14 +58,7 @@ export class QuoteRepository {
   async findById(id: string, organizationId: string): Promise<QuoteEntity> {
     const quote = await this.repository.findOne({
       where: { id, organizationId },
-      relations: [
-        'customer',
-        'salesPerson',
-        'reseller',
-        'property',
-        'versions',
-        'versions.lineItems',
-      ],
+      relations: ['customer', 'salesPerson', 'reseller', 'property', 'versions'],
     });
 
     if (!quote) {
@@ -143,13 +136,14 @@ export class QuoteRepository {
       );
     }
 
-    // Pagination
-    query.skip((page - 1) * limit).take(limit);
-
-    // Order by date desc
-    query.orderBy('quote.createdAt', 'DESC');
-
-    const [quotes, total] = await query.getManyAndCount();
+    // Split getCount + getMany to avoid TypeORM getManyAndCount crash
+    // when leftJoinAndSelect is combined with orderBy on a joined alias.
+    const total = await query.getCount();
+    const quotes = await query
+      .orderBy('quote.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
 
     return { quotes, total };
   }
@@ -236,10 +230,15 @@ export class QuoteRepository {
       qb.addOrderBy('customer.lastName', sortDirection, 'NULLS LAST');
     }
 
-    // ===== Pagination =====
-    qb.skip((query.page - 1) * query.limit).take(query.limit);
+    // Split getCount + getMany to avoid TypeORM getManyAndCount crash
+    // when leftJoinAndSelect is combined with addOrderBy on a joined alias.
+    const total = await qb.getCount();
+    const quotes = await qb
+      .skip((query.page - 1) * query.limit)
+      .take(query.limit)
+      .getMany();
 
-    return qb.getManyAndCount();
+    return [quotes, total];
   }
 
   /**

@@ -1,5 +1,5 @@
 import { SubsidySchemeType, ProjectType, type SubsidyTier } from '@oneohm-epc/shared/types';
-import { Column, Entity, JoinColumn, ManyToOne, Index } from 'typeorm';
+import { Column, DeleteDateColumn, Entity, JoinColumn, ManyToOne, Index } from 'typeorm';
 
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
@@ -191,12 +191,19 @@ export class SubsidyConfiguration extends BaseEntity {
   })
   effectiveTo?: Date;
 
+  // ==================== Audit ====================
+
+  @DeleteDateColumn({ type: 'timestamptz', name: 'deleted_at', nullable: true })
+  deletedAt?: Date;
+
+  @Column({ type: 'uuid', name: 'created_by', nullable: true })
+  createdBy?: string;
+
+  @Column({ type: 'uuid', name: 'updated_by', nullable: true })
+  updatedBy?: string;
+
   // ==================== Relationships ====================
 
-  /**
-   * Organization relationship
-   * @lazy Load with: .relations(['organization'])
-   */
   @ManyToOne(() => OrganizationEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'organization_id' })
   organization?: OrganizationEntity;

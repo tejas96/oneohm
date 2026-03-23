@@ -4,7 +4,6 @@ import {
   IsArray,
   IsBoolean,
   IsInt,
-  IsNumber,
   IsObject,
   IsOptional,
   IsString,
@@ -14,8 +13,8 @@ import {
 
 import {
   GstConfigDto,
-  WattageRoundingConfigDto,
   PaymentMilestoneDto,
+  ProfitMarginTierDto,
 } from './create-quote-configuration.dto';
 
 /**
@@ -47,13 +46,6 @@ export class UpdateQuoteConfigurationDto {
   @Type(() => GstConfigDto)
   gstConfig?: GstConfigDto;
 
-  @ApiPropertyOptional({ type: WattageRoundingConfigDto })
-  @IsObject()
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => WattageRoundingConfigDto)
-  wattageRounding?: WattageRoundingConfigDto;
-
   @ApiPropertyOptional({ type: [PaymentMilestoneDto] })
   @IsArray()
   @IsOptional()
@@ -61,16 +53,17 @@ export class UpdateQuoteConfigurationDto {
   @Type(() => PaymentMilestoneDto)
   paymentMilestones?: PaymentMilestoneDto[];
 
+  @ApiPropertyOptional({ type: [ProfitMarginTierDto] })
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => ProfitMarginTierDto)
+  profitMarginTiers?: ProfitMarginTierDto[];
+
   @ApiPropertyOptional({ example: true })
   @IsBoolean()
   @IsOptional()
   showInventoryStock?: boolean;
-
-  @ApiPropertyOptional({ example: 15 })
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  minProfitMarginPercent?: number;
 
   @ApiPropertyOptional({ example: true })
   @IsBoolean()

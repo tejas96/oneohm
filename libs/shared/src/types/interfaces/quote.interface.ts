@@ -1,4 +1,4 @@
-import type { PanelTechnology, PhaseType, StructureType } from '../enums/product.enum';
+import type { PanelTechnology, PhaseType, ProjectType, StructureType } from '../enums/product.enum';
 import type { DcrPreference, QuoteCalculationMode } from '../enums/quote.enum';
 
 /**
@@ -48,6 +48,15 @@ export interface CalculatorInputs {
   preferredInverterBrand?: string;
   preferredInverterCapacityKw?: number;
   subsidyApplicable: boolean;
+  selectedSubsidyIds?: string[];
+  manualDcrPanelCount?: number;
+  manualNonDcrPanelCount?: number;
+  manualInverterCount?: number;
+  systemSizeKw?: number;
+  projectType?: ProjectType;
+  actualSystemSizeKw?: number;
+  actualDcrSizeKw?: number;
+  actualNonDcrSizeKw?: number;
 }
 
 /**
@@ -59,9 +68,9 @@ export interface PricingBreakdown {
   basePrice: number;
   /** Base price after discount applied (before GST recalculation) */
   discountedBasePrice?: number;
-  /** GST at 5% on solar equipment (panels + inverters) */
+  /** GST on the equipment-weighted portion of the base at organization-configurable rate */
   gst5OnEquipment: number;
-  /** GST at 18% on services (structure + installation) */
+  /** GST on the services-weighted portion of the base at organization-configurable rate */
   gst18OnServices: number;
   totalGst: number;
   totalPrice: number;
@@ -91,6 +100,8 @@ export interface GstConfiguration {
 /**
  * Subsidy Configuration Interface
  * Rules for auto-calculating subsidy based on system size
+ *
+ * @deprecated Use SubsidyConfig from quote-calculator.interface.ts
  */
 export interface SubsidyConfiguration {
   /** Minimum system size in kW */
