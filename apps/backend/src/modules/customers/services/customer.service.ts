@@ -92,6 +92,20 @@ export class CustomerService {
     // Step 5: Generate human-readable code
     await this.assignCustomerCode(customer, organizationId);
 
+    // Step 6: Resolve group assignment (best-effort — does not roll back the customer on error)
+    try {
+      await this.resolveGroupAssignment(
+        customer,
+        organizationId,
+        createDto.groupCode,
+        createDto.groupName,
+      );
+    } catch (err: unknown) {
+      this.logger.warn(`Group assignment failed for customer ${customer.id}: ${String(err)}`);
+      // Customer is already persisted; surface the error so the caller can retry assignment
+      throw err;
+    }
+
     this.logger.log(`Customer profile created: ${customer.id}`);
     return customer;
   }
@@ -219,13 +233,34 @@ export class CustomerService {
       }
     }
 
+    // Strip group fields from the base update — group assignment is handled below
+    // to ensure validation (code exists) happens before any DB write
+    const {
+      groupCode: groupCodeToStrip,
+      groupName: groupNameToStrip,
+      ...profileUpdateFields
+    } = updateDto;
+    void groupCodeToStrip;
+    void groupNameToStrip;
+
     const updated = await this.customerRepository.update(id, {
-      ...updateDto,
+      ...profileUpdateFields,
       updatedBy,
     });
 
     if (!updated) {
       throw new NotFoundException(`Customer with ID '${id}' not found`);
+    }
+
+    // Resolve group assignment if group fields were provided in update
+    if (updateDto.groupCode !== undefined || updateDto.groupName !== undefined) {
+      // Treat empty strings the same as null for group clearing
+      const resolvedCode = updateDto.groupCode === '' ? null : updateDto.groupCode;
+      const resolvedName = updateDto.groupName === '' ? null : updateDto.groupName;
+      await this.resolveGroupAssignment(updated, organizationId, resolvedCode, resolvedName);
+      // Re-fetch after group update to return accurate state
+      const refreshed = await this.customerRepository.findById(id);
+      if (refreshed) return refreshed;
     }
 
     this.logger.log(`Customer updated successfully: ${id}`);
@@ -448,6 +483,16 @@ export class CustomerService {
     return user;
   }
 
+  /**
+   * Returns distinct customer groups for an organization.
+   * Used by the GET /customers/groups endpoint.
+   */
+  async getDistinctGroups(
+    organizationId: string,
+  ): Promise<{ groupCode: string; groupName: string }[]> {
+    return this.customerRepository.findDistinctGroups(organizationId);
+  }
+
   /** Generate and assign a human-readable customer code (non-fatal on failure) */
   private async assignCustomerCode(
     customer: CustomerProfileEntity,
@@ -468,6 +513,59 @@ export class CustomerService {
       customer.customerCode = customerCode;
     } catch (err: unknown) {
       this.logger.warn(`Failed to generate customer code for ${customer.id}: ${String(err)}`);
+    }
+  }
+
+  /**
+   * Resolves group assignment for a customer.
+   * - If both groupCode and groupName are null/undefined: no group change
+   * - If groupCode is provided: validates it exists in the org, then assigns
+   * - If only groupName is provided (no groupCode): generates a new group code
+   * - If both are explicitly null: removes the customer from any group
+   */
+  private async resolveGroupAssignment(
+    customer: CustomerProfileEntity,
+    organizationId: string,
+    groupCode?: string | null,
+    groupName?: string | null,
+  ): Promise<void> {
+    // Explicit null/empty means remove from group
+    if (groupCode === null && groupName === null) {
+      await this.customerRepository.update(customer.id, {
+        groupCode: null,
+        groupName: null,
+      } as unknown as Partial<CustomerProfileEntity>);
+      customer.groupCode = undefined;
+      customer.groupName = undefined;
+      return;
+    }
+
+    // Neither field provided — nothing to do
+    if (groupCode === undefined && groupName === undefined) return;
+
+    if (groupCode) {
+      // Joining an existing group: validate it exists
+      const exists = await this.customerRepository.groupCodeExists(organizationId, groupCode);
+      if (!exists) {
+        throw new BadRequestException(
+          `Group code '${groupCode}' does not exist in this organization`,
+        );
+      }
+      await this.customerRepository.update(customer.id, {
+        groupCode,
+        groupName: groupName ?? undefined,
+      });
+      customer.groupCode = groupCode;
+      customer.groupName = groupName ?? undefined;
+    } else if (groupName) {
+      // Creating a new group: generate a code
+      const newGroupCode = await this.customerRepository.generateGroupCode(organizationId);
+      await this.customerRepository.update(customer.id, {
+        groupCode: newGroupCode,
+        groupName,
+      });
+      customer.groupCode = newGroupCode;
+      customer.groupName = groupName;
     }
   }
 }

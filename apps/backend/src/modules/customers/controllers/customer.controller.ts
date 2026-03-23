@@ -118,6 +118,38 @@ export class CustomerController {
   }
 
   /**
+   * Get distinct customer groups for the organization
+   * Returns all (groupCode, groupName) pairs used to populate the group selector.
+   * NOTE: Must be defined BEFORE :id routes to avoid route conflicts.
+   */
+  @Get('groups')
+  @ApiOperation({
+    summary: 'Get customer groups',
+    description:
+      'Returns all distinct customer groups (code + name pairs) for the organization. ' +
+      'Used to populate the group selector when creating or editing a customer.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'List of distinct customer groups',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          groupCode: { type: 'string', example: 'GRP-0001' },
+          groupName: { type: 'string', example: 'Sunshine Apartments' },
+        },
+      },
+    },
+  })
+  async getGroups(
+    @OrganizationContext() organizationId: string,
+  ): Promise<{ groupCode: string; groupName: string }[]> {
+    return this.customerService.getDistinctGroups(organizationId);
+  }
+
+  /**
    * Check if phone/email is already registered
    * Used to prevent duplicate customer creation in the lead wizard
    * NOTE: This MUST be defined BEFORE :id routes to avoid route conflicts

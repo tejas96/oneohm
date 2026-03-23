@@ -166,6 +166,7 @@ export function CustomerListPage(): JSX.Element {
   // Filter state
   const [statusFilter, setStatusFilter] = useState(initialStatus);
   const [leadSourceFilter, setLeadSourceFilter] = useState(initialLeadSource);
+  const [groupSearch, setGroupSearch] = useState(searchParams.get('groupSearch') || '');
   const [sortBy, setSortBy] = useState<CustomerSortField>(initialSortBy);
   const [sortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder);
 
@@ -173,6 +174,7 @@ export function CustomerListPage(): JSX.Element {
   const debouncedSearch = useDebounce(searchInput, SEARCH_DEBOUNCE_MS);
   const debouncedStatusFilter = useDebounce(statusFilter, SEARCH_DEBOUNCE_MS);
   const debouncedLeadSourceFilter = useDebounce(leadSourceFilter, SEARCH_DEBOUNCE_MS);
+  const debouncedGroupSearch = useDebounce(groupSearch, SEARCH_DEBOUNCE_MS);
   const debouncedSortBy = useDebounce(sortBy, SEARCH_DEBOUNCE_MS);
   const debouncedSortOrder = useDebounce(sortOrder, SEARCH_DEBOUNCE_MS);
 
@@ -184,6 +186,7 @@ export function CustomerListPage(): JSX.Element {
     setSearchInput(searchParams.get('search') || '');
     setStatusFilter(searchParams.get('status') || 'all');
     setLeadSourceFilter(searchParams.get('leadSource') || 'all');
+    setGroupSearch(searchParams.get('groupSearch') || '');
     setSortBy(getValidSortField(searchParams.get('sortBy')));
     setSortOrder(getValidSortOrder(searchParams.get('sortOrder')));
   }, [searchParamsString]);
@@ -196,7 +199,13 @@ export function CustomerListPage(): JSX.Element {
       return;
     }
     setPage(1);
-  }, [debouncedSearch, debouncedStatusFilter, debouncedLeadSourceFilter, pageSize]);
+  }, [
+    debouncedSearch,
+    debouncedStatusFilter,
+    debouncedLeadSourceFilter,
+    debouncedGroupSearch,
+    pageSize,
+  ]);
 
   // Sync state to URL when filters change
   useEffect(() => {
@@ -206,6 +215,7 @@ export function CustomerListPage(): JSX.Element {
     if (debouncedSearch) params.set('search', debouncedSearch);
     if (statusFilter !== 'all') params.set('status', statusFilter);
     if (leadSourceFilter !== 'all') params.set('leadSource', leadSourceFilter);
+    if (groupSearch) params.set('groupSearch', groupSearch);
     if (sortBy !== CustomerSortField.CREATED_AT) params.set('sortBy', sortBy);
     if (sortOrder !== SortOrder.DESC) params.set('sortOrder', sortOrder);
 
@@ -214,7 +224,16 @@ export function CustomerListPage(): JSX.Element {
 
     // Use replaceState to avoid adding to history on every filter change
     window.history.replaceState({}, '', newUrl);
-  }, [page, pageSize, debouncedSearch, statusFilter, leadSourceFilter, sortBy, sortOrder]);
+  }, [
+    page,
+    pageSize,
+    debouncedSearch,
+    statusFilter,
+    leadSourceFilter,
+    groupSearch,
+    sortBy,
+    sortOrder,
+  ]);
 
   // Modal state
   const [selectedCustomer] = useState<Customer | null>(null);
@@ -237,6 +256,7 @@ export function CustomerListPage(): JSX.Element {
     status: debouncedStatusFilter !== 'all' ? (debouncedStatusFilter as CustomerStatus) : undefined,
     leadSource:
       debouncedLeadSourceFilter !== 'all' ? (debouncedLeadSourceFilter as LeadSource) : undefined,
+    groupSearch: debouncedGroupSearch.length >= 2 ? debouncedGroupSearch : undefined,
     sortBy: debouncedSortBy,
     sortOrder: debouncedSortOrder,
   });
@@ -270,12 +290,14 @@ export function CustomerListPage(): JSX.Element {
   };
 
   // Check if any filters are active
-  const hasActiveFilters = statusFilter !== 'all' || leadSourceFilter !== 'all' || debouncedSearch;
+  const hasActiveFilters =
+    statusFilter !== 'all' || leadSourceFilter !== 'all' || debouncedSearch || groupSearch;
 
   // Clear all filters
   const clearAllFilters = (): void => {
     setStatusFilter('all');
     setLeadSourceFilter('all');
+    setGroupSearch('');
     setSearchInput('');
     setSortBy(CustomerSortField.CREATED_AT);
     setSortOrder(SortOrder.DESC);
@@ -358,6 +380,15 @@ export function CustomerListPage(): JSX.Element {
                     {customer.propertyCount}
                   </span>
                 </div>
+                {customer.groupCode && (
+                  <div className="mt-0.5">
+                    <span className="px-1 py-0.5 text-2xs rounded bg-info/10 text-info font-medium">
+                      {customer.groupName
+                        ? `${customer.groupName} (${customer.groupCode})`
+                        : customer.groupCode}
+                    </span>
+                  </div>
+                )}
               </div>
             </Link>
           );
@@ -425,17 +456,20 @@ export function CustomerListPage(): JSX.Element {
         header: 'Lead Source',
         enableSorting: false,
         cell: ({ row }) => {
-          const source = row.original.leadSource as LeadSource | undefined;
-          if (!source) return <span className="text-foreground-tertiary">-</span>;
+          const rawSource = row.original.leadSource;
+          if (!rawSource) return <span className="text-foreground-tertiary">-</span>;
+
+          const isKnown = Object.values(LeadSource).includes(rawSource as LeadSource);
+          const displayLabel = isKnown
+            ? LEAD_SOURCE_LABELS[rawSource as LeadSource] || rawSource
+            : rawSource.charAt(0).toUpperCase() + rawSource.slice(1);
+          const colorClass = isKnown
+            ? LEAD_SOURCE_COLORS[rawSource as LeadSource] || 'bg-muted text-foreground-secondary'
+            : 'bg-muted text-foreground-secondary';
 
           return (
-            <span
-              className={cn(
-                'px-1.5 py-0.5 text-2xs font-medium rounded',
-                LEAD_SOURCE_COLORS[source] || 'bg-muted text-foreground-secondary',
-              )}
-            >
-              {LEAD_SOURCE_LABELS[source] || source}
+            <span className={cn('px-1.5 py-0.5 text-2xs font-medium rounded', colorClass)}>
+              {displayLabel}
             </span>
           );
         },
@@ -657,7 +691,7 @@ export function CustomerListPage(): JSX.Element {
         <div className="relative w-72">
           <Input
             type="text"
-            placeholder="Search by name, phone, email, or city..."
+            placeholder="Search by name, phone, email, city, or group..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             leftIcon={<Search className="size-icon-sm" />}
@@ -710,6 +744,33 @@ export function CustomerListPage(): JSX.Element {
             ))}
           </SelectContent>
         </Select>
+
+        {/* Group Search */}
+        <div className="relative">
+          <Input
+            type="text"
+            placeholder="Filter by group..."
+            value={groupSearch}
+            onChange={(e) => {
+              setGroupSearch(e.target.value);
+              setPage(1);
+            }}
+            leftIcon={<Search className="size-icon-sm" />}
+            className="h-8 text-sm w-44"
+          />
+          {groupSearch && (
+            <button
+              type="button"
+              onClick={() => {
+                setGroupSearch('');
+                setPage(1);
+              }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded"
+            >
+              <X className="size-3.5 text-foreground-tertiary" />
+            </button>
+          )}
+        </div>
 
         {/* Clear Filters - only show when filters active */}
         {hasActiveFilters && (

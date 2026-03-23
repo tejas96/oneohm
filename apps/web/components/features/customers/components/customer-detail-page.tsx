@@ -455,10 +455,42 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                 </label>
                 <div className="mt-1">
                   <Badge variant="secondary" size="xs">
-                    {customer.leadSource || 'Not specified'}
+                    {(() => {
+                      const src = customer.leadSource;
+                      if (!src) return 'Not specified';
+                      // If it's a known enum value, return friendly label
+                      const knownLabels: Record<string, string> = {
+                        referral: 'Referral',
+                        walk_in: 'Walk-in',
+                        social_media: 'Social Media',
+                        website: 'Website',
+                        exhibition: 'Exhibition',
+                        cold_call: 'Cold Call',
+                        advertisement: 'Advertisement',
+                        reseller: 'Reseller',
+                        other: 'Other',
+                      };
+                      return knownLabels[src] ?? src;
+                    })()}
                   </Badge>
                 </div>
               </div>
+
+              {/* Customer Group */}
+              {customer.groupCode && (
+                <div>
+                  <label className="text-2xs font-medium uppercase tracking-wider text-foreground-secondary">
+                    Customer Group
+                  </label>
+                  <div className="mt-1">
+                    <Badge variant="secondary" size="xs">
+                      {customer.groupName
+                        ? `${customer.groupName} (${customer.groupCode})`
+                        : customer.groupCode}
+                    </Badge>
+                  </div>
+                </div>
+              )}
 
               {/* Created By */}
               <div>

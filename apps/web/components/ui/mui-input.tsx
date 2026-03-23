@@ -269,6 +269,15 @@ const MUIInputInner = (
     required: stripReq,
     tooltip: stripTip,
     ref: registerRef,
+    // Strip CommonExtras that must not reach the DOM
+    error: stripError,
+    success: stripSuccess,
+    startIcon: stripStartIcon,
+    endIcon: stripEndIcon,
+    onEndIconClick: stripOnEndIconClick,
+    loading: stripLoading,
+    clearable: stripClearable,
+    onClear: stripOnClear,
     ...textFieldProps
   } = props as BaseFieldProps & { ref?: React.Ref<HTMLInputElement> };
   /* eslint-enable @typescript-eslint/no-unused-vars */

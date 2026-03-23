@@ -33,6 +33,10 @@ export class CustomerResponseDto {
 
   @ApiPropertyOptional()
   @Expose()
+  middleName?: string;
+
+  @ApiPropertyOptional()
+  @Expose()
   lastName?: string;
 
   @ApiPropertyOptional()
@@ -76,6 +80,15 @@ export class CustomerResponseDto {
   @ApiPropertyOptional()
   @Expose()
   referralCode?: string;
+
+  // ==================== Customer Group ====================
+  @ApiPropertyOptional()
+  @Expose()
+  groupCode?: string;
+
+  @ApiPropertyOptional()
+  @Expose()
+  groupName?: string;
 
   // ==================== Status ====================
   @ApiProperty({ enum: CustomerStatus })

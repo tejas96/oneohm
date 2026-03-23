@@ -1,5 +1,6 @@
 'use client';
 
+import { LeadSource } from '@oneohm-epc/shared/types';
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -78,12 +79,27 @@ export function useCreateCustomer(): UseMutationResult<
 
   return useMutation({
     mutationFn: async (data: CreateCustomerProfileFormData): Promise<CustomerResponse> => {
+      // Resolve leadSource: if user selected "other", use the typed text as leadSource
+      const leadSourceValue = data.leadSource ?? undefined;
+      const resolvedLeadSource =
+        leadSourceValue === LeadSource.OTHER
+          ? (data.leadSourceOther ?? undefined)
+          : leadSourceValue;
+
+      // Strip form-only fields before sending to API
+      const { leadSourceOther: leadSourceOtherVal, ...rest } = data;
+      void leadSourceOtherVal; // intentionally unused — already resolved above
+
       const payload = {
-        ...data,
+        ...rest,
         phone: `+91${data.phone}`,
         alternatePhone: data.alternatePhone ? `+91${data.alternatePhone}` : undefined,
         email: data.email ? data.email.trim().toLowerCase() : undefined,
         country: 'India',
+        leadSource: resolvedLeadSource,
+        // If groupCode is empty string, don't send it (backend only accepts valid code or nothing)
+        groupCode: data.groupCode || undefined,
+        groupName: data.groupName || undefined,
       };
 
       const { data: response } = await apiClient.post<CustomerResponse>('/customers', payload, {

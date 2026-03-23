@@ -102,6 +102,15 @@ export class CustomerQueryDto {
   leadSource?: LeadSource;
 
   @ApiPropertyOptional({
+    description: 'Filter by customer group name or code (partial match, case-insensitive).',
+    example: 'GRP-0001',
+  })
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }: { value: string }) => value?.trim())
+  groupSearch?: string;
+
+  @ApiPropertyOptional({
     description: 'Filter by creator - use "me" for current user or provide userId',
     example: 'me',
   })
