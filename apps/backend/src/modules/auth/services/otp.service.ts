@@ -16,6 +16,7 @@ import { MoreThan } from 'typeorm';
 import { ConfigService } from '../../../config/config.service';
 import { SecurityEventRepository } from '../../security-events/repositories/security-event.repository';
 import { SecurityEventService } from '../../security-events/services/security-event.service';
+import { SmsService } from '../services/sms.service';
 /**
  * OTP Service
  * Handles OTP generation, storage, and verification
@@ -38,6 +39,7 @@ export class OtpService {
     private readonly securityEventService: SecurityEventService,
     private readonly securityEventRepository: SecurityEventRepository,
     private readonly configService: ConfigService,
+    private readonly smsService: SmsService,
   ) {
     this.isDevelopment = this.configService.isDevelopment;
     if (this.isDevelopment) {
@@ -104,6 +106,13 @@ export class OtpService {
 
     this.logger.log(`OTP generated for ${phone} (expires in ${this.OTP_EXPIRY_SECONDS}s)`);
 
+    try {
+      await this.smsService.sendOtp(phone, otp);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`OTP generated but SMS failed: ${errorMessage}`);
+      // Decide: reject or allow verify with test OTP?
+    }
     return { otp, expiresAt };
   }
 

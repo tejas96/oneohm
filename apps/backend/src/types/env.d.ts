@@ -74,5 +74,6 @@ declare namespace NodeJS {
     MSG91_AUTH_KEY?: string;
     MSG91_SENDER_ID?: string;
     MSG91_DLT_TEMPLATE_ID?: string;
+    MSG91_FLOW_ID?: string;
   }
 }
