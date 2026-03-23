@@ -5,6 +5,7 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -33,6 +34,7 @@ import {
   CreateCustomerDto,
   CustomerQueryDto,
   CustomerResponseDto,
+  UpdateAssigneeDto,
   UpdateCustomerDto,
   UpdateCustomerStatusDto,
 } from '../dto';
@@ -299,6 +301,41 @@ export class CustomerController {
       id,
       organizationId,
       statusDto.status,
+      currentUser.id,
+    );
+    return toDto(CustomerResponseDto, customer);
+  }
+
+  /**
+   * Assign or unassign a customer to a user
+   * Send assigneeId as a valid UUID to assign, or null to unassign.
+   */
+  // @RequirePermission('customers:update') // TODO: Re-enable
+  @Patch(':id/assignee')
+  @ApiOperation({
+    summary: 'Assign or unassign a customer',
+    description:
+      'Assign a customer to a user (field worker). Send assigneeId as a UUID to assign, or null to unassign. ' +
+      'Assignee must be an active employee in the same organization. ' +
+      'Organization ID must be provided via query parameter (?organizationId=xxx) or header (X-Organization-Id).',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Customer assignee updated',
+    type: CustomerResponseDto,
+  })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Customer or assignee user not found' })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Assignee is not in this org or is inactive' })
+  async assignCustomer(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() assigneeDto: UpdateAssigneeDto,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<CustomerResponseDto> {
+    const customer = await this.customerService.assignCustomer(
+      id,
+      organizationId,
+      assigneeDto.assigneeId,
       currentUser.id,
     );
     return toDto(CustomerResponseDto, customer);

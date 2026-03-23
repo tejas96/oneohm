@@ -2,6 +2,7 @@
 export * from './create-customer.dto';
 export * from './update-customer.dto';
 export * from './update-customer-status.dto';
+export * from './update-assignee.dto';
 export * from './customer-response.dto';
 export * from './check-availability.dto';
 export * from './customer-query.dto';

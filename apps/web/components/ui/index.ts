@@ -205,6 +205,10 @@ export type { MUIDatePickerProps } from './mui-date-picker';
 export { MUIFieldLabel, mergeRefs } from './mui-shared';
 export type { MUIFieldLabelProps } from './mui-shared';
 
+// MUI User Assignee Selector
+export { MUIUserAssigneeSelector } from './mui-user-assignee-selector';
+export type { MUIUserAssigneeSelectorProps } from './mui-user-assignee-selector';
+
 // Sonner (Toasts)
 export { Toaster, showToast } from './sonner';
 

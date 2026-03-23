@@ -154,4 +154,20 @@ export class CustomerResponseDto {
     return `${firstName} ${lastName}`.trim() || undefined;
   })
   creatorName?: string;
+
+  // ==================== Assignee ====================
+
+  @ApiPropertyOptional({ description: 'ID of the user this customer is assigned to' })
+  @Expose()
+  assigneeId?: string;
+
+  @ApiPropertyOptional({ description: 'Full name of the assigned user' })
+  @Expose()
+  @Transform(({ obj }) => {
+    if (!obj.assigneeId || !obj.assignee) return undefined;
+    const firstName = obj.assignee.firstName || '';
+    const lastName = obj.assignee.lastName || '';
+    return `${firstName} ${lastName}`.trim() || undefined;
+  })
+  assigneeName?: string;
 }
