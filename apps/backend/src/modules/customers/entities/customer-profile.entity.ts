@@ -123,4 +123,12 @@ export class CustomerProfileEntity extends BaseEntity {
   @ManyToOne(() => UserEntity, { createForeignKeyConstraints: false })
   @JoinColumn({ name: 'updated_by' })
   updater?: UserEntity;
+
+  // ==================== Assignee ====================
+  @Column({ name: 'assignee_id', type: 'uuid', nullable: true })
+  assigneeId?: string;
+
+  @ManyToOne(() => UserEntity, { createForeignKeyConstraints: false })
+  @JoinColumn({ name: 'assignee_id' })
+  assignee?: UserEntity;
 }

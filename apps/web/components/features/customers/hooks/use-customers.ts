@@ -75,6 +75,8 @@ export interface Customer {
   createdBy?: string;
   updatedBy?: string;
   creatorName?: string;
+  assigneeId?: string;
+  assigneeName?: string;
 }
 
 export type { PaginationMeta };
@@ -263,6 +265,41 @@ export function useUpdateCustomerStatus(): UseMutationResult<
       void queryClient.invalidateQueries({
         queryKey: [...customerKeys.all(organizationId), 'stats'],
       });
+    },
+  });
+}
+
+/**
+ * Hook to assign or unassign a customer to a user.
+ * Pass assigneeId as a UUID to assign, or null to unassign.
+ */
+export function useAssignCustomer(): UseMutationResult<
+  Customer,
+  AxiosError,
+  { id: string; assigneeId: string | null }
+> {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
+
+  return useMutation({
+    mutationFn: async ({ id, assigneeId }): Promise<Customer> => {
+      const { data: response } = await apiClient.patch<Customer>(
+        `/customers/${id}/assignee`,
+        { assigneeId },
+        { headers: { 'X-Organization-Id': organizationId } },
+      );
+      return response;
+    },
+    onSuccess: (updatedCustomer) => {
+      // Update the detail cache immediately so the UI reflects the new assignee without a refetch
+      queryClient.setQueryData(
+        customerKeys.detail(organizationId, updatedCustomer.id),
+        updatedCustomer,
+      );
+      // Do NOT invalidate the list queries here — assigning an employee to a customer
+      // does not change what appears in the customer list, and triggering a full list
+      // refetch would cause a spurious /customers pagination request every time.
     },
   });
 }

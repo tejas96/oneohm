@@ -11,6 +11,36 @@ Think before writing. Challenge bad patterns. Own the quality.
 
 ---
 
+## UI Stack — MUI First (Active Migration)
+
+The project is **actively migrating away from Tailwind CSS and Radix UI toward MUI (`@mui/material`)**.
+
+### Rules
+- **All new UI components MUST be built with MUI** — no new Tailwind classes or Radix primitives.
+- **Icons MUST come from `@mui/icons-material`** — do NOT use `lucide-react` for new code.
+- **Do NOT extend or build on top of Radix** — those components are being deprecated.
+- If a new reusable primitive is needed and no MUI wrapper exists yet, build a new `mui-*.tsx` file in `components/ui/` following existing patterns.
+- When touching legacy Tailwind/Radix components, do not mix in MUI — keep changes consistent with whichever system that file already uses (migration is planned, not ad-hoc).
+
+### Existing MUI Component Library (`components/ui/`)
+
+Search here BEFORE building anything new:
+
+| Component | File | Use For |
+|-----------|------|---------|
+| `MUIInput` | `mui-input.tsx` | Text inputs, autocomplete fields |
+| `MUISelect` | `mui-select.tsx` | Dropdowns / single-select |
+| `MUIDialog` | `mui-dialog.tsx` | Modal dialogs with actions |
+| `MUISwitch` | `mui-switch.tsx` | Toggle switches |
+| `MUIDatePicker` | `mui-date-picker.tsx` | Date selection |
+| `MUIUserAssigneeSelector` | `mui-user-assignee-selector.tsx` | User/employee assignment popover with search |
+| `MUIFieldLabel` | `mui-shared.tsx` | Consistent field labels |
+| `mergeRefs`, `setRef` | `mui-shared.tsx` | Ref utilities |
+
+All exports are re-exported from `components/ui/index.ts` — import from `@/components/ui`.
+
+---
+
 ## Implementation Discipline
 
 BEFORE writing ANY code:
@@ -58,7 +88,9 @@ UI = render only. Logic = hooks only. Never mix.
 
 ---
 
-## Styling Tokens
+## Styling Tokens (Legacy Tailwind — Do Not Use In New Code)
+
+These tokens are defined in the Tailwind config and are used by existing components. New code uses MUI `sx` / `theme.palette` instead. Reference only when editing existing Tailwind components.
 
 Colors (dark → light):
 - text-foreground (#18181b), text-foreground-secondary (#52525b), text-foreground-tertiary (#71717a), text-foreground-muted (#a1a1aa)
@@ -131,7 +163,10 @@ Layout:
 - any type - type properly (`as never` for polymorphic refs, `unknown` + narrowing elsewhere)
 - Deep imports - use barrel (`@/lib/hooks`, `@/components/ui`, `../hooks`)
 - Dead code - delete immediately
-- Inline SVGs - use lucide-react
+- Inline SVGs - use `@mui/icons-material`
+- Icons from `lucide-react` in new code - use `@mui/icons-material`
+- New Tailwind classes in new components - MUI `sx` prop or `styled()`
+- New Radix primitives in new components - use MUI equivalents (`Popover`, `Dialog`, `Select`, etc.)
 - Redefine backend types - import from `@oneohm-epc/shared/types`
 - useQuery/useMutation in components - extract to `hooks/use-*.ts` files
 - Raw useQuery/useMutation in new feature hooks - use FDAL core hooks (`useResourceList`, `useResourceMutations`, etc.)
@@ -140,7 +175,7 @@ Layout:
 - rounded-xl/2xl - use rounded-lg
 - Magic pixels (w-6, h-12) - use tokens (size-icon-lg, h-input-md)
 - Arbitrary font sizes (text-[11px], text-[13px]) - use text tokens (text-section=10px, text-2xs, text-xs, text-sm)
-- Inline styles - use Tailwind classes (exception: dynamic computed CSS like percentage widths)
+- Inline styles - use MUI `sx` prop (exception: dynamic computed CSS like percentage widths)
 - console.log - remove before commit
 - Skip edge cases - add to TODO if not handled
 - Repeat same work - search first
@@ -167,7 +202,7 @@ Layout:
 - State: TanStack Query (server) | Zustand (global UI) | useState (local)
 - Data hooks: compose from FDAL core (`lib/hooks/core/`) — never rewrite fetch/cache/pagination/filter logic per feature
 - Files: kebab-case.tsx, hooks as use-*.ts, schemas as *.schema.ts
-- Icons: from lucide-react
+- Icons: from `@mui/icons-material`
 - Navigation: use lib/config/navigation.ts with ROUTES constants
 - Layout: use components/layout/ (Rail, Panel, Header)
 - API calls: use lib/api/client.ts (has auth interceptors, base URL = `/api/v1`)

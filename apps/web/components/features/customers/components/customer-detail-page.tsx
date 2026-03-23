@@ -11,6 +11,7 @@ import {
   QUOTE_STATUS_BADGE_VARIANT,
 } from '../constants';
 import {
+  useAssignCustomer,
   useCustomer,
   useCustomerProperties,
   useCustomerQuotes,
@@ -24,8 +25,10 @@ import { PropertyCard } from './property-card';
 import { PropertySelectModal } from './property-select-modal';
 import { UploadDocumentModal } from './upload-document-modal';
 
+import { useEmployees } from '@/components/features/employees';
 import { EditableField, EmptyState } from '@/components/shared';
 import {
+  MUIUserAssigneeSelector,
   Badge,
   Button,
   Breadcrumb,
@@ -139,6 +142,12 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
   const { data: properties, isLoading: isLoadingProperties } = useCustomerProperties(customerId);
   const { data: quotesData, isLoading: isLoadingQuotes } = useCustomerQuotes(customerId);
   const updateCustomerMutation = useUpdateCustomer();
+  const assignCustomerMutation = useAssignCustomer();
+  const {
+    data: employees = [],
+    isLoading: isLoadingEmployees,
+    error: employeesError,
+  } = useEmployees();
   const { user } = useAuth();
 
   useEffect(() => {
@@ -202,6 +211,24 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
       );
     },
     [customerId, updateCustomerMutation],
+  );
+
+  // Assignee change handler
+  const handleAssigneeChange = useCallback(
+    (userId: string | null) => {
+      assignCustomerMutation.mutate(
+        { id: customerId, assigneeId: userId },
+        {
+          onSuccess: () => {
+            showToast.success(userId ? 'Customer assigned successfully' : 'Assignee removed');
+          },
+          onError: (error) => {
+            showToast.error(getErrorMessage(error));
+          },
+        },
+      );
+    },
+    [customerId, assignCustomerMutation],
   );
 
   // Document property filter handler
@@ -504,6 +531,28 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
                     </AvatarFallback>
                   </Avatar>
                   <span className="text-sm text-foreground">{customer.creatorName || 'Self'}</span>
+                </div>
+              </div>
+
+              {/* Assigned To */}
+              <div>
+                <label className="text-2xs font-medium uppercase tracking-wider text-foreground-secondary">
+                  Assigned To
+                </label>
+                <div className="mt-1">
+                  <MUIUserAssigneeSelector
+                    value={customer.assigneeId ?? null}
+                    onChange={handleAssigneeChange}
+                    employees={employees}
+                    employeesLoading={isLoadingEmployees}
+                    employeesError={
+                      employeesError ? 'Failed to load employees. Please try again.' : null
+                    }
+                    loading={assignCustomerMutation.isPending}
+                    allowUnassign
+                    placeholder="Assign user"
+                    triggerMinWidth={180}
+                  />
                 </div>
               </div>
             </div>

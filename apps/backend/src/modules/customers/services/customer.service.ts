@@ -11,6 +11,7 @@ import { CustomerStatus, UserProfileType, UserStatus } from '@oneohm-epc/shared/
 import { normalizePhoneToE164 } from '@oneohm-epc/shared/utils';
 
 import { generateEntityCode } from '../../../common/utils/code-generator.util';
+import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { UserRepository } from '../../users/repositories/user.repository';
 import { ProfileService } from '../../users/services/profile.service';
@@ -42,6 +43,7 @@ export class CustomerService {
     private readonly profileService: ProfileService,
     @Inject(forwardRef(() => UserRepository))
     private readonly userRepository: UserRepository,
+    private readonly employeeProfileRepository: EmployeeProfileRepository,
   ) {}
 
   /**
@@ -418,6 +420,60 @@ export class CustomerService {
     }
 
     return result;
+  }
+
+  /**
+   * Assign or unassign a customer to a user (field worker).
+   * Pass assigneeId as a valid user UUID to assign, or null to unassign.
+   *
+   * Validations when assigning:
+   * - Assignee user must exist
+   * - Assignee must have an active employee profile in the same organization
+   */
+  async assignCustomer(
+    id: string,
+    organizationId: string,
+    assigneeId: string | null,
+    updatedBy?: string,
+  ): Promise<CustomerProfileEntity> {
+    this.logger.log(`Assigning customer ${id} to user ${assigneeId ?? 'null (unassign)'}`);
+
+    await this.findById(id, organizationId);
+
+    if (assigneeId !== null) {
+      // Validate assignee user exists
+      const assigneeUser = await this.userRepository.findById(assigneeId);
+      if (!assigneeUser) {
+        throw new NotFoundException(`User with ID '${assigneeId}' not found`);
+      }
+
+      // Validate assignee has an employee profile in the same organization (cross-org guard)
+      const employeeProfile = await this.employeeProfileRepository.findByUserAndOrganization(
+        assigneeId,
+        organizationId,
+      );
+      if (!employeeProfile) {
+        throw new BadRequestException(`User '${assigneeId}' does not belong to this organization`);
+      }
+
+      // Validate assignee is active
+      if (employeeProfile.status !== UserStatus.ACTIVE) {
+        throw new BadRequestException(`Cannot assign to inactive user '${assigneeId}'`);
+      }
+    }
+
+    const updated = await this.customerRepository.update(id, {
+      // Must use null explicitly so TypeORM sets the column to NULL (undefined = skip field)
+      assigneeId: assigneeId === null ? null : assigneeId,
+      updatedBy,
+    } as Partial<CustomerProfileEntity>);
+
+    if (!updated) {
+      throw new NotFoundException(`Customer with ID '${id}' not found`);
+    }
+
+    this.logger.log(`Customer ${id} assigned to ${assigneeId ?? 'null'} successfully`);
+    return updated;
   }
 
   // ==================== PRIVATE HELPERS ====================

@@ -34,7 +34,7 @@ export class CustomerProfileRepository {
   async findById(id: string): Promise<CustomerProfileEntity | null> {
     return this.repository.findOne({
       where: { id, deletedAt: IsNull() },
-      relations: ['user', 'organization', 'creator'],
+      relations: ['user', 'organization', 'creator', 'assignee'],
     });
   }
 
@@ -95,22 +95,28 @@ export class CustomerProfileRepository {
   }
 
   /**
-   * Find customers created by a specific user
-   * Used for field workers to see only their own customers
+   * Find customers created by or assigned to a specific user.
+   * Used for field workers to see their own and assigned customers.
    */
   async findByCreatedBy(
     organizationId: string,
-    createdBy: string,
+    userId: string,
     page = 1,
     limit = 20,
   ): Promise<[CustomerProfileEntity[], number]> {
-    return this.repository.findAndCount({
-      where: { organizationId, createdBy, deletedAt: IsNull() },
-      relations: ['user', 'organization', 'properties'],
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { createdAt: 'DESC' },
-    });
+    return this.repository
+      .createQueryBuilder('customer')
+      .leftJoinAndSelect('customer.user', 'user')
+      .leftJoinAndSelect('customer.organization', 'organization')
+      .leftJoinAndSelect('customer.properties', 'properties', 'properties.deleted_at IS NULL')
+      .leftJoinAndSelect('customer.assignee', 'assignee')
+      .where('customer.organizationId = :organizationId', { organizationId })
+      .andWhere('customer.deletedAt IS NULL')
+      .andWhere('(customer.createdBy = :userId OR customer.assigneeId = :userId)', { userId })
+      .orderBy('customer.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
   }
 
   async findByPhone(organizationId: string, phone: string): Promise<CustomerProfileEntity[]> {
@@ -210,6 +216,7 @@ export class CustomerProfileRepository {
       .leftJoinAndSelect('customer.user', 'user')
       .leftJoinAndSelect('customer.organization', 'organization')
       .leftJoinAndSelect('customer.properties', 'properties', 'properties.deleted_at IS NULL')
+      .leftJoinAndSelect('customer.assignee', 'assignee')
       .where('customer.organizationId = :organizationId', { organizationId })
       .andWhere('customer.deletedAt IS NULL')
       .andWhere(
@@ -226,9 +233,11 @@ export class CustomerProfileRepository {
         { searchTerm },
       );
 
-    // Filter by creator if specified (for field workers)
+    // Filter by creator OR assignee (for field workers — covers both own-created and assigned)
     if (createdBy) {
-      qb.andWhere('customer.createdBy = :createdBy', { createdBy });
+      qb.andWhere('(customer.createdBy = :createdBy OR customer.assigneeId = :createdBy)', {
+        createdBy,
+      });
     }
 
     qb.orderBy('customer.createdAt', 'DESC');
@@ -262,6 +271,7 @@ export class CustomerProfileRepository {
       .leftJoinAndSelect('customer.organization', 'organization')
       .leftJoinAndSelect('customer.properties', 'properties', 'properties.deleted_at IS NULL')
       .leftJoinAndSelect('customer.creator', 'creator')
+      .leftJoinAndSelect('customer.assignee', 'assignee')
       .where('customer.organizationId = :organizationId', { organizationId })
       .andWhere('customer.deletedAt IS NULL');
 
@@ -320,7 +330,10 @@ export class CustomerProfileRepository {
     }
 
     if (query.createdBy) {
-      qb.andWhere('customer.createdBy = :createdBy', { createdBy: query.createdBy });
+      // Return customers where user is the creator OR the assignee (for field worker "my leads" view)
+      qb.andWhere('(customer.createdBy = :createdBy OR customer.assigneeId = :createdBy)', {
+        createdBy: query.createdBy,
+      });
     }
 
     if (query.fromDate) {

@@ -17,6 +17,7 @@ import { CustomerPropertyService } from './services/customer-property.service';
 import { CustomerService } from './services/customer.service';
 import { FollowupService } from './services/followup.service';
 import { SiteVisitService } from './services/site-visit.service';
+import { EmployeesModule } from '../employees/employees.module';
 import { LoanFinanceModule } from '../loan-finance/loan-finance.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { QuotesModule } from '../quotes/quotes.module';
@@ -39,6 +40,7 @@ import { UsersModule } from '../users/users.module';
       SiteVisitEntity,
     ]),
     forwardRef(() => UsersModule),
+    forwardRef(() => EmployeesModule),
     OrganizationsModule,
     QuotesModule,
     LoanFinanceModule,
