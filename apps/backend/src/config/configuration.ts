@@ -110,6 +110,8 @@ export default (): Configuration => ({
     msg91AuthKey: process.env.MSG91_AUTH_KEY,
     msg91SenderId: process.env.MSG91_SENDER_ID,
     msg91DltTemplateId: process.env.MSG91_DLT_TEMPLATE_ID,
+    msg91FlowId: process.env.MSG91_FLOW_ID,
+    msg91OtpVarKey: process.env.MSG91_OTP_VAR_KEY,
   },
 
   seed: {
