@@ -13,10 +13,10 @@ import {
 import * as bcrypt from 'bcrypt';
 import { MoreThan } from 'typeorm';
 
+import { SmsService } from './sms.service';
 import { ConfigService } from '../../../config/config.service';
 import { SecurityEventRepository } from '../../security-events/repositories/security-event.repository';
 import { SecurityEventService } from '../../security-events/services/security-event.service';
-import { SmsService } from './sms.service';
 /**
  * OTP Service
  * Handles OTP generation, storage, and verification
