@@ -110,6 +110,8 @@ export interface IntegrationsConfig {
   msg91AuthKey?: string;
   msg91SenderId?: string;
   msg91DltTemplateId?: string;
+  msg91FlowId?: string;
+  msg91OtpVarKey?: string;
 }
 
 export interface SeedConfig {

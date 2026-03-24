@@ -15,6 +15,7 @@ import { IntegrationsModule } from '../integrations/integrations.module';
 import { ResellersModule } from '../resellers/resellers.module';
 import { SecurityEventsModule } from '../security-events/security-events.module';
 import { UsersModule } from '../users/users.module';
+import { SmsService } from './services/sms.service';
 
 /**
  * Auth Module
@@ -60,6 +61,7 @@ import { UsersModule } from '../users/users.module';
     // Services
     AuthService,
     OtpService,
+    SmsService,
 
     // Strategies
     JwtStrategy,
@@ -73,7 +75,7 @@ import { UsersModule } from '../users/users.module';
     // Services
     AuthService,
     OtpService,
-
+    SmsService,
     // Guards
     JwtAuthGuard,
 
