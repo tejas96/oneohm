@@ -128,7 +128,7 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
         </TabsContent>
 
         <TabsContent value="documents">
-          <ProjectDocumentsTab projectId={projectId} isActive={activeTab === 'documents'} />
+          <ProjectDocumentsTab projectId={projectId} />
         </TabsContent>
 
         <TabsContent value="payments">
@@ -148,7 +148,7 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
         </TabsContent>
 
         <TabsContent value="surveys">
-          <ProjectSurveysTab survey={project.survey} />
+          <ProjectSurveysTab propertyId={project.propertyId} />
         </TabsContent>
 
         <TabsContent value="activity">

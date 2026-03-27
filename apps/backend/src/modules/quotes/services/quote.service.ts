@@ -254,7 +254,7 @@ export class QuoteService {
     const systemType = updateDto.systemType || currentVersion.systemType;
     const systemSizeKw = updateDto.systemSizeKw || currentVersion.systemSizeKw;
     const totalWattageWp = updateDto.totalWattageWp || currentVersion.totalWattageWp;
-    const projectType = updateDto.projectType || currentVersion.projectType;
+    const projectType = (updateDto.projectType || currentVersion.projectType) as ProjectType;
 
     let pricingBreakdown: PricingBreakdown;
     let finalPrice: number;

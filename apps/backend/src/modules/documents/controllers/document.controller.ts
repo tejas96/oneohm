@@ -1,6 +1,3 @@
-// ============================================
-// IMPORTS
-// ============================================
 import {
   Body,
   Controller,
@@ -9,42 +6,28 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiParam,
-  ApiQuery,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
-import { DocumentStatus, DocumentType } from '@oneohm-epc/shared/types';
-import { plainToInstance } from 'class-transformer';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { OrganizationContext } from '../../../common/decorators';
+import { toDto, toDtoArray } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
 import {
+  BulkCreateDocumentDto,
   CreateDocumentDto,
-  CreateDocumentVersionDto,
   DocumentResponseDto,
-  DocumentVersionResponseDto,
-  SignDocumentDto,
+  QueryDocumentsDto,
   UpdateDocumentDto,
-  UpdateDocumentStatusDto,
-  VerifyDocumentOtpDto,
 } from '../dto';
 import { DocumentService } from '../services/document.service';
 
-/**
- * Document Controller
- * REST API endpoints for document management
- */
 @ApiTags('Documents')
 @ApiBearerAuth()
 @Controller('documents')
@@ -52,258 +35,133 @@ import { DocumentService } from '../services/document.service';
 export class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
 
-  // ============================================
-  // CREATE
-  // ============================================
   @Post()
-  @ApiOperation({ summary: 'Create a new document' })
-  @ApiResponse({
-    status: 201,
-    description: 'Document created successfully',
-    type: DocumentResponseDto,
-  })
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a document record' })
+  @ApiResponse({ status: HttpStatus.CREATED, type: DocumentResponseDto })
   async create(
+    @OrganizationContext() organizationId: string,
     @Body() dto: CreateDocumentDto,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<DocumentResponseDto> {
+    dto.organizationId = organizationId;
     const document = await this.documentService.create(dto, currentUser.id);
-    return plainToInstance(DocumentResponseDto, document, { excludeExtraneousValues: true });
+    return toDto(DocumentResponseDto, document);
   }
 
-  @Post('versions')
-  @ApiOperation({ summary: 'Create a new document version' })
-  @ApiResponse({
-    status: 201,
-    description: 'Document version created successfully',
-    type: DocumentResponseDto,
-  })
-  async createVersion(
-    @Body() dto: CreateDocumentVersionDto,
+  @Post('bulk')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Batch-create document records' })
+  @ApiResponse({ status: HttpStatus.CREATED, type: [DocumentResponseDto] })
+  async createBulk(
+    @OrganizationContext() organizationId: string,
+    @Body() dto: BulkCreateDocumentDto,
     @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<DocumentResponseDto> {
-    const document = await this.documentService.createVersion(dto, currentUser.id);
-    return plainToInstance(DocumentResponseDto, document, { excludeExtraneousValues: true });
+  ): Promise<DocumentResponseDto[]> {
+    for (const doc of dto.documents) {
+      doc.organizationId = organizationId;
+    }
+    const documents = await this.documentService.createBulk(dto.documents, currentUser.id);
+    return toDtoArray(DocumentResponseDto, documents);
   }
 
-  // ============================================
-  // READ
-  // ============================================
   @Get()
-  @ApiOperation({ summary: 'Get all documents (filtered)' })
-  @ApiQuery({ name: 'organizationId', type: String, required: false })
-  @ApiQuery({ name: 'projectId', type: String, required: false })
-  @ApiQuery({ name: 'customerId', type: String, required: false })
-  @ApiQuery({ name: 'quoteId', type: String, required: false })
-  @ApiQuery({ name: 'paymentId', type: String, required: false })
-  @ApiQuery({ name: 'documentType', enum: DocumentType, required: false })
-  @ApiQuery({ name: 'status', enum: DocumentStatus, required: false })
-  @ApiResponse({
-    status: 200,
-    description: 'Documents retrieved successfully',
-    type: [DocumentResponseDto],
-  })
+  @ApiOperation({ summary: 'List documents by entity with filters' })
+  @ApiResponse({ status: HttpStatus.OK, type: [DocumentResponseDto] })
   async findAll(
-    @OrganizationContext() orgId: string,
-    @Query('organizationId') organizationId?: string,
-    @Query('projectId') projectId?: string,
-    @Query('customerId') customerId?: string,
-    @Query('quoteId') quoteId?: string,
-    @Query('paymentId') paymentId?: string,
-    @Query('documentType') documentType?: DocumentType,
-    @Query('status') status?: DocumentStatus,
+    @OrganizationContext() organizationId: string,
+    @Query() queryDto: QueryDocumentsDto,
   ): Promise<DocumentResponseDto[]> {
-    let documents;
+    const page = queryDto.page ?? 1;
+    const limit = queryDto.limit ?? 50;
 
-    if (organizationId) {
-      documents = await this.documentService.findByOrganization(organizationId);
-    } else if (projectId) {
-      documents = await this.documentService.findByProject(projectId, orgId);
-    } else if (customerId) {
-      documents = await this.documentService.findByCustomer(customerId);
-    } else if (quoteId) {
-      documents = await this.documentService.findByQuote(quoteId);
-    } else if (paymentId) {
-      documents = await this.documentService.findByPayment(paymentId);
-    } else if (documentType) {
-      documents = await this.documentService.findByType(documentType);
-    } else if (status) {
-      documents = await this.documentService.findByStatus(status);
-    } else {
-      documents = await this.documentService.findAll();
+    // Property-wide query (all entity types for a property)
+    if (queryDto.propertyId) {
+      const docs = await this.documentService.findByProperty(queryDto.propertyId, organizationId, {
+        entityType: queryDto.entityType,
+        category: queryDto.category,
+        tag: queryDto.tag,
+      });
+      return toDtoArray(DocumentResponseDto, docs);
     }
 
-    return plainToInstance(DocumentResponseDto, documents, { excludeExtraneousValues: true });
-  }
+    // Batch query by entityIds
+    if (queryDto.entityType && queryDto.entityIds) {
+      const ids = queryDto.entityIds.split(',').map((id) => id.trim());
+      const docs = await this.documentService.findByEntityBatch(
+        queryDto.entityType,
+        ids,
+        organizationId,
+      );
+      return toDtoArray(DocumentResponseDto, docs);
+    }
 
-  @Get('number/:documentNumber')
-  @ApiOperation({ summary: 'Get document by document number' })
-  @ApiParam({ name: 'documentNumber', type: String })
-  @ApiResponse({
-    status: 200,
-    description: 'Document retrieved successfully',
-    type: DocumentResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Document not found' })
-  async findByDocumentNumber(
-    @Param('documentNumber') documentNumber: string,
-  ): Promise<DocumentResponseDto> {
-    const document = await this.documentService.findByDocumentNumber(documentNumber);
-    return plainToInstance(DocumentResponseDto, document, { excludeExtraneousValues: true });
-  }
+    // Single entity query
+    if (queryDto.entityType && queryDto.entityId) {
+      const docs = await this.documentService.findByEntity(
+        queryDto.entityType,
+        queryDto.entityId,
+        organizationId,
+      );
+      return toDtoArray(DocumentResponseDto, docs);
+    }
 
-  @Get('wcr/:wcrSessionNumber')
-  @ApiOperation({ summary: 'Get documents by WCR session number' })
-  @ApiParam({ name: 'wcrSessionNumber', type: String })
-  @ApiResponse({
-    status: 200,
-    description: 'Documents retrieved successfully',
-    type: [DocumentResponseDto],
-  })
-  async findByWcrSession(
-    @Param('wcrSessionNumber') wcrSessionNumber: string,
-  ): Promise<DocumentResponseDto[]> {
-    const documents = await this.documentService.findByWcrSession(wcrSessionNumber);
-    return plainToInstance(DocumentResponseDto, documents, { excludeExtraneousValues: true });
-  }
-
-  @Get('stats/:organizationId')
-  @ApiOperation({ summary: 'Get document statistics for organization' })
-  @ApiParam({ name: 'organizationId', type: String })
-  @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
-  async getStats(@Param('organizationId') organizationId: string): Promise<{
-    byType: { type: DocumentType; count: number }[];
-    byStatus: { status: DocumentStatus; count: number }[];
-    unsigned: number;
-    unverified: number;
-  }> {
-    return this.documentService.getDocumentStats(organizationId);
+    const [docs] = await this.documentService.findByOrganization(
+      organizationId,
+      {
+        entityType: queryDto.entityType,
+        category: queryDto.category,
+        tag: queryDto.tag,
+      },
+      page,
+      limit,
+    );
+    return toDtoArray(DocumentResponseDto, docs);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get document by ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Document retrieved successfully',
-    type: DocumentResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Document not found' })
-  async findById(@Param('id') id: string): Promise<DocumentResponseDto> {
-    const document = await this.documentService.findById(id);
-    return plainToInstance(DocumentResponseDto, document, { excludeExtraneousValues: true });
+  @ApiOperation({ summary: 'Get a single document' })
+  @ApiResponse({ status: HttpStatus.OK, type: DocumentResponseDto })
+  async findById(
+    @OrganizationContext() organizationId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<DocumentResponseDto> {
+    const document = await this.documentService.findById(id, organizationId);
+    return toDto(DocumentResponseDto, document);
   }
 
-  @Get(':id/versions')
-  @ApiOperation({ summary: 'Get all versions of a document' })
-  @ApiResponse({
-    status: 200,
-    description: 'Document versions retrieved successfully',
-    type: [DocumentVersionResponseDto],
-  })
-  async findVersions(@Param('id') id: string): Promise<DocumentVersionResponseDto[]> {
-    const versions = await this.documentService.findVersions(id);
-    return plainToInstance(DocumentVersionResponseDto, versions, { excludeExtraneousValues: true });
-  }
-
-  @Get(':id/latest-version')
-  @ApiOperation({ summary: 'Get latest version of a document' })
-  @ApiResponse({
-    status: 200,
-    description: 'Latest version retrieved successfully',
-    type: DocumentResponseDto,
-  })
-  async findLatestVersion(@Param('id') id: string): Promise<DocumentResponseDto | null> {
-    const document = await this.documentService.findLatestVersion(id);
-    return plainToInstance(DocumentResponseDto, document, { excludeExtraneousValues: true });
-  }
-
-  // ============================================
-  // UPDATE
-  // ============================================
   @Patch(':id')
-  @ApiOperation({ summary: 'Update document' })
-  @ApiResponse({
-    status: 200,
-    description: 'Document updated successfully',
-    type: DocumentResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Document not found' })
+  @ApiOperation({ summary: 'Update document tag/metadata' })
+  @ApiResponse({ status: HttpStatus.OK, type: DocumentResponseDto })
   async update(
-    @Param('id') id: string,
+    @OrganizationContext() organizationId: string,
+    @CurrentUser() currentUser: CurrentUserType,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateDocumentDto,
-    @CurrentUser() currentUser: CurrentUserType,
   ): Promise<DocumentResponseDto> {
-    const document = await this.documentService.update(id, dto, currentUser.id);
-    return plainToInstance(DocumentResponseDto, document, { excludeExtraneousValues: true });
+    const document = await this.documentService.update(id, dto, currentUser.id, organizationId);
+    return toDto(DocumentResponseDto, document);
   }
 
-  @Patch(':id/status')
-  @ApiOperation({ summary: 'Update document status' })
-  @ApiResponse({
-    status: 200,
-    description: 'Document status updated successfully',
-    type: DocumentResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Document not found' })
-  async updateStatus(
-    @Param('id') id: string,
-    @Body() dto: UpdateDocumentStatusDto,
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<DocumentResponseDto> {
-    const document = await this.documentService.updateStatus(id, dto, currentUser.id);
-    return plainToInstance(DocumentResponseDto, document, { excludeExtraneousValues: true });
-  }
-
-  // ============================================
-  // DIGITAL SIGNATURE
-  // ============================================
-  @Post(':id/sign')
-  @ApiOperation({ summary: 'Sign document digitally' })
-  @ApiResponse({
-    status: 200,
-    description: 'Document signed successfully',
-    type: DocumentResponseDto,
-  })
-  @ApiResponse({ status: 400, description: 'Invalid request' })
-  @ApiResponse({ status: 404, description: 'Document not found' })
-  async signDocument(
-    @Param('id') id: string,
-    @Body() dto: SignDocumentDto,
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<DocumentResponseDto> {
-    const document = await this.documentService.signDocument(id, dto, currentUser.id);
-    return plainToInstance(DocumentResponseDto, document, { excludeExtraneousValues: true });
-  }
-
-  // ============================================
-  // OTP VERIFICATION
-  // ============================================
-  @Post(':id/verify-otp')
-  @ApiOperation({ summary: 'Verify document with OTP' })
-  @ApiResponse({
-    status: 200,
-    description: 'Document verified successfully',
-    type: DocumentResponseDto,
-  })
-  @ApiResponse({ status: 400, description: 'Invalid OTP' })
-  @ApiResponse({ status: 404, description: 'Document not found' })
-  async verifyOtp(
-    @Param('id') id: string,
-    @Body() dto: VerifyDocumentOtpDto,
-    @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<DocumentResponseDto> {
-    const document = await this.documentService.verifyOtp(id, dto, currentUser.id);
-    return plainToInstance(DocumentResponseDto, document, { excludeExtraneousValues: true });
-  }
-
-  // ============================================
-  // DELETE
-  // ============================================
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete document (soft delete)' })
-  @ApiResponse({ status: 204, description: 'Document deleted successfully' })
-  @ApiResponse({ status: 404, description: 'Document not found' })
-  async delete(@Param('id') id: string): Promise<void> {
-    await this.documentService.delete(id);
+  @ApiOperation({ summary: 'Soft delete a document' })
+  @ApiResponse({ status: HttpStatus.NO_CONTENT })
+  async delete(
+    @OrganizationContext() organizationId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    await this.documentService.delete(id, organizationId);
+  }
+
+  @Get(':id/download')
+  @ApiOperation({ summary: 'Get presigned download URL (placeholder)' })
+  @ApiResponse({ status: HttpStatus.OK })
+  async download(
+    @OrganizationContext() organizationId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<{ url: string }> {
+    const document = await this.documentService.findById(id, organizationId);
+    return { url: document.fileUrl };
   }
 }

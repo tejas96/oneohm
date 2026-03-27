@@ -7,7 +7,30 @@ import type { QuoteConfigResponse, SubsidyConfigResponse } from '../types';
 
 import { apiClient } from '@/lib/api/client';
 import { useProductOptions } from '@/lib/hooks/resources';
+import { useProductTypeList, type ProductType } from '@/lib/hooks/resources/product-types';
 import { useAuth } from '@/providers/auth-provider';
+
+function getAttributeOptions(
+  productTypes: ProductType[],
+  typeCode: string,
+  attrKey: string,
+): string[] {
+  const pt = productTypes.find((t) => t.code === typeCode);
+  const attr = pt?.attributes?.find((a) => a.attributeKey === attrKey);
+  return (attr?.validation?.options as string[]) ?? [];
+}
+
+function toLabel(value: string): string {
+  return value
+    .split('_')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+const PHASE_SUBTITLES: Record<string, string> = {
+  single_phase: 'Up to 7 kW systems',
+  three_phase: 'Above 7 kW systems',
+};
 
 // ============================================================================
 // Query Keys (quote config + subsidy only — products use FDAL)
@@ -25,6 +48,12 @@ const quoteConfigKeys = {
 
 const FIVE_MINUTES = 5 * 60 * 1000;
 
+export interface PhaseTypeOption {
+  value: string;
+  label: string;
+  subtitle?: string;
+}
+
 export function useQuoteConfig() {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
@@ -32,6 +61,26 @@ export function useQuoteConfig() {
   const headers = useMemo(() => ({ 'X-Organization-Id': organizationId }), [organizationId]);
 
   const productOptions = useProductOptions();
+
+  const { items: productTypes } = useProductTypeList({
+    syncToUrl: false,
+    defaultPageSize: 50,
+  });
+
+  const phaseTypeOptions: PhaseTypeOption[] = useMemo(() => {
+    const options = getAttributeOptions(productTypes, 'inverter', 'phase_type');
+    if (options.length === 0) {
+      return [
+        { value: 'single_phase', label: 'Single Phase', subtitle: 'Up to 7 kW systems' },
+        { value: 'three_phase', label: 'Three Phase', subtitle: 'Above 7 kW systems' },
+      ];
+    }
+    return options.map((v) => ({
+      value: v,
+      label: toLabel(v),
+      subtitle: PHASE_SUBTITLES[v],
+    }));
+  }, [productTypes]);
 
   const configQuery = useQuery<QuoteConfigResponse>({
     queryKey: quoteConfigKeys.config(organizationId),
@@ -64,6 +113,7 @@ export function useQuoteConfig() {
 
   return {
     ...productOptions,
+    phaseTypeOptions,
     quoteConfig: configQuery.data ?? null,
     subsidyConfigs: subsidyQuery.data ?? [],
     isLoading: productOptions.isLoading || configQuery.isLoading || subsidyQuery.isLoading,

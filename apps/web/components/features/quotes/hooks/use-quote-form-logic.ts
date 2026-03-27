@@ -1,6 +1,6 @@
 'use client';
 
-import { DcrPreference, PhaseType } from '@oneohm-epc/shared/types';
+import { DcrPreference } from '@oneohm-epc/shared/types';
 import { useCallback, useRef } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 
@@ -17,7 +17,7 @@ export interface UseQuoteFormLogicReturn {
   handleSelectedSubsidyIdsChange: (ids: string[]) => void;
   handleBrandChange: (value: string) => void;
   handleInverterBrandChange: (value: string) => void;
-  handlePhaseChange: (value: PhaseType) => void;
+  handlePhaseChange: (value: string) => void;
   handleTechnologyVariantSelect: (technology: string, wattage: number) => void;
   handlePropertySelect: (propertyType?: string) => void;
   handleFieldChange: (fieldName: string, value: unknown) => void;
@@ -55,7 +55,7 @@ export function useQuoteFormLogic({
     (value: number) => {
       setValue('systemSizeKw', value, { shouldValidate: true });
       if (value > 7) {
-        setValue('phaseType', PhaseType.THREE_PHASE);
+        setValue('phaseType', 'three_phase');
         setValue('preferredInverterCapacityKw', undefined);
       }
       clearCalculationIfNeeded('systemSizeKw');
@@ -93,7 +93,7 @@ export function useQuoteFormLogic({
   // Technology variant selection -> set both technology and wattage
   const handleTechnologyVariantSelect = useCallback(
     (technology: string, wattage: number) => {
-      setValue('preferredPanelTechnology', technology as never);
+      setValue('preferredPanelTechnology', technology);
       setValue('preferredPanelWattage', wattage);
       clearCalculationIfNeeded('preferredPanelTechnology');
     },
@@ -126,7 +126,7 @@ export function useQuoteFormLogic({
 
   // Phase change -> reset inverter capacity
   const handlePhaseChange = useCallback(
-    (value: PhaseType) => {
+    (value: string) => {
       setValue('phaseType', value);
       setValue('preferredInverterCapacityKw', undefined);
       clearCalculationIfNeeded('phaseType');

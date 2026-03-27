@@ -57,8 +57,8 @@ export enum MilestoneStatus {
 }
 
 /**
- * Site Survey Status
- * Tracks the state of site survey activities
+ * @deprecated SiteSurveyStatus has been replaced by SiteActivityStatus from site-activity.enum.ts
+ * Kept temporarily for backward compatibility during migration.
  */
 export enum SiteSurveyStatus {
   SCHEDULED = 'scheduled',

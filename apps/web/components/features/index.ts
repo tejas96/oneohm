@@ -13,6 +13,12 @@ export * from './followups';
 // Site Visits
 export * from './site-visits';
 
+// Documents (generic)
+export * from './documents';
+
+// Site Activities
+export * from './site-activities';
+
 // Pipeline
 export * from './pipeline';
 

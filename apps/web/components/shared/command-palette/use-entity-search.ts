@@ -24,11 +24,11 @@ export function useEntitySearch(query: string, open: boolean): UseEntitySearchRe
   const debouncedQuery = useDebounce(query, 300);
   const enabled = open && debouncedQuery.length >= 2;
 
-  const filters = enabled ? { search: debouncedQuery, limit: 5 } : { limit: 0 };
+  const filters = enabled ? { search: debouncedQuery, limit: 5 } : { limit: 5 };
 
-  const customersQuery = useCustomers(filters);
-  const quotesQuery = useQuotes(filters);
-  const projectsQuery = useProjects(filters);
+  const customersQuery = useCustomers({ ...filters, enabled });
+  const quotesQuery = useQuotes({ ...filters, enabled });
+  const projectsQuery = useProjects({ ...filters, enabled });
 
   const isLoading =
     enabled && (customersQuery.isLoading || quotesQuery.isLoading || projectsQuery.isLoading);

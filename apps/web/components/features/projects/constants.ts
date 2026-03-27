@@ -6,7 +6,6 @@ import {
   ProjectPriority,
   ProjectStatus,
   ProjectType,
-  SiteSurveyStatus,
   TASK_PRIORITY_LABELS,
   TASK_STATUS_LABELS,
   TaskPriority,
@@ -441,23 +440,7 @@ export const DOCUMENT_CATEGORY_COLORS: Record<string, { bg: string; text: string
   Other: { bg: 'bg-muted', text: 'text-foreground-secondary' },
 };
 
-// ---------------------------------------------------------------------------
-// Survey constants (for Project Detail - Surveys tab)
-// ---------------------------------------------------------------------------
-
-export const SURVEY_STATUS_LABELS: Record<string, string> = {
-  [SiteSurveyStatus.SCHEDULED]: 'Scheduled',
-  [SiteSurveyStatus.IN_PROGRESS]: 'In Progress',
-  [SiteSurveyStatus.COMPLETED]: 'Completed',
-  [SiteSurveyStatus.CANCELLED]: 'Cancelled',
-};
-
-export const SURVEY_STATUS_BADGE_VARIANT: Record<string, string> = {
-  [SiteSurveyStatus.SCHEDULED]: 'info',
-  [SiteSurveyStatus.IN_PROGRESS]: 'warning',
-  [SiteSurveyStatus.COMPLETED]: 'success',
-  [SiteSurveyStatus.CANCELLED]: 'red-subtle',
-};
+// Survey constants removed – survey data now accessed via SiteActivityEntity
 
 // ---------------------------------------------------------------------------
 // Milestone payment status (for Overview - Milestones card)

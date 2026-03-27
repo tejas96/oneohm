@@ -20,6 +20,7 @@ import { S3StorageService } from './s3-storage.service';
  * Allowed MIME types for upload
  */
 const ALLOWED_MIME_TYPES: Record<FileCategory, string[]> = {
+  'site-activity': ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'],
   'site-visit': ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'],
   document: [
     'application/pdf',
@@ -38,6 +39,7 @@ const ALLOWED_MIME_TYPES: Record<FileCategory, string[]> = {
  * Max file sizes per category (in bytes)
  */
 const MAX_FILE_SIZES: Record<FileCategory, number> = {
+  'site-activity': 10 * 1024 * 1024, // 10MB
   'site-visit': 10 * 1024 * 1024, // 10MB
   document: 20 * 1024 * 1024, // 20MB
   profile: 5 * 1024 * 1024, // 5MB

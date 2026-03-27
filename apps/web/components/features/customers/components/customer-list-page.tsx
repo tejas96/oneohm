@@ -181,8 +181,10 @@ export function CustomerListPage(): JSX.Element {
   // Sync state from URL when external navigation occurs
   const searchParamsString = searchParams.toString();
   useEffect(() => {
-    setPage(Number(searchParams.get('page')) || 1);
-    setPageSize(Number(searchParams.get('limit')) || DEFAULT_PAGE_SIZE);
+    const newPage = Number(searchParams.get('page')) || 1;
+    const newLimit = Number(searchParams.get('limit')) || DEFAULT_PAGE_SIZE;
+    setPage(newPage);
+    setPageSize(newLimit);
     setSearchInput(searchParams.get('search') || '');
     setStatusFilter(searchParams.get('status') || 'all');
     setLeadSourceFilter(searchParams.get('leadSource') || 'all');

@@ -38,6 +38,7 @@ export type {
   QuoteDetail,
   QuoteVersionDetail,
   QuotePaymentMilestone,
+  PhaseTypeOption,
 } from './hooks';
 
 // Types
@@ -68,7 +69,6 @@ export {
   DEFAULT_PAGE_SIZE,
   SEARCH_DEBOUNCE_MS,
   PROJECT_TYPE_OPTIONS,
-  PHASE_TYPE_OPTIONS,
   DCR_PREFERENCE_OPTIONS,
   QUICK_SIZE_OPTIONS,
   DISCOUNT_PRESETS,

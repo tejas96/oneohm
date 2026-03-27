@@ -4,6 +4,7 @@ export * from './property.schema';
 export * from './quote.schema';
 export * from './project.schema';
 export * from './followup.schema';
+export * from './site-activity.schema';
 export * from './site-visit.schema';
 export * from './workflow-step.schema';
 export * from './constants';

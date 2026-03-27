@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PhaseType, PanelTechnology, StructureType } from '@oneohm-epc/shared/types';
+// PhaseType, PanelTechnology, StructureType are now dynamic strings from product_type_attributes
 
 /**
  * System configuration in the calculated quote
@@ -14,8 +14,8 @@ export class SystemConfigDto {
   @ApiProperty({ description: 'Non-DCR panel system size in kW', example: 3 })
   nonDcrSizeKw!: number;
 
-  @ApiProperty({ enum: PhaseType, description: 'Electrical phase type' })
-  phaseType!: PhaseType;
+  @ApiProperty({ description: 'Electrical phase type' })
+  phaseType!: string;
 }
 
 /**
@@ -34,8 +34,8 @@ export class CalculatedPanelDto {
   @ApiProperty({ description: 'Whether DCR panel', example: true })
   isDcr!: boolean;
 
-  @ApiPropertyOptional({ enum: PanelTechnology, description: 'Panel technology' })
-  technology?: PanelTechnology;
+  @ApiPropertyOptional({ description: 'Panel technology' })
+  technology?: string;
 
   @ApiProperty({ description: 'Wattage per panel in W', example: 540 })
   wattagePerPanel!: number;
@@ -130,8 +130,8 @@ export class CalculatedStructureDto {
   @ApiProperty({ description: 'Structure name', example: 'Aluminum Rail Mount' })
   name!: string;
 
-  @ApiProperty({ enum: StructureType, description: 'Structure type' })
-  structureType!: StructureType;
+  @ApiProperty({ description: 'Structure type' })
+  structureType!: string;
 
   @ApiProperty({ description: 'Quantity (usually per kW)', example: 5 })
   quantity!: number;

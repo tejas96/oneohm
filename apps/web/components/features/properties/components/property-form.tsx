@@ -1,11 +1,11 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ConnectionType, PropertyType, type PropertyDocument } from '@oneohm-epc/shared/types';
+import { ConnectionType, DocumentEntityType, PropertyType } from '@oneohm-epc/shared/types';
 import { ArrowLeft, Banknote, FileText, Home, MapPin, Thermometer, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
+import { useCallback, useEffect, useState, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { type CustomerResponse } from '../../customers';
@@ -23,15 +23,9 @@ import {
   type EditPropertyFormData,
 } from '../schemas/property.schema';
 
-import {
-  Alert,
-  DocumentCollector,
-  LeadTemperatureSelector,
-  RadioCard,
-  RadioCardGroup,
-  toPropertyDocuments,
-  type CapturedDocument,
-} from '@/components/shared';
+import { useUploadDocumentsBulk } from '@/components/features/documents/hooks';
+import { Alert, LeadTemperatureSelector, RadioCard, RadioCardGroup } from '@/components/shared';
+import { DocumentManager, type DraftDocument } from '@/components/shared/document-manager';
 import {
   Badge,
   Button,
@@ -49,8 +43,6 @@ import {
   Switch,
   Textarea,
 } from '@/components/ui';
-import { apiClient } from '@/lib/api/client';
-import { FileCategory, uploadFile } from '@/lib/api/storage';
 import {
   CONNECTION_TYPE_OPTIONS,
   DISCOM_OPTIONS,
@@ -74,39 +66,6 @@ interface PropertyFormProps {
   isLoadingCustomers?: boolean;
   propertyId?: string;
   initialData?: CustomerPropertyResponse;
-}
-
-// ============================================================================
-// Helpers
-// ============================================================================
-
-function inferMimeType(fileName: string): string {
-  const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
-  const map: Record<string, string> = {
-    jpg: 'image/jpeg',
-    jpeg: 'image/jpeg',
-    png: 'image/png',
-    gif: 'image/gif',
-    webp: 'image/webp',
-    pdf: 'application/pdf',
-  };
-  return map[ext] ?? 'application/octet-stream';
-}
-
-function mapExistingDocs(docs: PropertyDocument[]): CapturedDocument[] {
-  return docs.map((doc) => ({
-    id: `existing_${doc.url}`,
-    file: undefined,
-    slotId: doc.tag,
-    fileName: doc.fileName,
-    fileSize: doc.fileSize ?? 0,
-    mimeType: inferMimeType(doc.fileName),
-    previewUrl: doc.url,
-    status: 'success' as const,
-    progress: 100,
-    uploadedUrl: doc.url,
-    fileKey: undefined,
-  }));
 }
 
 // ============================================================================
@@ -149,12 +108,12 @@ export function PropertyForm({
     ? INDIAN_STATES.find((s) => s.toLowerCase() === resolvedCustomer.state?.toLowerCase())
     : undefined;
 
-  const [documents, setDocuments] = useState<CapturedDocument[]>([]);
-  const [isUploadingDocs, setIsUploadingDocs] = useState(false);
+  const [draftDocuments, setDraftDocuments] = useState<DraftDocument[]>([]);
+  const uploadDocsBulk = useUploadDocumentsBulk();
 
-  const [initialDocUrls] = useState<Set<string>>(
-    () => new Set((initialData?.documents ?? []).map((d) => d.url)),
-  );
+  const handleDraftDocsChange = useCallback((docs: DraftDocument[]) => {
+    setDraftDocuments(docs);
+  }, []);
 
   const schema = isEditMode ? editPropertySchema : createPropertySchema;
 
@@ -194,7 +153,7 @@ export function PropertyForm({
         },
   });
 
-  // Populate form + documents when initialData loads (edit mode)
+  // Populate form when initialData loads (edit mode)
   useEffect(() => {
     if (isEditMode && initialData) {
       form.reset({
@@ -214,7 +173,6 @@ export function PropertyForm({
         wantsLoan: initialData.wantsLoan || false,
         notes: initialData.notes || '',
       });
-      setDocuments(mapExistingDocs(initialData.documents ?? []));
     }
   }, [isEditMode, initialData, form]);
 
@@ -224,21 +182,6 @@ export function PropertyForm({
       form.setValue('customerId' as keyof CreatePropertyFormData, effectiveCustomerId);
     }
   }, [isEditMode, effectiveCustomerId, form]);
-
-  const documentsRef = useRef<CapturedDocument[]>([]);
-  useEffect(() => {
-    documentsRef.current = documents;
-  }, [documents]);
-
-  useEffect(() => {
-    return () => {
-      documentsRef.current.forEach((doc) => {
-        if (doc.previewUrl) {
-          URL.revokeObjectURL(doc.previewUrl);
-        }
-      });
-    };
-  }, []);
 
   // Progress tracking (create mode only)
   const watchedPropertyName = form.watch('propertyName');
@@ -264,20 +207,9 @@ export function PropertyForm({
   const isContextAware = !isEditMode && !!initialCustomerId;
 
   const activeMutation = isEditMode ? updatePropertyMutation : createPropertyMutation;
-  const isSubmitting = form.formState.isSubmitting || activeMutation.isPending || isUploadingDocs;
+  const isSubmitting = form.formState.isSubmitting || activeMutation.isPending;
 
-  // Dirty tracking for edit mode — includes document changes
-  const hasDocumentChanges = useMemo(() => {
-    if (!isEditMode) return false;
-    const currentUrls = new Set(documents.filter((d) => d.uploadedUrl).map((d) => d.uploadedUrl!));
-    if (currentUrls.size !== initialDocUrls.size) return true;
-    for (const url of currentUrls) {
-      if (!initialDocUrls.has(url)) return true;
-    }
-    return false;
-  }, [isEditMode, documents, initialDocUrls]);
-
-  const canSave = isEditMode ? form.formState.isDirty || hasDocumentChanges : true;
+  const canSave = isEditMode ? form.formState.isDirty : true;
 
   // Navigation
   const backLink = isEditMode
@@ -808,31 +740,19 @@ export function PropertyForm({
               <div>
                 <h3 className="text-sm font-semibold text-foreground">Documents</h3>
                 <p className="text-xs text-foreground-secondary">
-                  Upload identity and KYC documents
-                  {wantsLoan && (
-                    <span className="text-primary font-medium">
-                      {' '}
-                      &mdash; Aadhaar required for loan
-                    </span>
-                  )}
+                  Upload property documents, identity proofs, and KYC documents
                 </p>
               </div>
             </div>
 
-            <div className="p-5 space-y-4">
-              {wantsLoan && (
-                <Alert variant="warning" title={PROPERTY_ALERTS.documentWarning.title}>
-                  {PROPERTY_ALERTS.documentWarning.message}
-                </Alert>
-              )}
-
-              <DocumentCollector
-                wantsLoan={wantsLoan ?? false}
-                documents={documents}
-                onDocumentsChange={setDocuments}
-                disabled={isSubmitting}
-              />
-            </div>
+            <DocumentManager
+              entityType={DocumentEntityType.PROPERTY}
+              entityId={isEditMode && propertyId ? propertyId : undefined}
+              title="Property Documents"
+              description="Upload electricity bills, identity proofs, site photos, or other documents."
+              readOnly={isSubmitting}
+              onDraftDocumentsChange={!isEditMode ? handleDraftDocsChange : undefined}
+            />
           </CardContent>
         </Card>
 
@@ -883,107 +803,37 @@ export function PropertyForm({
 
   async function onSubmit(data: CreatePropertyFormData | EditPropertyFormData): Promise<void> {
     try {
-      setIsUploadingDocs(true);
-
-      const pendingDocs = documents.filter(
-        (d) => (d.status === 'pending' || d.status === 'error') && d.file,
-      );
-
-      let currentDocs = [...documents];
-
-      for (const doc of pendingDocs) {
-        if (!doc.file) continue;
-        try {
-          currentDocs = currentDocs.map((d) =>
-            d.id === doc.id ? { ...d, status: 'uploading' as const, progress: 0 } : d,
-          );
-          setDocuments(currentDocs);
-
-          const result = await uploadFile({
-            file: doc.file,
-            category: FileCategory.DOCUMENT,
-            entityType: 'property-document',
-            subCategory: doc.slotId,
-            onProgress: (progress) => {
-              setDocuments((prev) =>
-                prev.map((d) => (d.id === doc.id ? { ...d, progress: progress.percent } : d)),
-              );
-            },
-          });
-
-          currentDocs = currentDocs.map((d) =>
-            d.id === doc.id
-              ? {
-                  ...d,
-                  status: 'success' as const,
-                  progress: 100,
-                  uploadedUrl: result.publicUrl,
-                  fileKey: result.fileKey,
-                }
-              : d,
-          );
-          setDocuments(currentDocs);
-        } catch (error) {
-          const msg = error instanceof Error ? error.message : 'Upload failed';
-          currentDocs = currentDocs.map((d) =>
-            d.id === doc.id ? { ...d, status: 'error' as const, error: msg } : d,
-          );
-          setDocuments(currentDocs);
-        }
-      }
-
-      setIsUploadingDocs(false);
-
-      const failedDocs = currentDocs.filter((d) => d.status === 'error');
-      if (failedDocs.length > 0) {
-        const failedRequired =
-          data.wantsLoan && failedDocs.some((d) => d.slotId === 'aadhaar_card');
-        if (failedRequired) {
-          showToast.error('Required document (Aadhaar) failed to upload. Please retry.');
-          return;
-        }
-        showToast.warning(
-          `${failedDocs.length} document(s) failed to upload. Property will be ${isEditMode ? 'saved' : 'created'} without them.`,
-        );
-      }
-
-      const successfulDocs = currentDocs.filter((d) => d.status === 'success' && d.uploadedUrl);
-      const propertyDocuments = toPropertyDocuments(successfulDocs, data.wantsLoan ?? false);
-
       if (isEditMode && propertyId) {
         await updatePropertyMutation.mutateAsync({
           id: propertyId,
-          data: {
-            ...data,
-            documents: propertyDocuments,
-          },
+          data,
         });
-
-        // Post-save S3 cleanup for removed pre-existing docs
-        const removedExistingUrls = (initialData?.documents ?? [])
-          .filter((d) => !currentDocs.some((doc) => doc.uploadedUrl === d.url))
-          .map((d) => d.url);
-
-        for (const url of removedExistingUrls) {
-          void apiClient
-            .delete(`/customer-properties/${propertyId}/documents/${btoa(url)}`)
-            .catch((err) => console.warn('S3 cleanup failed for removed doc', err));
-        }
-
         showToast.success('Property updated successfully');
         router.push(buildRoute(ROUTES.PROPERTIES.DETAIL, { id: propertyId }));
       } else {
         const createData = data as CreatePropertyFormData;
-        await createPropertyMutation.mutateAsync({
-          ...createData,
-          documents: propertyDocuments,
-        });
+        const created = await createPropertyMutation.mutateAsync(createData);
+
+        // Flush draft documents to the new property via the generic documents API
+        const successDrafts = draftDocuments.filter((d) => d.status === 'success');
+        if (successDrafts.length > 0 && created.id) {
+          const payloads = successDrafts.map((d) => ({
+            entityType: DocumentEntityType.PROPERTY,
+            entityId: created.id,
+            category: d.category,
+            tag: d.tag,
+            fileName: d.fileName,
+            fileUrl: d.fileUrl,
+            fileSizeBytes: d.fileSizeBytes,
+            mimeType: d.mimeType,
+          }));
+          await uploadDocsBulk.mutateAsync(payloads);
+        }
 
         showToast.success('Property created successfully');
         router.push(buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: createData.customerId }));
       }
     } catch (error) {
-      setIsUploadingDocs(false);
       showToast.error(getErrorMessage(error));
     }
   }

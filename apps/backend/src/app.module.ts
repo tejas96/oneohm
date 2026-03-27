@@ -27,6 +27,7 @@ import { QuotesModule } from './modules/quotes/quotes.module';
 import { ResellersModule } from './modules/resellers/resellers.module';
 import { SecurityEventsModule } from './modules/security-events/security-events.module';
 import { ServiceMaintenanceModule } from './modules/service-maintenance/service-maintenance.module';
+import { SiteActivitiesModule } from './modules/site-activities/site-activities.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { UsersModule } from './modules/users/users.module';
 
@@ -65,6 +66,7 @@ import { UsersModule } from './modules/users/users.module';
     LoanFinanceModule,
     ComplianceModule,
     AuditModule,
+    SiteActivitiesModule,
     StorageModule,
   ],
   controllers: [AppController],

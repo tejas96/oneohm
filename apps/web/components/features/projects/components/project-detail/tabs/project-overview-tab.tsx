@@ -151,7 +151,6 @@ function CustomerCard({ project }: { project: ProjectDetail }) {
 
 function SiteCard({ project }: { project: ProjectDetail }) {
   const p = project.property;
-  const survey = project.survey;
   const address = [p?.address, p?.city, p?.state, p?.pincode].filter(Boolean).join(', ');
 
   return (
@@ -159,15 +158,6 @@ function SiteCard({ project }: { project: ProjectDetail }) {
       <CardTitle icon={MapPin} title="Installation Site" />
       <div className="divide-y divide-border-light">
         <InfoRow label="Address" value={address || 'N/A'} />
-        <InfoRow label="Roof Type" value={survey?.surveyData?.roofType ?? 'N/A'} />
-        <InfoRow
-          label="Available Area"
-          value={
-            survey?.surveyData?.availableAreaSqm != null
-              ? `${survey.surveyData.availableAreaSqm} sqm`
-              : 'N/A'
-          }
-        />
       </div>
     </div>
   );

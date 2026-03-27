@@ -1,8 +1,9 @@
 import {
+  DocumentCategory,
+  DocumentTag,
   LoanDocumentType,
   LoanStatus,
   ProjectType,
-  PhaseType,
   DcrPreference,
 } from '../types/enums';
 
@@ -43,9 +44,9 @@ export const PROJECT_TYPE_LABELS: Record<ProjectType, string> = {
   [ProjectType.INSTITUTIONAL]: 'Institutional',
 };
 
-export const PHASE_TYPE_LABELS: Record<PhaseType, string> = {
-  [PhaseType.SINGLE_PHASE]: 'Single Phase',
-  [PhaseType.THREE_PHASE]: 'Three Phase',
+export const PHASE_TYPE_LABELS: Record<string, string> = {
+  single_phase: 'Single Phase',
+  three_phase: 'Three Phase',
 };
 
 export const DCR_PREFERENCE_LABELS: Record<DcrPreference, { label: string; description: string }> =
@@ -63,5 +64,27 @@ export const DCR_PREFERENCE_LABELS: Record<DcrPreference, { label: string; descr
       description: 'Budget option - No subsidy',
     },
   };
+
+export const DOCUMENT_TAG_LABELS: Record<DocumentTag, string> = {
+  [DocumentTag.ELECTRICITY_BILL]: 'Electricity Bill',
+  [DocumentTag.AADHAR_CARD]: 'Aadhaar Card',
+  [DocumentTag.PAN_CARD]: 'PAN Card',
+  [DocumentTag.SITE_IMAGE]: 'Site Image',
+  [DocumentTag.FRONT_VIEW]: 'Front View',
+  [DocumentTag.ROOF_VIEW]: 'Roof View',
+  [DocumentTag.METER_BOX]: 'Meter Box',
+  [DocumentTag.WCR]: 'WCR',
+  [DocumentTag.MODEL_AGREEMENT]: 'Model Agreement',
+  [DocumentTag.REPORT]: 'Report',
+  [DocumentTag.CONTRACT]: 'Contract',
+  [DocumentTag.INVOICE]: 'Invoice',
+  [DocumentTag.OTHER]: 'Other',
+};
+
+export const DOCUMENT_CATEGORY_LABELS: Record<DocumentCategory, string> = {
+  [DocumentCategory.DOCUMENT]: 'Document',
+  [DocumentCategory.IMAGE]: 'Image',
+  [DocumentCategory.REPORT]: 'Report',
+};
 
 export { PANEL_TECHNOLOGY_LABELS } from '../types/enums/product.enum';

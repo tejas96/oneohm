@@ -25,6 +25,8 @@ export interface ProjectFilters {
   projectType?: string;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
+  // Query control
+  enabled?: boolean;
 }
 
 export interface TeamMemberSummary {
@@ -99,31 +101,32 @@ export function useProjects(
 ): UseQueryResult<ProjectListResponse, AxiosError> {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
+  const { enabled: callerEnabled, ...queryFilters } = filters;
 
   return useQuery({
-    queryKey: projectKeys.list(organizationId, filters as Record<string, unknown>),
+    queryKey: projectKeys.list(organizationId, queryFilters as Record<string, unknown>),
     queryFn: async (): Promise<ProjectListResponse> => {
       const params = new URLSearchParams();
 
-      if (filters.page) params.append('page', String(filters.page));
-      if (filters.limit) params.append('limit', String(filters.limit));
+      if (queryFilters.page) params.append('page', String(queryFilters.page));
+      if (queryFilters.limit) params.append('limit', String(queryFilters.limit));
 
-      if (filters.search && filters.search.length >= 2) {
-        params.append('search', filters.search);
+      if (queryFilters.search && queryFilters.search.length >= 2) {
+        params.append('search', queryFilters.search);
       }
 
-      if (filters.status) params.append('status', filters.status);
-      if (filters.priority) params.append('priority', filters.priority);
-      if (filters.projectType) params.append('projectType', filters.projectType);
-      if (filters.sortBy) params.append('sortBy', filters.sortBy);
-      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+      if (queryFilters.status) params.append('status', queryFilters.status);
+      if (queryFilters.priority) params.append('priority', queryFilters.priority);
+      if (queryFilters.projectType) params.append('projectType', queryFilters.projectType);
+      if (queryFilters.sortBy) params.append('sortBy', queryFilters.sortBy);
+      if (queryFilters.sortOrder) params.append('sortOrder', queryFilters.sortOrder);
 
       const { data } = await apiClient.get<ProjectListResponse>(`/projects?${params.toString()}`, {
         headers: { 'X-Organization-Id': organizationId },
       });
       return data;
     },
-    enabled: !!organizationId,
+    enabled: !!organizationId && callerEnabled !== false,
     placeholderData: keepPreviousData,
   });
 }

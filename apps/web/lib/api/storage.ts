@@ -119,8 +119,18 @@ async function uploadToPresignedUrl(
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isValidUuid(value: string | undefined): boolean {
+  return !!value && UUID_REGEX.test(value);
+}
+
 async function uploadWithRetry(options: UploadOptions, retryCount = 0): Promise<UploadResult> {
   const { file, category, entityId, entityType, subCategory, onProgress } = options;
+
+  // Omit entityId/entityType when uploading in draft mode (no real entity ID yet).
+  // Sending a non-UUID value like "draft" causes a backend 400 validation error.
+  const hasValidEntity = isValidUuid(entityId);
 
   try {
     // 1. Get presigned URL from backend
@@ -129,8 +139,7 @@ async function uploadWithRetry(options: UploadOptions, retryCount = 0): Promise<
       contentType: file.type,
       fileSize: file.size,
       category,
-      entityId,
-      entityType,
+      ...(hasValidEntity ? { entityId, entityType } : {}),
       subCategory,
     });
 

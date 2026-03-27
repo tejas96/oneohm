@@ -1,7 +1,7 @@
 'use client';
 
-import { LeadTemperature, QuoteStatus } from '@oneohm-epc/shared/types';
-import { Calendar, Edit, FileText, MapPin, Plus } from 'lucide-react';
+import { DocumentEntityType, LeadTemperature, QuoteStatus } from '@oneohm-epc/shared/types';
+import { Edit, FileText, MapPin, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type JSX, useCallback, useMemo } from 'react';
@@ -16,11 +16,12 @@ import { useProperty, useUpdateProperty, usePropertyQuotes } from '../hooks';
 import { FollowupMiniList } from './followup-mini-list';
 import { PropertyActivityTab } from './property-activity-tab';
 import { PropertyDetailHeader } from './property-detail-header';
-import { PropertyDocumentsTab } from './property-documents-tab';
 import { PropertyFollowupsTab } from './property-followups-tab';
 
 import { useFollowups, useMarkFollowupComplete } from '@/components/features/followups/hooks';
+import { SiteActivityTab } from '@/components/features/site-activities/components';
 import { EmptyState, ErrorState } from '@/components/shared';
+import { DocumentManager } from '@/components/shared/document-manager';
 import {
   Badge,
   Button,
@@ -43,7 +44,7 @@ interface PropertyDetailPageProps {
   propertyId: string;
 }
 
-const DEFAULT_TAB: PropertyDetailTab = 'sitevisit';
+const DEFAULT_TAB: PropertyDetailTab = 'siteactivity';
 
 // ============================================================================
 // Loading Skeleton
@@ -422,18 +423,9 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
             ))}
           </TabsList>
 
-          {/* Site Visit Tab */}
-          <TabsContent value="sitevisit">
-            <EmptyState
-              icon={<Calendar className="w-full h-full" />}
-              title="No site visit completed yet"
-              description="Schedule a site visit to assess the installation location and capture site details."
-              action={{
-                label: 'Schedule Site Visit',
-                onClick: () => router.push(`${ROUTES.SITE_VISITS.NEW}?propertyId=${propertyId}`),
-                icon: <Calendar className="size-icon-sm" />,
-              }}
-            />
+          {/* Site Activity Tab */}
+          <TabsContent value="siteactivity">
+            <SiteActivityTab propertyId={propertyId} />
           </TabsContent>
 
           {/* Quotes Tab */}
@@ -540,7 +532,12 @@ export function PropertyDetailPage({ propertyId }: PropertyDetailPageProps): JSX
 
           {/* Documents Tab */}
           <TabsContent value="documents">
-            <PropertyDocumentsTab property={property} />
+            <DocumentManager
+              entityType={DocumentEntityType.PROPERTY}
+              entityId={property.id}
+              title="Property Documents"
+              description="Upload property documents like electricity bills, site photos, or loan paperwork."
+            />
           </TabsContent>
 
           {/* Activity Tab */}

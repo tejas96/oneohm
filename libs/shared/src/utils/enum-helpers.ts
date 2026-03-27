@@ -1,4 +1,4 @@
-import { ProjectType, PhaseType } from '../types/enums/product.enum';
+import { ProjectType } from '../types/enums/product.enum';
 
 /**
  * Map property type (from lead) to project type
@@ -19,8 +19,8 @@ export function mapPropertyTypeToProjectType(propertyType: string): ProjectType 
  * Suggest phase type based on system size
  * ≤ 10 KW → Single Phase, > 10 KW → Three Phase
  */
-export function suggestPhaseType(systemSizeKw: number): PhaseType {
-  return systemSizeKw <= 10 ? PhaseType.SINGLE_PHASE : PhaseType.THREE_PHASE;
+export function suggestPhaseType(systemSizeKw: number): string {
+  return systemSizeKw <= 10 ? 'single_phase' : 'three_phase';
 }
 
 /**

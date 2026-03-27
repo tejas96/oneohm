@@ -1,4 +1,4 @@
-import type { PanelTechnology, PhaseType, ProjectType, StructureType } from '../enums/product.enum';
+import type { ProjectType } from '../enums/product.enum';
 import type { DcrPreference, QuoteCalculationMode } from '../enums/quote.enum';
 
 /**
@@ -34,16 +34,16 @@ export interface PaymentMilestone {
  * Stored as JSONB on quote_versions.
  */
 export interface CalculatorInputs {
-  phaseType: PhaseType;
+  phaseType: string;
   dcrPreference: DcrPreference;
   calculationMode: QuoteCalculationMode;
   dcrSystemSizeKw?: number;
   nonDcrSystemSizeKw?: number;
   floorNumber: number;
   distanceKm?: number;
-  structureType: StructureType;
+  structureType: string;
   preferredPanelBrand?: string;
-  preferredPanelTechnology?: PanelTechnology;
+  preferredPanelTechnology?: string;
   preferredPanelWattage?: number;
   preferredInverterBrand?: string;
   preferredInverterCapacityKw?: number;

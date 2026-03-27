@@ -1,5 +1,4 @@
 import type {
-  FileAttachment,
   MaterialStatus,
   MilestoneStatus,
   MilestoneType,
@@ -8,8 +7,6 @@ import type {
   ProjectMetadata,
   ProjectPriority,
   ProjectStatus,
-  SiteSurveyStatus,
-  SurveyData,
   TaskPriority,
   TaskStatus,
 } from '@oneohm-epc/shared/types';
@@ -52,7 +49,6 @@ export interface ProjectDetail {
   actualCost?: number;
   metadata?: ProjectMetadata;
   milestones: ProjectMilestone[];
-  survey?: ProjectSurvey;
   materials: ProjectMaterial[];
   createdAt: string;
   updatedAt: string;
@@ -80,20 +76,6 @@ export interface ProjectMilestone {
   progressPercentage: number;
   startDate?: string;
   endDate?: string;
-}
-
-export interface ProjectSurvey {
-  id: string;
-  projectId: string;
-  surveyCode?: string;
-  surveyorId?: string;
-  status: SiteSurveyStatus;
-  surveyData?: SurveyData;
-  documents?: FileAttachment[];
-  createdAt: string;
-  updatedAt: string;
-  createdBy?: string;
-  updatedBy?: string;
 }
 
 export interface ProjectMaterial {

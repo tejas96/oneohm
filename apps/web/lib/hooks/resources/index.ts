@@ -127,3 +127,16 @@ export {
   type SubsidyConfigItem,
   type SubsidyConfigFilters,
 } from './subsidy-config';
+
+// Documents (generic entity-document system)
+export {
+  useDocumentsByEntity,
+  useDocumentsByEntityBatch,
+  useUploadDocument,
+  useUploadDocumentsBulk,
+  useUpdateDocument,
+  useDeleteDocument,
+} from './documents';
+
+// Site Activities
+export { useSiteActivityByProperty, useCompleteVisit, useCompleteSurvey } from './site-activities';

@@ -19,5 +19,6 @@ export * from './quote.enum';
 export * from './reseller.enum';
 export * from './security-event.enum';
 export * from './service-maintenance.enum';
+export * from './site-activity.enum';
 export * from './site-visit.enum';
 export * from './user.enum';

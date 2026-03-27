@@ -44,6 +44,8 @@ export interface QuoteFilters {
   toDate?: string;
   // Sorting
   sortBy?: QuoteSortField;
+  // Query control
+  enabled?: boolean;
   sortOrder?: SortOrder;
 }
 
@@ -128,33 +130,34 @@ export function useQuotes(
 ): UseQueryResult<QuoteListResponse, AxiosError> {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
+  const { enabled: callerEnabled, ...queryFilters } = filters;
 
   return useQuery({
-    queryKey: quoteKeys.list(organizationId, filters as Record<string, unknown>),
+    queryKey: quoteKeys.list(organizationId, queryFilters as Record<string, unknown>),
     queryFn: async (): Promise<QuoteListResponse> => {
       const params = new URLSearchParams();
 
-      if (filters.page) params.append('page', String(filters.page));
-      if (filters.limit) params.append('limit', String(filters.limit));
-      if (filters.search && filters.search.length >= 2) {
-        params.append('search', filters.search);
+      if (queryFilters.page) params.append('page', String(queryFilters.page));
+      if (queryFilters.limit) params.append('limit', String(queryFilters.limit));
+      if (queryFilters.search && queryFilters.search.length >= 2) {
+        params.append('search', queryFilters.search);
       }
-      if (filters.status) params.append('status', filters.status);
-      if (filters.customerId) params.append('customerId', filters.customerId);
-      if (filters.propertyId) params.append('propertyId', filters.propertyId);
-      if (filters.salesPersonId) params.append('salesPersonId', filters.salesPersonId);
-      if (filters.resellerId) params.append('resellerId', filters.resellerId);
-      if (filters.fromDate) params.append('fromDate', filters.fromDate);
-      if (filters.toDate) params.append('toDate', filters.toDate);
-      if (filters.sortBy) params.append('sortBy', filters.sortBy);
-      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+      if (queryFilters.status) params.append('status', queryFilters.status);
+      if (queryFilters.customerId) params.append('customerId', queryFilters.customerId);
+      if (queryFilters.propertyId) params.append('propertyId', queryFilters.propertyId);
+      if (queryFilters.salesPersonId) params.append('salesPersonId', queryFilters.salesPersonId);
+      if (queryFilters.resellerId) params.append('resellerId', queryFilters.resellerId);
+      if (queryFilters.fromDate) params.append('fromDate', queryFilters.fromDate);
+      if (queryFilters.toDate) params.append('toDate', queryFilters.toDate);
+      if (queryFilters.sortBy) params.append('sortBy', queryFilters.sortBy);
+      if (queryFilters.sortOrder) params.append('sortOrder', queryFilters.sortOrder);
 
       const { data } = await apiClient.get<QuoteListResponse>(`/quotes?${params.toString()}`, {
         headers: { 'X-Organization-Id': organizationId },
       });
       return data;
     },
-    enabled: !!organizationId,
+    enabled: !!organizationId && callerEnabled !== false,
     placeholderData: keepPreviousData,
   });
 }

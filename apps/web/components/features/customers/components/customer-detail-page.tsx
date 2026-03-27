@@ -1,9 +1,9 @@
 'use client';
 
-import { Building2, Clock, Edit, FileText, Mail, Phone, Plus, Upload } from 'lucide-react';
+import { Building2, Clock, Edit, FileText, Mail, Phone, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { type JSX, useCallback, useEffect, useMemo, useState } from 'react';
+import { type JSX, useCallback, useEffect, useState } from 'react';
 
 import {
   CUSTOMER_DETAIL_TABS,
@@ -15,15 +15,11 @@ import {
   useCustomer,
   useCustomerProperties,
   useCustomerQuotes,
-  useDocumentPreview,
-  useRemovePropertyDocument,
   useUpdateCustomer,
 } from '../hooks';
-import { DocumentPreviewModal } from './document-preview-modal';
-import { DocumentRow, type AggregatedDocument } from './document-row';
+import { CustomerDocumentsTab } from './customer-documents-tab';
 import { PropertyCard } from './property-card';
 import { PropertySelectModal } from './property-select-modal';
-import { UploadDocumentModal } from './upload-document-modal';
 
 import { useEmployees } from '@/components/features/employees';
 import { EditableField, EmptyState } from '@/components/shared';
@@ -37,12 +33,6 @@ import {
   BreadcrumbLink,
   BreadcrumbSeparator,
   BreadcrumbPage,
-  ConfirmDialog,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Skeleton,
   showToast,
   WhatsAppIcon,
@@ -123,8 +113,6 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
 
   // State
   const [propertySelectOpen, setPropertySelectOpen] = useState(false);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [docToDelete, setDocToDelete] = useState<AggregatedDocument | null>(null);
 
   // Get active tab and document filter from URL
   const rawTab = searchParams.get('tab') || DEFAULT_TAB;
@@ -161,29 +149,6 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
       });
     }
   }, [customer, user?.id]);
-
-  // Document mutations & preview
-  const removeMutation = useRemovePropertyDocument();
-  const { previewDocument, isPreviewOpen, openPreview, closePreview, downloadToSystem } =
-    useDocumentPreview();
-
-  // Aggregate documents from all properties
-  const allDocuments = useMemo((): AggregatedDocument[] => {
-    if (!properties) return [];
-    return properties.flatMap((property) =>
-      (property.documents || []).map((doc) => ({
-        ...doc,
-        propertyId: property.id,
-        propertyName: property.propertyName || property.address || 'Unnamed Property',
-      })),
-    );
-  }, [properties]);
-
-  // Filter documents by selected property
-  const filteredDocuments = useMemo(() => {
-    if (propertyFilter === 'all') return allDocuments;
-    return allDocuments.filter((doc) => doc.propertyId === propertyFilter);
-  }, [allDocuments, propertyFilter]);
 
   // Tab change handler with URL persistence
   const handleTabChange = useCallback(
@@ -244,26 +209,6 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
     },
     [pathname, router, searchParams],
   );
-
-  // Document action handlers
-  const handleDeleteDocument = useCallback((doc: AggregatedDocument) => {
-    setDocToDelete(doc);
-  }, []);
-
-  const confirmDeleteDocument = useCallback(async () => {
-    if (!docToDelete) return;
-    try {
-      await removeMutation.mutateAsync({
-        propertyId: docToDelete.propertyId,
-        documentUrl: docToDelete.url,
-      });
-      showToast.success('Document deleted');
-    } catch {
-      showToast.error('Failed to delete document');
-    } finally {
-      setDocToDelete(null);
-    }
-  }, [docToDelete, removeMutation]);
 
   // Navigation handlers
   const handleEdit = (): void => {
@@ -747,72 +692,11 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
 
           {/* Documents Tab */}
           <TabsContent value="documents">
-            <div className="p-4">
-              {/* Documents Tab Header */}
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Select value={propertyFilter} onValueChange={setPropertyFilterParam}>
-                    <SelectTrigger className="h-input-sm w-48">
-                      <SelectValue placeholder="All Properties" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Properties</SelectItem>
-                      {properties?.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.propertyName || p.address || 'Unnamed'}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsUploadModalOpen(true)}
-                  disabled={!properties || properties.length === 0}
-                >
-                  <Upload className="mr-2 size-icon-sm" />
-                  Upload
-                </Button>
-              </div>
-
-              {/* Documents List */}
-              {filteredDocuments.length === 0 ? (
-                <EmptyState
-                  icon={<FileText className="w-full h-full" />}
-                  title="No documents yet"
-                  description={
-                    properties && properties.length > 0
-                      ? 'Upload documents for your properties.'
-                      : 'Add a property first to upload documents.'
-                  }
-                  action={
-                    properties && properties.length > 0
-                      ? {
-                          label: 'Upload Document',
-                          onClick: () => setIsUploadModalOpen(true),
-                          icon: <Upload className="size-icon-sm" />,
-                        }
-                      : undefined
-                  }
-                />
-              ) : (
-                <div className="space-y-2">
-                  {filteredDocuments.map((doc, idx) => (
-                    <DocumentRow
-                      key={`${doc.propertyId}-${doc.url}-${idx}`}
-                      document={doc}
-                      onPreview={openPreview}
-                      onDownload={(d) => {
-                        void downloadToSystem(d);
-                      }}
-                      onDelete={handleDeleteDocument}
-                      isDeleting={removeMutation.isPending}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            <CustomerDocumentsTab
+              properties={properties ?? []}
+              propertyFilter={propertyFilter}
+              onPropertyFilterChange={setPropertyFilterParam}
+            />
           </TabsContent>
 
           {/* Projects Tab */}
@@ -841,35 +725,6 @@ export function CustomerDetailPage({ customerId }: CustomerDetailPageProps): JSX
         onClose={() => setPropertySelectOpen(false)}
         customerId={customerId}
         properties={properties || []}
-      />
-
-      {/* Upload Document Modal */}
-      <UploadDocumentModal
-        open={isUploadModalOpen}
-        onOpenChange={setIsUploadModalOpen}
-        properties={properties || []}
-      />
-
-      {/* Document Preview Modal */}
-      <DocumentPreviewModal
-        document={previewDocument}
-        open={isPreviewOpen}
-        onOpenChange={closePreview}
-        onDownload={(doc) => {
-          void downloadToSystem(doc);
-        }}
-      />
-
-      {/* Delete Document Confirmation */}
-      <ConfirmDialog
-        open={!!docToDelete}
-        onOpenChange={(open) => !open && setDocToDelete(null)}
-        title="Delete Document"
-        description={`Are you sure you want to delete "${docToDelete?.fileName}"? This action cannot be undone.`}
-        iconVariant="error"
-        confirmLabel="Delete"
-        confirmVariant="destructive"
-        onConfirm={confirmDeleteDocument}
       />
     </div>
   );

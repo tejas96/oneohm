@@ -3,16 +3,16 @@
 /**
  * Document Upload Hook
  *
- * Encapsulates the logic for validating, uploading, and saving property documents.
- * Handles S3 upload via presigned URL, progress tracking, and API persistence.
+ * Encapsulates the logic for validating, uploading, and saving documents
+ * using the new generic documents API (entityType + entityId pattern).
  *
  * @module features/customers/hooks/use-document-upload
  */
 
+import { DocumentCategory, DocumentEntityType } from '@oneohm-epc/shared/types';
 import { useCallback, useState } from 'react';
 
-import { useAddPropertyDocument } from './use-property-documents';
-
+import { useUploadDocument } from '@/components/features/documents/hooks';
 import {
   ACCEPTED_FILE_TYPES,
   MAX_FILE_SIZE,
@@ -25,21 +25,10 @@ import { FileCategory, uploadFile } from '@/lib/api/storage';
 // ============================================================================
 
 interface UseDocumentUploadReturn {
-  /** Current upload progress (0-100) */
   uploadProgress: number;
-  /** Whether an upload is in progress */
   isUploading: boolean;
-  /**
-   * Validate a file against accepted types and size limits.
-   * Shows toast error if invalid.
-   */
   validateFile: (file: File) => boolean;
-  /**
-   * Upload a file to S3 and save the document reference to the property.
-   * Returns true on success, false on failure.
-   */
   uploadDocument: (params: { propertyId: string; docType: string; file: File }) => Promise<boolean>;
-  /** Reset upload state (progress, isUploading) */
   resetUploadState: () => void;
 }
 
@@ -51,7 +40,7 @@ export function useDocumentUpload(): UseDocumentUploadReturn {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
 
-  const addDocumentMutation = useAddPropertyDocument();
+  const uploadMutation = useUploadDocument();
 
   const resetUploadState = useCallback(() => {
     setUploadProgress(0);
@@ -84,7 +73,6 @@ export function useDocumentUpload(): UseDocumentUploadReturn {
       setUploadProgress(0);
 
       try {
-        // Step 1: Upload file to S3
         const uploadResult = await uploadFile({
           file,
           category: FileCategory.DOCUMENT,
@@ -96,17 +84,20 @@ export function useDocumentUpload(): UseDocumentUploadReturn {
           },
         });
 
-        // Step 2: Save document reference to property
-        await addDocumentMutation.mutateAsync({
-          propertyId,
-          document: {
-            url: uploadResult.publicUrl,
-            tag: docType,
-            fileName: uploadResult.fileName,
-            fileSize: file.size,
-            isLoanDoc: false,
-            isVerified: false,
-          },
+        const category = file.type.startsWith('image/')
+          ? DocumentCategory.IMAGE
+          : DocumentCategory.DOCUMENT;
+
+        await uploadMutation.mutateAsync({
+          organizationId: '', // Will be set by the API client interceptor
+          entityType: DocumentEntityType.PROPERTY,
+          entityId: propertyId,
+          category,
+          tag: docType,
+          fileName: uploadResult.fileName,
+          fileUrl: uploadResult.publicUrl,
+          fileSizeBytes: file.size,
+          mimeType: file.type,
         });
 
         showToast.success('Document uploaded successfully');
@@ -118,7 +109,7 @@ export function useDocumentUpload(): UseDocumentUploadReturn {
         return false;
       }
     },
-    [addDocumentMutation, resetUploadState],
+    [uploadMutation, resetUploadState],
   );
 
   return {

@@ -1,5 +1,3 @@
-import type { PanelTechnology } from '../types/enums/product.enum';
-
 export interface ProductOptionInput {
   id: string;
   name: string;
@@ -22,7 +20,7 @@ export interface ProductOptionInput {
 }
 
 export interface PanelTechnologyVariant {
-  technology: PanelTechnology;
+  technology: string;
   wattageRange: string;
   minWattage: number;
   maxWattage: number;
@@ -33,7 +31,7 @@ export interface PanelBrandOption {
   value: string;
   label: string;
   wattageRange?: string;
-  technologies: PanelTechnology[];
+  technologies: string[];
   technologyVariants: PanelTechnologyVariant[];
 }
 
@@ -108,7 +106,7 @@ export function derivePanelBrands(products: ProductOptionInput[]): PanelBrandOpt
 
     const technologyVariants: PanelTechnologyVariant[] = Array.from(info.variants.values())
       .map((v) => ({
-        technology: v.technology as PanelTechnology,
+        technology: v.technology,
         wattageRange: `${v.minWattage}-${v.maxWattage}Wp`,
         minWattage: v.minWattage,
         maxWattage: v.maxWattage,

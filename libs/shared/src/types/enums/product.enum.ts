@@ -39,11 +39,13 @@ export enum UnitOfMeasure {
   ROLLS = 'roll',
 }
 
+/** @deprecated Runtime validation now uses product_type_attributes. Kept as well-known constants. */
 export enum PhaseType {
   SINGLE_PHASE = 'single_phase',
   THREE_PHASE = 'three_phase',
 }
 
+/** @deprecated Runtime validation now uses product_type_attributes. Kept as well-known constants. */
 export enum PanelTechnology {
   PERC = 'perc',
   TOPCON = 'topcon',
@@ -52,7 +54,7 @@ export enum PanelTechnology {
   BIFACIAL = 'bifacial',
 }
 
-export const PANEL_TECHNOLOGY_LABELS: Record<PanelTechnology, string> = {
+export const PANEL_TECHNOLOGY_LABELS: Record<string, string> = {
   [PanelTechnology.PERC]: 'PERC',
   [PanelTechnology.TOPCON]: 'TOPCon',
   [PanelTechnology.MONO_PERC]: 'Mono PERC',
@@ -61,7 +63,7 @@ export const PANEL_TECHNOLOGY_LABELS: Record<PanelTechnology, string> = {
 };
 
 /**
- * Structure Type Enum
+ * @deprecated Runtime validation now uses product_type_attributes. Kept as well-known constants.
  * Pricing: unitPrice × costMultiplier × systemSizeKw
  */
 export enum StructureType {

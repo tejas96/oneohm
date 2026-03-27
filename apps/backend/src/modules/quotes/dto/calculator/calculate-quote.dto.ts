@@ -1,12 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  ProjectType,
-  PhaseType,
-  DcrPreference,
-  StructureType,
-  PanelTechnology,
-  SystemType,
-} from '@oneohm-epc/shared/types';
+import { ProjectType, DcrPreference, SystemType } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -114,13 +107,12 @@ export class CalculateQuoteDto {
   systemSizeKw!: number;
 
   @ApiProperty({
-    enum: PhaseType,
-    description: 'Electrical phase type',
-    example: PhaseType.SINGLE_PHASE,
+    description: 'Electrical phase type (e.g. single_phase, three_phase)',
+    example: 'single_phase',
   })
-  @IsEnum(PhaseType)
+  @IsString()
   @IsNotEmpty()
-  phaseType!: PhaseType;
+  phaseType!: string;
 
   @ApiProperty({
     description: 'Whether government subsidy should be applied',
@@ -159,14 +151,13 @@ export class CalculateQuoteDto {
   preferredPanelBrand?: string;
 
   @ApiPropertyOptional({
-    enum: PanelTechnology,
     description:
-      'Preferred panel technology (PERC or TOPCON). If not specified, highest wattage panel is selected.',
-    example: PanelTechnology.TOPCON,
+      'Preferred panel technology (e.g. perc, topcon). If not specified, highest wattage panel is selected.',
+    example: 'topcon',
   })
-  @IsEnum(PanelTechnology)
+  @IsString()
   @IsOptional()
-  preferredPanelTechnology?: PanelTechnology;
+  preferredPanelTechnology?: string;
 
   @ApiPropertyOptional({
     description:
@@ -199,13 +190,12 @@ export class CalculateQuoteDto {
   preferredInverterCapacityKw?: number;
 
   @ApiProperty({
-    enum: StructureType,
-    description: 'Type of mounting structure',
-    example: StructureType.ALUMINUM_RAIL,
+    description: 'Type of mounting structure (e.g. aluminum_rail, rcc_3x6)',
+    example: 'aluminum_rail',
   })
-  @IsEnum(StructureType)
+  @IsString()
   @IsNotEmpty()
-  structureType!: StructureType;
+  structureType!: string;
 
   @ApiPropertyOptional({
     description: 'Installation floor number (0 for ground floor)',
