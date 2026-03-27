@@ -45,20 +45,16 @@ export {
   usePaymentMilestones,
 } from './use-project-payments';
 
-export { documentKeys, useProjectDocuments } from './use-project-documents';
-
 export { useDocumentDownload } from './use-document-download';
 
 export type {
   MilestoneWithPayment,
   PaymentSummaryDetail,
   ProjectDetail,
-  ProjectDocument,
   ProjectDetailProperty,
   ProjectMaterial,
   ProjectMilestone,
   ProjectPayment,
-  ProjectSurvey,
   ProjectTaskItem,
   ProjectTeamMember,
   TaskStatsSummary,

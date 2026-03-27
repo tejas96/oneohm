@@ -29,18 +29,18 @@ import { toDto, toDtoArray, toPaginatedResponse } from '../../../common/utils';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import { type CurrentUserType } from '../../auth/types';
+import { CreateSiteActivityDto } from '../../site-activities/dto/create-site-activity.dto';
+import { SiteActivityResponseDto } from '../../site-activities/dto/site-activity-response.dto';
+import { UpdateSiteActivityDto } from '../../site-activities/dto/update-site-activity.dto';
+import { SiteActivityService } from '../../site-activities/services/site-activity.service';
 import {
   CreateCustomerPropertyDto,
-  CreateSiteVisitDto,
   CustomerPropertyResponseDto,
   PropertyDocumentDto,
   PropertyQueryDto,
-  SiteVisitResponseDto,
   UpdateCustomerPropertyDto,
-  UpdateSiteVisitDto,
 } from '../dto';
 import { CustomerPropertyService } from '../services/customer-property.service';
-import { SiteVisitService } from '../services/site-visit.service';
 
 /**
  * Customer Property Controller
@@ -57,7 +57,7 @@ import { SiteVisitService } from '../services/site-visit.service';
 export class CustomerPropertyController {
   constructor(
     private readonly propertyService: CustomerPropertyService,
-    private readonly siteVisitService: SiteVisitService,
+    private readonly siteActivityService: SiteActivityService,
   ) {}
 
   /**
@@ -436,143 +436,81 @@ export class CustomerPropertyController {
     return toDto(CustomerPropertyResponseDto, property);
   }
 
-  // ==================== SITE VISIT NESTED ROUTES ====================
+  // ==================== SITE ACTIVITY NESTED ROUTES (backward compat, M4) ====================
+  // @deprecated Use /site-activities endpoints instead. These proxies exist for one release cycle.
 
-  /**
-   * Create site visit for property
-   */
   @Post(':id/site-visit')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({
-    summary: 'Create site visit for property',
-    description:
-      'Creates a new site visit for the specified property. Only one visit per property is allowed.',
-  })
-  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
-  @ApiResponse({
-    status: HttpStatus.CREATED,
-    description: 'Site visit created successfully',
-    type: SiteVisitResponseDto,
-  })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Property not found' })
-  @ApiResponse({
-    status: HttpStatus.CONFLICT,
-    description: 'Site visit already exists for this property',
-  })
+  @ApiOperation({ summary: '[Deprecated] Create site activity for property', deprecated: true })
   async createSiteVisit(
     @Param('id', ParseUUIDPipe) propertyId: string,
-    @Body() createDto: CreateSiteVisitDto,
+    @Body() createDto: CreateSiteActivityDto,
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<SiteVisitResponseDto> {
-    const siteVisit = await this.siteVisitService.create(
-      propertyId,
+  ): Promise<SiteActivityResponseDto> {
+    createDto.propertyId = propertyId;
+    const activity = await this.siteActivityService.create(
       organizationId,
       createDto,
       currentUser.id,
     );
-    return toDto(SiteVisitResponseDto, siteVisit);
+    return toDto(SiteActivityResponseDto, activity);
   }
 
-  /**
-   * Get site visit for property
-   */
   @Get(':id/site-visit')
-  @ApiOperation({
-    summary: 'Get site visit for property',
-    description: 'Retrieve the site visit for a specific property.',
-  })
-  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Site visit details',
-    type: SiteVisitResponseDto,
-  })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Site visit not found' })
+  @ApiOperation({ summary: '[Deprecated] Get site activity for property', deprecated: true })
   async getSiteVisit(
     @Param('id', ParseUUIDPipe) propertyId: string,
     @OrganizationContext() organizationId: string,
-  ): Promise<SiteVisitResponseDto> {
-    const siteVisit = await this.siteVisitService.findByPropertyId(propertyId, organizationId);
-    return toDto(SiteVisitResponseDto, siteVisit);
+  ): Promise<SiteActivityResponseDto> {
+    const activity = await this.siteActivityService.findByPropertyId(propertyId, organizationId);
+    return toDto(SiteActivityResponseDto, activity);
   }
 
-  /**
-   * Update site visit for property
-   */
   @Patch(':id/site-visit')
-  @ApiOperation({
-    summary: 'Update site visit for property',
-    description: 'Update the site visit for a specific property.',
-  })
-  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Site visit updated successfully',
-    type: SiteVisitResponseDto,
-  })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Site visit not found' })
+  @ApiOperation({ summary: '[Deprecated] Update site activity for property', deprecated: true })
   async updateSiteVisit(
     @Param('id', ParseUUIDPipe) propertyId: string,
-    @Body() updateDto: UpdateSiteVisitDto,
+    @Body() updateDto: UpdateSiteActivityDto,
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<SiteVisitResponseDto> {
-    const siteVisit = await this.siteVisitService.update(
-      propertyId,
+  ): Promise<SiteActivityResponseDto> {
+    const activity = await this.siteActivityService.findByPropertyId(propertyId, organizationId);
+    const updated = await this.siteActivityService.update(
+      activity.id,
       organizationId,
       updateDto,
       currentUser.id,
     );
-    return toDto(SiteVisitResponseDto, siteVisit);
+    return toDto(SiteActivityResponseDto, updated);
   }
 
-  /**
-   * Complete site visit for property
-   */
   @Post(':id/site-visit/complete')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Mark site visit as completed',
-    description: 'Mark the site visit for a property as completed.',
-  })
-  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Site visit marked as completed',
-    type: SiteVisitResponseDto,
-  })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Site visit not found' })
+  @ApiOperation({ summary: '[Deprecated] Complete site visit for property', deprecated: true })
   async completeSiteVisit(
     @Param('id', ParseUUIDPipe) propertyId: string,
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
-  ): Promise<SiteVisitResponseDto> {
-    const siteVisit = await this.siteVisitService.complete(
-      propertyId,
+  ): Promise<SiteActivityResponseDto> {
+    const activity = await this.siteActivityService.findByPropertyId(propertyId, organizationId);
+    const updated = await this.siteActivityService.completeVisit(
+      activity.id,
       organizationId,
       currentUser.id,
     );
-    return toDto(SiteVisitResponseDto, siteVisit);
+    return toDto(SiteActivityResponseDto, updated);
   }
 
-  /**
-   * Delete site visit for property
-   */
   @Delete(':id/site-visit')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({
-    summary: 'Delete site visit for property',
-    description: 'Soft delete the site visit for a property.',
-  })
-  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
-  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Site visit deleted successfully' })
-  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Site visit not found' })
+  @ApiOperation({ summary: '[Deprecated] Delete site activity for property', deprecated: true })
   async deleteSiteVisit(
     @Param('id', ParseUUIDPipe) propertyId: string,
     @OrganizationContext() organizationId: string,
     @CurrentUser() currentUser: CurrentUserType,
   ): Promise<void> {
-    await this.siteVisitService.delete(propertyId, organizationId, currentUser.id);
+    const activity = await this.siteActivityService.findByPropertyId(propertyId, organizationId);
+    await this.siteActivityService.delete(activity.id, organizationId, currentUser.id);
   }
 }

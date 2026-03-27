@@ -18,11 +18,11 @@ import {
 
 import { CustomerProfileEntity } from './customer-profile.entity';
 import type { FollowupEntity } from './followup.entity';
-import type { SiteVisitEntity } from './site-visit.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { OrganizationEntity } from '../../organizations/entities/organization.entity';
 import type { ProjectEntity } from '../../projects/entities/project.entity';
 import { QuoteEntity } from '../../quotes/entities/quote.entity';
+import type { SiteActivityEntity } from '../../site-activities/entities/site-activity.entity';
 import { UserEntity } from '../../users/entities/user.entity';
 
 /**
@@ -54,9 +54,9 @@ export class CustomerPropertyEntity extends BaseEntity {
   @JoinColumn({ name: 'organization_id' })
   organization?: OrganizationEntity;
 
-  // ==================== SITE VISIT (One-to-One) ====================
-  @OneToOne('SiteVisitEntity', 'customerProperty')
-  siteVisit?: SiteVisitEntity;
+  // ==================== SITE ACTIVITY (One-to-One) ====================
+  @OneToOne('SiteActivityEntity', 'customerProperty')
+  siteActivity?: SiteActivityEntity;
 
   // ==================== QUOTES (One-to-Many) ====================
   @OneToMany(() => QuoteEntity, (quote) => quote.property)

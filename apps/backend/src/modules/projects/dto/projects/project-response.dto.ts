@@ -6,7 +6,6 @@ import { toNum } from '../../../../common/utils';
 import { CustomerPropertyResponseDto } from '../../../customers/dto/customer-property-response.dto';
 import { MaterialResponseDto } from '../materials/material-response.dto';
 import { MilestoneResponseDto } from '../milestones/milestone-response.dto';
-import { SurveyResponseDto } from '../surveys/survey-response.dto';
 
 /**
  * Project Response DTO
@@ -117,11 +116,6 @@ export class ProjectResponseDto {
   @Expose()
   @Type(() => MilestoneResponseDto)
   milestones?: MilestoneResponseDto[];
-
-  @ApiPropertyOptional({ type: () => SurveyResponseDto })
-  @Expose()
-  @Type(() => SurveyResponseDto)
-  survey?: SurveyResponseDto;
 
   @ApiPropertyOptional({ type: [MaterialResponseDto] })
   @Expose()

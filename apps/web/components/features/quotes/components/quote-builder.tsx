@@ -1,13 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  DcrPreference,
-  PhaseType,
-  ProjectType,
-  StructureType,
-  type PaymentMilestone,
-} from '@oneohm-epc/shared/types';
+import { DcrPreference, ProjectType, type PaymentMilestone } from '@oneohm-epc/shared/types';
 import { isAxiosError } from 'axios';
 import {
   AlertCircle,
@@ -33,7 +27,6 @@ import { useCustomerProperties, type CustomerPropertyResponse } from '../../cust
 import { useCustomer, useCustomers } from '../../customers/hooks';
 import {
   PROJECT_TYPE_OPTIONS,
-  PHASE_TYPE_OPTIONS,
   DCR_PREFERENCE_OPTIONS,
   QUICK_SIZE_OPTIONS,
   DISCOUNT_PRESETS,
@@ -187,7 +180,7 @@ export function QuoteBuilder(): JSX.Element {
       propertyId: preselectedPropertyId,
       projectType: ProjectType.RESIDENTIAL,
       systemSizeKw: 5,
-      phaseType: PhaseType.SINGLE_PHASE,
+      phaseType: 'single_phase',
       selectedSubsidyIds: [],
       dcrPreference: DcrPreference.DCR_ONLY,
       structureType: '',
@@ -286,7 +279,16 @@ export function QuoteBuilder(): JSX.Element {
       missingFields: missing,
       tooltipMessage: message,
     };
-  }, [calculateMutation.isPending, config.isLoading, structureType, missingProductCategories]);
+  }, [
+    calculateMutation.isPending,
+    config.isLoading,
+    structureType,
+    missingProductCategories,
+    isPricingFetched,
+    floorIncrementPercent,
+    transportRatePerKm,
+    systemSizeKw,
+  ]);
 
   // Manual quantity adjusters
   const [manualDcrPanelCount, setManualDcrPanelCount] = useState<number | undefined>();
@@ -341,7 +343,7 @@ export function QuoteBuilder(): JSX.Element {
   useEffect(() => {
     const firstStructure = config.structureTypes[0];
     if (firstStructure && !form.getValues('structureType')) {
-      form.setValue('structureType', firstStructure.value as StructureType);
+      form.setValue('structureType', firstStructure.value);
     }
   }, [config.structureTypes, form]);
 
@@ -1005,10 +1007,10 @@ export function QuoteBuilder(): JSX.Element {
               <div className="space-y-2">
                 <Label>Phase Type *</Label>
                 <div className="flex gap-2">
-                  {PHASE_TYPE_OPTIONS.map((opt) => {
+                  {config.phaseTypeOptions.map((opt) => {
                     const isSelected = form.watch('phaseType') === opt.value;
                     const isDisabled =
-                      opt.value === PhaseType.SINGLE_PHASE && formLogic.shouldDisableSinglePhase;
+                      opt.value === 'single_phase' && formLogic.shouldDisableSinglePhase;
                     return (
                       <button
                         key={opt.value}

@@ -107,10 +107,11 @@ const mockSiteVisits: SiteVisit[] = [
 // Badge Mappings
 // ============================================================================
 
-const STATUS_VARIANTS: Record<SiteVisitStatus, 'warning' | 'info' | 'success'> = {
+const STATUS_VARIANTS: Record<SiteVisitStatus, 'warning' | 'info' | 'success' | 'error'> = {
   [SiteVisitStatus.PENDING]: 'warning',
   [SiteVisitStatus.IN_PROGRESS]: 'info',
   [SiteVisitStatus.COMPLETED]: 'success',
+  [SiteVisitStatus.CANCELLED]: 'error',
 };
 
 // TODO: Phase 2 - Use for priority badges

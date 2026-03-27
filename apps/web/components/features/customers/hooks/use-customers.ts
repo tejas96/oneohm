@@ -48,6 +48,8 @@ export interface CustomerFilters {
   // Sorting
   sortBy?: CustomerSortField;
   sortOrder?: SortOrder;
+  // Query control
+  enabled?: boolean;
 }
 
 export interface Customer {
@@ -124,34 +126,35 @@ export function useCustomers(
 ): UseQueryResult<CustomerListResponse, AxiosError> {
   const { user } = useAuth();
   const organizationId = user?.organizationId;
+  const { enabled: callerEnabled, ...queryFilters } = filters;
 
   return useQuery({
-    queryKey: customerKeys.list(organizationId, filters as Record<string, unknown>),
+    queryKey: customerKeys.list(organizationId, queryFilters as Record<string, unknown>),
     queryFn: async (): Promise<CustomerListResponse> => {
       const params = new URLSearchParams();
 
       // Pagination
-      if (filters.page) params.append('page', String(filters.page));
-      if (filters.limit) params.append('limit', String(filters.limit));
+      if (queryFilters.page) params.append('page', String(queryFilters.page));
+      if (queryFilters.limit) params.append('limit', String(queryFilters.limit));
 
       // Search (min 2 chars)
-      if (filters.search && filters.search.length >= 2) {
-        params.append('search', filters.search);
+      if (queryFilters.search && queryFilters.search.length >= 2) {
+        params.append('search', queryFilters.search);
       }
 
       // Filters
-      if (filters.status) params.append('status', filters.status);
-      if (filters.city) params.append('city', filters.city);
-      if (filters.state) params.append('state', filters.state);
-      if (filters.leadSource) params.append('leadSource', filters.leadSource);
-      if (filters.createdBy) params.append('createdBy', filters.createdBy);
-      if (filters.fromDate) params.append('fromDate', filters.fromDate);
-      if (filters.toDate) params.append('toDate', filters.toDate);
-      if (filters.groupSearch) params.append('groupSearch', filters.groupSearch);
+      if (queryFilters.status) params.append('status', queryFilters.status);
+      if (queryFilters.city) params.append('city', queryFilters.city);
+      if (queryFilters.state) params.append('state', queryFilters.state);
+      if (queryFilters.leadSource) params.append('leadSource', queryFilters.leadSource);
+      if (queryFilters.createdBy) params.append('createdBy', queryFilters.createdBy);
+      if (queryFilters.fromDate) params.append('fromDate', queryFilters.fromDate);
+      if (queryFilters.toDate) params.append('toDate', queryFilters.toDate);
+      if (queryFilters.groupSearch) params.append('groupSearch', queryFilters.groupSearch);
 
       // Sorting
-      if (filters.sortBy) params.append('sortBy', filters.sortBy);
-      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+      if (queryFilters.sortBy) params.append('sortBy', queryFilters.sortBy);
+      if (queryFilters.sortOrder) params.append('sortOrder', queryFilters.sortOrder);
 
       const { data } = await apiClient.get<CustomerListResponse>(
         `/customers?${params.toString()}`,
@@ -159,7 +162,7 @@ export function useCustomers(
       );
       return data;
     },
-    enabled: !!organizationId,
+    enabled: !!organizationId && callerEnabled !== false,
     // Keep previous data visible while new data loads to prevent UI flicker
     placeholderData: keepPreviousData,
   });

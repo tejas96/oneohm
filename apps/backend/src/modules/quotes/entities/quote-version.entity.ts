@@ -1,10 +1,4 @@
-import {
-  CalculatorInputs,
-  PaymentMilestone,
-  PricingBreakdown,
-  ProjectType,
-  SystemType,
-} from '@oneohm-epc/shared/types';
+import { CalculatorInputs, PaymentMilestone, PricingBreakdown } from '@oneohm-epc/shared/types';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 import { QuoteEntity } from './quote.entity';
@@ -35,9 +29,8 @@ export class QuoteVersionEntity extends BaseEntity {
     type: 'varchar',
     length: 50,
     name: 'system_type',
-    enum: SystemType,
   })
-  systemType!: SystemType;
+  systemType!: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, name: 'system_size_kw' })
   systemSizeKw!: number;
@@ -50,9 +43,8 @@ export class QuoteVersionEntity extends BaseEntity {
     type: 'varchar',
     length: 50,
     name: 'project_type',
-    enum: ProjectType,
   })
-  projectType!: ProjectType;
+  projectType!: string;
 
   // ==================== Top-level Pricing (sortable/filterable) ====================
   @Column({ type: 'decimal', precision: 15, scale: 2, name: 'final_price' })

@@ -18,8 +18,3 @@ export * from './property-query.dto';
 export * from './create-followup.dto';
 export * from './update-followup.dto';
 export * from './followup-response.dto';
-
-// Site Visit DTOs
-export * from './create-site-visit.dto';
-export * from './update-site-visit.dto';
-export * from './site-visit-response.dto';

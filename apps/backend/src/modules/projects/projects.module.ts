@@ -7,7 +7,6 @@ import {
   ProjectController,
   ProjectTaskController,
   ProjectTeamController,
-  SurveyController,
   TasksController,
   WorkflowStepController,
 } from './controllers';
@@ -17,7 +16,6 @@ import {
   ProjectMilestoneEntity,
   ProjectTaskEntity,
   ProjectTeamMemberEntity,
-  SiteSurveyEntity,
   WorkflowStepEntity,
 } from './entities';
 import { ProjectTeamGuard } from './guards';
@@ -27,7 +25,6 @@ import {
   ProjectRepository,
   ProjectTaskRepository,
   ProjectTeamRepository,
-  SurveyRepository,
   WorkflowStepRepository,
 } from './repositories';
 import {
@@ -36,7 +33,6 @@ import {
   ProjectService,
   ProjectTaskService,
   ProjectTeamService,
-  SurveyService,
   WorkflowEngineService,
   WorkflowStepService,
 } from './services';
@@ -50,7 +46,6 @@ import { UsersModule } from '../users/users.module';
     TypeOrmModule.forFeature([
       ProjectEntity,
       ProjectMilestoneEntity,
-      SiteSurveyEntity,
       ProjectMaterialEntity,
       WorkflowStepEntity,
       ProjectTaskEntity,
@@ -64,7 +59,6 @@ import { UsersModule } from '../users/users.module';
   controllers: [
     ProjectController,
     MilestoneController,
-    SurveyController,
     MaterialController,
     WorkflowStepController,
     ProjectTaskController,
@@ -75,7 +69,6 @@ import { UsersModule } from '../users/users.module';
     // Repositories
     ProjectRepository,
     MilestoneRepository,
-    SurveyRepository,
     MaterialRepository,
     WorkflowStepRepository,
     ProjectTaskRepository,
@@ -83,7 +76,6 @@ import { UsersModule } from '../users/users.module';
     // Services
     ProjectService,
     MilestoneService,
-    SurveyService,
     MaterialService,
     WorkflowStepService,
     WorkflowEngineService,
@@ -95,14 +87,12 @@ import { UsersModule } from '../users/users.module';
   exports: [
     ProjectRepository,
     MilestoneRepository,
-    SurveyRepository,
     MaterialRepository,
     WorkflowStepRepository,
     ProjectTaskRepository,
     ProjectTeamRepository,
     ProjectService,
     MilestoneService,
-    SurveyService,
     MaterialService,
     WorkflowStepService,
     ProjectTaskService,

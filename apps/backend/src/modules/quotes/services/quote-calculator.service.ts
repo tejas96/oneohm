@@ -2,10 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PRODUCT_TYPE_INVERTER, PRODUCT_TYPE_SOLAR_PANEL } from '@oneohm-epc/shared/constants';
 import {
   ProjectType,
-  PhaseType,
   DcrPreference,
-  StructureType,
-  PanelTechnology,
   CalculatedPanelConfig,
   CalculatedInverterConfig,
   CalculatedInstallationCost,
@@ -515,7 +512,7 @@ export class QuoteCalculatorService {
         name: panel.name,
         brand: panel.brand?.name || 'Unknown',
         isDcr: specs.is_dcr === true || specs.is_dcr === 'true',
-        technology: specs.technology as PanelTechnology | undefined,
+        technology: (specs.technology as string) || undefined,
         wattagePerPanel: wattage,
         quantity: override.quantity,
         totalWattage,
@@ -772,7 +769,7 @@ export class QuoteCalculatorService {
         name: bestPanel.name,
         brand: bestPanel.brand?.name || 'Unknown',
         isDcr: specs.is_dcr === true || specs.is_dcr === 'true',
-        technology: specs.technology as PanelTechnology | undefined,
+        technology: (specs.technology as string) || undefined,
         wattagePerPanel: nominalWattage,
         quantity: targetCount,
         totalWattage,
@@ -822,7 +819,7 @@ export class QuoteCalculatorService {
       name: selectedPanel.name,
       brand: selectedPanel.brand?.name || 'Unknown',
       isDcr: specs.is_dcr === true || specs.is_dcr === 'true',
-      technology: specs.technology as PanelTechnology | undefined,
+      technology: (specs.technology as string) || undefined,
       wattagePerPanel: nominalWattage,
       quantity: targetCount,
       totalWattage,
@@ -899,7 +896,7 @@ export class QuoteCalculatorService {
       name: panel.name,
       brand: panel.brand?.name || 'Unknown',
       isDcr: specs.is_dcr === true || specs.is_dcr === 'true',
-      technology: specs.technology as PanelTechnology | undefined,
+      technology: (specs.technology as string) || undefined,
       wattagePerPanel: nominalWattage,
       quantity: panelCount,
       totalWattage,
@@ -924,7 +921,7 @@ export class QuoteCalculatorService {
   private async calculateInverters(
     organizationId: string,
     systemSizeKw: number,
-    phaseType: PhaseType,
+    phaseType: string,
     preferredBrand: string | undefined,
     projectType: ProjectType,
     overrides: InverterOverrideDto[] | undefined,
@@ -1107,7 +1104,7 @@ export class QuoteCalculatorService {
   private async calculateInvertersWithQuantityConstraint(
     organizationId: string,
     systemSizeKw: number,
-    phaseType: PhaseType,
+    phaseType: string,
     targetQuantity: number,
     preferredBrand: string | undefined,
     projectType: ProjectType,
@@ -1337,7 +1334,7 @@ export class QuoteCalculatorService {
    */
   private async findInverters(
     organizationId: string,
-    phaseType: PhaseType,
+    phaseType: string,
     preferredBrand?: string,
     preferredCapacityKw?: number,
   ): Promise<ProductEntity[]> {
@@ -1793,12 +1790,12 @@ export class QuoteCalculatorService {
   private async calculateStructure(
     organizationId: string,
     systemSizeKw: number,
-    structureType: StructureType,
+    structureType: string,
     projectType: ProjectType,
   ): Promise<{
     productId: string;
     name: string;
-    structureType: StructureType;
+    structureType: string;
     quantity: number;
     unitPrice: number;
     lineTotal: number;
@@ -1848,7 +1845,7 @@ export class QuoteCalculatorService {
    */
   private calculateInstallationCosts(
     pricing: InstallationPricing,
-    _structureType: StructureType,
+    _structureType: string,
     floorNumber: number,
     distanceKm: number,
   ): CalculatedInstallationCost {

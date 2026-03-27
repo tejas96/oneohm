@@ -16,7 +16,6 @@ export type { PropertyDetailTab } from './constants';
 export { PropertyListPage } from './components/property-list-page';
 export { PropertyDetailPage } from './components/property-detail-page';
 export { PropertyDetailHeader } from './components/property-detail-header';
-export { PropertyDocumentsTab } from './components/property-documents-tab';
 export { PropertyForm } from './components/property-form';
 export { PropertyFormPage } from './components/property-form-page';
 export { MarkAsLostModal } from './components/mark-as-lost-modal';

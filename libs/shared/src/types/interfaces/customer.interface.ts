@@ -90,19 +90,9 @@ export interface CustomerProperty {
 // ============================================================================
 
 /**
- * Property Document - Unified document storage for property-level documents
- * All documents (loan and non-loan) are stored in this format.
- *
- * Storage: JSONB column in customer_properties table
- *
- * @example
- * const doc: PropertyDocument = {
- *   url: "https://storage.example.com/docs/aadhaar.jpg",
- *   tag: "aadhaar_card",
- *   fileName: "aadhaar.jpg",
- *   isLoanDoc: true,
- *   isVerified: false
- * };
+ * @deprecated PropertyDocument is deprecated. Documents are now stored in the `documents` table
+ * using the generic entityType+entityId pattern. Use the documents API instead.
+ * Kept temporarily for backward compatibility during migration.
  */
 export interface PropertyDocument {
   /** Cloud storage URL of the document */

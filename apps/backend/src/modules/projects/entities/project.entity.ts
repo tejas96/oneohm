@@ -13,7 +13,6 @@ import { ProjectMaterialEntity } from './project-material.entity';
 import { ProjectMilestoneEntity } from './project-milestone.entity';
 import { ProjectTaskEntity } from './project-task.entity';
 import { ProjectTeamMemberEntity } from './project-team-member.entity';
-import { SiteSurveyEntity } from './site-survey.entity';
 import { BaseEntity } from '../../../common/entities/base.entity';
 import { CustomerPropertyEntity } from '../../customers/entities/customer-property.entity';
 import { QuoteEntity } from '../../quotes/entities/quote.entity';
@@ -113,9 +112,6 @@ export class ProjectEntity extends BaseEntity {
 
   @OneToMany(() => ProjectTaskEntity, (task) => task.project)
   tasks!: ProjectTaskEntity[];
-
-  @OneToOne(() => SiteSurveyEntity, (survey) => survey.project)
-  survey?: SiteSurveyEntity;
 
   @OneToMany(() => ProjectMaterialEntity, (material) => material.project)
   materials!: ProjectMaterialEntity[];

@@ -42,7 +42,7 @@ export const QUOTE_STATUS_BADGE_VARIANT: Record<QuoteStatus, BadgeProps['variant
 
 /**
  * Mapping of document tag values to human-readable labels.
- * Used by both UploadDocumentModal (as select options) and DocumentRow (as display labels).
+ * Mapping of legacy document tag values to display labels.
  */
 export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   electricity_bill: 'Electricity Bill',
@@ -56,12 +56,3 @@ export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   compliance_certificate: 'Compliance Certificate',
   other: 'Other',
 };
-
-/**
- * Document type options for Select components.
- * Derived from DOCUMENT_TYPE_LABELS.
- */
-export const DOCUMENT_TYPE_OPTIONS = Object.entries(DOCUMENT_TYPE_LABELS).map(([value, label]) => ({
-  value,
-  label,
-}));

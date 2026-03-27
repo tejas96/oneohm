@@ -1,5 +1,5 @@
-import { PhaseType, PanelTechnology, StructureType, ProjectType } from '../enums/product.enum';
-import { SubsidySchemeType, DcrPreference } from '../enums/quote.enum';
+import type { ProjectType } from '../enums/product.enum';
+import type { SubsidySchemeType, DcrPreference } from '../enums/quote.enum';
 
 /**
  * ============================================================================
@@ -221,7 +221,7 @@ export interface QuoteCalculationInput {
   /** Required system size in kW */
   systemSizeKw: number;
   /** Electrical phase type */
-  phaseType: PhaseType;
+  phaseType: string;
   /** Whether subsidy is applicable */
   subsidyApplicable: boolean;
   /** DCR panel preference */
@@ -231,7 +231,7 @@ export interface QuoteCalculationInput {
   /** Preferred inverter brand (optional) */
   preferredInverterBrand?: string;
   /** Structure type */
-  structureType: StructureType;
+  structureType: string;
   /** Installation floor number (default 0 for ground) */
   floorNumber?: number;
   /** Distance from warehouse in km */
@@ -251,7 +251,7 @@ export interface CalculatedPanelConfig {
   /** Whether DCR panel */
   isDcr: boolean;
   /** Technology (optional - may not be specified in specs) */
-  technology?: PanelTechnology;
+  technology?: string;
   /** Wattage per panel */
   wattagePerPanel: number;
   /** Number of panels */
@@ -396,7 +396,7 @@ export interface QuoteCalculationResult {
     totalSystemSizeKw: number;
     dcrSizeKw: number;
     nonDcrSizeKw: number;
-    phaseType: PhaseType;
+    phaseType: string;
   };
   /** Panel configurations (may have DCR + Non-DCR split) */
   panels: CalculatedPanelConfig[];
@@ -406,7 +406,7 @@ export interface QuoteCalculationResult {
   structure: {
     productId: string;
     name: string;
-    structureType: StructureType;
+    structureType: string;
     quantity: number;
     unitPrice: number;
     lineTotal: number;

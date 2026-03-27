@@ -1,9 +1,6 @@
 import type {
   ProjectType,
-  PhaseType,
   DcrPreference,
-  StructureType,
-  PanelTechnology,
   PaymentMilestone as SharedPaymentMilestone,
   ProfitMarginTier,
   SubsidyTier as SharedSubsidyTier,
@@ -40,15 +37,15 @@ export interface CalculateQuoteRequest {
   propertyId?: string;
   projectType: ProjectType;
   systemSizeKw: number;
-  phaseType: PhaseType;
+  phaseType: string;
   subsidyApplicable: boolean;
   dcrPreference?: DcrPreference;
   preferredPanelBrand?: string;
-  preferredPanelTechnology?: PanelTechnology;
+  preferredPanelTechnology?: string;
   preferredPanelWattage?: number;
   preferredInverterBrand?: string;
   preferredInverterCapacityKw?: number;
-  structureType: StructureType | string;
+  structureType: string;
   floorNumber?: number;
   distanceKm?: number;
   panelOverrides?: PanelOverride[];
@@ -79,7 +76,7 @@ export interface SystemConfig {
   totalSystemSizeKw: number;
   dcrSizeKw: number;
   nonDcrSizeKw: number;
-  phaseType: PhaseType;
+  phaseType: string;
 }
 
 /**
@@ -113,7 +110,7 @@ export interface CalculatedInverter {
 export interface CalculatedStructure {
   productId: string;
   name: string;
-  structureType: StructureType;
+  structureType: string;
   quantity: number;
   unitPrice: number;
   lineTotal: number;

@@ -21,6 +21,7 @@ export type { QuoteDetail, QuoteVersionDetail, QuotePaymentMilestone } from './t
 
 // Quote builder hooks
 export { useQuoteConfig } from './use-quote-config';
+export type { PhaseTypeOption } from './use-quote-config';
 
 export { useCalculateQuote } from './use-calculate-quote';
 export { useInstallationPricing } from './use-installation-pricing';

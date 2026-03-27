@@ -4,7 +4,6 @@ import {
   QuoteStatus,
   SystemType,
   ProjectType,
-  PhaseType,
   DcrPreference,
   ItemCategory,
 } from '@oneohm-epc/shared/types';
@@ -122,29 +121,6 @@ export const PROJECT_TYPE_OPTIONS: ProjectTypeOption[] = [
 ];
 
 // ============================================================================
-// Phase Type Options
-// ============================================================================
-
-export interface PhaseTypeOption {
-  value: PhaseType;
-  label: string;
-  subtitle: string;
-}
-
-export const PHASE_TYPE_OPTIONS: PhaseTypeOption[] = [
-  {
-    value: PhaseType.SINGLE_PHASE,
-    label: 'Single Phase',
-    subtitle: 'Up to 7 kW systems',
-  },
-  {
-    value: PhaseType.THREE_PHASE,
-    label: 'Three Phase',
-    subtitle: 'Above 7 kW systems',
-  },
-];
-
-// ============================================================================
 // DCR Preference Options
 // ============================================================================
 
@@ -178,11 +154,6 @@ export { SYSTEM_SIZE_CONFIG, DISCOUNT_PRESETS, DISTANCE_CONFIG };
 export const PROJECT_TYPE_LABELS: Record<string, string> = _PROJECT_TYPE_LABELS;
 
 export const QUICK_SIZE_OPTIONS = [3, 5, 7, 10, 15, 20] as const;
-
-export const FLOOR_OPTIONS = Array.from({ length: 11 }, (_, i) => ({
-  value: i,
-  label: i === 0 ? 'Ground Floor' : `Floor ${i}`,
-}));
 
 // ============================================================================
 // Property Type to Project Type Mapping

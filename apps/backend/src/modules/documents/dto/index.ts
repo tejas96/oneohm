@@ -1,3 +1,4 @@
-export * from './create-document.dto';
-export * from './update-document.dto';
-export * from './document-response.dto';
+export { CreateDocumentDto, BulkCreateDocumentDto } from './create-document.dto';
+export { UpdateDocumentDto } from './update-document.dto';
+export { DocumentResponseDto } from './document-response.dto';
+export { QueryDocumentsDto } from './query-documents.dto';
