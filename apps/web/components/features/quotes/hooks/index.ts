@@ -29,6 +29,8 @@ export { useSaveQuote } from './use-save-quote';
 export { useQuoteFormLogic } from './use-quote-form-logic';
 export type { UseQuoteFormLogicOptions, UseQuoteFormLogicReturn } from './use-quote-form-logic';
 export { useQuotePdf } from './use-quote-pdf';
+export { useQuotePermissions } from './use-quote-permissions';
+export type { QuotePermissions } from './use-quote-permissions';
 
 // ============================================================================
 // Types

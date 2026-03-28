@@ -7,9 +7,11 @@ import React from 'react';
 import { SYSTEM_TYPE_LABELS, PROJECT_TYPE_LABELS } from '../../../constants';
 import type { QuoteDetail, QuoteVersionDetail } from '../../../hooks/types';
 
+import { Can } from '@/components/shared/guards';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { PERMISSIONS } from '@/lib/constants/permissions';
 import { formatCurrency } from '@/lib/utils/format';
 
 interface QuoteOverviewTabProps {
@@ -138,45 +140,82 @@ export function QuoteOverviewTab({
               {breakdown?.basePrice != null && (
                 <div className="flex justify-between">
                   <span className="text-sm text-foreground-secondary">Base Price</span>
-                  <span className="text-sm">{formatCurrency(breakdown.basePrice)}</span>
+                  <Can
+                    permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                    fallback={<span className="text-sm text-foreground-secondary">—</span>}
+                  >
+                    <span className="text-sm">{formatCurrency(breakdown.basePrice)}</span>
+                  </Can>
                 </div>
               )}
               {breakdown?.discountAmount != null && breakdown.discountAmount > 0 && (
                 <div className="flex justify-between text-success">
                   <span className="text-sm">Discount</span>
-                  <span className="text-sm">-{formatCurrency(breakdown.discountAmount)}</span>
+                  <Can
+                    permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                    fallback={<span className="text-sm text-foreground-secondary">—</span>}
+                  >
+                    <span className="text-sm">-{formatCurrency(breakdown.discountAmount)}</span>
+                  </Can>
                 </div>
               )}
               {breakdown?.gst5OnEquipment != null && (
                 <div className="flex justify-between">
                   <span className="text-sm text-foreground-secondary">GST on Equipment</span>
-                  <span className="text-sm">{formatCurrency(breakdown.gst5OnEquipment)}</span>
+                  <Can
+                    permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                    fallback={<span className="text-sm text-foreground-secondary">—</span>}
+                  >
+                    <span className="text-sm">{formatCurrency(breakdown.gst5OnEquipment)}</span>
+                  </Can>
                 </div>
               )}
               {breakdown?.gst18OnServices != null && (
                 <div className="flex justify-between">
                   <span className="text-sm text-foreground-secondary">GST on Services</span>
-                  <span className="text-sm">{formatCurrency(breakdown.gst18OnServices)}</span>
+                  <Can
+                    permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                    fallback={<span className="text-sm text-foreground-secondary">—</span>}
+                  >
+                    <span className="text-sm">{formatCurrency(breakdown.gst18OnServices)}</span>
+                  </Can>
                 </div>
               )}
               {breakdown?.totalGst != null && (
                 <div className="flex justify-between">
                   <span className="text-sm text-foreground-secondary">Total GST</span>
-                  <span className="text-sm">{formatCurrency(breakdown.totalGst)}</span>
+                  <Can
+                    permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                    fallback={<span className="text-sm text-foreground-secondary">—</span>}
+                  >
+                    <span className="text-sm">{formatCurrency(breakdown.totalGst)}</span>
+                  </Can>
                 </div>
               )}
               {breakdown?.totalPrice != null && (
                 <div className="flex justify-between border-t border-border-light pt-2">
                   <span className="text-sm font-medium">Gross Total</span>
-                  <span className="text-sm font-medium">
-                    {formatCurrency(breakdown.totalPrice)}
-                  </span>
+                  <Can
+                    permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                    fallback={
+                      <span className="text-sm font-medium text-foreground-secondary">—</span>
+                    }
+                  >
+                    <span className="text-sm font-medium">
+                      {formatCurrency(breakdown.totalPrice)}
+                    </span>
+                  </Can>
                 </div>
               )}
               {breakdown?.subsidyAmount != null && breakdown.subsidyAmount > 0 && (
                 <div className="flex justify-between text-success">
                   <span className="text-sm">Subsidy</span>
-                  <span className="text-sm">-{formatCurrency(breakdown.subsidyAmount)}</span>
+                  <Can
+                    permission={PERMISSIONS.QUOTES.VIEW_PRICE_BREAKDOWN}
+                    fallback={<span className="text-sm text-foreground-secondary">—</span>}
+                  >
+                    <span className="text-sm">-{formatCurrency(breakdown.subsidyAmount)}</span>
+                  </Can>
                 </div>
               )}
               {effectivePrice != null && (
