@@ -5,6 +5,7 @@ import {
   MilestoneType,
   type TaskChecklist,
   type TaskStatus,
+  TASK_STATUS_LABELS,
   type WorkflowStep,
 } from '@oneohm-epc/shared/types';
 import {
@@ -23,7 +24,6 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
-import { TASK_STATUS_LABELS } from '../constants';
 import {
   workflowStepSchema,
   type ChecklistItem,
@@ -88,7 +88,7 @@ const ALL_TASK_STATUSES = Object.keys(TASK_STATUS_LABELS) as TaskStatus[];
 
 // ── Page Component ─────────────────────────────────────────────
 
-export function ProjectWorkflowStepsPage(): React.JSX.Element {
+export function AdminWorkflowStepsPage(): React.JSX.Element {
   const {
     items,
     isEmpty,
@@ -123,7 +123,7 @@ export function ProjectWorkflowStepsPage(): React.JSX.Element {
 
   const deleteConfirmation = useDeleteConfirmation<WorkflowStep>({
     mutation: mutations.remove,
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- generic inference limitation
+
     getId: (step) => step.id,
   });
 
@@ -909,15 +909,12 @@ function DependsOnSelector({
 
   const availableSteps = useMemo((): WorkflowStep[] => {
     const lower = searchTerm.toLowerCase();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- generic FDAL inference
+
     return allSteps.filter((s): boolean => {
       if (selectedSet.has(s.code)) return false;
       if (excludeCode && s.code === excludeCode) return false;
       if (!lower) return true;
-      return (
-        (s.name as string).toLowerCase().includes(lower) ||
-        (s.code as string).toLowerCase().includes(lower)
-      );
+      return s.name.toLowerCase().includes(lower) || s.code.toLowerCase().includes(lower);
     });
   }, [allSteps, searchTerm, selectedSet, excludeCode]);
 

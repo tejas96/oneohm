@@ -409,18 +409,6 @@ export const navigationConfig: NavigationConfig = {
             },
           ],
         },
-        {
-          title: 'Settings',
-          roles: ['admin', 'super_admin', 'platform_admin'],
-          items: [
-            {
-              id: 'projects-workflow-steps',
-              icon: Settings,
-              label: 'Workflow Steps',
-              href: ROUTES.PROJECTS.WORKFLOW_STEPS,
-            },
-          ],
-        },
       ],
     },
 
@@ -664,6 +652,12 @@ export const navigationConfig: NavigationConfig = {
           title: 'System',
           roles: ['admin', 'super_admin', 'platform_admin'],
           items: [
+            {
+              id: 'admin-workflow-steps',
+              icon: Settings,
+              label: 'Workflow Steps',
+              href: ROUTES.ADMIN.WORKFLOW_STEPS,
+            },
             {
               id: 'workflows',
               icon: LayoutGrid,

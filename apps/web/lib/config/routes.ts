@@ -77,7 +77,6 @@ export const ROUTES = {
     BOARD: '/projects/board',
     MY_TASKS: '/projects/my-tasks',
     TIMELINE: '/projects/timeline',
-    WORKFLOW_STEPS: '/projects/workflow-steps',
   },
 
   // Pipeline
@@ -163,6 +162,7 @@ export const ROUTES = {
     INSTALLATION_PRICING: '/admin/pricing',
     QUOTE_CONFIG: '/admin/quote-config',
     SUBSIDY_CONFIG: '/admin/subsidy-config',
+    WORKFLOW_STEPS: '/admin/workflow-steps',
     WORKFLOWS: '/admin/workflows',
     INTEGRATIONS: '/admin/integrations',
     AUDIT: '/admin/audit',
@@ -290,6 +290,7 @@ export const ADMIN_ROUTES = [
   ROUTES.ADMIN.ROLES,
   ROUTES.ADMIN.PERMISSIONS,
   ROUTES.ADMIN.SETTINGS,
+  ROUTES.ADMIN.WORKFLOW_STEPS,
   ROUTES.ADMIN.WORKFLOWS,
   ROUTES.ADMIN.INTEGRATIONS,
   ROUTES.ADMIN.AUDIT,
@@ -443,6 +444,7 @@ export const ROUTE_TO_PANEL_MAP: Record<string, string> = {
   [ROUTES.ADMIN.ROLES]: 'admin',
   [ROUTES.ADMIN.PERMISSIONS]: 'admin',
   [ROUTES.ADMIN.SETTINGS]: 'admin',
+  [ROUTES.ADMIN.WORKFLOW_STEPS]: 'admin',
   [ROUTES.ADMIN.HOME]: 'admin',
 
   // Dashboard (default)
