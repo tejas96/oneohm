@@ -65,6 +65,10 @@ export {
 } from './dialog';
 export type { DialogContentProps, ConfirmDialogProps } from './dialog';
 
+// MUI Breadcrumb
+export { MUIBreadcrumb } from './mui-breadcrumb';
+export type { MUIBreadcrumbProps, MUIBreadcrumbItem } from './mui-breadcrumb';
+
 // MUI Dialog
 export {
   MUIDialog,
@@ -207,7 +211,11 @@ export type { MUIFieldLabelProps } from './mui-shared';
 
 // MUI User Assignee Selector
 export { MUIUserAssigneeSelector } from './mui-user-assignee-selector';
-export type { MUIUserAssigneeSelectorProps } from './mui-user-assignee-selector';
+export type { MUIUserAssigneeSelectorProps, AssigneeOption } from './mui-user-assignee-selector';
+
+// MUI Typography
+export { MUITypography } from './mui-typography';
+export type { MUITypographyProps, MUITypographyVariant } from './mui-typography';
 
 // Sonner (Toasts)
 export { Toaster, showToast } from './sonner';

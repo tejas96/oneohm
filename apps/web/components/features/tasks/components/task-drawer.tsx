@@ -1,27 +1,27 @@
 'use client';
 
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { Box, Divider } from '@mui/material';
 import {
   TASK_STATUS_TRANSITIONS,
   TaskStatus,
   type TaskChecklist,
   type TaskPriority,
 } from '@oneohm-epc/shared/types';
-import { AlertCircle } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 
-import { DRAWER_TABS, type DrawerTab } from '../constants';
-import { TaskDrawerActivity } from './task-drawer-activity';
 import { TaskDrawerChecklist } from './task-drawer-checklist';
 import { TaskDrawerDependencies } from './task-drawer-dependencies';
-import { TaskDrawerDetails } from './task-drawer-details';
 import { TaskDrawerHeader } from './task-drawer-header';
+import { TaskDrawerMainContent } from './task-drawer-main-content';
+import { TaskDrawerMetadata } from './task-drawer-metadata';
 import { useTaskDetail } from '../hooks/use-task-detail';
 import { useAddComment, useUpdateTask } from '../hooks/use-task-mutations';
 
 import { Button } from '@/components/ui/button';
+import { MUITypography } from '@/components/ui/mui-typography';
 import { Sheet, SheetContent, SheetFooter, SheetTitle } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
 
 interface TaskDrawerProps {
   taskId: string | null;
@@ -36,7 +36,6 @@ export function TaskDrawer({
   onClose,
   onTaskUpdated,
 }: TaskDrawerProps): React.JSX.Element {
-  const [activeTab, setActiveTab] = useState<DrawerTab>('details');
   const { data: task, isLoading, isError, error } = useTaskDetail(open ? taskId : null);
   const updateTask = useUpdateTask();
   const addComment = useAddComment();
@@ -139,14 +138,12 @@ export function TaskDrawer({
     [taskId, addComment],
   );
 
-  const canComplete = task
-    ? (TASK_STATUS_TRANSITIONS[task.status] ?? []).includes(TaskStatus.DONE)
-    : false;
+  const canComplete = task ? TASK_STATUS_TRANSITIONS[task.status].includes(TaskStatus.DONE) : false;
 
   if (!open) {
     return (
       <Sheet open={false}>
-        <SheetContent side="right" className="w-full sm:max-w-md">
+        <SheetContent side="right" className="w-full sm:max-w-4xl">
           <SheetTitle className="sr-only">Task Details</SheetTitle>
         </SheetContent>
       </Sheet>
@@ -155,31 +152,45 @@ export function TaskDrawer({
 
   return (
     <Sheet open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col p-0">
+      <SheetContent side="right" className="w-full sm:max-w-4xl flex flex-col p-0">
         <SheetTitle className="sr-only">{task?.name ?? 'Task Details'}</SheetTitle>
         {isError ? (
-          <div className="flex flex-col items-center justify-center gap-3 p-6 pt-16 text-center">
-            <AlertCircle className="h-10 w-10 text-foreground-muted" />
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                {[403, 404].includes(
-                  (error as { response?: { status?: number } })?.response?.status ?? 0,
-                )
-                  ? 'Access Denied'
-                  : 'Failed to load task'}
-              </p>
-              <p className="mt-1 text-xs text-foreground-secondary">
-                {[403, 404].includes(
-                  (error as { response?: { status?: number } })?.response?.status ?? 0,
-                )
-                  ? "You don't have permission to view this task's details"
-                  : 'Something went wrong. Please try again later.'}
-              </p>
-            </div>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1.5,
+              p: 3,
+              pt: 8,
+              textAlign: 'center',
+            }}
+          >
+            <ErrorOutlineIcon sx={{ fontSize: 40, color: 'text.disabled' }} />
+            <Box>
+              {(() => {
+                const status =
+                  (error as { response?: { status?: number } } | null)?.response?.status ?? 0;
+                const isAccessDenied = [403, 404].includes(status);
+                return (
+                  <>
+                    <MUITypography variant="bodyPrimary" sx={{ fontWeight: 500, mb: 0.5 }}>
+                      {isAccessDenied ? 'Access Denied' : 'Failed to load task'}
+                    </MUITypography>
+                    <MUITypography variant="body">
+                      {isAccessDenied
+                        ? "You don't have permission to view this task's details"
+                        : 'Something went wrong. Please try again later.'}
+                    </MUITypography>
+                  </>
+                );
+              })()}
+            </Box>
             <Button variant="outline" size="sm" onClick={onClose}>
               Close
             </Button>
-          </div>
+          </Box>
         ) : isLoading || !task ? (
           <div className="p-6 space-y-4">
             <Skeleton className="h-4 w-32" />
@@ -193,77 +204,100 @@ export function TaskDrawer({
           </div>
         ) : (
           <>
-            <div className="px-6 pt-6">
-              <TaskDrawerHeader
-                projectNumber={task.projectNumber}
-                code={task.code}
-                name={task.name}
-                status={task.status}
-                priority={task.priority}
-                onStatusChange={handleStatusChange}
-                onPriorityChange={handlePriorityChange}
-              />
-            </div>
+            {/* Header */}
+            <TaskDrawerHeader
+              projectId={task.projectId}
+              projectNumber={task.projectNumber}
+              code={task.code}
+              name={task.name}
+            />
 
-            {/* Tab navigation */}
-            <div className="flex border-b border-border-light px-6">
-              {DRAWER_TABS.map((tab) => (
-                <button
-                  key={tab.value}
-                  type="button"
-                  onClick={() => setActiveTab(tab.value)}
-                  className={cn(
-                    'px-3 py-2 text-sm font-medium transition-colors border-b-2 -mb-px',
-                    activeTab === tab.value
-                      ? 'border-primary text-foreground'
-                      : 'border-transparent text-foreground-tertiary hover:text-foreground-secondary',
-                  )}
+            {/* Two-column layout: Metadata sidebar (left) + Main content (right) */}
+            <Box sx={{ flex: 1, overflow: 'auto' }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '300px 1fr' }}>
+                {/* Metadata sidebar */}
+                <Box
+                  sx={{
+                    borderRight: 1,
+                    borderColor: 'divider',
+                    px: 2.5,
+                    py: 2.5,
+                    bgcolor: 'action.hover',
+                  }}
                 >
-                  {tab.label}
-                  {tab.value === 'checklist' && task.checklistProgress && (
-                    <span className="ml-1 text-2xs text-foreground-muted">
-                      ({task.checklistProgress.done}/{task.checklistProgress.total})
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {/* Tab content */}
-            <div className="flex-1 overflow-y-auto px-6 py-4">
-              {activeTab === 'details' && (
-                <>
-                  <TaskDrawerDetails
-                    task={task}
-                    onDueDateChange={handleDueDateChange}
+                  <TaskDrawerMetadata
+                    projectId={task.projectId}
+                    projectNumber={task.projectNumber}
+                    projectName={task.projectName}
+                    status={task.status}
+                    priority={task.priority}
+                    assignedToUserId={task.assignedToUserId}
+                    endDate={task.endDate}
+                    createdAt={task.createdAt}
+                    updatedAt={task.updatedAt}
+                    onStatusChange={handleStatusChange}
+                    onPriorityChange={handlePriorityChange}
                     onAssigneeChange={handleAssigneeChange}
-                    onDescriptionChange={handleDescriptionChange}
+                    onDueDateChange={handleDueDateChange}
                   />
-                  <div className="mt-4 pt-4 border-t border-border-light">
-                    <TaskDrawerDependencies
-                      task={task}
-                      onDependenciesChange={handleDependenciesChange}
-                    />
-                  </div>
-                </>
-              )}
-              {activeTab === 'checklist' && (
-                <TaskDrawerChecklist
-                  checklist={task.checklist}
-                  onToggleItem={handleChecklistToggle}
-                />
-              )}
-              {activeTab === 'activity' && (
-                <TaskDrawerActivity
-                  activityLog={task.activityLog ?? []}
-                  onAddComment={handleAddComment}
-                  isAddingComment={addComment.isPending}
-                />
-              )}
-            </div>
+                </Box>
+
+                {/* Main content area */}
+                <Box sx={{ px: 3, py: 2.5 }}>
+                  <TaskDrawerMainContent
+                    description={task.description}
+                    activityLog={task.activityLog}
+                    blockedReason={task.blockedReason}
+                    completionPercentage={task.completionPercentage}
+                    hasDependencyBlockers={task.hasDependencyBlockers}
+                    onDescriptionChange={handleDescriptionChange}
+                    onAddComment={handleAddComment}
+                    isAddingComment={addComment.isPending}
+                    hasExtraSections={
+                      (task.checklist?.items.length ?? 0) > 0 ||
+                      (task.dependsOnTaskIds?.length ?? 0) > 0 ||
+                      Boolean(task.hasDependencyBlockers)
+                    }
+                  >
+                    {/* Checklist — shown before activity */}
+                    {task.checklist?.items && task.checklist.items.length > 0 && (
+                      <Box>
+                        <MUITypography variant="sectionTitle" sx={{ mb: 1.5 }}>
+                          Checklist
+                        </MUITypography>
+                        <TaskDrawerChecklist
+                          checklist={task.checklist}
+                          onToggleItem={handleChecklistToggle}
+                        />
+                      </Box>
+                    )}
+
+                    {/* Divider between checklist and dependencies when both are present */}
+                    {(task.checklist?.items.length ?? 0) > 0 &&
+                      ((task.dependsOnTaskIds?.length ?? 0) > 0 || task.hasDependencyBlockers) && (
+                        <Divider />
+                      )}
+
+                    {/* Dependencies — shown before activity */}
+                    {((task.dependsOnTaskIds && task.dependsOnTaskIds.length > 0) ||
+                      task.hasDependencyBlockers) && (
+                      <Box>
+                        <MUITypography variant="sectionTitle" sx={{ mb: 1.5 }}>
+                          Dependencies
+                        </MUITypography>
+                        <TaskDrawerDependencies
+                          task={task}
+                          onDependenciesChange={handleDependenciesChange}
+                        />
+                      </Box>
+                    )}
+                  </TaskDrawerMainContent>
+                </Box>
+              </Box>
+            </Box>
 
             {canComplete && (
-              <SheetFooter className="border-t border-border-light p-4">
+              <SheetFooter className="border-t border-border-light p-4 bg-white">
                 <Button className="w-full" onClick={handleComplete} disabled={updateTask.isPending}>
                   Complete Task
                 </Button>
