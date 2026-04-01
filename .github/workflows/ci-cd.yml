@@ -111,7 +111,7 @@ jobs:
             ${{ runner.os }}-nx-
 
       - name: Set NX SHAs
-        uses: nrwl/nx-set-shas@v4
+        uses: nrwl/nx-set-shas@v5
         with:
           main-branch-name: 'main'
 
@@ -159,7 +159,7 @@ jobs:
             ${{ runner.os }}-nx-
 
       - name: Set NX SHAs
-        uses: nrwl/nx-set-shas@v4
+        uses: nrwl/nx-set-shas@v5
         with:
           main-branch-name: 'main'
 
@@ -204,7 +204,7 @@ jobs:
             ${{ runner.os }}-nx-
 
       - name: Set NX SHAs
-        uses: nrwl/nx-set-shas@v4
+        uses: nrwl/nx-set-shas@v5
         with:
           main-branch-name: 'main'
 
@@ -256,7 +256,7 @@ jobs:
             ${{ runner.os }}-nx-
 
       - name: Set NX SHAs
-        uses: nrwl/nx-set-shas@v4
+        uses: nrwl/nx-set-shas@v5
         with:
           main-branch-name: 'main'
 
@@ -304,7 +304,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Set NX SHAs
-        uses: nrwl/nx-set-shas@v4
+        uses: nrwl/nx-set-shas@v5
         with:
           main-branch-name: 'main'
 
@@ -370,7 +370,7 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Set NX SHAs
-        uses: nrwl/nx-set-shas@v4
+        uses: nrwl/nx-set-shas@v5
         with:
           main-branch-name: 'main'
 
