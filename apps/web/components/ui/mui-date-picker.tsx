@@ -97,7 +97,7 @@ function MUIDatePickerInner(
             fullWidth,
             error: displayError,
             helperText: error || helperText,
-            placeholder: placeholder || 'DD/MM/YYYY',
+            placeholder: placeholder || 'dd/mm/yyyy',
             sx: {
               '& .MuiInputBase-root': {
                 height: MUI_INPUT_HEIGHT,
