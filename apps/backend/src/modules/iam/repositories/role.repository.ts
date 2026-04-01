@@ -29,13 +29,13 @@ export class RoleRepository {
     if (organizationId === null || organizationId === '') {
       return this.repository.findOne({
         where: { code, organizationId: IsNull(), deletedAt: IsNull() },
-        relations: ['parent', 'rolePermissions', 'rolePermissions.permission'],
+        relations: ['rolePermissions', 'rolePermissions.permission'],
       });
     }
 
     return this.repository.findOne({
       where: { code, organizationId, deletedAt: IsNull() },
-      relations: ['parent', 'rolePermissions', 'rolePermissions.permission'],
+      relations: ['rolePermissions', 'rolePermissions.permission'],
     });
   }
 
@@ -45,7 +45,7 @@ export class RoleRepository {
   async findPlatformRoleByCode(code: string): Promise<RoleEntity | null> {
     return this.repository.findOne({
       where: { code, organizationId: IsNull(), deletedAt: IsNull() },
-      relations: ['parent', 'rolePermissions', 'rolePermissions.permission'],
+      relations: ['rolePermissions', 'rolePermissions.permission'],
     });
   }
 
@@ -72,26 +72,6 @@ export class RoleRepository {
     return this.repository.find({
       where: { organizationId, isSystemRole: true, deletedAt: IsNull() },
       order: { name: 'ASC' },
-    });
-  }
-
-  /**
-   * Find child roles
-   */
-  async findChildren(parentRoleId: string): Promise<RoleEntity[]> {
-    return this.repository.find({
-      where: { parentRoleId, deletedAt: IsNull() },
-      order: { level: 'ASC', name: 'ASC' },
-    });
-  }
-
-  /**
-   * Get role hierarchy (role with all children)
-   */
-  async getRoleHierarchy(roleId: string): Promise<RoleEntity | null> {
-    return this.repository.findOne({
-      where: { id: roleId, deletedAt: IsNull() },
-      relations: ['children', 'parent'],
     });
   }
 
@@ -125,17 +105,6 @@ export class RoleRepository {
 
     const count = await query.getCount();
     return count > 0;
-  }
-
-  /**
-   * Get all roles with hierarchy
-   */
-  async findAllWithHierarchy(organizationId: string): Promise<RoleEntity[]> {
-    return this.repository.find({
-      where: { organizationId, deletedAt: IsNull() },
-      relations: ['parent', 'children'],
-      order: { level: 'ASC', name: 'ASC' },
-    });
   }
 
   /**

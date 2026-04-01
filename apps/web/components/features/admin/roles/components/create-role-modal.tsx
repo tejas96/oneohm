@@ -37,7 +37,7 @@ export function CreateRoleModal({ open, onOpenChange }: CreateRoleModalProps): J
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<string[]>([]);
   const form = useForm<RoleFormData>({
     resolver: zodResolver(roleSchema),
-    defaultValues: { name: '', code: '', description: '', parentRoleId: '', level: 0 },
+    defaultValues: { name: '', code: '', description: '', level: 0 },
   });
 
   const handleClose = (isOpen: boolean): void => {
@@ -56,7 +56,6 @@ export function CreateRoleModal({ open, onOpenChange }: CreateRoleModalProps): J
         ...data,
         organizationId: currentUser?.organizationId || undefined,
       };
-      if (!payload.parentRoleId) delete payload.parentRoleId;
       if (!payload.description) delete payload.description;
       const result = await mutations.create.mutateAsync(
         payload as Record<string, unknown> & { id: string },
@@ -119,15 +118,9 @@ export function CreateRoleModal({ open, onOpenChange }: CreateRoleModalProps): J
                 placeholder="Brief description of this role..."
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Parent Role ID</Label>
-                <Input {...form.register('parentRoleId')} placeholder="Optional" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Level</Label>
-                <Input type="number" {...form.register('level', { valueAsNumber: true })} />
-              </div>
+            <div className="space-y-1.5">
+              <Label>Level</Label>
+              <Input type="number" {...form.register('level', { valueAsNumber: true })} />
             </div>
             <PermissionSelector
               selectedIds={selectedPermissionIds}

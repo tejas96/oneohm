@@ -19,10 +19,6 @@ export class CreateRoleDto {
   @IsOptional()
   description?: string;
 
-  @IsUUID()
-  @IsOptional()
-  parentRoleId?: string;
-
   @IsOptional()
   level?: number;
 

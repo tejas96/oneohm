@@ -42,7 +42,6 @@ export function EditRoleModal({ open, onOpenChange, role }: EditRoleModalProps):
       name: role.name,
       code: role.code,
       description: role.description ?? '',
-      parentRoleId: role.parentRoleId ?? '',
       level: role.level,
     },
   });
@@ -59,7 +58,6 @@ export function EditRoleModal({ open, onOpenChange, role }: EditRoleModalProps):
   const onSubmit = async (data: RoleFormData): Promise<void> => {
     try {
       const payload: Record<string, unknown> = { ...data };
-      if (!payload.parentRoleId) delete payload.parentRoleId;
       if (!payload.description) delete payload.description;
       await mutations.update.mutateAsync({ id: role.id, data: payload as Partial<AdminRole> });
 
@@ -117,15 +115,9 @@ export function EditRoleModal({ open, onOpenChange, role }: EditRoleModalProps):
               <Label>Description</Label>
               <Textarea {...form.register('description')} rows={2} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Parent Role ID</Label>
-                <Input {...form.register('parentRoleId')} placeholder="Optional" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Level</Label>
-                <Input type="number" {...form.register('level', { valueAsNumber: true })} />
-              </div>
+            <div className="space-y-1.5">
+              <Label>Level</Label>
+              <Input type="number" {...form.register('level', { valueAsNumber: true })} />
             </div>
             {isLoadingDetail ? (
               <div className="flex items-center gap-2 p-3 text-sm text-foreground-secondary">
