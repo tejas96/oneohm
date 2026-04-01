@@ -138,9 +138,7 @@ export function TaskDrawer({
     [taskId, addComment],
   );
 
-  const canComplete = task
-    ? TASK_STATUS_TRANSITIONS[task.status].includes(TaskStatus.DONE)
-    : false;
+  const canComplete = task ? TASK_STATUS_TRANSITIONS[task.status].includes(TaskStatus.DONE) : false;
 
   if (!open) {
     return (
@@ -172,7 +170,8 @@ export function TaskDrawer({
             <ErrorOutlineIcon sx={{ fontSize: 40, color: 'text.disabled' }} />
             <Box>
               {(() => {
-                const status = (error as { response?: { status?: number } } | null)?.response?.status ?? 0;
+                const status =
+                  (error as { response?: { status?: number } } | null)?.response?.status ?? 0;
                 const isAccessDenied = [403, 404].includes(status);
                 return (
                   <>
