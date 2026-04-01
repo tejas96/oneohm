@@ -204,17 +204,17 @@ export function MUIUserAssigneeSelector({
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
-  const handleOpen = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleOpen = (e: React.MouseEvent<HTMLButtonElement>): void => {
     if (disabled || loading || readOnly) return;
     setAnchorEl(e.currentTarget);
   };
 
-  const handleClose = () => {
+  const handleClose = (): void => {
     setAnchorEl(null);
     setSearch('');
   };
 
-  const handleSelect = (id: string | null) => {
+  const handleSelect = (id: string | null): void => {
     onChange?.(id);
     handleClose();
   };

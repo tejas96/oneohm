@@ -139,7 +139,7 @@ export function TaskDrawer({
   );
 
   const canComplete = task
-    ? (TASK_STATUS_TRANSITIONS[task.status] ?? []).includes(TaskStatus.DONE)
+    ? TASK_STATUS_TRANSITIONS[task.status].includes(TaskStatus.DONE)
     : false;
 
   if (!open) {
@@ -171,20 +171,22 @@ export function TaskDrawer({
           >
             <ErrorOutlineIcon sx={{ fontSize: 40, color: 'text.disabled' }} />
             <Box>
-              <MUITypography variant="bodyPrimary" sx={{ fontWeight: 500, mb: 0.5 }}>
-                {[403, 404].includes(
-                  (error as { response?: { status?: number } })?.response?.status ?? 0,
-                )
-                  ? 'Access Denied'
-                  : 'Failed to load task'}
-              </MUITypography>
-              <MUITypography variant="body">
-                {[403, 404].includes(
-                  (error as { response?: { status?: number } })?.response?.status ?? 0,
-                )
-                  ? "You don't have permission to view this task's details"
-                  : 'Something went wrong. Please try again later.'}
-              </MUITypography>
+              {(() => {
+                const status = (error as { response?: { status?: number } } | null)?.response?.status ?? 0;
+                const isAccessDenied = [403, 404].includes(status);
+                return (
+                  <>
+                    <MUITypography variant="bodyPrimary" sx={{ fontWeight: 500, mb: 0.5 }}>
+                      {isAccessDenied ? 'Access Denied' : 'Failed to load task'}
+                    </MUITypography>
+                    <MUITypography variant="body">
+                      {isAccessDenied
+                        ? "You don't have permission to view this task's details"
+                        : 'Something went wrong. Please try again later.'}
+                    </MUITypography>
+                  </>
+                );
+              })()}
             </Box>
             <Button variant="outline" size="sm" onClick={onClose}>
               Close
@@ -245,7 +247,7 @@ export function TaskDrawer({
                 <Box sx={{ px: 3, py: 2.5 }}>
                   <TaskDrawerMainContent
                     description={task.description}
-                    activityLog={task.activityLog ?? []}
+                    activityLog={task.activityLog}
                     blockedReason={task.blockedReason}
                     completionPercentage={task.completionPercentage}
                     hasDependencyBlockers={task.hasDependencyBlockers}
@@ -253,7 +255,7 @@ export function TaskDrawer({
                     onAddComment={handleAddComment}
                     isAddingComment={addComment.isPending}
                     hasExtraSections={
-                      (task.checklist?.items?.length ?? 0) > 0 ||
+                      (task.checklist?.items.length ?? 0) > 0 ||
                       (task.dependsOnTaskIds?.length ?? 0) > 0 ||
                       Boolean(task.hasDependencyBlockers)
                     }
@@ -272,7 +274,7 @@ export function TaskDrawer({
                     )}
 
                     {/* Divider between checklist and dependencies when both are present */}
-                    {(task.checklist?.items?.length ?? 0) > 0 &&
+                    {(task.checklist?.items.length ?? 0) > 0 &&
                       ((task.dependsOnTaskIds?.length ?? 0) > 0 || task.hasDependencyBlockers) && (
                         <Divider />
                       )}
