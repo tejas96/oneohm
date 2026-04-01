@@ -13,9 +13,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *
  * Safe to run: all 21 rows have parent_role_id = NULL (verified before migration).
  */
-export class RemoveParentRoleIdFromRoles1801000000000
-  implements MigrationInterface
-{
+export class RemoveParentRoleIdFromRoles1801000000000 implements MigrationInterface {
   name = 'RemoveParentRoleIdFromRoles1801000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
