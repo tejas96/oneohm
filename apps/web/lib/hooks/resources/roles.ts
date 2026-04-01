@@ -21,7 +21,6 @@ export interface AdminRole {
   name: string;
   code: string;
   description?: string;
-  parentRoleId?: string;
   level: number;
   isSystemRole: boolean;
   permissionsCount?: number;
@@ -36,7 +35,6 @@ export interface RoleWithPermissions {
   name: string;
   code: string;
   description?: string;
-  parentRoleId?: string;
   level: number;
   isSystemRole: boolean;
   permissions: string[];

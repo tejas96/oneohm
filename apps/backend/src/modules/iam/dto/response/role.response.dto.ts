@@ -23,9 +23,6 @@ export class RoleResponseDto {
   @ApiProperty({ example: 'Manages sales team and customer relationships', required: false })
   description?: string;
 
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174002', required: false })
-  parentRoleId?: string;
-
   @ApiProperty({ example: 1 })
   level: number;
 

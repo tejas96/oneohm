@@ -525,8 +525,7 @@ POST /iam/roles
   "name": "Project Manager",
   "code": "project_manager",
   "description": "Manages projects and team members",
-  "level": 2,
-  "parentRoleId": "parent-role-uuid" // Optional
+  "level": 2
 }
 
 // Via Service

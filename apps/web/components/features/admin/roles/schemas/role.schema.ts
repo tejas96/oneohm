@@ -8,7 +8,6 @@ export const roleSchema = z.object({
     .max(50)
     .regex(/^[a-z0-9_]+$/, 'Code must be lowercase alphanumeric with underscores'),
   description: z.string().max(500).optional().or(z.literal('')),
-  parentRoleId: z.string().optional().or(z.literal('')),
   level: z.coerce.number().int().min(0).optional(),
 });
 

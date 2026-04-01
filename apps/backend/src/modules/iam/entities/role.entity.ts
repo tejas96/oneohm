@@ -23,7 +23,6 @@ import { UserEntity } from '../../users/entities/user.entity';
 @Entity('roles')
 @Index(['organizationId', 'code'], { unique: true })
 @Index(['organizationId', 'deletedAt'])
-@Index(['parentRoleId', 'deletedAt'])
 @Index(['code', 'deletedAt'])
 export class RoleEntity {
   // ==================== Primary Key ====================
@@ -36,13 +35,6 @@ export class RoleEntity {
   @ManyToOne(() => OrganizationEntity, { nullable: true })
   @JoinColumn({ name: 'organization_id' })
   organization?: OrganizationEntity;
-
-  @ManyToOne(() => RoleEntity, (role) => role.children, { nullable: true })
-  @JoinColumn({ name: 'parent_role_id' })
-  parent?: RoleEntity;
-
-  @OneToMany(() => RoleEntity, (role) => role.parent)
-  children!: RoleEntity[];
 
   @OneToMany(() => RolePermissionEntity, (rolePermission) => rolePermission.role)
   rolePermissions!: RolePermissionEntity[];
@@ -60,9 +52,6 @@ export class RoleEntity {
   @Column({ name: 'organization_id', type: 'uuid', nullable: true })
   organizationId!: string | null;
 
-  @Column({ name: 'parent_role_id', type: 'uuid', nullable: true })
-  parentRoleId?: string;
-
   // ==================== Role Info ====================
 
   @Column({ type: 'varchar', length: 100 })
@@ -74,7 +63,7 @@ export class RoleEntity {
   @Column({ type: 'text', nullable: true })
   description?: string;
 
-  // ==================== Role Hierarchy ====================
+  // ==================== Ordering ====================
 
   @Column({ type: 'integer', default: 0 })
   level!: number;
