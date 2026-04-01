@@ -247,11 +247,7 @@ export function MUIUserAssigneeSelector({
             >
               {getInitials(currentName)}
             </Avatar>
-            <MUITypography
-              variant="bodyPrimary"
-              component="span"
-              noWrap
-            >
+            <MUITypography variant="bodyPrimary" component="span" noWrap>
               {currentName}
             </MUITypography>
           </>
@@ -469,9 +465,7 @@ export function MUIUserAssigneeSelector({
           {/* Empty — no options at all */}
           {!optionsErrorMsg && !isOptionsLoading && resolvedOptions.length === 0 && (
             <Box sx={{ py: 3, px: 2, textAlign: 'center' }}>
-              <MUITypography variant="body">
-                {resolvedEmptyText}
-              </MUITypography>
+              <MUITypography variant="body">{resolvedEmptyText}</MUITypography>
             </Box>
           )}
 
@@ -481,9 +475,7 @@ export function MUIUserAssigneeSelector({
             resolvedOptions.length > 0 &&
             filtered.length === 0 && (
               <Box sx={{ py: 3, px: 2, textAlign: 'center' }}>
-                <MUITypography variant="body">
-                  No results for &ldquo;{search}&rdquo;.
-                </MUITypography>
+                <MUITypography variant="body">No results for &ldquo;{search}&rdquo;.</MUITypography>
               </Box>
             )}
 

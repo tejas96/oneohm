@@ -10,16 +10,16 @@ import {
 import NextLink from 'next/link';
 import { useMemo, useCallback } from 'react';
 
-import {
-  TASK_PRIORITY_LABELS,
-  TASK_STATUS_LABELS,
-} from '../../projects/constants';
+import { TASK_PRIORITY_LABELS, TASK_STATUS_LABELS } from '../../projects/constants';
 import { useProjectTeam, type ProjectTeamMember } from '../../projects/hooks';
 
 import { MUIDatePicker } from '@/components/ui/mui-date-picker';
 import { MUISelect } from '@/components/ui/mui-select';
 import { MUITypography } from '@/components/ui/mui-typography';
-import { MUIUserAssigneeSelector, type AssigneeOption } from '@/components/ui/mui-user-assignee-selector';
+import {
+  MUIUserAssigneeSelector,
+  type AssigneeOption,
+} from '@/components/ui/mui-user-assignee-selector';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { MUI_LABEL_FONT_SIZE } from '@/lib/theme/mui-theme';
 import { formatDate } from '@/lib/utils';
@@ -96,7 +96,9 @@ export function TaskDrawerMetadata({
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
       {/* Status */}
       <Box>
-        <MUITypography variant="metaLabel" sx={{ mb: 0.75 }}>Status</MUITypography>
+        <MUITypography variant="metaLabel" sx={{ mb: 0.75 }}>
+          Status
+        </MUITypography>
         <MUISelect
           value={status}
           onChange={(e) => onStatusChange(e.target.value as TaskStatus)}
@@ -116,7 +118,9 @@ export function TaskDrawerMetadata({
 
       {/* Priority */}
       <Box>
-        <MUITypography variant="metaLabel" sx={{ mb: 0.75 }}>Priority</MUITypography>
+        <MUITypography variant="metaLabel" sx={{ mb: 0.75 }}>
+          Priority
+        </MUITypography>
         <MUISelect
           value={priority}
           onChange={(e) => onPriorityChange(e.target.value as TaskPriority)}
@@ -133,7 +137,9 @@ export function TaskDrawerMetadata({
 
       {/* Assignee */}
       <Box>
-        <MUITypography variant="metaLabel" sx={{ mb: 0.75 }}>Assignee</MUITypography>
+        <MUITypography variant="metaLabel" sx={{ mb: 0.75 }}>
+          Assignee
+        </MUITypography>
         <MUIUserAssigneeSelector
           value={assignedToUserId ?? null}
           onChange={onAssigneeChange}
@@ -150,7 +156,9 @@ export function TaskDrawerMetadata({
 
       {/* Due Date */}
       <Box>
-        <MUITypography variant="metaLabel" sx={{ mb: 0.75 }}>Due Date</MUITypography>
+        <MUITypography variant="metaLabel" sx={{ mb: 0.75 }}>
+          Due Date
+        </MUITypography>
         <MUIDatePicker
           value={endDate ?? null}
           onChange={handleDateChange}
@@ -171,7 +179,9 @@ export function TaskDrawerMetadata({
 
       {/* Project */}
       <Box>
-        <MUITypography variant="metaLabel" sx={{ mb: 0.75 }}>Project</MUITypography>
+        <MUITypography variant="metaLabel" sx={{ mb: 0.75 }}>
+          Project
+        </MUITypography>
         <MuiLink
           component={NextLink}
           href={projectHref}
@@ -193,15 +203,11 @@ export function TaskDrawerMetadata({
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
           <CalendarTodayIcon sx={{ fontSize: 12, color: 'text.disabled' }} />
-          <MUITypography variant="timestamp">
-            Created {formatDate(createdAt)}
-          </MUITypography>
+          <MUITypography variant="timestamp">Created {formatDate(createdAt)}</MUITypography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
           <CalendarTodayIcon sx={{ fontSize: 12, color: 'text.disabled' }} />
-          <MUITypography variant="timestamp">
-            Updated {formatDate(updatedAt)}
-          </MUITypography>
+          <MUITypography variant="timestamp">Updated {formatDate(updatedAt)}</MUITypography>
         </Box>
       </Box>
     </Box>

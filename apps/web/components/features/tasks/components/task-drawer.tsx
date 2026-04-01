@@ -215,7 +215,15 @@ export function TaskDrawer({
             <Box sx={{ flex: 1, overflow: 'auto' }}>
               <Box sx={{ display: 'grid', gridTemplateColumns: '300px 1fr' }}>
                 {/* Metadata sidebar */}
-                <Box sx={{ borderRight: 1, borderColor: 'divider', px: 2.5, py: 2.5, bgcolor: 'action.hover' }}>
+                <Box
+                  sx={{
+                    borderRight: 1,
+                    borderColor: 'divider',
+                    px: 2.5,
+                    py: 2.5,
+                    bgcolor: 'action.hover',
+                  }}
+                >
                   <TaskDrawerMetadata
                     projectId={task.projectId}
                     projectNumber={task.projectNumber}
@@ -251,7 +259,7 @@ export function TaskDrawer({
                     }
                   >
                     {/* Checklist — shown before activity */}
-                    {task.checklist && task.checklist.items && task.checklist.items.length > 0 && (
+                    {task.checklist?.items && task.checklist.items.length > 0 && (
                       <Box>
                         <MUITypography variant="sectionTitle" sx={{ mb: 1.5 }}>
                           Checklist

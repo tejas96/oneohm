@@ -116,7 +116,5 @@ const MUIBreadcrumbInner = (
   );
 };
 
-export const MUIBreadcrumb = React.forwardRef<HTMLElement, MUIBreadcrumbProps>(
-  MUIBreadcrumbInner,
-);
+export const MUIBreadcrumb = React.forwardRef<HTMLElement, MUIBreadcrumbProps>(MUIBreadcrumbInner);
 MUIBreadcrumb.displayName = 'MUIBreadcrumb';

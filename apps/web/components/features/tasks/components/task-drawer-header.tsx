@@ -25,17 +25,12 @@ export function TaskDrawerHeader({
   return (
     <Box sx={{ px: 3, pt: 3, pb: 2, borderBottom: 1, borderColor: 'divider' }}>
       <MUIBreadcrumb
-        items={[
-          { label: projectNumber, href: projectHref },
-          { label: code },
-        ]}
+        items={[{ label: projectNumber, href: projectHref }, { label: code }]}
         maxItems={2}
         fontSize={MUI_FINE_PRINT_FONT_SIZE}
         sx={{ mb: 1 }}
       />
-      <MUITypography variant="drawerTitle">
-        {name || code || 'Untitled'}
-      </MUITypography>
+      <MUITypography variant="drawerTitle">{name || code || 'Untitled'}</MUITypography>
     </Box>
   );
 }

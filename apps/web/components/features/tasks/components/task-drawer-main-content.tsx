@@ -4,14 +4,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import CommentIcon from '@mui/icons-material/Comment';
 import EditIcon from '@mui/icons-material/Edit';
-import {
-  Box,
-  Button,
-  Chip,
-  Divider,
-  IconButton,
-  TextField,
-} from '@mui/material';
+import { Box, Button, Chip, Divider, IconButton, TextField } from '@mui/material';
 import type { TaskActivityEntry } from '@oneohm-epc/shared/types';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -93,9 +86,7 @@ export function TaskDrawerMainContent({
           <MUITypography variant="alertTitle" sx={{ color: 'error.main' }}>
             Blocked
           </MUITypography>
-          <MUITypography variant="body">
-            {blockedReason}
-          </MUITypography>
+          <MUITypography variant="body">{blockedReason}</MUITypography>
         </Box>
       )}
 
@@ -113,49 +104,56 @@ export function TaskDrawerMainContent({
           <MUITypography variant="alertTitle" sx={{ color: 'warning.main' }}>
             Blocked by Dependencies
           </MUITypography>
-          <MUITypography variant="body">
-            Some dependency tasks are not yet complete
-          </MUITypography>
+          <MUITypography variant="body">Some dependency tasks are not yet complete</MUITypography>
         </Box>
       )}
 
       {/* Progress indicator */}
-      {completionPercentage !== undefined && completionPercentage > 0 && completionPercentage < 100 && (
-        <Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.75 }}>
-            <MUITypography variant="alertTitle" sx={{ color: 'text.secondary' }}>
-              Progress
-            </MUITypography>
-            <MUITypography variant="alertTitle" sx={{ color: 'text.primary' }}>
-              {completionPercentage}%
-            </MUITypography>
-          </Box>
-          <Box
-            sx={{
-              height: 6,
-              bgcolor: 'action.hover',
-              borderRadius: 1,
-              overflow: 'hidden',
-            }}
-          >
+      {completionPercentage !== undefined &&
+        completionPercentage > 0 &&
+        completionPercentage < 100 && (
+          <Box>
             <Box
               sx={{
-                height: '100%',
-                width: `${completionPercentage}%`,
-                bgcolor: 'primary.main',
-                transition: 'width 0.3s ease',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 0.75,
               }}
-            />
+            >
+              <MUITypography variant="alertTitle" sx={{ color: 'text.secondary' }}>
+                Progress
+              </MUITypography>
+              <MUITypography variant="alertTitle" sx={{ color: 'text.primary' }}>
+                {completionPercentage}%
+              </MUITypography>
+            </Box>
+            <Box
+              sx={{
+                height: 6,
+                bgcolor: 'action.hover',
+                borderRadius: 1,
+                overflow: 'hidden',
+              }}
+            >
+              <Box
+                sx={{
+                  height: '100%',
+                  width: `${completionPercentage}%`,
+                  bgcolor: 'primary.main',
+                  transition: 'width 0.3s ease',
+                }}
+              />
+            </Box>
           </Box>
-        </Box>
-      )}
+        )}
 
       {/* Description Section */}
       <Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-          <MUITypography variant="sectionTitle">
-            Description
-          </MUITypography>
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}
+        >
+          <MUITypography variant="sectionTitle">Description</MUITypography>
           {onDescriptionChange && !isEditingDescription && (
             <IconButton
               size="small"
@@ -276,9 +274,7 @@ export function TaskDrawerMainContent({
         {/* Activity timeline */}
         {activityLog.length === 0 ? (
           <Box sx={{ py: 4, textAlign: 'center' }}>
-            <MUITypography variant="body">
-              No activity yet
-            </MUITypography>
+            <MUITypography variant="body">No activity yet</MUITypography>
           </Box>
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -320,9 +316,7 @@ export function TaskDrawerMainContent({
                         py: 1.5,
                       }}
                     >
-                      <MUITypography variant="bodyPrimary">
-                        {entry.newValue}
-                      </MUITypography>
+                      <MUITypography variant="bodyPrimary">{entry.newValue}</MUITypography>
                     </Box>
                   ) : (
                     <Box

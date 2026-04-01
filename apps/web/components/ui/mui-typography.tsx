@@ -1,7 +1,6 @@
 'use client';
 
-import { Typography } from '@mui/material';
-import type { SxProps, Theme, TypographyProps } from '@mui/material';
+import { Typography, type SxProps, type Theme, type TypographyProps } from '@mui/material';
 import * as React from 'react';
 
 import {
@@ -24,16 +23,16 @@ import {
  * `variant` prop is replaced by this semantic token union.
  */
 export type MUITypographyVariant =
-  | 'sectionTitle'   // 0.875rem / 600 / text.primary  — section headings (Description, Activity, Checklist)
-  | 'body'           // 0.875rem / text.secondary       — body copy, alert paragraphs, activity labels
-  | 'bodyPrimary'    // 0.875rem / text.primary         — comment text, strong body copy
-  | 'metaLabel'      // 0.6875rem / 600 / uppercase     — sidebar field labels (STATUS, PRIORITY, etc.)
-  | 'timestamp'      // 0.75rem / text.disabled         — absolute formatted dates
-  | 'finePrint'      // 0.6875rem / text.disabled       — relative activity timestamps
-  | 'alertTitle'     // 0.75rem / 600 — no color (pass via sx or color prop)
-  | 'placeholder'    // 0.875rem / text.disabled / italic — empty/unset field copy
-  | 'drawerTitle'    // 1.25rem / 500 / text.primary    — page-level drawer heading
-  | 'inherit';       // fontSize: inherit — used inside parents that control the font size (Button, Breadcrumbs)
+  | 'sectionTitle' // 0.875rem / 600 / text.primary  — section headings (Description, Activity, Checklist)
+  | 'body' // 0.875rem / text.secondary       — body copy, alert paragraphs, activity labels
+  | 'bodyPrimary' // 0.875rem / text.primary         — comment text, strong body copy
+  | 'metaLabel' // 0.6875rem / 600 / uppercase     — sidebar field labels (STATUS, PRIORITY, etc.)
+  | 'timestamp' // 0.75rem / text.disabled         — absolute formatted dates
+  | 'finePrint' // 0.6875rem / text.disabled       — relative activity timestamps
+  | 'alertTitle' // 0.75rem / 600 — no color (pass via sx or color prop)
+  | 'placeholder' // 0.875rem / text.disabled / italic — empty/unset field copy
+  | 'drawerTitle' // 1.25rem / 500 / text.primary    — page-level drawer heading
+  | 'inherit'; // fontSize: inherit — used inside parents that control the font size (Button, Breadcrumbs)
 
 /**
  * MUITypographyProps extends MUI's TypographyProps with one change:
@@ -161,15 +160,8 @@ export function MUITypography({
   const mergedSx = [variantSx, ...(Array.isArray(sx) ? sx : sx ? [sx] : [])];
 
   return resolvedComponent ? (
-    <Typography
-      component={resolvedComponent}
-      sx={mergedSx}
-      {...rest}
-    />
+    <Typography component={resolvedComponent} sx={mergedSx} {...rest} />
   ) : (
-    <Typography
-      sx={mergedSx}
-      {...rest}
-    />
+    <Typography sx={mergedSx} {...rest} />
   );
 }
