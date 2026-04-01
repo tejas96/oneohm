@@ -173,26 +173,37 @@ export function AdminUsersListPage(): JSX.Element {
         accessorKey: 'name',
         header: () => <SortableHeader field="firstName" label="User" />,
         enableSorting: false,
-        cell: ({ row }) => (
-          <Link
-            href={buildRoute(ROUTES.ADMIN.USER_DETAIL, { id: row.original.id })}
-            className="flex items-center gap-2.5 hover:text-primary transition-colors"
-          >
-            <Avatar className="size-8 shrink-0">
-              <AvatarFallback>
-                {getInitials(`${row.original.firstName} ${row.original.lastName ?? ''}`.trim())}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0">
-              <div className="font-medium text-foreground leading-tight">
-                {row.original.firstName} {row.original.lastName}
+        cell: ({ row }) => {
+          const isDeleted = !!row.original.deletedAt;
+          const inner = (
+            <>
+              <Avatar className={`size-8 shrink-0${isDeleted ? ' opacity-50' : ''}`}>
+                <AvatarFallback>
+                  {getInitials(`${row.original.firstName} ${row.original.lastName ?? ''}`.trim())}
+                </AvatarFallback>
+              </Avatar>
+              <div className={`min-w-0${isDeleted ? ' opacity-50' : ''}`}>
+                <div className="font-medium text-foreground leading-tight">
+                  {row.original.firstName} {row.original.lastName}
+                </div>
+                <div className="text-foreground-tertiary text-2xs leading-tight mt-0.5 truncate">
+                  {row.original.email || '-'}
+                </div>
               </div>
-              <div className="text-foreground-tertiary text-2xs leading-tight mt-0.5 truncate">
-                {row.original.email || '-'}
-              </div>
-            </div>
-          </Link>
-        ),
+            </>
+          );
+          if (isDeleted) {
+            return <div className="flex items-center gap-2.5">{inner}</div>;
+          }
+          return (
+            <Link
+              href={buildRoute(ROUTES.ADMIN.USER_DETAIL, { id: row.original.id })}
+              className="flex items-center gap-2.5 hover:text-primary transition-colors"
+            >
+              {inner}
+            </Link>
+          );
+        },
       },
       {
         accessorKey: 'phone',
@@ -260,19 +271,19 @@ export function AdminUsersListPage(): JSX.Element {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() =>
-                    router.push(buildRoute(ROUTES.ADMIN.USER_DETAIL, { id: row.original.id }))
-                  }
-                >
-                  <Eye className="mr-2 size-icon-sm" /> View Details
-                </DropdownMenuItem>
                 {isDeleted ? (
                   <DropdownMenuItem onClick={() => setRestoreTarget(row.original)}>
                     <RotateCcw className="mr-2 size-icon-sm" /> Restore Employee
                   </DropdownMenuItem>
                 ) : (
                   <>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        router.push(buildRoute(ROUTES.ADMIN.USER_DETAIL, { id: row.original.id }))
+                      }
+                    >
+                      <Eye className="mr-2 size-icon-sm" /> View Details
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() =>
                         router.push(buildRoute(ROUTES.ADMIN.USER_DETAIL, { id: row.original.id }))

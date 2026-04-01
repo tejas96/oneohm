@@ -59,17 +59,27 @@ export class UserService {
       throw new BadRequestException('organizationId is required when profileType is provided');
     }
 
-    // Check if email already exists (if provided)
+    // Check if email already exists (including soft-deleted users to avoid DB 23505)
     if (createDto.email) {
-      const existingEmail = await this.userRepository.findByEmail(createDto.email);
+      const existingEmail = await this.userRepository.findByEmailIncludingDeleted(createDto.email);
       if (existingEmail) {
+        if (existingEmail.deletedAt) {
+          throw new ConflictException(
+            `Email ${createDto.email} belongs to a previously deleted account. Please restore that account instead.`,
+          );
+        }
         throw new ConflictException(`Email ${createDto.email} is already registered`);
       }
     }
 
-    // Check if phone already exists
-    const existingPhone = await this.userRepository.findByPhone(createDto.phone);
+    // Check if phone already exists (including soft-deleted users to avoid DB 23505)
+    const existingPhone = await this.userRepository.findByPhoneIncludingDeleted(createDto.phone);
     if (existingPhone) {
+      if (existingPhone.deletedAt) {
+        throw new ConflictException(
+          `Phone ${createDto.phone} belongs to a previously deleted account. Please restore that account instead.`,
+        );
+      }
       throw new ConflictException(`Phone ${createDto.phone} is already registered`);
     }
 
@@ -77,12 +87,24 @@ export class UserService {
     const { roles, password, organizationId, profileType, profileData, ...userData } = createDto;
 
     // Create user
-    const user = await this.userRepository.create({
-      ...userData,
-      passwordHash: password, // Will be hashed by entity hook
-      status: createDto.status || UserStatus.ACTIVE,
-      profileCompleted: false, // Will be updated after profile creation
-    });
+    let user: UserEntity;
+    try {
+      user = await this.userRepository.create({
+        ...userData,
+        passwordHash: password, // Will be hashed by entity hook
+        status: createDto.status || UserStatus.ACTIVE,
+        profileCompleted: false, // Will be updated after profile creation
+      });
+    } catch (dbErr: unknown) {
+      const e = dbErr as { code?: string; constraint?: string; message?: string };
+      if (e.code === '23505') {
+        const msg = e.constraint?.includes('email')
+          ? `Email ${createDto.email ?? ''} is already in use`
+          : `Phone ${createDto.phone} is already in use`;
+        throw new ConflictException(msg);
+      }
+      throw dbErr;
+    }
 
     this.logger.log(`User created: ${user.phone} (${user.email || 'no email'})`);
 
@@ -187,12 +209,12 @@ export class UserService {
   }
 
   async emailExists(email: string): Promise<boolean> {
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this.userRepository.findByEmailIncludingDeleted(email);
     return !!user;
   }
 
   async phoneExists(phone: string): Promise<boolean> {
-    const user = await this.userRepository.findByPhone(phone);
+    const user = await this.userRepository.findByPhoneIncludingDeleted(phone);
     return !!user;
   }
 

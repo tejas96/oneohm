@@ -649,7 +649,7 @@ export const navigationConfig: NavigationConfig = {
           ],
         },
         {
-          title: 'System',
+          title: 'Project',
           roles: ['admin', 'super_admin', 'platform_admin'],
           items: [
             {

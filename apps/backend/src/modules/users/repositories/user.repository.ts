@@ -50,6 +50,24 @@ export class UserRepository {
     });
   }
 
+  /** Includes soft-deleted rows — used for uniqueness checks during create */
+  async findByEmailIncludingDeleted(email: string): Promise<UserEntity | null> {
+    return this.repository
+      .createQueryBuilder('user')
+      .withDeleted()
+      .where('user.email = :email', { email })
+      .getOne();
+  }
+
+  /** Includes soft-deleted rows — used for uniqueness checks during create */
+  async findByPhoneIncludingDeleted(phone: string): Promise<UserEntity | null> {
+    return this.repository
+      .createQueryBuilder('user')
+      .withDeleted()
+      .where('user.phone = :phone', { phone })
+      .getOne();
+  }
+
   async findByEmailOrPhone(emailOrPhone: string): Promise<UserEntity | null> {
     return this.repository
       .createQueryBuilder('user')
@@ -85,31 +103,6 @@ export class UserRepository {
         .where('user.id = :id', { id })
         .andWhere('user.deleted_at IS NULL'),
     );
-  }
-
-  /**
-   * Shared helper: executes a user query and attaches IAM role codes/names.
-   * JOINs through user_roles.role_id -> roles.code so the result reflects
-   * IAM-assigned roles rather than the deprecated user_roles.role column.
-   */
-  private async findOneWithIamRoles(
-    qb: SelectQueryBuilder<UserEntity>,
-  ): Promise<UserEntity | null> {
-    const result = await qb
-      .leftJoin('user_roles', 'ur', 'ur.user_id = user.id')
-      .leftJoin('roles', 'r', 'r.id = ur.role_id AND r.deleted_at IS NULL')
-      .addSelect(['ur.role_id', 'r.code', 'r.name', 'ur.role'])
-      .getRawAndEntities();
-
-    if (!result.entities.length) return null;
-
-    const userEntity = result.entities[0];
-    if (userEntity) {
-      userEntity.roles = result.raw
-        .map((row: { r_code: string | null; ur_role: string | null }) => row.r_code ?? row.ur_role)
-        .filter((r: string | null): r is string => r != null);
-    }
-    return userEntity ?? null;
   }
 
   async findAll(page = 1, limit = 20, filters?: UserListFilters): Promise<[UserEntity[], number]> {
@@ -264,5 +257,30 @@ export class UserRepository {
     return this.repository.findOne({
       where: { ...options.where, deletedAt: IsNull() },
     });
+  }
+
+  /**
+   * Shared helper: executes a user query and attaches IAM role codes/names.
+   * JOINs through user_roles.role_id -> roles.code so the result reflects
+   * IAM-assigned roles rather than the deprecated user_roles.role column.
+   */
+  private async findOneWithIamRoles(
+    qb: SelectQueryBuilder<UserEntity>,
+  ): Promise<UserEntity | null> {
+    const result = await qb
+      .leftJoin('user_roles', 'ur', 'ur.user_id = user.id')
+      .leftJoin('roles', 'r', 'r.id = ur.role_id AND r.deleted_at IS NULL')
+      .addSelect(['ur.role_id', 'r.code', 'r.name', 'ur.role'])
+      .getRawAndEntities();
+
+    if (!result.entities.length) return null;
+
+    const userEntity = result.entities[0];
+    if (userEntity) {
+      userEntity.roles = result.raw
+        .map((row: { r_code: string | null; ur_role: string | null }) => row.r_code ?? row.ur_role)
+        .filter((r: string | null): r is string => r != null);
+    }
+    return userEntity ?? null;
   }
 }
