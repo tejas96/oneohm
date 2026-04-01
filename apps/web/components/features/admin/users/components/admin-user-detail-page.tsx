@@ -165,6 +165,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
   }
 
   if (isError || !user) {
+    const isArchived = error?.status === 404;
     return (
       <div className="space-y-5">
         <Link
@@ -177,12 +178,20 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps): JSX.E
           <div className="flex items-center gap-3 text-error">
             <AlertCircle className="size-5 shrink-0" />
             <div className="flex-1">
-              <p className="font-medium">Failed to load user</p>
-              <p className="text-sm text-foreground-secondary mt-1">{getErrorMessage(error)}</p>
+              <p className="font-medium">
+                {isArchived ? 'User not found or has been archived' : 'Failed to load user'}
+              </p>
+              <p className="text-sm text-foreground-secondary mt-1">
+                {isArchived
+                  ? 'This user may have been deleted. You can restore them from the Users list under the Archived tab.'
+                  : getErrorMessage(error)}
+              </p>
             </div>
-            <Button variant="outline" size="sm" onClick={() => void refetch()}>
-              Retry
-            </Button>
+            {!isArchived && (
+              <Button variant="outline" size="sm" onClick={() => void refetch()}>
+                Retry
+              </Button>
+            )}
           </div>
         </div>
       </div>
