@@ -29,7 +29,7 @@ import {
 } from '@/components/ui';
 import { MUIFieldLabel } from '@/components/ui/mui-shared';
 import { useModalForm } from '@/lib/hooks/core';
-import { useLookupMutations, type Lookup } from '@/lib/hooks/resources';
+import { useLookupMutations, useLookupTypeCodes, type Lookup } from '@/lib/hooks/resources';
 import { getErrorMessage } from '@/lib/utils';
 
 interface AdminLookupFormModalProps {
@@ -93,6 +93,7 @@ export function AdminLookupFormModal({
 }: AdminLookupFormModalProps): JSX.Element {
   const isEdit = !!lookup;
   const mutations = useLookupMutations();
+  const { typeCodes, isLoading: isLoadingTypeCodes } = useLookupTypeCodes();
 
   const form = useForm<LookupFormInput, unknown, LookupFormValues>({
     resolver: zodResolver(lookupSchema),
@@ -177,15 +178,54 @@ export function AdminLookupFormModal({
 
           {/* Core identity */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <MUIInput
-              id="lookup-type-code"
-              fieldLabel="Type Code"
-              required
-              tooltip='Lowercase snake_case group key, e.g. "lead_source". All entries sharing a type code form one dropdown.'
-              placeholder="e.g. lead_source"
-              error={form.formState.errors.typeCode?.message}
-              disabled={isEdit}
-              {...form.register('typeCode')}
+            <Controller
+              name="typeCode"
+              control={form.control}
+              render={({ field }) => (
+                <MUIInput
+                  mode="autocomplete"
+                  fieldLabel="Type Code"
+                  required
+                  tooltip='Lowercase snake_case group key, e.g. "lead_source". All entries sharing a type code form one dropdown.'
+                  freeSolo
+                  options={typeCodes}
+                  value={field.value ?? null}
+                  loading={isLoadingTypeCodes}
+                  filterOptions={(opts, { inputValue }) => {
+                    const q = inputValue.trim().toLowerCase();
+                    const matches = (opts as string[]).filter((o) => o.toLowerCase().includes(q));
+                    const hasExact = (opts as string[]).some((o) => o.toLowerCase() === q);
+                    if (q && !hasExact) {
+                      matches.push(`Create "${inputValue.trim()}"`);
+                    }
+                    return matches as typeof opts;
+                  }}
+                  onInputChange={(text) => {
+                    field.onChange(text);
+                  }}
+                  onChange={(selected) => {
+                    if (!selected) {
+                      field.onChange('');
+                    } else if (typeof selected === 'string') {
+                      // Strip the synthetic "Create "…"" label if user selects it
+                      const match = /^Create "(.+)"$/.exec(selected);
+                      field.onChange(match ? match[1] : selected);
+                    }
+                  }}
+                  getOptionLabel={(opt) => (typeof opt === 'string' ? opt : '')}
+                  isOptionEqualToValue={(option, val) => option === val}
+                  noOptionsText="Type a new type code to create it"
+                  disabled={isEdit}
+                  clearable={!isEdit}
+                  onClear={() => field.onChange('')}
+                  textFieldProps={{
+                    id: 'lookup-type-code',
+                    placeholder: 'e.g. lead_source',
+                    error: Boolean(form.formState.errors.typeCode),
+                    helperText: form.formState.errors.typeCode?.message,
+                  }}
+                />
+              )}
             />
             <MUIInput
               id="lookup-code"

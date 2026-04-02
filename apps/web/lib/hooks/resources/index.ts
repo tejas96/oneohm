@@ -148,6 +148,7 @@ export {
   useLookupMutations,
   useLookupPermissions,
   useLookupsByTypeCode,
+  useLookupTypeCodes,
   type Lookup,
   type LookupByTypeCode,
   type LookupFilters,

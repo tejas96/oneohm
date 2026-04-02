@@ -2,6 +2,7 @@
 
 import { LookupDataType, LookupScopeType } from '@oneohm-epc/shared/types';
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 
 import {
   defineResource,
@@ -97,6 +98,22 @@ export function useLookups(
       ...overrides?.defaultFilters,
     } as Partial<LookupFilters>,
   });
+}
+
+// ── Type Code suggestions Hook ─────────────────────────────────
+// Returns deduplicated list of existing typeCode values for autocomplete suggestions.
+// Used by the admin form modal to power the "create or select" typeCode field.
+
+export function useLookupTypeCodes(): { typeCodes: string[]; isLoading: boolean } {
+  const { items, isLoading } = useLookups({
+    defaultPageSize: 200,
+    syncToUrl: false,
+    defaultSort: { field: 'typeCode', order: 'ASC' },
+  });
+
+  const typeCodes = useMemo(() => [...new Set(items.map((l) => l.typeCode))].sort(), [items]);
+
+  return { typeCodes, isLoading };
 }
 
 // ── Detail Hook ────────────────────────────────────────────────
