@@ -18,6 +18,7 @@ import { EmployeesModule } from './modules/employees/employees.module';
 import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { LoanFinanceModule } from './modules/loan-finance/loan-finance.module';
+import { LookupsModule } from './modules/lookups/lookups.module';
 import { MasterDataModule } from './modules/master-data/master-data.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { PaymentsModule } from './modules/payments/payments.module';
@@ -53,6 +54,7 @@ import { UsersModule } from './modules/users/users.module';
     EmployeesModule,
     // Other modules
     MasterDataModule,
+    LookupsModule,
     QuotesModule,
     ProjectsModule,
     InventoryModule,
