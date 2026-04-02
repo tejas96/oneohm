@@ -247,7 +247,9 @@ function CustomerFormContent({
         const updatePayload = {
           ...profileFields,
           phone: `+91${data.phone}`,
-          alternatePhone: data.alternatePhone ? `+91${data.alternatePhone}` : undefined,
+          // null = explicitly clear; undefined = omit (not changed) — we use null when user clears
+          email: profileFields.email?.trim() ? profileFields.email.trim().toLowerCase() : null,
+          alternatePhone: data.alternatePhone ? `+91${data.alternatePhone}` : null,
           leadSource: resolvedLeadSource,
           // Send null to explicitly clear group; omit entirely when no group was ever set
           groupCode: groupCode || (customer?.groupCode ? null : undefined),

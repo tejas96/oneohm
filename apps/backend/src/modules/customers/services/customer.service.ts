@@ -199,14 +199,27 @@ export class CustomerService {
 
     await this.findById(id, organizationId);
 
-    // Normalize incoming values (whitespace-only email treated as empty)
-    if (updateDto.email !== undefined) {
+    // Normalize email: null = explicit clear (→ null in DB), string = normalize, undefined = skip
+    if (updateDto.email === null) {
+      // Explicit clear — keep as null so TypeORM writes NULL to the column
+    } else if (updateDto.email !== undefined) {
       const normalized = normalizeEmail(updateDto.email);
-      updateDto.email = normalized ?? undefined;
+      // Empty string after normalization also becomes null (clear intent)
+      updateDto.email = normalized ?? null;
     }
+
+    // Normalize phone: undefined = skip update
     if (updateDto.phone !== undefined) {
       const normalizedPhone = normalizePhoneToE164(updateDto.phone);
       updateDto.phone = normalizedPhone.length > 0 ? normalizedPhone : undefined;
+    }
+
+    // Normalize alternatePhone: null = explicit clear
+    if (updateDto.alternatePhone === null) {
+      // Keep as null — TypeORM will write NULL to the column
+    } else if (updateDto.alternatePhone !== undefined) {
+      const normalized = normalizePhoneToE164(updateDto.alternatePhone);
+      updateDto.alternatePhone = normalized.length > 0 ? normalized : null;
     }
 
     // Check for email conflicts within this org (exclude self)
@@ -246,7 +259,7 @@ export class CustomerService {
     void groupNameToStrip;
 
     const updated = await this.customerRepository.update(id, {
-      ...profileUpdateFields,
+      ...(profileUpdateFields as Partial<CustomerProfileEntity>),
       updatedBy,
     });
 

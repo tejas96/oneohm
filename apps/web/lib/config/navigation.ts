@@ -646,6 +646,12 @@ export const navigationConfig: NavigationConfig = {
               label: 'General Settings',
               href: ROUTES.ADMIN.SETTINGS,
             },
+            {
+              id: 'admin-lookups',
+              icon: List,
+              label: 'Lookups',
+              href: ROUTES.ADMIN.LOOKUPS,
+            },
           ],
         },
         {

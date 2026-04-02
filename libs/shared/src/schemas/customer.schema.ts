@@ -11,7 +11,7 @@ export const createCustomerProfileSchema = z
       .string()
       .length(10, 'Phone must be 10 digits')
       .regex(/^[6-9]\d{9}$/, 'Enter a valid Indian mobile number'),
-    email: z.string().email('Invalid email address').optional().or(z.literal('')),
+    email: z.union([z.string().email('Invalid email address'), z.literal('')]).optional(),
     alternatePhone: z
       .string()
       .regex(/^\d{0,10}$/, 'Phone must contain only digits')

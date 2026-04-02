@@ -41,6 +41,12 @@ export const PERMISSIONS = {
     VIEW_USERS: 'users:read',
     MANAGE_USERS: 'users:create',
   },
+  LOOKUPS: {
+    VIEW: 'lookups:read',
+    CREATE: 'lookups:create',
+    UPDATE: 'lookups:update',
+    DELETE: 'lookups:delete',
+  },
 } as const;
 
 type PermissionValues<T> = T extends string

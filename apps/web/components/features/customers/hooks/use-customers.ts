@@ -99,9 +99,9 @@ export interface UpdateCustomerData {
   firstName?: string;
   middleName?: string;
   lastName?: string;
-  email?: string;
+  email?: string | null;
   phone?: string;
-  alternatePhone?: string;
+  alternatePhone?: string | null;
   address?: string;
   city?: string;
   state?: string;

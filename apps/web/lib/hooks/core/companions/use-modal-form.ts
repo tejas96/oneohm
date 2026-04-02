@@ -2,30 +2,38 @@
 
 import type { UseMutationResult } from '@tanstack/react-query';
 import { useCallback } from 'react';
-import type { UseFormReturn } from 'react-hook-form';
+import type { FieldValues, UseFormReturn } from 'react-hook-form';
 
-interface UseModalFormOptions<TForm extends Record<string, unknown>, TPayload = TForm> {
-  form: UseFormReturn<TForm>;
+interface UseModalFormOptions<
+  TForm extends FieldValues,
+  TPayload = TForm,
+  TTransformedValues extends FieldValues = TForm,
+> {
+  form: UseFormReturn<TForm, unknown, TTransformedValues>;
   mutation: UseMutationResult<unknown, unknown, TPayload>;
-  transformPayload?: (data: TForm) => TPayload;
+  transformPayload?: (data: TTransformedValues) => TPayload;
   onSuccess?: () => void;
   onOpenChange: (open: boolean) => void;
 }
 
-interface UseModalFormReturn<TForm extends Record<string, unknown>> {
+interface UseModalFormReturn<TForm extends FieldValues> {
   handleSubmit: ReturnType<UseFormReturn<TForm>['handleSubmit']>;
   handleClose: (open: boolean) => void;
   isSubmitting: boolean;
   isError: boolean;
 }
 
-export function useModalForm<TForm extends Record<string, unknown>, TPayload = TForm>({
+export function useModalForm<
+  TForm extends FieldValues,
+  TPayload = TForm,
+  TTransformedValues extends FieldValues = TForm,
+>({
   form,
   mutation,
   transformPayload,
   onSuccess,
   onOpenChange,
-}: UseModalFormOptions<TForm, TPayload>): UseModalFormReturn<TForm> {
+}: UseModalFormOptions<TForm, TPayload, TTransformedValues>): UseModalFormReturn<TForm> {
   const handleClose = useCallback(
     (open: boolean) => {
       if (!open) form.reset();
@@ -35,7 +43,7 @@ export function useModalForm<TForm extends Record<string, unknown>, TPayload = T
   );
 
   const onSubmit = useCallback(
-    async (data: TForm) => {
+    async (data: TTransformedValues) => {
       try {
         const payload = transformPayload ? transformPayload(data) : (data as unknown as TPayload);
         await mutation.mutateAsync(payload);

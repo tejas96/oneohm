@@ -8,6 +8,7 @@ import {
   IsString,
   Matches,
   MaxLength,
+  ValidateIf,
 } from 'class-validator';
 
 /**
@@ -38,8 +39,9 @@ export class CreateCustomerDto {
     example: 'rajesh.kumar@example.com',
     description: 'Customer email address',
   })
-  @IsEmail()
   @IsOptional()
+  @ValidateIf((_, v) => v !== '' && v !== null && v !== undefined)
+  @IsEmail()
   @MaxLength(255)
   email?: string;
 
