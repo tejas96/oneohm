@@ -274,7 +274,7 @@ export class UserService {
       const result = await tx
         .createQueryBuilder()
         .update('users')
-        .set({ deletedAt: new Date() })
+        .set({ deletedAt: new Date(), status: UserStatus.ARCHIVED })
         .where('id = :id AND deleted_at IS NULL', { id })
         .execute();
 

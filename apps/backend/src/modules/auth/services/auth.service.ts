@@ -72,13 +72,18 @@ export class AuthService {
 
       if (deletedUser) {
         this.logger.warn(`Deleted user login attempt: ${email}`);
-        throw new UnauthorizedException(
-          'Your account has been deactivated. Please contact the administrator.',
-        );
+        throw new UnauthorizedException(this.getAccountStatusMessage(deletedUser.status));
       }
 
       this.logger.warn(`Failed login attempt for email: ${email}`);
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Check if user is active BEFORE password verification
+    // so non-active users always get a clear account-status message
+    if (user.status !== UserStatus.ACTIVE) {
+      this.logger.warn(`Non-active user login attempt: ${email} (status: ${user.status})`);
+      throw new UnauthorizedException(this.getAccountStatusMessage(user.status));
     }
 
     // Verify password
@@ -86,14 +91,6 @@ export class AuthService {
     if (!isPasswordValid) {
       this.logger.warn(`Invalid password for user: ${email}`);
       throw new UnauthorizedException('Invalid credentials');
-    }
-
-    // Check if user is active
-    if (user.status !== UserStatus.ACTIVE) {
-      this.logger.warn(`Inactive user login attempt: ${email}`);
-      throw new UnauthorizedException(
-        'Your account is inactive. Please contact the administrator.',
-      );
     }
 
     // Update last login
@@ -200,19 +197,15 @@ export class AuthService {
         .getOne();
 
       if (deletedUser) {
-        throw new UnauthorizedException(
-          'Your account has been deactivated. Please contact the administrator.',
-        );
+        throw new UnauthorizedException(this.getAccountStatusMessage(deletedUser.status));
       }
       throw new UnauthorizedException('User not found');
     }
 
     // Check if user is active
     if (user.status !== UserStatus.ACTIVE) {
-      this.logger.warn(`Inactive user login attempt: ${phone}`);
-      throw new UnauthorizedException(
-        'Your account is inactive. Please contact the administrator.',
-      );
+      this.logger.warn(`Non-active user OTP login attempt: ${phone} (status: ${user.status})`);
+      throw new UnauthorizedException(this.getAccountStatusMessage(user.status));
     }
 
     // Verify phone if not already verified
@@ -308,22 +301,39 @@ export class AuthService {
   }
 
   /**
-   * Validate user credentials (used by LocalStrategy)
-   * Returns user if valid, null if invalid
+   * Validate user credentials (used by LocalStrategy).
+   * Throws UnauthorizedException with a status-specific message on failure:
+   * - deleted user → archived message
+   * - non-active user → per-status message (inactive/suspended/pending/archived)
+   * - wrong password → generic "Invalid email or password"
    */
-  async validateUser(email: string, password: string): Promise<UserEntity | null> {
+  async validateUser(email: string, password: string): Promise<UserEntity> {
     const user = await this.userRepository.findByEmailWithRoles(email);
 
-    if (user?.status !== UserStatus.ACTIVE) {
-      return null;
+    if (!user) {
+      const deletedUser = await this.userRepository.repository
+        .createQueryBuilder('user')
+        .withDeleted()
+        .where('user.email = :email', { email })
+        .andWhere('user.deleted_at IS NOT NULL')
+        .getOne();
+
+      if (deletedUser) {
+        throw new UnauthorizedException(this.getAccountStatusMessage(deletedUser.status));
+      }
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    if (user.status !== UserStatus.ACTIVE) {
+      this.logger.warn(`Non-active user login attempt: ${email} (status: ${user.status})`);
+      throw new UnauthorizedException(this.getAccountStatusMessage(user.status));
     }
 
     const isPasswordValid = await user.validatePassword(password);
     if (!isPasswordValid) {
-      return null;
+      throw new UnauthorizedException('Invalid email or password');
     }
 
-    // Update last login
     await this.userRepository.updateLastLogin(user.id);
 
     return user;
@@ -455,6 +465,19 @@ export class AuthService {
     this.logger.log(`Password reset successfully for user: ${user.email}`);
 
     return { message: 'Password reset successfully' };
+  }
+
+  private getAccountStatusMessage(status: string): string {
+    const messages: Partial<Record<UserStatus, string>> = {
+      [UserStatus.INACTIVE]: 'Your account is inactive. Please contact your administrator.',
+      [UserStatus.SUSPENDED]: 'Your account has been suspended. Please contact your administrator.',
+      [UserStatus.ARCHIVED]: 'Your account has been removed. Please contact your administrator.',
+      [UserStatus.PENDING]: 'Your account is pending approval. Please contact your administrator.',
+    };
+    return (
+      messages[status as UserStatus] ??
+      'Your account is not active. Please contact your administrator.'
+    );
   }
 
   private async generateTokens(
