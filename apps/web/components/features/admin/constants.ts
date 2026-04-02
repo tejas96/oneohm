@@ -4,12 +4,14 @@ export const USER_STATUS_VARIANTS: Record<string, string> = {
   active: 'success',
   inactive: 'secondary',
   suspended: 'error',
+  archived: 'secondary',
 };
 
 export const USER_STATUS_LABELS: Record<string, string> = {
   active: 'Active',
   inactive: 'Inactive',
   suspended: 'Suspended',
+  archived: 'Archived',
 };
 
 export const USER_STATUS_TABS: FilterTab<string>[] = [

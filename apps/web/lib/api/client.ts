@@ -93,7 +93,7 @@ apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getAccessToken();
 
-    if (token && config.headers) {
+    if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
@@ -111,7 +111,7 @@ let failedQueue: Array<{
   reject: (reason?: unknown) => void;
 }> = [];
 
-const processQueue = (error: Error | null) => {
+const processQueue = (error: Error | null): void => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
@@ -122,10 +122,27 @@ const processQueue = (error: Error | null) => {
   failedQueue = [];
 };
 
+function shouldSkip401Recovery(requestUrl?: string): boolean {
+  if (!requestUrl) return false;
+  return (
+    requestUrl.includes('/auth/login') ||
+    requestUrl.includes('/auth/refresh') ||
+    requestUrl.includes('/auth/otp/request') ||
+    requestUrl.includes('/auth/otp/verify') ||
+    requestUrl.includes('/auth/forgot-password') ||
+    requestUrl.includes('/auth/reset-password')
+  );
+}
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config;
+    const requestUrl = originalRequest?.url;
+
+    if (error.response?.status === 401 && shouldSkip401Recovery(requestUrl)) {
+      return Promise.reject(error);
+    }
 
     // If error is 401 and we haven't already tried to refresh
     if (
