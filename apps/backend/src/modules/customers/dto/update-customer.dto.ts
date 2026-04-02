@@ -28,12 +28,14 @@ export class UpdateCustomerDto {
 
   @ApiPropertyOptional({
     example: 'rajesh.kumar@example.com',
-    description: 'Customer email address',
+    description: 'Customer email address. Send null to explicitly clear.',
+    nullable: true,
   })
-  @IsEmail()
   @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== '' && v !== undefined)
+  @IsEmail()
   @MaxLength(255)
-  email?: string;
+  email?: string | null;
 
   @ApiPropertyOptional({ example: '+91-9876543210', description: 'Primary phone number' })
   @IsString()
@@ -46,15 +48,17 @@ export class UpdateCustomerDto {
 
   @ApiPropertyOptional({
     example: '+91-9876543211',
-    description: 'Alternate phone number',
+    description: 'Alternate phone number. Send null to explicitly clear.',
+    nullable: true,
   })
-  @IsString()
   @IsOptional()
+  @ValidateIf((_, v) => v !== null)
+  @IsString()
   @Matches(/^[\d\s\-+()]+$/, {
     message: 'Phone must contain only digits, spaces, and +-() characters',
   })
   @MaxLength(20)
-  alternatePhone?: string;
+  alternatePhone?: string | null;
 
   // ==================== Address (Billing/Mailing) ====================
   @ApiPropertyOptional({
