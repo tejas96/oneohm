@@ -21,8 +21,8 @@ import loadConfig from '../../config/configuration';
  * 7. Quote Configuration (1)
  */
 
-const ORG_ID = loadConfig().seed.organizationId;
-
+// const ORG_ID = loadConfig().seed.organizationId;
+let ORG_ID: string;
 // =====================================================
 // Product Type IDs (Pre-generated)
 // =====================================================
@@ -122,6 +122,23 @@ export async function seedMasterData(dataSource: DataSource): Promise<void> {
   await queryRunner.startTransaction();
 
   try {
+       // =====================================================
+    // FIND OR USE CONFIGURED ORGANIZATION
+    // =====================================================
+    const orgResult = await queryRunner.query(
+      `SELECT id FROM organizations WHERE code = $1 LIMIT 1`,
+      ['ONEOHM'],
+    );
+
+    if (orgResult.length === 0) {
+      // Fallback to config if ONEOHM doesn't exist
+      ORG_ID = loadConfig().seed.organizationId;
+      console.warn(`ℹ️ No ONEOHM organization found, using configured ID: ${ORG_ID}`);
+    } else {
+      ORG_ID = orgResult[0].id;
+      console.log(`✅ Found ONEOHM organization: ${ORG_ID}`);
+    }
+
     console.log('🌱 Seeding master data for organization:', ORG_ID);
 
     // =====================================================
