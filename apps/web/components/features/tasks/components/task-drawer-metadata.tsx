@@ -111,9 +111,9 @@ export function TaskDrawerMetadata({
           {allStatuses
             .filter((s) => s !== status)
             .map((s) => (
-            <MenuItem key={s} value={s}>
-              {TASK_STATUS_LABELS[s]}
-            </MenuItem>
+              <MenuItem key={s} value={s}>
+                {TASK_STATUS_LABELS[s]}
+              </MenuItem>
             ))}
         </MUISelect>
       </Box>

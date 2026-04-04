@@ -20,10 +20,7 @@ export function TaskStatusDropdown({
 }: TaskStatusDropdownProps): React.JSX.Element {
   const [open, setOpen] = useState(false);
 
-  const allStatuses = useMemo(
-    () => Object.keys(TASK_STATUS_LABELS) as TaskStatus[],
-    [],
-  );
+  const allStatuses = useMemo(() => Object.keys(TASK_STATUS_LABELS) as TaskStatus[], []);
 
   const handleSelect = (status: TaskStatus) => {
     setOpen(false);
@@ -46,21 +43,21 @@ export function TaskStatusDropdown({
         {allStatuses
           .filter((status) => status !== currentStatus)
           .map((status) => (
-          <button
-            key={status}
-            type="button"
-            onClick={() => handleSelect(status)}
-            className={cn(
-              'flex w-full items-center gap-2 rounded px-3 py-1.5 text-xs transition-colors',
-              status === currentStatus
-                ? 'bg-info/10 text-info font-medium'
-                : 'text-foreground-secondary hover:bg-muted',
-            )}
-          >
-            <span className={cn('size-2 rounded-full', TASK_STATUS_DOT_COLOR[status])} />
-            {TASK_STATUS_LABELS[status]}
-            {status === currentStatus && <Check className="ml-auto size-3" />}
-          </button>
+            <button
+              key={status}
+              type="button"
+              onClick={() => handleSelect(status)}
+              className={cn(
+                'flex w-full items-center gap-2 rounded px-3 py-1.5 text-xs transition-colors',
+                status === currentStatus
+                  ? 'bg-info/10 text-info font-medium'
+                  : 'text-foreground-secondary hover:bg-muted',
+              )}
+            >
+              <span className={cn('size-2 rounded-full', TASK_STATUS_DOT_COLOR[status])} />
+              {TASK_STATUS_LABELS[status]}
+              {status === currentStatus && <Check className="ml-auto size-3" />}
+            </button>
           ))}
       </PopoverContent>
     </Popover>
