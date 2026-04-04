@@ -57,16 +57,12 @@ export class WorkflowStepResponseDto {
 
   @ApiPropertyOptional()
   @Expose()
-  estimatedDurationHours?: number;
+  effortDays?: number;
 
   @ApiPropertyOptional()
   @Expose()
   @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   checklistTemplate?: TaskChecklist;
-
-  @ApiPropertyOptional()
-  @Expose()
-  allowedTransitions?: Record<string, string[]>;
 
   @ApiProperty()
   @Expose()

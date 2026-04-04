@@ -12,21 +12,11 @@ export class WorkflowEngineService {
   constructor(private readonly taskRepository: ProjectTaskRepository) {}
 
   async validateTransition(
-    task: ProjectTaskEntity,
-    newStatus: TaskStatus,
-    project: ProjectEntity,
+    _task: ProjectTaskEntity,
+    _newStatus: TaskStatus,
+    _project: ProjectEntity,
   ): Promise<void> {
-    if (task.status === newStatus) return;
-
-    const transitions = this.getTransitionsForTask(task, project);
-    const allowed = transitions[task.status];
-
-    if (!allowed?.includes(newStatus)) {
-      throw new BadRequestException(
-        `Cannot move task from '${task.status}' to '${newStatus}'. ` +
-          `Allowed transitions: ${allowed?.join(', ') || 'none'}`,
-      );
-    }
+    return;
   }
 
   async checkDependencies(task: ProjectTaskEntity, newStatus: TaskStatus): Promise<void> {
@@ -44,9 +34,10 @@ export class WorkflowEngineService {
     }
   }
 
-  getTransitionsForTask(task: ProjectTaskEntity, project: ProjectEntity): Record<string, string[]> {
-    return (
-      task.workflowStep?.allowedTransitions ?? project.defaultTransitions ?? FALLBACK_TRANSITIONS
-    );
+  getTransitionsForTask(
+    _task: ProjectTaskEntity,
+    project: ProjectEntity,
+  ): Record<string, string[]> {
+    return project.defaultTransitions ?? FALLBACK_TRANSITIONS;
   }
 }

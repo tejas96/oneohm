@@ -80,22 +80,17 @@ export class CreateWorkflowStepDto {
   @IsOptional()
   dependsOnTaskCodes?: string[];
 
-  @ApiPropertyOptional({ description: 'Estimated duration in hours', minimum: 0 })
+  @ApiPropertyOptional({ description: 'Estimated effort in days', minimum: 0 })
   @IsInt()
   @Min(0)
   @IsOptional()
   @Type(() => Number)
-  estimatedDurationHours?: number;
+  effortDays?: number;
 
   @ApiPropertyOptional({ description: 'Checklist template' })
   @IsObject()
   @IsOptional()
   checklistTemplate?: TaskChecklist;
-
-  @ApiPropertyOptional({ description: 'FSM transition overrides for this step' })
-  @IsObject()
-  @IsOptional()
-  allowedTransitions?: Record<string, string[]>;
 
   @ApiPropertyOptional({ description: 'Is active', default: true })
   @IsBoolean()

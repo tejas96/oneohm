@@ -1784,7 +1784,7 @@ function TaskRowGroup({
 
             {/* Duration */}
             <span className="hidden w-10 shrink-0 text-xs text-foreground-secondary sm:block">
-              {t.estimatedDurationHours ? `${t.estimatedDurationHours}h` : '—'}
+              {t.effortDays ? `${t.effortDays}d` : '—'}
             </span>
 
             {/* Milestone Select */}

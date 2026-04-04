@@ -1,15 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { MilestoneType, type TaskChecklist, type WorkflowStep } from '@oneohm-epc/shared/types';
 import {
-  MilestoneType,
-  type TaskChecklist,
-  type TaskStatus,
-  TASK_STATUS_LABELS,
-  type WorkflowStep,
-} from '@oneohm-epc/shared/types';
-import {
-  ArrowRight,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
@@ -83,8 +76,6 @@ const MILESTONE_TYPE_LABELS: Record<string, string> = {
   [MilestoneType.HANDOVER]: 'Handover',
   [MilestoneType.CUSTOM]: 'Custom',
 };
-
-const ALL_TASK_STATUSES = Object.keys(TASK_STATUS_LABELS) as TaskStatus[];
 
 // ── Page Component ─────────────────────────────────────────────
 
@@ -431,8 +422,8 @@ function WorkflowStepRow({
                 : '—'}
             </div>
             <div>
-              <span className="text-foreground-secondary">Est. Hours:</span>{' '}
-              {step.estimatedDurationHours ?? '—'}
+              <span className="text-foreground-secondary">Effort (days):</span>{' '}
+              {step.effortDays ?? '—'}
             </div>
           </div>
           {step.dependsOnTaskCodes && step.dependsOnTaskCodes.length > 0 && (
@@ -443,26 +434,6 @@ function WorkflowStepRow({
                   {code}
                 </Badge>
               ))}
-            </div>
-          )}
-          {step.allowedTransitions && (
-            <div className="text-xs">
-              <span className="text-foreground-secondary font-medium">FSM Overrides:</span>
-              <div className="mt-1 grid grid-cols-2 gap-1">
-                {Object.entries(step.allowedTransitions).map(([from, targets]) => (
-                  <div key={from} className="flex items-center gap-1">
-                    <Badge variant="outline" className="text-2xs">
-                      {TASK_STATUS_LABELS[from as TaskStatus] || from}
-                    </Badge>
-                    <span className="text-foreground-tertiary">→</span>
-                    {targets.map((to) => (
-                      <Badge key={to} variant="secondary" className="text-2xs">
-                        {TASK_STATUS_LABELS[to as TaskStatus] || to}
-                      </Badge>
-                    ))}
-                  </div>
-                ))}
-              </div>
             </div>
           )}
         </div>
@@ -508,12 +479,11 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
       defaultDepartment: '',
       defaultMilestoneType: null,
       sequenceOrder: 1,
-      estimatedDurationHours: '' as unknown as number,
+      effortDays: '' as unknown as number,
       isMandatory: true,
       canRunParallel: false,
       dependsOnTaskCodes: [],
       checklistTemplate: [],
-      allowedTransitions: {},
     },
   });
 
@@ -530,7 +500,7 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
         defaultDepartment: step.defaultDepartment ?? '',
         defaultMilestoneType: step.defaultMilestoneType ?? null,
         sequenceOrder: step.sequenceOrder,
-        estimatedDurationHours: step.estimatedDurationHours ?? ('' as unknown as number),
+        effortDays: step.effortDays ?? ('' as unknown as number),
         isMandatory: step.isMandatory,
         canRunParallel: step.canRunParallel,
         dependsOnTaskCodes: step.dependsOnTaskCodes ?? [],
@@ -541,7 +511,6 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
             isCompleted: item.isCompleted,
             order: idx,
           })) ?? [],
-        allowedTransitions: step.allowedTransitions ?? {},
       });
     } else {
       form.reset({
@@ -553,12 +522,11 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
         defaultDepartment: '',
         defaultMilestoneType: null,
         sequenceOrder: 1,
-        estimatedDurationHours: '' as unknown as number,
+        effortDays: '' as unknown as number,
         isMandatory: true,
         canRunParallel: false,
         dependsOnTaskCodes: [],
         checklistTemplate: [],
-        allowedTransitions: {},
       });
     }
   }, [open, step, form]);
@@ -576,14 +544,6 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
     (data: WorkflowStepFormValues): void => {
       const depCodes = data.dependsOnTaskCodes?.filter(Boolean);
       const checklistItems = data.checklistTemplate?.filter((item) => item.title.trim());
-      const cleanedTransitions: Record<string, string[]> = {};
-      if (data.allowedTransitions) {
-        for (const [from, to] of Object.entries(data.allowedTransitions)) {
-          if (to.length > 0) cleanedTransitions[from] = to;
-        }
-      }
-      const transitions =
-        Object.keys(cleanedTransitions).length > 0 ? cleanedTransitions : undefined;
 
       const payload: Partial<WorkflowStep> = {
         name: data.name,
@@ -594,10 +554,8 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
         defaultDepartment: data.defaultDepartment || undefined,
         defaultMilestoneType: data.defaultMilestoneType || undefined,
         sequenceOrder: data.sequenceOrder,
-        estimatedDurationHours:
-          data.estimatedDurationHours !== '' && data.estimatedDurationHours != null
-            ? Number(data.estimatedDurationHours)
-            : undefined,
+        effortDays:
+          data.effortDays !== '' && data.effortDays != null ? Number(data.effortDays) : undefined,
         isMandatory: data.isMandatory ?? true,
         canRunParallel: data.canRunParallel ?? false,
         dependsOnTaskCodes: depCodes && depCodes.length > 0 ? depCodes : undefined,
@@ -605,7 +563,6 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
           checklistItems && checklistItems.length > 0
             ? ({ items: checklistItems } as TaskChecklist)
             : undefined,
-        allowedTransitions: transitions,
       };
 
       if (step) {
@@ -762,12 +719,12 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Est. Duration (hours)</Label>
+                <Label>Effort (days)</Label>
                 <Input
                   type="number"
-                  {...form.register('estimatedDurationHours')}
+                  {...form.register('effortDays')}
                   min={0}
-                  placeholder="e.g. 8"
+                  placeholder="e.g. 2"
                 />
               </div>
             </div>
@@ -841,27 +798,6 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
               control={form.control}
               render={({ field }): React.JSX.Element => (
                 <ChecklistBuilder value={field.value ?? []} onChange={field.onChange} />
-              )}
-            />
-          </fieldset>
-
-          {/* ─── Section: Status Transitions ─── */}
-          <fieldset className="space-y-3 rounded-lg border border-border-light p-4">
-            <legend className="px-2 text-xs font-semibold text-foreground-secondary uppercase tracking-wider">
-              Status Transitions Override
-            </legend>
-
-            <Alert variant="info" appearance="minimal" className="text-xs">
-              Override the default status flow for tasks created from this step. Leave empty to use
-              the system default transitions. Each rule defines which statuses a task can move to
-              from a given status.
-            </Alert>
-
-            <Controller
-              name="allowedTransitions"
-              control={form.control}
-              render={({ field }): React.JSX.Element => (
-                <TransitionBuilder value={field.value ?? {}} onChange={field.onChange} />
               )}
             />
           </fieldset>
@@ -1061,190 +997,6 @@ function ChecklistBuilder({ value, onChange }: ChecklistBuilderProps): React.JSX
       <Button type="button" variant="outline" size="sm" onClick={addItem}>
         <Plus className="size-icon-xs mr-1" />
         Add Item
-      </Button>
-    </div>
-  );
-}
-
-// ── TransitionBuilder ──────────────────────────────────────────
-
-interface TransitionRule {
-  from: string;
-  to: string[];
-}
-
-interface TransitionBuilderProps {
-  value: Record<string, string[]>;
-  onChange: (transitions: Record<string, string[]>) => void;
-}
-
-function TransitionBuilder({ value, onChange }: TransitionBuilderProps): React.JSX.Element {
-  const rules = useMemo(
-    (): TransitionRule[] => Object.entries(value).map(([from, to]) => ({ from, to })),
-    [value],
-  );
-
-  const usedFromStatuses = useMemo(() => new Set(rules.map((r) => r.from)), [rules]);
-
-  const emitChange = useCallback(
-    (updatedRules: TransitionRule[]): void => {
-      const record: Record<string, string[]> = {};
-      for (const rule of updatedRules) {
-        if (rule.from) {
-          record[rule.from] = rule.to;
-        }
-      }
-      onChange(record);
-    },
-    [onChange],
-  );
-
-  const addRule = useCallback((): void => {
-    const available = ALL_TASK_STATUSES.filter((s) => !usedFromStatuses.has(s));
-    const first = available[0];
-    if (!first) return;
-    const newRules: TransitionRule[] = [...rules, { from: first, to: [] as string[] }];
-    emitChange(newRules);
-  }, [rules, usedFromStatuses, emitChange]);
-
-  const removeRule = useCallback(
-    (idx: number): void => {
-      const updated = rules.filter((_, i) => i !== idx);
-      emitChange(updated);
-    },
-    [rules, emitChange],
-  );
-
-  const updateFrom = useCallback(
-    (idx: number, from: string): void => {
-      const updated = rules.map((rule, i) => {
-        if (i !== idx) return rule;
-        const filteredTo = rule.to.filter((t) => t !== from);
-        return { from, to: filteredTo };
-      });
-      emitChange(updated);
-    },
-    [rules, emitChange],
-  );
-
-  const addTo = useCallback(
-    (idx: number, status: string): void => {
-      const updated = rules.map((rule, i) =>
-        i === idx ? { ...rule, to: [...rule.to, status] } : rule,
-      );
-      emitChange(updated);
-    },
-    [rules, emitChange],
-  );
-
-  const removeTo = useCallback(
-    (idx: number, status: string): void => {
-      const updated = rules
-        .map((rule, i) => (i === idx ? { ...rule, to: rule.to.filter((t) => t !== status) } : rule))
-        .filter((rule) => rule.to.length > 0);
-      emitChange(updated);
-    },
-    [rules, emitChange],
-  );
-
-  return (
-    <div className="space-y-2">
-      {rules.length === 0 ? (
-        <p className="text-xs text-foreground-tertiary">
-          No custom transitions. System defaults will be used.
-        </p>
-      ) : (
-        <div className="space-y-2">
-          {rules.map((rule, idx) => {
-            const availableFrom = ALL_TASK_STATUSES.filter(
-              (s) => (s as string) === rule.from || !usedFromStatuses.has(s),
-            );
-            const toSet = new Set(rule.to);
-            const availableTo = ALL_TASK_STATUSES.filter(
-              (s) => (s as string) !== rule.from && !toSet.has(s as string),
-            );
-
-            return (
-              <div
-                key={rule.from}
-                className="flex flex-wrap items-start gap-2 rounded-md border border-border-light p-2"
-              >
-                <Select value={rule.from} onValueChange={(v) => updateFrom(idx, v)}>
-                  <SelectTrigger className="w-32 h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableFrom.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {TASK_STATUS_LABELS[s]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <ArrowRight className="size-icon-sm text-foreground-tertiary mt-1.5 shrink-0" />
-
-                <div className="flex-1 flex flex-wrap items-center gap-1 min-w-0">
-                  {rule.to.map((status) => (
-                    <Badge
-                      key={status}
-                      variant="secondary"
-                      size="xs"
-                      className="pr-1 cursor-pointer hover:bg-error/10 group"
-                      onClick={() => removeTo(idx, status)}
-                    >
-                      {TASK_STATUS_LABELS[status as TaskStatus] || status}
-                      <X className="ml-1 size-3 opacity-50 group-hover:opacity-100 group-hover:text-error" />
-                    </Badge>
-                  ))}
-                  {availableTo.length > 0 && (
-                    <Select
-                      value={NONE_SENTINEL}
-                      onValueChange={(v) => {
-                        if (v !== NONE_SENTINEL) addTo(idx, v);
-                      }}
-                    >
-                      <SelectTrigger className="h-6 w-20 text-[10px] border-dashed">
-                        <SelectValue placeholder="+ Add" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={NONE_SENTINEL} className="hidden">
-                          + Add
-                        </SelectItem>
-                        {availableTo.map((s) => (
-                          <SelectItem key={s} value={s}>
-                            {TASK_STATUS_LABELS[s]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7 shrink-0 text-foreground-tertiary hover:text-error"
-                  onClick={() => removeRule(idx)}
-                >
-                  <Trash2 className="size-icon-xs" />
-                </Button>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={addRule}
-        disabled={usedFromStatuses.size >= ALL_TASK_STATUSES.length}
-      >
-        <Plus className="size-icon-xs mr-1" />
-        Add Rule
       </Button>
     </div>
   );

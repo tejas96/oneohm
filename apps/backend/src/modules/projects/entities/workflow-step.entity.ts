@@ -47,14 +47,11 @@ export class WorkflowStepEntity extends BaseEntity {
   @Column({ name: 'depends_on_task_codes', type: 'text', array: true, nullable: true })
   dependsOnTaskCodes?: string[];
 
-  @Column({ name: 'estimated_duration_hours', type: 'integer', nullable: true })
-  estimatedDurationHours?: number;
+  @Column({ name: 'effort_days', type: 'integer', nullable: true })
+  effortDays?: number;
 
   @Column({ name: 'checklist_template', type: 'jsonb', nullable: true })
   checklistTemplate?: TaskChecklist;
-
-  @Column({ name: 'allowed_transitions', type: 'jsonb', nullable: true })
-  allowedTransitions?: Record<string, string[]>;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;

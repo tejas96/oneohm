@@ -3,9 +3,9 @@
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import { MenuItem, Box, Divider, Link as MuiLink } from '@mui/material';
 import {
-  TASK_STATUS_TRANSITIONS,
   type TaskPriority,
   type TaskStatus,
+  TaskStatus as TaskStatusEnum,
 } from '@oneohm-epc/shared/types';
 import NextLink from 'next/link';
 import { useMemo, useCallback } from 'react';
@@ -63,7 +63,7 @@ export function TaskDrawerMetadata({
   onAssigneeChange,
   onDueDateChange,
 }: TaskDrawerMetadataProps): React.JSX.Element {
-  const allowedStatuses = useMemo(() => TASK_STATUS_TRANSITIONS[status], [status]);
+  const allStatuses = useMemo(() => Object.values(TaskStatusEnum), []);
   const projectHref = buildRoute(ROUTES.PROJECTS.DETAIL, { id: projectId });
 
   const { data: teamMembers = [], isLoading: teamLoading } = useProjectTeam(projectId);
@@ -108,11 +108,13 @@ export function TaskDrawerMetadata({
           <MenuItem value={status} disabled>
             {TASK_STATUS_LABELS[status]} (current)
           </MenuItem>
-          {allowedStatuses.map((s) => (
+          {allStatuses
+            .filter((s) => s !== status)
+            .map((s) => (
             <MenuItem key={s} value={s}>
               {TASK_STATUS_LABELS[s]}
             </MenuItem>
-          ))}
+            ))}
         </MUISelect>
       </Box>
 
@@ -173,6 +175,9 @@ export function TaskDrawerMetadata({
             },
           }}
         />
+        <MUITypography variant="body" sx={{ mt: 0.75, color: 'text.secondary', fontSize: 11 }}>
+          Initial due date is auto-set from workflow step effort days. You can edit it anytime.
+        </MUITypography>
       </Box>
 
       <Divider />
