@@ -38,6 +38,12 @@ const PROJECT_CONSTANTS = {
   KANBAN_ORDER_MULTIPLIER: 100,
 } as const;
 
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
 /**
  * Project Service
  * Business logic for project management
@@ -599,6 +605,7 @@ export class ProjectService {
     organizationId: string,
     createdBy: string,
     excludedStepIds?: string[],
+    projectStartDate?: Date,
     manager?: EntityManager,
   ): Promise<void> {
     let steps = await this.workflowStepRepository.findAllActive(organizationId, manager);
@@ -617,6 +624,8 @@ export class ProjectService {
     const org = await this.organizationRepository.findOneById(organizationId);
     const orgCode = org?.code || 'UNKNOWN';
     const codeToTaskId = new Map<string, string>();
+    const baseDate = projectStartDate ? new Date(projectStartDate) : new Date();
+    baseDate.setHours(0, 0, 0, 0);
 
     for (const step of steps) {
       let taskCode: string;
@@ -632,6 +641,7 @@ export class ProjectService {
           workflowStepId: step.id,
           code: taskCode,
           kanbanOrder: step.sequenceOrder * PROJECT_CONSTANTS.KANBAN_ORDER_MULTIPLIER,
+          endDate: step.effortDays != null ? addDays(baseDate, step.effortDays) : undefined,
           status: TaskStatus.BACKLOG,
           createdBy,
           updatedBy: createdBy,
@@ -736,6 +746,7 @@ export class ProjectService {
         organizationId,
         createdBy,
         excludedStepIds,
+        project.startDate,
         manager,
       );
 

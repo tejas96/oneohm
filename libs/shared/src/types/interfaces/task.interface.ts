@@ -19,9 +19,8 @@ export interface WorkflowStep {
   isMandatory: boolean;
   canRunParallel: boolean;
   dependsOnTaskCodes?: string[];
-  estimatedDurationHours?: number;
+  effortDays?: number;
   checklistTemplate?: TaskChecklist;
-  allowedTransitions?: Record<string, string[]>;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

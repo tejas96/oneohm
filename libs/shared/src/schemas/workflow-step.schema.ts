@@ -20,17 +20,16 @@ export const workflowStepSchema = z.object({
   defaultDepartment: z.string().optional(),
   defaultMilestoneType: z.nativeEnum(MilestoneType).nullable().optional(),
   sequenceOrder: z.coerce.number().int().min(1, 'Sequence order must be at least 1'),
-  estimatedDurationHours: z.coerce
+  effortDays: z.coerce
     .number()
     .int()
-    .min(0, 'Duration must be at least 0')
+    .min(0, 'Effort must be at least 0')
     .optional()
     .or(z.literal('')),
   isMandatory: z.boolean().default(true),
   canRunParallel: z.boolean().default(false),
   dependsOnTaskCodes: z.array(z.string()).optional().default([]),
   checklistTemplate: z.array(checklistItemSchema).optional().default([]),
-  allowedTransitions: z.record(z.string(), z.array(z.string())).optional().default({}),
 });
 
 export type WorkflowStepFormValues = z.input<typeof workflowStepSchema>;

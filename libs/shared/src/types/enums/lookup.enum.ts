@@ -18,3 +18,7 @@ export enum LookupDataType {
   DATE = 'date',
   JSON = 'json',
 }
+
+export enum LookupType {
+  DEFAULT_TASK_STATUS = 'default_task_status',
+}
