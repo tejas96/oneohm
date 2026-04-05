@@ -1,12 +1,12 @@
 'use client';
 
-import type { ProjectPriority, ProjectStatus } from '@oneohm-epc/shared/types';
+import { LookupTypeCode, type ProjectPriority, type ProjectStatus } from '@oneohm-epc/shared/types';
 import { Inbox, LayoutGrid, List, Plus, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { PRIORITY_FILTER_OPTIONS, STATUS_FILTER_OPTIONS, TYPE_FILTER_OPTIONS } from '../constants';
+import { STATUS_FILTER_OPTIONS, TYPE_FILTER_OPTIONS } from '../constants';
 import { useProjects, type ProjectFilters } from '../hooks';
 import { ProjectCard } from './project-card';
 import { projectColumns } from './project-table-columns';
@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/select';
 import { ROUTES } from '@/lib/config/routes';
 import { useDebounce } from '@/lib/hooks';
+import { useLookupOptions } from '@/lib/hooks/resources';
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -98,6 +99,11 @@ export function ProjectListPage() {
   );
 
   const { data, isLoading, isError, refetch } = useProjects(filters);
+  const {
+    items: projectPriorityItems,
+    isLoading: priorityLoading,
+    isError: priorityError,
+  } = useLookupOptions(LookupTypeCode.PRIORITY);
 
   const projects = data?.data ?? [];
   const totalItems = data?.meta?.total ?? 0;
@@ -153,6 +159,17 @@ export function ProjectListPage() {
   );
 
   const hasActiveFilters = statusFilter || priorityFilter || typeFilter || debouncedSearch;
+
+  const priorityFilterOptions = useMemo((): Array<{ value: string; label: string }> => {
+    if (priorityLoading || priorityError || projectPriorityItems.length === 0) {
+      return [{ value: '', label: priorityError ? 'Failed to load priorities' : 'All Priority' }];
+    }
+    const mapped: Array<{ value: string; label: string }> = projectPriorityItems.map((item) => ({
+      value: item.value,
+      label: item.label,
+    }));
+    return [{ value: '', label: 'All Priority' }, ...mapped];
+  }, [priorityError, priorityLoading, projectPriorityItems]);
 
   return (
     <div className="space-y-5">
@@ -223,7 +240,7 @@ export function ProjectListPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {PRIORITY_FILTER_OPTIONS.map((opt) => (
+            {priorityFilterOptions.map((opt) => (
               <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
                 {opt.label}
               </SelectItem>

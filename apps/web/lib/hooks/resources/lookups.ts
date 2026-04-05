@@ -1,6 +1,6 @@
 'use client';
 
-import { LookupDataType, LookupScopeType } from '@oneohm-epc/shared/types';
+import { LookupDataType, LookupScopeType, LookupTypeCode } from '@oneohm-epc/shared/types';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
@@ -55,6 +55,13 @@ export interface LookupByTypeCode {
   icon?: string;
   orderIndex: number;
   metadata?: Record<string, unknown>;
+}
+
+export interface LookupOption {
+  value: string;
+  label: string;
+  color?: string;
+  orderIndex: number;
 }
 
 export interface LookupFilters extends BaseFilters {
@@ -166,6 +173,7 @@ export function useLookupsByTypeCode(
   items: LookupByTypeCode[];
   isLoading: boolean;
   isError: boolean;
+  error: unknown;
 } {
   const { orgHeaders } = useOrgContext();
 
@@ -182,7 +190,7 @@ export function useLookupsByTypeCode(
     queryFn: async ({ signal }) => {
       const headers = scopeType === LookupScopeType.ORGANIZATION ? orgHeaders : {};
       const { data } = await apiClient.get<LookupByTypeCode[]>(buildUrl(), { headers, signal });
-      return data;
+      return data as LookupByTypeCode[];
     },
     enabled: !!typeCode && enabled,
     staleTime: STALE_TIMES.slow,
@@ -192,5 +200,36 @@ export function useLookupsByTypeCode(
     items: query.data ?? [],
     isLoading: query.isLoading,
     isError: query.isError,
+    error: query.error,
+  };
+}
+
+function toLookupOptions(items: LookupByTypeCode[]): LookupOption[] {
+  return items
+    .map((item) => ({
+      value: item.code,
+      label: item.label,
+      color: item.color,
+      orderIndex: item.orderIndex,
+    }))
+    .sort((a, b) => a.orderIndex - b.orderIndex || a.label.localeCompare(b.label));
+}
+
+export function useLookupOptions(
+  typeCode: LookupTypeCode,
+  enabled = true,
+): {
+  items: LookupOption[];
+  isLoading: boolean;
+  isError: boolean;
+  error: unknown;
+} {
+  const query = useLookupsByTypeCode(typeCode, LookupScopeType.GLOBAL, undefined, enabled);
+
+  return {
+    items: toLookupOptions(query.items),
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
   };
 }

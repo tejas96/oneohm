@@ -10,7 +10,7 @@ import {
 import NextLink from 'next/link';
 import { useMemo, useCallback } from 'react';
 
-import { TASK_PRIORITY_LABELS, TASK_STATUS_LABELS } from '../../projects/constants';
+import { TASK_STATUS_LABELS } from '../../projects/constants';
 import { useProjectTeam, type ProjectTeamMember } from '../../projects/hooks';
 
 import { MUIDatePicker } from '@/components/ui/mui-date-picker';
@@ -20,6 +20,7 @@ import {
   MUIUserAssigneeSelector,
   type AssigneeOption,
 } from '@/components/ui/mui-user-assignee-selector';
+import { PriorityDropdown } from '@/components/ui/priority-dropdown';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { MUI_LABEL_FONT_SIZE } from '@/lib/theme/mui-theme';
 import { formatDate } from '@/lib/utils';
@@ -123,18 +124,12 @@ export function TaskDrawerMetadata({
         <MUITypography variant="metaLabel" sx={{ mb: 0.75 }}>
           Priority
         </MUITypography>
-        <MUISelect
+        <PriorityDropdown
           value={priority}
           onChange={(e) => onPriorityChange(e.target.value as TaskPriority)}
           formControlProps={{ fullWidth: true, size: 'small', sx: { margin: 0 } }}
           MenuProps={{ disablePortal: true }}
-        >
-          {(['urgent', 'high', 'medium', 'low'] as TaskPriority[]).map((p) => (
-            <MenuItem key={p} value={p}>
-              {TASK_PRIORITY_LABELS[p]}
-            </MenuItem>
-          ))}
-        </MUISelect>
+        />
       </Box>
 
       {/* Assignee */}

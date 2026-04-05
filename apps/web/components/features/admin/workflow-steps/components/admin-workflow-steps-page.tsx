@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { MilestoneType, type TaskChecklist, type WorkflowStep } from '@oneohm-epc/shared/types';
+import { MilestoneType, type WorkflowStep } from '@oneohm-epc/shared/types';
 import {
   CheckCircle2,
   ChevronDown,
@@ -22,6 +22,7 @@ import {
   type ChecklistItem,
   type WorkflowStepFormValues,
 } from '../schemas/workflow-step.schema';
+import { buildWorkflowStepPayload } from '../utils/workflow-step-payload';
 
 import { Alert } from '@/components/shared/alerts/alert';
 import { TablePagination } from '@/components/shared/data-table';
@@ -542,28 +543,7 @@ function StepFormSheet({ open, step, mutations, onClose }: StepFormSheetProps): 
 
   const onSubmit = useCallback(
     (data: WorkflowStepFormValues): void => {
-      const depCodes = data.dependsOnTaskCodes?.filter(Boolean);
-      const checklistItems = data.checklistTemplate?.filter((item) => item.title.trim());
-
-      const payload: Partial<WorkflowStep> = {
-        name: data.name,
-        code: data.code,
-        description: data.description || undefined,
-        type: data.type || undefined,
-        defaultRoleCode: data.defaultRoleCode || undefined,
-        defaultDepartment: data.defaultDepartment || undefined,
-        defaultMilestoneType: data.defaultMilestoneType || undefined,
-        sequenceOrder: data.sequenceOrder,
-        effortDays:
-          data.effortDays !== '' && data.effortDays != null ? Number(data.effortDays) : undefined,
-        isMandatory: data.isMandatory ?? true,
-        canRunParallel: data.canRunParallel ?? false,
-        dependsOnTaskCodes: depCodes && depCodes.length > 0 ? depCodes : undefined,
-        checklistTemplate:
-          checklistItems && checklistItems.length > 0
-            ? ({ items: checklistItems } as TaskChecklist)
-            : undefined,
-      };
+      const payload: Partial<WorkflowStep> = buildWorkflowStepPayload(data);
 
       if (step) {
         mutations.update.mutate({ id: step.id, data: payload }, { onSuccess: () => onClose() });

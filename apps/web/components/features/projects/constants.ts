@@ -347,7 +347,7 @@ export const QUICK_FILTER_CHIPS: QuickFilterChip[] = [
   { key: 'overdue', label: 'Overdue', filter: { dueDateFilter: 'overdue' } },
   { key: 'due-today', label: 'Due Today', filter: { dueDateFilter: 'dueToday' } },
   { key: 'blocked', label: 'Blocked', filter: { status: TaskStatus.BLOCKED } },
-  { key: 'high-priority', label: 'High/Urgent', filter: { priority: TaskPriority.HIGH } },
+  { key: 'high-priority', label: 'High Priority', filter: { priority: TaskPriority.HIGH } },
 ];
 
 // ---------------------------------------------------------------------------

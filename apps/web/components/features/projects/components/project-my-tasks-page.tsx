@@ -1,6 +1,6 @@
 'use client';
 
-import { TASK_STATUS_TRANSITIONS, TaskStatus } from '@oneohm-epc/shared/types';
+import { TASK_STATUS_TRANSITIONS, LookupTypeCode, TaskStatus } from '@oneohm-epc/shared/types';
 import {
   AlertTriangle,
   Calendar,
@@ -14,11 +14,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
-import {
-  TASK_GROUP_BY_OPTIONS,
-  TASK_PRIORITY_FILTER_OPTIONS,
-  TASK_STATUS_FILTER_OPTIONS,
-} from '../constants';
+import { TASK_GROUP_BY_OPTIONS, TASK_STATUS_FILTER_OPTIONS } from '../constants';
 import {
   useMyTasks,
   useUpdateTaskStatus,
@@ -42,6 +38,7 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDebounce, useUrlFilters } from '@/lib/hooks';
+import { useLookupOptions } from '@/lib/hooks/resources';
 import { cn } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
@@ -164,6 +161,11 @@ export function ProjectMyTasksPage(): React.JSX.Element {
 
   const { data, isLoading, isError, refetch } = useMyTasks(filters);
   const updateStatus = useUpdateTaskStatus();
+  const {
+    items: taskPriorityItems,
+    isLoading: priorityLoading,
+    isError: priorityError,
+  } = useLookupOptions(LookupTypeCode.PRIORITY);
 
   const summary = data?.summary;
   const groups = data?.groups ?? [];
@@ -187,6 +189,17 @@ export function ProjectMyTasksPage(): React.JSX.Element {
     ],
     [projects],
   );
+
+  const priorityFilterOptions = useMemo((): Array<{ value: string; label: string }> => {
+    if (priorityLoading || priorityError || taskPriorityItems.length === 0) {
+      return [{ value: '', label: priorityError ? 'Failed to load priorities' : 'All Priority' }];
+    }
+    const mapped: Array<{ value: string; label: string }> = taskPriorityItems.map((item) => ({
+      value: item.value,
+      label: item.label,
+    }));
+    return [{ value: '', label: 'All Priority' }, ...mapped];
+  }, [priorityError, priorityLoading, taskPriorityItems]);
 
   // ---------------------------------------------------------------------------
   // Handlers
@@ -429,7 +442,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {TASK_PRIORITY_FILTER_OPTIONS.map((opt) => (
+            {priorityFilterOptions.map((opt) => (
               <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
                 {opt.label}
               </SelectItem>
