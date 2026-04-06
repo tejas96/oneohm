@@ -19,6 +19,7 @@ export enum ProjectStatus {
  */
 export enum ProjectPriority {
   LOW = 'low',
+  MEDIUM = 'medium',
   NORMAL = 'normal',
   HIGH = 'high',
   URGENT = 'urgent',
@@ -127,6 +128,7 @@ export enum TaskStatus {
 export enum TaskPriority {
   LOW = 'low',
   MEDIUM = 'medium',
+  NORMAL = 'normal',
   HIGH = 'high',
   URGENT = 'urgent',
 }

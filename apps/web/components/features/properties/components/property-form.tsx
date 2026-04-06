@@ -759,7 +759,7 @@ export function PropertyForm({
         {/* Sticky Footer */}
         <div className="sticky bottom-0 z-10">
           <div className="absolute inset-x-0 -top-6 h-6 bg-linear-to-t from-background-tertiary to-transparent pointer-events-none" />
-          <div className="bg-background border-t border-border-light py-4 -mx-4 px-4 lg:-mx-5 lg:px-5">
+          <div className="bg-background border-t border-border-light py-4 px-4">
             <div className="flex items-center justify-between gap-4">
               {!isEditMode && (
                 <p className="text-xs text-foreground-secondary hidden sm:block">

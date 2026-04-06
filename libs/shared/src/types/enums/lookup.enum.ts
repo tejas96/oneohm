@@ -19,6 +19,7 @@ export enum LookupDataType {
   JSON = 'json',
 }
 
-export enum LookupType {
+export enum LookupTypeCode {
   DEFAULT_TASK_STATUS = 'default_task_status',
+  PRIORITY = 'priority',
 }

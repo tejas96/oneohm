@@ -103,6 +103,17 @@ export class LookupRepository {
     return query.getMany();
   }
 
+  /**
+   * Returns raw LookupEntity rows for internal service use (no DTO mapping).
+   * Ordered by orderIndex ASC so callers can rely on DB-defined order.
+   */
+  async findByTypeCodeRaw(typeCode: string): Promise<LookupEntity[]> {
+    return this.repository.find({
+      where: { typeCode, isActive: true, deletedAt: IsNull() },
+      order: { orderIndex: 'ASC' },
+    });
+  }
+
   async findById(id: string): Promise<LookupEntity | null> {
     return this.repository.findOne({ where: { id, deletedAt: IsNull() } });
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import { TaskStatus, TASK_STATUS_TRANSITIONS } from '@oneohm-epc/shared/types';
+import { TaskStatus } from '@oneohm-epc/shared/types';
 import {
   useQuery,
   useMutation,
@@ -42,6 +42,8 @@ export interface BoardColumnTask {
 
 export interface BoardColumn {
   status: TaskStatus;
+  label: string;
+  color: string;
   tasks: BoardColumnTask[];
   total: number;
 }
@@ -198,14 +200,4 @@ export function useMoveTask(projectId: string): UseMutationResult<unknown, Error
       }
     },
   });
-}
-
-export function useCanTransition(currentStatus: TaskStatus, targetStatus: TaskStatus): boolean {
-  if (currentStatus === targetStatus) return true;
-  const allowed = TASK_STATUS_TRANSITIONS[currentStatus];
-  return allowed?.includes(targetStatus) ?? false;
-}
-
-export function useAllowedTransitions(currentStatus: TaskStatus): TaskStatus[] {
-  return [currentStatus, ...(TASK_STATUS_TRANSITIONS[currentStatus] ?? [])];
 }

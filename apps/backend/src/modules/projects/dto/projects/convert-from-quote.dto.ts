@@ -1,20 +1,45 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProjectPriority } from '@oneohm-epc/shared/types';
+import { ProjectPriority, TaskStatus } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import {
+  ArrayMinSize,
   IsArray,
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   MaxLength,
   Min,
+  MinLength,
   ValidateNested,
 } from 'class-validator';
+
+export class TaskStatusConfigDto {
+  @ApiProperty({ enum: Object.values(TaskStatus), description: 'Task status code' })
+  @IsEnum(TaskStatus)
+  code!: TaskStatus;
+
+  @ApiProperty({ example: 'Backlog', description: 'Display label for the status' })
+  @IsString()
+  @MinLength(1)
+  label!: string;
+
+  @ApiProperty({ example: '#6B7280', description: 'Hex color for the status column' })
+  @IsString()
+  @Matches(/^#[0-9A-Fa-f]{6}$/, { message: 'color must be a valid hex color (e.g. #6B7280)' })
+  color!: string;
+
+  @ApiProperty({ example: 1, description: 'Sort order index (1-based)' })
+  @IsInt()
+  @Min(1)
+  orderIndex!: number;
+}
 
 export class ConvertTeamMemberDto {
   @ApiProperty({ description: 'User ID to assign as team member' })
@@ -145,4 +170,16 @@ export class ConvertFromQuoteDto {
   @ValidateNested({ each: true })
   @Type(() => MilestoneInputDto)
   milestones?: MilestoneInputDto[];
+
+  @ApiPropertyOptional({
+    description:
+      'Task status configuration for this project (pre-filled from default_task_status lookup)',
+    type: [TaskStatusConfigDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1, { message: 'At least one task status is required' })
+  @ValidateNested({ each: true })
+  @Type(() => TaskStatusConfigDto)
+  taskStatuses?: TaskStatusConfigDto[];
 }

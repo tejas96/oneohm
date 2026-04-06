@@ -23,8 +23,6 @@ import {
   ProjectTeamRepository,
   WorkflowStepRepository,
 } from '../repositories';
-import { FALLBACK_TRANSITIONS } from './workflow-engine.service';
-
 const STAGE_TO_MILESTONE_TYPE: Record<string, MilestoneType> = {
   material_procurement: 'material_procurement' as MilestoneType,
   installation_start: 'installation' as MilestoneType,
@@ -346,6 +344,7 @@ export class ProjectService {
         progressPercentage: 0,
         startDate: convertDto?.startDate ? new Date(convertDto.startDate) : undefined,
         endDate: convertDto?.endDate ? new Date(convertDto.endDate) : undefined,
+        taskStatuses: convertDto?.taskStatuses?.length ? convertDto.taskStatuses : undefined,
       },
       propertyId: quote.propertyId,
       organizationId,
@@ -733,10 +732,10 @@ export class ProjectService {
         manager,
       );
 
-      // 5. Set default transitions and excluded steps on project
+      // 5. Set excluded steps on project (transitions are DB-driven, no hardcoded map)
       await this.projectRepository.updateById(
         project.id,
-        { defaultTransitions: FALLBACK_TRANSITIONS, excludedStepIds: excludedStepIds ?? [] },
+        { excludedStepIds: excludedStepIds ?? [] },
         manager,
       );
 

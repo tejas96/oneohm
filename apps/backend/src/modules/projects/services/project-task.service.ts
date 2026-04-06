@@ -9,15 +9,17 @@ import {
 } from '@nestjs/common';
 import {
   type ChecklistProgress,
+  LookupTypeCode,
   type PaginatedResponse,
   type StatisticsResponse,
   type TaskActivityEntry,
   type TaskActivityType,
-  TaskPriority,
   TaskStatus,
+  type TaskStatusConfig,
 } from '@oneohm-epc/shared/types';
 import { DataSource, type EntityManager, IsNull } from 'typeorm';
 
+import { LookupRepository } from '../../lookups/repositories/lookup.repository';
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import {
   type CreateProjectTaskDto,
@@ -69,6 +71,7 @@ export class ProjectTaskService {
     private readonly workflowEngine: WorkflowEngineService,
     private readonly projectRepository: ProjectRepository,
     private readonly milestoneRepository: MilestoneRepository,
+    private readonly lookupRepository: LookupRepository,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -315,22 +318,22 @@ export class ProjectTaskService {
 
     await this.validateAndApplyStatusChange(existingTask, newStatus, projectId);
 
+    const statusMap = await this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS);
+    const meta = statusMap.get(newStatus)?.metadata ?? {};
+
     const updateData: Record<string, unknown> = {
       status: newStatus,
       updatedBy: currentUserId,
     };
     updateData.version = () => 'version + 1';
 
-    if (newStatus === TaskStatus.IN_PROGRESS && !existingTask.startDate) {
+    if (meta.autoSetStartDate && !existingTask.startDate) {
       updateData.startDate = new Date();
     }
-    if (newStatus === TaskStatus.DONE || newStatus === TaskStatus.CANCELLED) {
-      if (!existingTask.endDate) {
-        updateData.endDate = new Date();
-      }
-      if (newStatus === TaskStatus.DONE) {
-        updateData.completionPercentage = 100;
-      }
+    if (meta.isFinal) {
+      if (!existingTask.endDate) updateData.endDate = new Date();
+      if (meta.autoCompletePct !== undefined)
+        updateData.completionPercentage = meta.autoCompletePct;
     }
 
     const activityEntries: TaskActivityEntry[] = [];
@@ -430,11 +433,15 @@ export class ProjectTaskService {
       throw new BadRequestException('Completion percentage must be between 0 and 100');
     }
 
-    // If setting to 100%, auto-transition status to DONE via the dedicated status handler
+    // If setting to 100%, auto-transition to whichever status has autoCompletePct === 100
     if (completionPercentage === 100) {
       const task = await this.findById(id, projectId);
-      if (task.status !== TaskStatus.DONE) {
-        await this.updateStatus(id, projectId, TaskStatus.DONE, currentUserId);
+      const statusMap = await this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS);
+      const finalStatus = [...statusMap.entries()].find(
+        ([, e]) => e.metadata.autoCompletePct === 100,
+      )?.[0];
+      if (finalStatus && (task.status as string) !== finalStatus) {
+        await this.updateStatus(id, projectId, finalStatus as TaskStatus, currentUserId);
         return this.findById(id, projectId);
       }
     }
@@ -526,6 +533,9 @@ export class ProjectTaskService {
     expectedVersion: number,
     currentUserId: string,
   ): Promise<ProjectTaskEntity> {
+    // Load outside the transaction — lookup data is immutable during the request lifecycle
+    const statusMap = await this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS);
+
     const result = await this.dataSource.transaction('SERIALIZABLE', async (manager) => {
       const existingTask = await manager.findOne(ProjectTaskEntity, {
         where: { id, projectId, deletedAt: IsNull() },
@@ -561,17 +571,20 @@ export class ProjectTaskService {
             }
           : undefined;
 
+      const statusMeta = statusMap.get(newStatus)?.metadata ?? {};
+
       const setClause: Record<string, unknown> = {
         status: newStatus,
         kanbanOrder: newKanbanOrder,
         version: () => 'version + 1',
       };
-      if (newStatus === TaskStatus.IN_PROGRESS && !existingTask.startDate) {
+      if (statusMeta.autoSetStartDate && !existingTask.startDate) {
         setClause.startDate = new Date();
       }
-      if (newStatus === TaskStatus.DONE || newStatus === TaskStatus.CANCELLED) {
+      if (statusMeta.isFinal) {
         if (!existingTask.endDate) setClause.endDate = new Date();
-        if (newStatus === TaskStatus.DONE) setClause.completionPercentage = 100;
+        if (statusMeta.autoCompletePct !== undefined)
+          setClause.completionPercentage = statusMeta.autoCompletePct;
       }
 
       const updateResult = await manager
@@ -624,6 +637,8 @@ export class ProjectTaskService {
   async getBoardData(projectId: string): Promise<{
     columns: Array<{
       status: TaskStatus;
+      label: string;
+      color: string;
       tasks: Record<string, unknown>[];
       total: number;
     }>;
@@ -633,8 +648,26 @@ export class ProjectTaskService {
       labels: string[];
     };
   }> {
-    const allTasks = await this.taskRepository.findAllForBoard(projectId);
-    const teamMembers = await this.teamRepository.findByProject(projectId);
+    const [allTasks, teamMembers, project, statusMap] = await Promise.all([
+      this.taskRepository.findAllForBoard(projectId),
+      this.teamRepository.findByProject(projectId),
+      this.projectRepository.findOneById(projectId),
+      this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
+    ]);
+
+    if (!project) {
+      throw new NotFoundException(`Project with ID ${projectId} not found`);
+    }
+
+    if (!project.taskStatuses?.length) {
+      throw new NotFoundException(
+        `Project ${projectId} has no task statuses configured. Please configure statuses via the project settings.`,
+      );
+    }
+
+    const configuredStatuses: TaskStatusConfig[] = project.taskStatuses
+      .slice()
+      .sort((a, b) => a.orderIndex - b.orderIndex);
 
     const depNameMap = new Map<string, string>();
     const depCodeMap = new Map<string, string>();
@@ -645,61 +678,73 @@ export class ProjectTaskService {
       depStatusMap.set(task.id, task.status);
     }
 
-    const allStatuses = [
-      TaskStatus.BACKLOG,
-      TaskStatus.TODO,
-      TaskStatus.IN_PROGRESS,
-      TaskStatus.IN_REVIEW,
-      TaskStatus.TESTING,
-      TaskStatus.BLOCKED,
-      TaskStatus.DONE,
-    ];
+    const configuredCodes = new Set(configuredStatuses.map((s) => s.code));
 
-    const columns = allStatuses.map((status) => {
-      const tasksInCol = allTasks.filter((t) => t.status === status);
+    const mapTask = (t: (typeof allTasks)[number]): Record<string, unknown> => {
+      const assignee = t.assignee;
+      const checklistProgress = (() => {
+        const cl = t.checklistOverride ?? t.workflowStep?.checklistTemplate;
+        if (!cl?.items?.length) return undefined;
+        return { done: cl.items.filter((i) => i.isCompleted).length, total: cl.items.length };
+      })();
+
       return {
-        status,
-        total: tasksInCol.length,
-        tasks: tasksInCol.map((t) => {
-          const assignee = t.assignee;
-          const checklistProgress = (() => {
-            const cl = t.checklistOverride ?? t.workflowStep?.checklistTemplate;
-            if (!cl?.items?.length) return undefined;
-            return { done: cl.items.filter((i) => i.isCompleted).length, total: cl.items.length };
-          })();
-
-          return {
-            id: t.id,
-            code: t.code,
-            name: t.name ?? t.nameOverride ?? '',
-            status: t.status,
-            priority: t.priority,
-            assigneeName: assignee
-              ? [assignee.firstName, assignee.lastName].filter(Boolean).join(' ') || undefined
-              : undefined,
-            assigneeId: t.assignedToUserId,
-            endDate: t.endDate,
-            labels: t.labels,
-            kanbanOrder: t.kanbanOrder,
-            checklistProgress,
-            hasDependencyBlockers: (t.dependsOnTaskIds ?? []).some((depId: string) => {
-              const s = depStatusMap.get(depId);
-              return s !== undefined && s !== TaskStatus.DONE && s !== TaskStatus.CANCELLED;
-            }),
-            dependencyNames: (t.dependsOnTaskIds ?? [])
-              .map((depId: string) => depNameMap.get(depId))
-              .filter(Boolean) as string[],
-            dependencyCodes: (t.dependsOnTaskIds ?? [])
-              .map((depId: string) => depCodeMap.get(depId))
-              .filter(Boolean) as string[],
-            version: t.version,
-            milestoneName: t.milestone?.name,
-            completionPercentage: t.completionPercentage,
-            blockedReason: t.blockedReason,
-          };
+        id: t.id,
+        code: t.code,
+        name: t.name ?? t.nameOverride ?? '',
+        status: t.status,
+        priority: t.priority,
+        assigneeName: assignee
+          ? [assignee.firstName, assignee.lastName].filter(Boolean).join(' ') || undefined
+          : undefined,
+        assigneeId: t.assignedToUserId,
+        endDate: t.endDate,
+        labels: t.labels,
+        kanbanOrder: t.kanbanOrder,
+        checklistProgress,
+        hasDependencyBlockers: (t.dependsOnTaskIds ?? []).some((depId: string) => {
+          const s = depStatusMap.get(depId);
+          if (!s) return false;
+          // A dependency blocks progress if its status is NOT explicitly marked as non-blocking (blocksDependents !== false)
+          return statusMap.get(s)?.metadata.blocksDependents !== false;
         }),
+        dependencyNames: (t.dependsOnTaskIds ?? [])
+          .map((depId: string) => depNameMap.get(depId))
+          .filter(Boolean) as string[],
+        dependencyCodes: (t.dependsOnTaskIds ?? [])
+          .map((depId: string) => depCodeMap.get(depId))
+          .filter(Boolean) as string[],
+        version: t.version,
+        milestoneName: t.milestone?.name,
+        completionPercentage: t.completionPercentage,
+        blockedReason: t.blockedReason,
       };
-    });
+    };
+
+    const columns = configuredStatuses.map(({ code, label, color }) => ({
+      status: code,
+      label,
+      color,
+      total: 0,
+      tasks: [] as Record<string, unknown>[],
+    }));
+
+    for (const task of allTasks) {
+      if (configuredCodes.has(task.status)) {
+        const col = columns.find((c) => c.status === task.status);
+        if (col) {
+          col.tasks.push(mapTask(task));
+          col.total++;
+        }
+      } else {
+        // Unmapped tasks (e.g. todo, in_review, testing, cancelled) fold into first column
+        const firstCol = columns[0];
+        if (firstCol) {
+          firstCol.tasks.push(mapTask(task));
+          firstCol.total++;
+        }
+      }
+    }
 
     const milestonesSet = new Map<string, string>();
     const labelsSet = new Set<string>();
@@ -798,12 +843,20 @@ export class ProjectTaskService {
   }> {
     const teamProjectIds = await this.getUserTeamProjectIds(userId);
 
-    const [tasks, summaryCounts, completedThisWeek, projects] = await Promise.all([
-      this.taskRepository.findAllByUserId(userId, organizationId, filters, teamProjectIds),
-      this.taskRepository.countSummaryForUser(userId, organizationId, teamProjectIds),
-      this.taskRepository.countCompletedThisWeek(userId, organizationId, undefined, teamProjectIds),
-      this.taskRepository.findUserTaskProjects(userId, organizationId, teamProjectIds),
-    ]);
+    const [tasks, summaryCounts, completedThisWeek, projects, statusMap, priorityMap] =
+      await Promise.all([
+        this.taskRepository.findAllByUserId(userId, organizationId, filters, teamProjectIds),
+        this.taskRepository.countSummaryForUser(userId, organizationId, teamProjectIds),
+        this.taskRepository.countCompletedThisWeek(
+          userId,
+          organizationId,
+          undefined,
+          teamProjectIds,
+        ),
+        this.taskRepository.findUserTaskProjects(userId, organizationId, teamProjectIds),
+        this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
+        this.getLookupMap(LookupTypeCode.PRIORITY),
+      ]);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -841,7 +894,7 @@ export class ProjectTaskService {
     }
 
     const enrichedTasks = tasks.map((task) =>
-      this.enrichMyTask(task, today, depNameMap, depStatusMap, depCodeMap),
+      this.enrichMyTask(task, today, depNameMap, depStatusMap, depCodeMap, statusMap, priorityMap),
     );
 
     const summary = {
@@ -850,7 +903,7 @@ export class ProjectTaskService {
       projects,
     };
 
-    const groups = this.buildGroups(enrichedTasks, groupBy, today);
+    const groups = await this.buildGroups(enrichedTasks, groupBy, today, statusMap, priorityMap);
 
     // Sort tasks within each group by urgencyScore DESC
     for (const group of groups) {
@@ -931,7 +984,20 @@ export class ProjectTaskService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    return this.enrichMyTask(task, today, depNameMap, depStatusMap, depCodeMap);
+    const [statusMap, priorityMap] = await Promise.all([
+      this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
+      this.getLookupMap(LookupTypeCode.PRIORITY),
+    ]);
+
+    return this.enrichMyTask(
+      task,
+      today,
+      depNameMap,
+      depStatusMap,
+      depCodeMap,
+      statusMap,
+      priorityMap,
+    );
   }
 
   async updateTaskCrossProject(
@@ -953,6 +1019,12 @@ export class ProjectTaskService {
     if (!task) {
       throw new NotFoundException('Task not found or you do not have access');
     }
+
+    // Load lookup maps once — used for status side-effects and enrichment below
+    const [statusMap, priorityMap] = await Promise.all([
+      this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
+      this.getLookupMap(LookupTypeCode.PRIORITY),
+    ]);
 
     // Handle status change through FSM validation
     if (dto.status && dto.status !== task.status) {
@@ -997,12 +1069,14 @@ export class ProjectTaskService {
           newValue: dto.status,
           createdAt: now,
         });
-        if (dto.status === TaskStatus.IN_PROGRESS && !task.startDate) {
+        const sMeta = statusMap.get(dto.status)?.metadata ?? {};
+        if (sMeta.autoSetStartDate && !task.startDate) {
           updateData.startDate = new Date();
         }
-        if (dto.status === TaskStatus.DONE || dto.status === TaskStatus.CANCELLED) {
+        if (sMeta.isFinal) {
           if (!task.endDate) updateData.endDate = new Date();
-          if (dto.status === TaskStatus.DONE) updateData.completionPercentage = 100;
+          if (sMeta.autoCompletePct !== undefined)
+            updateData.completionPercentage = sMeta.autoCompletePct;
         }
       }
     }
@@ -1140,7 +1214,17 @@ export class ProjectTaskService {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return this.enrichMyTask(updated, today, depNameMap, depStatusMap, depCodeMap);
+
+    // Reuse the maps already loaded at the start of this method
+    return this.enrichMyTask(
+      updated,
+      today,
+      depNameMap,
+      depStatusMap,
+      depCodeMap,
+      statusMap,
+      priorityMap,
+    );
   }
 
   async addComment(
@@ -1251,6 +1335,19 @@ export class ProjectTaskService {
     if (!project) {
       throw new NotFoundException(`Project with ID ${projectId} not found`);
     }
+
+    if (!project.taskStatuses?.length) {
+      throw new BadRequestException(`Project ${projectId} has no task statuses configured.`);
+    }
+
+    const allowedCodes = project.taskStatuses.map((s) => s.code);
+
+    if (!allowedCodes.includes(newStatus)) {
+      throw new BadRequestException(
+        `Status '${newStatus}' is not a configured status for this project`,
+      );
+    }
+
     await this.workflowEngine.validateTransition(task, newStatus, project);
     await this.workflowEngine.checkDependencies(task, newStatus);
   }
@@ -1334,9 +1431,11 @@ export class ProjectTaskService {
   private enrichMyTask(
     task: ProjectTaskEntity,
     today: Date,
-    depNameMap?: Map<string, string>,
-    depStatusMap?: Map<string, TaskStatus>,
-    depCodeMap?: Map<string, string>,
+    depNameMap: Map<string, string>,
+    depStatusMap: Map<string, TaskStatus>,
+    depCodeMap: Map<string, string>,
+    statusMap: Map<string, { label: string; metadata: Record<string, unknown> }>,
+    priorityMap: Map<string, { label: string; metadata: Record<string, unknown> }>,
   ): EnrichedMyTask {
     const assignee = task.assignee;
     const assigneeName = assignee
@@ -1366,7 +1465,7 @@ export class ProjectTaskService {
       (Date.now() - new Date(task.updatedAt).getTime()) / msPerDay,
     );
 
-    const urgencyScore = this.computeUrgencyScore(task, today);
+    const urgencyScore = this.computeUrgencyScore(task, today, statusMap, priorityMap);
 
     return {
       ...task,
@@ -1378,26 +1477,28 @@ export class ProjectTaskService {
       isOverdue,
       daysSinceLastUpdate,
       checklistProgress,
-      dependencyNames: depNameMap
-        ? ((task.dependsOnTaskIds ?? [])
-            .map((depId: string) => depNameMap.get(depId))
-            .filter(Boolean) as string[])
-        : [],
-      dependencyCodes: depCodeMap
-        ? ((task.dependsOnTaskIds ?? [])
-            .map((depId: string) => depCodeMap.get(depId))
-            .filter(Boolean) as string[])
-        : [],
-      hasDependencyBlockers: depStatusMap
-        ? (task.dependsOnTaskIds ?? []).some((depId: string) => {
-            const s = depStatusMap.get(depId);
-            return s !== undefined && s !== TaskStatus.DONE && s !== TaskStatus.CANCELLED;
-          })
-        : false,
+      dependencyNames: (task.dependsOnTaskIds ?? [])
+        .map((depId: string) => depNameMap.get(depId))
+        .filter(Boolean) as string[],
+      dependencyCodes: (task.dependsOnTaskIds ?? [])
+        .map((depId: string) => depCodeMap.get(depId))
+        .filter(Boolean) as string[],
+      hasDependencyBlockers: (task.dependsOnTaskIds ?? []).some((depId: string) => {
+        const s = depStatusMap.get(depId);
+        if (!s) return false;
+        // Unknown statuses (not in lookup) are treated as blocking — safe default
+        return statusMap.get(s)?.metadata.blocksDependents !== false;
+      }),
+      projectTaskStatuses: task.project?.taskStatuses ?? [],
     };
   }
 
-  private computeUrgencyScore(task: ProjectTaskEntity, today: Date): number {
+  private computeUrgencyScore(
+    task: ProjectTaskEntity,
+    today: Date,
+    statusMap: Map<string, { label: string; metadata: Record<string, unknown> }>,
+    priorityMap: Map<string, { label: string; metadata: Record<string, unknown> }>,
+  ): number {
     let score = 0;
     const msPerDay = 86_400_000;
 
@@ -1416,17 +1517,11 @@ export class ProjectTaskService {
       }
     }
 
-    const priorityWeights: Record<string, number> = {
-      [TaskPriority.URGENT]: 40,
-      [TaskPriority.HIGH]: 30,
-      [TaskPriority.MEDIUM]: 15,
-      [TaskPriority.LOW]: 5,
-    };
-    score += priorityWeights[task.priority] ?? 15;
+    // Priority weight: entirely from DB metadata, default 0 if not configured
+    score += (priorityMap.get(task.priority)?.metadata.urgencyWeight as number | undefined) ?? 0;
 
-    if (task.status === TaskStatus.BLOCKED) {
-      score -= 20;
-    }
+    // Status urgency penalty: entirely from DB metadata (e.g. blocked lowers score)
+    score -= (statusMap.get(task.status)?.metadata.urgencyPenalty as number | undefined) ?? 0;
 
     const daysSinceCreated = Math.floor(
       (Date.now() - new Date(task.createdAt).getTime()) / msPerDay,
@@ -1456,45 +1551,63 @@ export class ProjectTaskService {
     }));
   }
 
-  private groupByStatus(tasks: EnrichedMyTask[]): TaskGroup[] {
-    const order: Array<{ key: TaskStatus; label: string; variant: string }> = [
-      { key: TaskStatus.BLOCKED, label: 'BLOCKED', variant: 'error' },
-      { key: TaskStatus.IN_REVIEW, label: 'IN REVIEW', variant: 'warning' },
-      { key: TaskStatus.IN_PROGRESS, label: 'IN PROGRESS', variant: 'info' },
-      { key: TaskStatus.TODO, label: 'TO DO', variant: 'secondary' },
-      { key: TaskStatus.TESTING, label: 'TESTING', variant: 'info' },
-      { key: TaskStatus.BACKLOG, label: 'BACKLOG', variant: 'secondary' },
-    ];
+  private groupByStatus(
+    tasks: EnrichedMyTask[],
+    statusLookups: Array<{ code: string; label: string; metadata: Record<string, unknown> }>,
+  ): TaskGroup[] {
+    // Order, label, variant all come from DB — no hardcoded list
+    const groups = statusLookups.map((lookup) => {
+      const filtered = tasks.filter((t) => (t.status as string) === lookup.code);
+      return {
+        key: lookup.code,
+        label: lookup.label,
+        count: filtered.length,
+        variant: (lookup.metadata.variant as string) ?? 'secondary',
+        tasks: filtered,
+      };
+    });
 
-    return order
-      .map((o) => {
-        const filtered = tasks.filter((t) => t.status === o.key);
-        return {
-          key: o.key,
-          label: o.label,
-          count: filtered.length,
-          variant: o.variant,
-          tasks: filtered,
-        };
-      })
-      .filter((g) => g.count > 0);
+    // Surface tasks whose status isn't in the lookup under a generic group
+    const knownCodes = new Set(statusLookups.map((l) => l.code));
+    const unknown = tasks.filter((t) => !knownCodes.has(t.status as string));
+    if (unknown.length > 0) {
+      groups.push({
+        key: 'other',
+        label: 'OTHER',
+        count: unknown.length,
+        variant: 'secondary',
+        tasks: unknown,
+      });
+    }
+
+    return groups.filter((g) => g.count > 0);
   }
 
-  private buildGroups(
+  private async buildGroups(
     tasks: EnrichedMyTask[],
     groupBy: 'dueDate' | 'priority' | 'project' | 'status',
     today: Date,
-  ): TaskGroup[] {
+    statusMap: Map<string, { label: string; metadata: Record<string, unknown> }>,
+    priorityMap: Map<string, { label: string; metadata: Record<string, unknown> }>,
+  ): Promise<TaskGroup[]> {
     if (groupBy === 'dueDate') {
       return this.groupByDueDate(tasks, today);
     }
     if (groupBy === 'priority') {
-      return this.groupByPriority(tasks);
+      return this.groupByPriority(tasks, priorityMap);
     }
     if (groupBy === 'project') {
       return this.groupByProject(tasks);
     }
-    return this.groupByStatus(tasks);
+    // status grouping: use the already-loaded statusMap for order, label, and variant
+    return this.groupByStatus(
+      tasks,
+      [...statusMap.entries()].map(([code, e]) => ({
+        code,
+        label: e.label,
+        metadata: e.metadata,
+      })),
+    );
   }
 
   private groupByDueDate(tasks: EnrichedMyTask[], today: Date): TaskGroup[] {
@@ -1550,25 +1663,49 @@ export class ProjectTaskService {
       }));
   }
 
-  private groupByPriority(tasks: EnrichedMyTask[]): TaskGroup[] {
-    const order: Array<{ key: TaskPriority; label: string; variant: string }> = [
-      { key: TaskPriority.URGENT, label: 'URGENT', variant: 'error' },
-      { key: TaskPriority.HIGH, label: 'HIGH', variant: 'warning' },
-      { key: TaskPriority.MEDIUM, label: 'MEDIUM', variant: 'info' },
-      { key: TaskPriority.LOW, label: 'LOW', variant: 'secondary' },
-    ];
+  private groupByPriority(
+    tasks: EnrichedMyTask[],
+    priorityMap: Map<string, { label: string; metadata: Record<string, unknown> }>,
+  ): TaskGroup[] {
+    // Order comes from Map insertion order which matches DB orderIndex (set by getLookupMap)
+    const groups: TaskGroup[] = [];
 
-    return order
-      .map((o) => {
-        const filtered = tasks.filter((t) => t.priority === o.key);
-        return {
-          key: o.key,
-          label: o.label,
-          count: filtered.length,
-          variant: o.variant,
-          tasks: filtered,
-        };
-      })
-      .filter((g) => g.count > 0);
+    for (const [code, entry] of priorityMap.entries()) {
+      const filtered = tasks.filter((t) => (t.priority as string) === code);
+      groups.push({
+        key: code,
+        label: entry.label,
+        count: filtered.length,
+        variant: (entry.metadata.variant as string) ?? 'secondary',
+        tasks: filtered,
+      });
+    }
+
+    // Surface tasks whose priority isn't in the lookup
+    const knownCodes = new Set(priorityMap.keys());
+    const unknown = tasks.filter((t) => !knownCodes.has(t.priority as string));
+    if (unknown.length > 0) {
+      groups.push({
+        key: 'other',
+        label: 'Other',
+        count: unknown.length,
+        variant: 'secondary',
+        tasks: unknown,
+      });
+    }
+
+    return groups.filter((g) => g.count > 0);
+  }
+
+  /**
+   * Returns a Map<code, { label, metadata }> for the given lookup typeCode.
+   * Carries both label and metadata so callers never need a second DB fetch for labels.
+   * Map insertion order matches DB orderIndex ASC (guaranteed by findByTypeCodeRaw).
+   */
+  private async getLookupMap(
+    typeCode: LookupTypeCode,
+  ): Promise<Map<string, { label: string; metadata: Record<string, unknown> }>> {
+    const rows = await this.lookupRepository.findByTypeCodeRaw(typeCode);
+    return new Map(rows.map((r) => [r.code, { label: r.label, metadata: r.metadata ?? {} }]));
   }
 }

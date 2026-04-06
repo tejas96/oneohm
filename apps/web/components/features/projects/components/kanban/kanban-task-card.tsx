@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 const PRIORITY_COLORS: Record<string, string> = {
   urgent: 'border-l-red-500',
   high: 'border-l-orange-500',
+  normal: 'border-l-blue-500',
   medium: 'border-l-blue-500',
   low: 'border-l-gray-400',
 };
@@ -21,6 +22,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 const PRIORITY_DOT_COLORS: Record<string, string> = {
   urgent: 'bg-red-500',
   high: 'bg-orange-500',
+  normal: 'bg-blue-500',
   medium: 'bg-blue-500',
   low: 'bg-gray-400',
 };

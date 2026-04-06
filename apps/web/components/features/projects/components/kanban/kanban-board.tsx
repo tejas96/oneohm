@@ -10,9 +10,8 @@ import {
   useSensors,
   type DragEndEvent,
   type DragStartEvent,
-  type DragOverEvent,
 } from '@dnd-kit/core';
-import { TASK_STATUS_TRANSITIONS, TaskStatus } from '@oneohm-epc/shared/types';
+import { TaskStatus } from '@oneohm-epc/shared/types';
 import React, { useCallback, useMemo, useState } from 'react';
 
 import { KanbanColumn } from './kanban-column';
@@ -44,7 +43,6 @@ export function KanbanBoard({
   currentUserId,
 }: KanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<BoardColumnTask | null>(null);
-  const [overColumnStatus, setOverColumnStatus] = useState<TaskStatus | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -56,6 +54,11 @@ export function KanbanBoard({
   );
 
   const filteredColumns = useMemo(() => {
+    // Resolve the milestone name for the selected milestone ID once, outside the column loop
+    const selectedMilestoneName = filters.milestoneId
+      ? (data.filters.milestones.find((m) => m.id === filters.milestoneId)?.name ?? null)
+      : null;
+
     return data.columns.map((col) => {
       let tasks = col.tasks;
       if (filters.assigneeId) {
@@ -64,8 +67,8 @@ export function KanbanBoard({
       if (filters.priority) {
         tasks = tasks.filter((t) => t.priority === filters.priority);
       }
-      if (filters.milestoneId) {
-        tasks = tasks.filter((t) => t.milestoneName != null);
+      if (selectedMilestoneName) {
+        tasks = tasks.filter((t) => t.milestoneName === selectedMilestoneName);
       }
       if (filters.label) {
         tasks = tasks.filter((t) => t.labels?.includes(filters.label));
@@ -84,39 +87,17 @@ export function KanbanBoard({
       }
       return { ...col, tasks, total: tasks.length };
     });
-  }, [data.columns, filters, currentUserId]);
-
-  const isInvalidTransition = useCallback(
-    (sourceStatus: TaskStatus | undefined, targetStatus: TaskStatus): boolean => {
-      if (!sourceStatus || sourceStatus === targetStatus) return false;
-      const allowed = TASK_STATUS_TRANSITIONS[sourceStatus] ?? [];
-      return !allowed.includes(targetStatus);
-    },
-    [],
-  );
+  }, [data.columns, data.filters.milestones, filters, currentUserId]);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const task = event.active.data.current?.task as BoardColumnTask | undefined;
     if (task) setActiveTask(task);
   }, []);
 
-  const handleDragOver = useCallback((event: DragOverEvent) => {
-    const overData = event.over?.data.current;
-    if (overData?.type === 'column') {
-      setOverColumnStatus(overData.status as TaskStatus);
-    } else if (overData?.type === 'task') {
-      const overTask = overData.task as BoardColumnTask;
-      setOverColumnStatus(overTask.status);
-    } else {
-      setOverColumnStatus(null);
-    }
-  }, []);
-
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;
       setActiveTask(null);
-      setOverColumnStatus(null);
 
       if (!over) return;
 
@@ -134,16 +115,12 @@ export function KanbanBoard({
         targetStatus = over.id as TaskStatus;
       }
 
-      if (
-        draggedTask.status !== targetStatus &&
-        isInvalidTransition(draggedTask.status, targetStatus)
-      ) {
-        showToast.error(`Cannot move task from ${draggedTask.status} to ${targetStatus}`);
+      const targetCol = filteredColumns.find((c) => c.status === targetStatus);
+      if (!targetCol) {
+        showToast.error('Cannot move to that column.');
         return;
       }
-
-      const targetCol = filteredColumns.find((c) => c.status === targetStatus);
-      const tasksInTarget = targetCol?.tasks ?? [];
+      const tasksInTarget = targetCol.tasks;
       let kanbanOrder: number;
 
       if (overData?.type === 'task') {
@@ -165,7 +142,7 @@ export function KanbanBoard({
         version: draggedTask.version,
       });
     },
-    [filteredColumns, isInvalidTransition, onMoveTask, projectId],
+    [filteredColumns, onMoveTask, projectId],
   );
 
   return (
@@ -173,7 +150,6 @@ export function KanbanBoard({
       sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
       <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: '400px' }}>
@@ -182,11 +158,7 @@ export function KanbanBoard({
             key={column.status}
             column={column}
             onTaskClick={onTaskClick}
-            isInvalidDrop={
-              !!activeTask &&
-              overColumnStatus === column.status &&
-              isInvalidTransition(activeTask.status, column.status)
-            }
+            isInvalidDrop={false}
           />
         ))}
       </div>

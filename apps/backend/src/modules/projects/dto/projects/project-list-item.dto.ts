@@ -1,5 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProjectPriority, ProjectStatus, type ProjectMetadata } from '@oneohm-epc/shared/types';
+import {
+  ProjectPriority,
+  ProjectStatus,
+  type ProjectMetadata,
+  type TaskStatusConfig,
+} from '@oneohm-epc/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../../common/utils';
@@ -132,6 +137,10 @@ export class ProjectListItemDto {
   @ApiPropertyOptional()
   @Expose()
   metadata?: ProjectMetadata;
+
+  @ApiPropertyOptional({ description: 'Configured task statuses for this project' })
+  @Expose()
+  taskStatuses?: TaskStatusConfig[];
 
   @ApiProperty({ type: () => ProjectListPropertyDto })
   @Expose()

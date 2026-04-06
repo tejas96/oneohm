@@ -1,16 +1,16 @@
 'use client';
 
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import { MenuItem, Box, Divider, Link as MuiLink } from '@mui/material';
+import { MenuItem, Box, Divider, Link as MuiLink, Skeleton } from '@mui/material';
 import {
   type TaskPriority,
   type TaskStatus,
-  TaskStatus as TaskStatusEnum,
+  type TaskStatusConfig,
 } from '@oneohm-epc/shared/types';
 import NextLink from 'next/link';
 import { useMemo, useCallback } from 'react';
 
-import { TASK_PRIORITY_LABELS, TASK_STATUS_LABELS } from '../../projects/constants';
+import { TASK_STATUS_LABELS } from '../../projects/constants';
 import { useProjectTeam, type ProjectTeamMember } from '../../projects/hooks';
 
 import { MUIDatePicker } from '@/components/ui/mui-date-picker';
@@ -20,6 +20,7 @@ import {
   MUIUserAssigneeSelector,
   type AssigneeOption,
 } from '@/components/ui/mui-user-assignee-selector';
+import { PriorityDropdown } from '@/components/ui/priority-dropdown';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { MUI_LABEL_FONT_SIZE } from '@/lib/theme/mui-theme';
 import { formatDate } from '@/lib/utils';
@@ -34,6 +35,9 @@ interface TaskDrawerMetadataProps {
   endDate?: string | null;
   createdAt: string;
   updatedAt: string;
+  taskStatuses: TaskStatusConfig[];
+  statusesLoading?: boolean;
+  hasDependencyBlockers?: boolean;
   onStatusChange: (status: TaskStatus) => void;
   onPriorityChange: (priority: TaskPriority) => void;
   onAssigneeChange: (userId: string | null) => void;
@@ -58,13 +62,23 @@ export function TaskDrawerMetadata({
   endDate,
   createdAt,
   updatedAt,
+  taskStatuses,
+  statusesLoading = false,
+  hasDependencyBlockers = false,
   onStatusChange,
   onPriorityChange,
   onAssigneeChange,
   onDueDateChange,
 }: TaskDrawerMetadataProps): React.JSX.Element {
-  const allStatuses = useMemo(() => Object.values(TaskStatusEnum), []);
+  // No fallback — statuses come from the project's configured lookup data
+  const allStatuses = taskStatuses;
   const projectHref = buildRoute(ROUTES.PROJECTS.DETAIL, { id: projectId });
+
+  // Label for the current status — falls back to TASK_STATUS_LABELS for out-of-config statuses
+  const currentStatusLabel = useMemo(() => {
+    const found = allStatuses.find((s) => s.code === status);
+    return found?.label ?? TASK_STATUS_LABELS[status];
+  }, [allStatuses, status]);
 
   const { data: teamMembers = [], isLoading: teamLoading } = useProjectTeam(projectId);
 
@@ -99,23 +113,43 @@ export function TaskDrawerMetadata({
         <MUITypography variant="metaLabel" sx={{ mb: 0.75 }}>
           Status
         </MUITypography>
-        <MUISelect
-          value={status}
-          onChange={(e) => onStatusChange(e.target.value as TaskStatus)}
-          formControlProps={{ fullWidth: true, size: 'small', sx: { margin: 0 } }}
-          MenuProps={{ disablePortal: true }}
-        >
-          <MenuItem value={status} disabled>
-            {TASK_STATUS_LABELS[status]} (current)
-          </MenuItem>
-          {allStatuses
-            .filter((s) => s !== status)
-            .map((s) => (
-              <MenuItem key={s} value={s}>
-                {TASK_STATUS_LABELS[s]}
-              </MenuItem>
-            ))}
-        </MUISelect>
+        {statusesLoading ? (
+          <Skeleton variant="rounded" height={31} />
+        ) : (
+          <MUISelect
+            value={status}
+            onChange={(e) => onStatusChange(e.target.value as TaskStatus)}
+            formControlProps={{ fullWidth: true, size: 'small', sx: { margin: 0 } }}
+            MenuProps={{ disablePortal: true }}
+            disabled={hasDependencyBlockers}
+          >
+            <MenuItem value={status} disabled>
+              {currentStatusLabel} (current)
+            </MenuItem>
+            {allStatuses
+              .filter((s) => s.code !== status)
+              .map((s) => (
+                <MenuItem key={s.code} value={s.code}>
+                  {s.label}
+                </MenuItem>
+              ))}
+          </MUISelect>
+        )}
+        {hasDependencyBlockers && !statusesLoading && (
+          <MUITypography
+            variant="body"
+            sx={{
+              mt: 0.5,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              color: 'warning.main',
+              fontSize: 11,
+            }}
+          >
+            Complete all dependencies before changing status.
+          </MUITypography>
+        )}
       </Box>
 
       {/* Priority */}
@@ -123,18 +157,12 @@ export function TaskDrawerMetadata({
         <MUITypography variant="metaLabel" sx={{ mb: 0.75 }}>
           Priority
         </MUITypography>
-        <MUISelect
+        <PriorityDropdown
           value={priority}
           onChange={(e) => onPriorityChange(e.target.value as TaskPriority)}
           formControlProps={{ fullWidth: true, size: 'small', sx: { margin: 0 } }}
           MenuProps={{ disablePortal: true }}
-        >
-          {(['urgent', 'high', 'medium', 'low'] as TaskPriority[]).map((p) => (
-            <MenuItem key={p} value={p}>
-              {TASK_PRIORITY_LABELS[p]}
-            </MenuItem>
-          ))}
-        </MUISelect>
+        />
       </Box>
 
       {/* Assignee */}
