@@ -37,6 +37,7 @@ import {
   WorkflowStepService,
 } from './services';
 import { CustomersModule } from '../customers/customers.module';
+import { LookupsModule } from '../lookups/lookups.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { QuotesModule } from '../quotes/quotes.module';
 import { UsersModule } from '../users/users.module';
@@ -55,6 +56,7 @@ import { UsersModule } from '../users/users.module';
     QuotesModule,
     CustomersModule,
     UsersModule,
+    LookupsModule,
   ],
   controllers: [
     ProjectController,

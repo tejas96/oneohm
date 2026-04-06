@@ -21,13 +21,21 @@ import {
   TextField,
   Tooltip,
 } from '@mui/material';
-import * as React from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type JSX,
+  type MouseEvent,
+  type ReactNode,
+} from 'react';
 
 import type { Employee } from '@/components/features/employees/hooks/use-employees';
 import { MUITypography } from '@/components/ui/mui-typography';
 
 /* -------------------------------------------------------------------------- */
-/*  Helpers                                                                    */
+/*  Helpers (private — shared by both components in this file)                 */
 /* -------------------------------------------------------------------------- */
 
 function stringToColor(str: string): string {
@@ -35,8 +43,7 @@ function stringToColor(str: string): string {
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const h = Math.abs(hash) % 360;
-  return `hsl(${h}, 45%, 45%)`;
+  return `hsl(${Math.abs(hash) % 360}, 45%, 45%)`;
 }
 
 function getInitials(name: string): string {
@@ -46,24 +53,255 @@ function getInitials(name: string): string {
   return ((parts[0]?.[0] ?? '') + (parts[parts.length - 1]?.[0] ?? '')).toUpperCase();
 }
 
-function employeeToOption(emp: Employee): AssigneeOption {
-  let displayName: string;
-  if (emp.user) {
-    const name = `${emp.user.firstName ?? ''} ${emp.user.lastName ?? ''}`.trim();
-    displayName = name || emp.user.email || emp.user.phone || emp.userId;
-  } else {
-    displayName = emp.userId;
-  }
-  const secondaryText = [emp.designation, emp.department].filter(Boolean).join(' · ');
-  return {
-    id: emp.userId,
-    displayName,
-    secondaryText: secondaryText || undefined,
-  };
+/* -------------------------------------------------------------------------- */
+/*  MUIAvatarGroup — public types                                              */
+/* -------------------------------------------------------------------------- */
+
+/** Shape required by MUIAvatarGroup — intentionally minimal */
+export interface MUIAvatarGroupMember {
+  /** Unique ID — matched against `selectedIds` */
+  id: string;
+  /** Full display name used for initials and tooltip */
+  displayName: string;
+  /** Optional avatar image URL */
+  avatarUrl?: string;
+}
+
+export interface MUIAvatarGroupProps {
+  /** List of members to display */
+  members: MUIAvatarGroupMember[];
+  /**
+   * Maximum number of avatars to show inline before collapsing into "+N" overflow.
+   * @default 4
+   */
+  max?: number;
+  /**
+   * Avatar diameter in pixels.
+   * @default 28
+   */
+  size?: number;
+  /**
+   * When true, avatars can be clicked to toggle selection (filter mode).
+   * Requires `selectedIds` and `onToggle`.
+   */
+  selectable?: boolean;
+  /** Set of currently selected member IDs */
+  selectedIds?: Set<string>;
+  /** Called when a member avatar or overflow-list item is clicked (selectable mode only) */
+  onToggle?: (memberId: string) => void;
+  /** When provided, a "Clear" button appears next to the group when any avatar is selected */
+  onClear?: () => void;
+  /** Shown when `members` is empty */
+  emptyText?: string;
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Public types                                                               */
+/*  MUIAvatarGroup — component                                                 */
+/* -------------------------------------------------------------------------- */
+
+export function MUIAvatarGroup({
+  members,
+  max = 4,
+  size = 28,
+  selectable = false,
+  selectedIds,
+  onToggle,
+  onClear,
+  emptyText = 'No members',
+}: MUIAvatarGroupProps): JSX.Element {
+  const [overflowAnchor, setOverflowAnchor] = useState<HTMLElement | null>(null);
+  const overflowOpen = Boolean(overflowAnchor);
+
+  if (members.length === 0) {
+    return (
+      <MUITypography variant="body" sx={{ color: 'text.disabled' }}>
+        {emptyText}
+      </MUITypography>
+    );
+  }
+
+  const visible = members.slice(0, max);
+  const overflow = members.slice(max);
+  const hasOverflow = overflow.length > 0;
+  const hasSelection = selectable && selectedIds && selectedIds.size > 0;
+  const overlap = Math.round(size * 0.3);
+
+  // Scale font to ~35% of avatar diameter so initials always fit without clipping
+  const avatarFontSize = Math.round(size * 0.35);
+
+  const baseAvatarSx = {
+    width: size,
+    height: size,
+    fontSize: avatarFontSize,
+    border: '2px solid',
+    borderColor: 'background.paper',
+    transition: 'transform 0.15s',
+  };
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+      {/* Stacked visible avatars */}
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        {visible.map((member, idx) => {
+          const isSelected = selectedIds?.has(member.id) ?? false;
+          return (
+            <Tooltip key={member.id} title={member.displayName} placement="top" arrow>
+              <Avatar
+                src={member.avatarUrl}
+                onClick={selectable ? () => onToggle?.(member.id) : undefined}
+                sx={{
+                  ...baseAvatarSx,
+                  ml: idx === 0 ? 0 : `-${overlap}px`,
+                  bgcolor: stringToColor(member.displayName),
+                  zIndex: visible.length - idx,
+                  cursor: selectable ? 'pointer' : 'default',
+                  outline: isSelected ? '2px solid' : 'none',
+                  outlineColor: 'primary.main',
+                  outlineOffset: '1px',
+                  '&:hover': selectable ? { transform: 'scale(1.1)', zIndex: 20 } : {},
+                }}
+              >
+                {getInitials(member.displayName)}
+              </Avatar>
+            </Tooltip>
+          );
+        })}
+
+        {/* "+N" overflow trigger */}
+        {hasOverflow && (
+          <Tooltip title={`${overflow.length} more — click to view all`} placement="top" arrow>
+            <Avatar
+              onClick={(e: MouseEvent<HTMLElement>) => setOverflowAnchor(e.currentTarget)}
+              sx={{
+                ...baseAvatarSx,
+                ml: `-${overlap}px`,
+                bgcolor: 'action.selected',
+                color: 'text.secondary',
+                fontWeight: 600,
+                cursor: 'pointer',
+                zIndex: 0,
+                '&:hover': { bgcolor: 'action.hover', transform: 'scale(1.08)', zIndex: 20 },
+              }}
+            >
+              +{overflow.length}
+            </Avatar>
+          </Tooltip>
+        )}
+      </Box>
+
+      {/* Clear selection */}
+      {hasSelection && onClear && (
+        <Box
+          component="button"
+          type="button"
+          onClick={onClear}
+          sx={{
+            background: 'none',
+            border: 'none',
+            p: 0,
+            cursor: 'pointer',
+            color: 'text.secondary',
+            typography: 'caption',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.25,
+            ml: 0.5,
+            '&:hover': { color: 'text.primary' },
+          }}
+        >
+          ✕ Clear
+        </Box>
+      )}
+
+      {/* Overflow popover — lists ALL members */}
+      <Popover
+        open={overflowOpen}
+        anchorEl={overflowAnchor}
+        onClose={() => setOverflowAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        slotProps={{
+          paper: {
+            elevation: 4,
+            sx: {
+              mt: 0.5,
+              minWidth: 180,
+              maxWidth: 240,
+              borderRadius: 1.5,
+              border: 1,
+              borderColor: 'divider',
+              overflow: 'hidden',
+            },
+          },
+        }}
+      >
+        <Box sx={{ px: 1.5, pt: 1.5, pb: 0.5 }}>
+          <MUITypography variant="body" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+            All members ({members.length})
+          </MUITypography>
+        </Box>
+        <List dense disablePadding sx={{ px: 0.75, pb: 0.75 }}>
+          {members.map((member) => {
+            const isSelected = selectedIds?.has(member.id) ?? false;
+            return (
+              <ListItemButton
+                key={member.id}
+                onClick={
+                  selectable
+                    ? () => {
+                        onToggle?.(member.id);
+                        setOverflowAnchor(null);
+                      }
+                    : undefined
+                }
+                dense
+                selected={isSelected}
+                sx={{
+                  borderRadius: 1,
+                  px: 1,
+                  mb: 0.25,
+                  cursor: selectable ? 'pointer' : 'default',
+                  '&.Mui-selected': {
+                    backgroundColor: 'primary.50',
+                    '&:hover': { backgroundColor: 'primary.100' },
+                  },
+                }}
+              >
+                <ListItemAvatar sx={{ minWidth: 36 }}>
+                  <Avatar
+                    src={member.avatarUrl}
+                    sx={{
+                      width: 28,
+                      height: 28,
+                      fontSize: 10,
+                      bgcolor: stringToColor(member.displayName),
+                    }}
+                  >
+                    {getInitials(member.displayName)}
+                  </Avatar>
+                </ListItemAvatar>
+                <ListItemText
+                  primary={member.displayName}
+                  primaryTypographyProps={{
+                    noWrap: true,
+                    variant: 'body2',
+                    sx: { fontWeight: isSelected ? 600 : 400 },
+                  }}
+                />
+                {isSelected && (
+                  <CheckIcon sx={{ fontSize: 15, color: 'primary.main', flexShrink: 0, ml: 0.5 }} />
+                )}
+              </ListItemButton>
+            );
+          })}
+        </List>
+      </Popover>
+    </Box>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  MUIUserAssigneeSelector — public types                                     */
 /* -------------------------------------------------------------------------- */
 
 /**
@@ -127,7 +365,7 @@ export interface MUIUserAssigneeSelectorProps {
 
   // ── Presentation ───────────────────────────────────────────────────────────
   /** Optional label rendered above the trigger */
-  label?: React.ReactNode;
+  label?: ReactNode;
   /** Validation error shown below the trigger */
   error?: boolean | string;
   /** Placeholder shown on the trigger when no assignee is set */
@@ -141,7 +379,7 @@ export interface MUIUserAssigneeSelectorProps {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  Component                                                                  */
+/*  MUIUserAssigneeSelector — component                                        */
 /* -------------------------------------------------------------------------- */
 
 export function MUIUserAssigneeSelector({
@@ -164,31 +402,28 @@ export function MUIUserAssigneeSelector({
   triggerMinWidth = 220,
   searchPlaceholder = 'Search by name…',
   emptyText,
-}: MUIUserAssigneeSelectorProps): React.JSX.Element {
-  const [anchorEl, setAnchorEl] = React.useState<HTMLButtonElement | null>(null);
-  const [search, setSearch] = React.useState('');
-  const searchRef = React.useRef<HTMLInputElement>(null);
+}: MUIUserAssigneeSelectorProps): JSX.Element {
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+  const [search, setSearch] = useState('');
+  const searchRef = useRef<HTMLInputElement>(null);
   const isOpen = Boolean(anchorEl);
 
-  // Resolve which data source to use: explicit options take priority over employees
-  const resolvedOptions = React.useMemo<AssigneeOption[]>(
+  // Explicit options take priority over legacy employees prop
+  const resolvedOptions = useMemo<AssigneeOption[]>(
     () => options ?? employees.map(employeeToOption),
     [options, employees],
   );
 
-  // Resolve loading / error from either prop set
   const isOptionsLoading = optionsLoading ?? employeesLoading ?? false;
   const optionsErrorMsg = optionsError ?? employeesError ?? null;
 
-  // Find the currently assigned option
-  const currentOption = React.useMemo(
+  const currentOption = useMemo(
     () => (value ? (resolvedOptions.find((o) => o.id === value) ?? null) : null),
     [value, resolvedOptions],
   );
   const currentName = currentOption?.displayName ?? null;
 
-  // Client-side search filtering — searches displayName and secondaryText
-  const filtered = React.useMemo(() => {
+  const filtered = useMemo(() => {
     if (!search.trim()) return resolvedOptions;
     const q = search.trim().toLowerCase();
     return resolvedOptions.filter(
@@ -202,25 +437,7 @@ export function MUIUserAssigneeSelector({
   const errorMsg = typeof error === 'string' ? error : undefined;
   const resolvedEmptyText = emptyText ?? 'No members found.';
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
-
-  const handleOpen = (e: React.MouseEvent<HTMLButtonElement>): void => {
-    if (disabled || loading || readOnly) return;
-    setAnchorEl(e.currentTarget);
-  };
-
-  const handleClose = (): void => {
-    setAnchorEl(null);
-    setSearch('');
-  };
-
-  const handleSelect = (id: string | null): void => {
-    onChange?.(id);
-    handleClose();
-  };
-
-  // Auto-focus search input when popover opens
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       const id = window.setTimeout(() => searchRef.current?.focus(), 50);
       return () => window.clearTimeout(id);
@@ -240,7 +457,7 @@ export function MUIUserAssigneeSelector({
               sx={{
                 width: 24,
                 height: 24,
-                fontSize: '0.65rem',
+                fontSize: 9,
                 bgcolor: stringToColor(currentName),
                 flexShrink: 0,
               }}
@@ -264,7 +481,9 @@ export function MUIUserAssigneeSelector({
 
   const triggerContent = (
     <Button
-      onClick={handleOpen}
+      onClick={(e) => {
+        setAnchorEl(e.currentTarget);
+      }}
       disabled={disabled || loading}
       variant="outlined"
       size="small"
@@ -277,16 +496,13 @@ export function MUIUserAssigneeSelector({
         borderColor: hasError ? 'error.main' : 'divider',
         color: currentName ? 'text.primary' : 'text.secondary',
         fontWeight: 400,
-        fontSize: '0.8125rem',
         textTransform: 'none',
+        typography: 'body2',
         '&:hover': {
           borderColor: hasError ? 'error.main' : 'primary.main',
           backgroundColor: 'action.hover',
         },
-        '&.Mui-disabled': {
-          borderColor: 'divider',
-          color: 'text.disabled',
-        },
+        '&.Mui-disabled': { borderColor: 'divider', color: 'text.disabled' },
       }}
     >
       {loading ? (
@@ -297,7 +513,7 @@ export function MUIUserAssigneeSelector({
           sx={{
             width: 22,
             height: 22,
-            fontSize: '0.6rem',
+            fontSize: 8,
             bgcolor: stringToColor(currentName),
             flexShrink: 0,
           }}
@@ -327,7 +543,6 @@ export function MUIUserAssigneeSelector({
 
   return (
     <Box>
-      {/* Optional label */}
       {label && (
         <MUITypography
           variant="bodyPrimary"
@@ -338,38 +553,34 @@ export function MUIUserAssigneeSelector({
         </MUITypography>
       )}
 
-      {/* Trigger — wrapped in Tooltip when disabled */}
       {disabled ? (
         <Tooltip title="Assignment is disabled" placement="top">
-          <span style={{ display: 'block' }}>{triggerContent}</span>
+          <Box component="span" sx={{ display: 'block' }}>
+            {triggerContent}
+          </Box>
         </Tooltip>
       ) : (
         triggerContent
       )}
 
-      {/* Validation error */}
       {errorMsg && (
         <MUITypography
           variant="alertTitle"
           component="span"
-          sx={{
-            color: 'error.main',
-            mt: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.5,
-          }}
+          sx={{ color: 'error.main', mt: '4px', display: 'flex', alignItems: 'center', gap: 0.5 }}
         >
           <WarningAmberIcon sx={{ fontSize: 13 }} />
           {errorMsg}
         </MUITypography>
       )}
 
-      {/* Popover */}
       <Popover
         open={isOpen}
         anchorEl={anchorEl}
-        onClose={handleClose}
+        onClose={() => {
+          setAnchorEl(null);
+          setSearch('');
+        }}
         disablePortal={disablePortal}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
@@ -388,7 +599,7 @@ export function MUIUserAssigneeSelector({
           },
         }}
       >
-        {/* Search bar */}
+        {/* Search */}
         <Box sx={{ px: 1.5, pt: 1.5, pb: 1 }}>
           <TextField
             inputRef={searchRef}
@@ -404,16 +615,20 @@ export function MUIUserAssigneeSelector({
                 </InputAdornment>
               ),
             }}
-            sx={{ '& .MuiInputBase-input': { fontSize: '0.8125rem' } }}
+            sx={{ '& .MuiInputBase-input': { typography: 'body2' } }}
           />
         </Box>
 
-        {/* Unassign option — only when allowUnassign=true and a value is set */}
+        {/* Unassign option */}
         {allowUnassign && value && (
           <>
             <Box sx={{ px: 1.5, pb: 0.5 }}>
               <ListItemButton
-                onClick={() => handleSelect(null)}
+                onClick={() => {
+                  onChange?.(null);
+                  setAnchorEl(null);
+                  setSearch('');
+                }}
                 dense
                 sx={{
                   borderRadius: 1,
@@ -436,16 +651,14 @@ export function MUIUserAssigneeSelector({
 
         {/* Options list */}
         <Box sx={{ maxHeight: 280, overflowY: 'auto' }}>
-          {/* Error state */}
           {optionsErrorMsg && (
             <Box sx={{ px: 1.5, py: 1.5 }}>
-              <Alert severity="error" variant="outlined" sx={{ fontSize: '0.8125rem' }}>
+              <Alert severity="error" variant="outlined" sx={{ typography: 'body2' }}>
                 {optionsErrorMsg}
               </Alert>
             </Box>
           )}
 
-          {/* Loading state */}
           {!optionsErrorMsg && isOptionsLoading && (
             <Box
               sx={{
@@ -462,14 +675,12 @@ export function MUIUserAssigneeSelector({
             </Box>
           )}
 
-          {/* Empty — no options at all */}
           {!optionsErrorMsg && !isOptionsLoading && resolvedOptions.length === 0 && (
             <Box sx={{ py: 3, px: 2, textAlign: 'center' }}>
               <MUITypography variant="body">{resolvedEmptyText}</MUITypography>
             </Box>
           )}
 
-          {/* Empty — no search matches */}
           {!optionsErrorMsg &&
             !isOptionsLoading &&
             resolvedOptions.length > 0 &&
@@ -479,7 +690,6 @@ export function MUIUserAssigneeSelector({
               </Box>
             )}
 
-          {/* Option rows */}
           {!optionsErrorMsg && !isOptionsLoading && filtered.length > 0 && (
             <List dense disablePadding sx={{ px: 0.75, py: 0.75 }}>
               {filtered.map((option) => {
@@ -487,7 +697,11 @@ export function MUIUserAssigneeSelector({
                 return (
                   <ListItemButton
                     key={option.id}
-                    onClick={() => handleSelect(option.id)}
+                    onClick={() => {
+                      onChange?.(option.id);
+                      setAnchorEl(null);
+                      setSearch('');
+                    }}
                     dense
                     selected={isSelected}
                     sx={{
@@ -506,7 +720,7 @@ export function MUIUserAssigneeSelector({
                         sx={{
                           width: 28,
                           height: 28,
-                          fontSize: '0.65rem',
+                          fontSize: 10,
                           bgcolor: stringToColor(option.displayName),
                         }}
                       >
@@ -518,12 +732,10 @@ export function MUIUserAssigneeSelector({
                       secondary={option.secondaryText}
                       primaryTypographyProps={{
                         noWrap: true,
-                        sx: { fontSize: '0.8125rem', fontWeight: isSelected ? 600 : 400 },
+                        variant: 'body2',
+                        sx: { fontWeight: isSelected ? 600 : 400 },
                       }}
-                      secondaryTypographyProps={{
-                        noWrap: true,
-                        sx: { fontSize: '0.7rem' },
-                      }}
+                      secondaryTypographyProps={{ noWrap: true, variant: 'caption' }}
                     />
                     {isSelected && (
                       <CheckIcon
@@ -539,4 +751,20 @@ export function MUIUserAssigneeSelector({
       </Popover>
     </Box>
   );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Private helpers                                                            */
+/* -------------------------------------------------------------------------- */
+
+function employeeToOption(emp: Employee): AssigneeOption {
+  let displayName: string;
+  if (emp.user) {
+    const name = `${emp.user.firstName ?? ''} ${emp.user.lastName ?? ''}`.trim();
+    displayName = name || emp.user.email || emp.user.phone || emp.userId;
+  } else {
+    displayName = emp.userId;
+  }
+  const secondaryText = [emp.designation, emp.department].filter(Boolean).join(' · ');
+  return { id: emp.userId, displayName, secondaryText: secondaryText || undefined };
 }

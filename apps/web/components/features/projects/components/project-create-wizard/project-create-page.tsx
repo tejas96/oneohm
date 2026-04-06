@@ -6,6 +6,7 @@ import {
   PropertyStatus,
   QuoteStatus,
   MilestoneType,
+  type TaskStatusConfig,
 } from '@oneohm-epc/shared/types';
 import {
   AlertCircle,
@@ -34,6 +35,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
+import { ProjectStatusConfigStep } from './project-status-config-step';
 import {
   useCustomerProperties,
   useCustomer,
@@ -138,6 +140,7 @@ export function ProjectCreatePage(): React.JSX.Element {
         type: m.type,
         order: i + 1,
       })),
+      taskStatuses: [] as TaskStatusConfig[],
     },
     mode: 'onTouched',
   });
@@ -593,6 +596,7 @@ export function ProjectCreatePage(): React.JSX.Element {
         excludedStepIds: 'Tasks',
         taskAssignments: 'Task Assignments',
         taskMilestoneOverrides: 'Task Milestones',
+        taskStatuses: 'Project Statuses',
       };
       const errorFields = Object.keys(fieldErrors);
       const labels = errorFields.map((k) => FIELD_LABELS[k] || k).join(', ');
@@ -638,6 +642,7 @@ export function ProjectCreatePage(): React.JSX.Element {
           milestones: milestonesPayload,
           taskAssignments: assignmentsPayload,
           taskMilestoneOverrides: milestoneOverridesPayload,
+          taskStatuses: values.taskStatuses?.length ? values.taskStatuses : undefined,
         },
       });
 
@@ -1414,6 +1419,21 @@ export function ProjectCreatePage(): React.JSX.Element {
                 )}
               </>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ================================================================== */}
+      {/* Section 5: Project Status Configuration */}
+      {/* ================================================================== */}
+      {selectedPropertyId && !propertyConverted && (
+        <Card>
+          <CardHeader className="justify-start gap-2">
+            <Flag className="size-4 text-foreground-secondary" />
+            <h2 className="text-sm font-semibold">Project Statuses</h2>
+          </CardHeader>
+          <CardContent>
+            <ProjectStatusConfigStep form={form} />
           </CardContent>
         </Card>
       )}

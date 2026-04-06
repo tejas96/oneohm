@@ -111,6 +111,7 @@ export function CollapsibleTaskGroup({
               onMarkDone={onMarkDone}
               onStartTask={onStartTask}
               isFocused={focusedTaskId === task.id}
+              taskStatuses={task.projectTaskStatuses}
             />
           ))}
 

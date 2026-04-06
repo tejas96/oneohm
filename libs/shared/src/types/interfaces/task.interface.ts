@@ -1,4 +1,9 @@
-import type { FileAttachment, TaskActivityEntry, TaskChecklist } from './project.interface';
+import type {
+  FileAttachment,
+  TaskActivityEntry,
+  TaskChecklist,
+  TaskStatusConfig,
+} from './project.interface';
 import { type MilestoneType, type TaskPriority, TaskStatus } from '../enums/project.enum';
 
 // ============================================================================
@@ -86,6 +91,7 @@ export interface MyTask extends ProjectTask {
   dependencyNames?: string[];
   dependencyCodes?: string[];
   hasDependencyBlockers?: boolean;
+  projectTaskStatuses?: TaskStatusConfig[];
 }
 
 export interface MyTasksProject {
@@ -127,26 +133,6 @@ export interface MyTaskFilters {
   search?: string;
   dueDateFilter?: DueDateFilter;
 }
-
-// ============================================================================
-// FSM Transitions (shared between frontend & backend)
-// ============================================================================
-
-export const TASK_STATUS_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
-  [TaskStatus.BACKLOG]: [TaskStatus.TODO],
-  [TaskStatus.TODO]: [TaskStatus.IN_PROGRESS, TaskStatus.BACKLOG],
-  [TaskStatus.IN_PROGRESS]: [
-    TaskStatus.IN_REVIEW,
-    TaskStatus.BLOCKED,
-    TaskStatus.DONE,
-    TaskStatus.TESTING,
-  ],
-  [TaskStatus.IN_REVIEW]: [TaskStatus.DONE, TaskStatus.IN_PROGRESS],
-  [TaskStatus.TESTING]: [TaskStatus.DONE, TaskStatus.IN_PROGRESS, TaskStatus.BLOCKED],
-  [TaskStatus.BLOCKED]: [TaskStatus.IN_PROGRESS, TaskStatus.CANCELLED],
-  [TaskStatus.DONE]: [TaskStatus.IN_PROGRESS],
-  [TaskStatus.CANCELLED]: [TaskStatus.BACKLOG],
-};
 
 // ============================================================================
 // Task Label Maps (shared between frontend & backend)

@@ -1,6 +1,6 @@
 'use client';
 
-import { TASK_STATUS_TRANSITIONS, LookupTypeCode, TaskStatus } from '@oneohm-epc/shared/types';
+import { LookupTypeCode, TaskStatus } from '@oneohm-epc/shared/types';
 import {
   AlertTriangle,
   Calendar,
@@ -21,8 +21,10 @@ import {
   type GroupByMode,
   type MyTask,
   type MyTaskFilters,
+  type TeamMemberSummary,
 } from '../hooks';
 import { CollapsibleTaskGroup } from './collapsible-task-group';
+import { TeamAvatarGroup } from './team-avatar-group';
 import { useCollapsedGroups } from '../hooks/use-collapsed-groups';
 import { useTaskKeyboardNav } from '../hooks/use-task-keyboard-nav';
 
@@ -52,6 +54,7 @@ const MY_TASKS_URL_DEFAULTS = {
   groupBy: 'dueDate',
   search: '',
   dueDateFilter: '',
+  assigneeId: '',
 };
 
 interface SummaryCard {
@@ -136,6 +139,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   const statusFilter = urlFilters.status;
   const priorityFilter = urlFilters.priority;
   const dueDateFilter = urlFilters.dueDateFilter;
+  const assigneeFilter = urlFilters.assigneeId;
   const groupBy = (urlFilters.groupBy || 'dueDate') as GroupByMode;
   const [searchInput, setSearchInput] = useState(urlFilters.search || '');
   const debouncedSearch = useDebounce(searchInput, 300);
@@ -171,11 +175,47 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   const groups = data?.groups ?? [];
   const projects = summary?.projects ?? [];
 
+  // Derive unique assignees from loaded tasks for the avatar filter
+  const allTasksFlat = useMemo(() => groups.flatMap((g) => g.tasks), [groups]);
+
+  const assigneeMembers = useMemo<TeamMemberSummary[]>(() => {
+    const seen = new Map<string, TeamMemberSummary>();
+    for (const task of allTasksFlat) {
+      const uid = task.assignedToUserId;
+      if (uid && task.assigneeName && !seen.has(uid)) {
+        const parts = task.assigneeName.trim().split(' ');
+        seen.set(uid, {
+          id: uid,
+          firstName: parts[0] ?? '',
+          lastName: parts.slice(1).join(' ') || undefined,
+          isProjectManager: false,
+        });
+      }
+    }
+    return Array.from(seen.values());
+  }, [allTasksFlat]);
+
+  const selectedAssigneeIds = useMemo(
+    () => (assigneeFilter ? new Set([assigneeFilter]) : new Set<string>()),
+    [assigneeFilter],
+  );
+
+  // Client-side assignee filtering applied on top of server-side filters
+  const filteredGroups = useMemo(() => {
+    if (!assigneeFilter) return groups;
+    return groups
+      .map((g) => ({
+        ...g,
+        tasks: g.tasks.filter((t) => t.assignedToUserId === assigneeFilter),
+      }))
+      .filter((g) => g.tasks.length > 0);
+  }, [groups, assigneeFilter]);
+
   // All tasks flat for keyboard nav indexing
-  const allTasks = useMemo(() => groups.flatMap((g) => g.tasks), [groups]);
+  const allTasks = useMemo(() => filteredGroups.flatMap((g) => g.tasks), [filteredGroups]);
 
   // Collapse state
-  const groupKeys = useMemo(() => groups.map((g) => g.key), [groups]);
+  const groupKeys = useMemo(() => filteredGroups.map((g) => g.key), [filteredGroups]);
   const { isExpanded, toggle, expandAll, collapseAll, allExpanded } = useCollapsedGroups(
     groupBy,
     groupKeys,
@@ -213,7 +253,14 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   );
 
   const handleClearFilters = useCallback(() => {
-    setFilter({ projectId: '', status: '', priority: '', search: '', dueDateFilter: '' });
+    setFilter({
+      projectId: '',
+      status: '',
+      priority: '',
+      search: '',
+      dueDateFilter: '',
+      assigneeId: '',
+    });
     setSearchInput('');
   }, [setFilter]);
 
@@ -260,7 +307,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
     (index: number) => {
       const task = allTasks[index];
       if (!task) return;
-      const canDone = (TASK_STATUS_TRANSITIONS[task.status] ?? []).includes(TaskStatus.DONE);
+      const canDone = task.status !== TaskStatus.DONE && !task.hasDependencyBlockers;
       if (canDone) handleMarkDone(task.id);
     },
     [allTasks, handleMarkDone],
@@ -270,9 +317,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
     (index: number) => {
       const task = allTasks[index];
       if (!task) return;
-      const canStart = (TASK_STATUS_TRANSITIONS[task.status] ?? []).includes(
-        TaskStatus.IN_PROGRESS,
-      );
+      const canStart = task.status !== TaskStatus.IN_PROGRESS && !task.hasDependencyBlockers;
       if (canStart) handleStartTask(task.id);
     },
     [allTasks, handleStartTask],
@@ -293,7 +338,12 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   const focusedTaskId = focusedIndex >= 0 ? allTasks[focusedIndex]?.id : undefined;
 
   const hasActiveFilters =
-    projectFilter || statusFilter || priorityFilter || debouncedSearch || dueDateFilter;
+    projectFilter ||
+    statusFilter ||
+    priorityFilter ||
+    debouncedSearch ||
+    dueDateFilter ||
+    assigneeFilter;
   const morningBrief =
     summary && !briefDismissed ? getMorningBrief(summary.overdue, summary.dueToday) : null;
 
@@ -463,6 +513,22 @@ export function ProjectMyTasksPage(): React.JSX.Element {
           </SelectContent>
         </Select>
 
+        {/* Assignee avatar filter */}
+        {assigneeMembers.length > 0 && (
+          <>
+            <div className="h-5 w-px bg-border-light" />
+            <TeamAvatarGroup
+              members={assigneeMembers}
+              max={4}
+              size="xs"
+              selectable
+              selectedIds={selectedAssigneeIds}
+              onToggle={(id) => handleFilterChange('assigneeId', assigneeFilter === id ? '' : id)}
+              onClear={() => handleFilterChange('assigneeId', '')}
+            />
+          </>
+        )}
+
         {hasActiveFilters && (
           <Button
             variant="ghost"
@@ -533,7 +599,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
           )}
 
           {/* Empty state */}
-          {!isLoading && groups.length === 0 && (
+          {!isLoading && filteredGroups.length === 0 && (
             <div className="bg-background rounded-lg border border-border-light overflow-hidden">
               <div className="p-8">
                 <EmptyState
@@ -561,7 +627,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
           {/* Grouped Task List - Jira-style collapsible */}
           {!isLoading && (
             <div className="space-y-1.5">
-              {groups.map((group) => (
+              {filteredGroups.map((group) => (
                 <CollapsibleTaskGroup
                   key={group.key}
                   groupKey={group.key}

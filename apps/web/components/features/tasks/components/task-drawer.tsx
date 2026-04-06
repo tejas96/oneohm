@@ -2,12 +2,7 @@
 
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Box, Divider } from '@mui/material';
-import {
-  TASK_STATUS_TRANSITIONS,
-  TaskStatus,
-  type TaskChecklist,
-  type TaskPriority,
-} from '@oneohm-epc/shared/types';
+import { TaskStatus, type TaskChecklist, type TaskPriority } from '@oneohm-epc/shared/types';
 import { useCallback } from 'react';
 
 import { TaskDrawerChecklist } from './task-drawer-checklist';
@@ -15,6 +10,7 @@ import { TaskDrawerDependencies } from './task-drawer-dependencies';
 import { TaskDrawerHeader } from './task-drawer-header';
 import { TaskDrawerMainContent } from './task-drawer-main-content';
 import { TaskDrawerMetadata } from './task-drawer-metadata';
+import { useProjectTaskStatuses } from '../../projects/hooks/use-project-task-statuses';
 import { useTaskDetail } from '../hooks/use-task-detail';
 import { useAddComment, useUpdateTask } from '../hooks/use-task-mutations';
 
@@ -39,6 +35,7 @@ export function TaskDrawer({
   const { data: task, isLoading, isError, error } = useTaskDetail(open ? taskId : null);
   const updateTask = useUpdateTask();
   const addComment = useAddComment();
+  const { taskStatuses, isLoading: statusesLoading } = useProjectTaskStatuses(task?.projectId);
 
   const handleStatusChange = useCallback(
     (status: TaskStatus) => {
@@ -138,7 +135,7 @@ export function TaskDrawer({
     [taskId, addComment],
   );
 
-  const canComplete = task ? TASK_STATUS_TRANSITIONS[task.status].includes(TaskStatus.DONE) : false;
+  const canComplete = task ? task.status !== TaskStatus.DONE && !task.hasDependencyBlockers : false;
 
   if (!open) {
     return (
@@ -235,6 +232,9 @@ export function TaskDrawer({
                     endDate={task.endDate}
                     createdAt={task.createdAt}
                     updatedAt={task.updatedAt}
+                    taskStatuses={taskStatuses}
+                    statusesLoading={statusesLoading}
+                    hasDependencyBlockers={task.hasDependencyBlockers}
                     onStatusChange={handleStatusChange}
                     onPriorityChange={handlePriorityChange}
                     onAssigneeChange={handleAssigneeChange}

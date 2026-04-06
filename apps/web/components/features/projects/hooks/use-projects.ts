@@ -5,6 +5,7 @@ import type {
   ProjectMetadata,
   ProjectPriority,
   ProjectStatus,
+  TaskStatusConfig,
 } from '@oneohm-epc/shared/types';
 import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
@@ -58,6 +59,7 @@ export interface ProjectListItem {
   estimatedCost?: number;
   actualCost?: number;
   metadata?: ProjectMetadata;
+  taskStatuses?: TaskStatusConfig[];
   property: {
     id: string;
     address?: string;

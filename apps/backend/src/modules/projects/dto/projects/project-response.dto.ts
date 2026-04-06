@@ -1,5 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProjectPriority, ProjectStatus, type ProjectMetadata } from '@oneohm-epc/shared/types';
+import {
+  ProjectPriority,
+  ProjectStatus,
+  type ProjectMetadata,
+  type TaskStatusConfig,
+} from '@oneohm-epc/shared/types';
 import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../../common/utils';
@@ -110,6 +115,10 @@ export class ProjectResponseDto {
   @Expose()
   @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
   metadata?: ProjectMetadata;
+
+  @ApiPropertyOptional({ description: 'Configured task statuses for this project' })
+  @Expose()
+  taskStatuses?: TaskStatusConfig[];
 
   // ==================== Related Entities ====================
   @ApiPropertyOptional({ type: [MilestoneResponseDto] })

@@ -165,6 +165,7 @@ export const TASK_STATUS_DOT_COLOR: Record<string, string> = {
 
 export const TASK_PRIORITY_BADGE_VARIANT: Record<string, string> = {
   [TaskPriority.LOW]: 'secondary',
+  [TaskPriority.NORMAL]: 'info',
   [TaskPriority.MEDIUM]: 'info',
   [TaskPriority.HIGH]: 'warning',
   [TaskPriority.URGENT]: 'error',
@@ -172,6 +173,7 @@ export const TASK_PRIORITY_BADGE_VARIANT: Record<string, string> = {
 
 export const TASK_PRIORITY_DOT_COLOR: Record<string, string> = {
   [TaskPriority.LOW]: 'bg-foreground-tertiary',
+  [TaskPriority.NORMAL]: 'bg-info',
   [TaskPriority.MEDIUM]: 'bg-info',
   [TaskPriority.HIGH]: 'bg-warning',
   [TaskPriority.URGENT]: 'bg-error',

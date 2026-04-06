@@ -1,6 +1,6 @@
 'use client';
 
-import type { ProjectPriority } from '@oneohm-epc/shared/types';
+import type { ProjectPriority, TaskStatusConfig } from '@oneohm-epc/shared/types';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
@@ -23,6 +23,7 @@ export interface ConvertFromQuotePayload {
   taskAssignments?: Array<{ workflowStepId: string; assignedToUserId: string }>;
   taskMilestoneOverrides?: Array<{ workflowStepId: string; milestoneOrder: number }>;
   milestones?: Array<{ name: string; type: string; order: number }>;
+  taskStatuses?: TaskStatusConfig[];
 }
 
 interface ProjectResponse {

@@ -47,6 +47,11 @@ export {
 
 export { useDocumentDownload } from './use-document-download';
 
+export {
+  useProjectTaskStatuses,
+  type UseProjectTaskStatusesResult,
+} from './use-project-task-statuses';
+
 export type {
   MilestoneWithPayment,
   PaymentSummaryDetail,

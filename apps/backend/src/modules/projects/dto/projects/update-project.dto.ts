@@ -1,7 +1,9 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ProjectPriority } from '@oneohm-epc/shared/types';
+import { ProjectPriority, type TaskStatusConfig } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import {
+  ArrayMinSize,
+  IsArray,
   IsDateString,
   IsEnum,
   IsInt,
@@ -11,7 +13,10 @@ import {
   IsString,
   MaxLength,
   Min,
+  ValidateNested,
 } from 'class-validator';
+
+import { TaskStatusConfigDto } from './convert-from-quote.dto';
 
 /**
  * DTO for updating an existing project
@@ -96,4 +101,15 @@ export class UpdateProjectDto {
   @IsObject()
   @IsOptional()
   metadata?: Record<string, unknown>;
+
+  @ApiPropertyOptional({
+    description: 'Task status configuration for this project',
+    type: [TaskStatusConfigDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1, { message: 'At least one task status is required' })
+  @ValidateNested({ each: true })
+  @Type(() => TaskStatusConfigDto)
+  taskStatuses?: TaskStatusConfig[];
 }

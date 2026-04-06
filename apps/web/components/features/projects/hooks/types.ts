@@ -9,6 +9,7 @@ import type {
   ProjectStatus,
   TaskPriority,
   TaskStatus,
+  TaskStatusConfig,
 } from '@oneohm-epc/shared/types';
 
 // ============================================================================
@@ -48,6 +49,7 @@ export interface ProjectDetail {
   estimatedCost?: number;
   actualCost?: number;
   metadata?: ProjectMetadata;
+  taskStatuses?: TaskStatusConfig[];
   milestones: ProjectMilestone[];
   materials: ProjectMaterial[];
   createdAt: string;

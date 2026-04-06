@@ -210,8 +210,13 @@ export { MUIFieldLabel, mergeRefs } from './mui-shared';
 export type { MUIFieldLabelProps } from './mui-shared';
 
 // MUI User Assignee Selector
-export { MUIUserAssigneeSelector } from './mui-user-assignee-selector';
-export type { MUIUserAssigneeSelectorProps, AssigneeOption } from './mui-user-assignee-selector';
+export { MUIUserAssigneeSelector, MUIAvatarGroup } from './mui-user-assignee-selector';
+export type {
+  MUIUserAssigneeSelectorProps,
+  AssigneeOption,
+  MUIAvatarGroupProps,
+  MUIAvatarGroupMember,
+} from './mui-user-assignee-selector';
 
 // MUI Typography
 export { MUITypography } from './mui-typography';

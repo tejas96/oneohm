@@ -4,14 +4,11 @@ import { TaskStatus } from '@oneohm-epc/shared/types';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import {
-  MAX_TASKS_PER_COLUMN,
-  TASK_PRIORITY_DOT_COLOR,
-  TASK_STATUS_LABELS,
-} from '../../../constants';
+import { MAX_TASKS_PER_COLUMN, TASK_PRIORITY_DOT_COLOR } from '../../../constants';
 import type { TeamMemberSummary } from '../../../hooks';
 import type { ProjectTaskItem } from '../../../hooks/types';
 import { useProjectTasks, useProjectTeam } from '../../../hooks/use-project-detail';
+import { useProjectTaskStatuses } from '../../../hooks/use-project-task-statuses';
 import { TeamAvatarGroup } from '../../team-avatar-group';
 
 import { ErrorState } from '@/components/shared/feedback/empty-state';
@@ -30,42 +27,12 @@ interface ProjectTasksTabProps {
   isActive: boolean;
 }
 
-const KANBAN_COLUMNS: { status: TaskStatus; label: string }[] = [
-  { status: TaskStatus.TODO, label: TASK_STATUS_LABELS[TaskStatus.TODO] },
-  { status: TaskStatus.IN_PROGRESS, label: TASK_STATUS_LABELS[TaskStatus.IN_PROGRESS] },
-  { status: TaskStatus.BLOCKED, label: TASK_STATUS_LABELS[TaskStatus.BLOCKED] },
-  { status: TaskStatus.DONE, label: TASK_STATUS_LABELS[TaskStatus.DONE] },
-];
-
-const STATUS_TO_COLUMN: Record<string, TaskStatus> = {
-  [TaskStatus.BACKLOG]: TaskStatus.TODO,
-  [TaskStatus.TODO]: TaskStatus.TODO,
-  [TaskStatus.IN_PROGRESS]: TaskStatus.IN_PROGRESS,
-  [TaskStatus.IN_REVIEW]: TaskStatus.IN_PROGRESS,
-  [TaskStatus.TESTING]: TaskStatus.IN_PROGRESS,
-  [TaskStatus.BLOCKED]: TaskStatus.BLOCKED,
-  [TaskStatus.DONE]: TaskStatus.DONE,
-};
-
 const PRIORITY_BORDER: Record<string, string> = {
-  critical: 'border-l-error',
+  urgent: 'border-l-error',
   high: 'border-l-warning',
+  normal: 'border-l-info',
   medium: 'border-l-info',
   low: 'border-l-foreground-tertiary',
-};
-
-const COLUMN_BG: Record<string, string> = {
-  [TaskStatus.TODO]: 'bg-background-secondary',
-  [TaskStatus.IN_PROGRESS]: 'bg-info/5',
-  [TaskStatus.BLOCKED]: 'bg-warning/5',
-  [TaskStatus.DONE]: 'bg-success/5',
-};
-
-const COLUMN_LABEL_COLOR: Record<string, string> = {
-  [TaskStatus.TODO]: 'text-foreground-secondary',
-  [TaskStatus.IN_PROGRESS]: 'text-info',
-  [TaskStatus.BLOCKED]: 'text-warning',
-  [TaskStatus.DONE]: 'text-success',
 };
 
 function TaskCard({ task, isDone }: { task: ProjectTaskItem; isDone?: boolean }) {
@@ -160,32 +127,33 @@ function TaskCard({ task, isDone }: { task: ProjectTaskItem; isDone?: boolean })
 function KanbanColumn({
   status,
   label,
+  color,
   tasks,
   count,
 }: {
-  status: TaskStatus;
+  status: string;
   label: string;
+  color: string;
   tasks: ProjectTaskItem[];
   count: number;
-}) {
+}): React.JSX.Element {
   const [expanded, setExpanded] = useState(false);
   const toggleExpanded = useCallback(() => setExpanded((prev) => !prev), []);
 
   const hasOverflow = tasks.length > MAX_TASKS_PER_COLUMN;
   const displayed = expanded ? tasks : tasks.slice(0, MAX_TASKS_PER_COLUMN);
-  const isDone = status === TaskStatus.DONE;
+  const isDone = status === (TaskStatus.DONE as string);
+
+  // Derive a light tint background from the hex color
+  const bgStyle = { backgroundColor: `${color}0F` }; // ~6% opacity
 
   return (
-    <div className={`rounded-lg p-3 ${COLUMN_BG[status] ?? 'bg-background-secondary'}`}>
+    <div className="rounded-lg p-3" style={bgStyle}>
       <div className="flex items-center justify-between mb-2">
-        <span
-          className={`text-2xs font-semibold uppercase ${COLUMN_LABEL_COLOR[status] ?? 'text-foreground-secondary'}`}
-        >
+        <span className="text-2xs font-semibold uppercase" style={{ color }}>
           {label}
         </span>
-        <span
-          className={`text-2xs font-semibold ${COLUMN_LABEL_COLOR[status] ?? 'text-foreground-tertiary'}`}
-        >
+        <span className="text-2xs font-semibold" style={{ color }}>
           {count}
         </span>
       </div>
@@ -214,6 +182,12 @@ function KanbanColumn({
 export const ProjectTasksTab = React.memo(
   ({ projectId, isActive }: ProjectTasksTabProps): React.JSX.Element => {
     const { user } = useAuth();
+    const {
+      taskStatuses,
+      isLoading: statusesLoading,
+      isError: statusesError,
+      error: statusesErrorMsg,
+    } = useProjectTaskStatuses(projectId);
     const {
       data: tasks,
       isLoading,
@@ -278,17 +252,20 @@ export const ProjectTasksTab = React.memo(
     }, [tasks, selectedAssignees]);
 
     const grouped = useMemo(() => {
+      if (taskStatuses.length === 0) return {};
+      const configuredCodes = new Set(taskStatuses.map((s) => s.code));
+      // Safe: length guard above ensures [0] exists
+      const firstCode = taskStatuses[0]!.code;
       const groups: Record<string, ProjectTaskItem[]> = {};
       for (const task of filteredTasks) {
-        const column = STATUS_TO_COLUMN[task.status];
-        if (!column) continue;
-        if (!groups[column]) groups[column] = [];
-        groups[column].push(task);
+        const columnCode = configuredCodes.has(task.status) ? task.status : firstCode;
+        if (!groups[columnCode]) groups[columnCode] = [];
+        groups[columnCode].push(task);
       }
       return groups;
-    }, [filteredTasks]);
+    }, [filteredTasks, taskStatuses]);
 
-    if (isLoading && isActive) {
+    if ((isLoading || statusesLoading) && isActive) {
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -304,6 +281,15 @@ export const ProjectTasksTab = React.memo(
           title="Failed to load tasks"
           description={getErrorMessage(error)}
           onRetry={() => refetch()}
+        />
+      );
+    }
+
+    if (statusesError) {
+      return (
+        <ErrorState
+          title="Failed to load project statuses"
+          description={getErrorMessage(statusesErrorMsg)}
         />
       );
     }
@@ -338,13 +324,14 @@ export const ProjectTasksTab = React.memo(
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {KANBAN_COLUMNS.map((col) => {
-            const columnTasks = grouped[col.status] ?? [];
+          {taskStatuses.map((col) => {
+            const columnTasks = grouped[col.code] ?? [];
             return (
               <KanbanColumn
-                key={col.status}
-                status={col.status}
+                key={col.code}
+                status={col.code}
                 label={col.label}
+                color={col.color}
                 tasks={columnTasks}
                 count={columnTasks.length}
               />
