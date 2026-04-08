@@ -1,66 +1,110 @@
 'use client';
 
-import { TaskStatus, type TaskStatusConfig } from '@oneohm-epc/shared/types';
-import { AlertTriangle, Check, Clock, Lock, Play } from 'lucide-react';
+import CheckIcon from '@mui/icons-material/Check';
+import KeyboardDoubleArrowUpIcon from '@mui/icons-material/KeyboardDoubleArrowUp';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import RemoveIcon from '@mui/icons-material/Remove';
+import SouthIcon from '@mui/icons-material/South';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
+import { TaskPriority, TaskStatus } from '@oneohm-epc/shared/types';
 import Link from 'next/link';
 import type { JSX } from 'react';
 
-import {
-  NEXT_ACTION_HINTS,
-  STALE_THRESHOLDS,
-  TASK_PRIORITY_BADGE_VARIANT,
-  TASK_PRIORITY_LABELS,
-} from '../constants';
+import { STALE_THRESHOLDS } from '../constants';
 import type { MyTask } from '../hooks';
-import { TaskStatusDropdown } from './task-status-dropdown';
 
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { cn, formatRelativeDate, getDueDateColor } from '@/lib/utils';
+import { formatRelativeDate } from '@/lib/utils';
+
+// MUI-safe color map — mirrors the Tailwind/MUI theme token values
+const DUE_DATE_COLOR = {
+  overdue: '#dc2626', // error.main
+  today: '#eab308', // warning.main
+  future: '#71717a', // text.disabled (foreground-tertiary)
+} as const;
+
+function getDueDateSxColor(endDate: string): string {
+  const d = new Date(endDate);
+  d.setHours(0, 0, 0, 0);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  if (d < now) return DUE_DATE_COLOR.overdue;
+  if (d.getTime() === now.getTime()) return DUE_DATE_COLOR.today;
+  return DUE_DATE_COLOR.future;
+}
+
+interface PriorityConfig {
+  label: string;
+  color: string;
+  Icon: typeof RemoveIcon;
+}
+
+const PRIORITY_CONFIG: Record<TaskPriority, PriorityConfig> = {
+  [TaskPriority.URGENT]: { label: 'Urgent', color: 'error.main', Icon: KeyboardDoubleArrowUpIcon },
+  [TaskPriority.HIGH]: { label: 'High', color: 'warning.main', Icon: KeyboardDoubleArrowUpIcon },
+  [TaskPriority.MEDIUM]: { label: 'Medium', color: 'text.disabled', Icon: RemoveIcon },
+  [TaskPriority.LOW]: { label: 'Low', color: 'text.disabled', Icon: SouthIcon },
+  [TaskPriority.NORMAL]: { label: 'Normal', color: 'text.disabled', Icon: RemoveIcon },
+};
+
+/** Priority badge — icon + label so it's immediately readable at a glance */
+function PriorityBadge({ priority }: { priority: TaskPriority }): JSX.Element {
+  const cfg = PRIORITY_CONFIG[priority] ?? PRIORITY_CONFIG[TaskPriority.NORMAL];
+  const { label, color, Icon } = cfg;
+  return (
+    <Box
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 0.25,
+        flexShrink: 0,
+      }}
+    >
+      <Icon sx={{ fontSize: 13, color }} />
+      <Typography variant="caption" sx={{ color, fontWeight: 500, lineHeight: 1 }}>
+        {label}
+      </Typography>
+    </Box>
+  );
+}
 
 interface TaskRowProps {
   task: MyTask;
   onOpenDrawer: (task: MyTask) => void;
-  onStatusChange: (taskId: string, status: TaskStatus) => void;
   onMarkDone: (taskId: string) => void;
   onStartTask: (taskId: string) => void;
-  taskStatuses?: TaskStatusConfig[];
   isFocused?: boolean;
 }
 
 export function TaskRow({
   task,
   onOpenDrawer,
-  onStatusChange,
   onMarkDone,
   onStartTask,
-  taskStatuses,
   isFocused,
 }: TaskRowProps): JSX.Element {
   const projectDetailHref = buildRoute(ROUTES.PROJECTS.DETAIL, { id: task.projectId });
-  const hasDependencyBlockers = task.hasDependencyBlockers;
-  const canMarkDone = task.status !== TaskStatus.DONE && !hasDependencyBlockers;
-  const canStart = task.status !== TaskStatus.IN_PROGRESS && !hasDependencyBlockers;
-  const isOverdue = task.isOverdue ?? false;
+  const isOverdue = Boolean(task.isOverdue);
   const daysStale = task.daysSinceLastUpdate ?? 0;
   const staleThreshold = STALE_THRESHOLDS[task.status];
   const isStale = staleThreshold !== undefined && daysStale >= staleThreshold;
 
-  const hintText = NEXT_ACTION_HINTS[task.status];
-  const blockedHint =
-    task.status === TaskStatus.BLOCKED && task.blockedReason
-      ? `Resolve blocker: ${task.blockedReason}`
-      : hintText;
+  // Don't offer "Start" on already-active or terminal statuses
+  const canStart =
+    task.status !== TaskStatus.IN_PROGRESS &&
+    task.status !== TaskStatus.DONE &&
+    task.status !== TaskStatus.CANCELLED;
+  // Don't offer "Mark Done" on already-done or cancelled
+  const canMarkDone = task.status !== TaskStatus.DONE && task.status !== TaskStatus.CANCELLED;
 
   return (
-    <div
+    <Box
       data-task-row
-      className={cn(
-        'group/task flex items-center px-4 py-3 border-b border-border-light last:border-b-0 cursor-pointer transition-colors',
-        isOverdue ? 'bg-error/5 hover:bg-error/10' : 'hover:bg-background-secondary',
-        isFocused && 'ring-2 ring-primary ring-inset',
-      )}
       onClick={() => onOpenDrawer(task)}
       role="button"
       tabIndex={0}
@@ -70,114 +114,195 @@ export function TaskRow({
           onOpenDrawer(task);
         }
       }}
+      sx={{
+        position: 'relative', // required for the absolute priority stripe child
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+        px: 1.5,
+        py: 1,
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        cursor: 'pointer',
+        transition: 'background-color 0.15s',
+        bgcolor: isOverdue ? 'rgba(220,38,38,0.06)' : 'background.paper',
+        outline: isFocused ? '2px solid' : 'none',
+        outlineColor: 'primary.main',
+        outlineOffset: '-2px',
+        '&:last-of-type': { borderBottom: 'none' },
+        '&:hover': {
+          bgcolor: isOverdue ? 'rgba(220,38,38,0.1)' : 'action.hover',
+        },
+        // Quick actions + status button hidden by default on desktop, shown on hover
+        '& .row-hover-actions': {
+          opacity: { xs: 1, sm: 0 },
+          transition: 'opacity 0.15s',
+        },
+        '&:hover .row-hover-actions': {
+          opacity: 1,
+        },
+      }}
     >
-      {/* Overdue indicator */}
-      {isOverdue && <AlertTriangle className="size-3.5 text-error mr-2 shrink-0" />}
-      {hasDependencyBlockers && !isOverdue && (
-        <Lock className="size-3.5 text-amber-500 mr-2 shrink-0" />
+      {/* Left priority / overdue accent stripe */}
+      {(isOverdue || task.priority === TaskPriority.URGENT) && (
+        <Box
+          aria-hidden="true"
+          sx={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 3,
+            bgcolor: isOverdue ? 'error.main' : 'warning.main',
+            borderRadius: '2px 0 0 2px',
+          }}
+        />
       )}
 
-      {/* Task info */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
+      {/* Task info — fills available width, overflow:hidden enforces noWrap on the title */}
+      <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+        {/* Title line */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
+          {isOverdue && (
+            <WarningAmberIcon sx={{ fontSize: 13, color: 'error.main', flexShrink: 0 }} />
+          )}
+          <Typography
+            variant="body2"
+            fontWeight={500}
+            noWrap
+            sx={{ color: 'text.primary', lineHeight: 1.4 }}
+          >
+            {task.name || task.code || 'Untitled'}
+          </Typography>
+          {isStale && (
+            <Tooltip title={`No updates in ${daysStale} days`} placement="top">
+              <Typography
+                component="span"
+                variant="caption"
+                sx={{
+                  color: 'warning.main',
+                  flexShrink: 0,
+                  fontSize: '0.6875rem',
+                }}
+              >
+                {daysStale}d
+              </Typography>
+            </Tooltip>
+          )}
+        </Box>
+
+        {/* Metadata: project · task code */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
           <Link
             href={projectDetailHref}
             onClick={(e) => e.stopPropagation()}
-            className="text-2xs font-mono text-foreground-tertiary hover:text-primary transition-colors"
+            style={{ textDecoration: 'none' }}
           >
-            {task.projectNumber}
-          </Link>
-          <span className="text-foreground-muted">/</span>
-          <span className="text-2xs font-mono text-foreground-muted">{task.code}</span>
-          <Badge
-            variant={
-              TASK_PRIORITY_BADGE_VARIANT[task.priority] as
-                | 'error'
-                | 'warning'
-                | 'info'
-                | 'secondary'
-            }
-            size="xs"
-            shape="rounded"
-          >
-            {TASK_PRIORITY_LABELS[task.priority]}
-          </Badge>
-          {isStale && (
-            <span className="inline-flex items-center gap-0.5 text-2xs text-warning">
-              <Clock className="size-3" />
-              {daysStale}d in status
-            </span>
-          )}
-        </div>
-
-        <div className="text-sm font-medium mt-0.5 truncate">
-          {task.name ?? task.code ?? 'Untitled'}
-        </div>
-
-        {/* Next action hint + assignee info */}
-        <div className="flex items-center gap-3 mt-0.5">
-          {blockedHint && (
-            <span className="text-2xs text-foreground-muted italic truncate">{blockedHint}</span>
-          )}
-          {task.assigneeName && (
-            <span className="text-2xs text-foreground-tertiary shrink-0">{task.assigneeName}</span>
-          )}
-        </div>
-
-        {task.completionPercentage > 0 && task.completionPercentage < 100 && (
-          <div className="flex items-center gap-2 mt-1">
-            <Progress value={task.completionPercentage} size="sm" className="w-24" />
-            <span className="text-2xs text-foreground-muted">{task.completionPercentage}%</span>
-          </div>
-        )}
-      </div>
-
-      {/* Right side: due date + actions */}
-      <div className="flex items-center gap-2 ml-3 shrink-0">
-        {task.endDate && (
-          <span
-            className={`text-2xs font-medium whitespace-nowrap ${getDueDateColor(task.endDate)}`}
-          >
-            {formatRelativeDate(task.endDate)}
-          </span>
-        )}
-
-        {/* Quick actions: visible on mobile, hover on desktop */}
-        <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover/task:opacity-100 transition-opacity">
-          <TaskStatusDropdown
-            currentStatus={task.status}
-            taskStatuses={taskStatuses ?? task.projectTaskStatuses}
-            hasDependencyBlockers={hasDependencyBlockers}
-            onStatusChange={(status) => onStatusChange(task.id, status)}
-          />
-          {canStart && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onStartTask(task.id);
+            <Typography
+              variant="caption"
+              sx={{
+                fontFamily: 'monospace',
+                color: 'text.disabled',
+                '&:hover': { color: 'primary.main' },
+                transition: 'color 0.15s',
               }}
-              className="flex items-center gap-1 rounded px-2 py-1 text-2xs text-info bg-info/10 hover:bg-info/20 transition-colors"
             >
-              <Play className="size-3" />
-              Start
-            </button>
+              {task.projectNumber}
+            </Typography>
+          </Link>
+          <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+            ·
+          </Typography>
+          <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.disabled' }}>
+            {task.code}
+          </Typography>
+        </Box>
+
+        {/* Progress bar — only when partially complete */}
+        {task.completionPercentage > 0 && task.completionPercentage < 100 && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+            <Box sx={{ width: 96 }}>
+              <Progress value={task.completionPercentage} size="sm" />
+            </Box>
+            <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+              {task.completionPercentage}%
+            </Typography>
+          </Box>
+        )}
+      </Box>
+
+      {/* Right side: fixed-width slots so alignment never shifts */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+        {/* Priority — fixed width so absent due-date doesn't shift it */}
+        <Box sx={{ width: 72, display: 'flex', justifyContent: 'flex-end' }}>
+          <PriorityBadge priority={task.priority} />
+        </Box>
+
+        {/* Due date — fixed width, empty placeholder when not set */}
+        <Box sx={{ width: 120, display: 'flex', justifyContent: 'flex-end' }}>
+          {task.endDate && (
+            <Typography
+              variant="caption"
+              sx={{ whiteSpace: 'nowrap', fontWeight: 500, color: getDueDateSxColor(task.endDate) }}
+            >
+              {formatRelativeDate(task.endDate)}
+            </Typography>
+          )}
+        </Box>
+
+        {/* Quick action buttons — hover-reveal, fixed width so row height stays constant */}
+        <Box
+          className="row-hover-actions"
+          sx={{
+            width: 56,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: 0.5,
+          }}
+        >
+          {canStart && (
+            <Tooltip title="Start task" placement="top">
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStartTask(task.id);
+                }}
+                sx={{
+                  color: 'info.main',
+                  bgcolor: 'rgba(14,165,233,0.1)',
+                  width: 24,
+                  height: 24,
+                  '&:hover': { bgcolor: 'rgba(14,165,233,0.18)' },
+                }}
+              >
+                <PlayArrowIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            </Tooltip>
           )}
           {canMarkDone && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onMarkDone(task.id);
-              }}
-              className="flex items-center gap-1 rounded px-2 py-1 text-2xs text-success bg-success/10 hover:bg-success/20 transition-colors"
-            >
-              <Check className="size-3" />
-              Done
-            </button>
+            <Tooltip title="Mark done" placement="top">
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMarkDone(task.id);
+                }}
+                sx={{
+                  color: 'success.main',
+                  bgcolor: 'rgba(34,197,94,0.1)',
+                  width: 24,
+                  height: 24,
+                  '&:hover': { bgcolor: 'rgba(34,197,94,0.18)' },
+                }}
+              >
+                <CheckIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            </Tooltip>
           )}
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 }
