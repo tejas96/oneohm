@@ -7,4 +7,5 @@ export * from './use-routes';
 export * from './use-navigation-counts';
 export * from './use-url-filters';
 export * from './use-body-scroll-lock';
+export * from './useGooglePlacesAutocomplete';
 export * from './resources';

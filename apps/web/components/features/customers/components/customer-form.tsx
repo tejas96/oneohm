@@ -22,7 +22,7 @@ import {
   type CreateCustomerProfileFormData,
 } from '../schemas/customer.schema';
 
-import { EmptyState } from '@/components/shared';
+import { EmptyState, AddressAutocompleteInput } from '@/components/shared';
 import { Button, Card, CardContent, MUIInput, MUISelect, showToast } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
 import { getErrorMessage } from '@/lib/utils';
@@ -228,6 +228,20 @@ function CustomerFormContent({
     }
   };
 
+  // Handle address selection from Google Places autocomplete
+  const handleAddressSelected = (addressComponents: {
+    address: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country: string;
+  }): void => {
+    form.setValue('address', addressComponents.address);
+    form.setValue('city', addressComponents.city);
+    form.setValue('state', addressComponents.state);
+    form.setValue('pincode', addressComponents.pincode);
+  };
+
   const onSubmit = async (data: CreateCustomerProfileFormData): Promise<void> => {
     if (availability.hasErrors) {
       showToast.error('Please fix the duplicate phone/email errors');
@@ -396,12 +410,13 @@ function CustomerFormContent({
                 Address
               </h3>
 
-              <MUIInput
-                id="address"
-                fieldLabel="Street Address"
-                placeholder="Enter street address"
-                error={form.formState.errors.address?.message}
-                {...form.register('address')}
+              <AddressAutocompleteInput
+                control={form.control}
+                name="address"
+                label="Street Address"
+                placeholder="Enter or search address"
+                onAddressSelected={handleAddressSelected}
+                apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
               />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

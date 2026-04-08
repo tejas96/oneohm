@@ -24,7 +24,7 @@ import {
 } from '../schemas/property.schema';
 
 import { useUploadDocumentsBulk } from '@/components/features/documents/hooks';
-import { Alert, LeadTemperatureSelector, RadioCard, RadioCardGroup } from '@/components/shared';
+import { Alert, AddressAutocompleteInput, LeadTemperatureSelector, RadioCard, RadioCardGroup } from '@/components/shared';
 import { DocumentManager, type DraftDocument } from '@/components/shared/document-manager';
 import {
   Badge,
@@ -457,11 +457,12 @@ export function PropertyForm({
                 <Label htmlFor="address" className="text-sm" required>
                   Full Address
                 </Label>
-                <Textarea
-                  id="address"
-                  placeholder="Street address, area, landmark"
-                  {...form.register('address')}
-                  error={form.formState.errors.address?.message}
+                <AddressAutocompleteInput
+                  control={form.control}
+                  name="address"
+                  placeholder="Search address or enter street address, area, landmark"
+                  onAddressSelected={handleAddressSelected}
+                  apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
                 />
               </div>
 
@@ -800,6 +801,22 @@ export function PropertyForm({
   // ============================================================================
   // Private: Form submission handler
   // ============================================================================
+
+  /**
+   * Handle address selection from Google Places autocomplete
+   */
+  function handleAddressSelected(addressComponents: {
+    address: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country: string;
+  }): void {
+    form.setValue('address', addressComponents.address, { shouldDirty: true });
+    form.setValue('city', addressComponents.city, { shouldDirty: true });
+    form.setValue('state', addressComponents.state, { shouldDirty: true });
+    form.setValue('pincode', addressComponents.pincode, { shouldDirty: true });
+  }
 
   async function onSubmit(data: CreatePropertyFormData | EditPropertyFormData): Promise<void> {
     try {
