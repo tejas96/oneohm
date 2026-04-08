@@ -18,6 +18,7 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query';
 
+import { myTasksSummaryKeys } from '@/components/features/tasks/hooks/use-my-tasks-summary';
 import { showToast } from '@/components/ui/sonner';
 import { apiClient } from '@/lib/api/client';
 import { getErrorMessage } from '@/lib/utils';
@@ -69,6 +70,10 @@ export function useMyTasks(filters: MyTaskFilters): UseQueryResult<GroupedMyTask
       return data;
     },
     enabled: !!user && !!organizationId,
+    // Always refetch when navigating to My Tasks so the user sees the latest state.
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
     placeholderData: keepPreviousData,
   });
 }
@@ -90,7 +95,10 @@ export function useUpdateTaskStatus() {
     onSuccess: (_data, variables) => {
       const isDone = variables.status === TaskStatus.DONE;
       showToast.success(isDone ? 'Task marked as done' : 'Task status updated');
+      // Invalidate the grouped task list AND the separate sidebar summary so both
+      // update immediately without a hard refresh.
       void queryClient.invalidateQueries({ queryKey: myTaskKeys.all(organizationId) });
+      void queryClient.invalidateQueries({ queryKey: myTasksSummaryKeys.all(organizationId) });
     },
     onError: (error) => {
       showToast.error(getErrorMessage(error));

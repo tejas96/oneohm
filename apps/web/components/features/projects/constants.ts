@@ -141,36 +141,6 @@ export const TYPE_FILTER_OPTIONS = [
 
 export { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS };
 
-export const TASK_STATUS_BADGE_VARIANT: Record<string, string> = {
-  [TaskStatus.BACKLOG]: 'secondary',
-  [TaskStatus.TODO]: 'secondary',
-  [TaskStatus.IN_PROGRESS]: 'info',
-  [TaskStatus.IN_REVIEW]: 'amber',
-  [TaskStatus.TESTING]: 'purple',
-  [TaskStatus.BLOCKED]: 'error',
-  [TaskStatus.DONE]: 'success',
-  [TaskStatus.CANCELLED]: 'muted',
-};
-
-export const TASK_STATUS_DOT_COLOR: Record<string, string> = {
-  [TaskStatus.BACKLOG]: 'bg-foreground-tertiary',
-  [TaskStatus.TODO]: 'bg-foreground-tertiary',
-  [TaskStatus.IN_PROGRESS]: 'bg-info',
-  [TaskStatus.IN_REVIEW]: 'bg-warning',
-  [TaskStatus.TESTING]: 'bg-primary',
-  [TaskStatus.BLOCKED]: 'bg-error',
-  [TaskStatus.DONE]: 'bg-success',
-  [TaskStatus.CANCELLED]: 'bg-foreground-muted',
-};
-
-export const TASK_PRIORITY_BADGE_VARIANT: Record<string, string> = {
-  [TaskPriority.LOW]: 'secondary',
-  [TaskPriority.NORMAL]: 'info',
-  [TaskPriority.MEDIUM]: 'info',
-  [TaskPriority.HIGH]: 'warning',
-  [TaskPriority.URGENT]: 'error',
-};
-
 export const TASK_PRIORITY_DOT_COLOR: Record<string, string> = {
   [TaskPriority.LOW]: 'bg-foreground-tertiary',
   [TaskPriority.NORMAL]: 'bg-info',
@@ -178,16 +148,6 @@ export const TASK_PRIORITY_DOT_COLOR: Record<string, string> = {
   [TaskPriority.HIGH]: 'bg-warning',
   [TaskPriority.URGENT]: 'bg-error',
 };
-
-export const TASK_STATUS_FILTER_OPTIONS = [
-  { value: '', label: 'All Status' },
-  { value: TaskStatus.BACKLOG, label: 'Backlog' },
-  { value: TaskStatus.TODO, label: 'To Do' },
-  { value: TaskStatus.IN_PROGRESS, label: 'In Progress' },
-  { value: TaskStatus.IN_REVIEW, label: 'In Review' },
-  { value: TaskStatus.TESTING, label: 'Testing' },
-  { value: TaskStatus.BLOCKED, label: 'Blocked' },
-] as const;
 
 export const TASK_GROUP_BY_OPTIONS = [
   { value: 'dueDate', label: 'Group by: Due Date' },
@@ -314,15 +274,6 @@ export const SMART_EXPAND_DEFAULTS: Record<string, Record<string, boolean>> = {
   project: {},
 };
 
-export const NEXT_ACTION_HINTS: Record<string, string> = {
-  [TaskStatus.BACKLOG]: 'Move to To Do when ready',
-  [TaskStatus.TODO]: 'Start working on this',
-  [TaskStatus.IN_PROGRESS]: 'Submit for review when done',
-  [TaskStatus.IN_REVIEW]: 'Awaiting reviewer feedback',
-  [TaskStatus.TESTING]: 'Verify and mark done',
-  [TaskStatus.BLOCKED]: 'Resolve blocker',
-};
-
 export const STALE_THRESHOLDS: Record<string, number> = {
   [TaskStatus.IN_PROGRESS]: 3,
   [TaskStatus.BLOCKED]: 2,
@@ -330,27 +281,11 @@ export const STALE_THRESHOLDS: Record<string, number> = {
   [TaskStatus.TODO]: 7,
 };
 
-export const TASK_PRIORITY_FILTER_OPTIONS = [
-  { value: '', label: 'All Priority' },
-  { value: TaskPriority.URGENT, label: 'Urgent' },
-  { value: TaskPriority.HIGH, label: 'High' },
-  { value: TaskPriority.MEDIUM, label: 'Medium' },
-  { value: TaskPriority.LOW, label: 'Low' },
-] as const;
-
 export interface QuickFilterChip {
   key: string;
   label: string;
   filter: { status?: string; priority?: string; dueDateFilter?: string };
 }
-
-export const QUICK_FILTER_CHIPS: QuickFilterChip[] = [
-  { key: 'all', label: 'All', filter: {} },
-  { key: 'overdue', label: 'Overdue', filter: { dueDateFilter: 'overdue' } },
-  { key: 'due-today', label: 'Due Today', filter: { dueDateFilter: 'dueToday' } },
-  { key: 'blocked', label: 'Blocked', filter: { status: TaskStatus.BLOCKED } },
-  { key: 'high-priority', label: 'High Priority', filter: { priority: TaskPriority.HIGH } },
-];
 
 // ---------------------------------------------------------------------------
 // Payment constants (for Project Detail - Payments tab)
@@ -394,71 +329,7 @@ export const MATERIAL_STATUS_BADGE_VARIANT: Record<string, string> = {
   [MaterialStatus.USED]: 'success',
 };
 
-// ---------------------------------------------------------------------------
-// Document category map
-// ---------------------------------------------------------------------------
-
-export const DOCUMENT_CATEGORY_MAP: Record<string, string> = {
-  contract: 'Contracts & Agreements',
-  agreement: 'Contracts & Agreements',
-  nda: 'Contracts & Agreements',
-  quote: 'Proposals & Quotes',
-  proposal: 'Proposals & Quotes',
-  invoice: 'Financial',
-  payment_receipt: 'Financial',
-  wcr: 'Work Completion',
-  wcr_preliminary: 'Work Completion',
-  wcr_final: 'Work Completion',
-  site_survey: 'Technical',
-  technical_drawing: 'Technical',
-  installation_manual: 'Technical',
-  compliance_certificate: 'Compliance',
-  approval_letter: 'Compliance',
-  inspection_report: 'Compliance',
-  identity_proof: 'Customer Documents',
-  address_proof: 'Customer Documents',
-  electricity_bill: 'Customer Documents',
-  loan_application: 'Loan & Subsidy',
-  loan_sanction: 'Loan & Subsidy',
-  loan_agreement: 'Loan & Subsidy',
-  subsidy_application: 'Loan & Subsidy',
-  subsidy_approval: 'Loan & Subsidy',
-  maintenance_report: 'Service',
-  service_report: 'Service',
-  warranty_certificate: 'Service',
-  other: 'Other',
-};
-
-export const DOCUMENT_CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
-  'Contracts & Agreements': { bg: 'bg-info/10', text: 'text-info' },
-  'Proposals & Quotes': { bg: 'bg-success/10', text: 'text-success' },
-  Financial: { bg: 'bg-warning/10', text: 'text-warning' },
-  'Work Completion': { bg: 'bg-primary/10', text: 'text-primary' },
-  Technical: { bg: 'bg-info/10', text: 'text-info' },
-  Compliance: { bg: 'bg-error/10', text: 'text-error' },
-  'Customer Documents': { bg: 'bg-info/10', text: 'text-info' },
-  'Loan & Subsidy': { bg: 'bg-success/10', text: 'text-success' },
-  Service: { bg: 'bg-primary/10', text: 'text-primary' },
-  Other: { bg: 'bg-muted', text: 'text-foreground-secondary' },
-};
-
 // Survey constants removed – survey data now accessed via SiteActivityEntity
-
-// ---------------------------------------------------------------------------
-// Milestone payment status (for Overview - Milestones card)
-// ---------------------------------------------------------------------------
-
-export const MILESTONE_PAYMENT_STATUS_BADGE: Record<string, string> = {
-  received: 'success',
-  due: 'warning',
-  pending: 'secondary',
-};
-
-export const MILESTONE_PAYMENT_STATUS_LABELS: Record<string, string> = {
-  received: 'Received',
-  due: 'Due',
-  pending: 'Pending',
-};
 
 // ---------------------------------------------------------------------------
 // Display limits

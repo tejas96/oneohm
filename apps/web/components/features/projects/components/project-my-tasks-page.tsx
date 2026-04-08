@@ -1,47 +1,45 @@
 'use client';
 
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
+import InboxIcon from '@mui/icons-material/Inbox';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import SearchIcon from '@mui/icons-material/Search';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import FormControl from '@mui/material/FormControl';
+import IconButton from '@mui/material/IconButton';
+import InputAdornment from '@mui/material/InputAdornment';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import Skeleton from '@mui/material/Skeleton';
+import TextField from '@mui/material/TextField';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
 import { LookupTypeCode, TaskStatus } from '@oneohm-epc/shared/types';
-import {
-  AlertTriangle,
-  Calendar,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  ClipboardList,
-  Inbox,
-  Search,
-  X,
-} from 'lucide-react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { TASK_GROUP_BY_OPTIONS, TASK_STATUS_FILTER_OPTIONS } from '../constants';
+import { TASK_GROUP_BY_OPTIONS } from '../constants';
 import {
   useMyTasks,
   useUpdateTaskStatus,
   type GroupByMode,
   type MyTask,
   type MyTaskFilters,
-  type TeamMemberSummary,
 } from '../hooks';
 import { CollapsibleTaskGroup } from './collapsible-task-group';
-import { TeamAvatarGroup } from './team-avatar-group';
 import { useCollapsedGroups } from '../hooks/use-collapsed-groups';
 import { useTaskKeyboardNav } from '../hooks/use-task-keyboard-nav';
 
 import { TaskDrawer } from '@/components/features/tasks';
 import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
-import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useDebounce, useUrlFilters } from '@/lib/hooks';
 import { useLookupOptions } from '@/lib/hooks/resources';
-import { cn } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -54,62 +52,7 @@ const MY_TASKS_URL_DEFAULTS = {
   groupBy: 'dueDate',
   search: '',
   dueDateFilter: '',
-  assigneeId: '',
 };
-
-interface SummaryCard {
-  key: string;
-  label: string;
-  getValue: (s: {
-    total: number;
-    overdue: number;
-    dueToday: number;
-    completedThisWeek: number;
-  }) => number;
-  bg: string;
-  text: string;
-  iconBg: string;
-  icon: React.ReactNode;
-}
-
-const SUMMARY_CARDS: SummaryCard[] = [
-  {
-    key: 'total',
-    label: 'Total Tasks',
-    getValue: (s) => s.total,
-    bg: 'bg-background',
-    text: 'text-foreground',
-    iconBg: 'bg-muted',
-    icon: <ClipboardList className="size-4 text-foreground-secondary" />,
-  },
-  {
-    key: 'overdue',
-    label: 'Overdue',
-    getValue: (s) => s.overdue,
-    bg: 'bg-error/5',
-    text: 'text-error',
-    iconBg: 'bg-error/10',
-    icon: <AlertTriangle className="size-4 text-error" />,
-  },
-  {
-    key: 'dueToday',
-    label: 'Due Today',
-    getValue: (s) => s.dueToday,
-    bg: 'bg-warning/5',
-    text: 'text-warning',
-    iconBg: 'bg-warning/10',
-    icon: <Calendar className="size-4 text-warning" />,
-  },
-  {
-    key: 'completedThisWeek',
-    label: 'Done This Week',
-    getValue: (s) => s.completedThisWeek,
-    bg: 'bg-success/5',
-    text: 'text-success',
-    iconBg: 'bg-success/10',
-    icon: <CheckCircle2 className="size-4 text-success" />,
-  },
-];
 
 // ---------------------------------------------------------------------------
 // Morning brief
@@ -139,10 +82,20 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   const statusFilter = urlFilters.status;
   const priorityFilter = urlFilters.priority;
   const dueDateFilter = urlFilters.dueDateFilter;
-  const assigneeFilter = urlFilters.assigneeId;
   const groupBy = (urlFilters.groupBy || 'dueDate') as GroupByMode;
   const [searchInput, setSearchInput] = useState(urlFilters.search || '');
   const debouncedSearch = useDebounce(searchInput, 300);
+
+  // Keep a ref to setFilter so the sync effect always has a stable dep array.
+  // setFilter itself is stable (empty useCallback deps in useUrlFilters) but React's
+  // rules-of-hooks require the array to never change length between renders.
+  const setFilterRef = useRef(setFilter);
+  setFilterRef.current = setFilter;
+
+  // Sync debounced search value into URL so the search param survives navigation / sharing.
+  useEffect(() => {
+    setFilterRef.current('search', debouncedSearch);
+  }, [debouncedSearch]);
 
   // Drawer state
   const [drawerTaskId, setDrawerTaskId] = useState<string | null>(null);
@@ -166,6 +119,11 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   const { data, isLoading, isError, refetch } = useMyTasks(filters);
   const updateStatus = useUpdateTaskStatus();
   const {
+    items: taskStatusItems,
+    isLoading: statusLoading,
+    isError: statusError,
+  } = useLookupOptions(LookupTypeCode.DEFAULT_TASK_STATUS);
+  const {
     items: taskPriorityItems,
     isLoading: priorityLoading,
     isError: priorityError,
@@ -175,47 +133,11 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   const groups = data?.groups ?? [];
   const projects = summary?.projects ?? [];
 
-  // Derive unique assignees from loaded tasks for the avatar filter
-  const allTasksFlat = useMemo(() => groups.flatMap((g) => g.tasks), [groups]);
-
-  const assigneeMembers = useMemo<TeamMemberSummary[]>(() => {
-    const seen = new Map<string, TeamMemberSummary>();
-    for (const task of allTasksFlat) {
-      const uid = task.assignedToUserId;
-      if (uid && task.assigneeName && !seen.has(uid)) {
-        const parts = task.assigneeName.trim().split(' ');
-        seen.set(uid, {
-          id: uid,
-          firstName: parts[0] ?? '',
-          lastName: parts.slice(1).join(' ') || undefined,
-          isProjectManager: false,
-        });
-      }
-    }
-    return Array.from(seen.values());
-  }, [allTasksFlat]);
-
-  const selectedAssigneeIds = useMemo(
-    () => (assigneeFilter ? new Set([assigneeFilter]) : new Set<string>()),
-    [assigneeFilter],
-  );
-
-  // Client-side assignee filtering applied on top of server-side filters
-  const filteredGroups = useMemo(() => {
-    if (!assigneeFilter) return groups;
-    return groups
-      .map((g) => ({
-        ...g,
-        tasks: g.tasks.filter((t) => t.assignedToUserId === assigneeFilter),
-      }))
-      .filter((g) => g.tasks.length > 0);
-  }, [groups, assigneeFilter]);
-
   // All tasks flat for keyboard nav indexing
-  const allTasks = useMemo(() => filteredGroups.flatMap((g) => g.tasks), [filteredGroups]);
+  const allTasks = useMemo(() => groups.flatMap((g) => g.tasks), [groups]);
 
   // Collapse state
-  const groupKeys = useMemo(() => filteredGroups.map((g) => g.key), [filteredGroups]);
+  const groupKeys = useMemo(() => groups.map((g) => g.key), [groups]);
   const { isExpanded, toggle, expandAll, collapseAll, allExpanded } = useCollapsedGroups(
     groupBy,
     groupKeys,
@@ -230,15 +152,24 @@ export function ProjectMyTasksPage(): React.JSX.Element {
     [projects],
   );
 
+  const statusFilterOptions = useMemo((): Array<{ value: string; label: string }> => {
+    if (statusLoading || statusError || taskStatusItems.length === 0) {
+      return [{ value: '', label: statusError ? 'Failed to load statuses' : 'All Status' }];
+    }
+    return [
+      { value: '', label: 'All Status' },
+      ...taskStatusItems.map((item) => ({ value: item.value, label: item.label })),
+    ];
+  }, [statusError, statusLoading, taskStatusItems]);
+
   const priorityFilterOptions = useMemo((): Array<{ value: string; label: string }> => {
     if (priorityLoading || priorityError || taskPriorityItems.length === 0) {
       return [{ value: '', label: priorityError ? 'Failed to load priorities' : 'All Priority' }];
     }
-    const mapped: Array<{ value: string; label: string }> = taskPriorityItems.map((item) => ({
-      value: item.value,
-      label: item.label,
-    }));
-    return [{ value: '', label: 'All Priority' }, ...mapped];
+    return [
+      { value: '', label: 'All Priority' },
+      ...taskPriorityItems.map((item) => ({ value: item.value, label: item.label })),
+    ];
   }, [priorityError, priorityLoading, taskPriorityItems]);
 
   // ---------------------------------------------------------------------------
@@ -259,17 +190,9 @@ export function ProjectMyTasksPage(): React.JSX.Element {
       priority: '',
       search: '',
       dueDateFilter: '',
-      assigneeId: '',
     });
     setSearchInput('');
   }, [setFilter]);
-
-  const handleStatusChange = useCallback(
-    (taskId: string, status: TaskStatus) => {
-      updateStatus.mutate({ taskId, status });
-    },
-    [updateStatus],
-  );
 
   const handleMarkDone = useCallback(
     (taskId: string) => {
@@ -338,12 +261,7 @@ export function ProjectMyTasksPage(): React.JSX.Element {
   const focusedTaskId = focusedIndex >= 0 ? allTasks[focusedIndex]?.id : undefined;
 
   const hasActiveFilters =
-    projectFilter ||
-    statusFilter ||
-    priorityFilter ||
-    debouncedSearch ||
-    dueDateFilter ||
-    assigneeFilter;
+    projectFilter || statusFilter || priorityFilter || debouncedSearch || dueDateFilter;
   const morningBrief =
     summary && !briefDismissed ? getMorningBrief(summary.overdue, summary.dueToday) : null;
 
@@ -353,214 +271,203 @@ export function ProjectMyTasksPage(): React.JSX.Element {
 
   return (
     <div className="space-y-3">
-      {/* Page Header + Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">My Tasks</h1>
-          <p className="text-sm text-foreground-secondary mt-0.5">
-            All tasks assigned to you across projects
-          </p>
-        </div>
-
-        {/* Search */}
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-foreground-muted" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search tasks... (press /)"
-            className="w-full rounded-lg border border-border-light bg-background pl-8 pr-3 h-8 text-sm placeholder:text-foreground-muted focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-        </div>
+      {/* Page Header */}
+      <div>
+        <Typography variant="h6" fontWeight={600}>
+          My Tasks
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+          All tasks assigned to you across projects
+        </Typography>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Stat Chips */}
       {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-lg border border-border-light p-3">
-              <Skeleton className="h-3 w-20 mb-2" />
-              <Skeleton className="h-7 w-10" />
-            </div>
+            <Skeleton key={i} variant="rounded" width={110} height={32} />
           ))}
-        </div>
+        </Box>
       ) : (
         summary && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {SUMMARY_CARDS.map((card) => (
-              <div
-                key={card.key}
-                className={cn(
-                  'rounded-lg border border-border-light px-3 py-2.5 transition-colors hover:shadow-sm',
-                  card.bg,
-                  card.key !== 'completedThisWeek' && 'cursor-pointer',
-                )}
-                onClick={() => {
-                  if (card.key === 'overdue') {
-                    setFilter({
-                      status: '',
-                      priority: '',
-                      dueDateFilter: dueDateFilter === 'overdue' ? '' : 'overdue',
-                    });
-                  }
-                  if (card.key === 'dueToday') {
-                    setFilter({
-                      status: '',
-                      priority: '',
-                      dueDateFilter: dueDateFilter === 'dueToday' ? '' : 'dueToday',
-                    });
-                  }
-                  if (card.key === 'total') {
-                    handleClearFilters();
-                  }
-                }}
-                role={card.key !== 'completedThisWeek' ? 'button' : undefined}
-                tabIndex={card.key !== 'completedThisWeek' ? 0 : undefined}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <div
-                    className={cn('flex items-center justify-center size-6 rounded', card.iconBg)}
-                  >
-                    {card.icon}
-                  </div>
-                  <span className="text-xs text-foreground-secondary">{card.label}</span>
-                </div>
-                <span className={cn('text-2xl font-semibold tabular-nums', card.text)}>
-                  {card.getValue(summary)}
-                </span>
-              </div>
-            ))}
-          </div>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            {/* Total */}
+            <Chip
+              icon={<FormatListBulletedIcon fontSize="small" />}
+              label={`${summary.total} Total`}
+              size="small"
+              variant={dueDateFilter ? 'outlined' : 'filled'}
+              onClick={handleClearFilters}
+              sx={{ cursor: 'pointer' }}
+            />
+            {/* Overdue */}
+            <Chip
+              icon={<WarningAmberIcon fontSize="small" />}
+              label={`${summary.overdue} Overdue`}
+              size="small"
+              color={summary.overdue > 0 ? 'error' : 'default'}
+              variant={dueDateFilter === 'overdue' ? 'filled' : 'outlined'}
+              onClick={() =>
+                setFilter({
+                  status: '',
+                  priority: '',
+                  dueDateFilter: dueDateFilter === 'overdue' ? '' : 'overdue',
+                })
+              }
+              sx={{ cursor: 'pointer' }}
+            />
+            {/* Due Today */}
+            <Chip
+              icon={<CalendarTodayIcon fontSize="small" />}
+              label={`${summary.dueToday} Due Today`}
+              size="small"
+              color={summary.dueToday > 0 ? 'warning' : 'default'}
+              variant={dueDateFilter === 'dueToday' ? 'filled' : 'outlined'}
+              onClick={() =>
+                setFilter({
+                  status: '',
+                  priority: '',
+                  dueDateFilter: dueDateFilter === 'dueToday' ? '' : 'dueToday',
+                })
+              }
+              sx={{ cursor: 'pointer' }}
+            />
+            {/* Done This Week */}
+            <Chip
+              icon={<CheckCircleOutlineIcon fontSize="small" />}
+              label={`${summary.completedThisWeek} Done This Week`}
+              size="small"
+              color={summary.completedThisWeek > 0 ? 'success' : 'default'}
+              variant="outlined"
+            />
+          </Box>
         )
       )}
 
       {/* Morning Brief Banner */}
       {morningBrief && (
-        <div className="flex items-center justify-between rounded-lg border border-info/20 bg-info/5 px-3 py-2">
-          <p className="text-sm text-foreground-secondary">{morningBrief}</p>
-          <button
-            type="button"
-            onClick={() => setBriefDismissed(true)}
-            className="text-foreground-muted hover:text-foreground-secondary shrink-0 ml-3"
-          >
-            <X className="size-3.5" />
-          </button>
-        </div>
+        <Alert severity="info" onClose={() => setBriefDismissed(true)} sx={{ py: 0.5 }}>
+          {morningBrief}
+        </Alert>
       )}
 
-      {/* Filters row */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Select
-          value={projectFilter || 'all'}
-          onValueChange={(v) => handleFilterChange('projectId', v === 'all' ? '' : v)}
-        >
-          <SelectTrigger className="w-48 h-8 text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {projectFilterOptions.map((opt) => (
-              <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* Filter Row — search first, then dropdowns */}
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
+        {/* Search */}
+        <TextField
+          inputRef={searchInputRef}
+          size="small"
+          placeholder="Search tasks… (press /)"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          sx={{ width: 220 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
 
-        <Select
-          value={statusFilter || 'all'}
-          onValueChange={(v) => handleFilterChange('status', v === 'all' ? '' : v)}
-        >
-          <SelectTrigger className="w-36 h-8 text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {TASK_STATUS_FILTER_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={priorityFilter || 'all'}
-          onValueChange={(v) => handleFilterChange('priority', v === 'all' ? '' : v)}
-        >
-          <SelectTrigger className="w-36 h-8 text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {priorityFilterOptions.map((opt) => (
-              <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={groupBy} onValueChange={(v) => handleFilterChange('groupBy', v)}>
-          <SelectTrigger className="w-44 h-8 text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {TASK_GROUP_BY_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Assignee avatar filter */}
-        {assigneeMembers.length > 0 && (
-          <>
-            <div className="h-5 w-px bg-border-light" />
-            <TeamAvatarGroup
-              members={assigneeMembers}
-              max={4}
-              size="xs"
-              selectable
-              selectedIds={selectedAssigneeIds}
-              onToggle={(id) => handleFilterChange('assigneeId', assigneeFilter === id ? '' : id)}
-              onClear={() => handleFilterChange('assigneeId', '')}
-            />
-          </>
-        )}
-
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClearFilters}
-            className="text-foreground-secondary h-8"
+        {/* Project filter */}
+        <FormControl size="small" sx={{ width: 192 }}>
+          <InputLabel shrink>Project</InputLabel>
+          <Select
+            label="Project"
+            displayEmpty
+            notched
+            value={projectFilter || ''}
+            onChange={(e) => handleFilterChange('projectId', e.target.value as string)}
           >
-            <X className="mr-1 size-3" />
-            Clear
-          </Button>
+            {projectFilterOptions.map((opt) => (
+              <MenuItem key={opt.value || '__all__'} value={opt.value}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        {/* Status filter — driven by DEFAULT_TASK_STATUS lookup */}
+        <FormControl size="small" sx={{ width: 144 }}>
+          <InputLabel shrink>Status</InputLabel>
+          <Select
+            label="Status"
+            displayEmpty
+            notched
+            value={statusFilter || ''}
+            onChange={(e) => handleFilterChange('status', e.target.value as string)}
+          >
+            {statusFilterOptions.map((opt) => (
+              <MenuItem key={opt.value || '__all__'} value={opt.value}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        {/* Priority filter */}
+        <FormControl size="small" sx={{ width: 144 }}>
+          <InputLabel shrink>Priority</InputLabel>
+          <Select
+            label="Priority"
+            displayEmpty
+            notched
+            value={priorityFilter || ''}
+            onChange={(e) => handleFilterChange('priority', e.target.value as string)}
+          >
+            {priorityFilterOptions.map((opt) => (
+              <MenuItem key={opt.value || '__all__'} value={opt.value}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        {/* Group By */}
+        <FormControl size="small" sx={{ width: 176 }}>
+          <InputLabel shrink>Group By</InputLabel>
+          <Select
+            label="Group By"
+            displayEmpty
+            notched
+            value={groupBy}
+            onChange={(e) => handleFilterChange('groupBy', e.target.value as string)}
+          >
+            {TASK_GROUP_BY_OPTIONS.map((opt) => (
+              <MenuItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        {/* Clear filters */}
+        {hasActiveFilters && (
+          <Chip
+            label="Clear"
+            size="small"
+            variant="outlined"
+            onDelete={handleClearFilters}
+            onClick={handleClearFilters}
+          />
         )}
 
-        {/* Expand/Collapse All */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={allExpanded ? collapseAll : expandAll}
-          className="text-foreground-tertiary h-8 ml-auto"
-        >
-          {allExpanded ? (
-            <>
-              <ChevronUp className="mr-1 size-3" />
-              Collapse All
-            </>
-          ) : (
-            <>
-              <ChevronDown className="mr-1 size-3" />
-              Expand All
-            </>
-          )}
-        </Button>
-      </div>
+        {/* Expand / Collapse All */}
+        <Tooltip title={allExpanded ? 'Collapse all' : 'Expand all'}>
+          <IconButton
+            size="small"
+            onClick={allExpanded ? collapseAll : expandAll}
+            sx={{ ml: 'auto' }}
+          >
+            {allExpanded ? (
+              <KeyboardArrowUpIcon fontSize="small" />
+            ) : (
+              <KeyboardArrowDownIcon fontSize="small" />
+            )}
+          </IconButton>
+        </Tooltip>
+      </Box>
 
       {/* Error State */}
       {isError && <ErrorState onRetry={() => refetch()} />}
@@ -570,64 +477,86 @@ export function ProjectMyTasksPage(): React.JSX.Element {
         <div ref={containerRef}>
           {/* Loading skeletons */}
           {isLoading && (
-            <div className="space-y-4">
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {Array.from({ length: 3 }).map((_, gi) => (
-                <div key={gi}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Skeleton className="size-4" />
-                    <Skeleton className="size-2.5 rounded-full" />
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-5 w-8 rounded-full" />
-                  </div>
-                  <div className="bg-background rounded-lg border border-border-light overflow-hidden">
+                <Box key={gi}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Skeleton variant="rectangular" width={14} height={14} />
+                    <Skeleton variant="circular" width={10} height={10} />
+                    <Skeleton variant="text" width={96} height={16} />
+                    <Skeleton variant="rounded" width={32} height={20} />
+                  </Box>
+                  <Box
+                    sx={{
+                      bgcolor: 'background.paper',
+                      borderRadius: 1,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      overflow: 'hidden',
+                    }}
+                  >
                     {Array.from({ length: 3 }).map((_, ri) => (
-                      <div
+                      <Box
                         key={ri}
-                        className="flex items-center px-4 py-3 border-b border-border-light last:border-b-0"
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          px: 2,
+                          py: 1.5,
+                          borderBottom: ri < 2 ? '1px solid' : 'none',
+                          borderColor: 'divider',
+                        }}
                       >
-                        <div className="flex-1 space-y-2">
-                          <Skeleton className="h-3 w-40" />
-                          <Skeleton className="h-4 w-56" />
-                        </div>
-                        <Skeleton className="h-3 w-16 ml-4" />
-                      </div>
+                        <Box sx={{ flex: 1 }}>
+                          <Skeleton variant="text" width={160} height={12} sx={{ mb: 0.5 }} />
+                          <Skeleton variant="text" width={224} height={16} />
+                        </Box>
+                        <Skeleton variant="text" width={64} height={12} sx={{ ml: 2 }} />
+                      </Box>
                     ))}
-                  </div>
-                </div>
+                  </Box>
+                </Box>
               ))}
-            </div>
+            </Box>
           )}
 
           {/* Empty state */}
-          {!isLoading && filteredGroups.length === 0 && (
-            <div className="bg-background rounded-lg border border-border-light overflow-hidden">
-              <div className="p-8">
-                <EmptyState
-                  title="No tasks assigned to you"
-                  description={
-                    hasActiveFilters
-                      ? 'No tasks match the selected filters. Try different filter options.'
-                      : 'You don\u2019t have any incomplete tasks right now. Tasks assigned to you will appear here.'
-                  }
-                  icon={<Inbox className="w-full h-full" />}
-                  iconColor={hasActiveFilters ? 'muted' : 'primary'}
-                  action={
-                    hasActiveFilters
-                      ? {
-                          label: 'Clear Filters',
-                          onClick: handleClearFilters,
-                        }
-                      : undefined
-                  }
-                />
-              </div>
-            </div>
+          {!isLoading && groups.length === 0 && (
+            <Box
+              sx={{
+                bgcolor: 'background.paper',
+                borderRadius: 1,
+                border: '1px solid',
+                borderColor: 'divider',
+                overflow: 'hidden',
+                p: 4,
+              }}
+            >
+              <EmptyState
+                title="No tasks assigned to you"
+                description={
+                  hasActiveFilters
+                    ? 'No tasks match the selected filters. Try different filter options.'
+                    : 'You don\u2019t have any incomplete tasks right now. Tasks assigned to you will appear here.'
+                }
+                icon={<InboxIcon sx={{ width: '100%', height: '100%' }} />}
+                iconColor={hasActiveFilters ? 'muted' : 'primary'}
+                action={
+                  hasActiveFilters
+                    ? {
+                        label: 'Clear Filters',
+                        onClick: handleClearFilters,
+                      }
+                    : undefined
+                }
+              />
+            </Box>
           )}
 
-          {/* Grouped Task List - Jira-style collapsible */}
+          {/* Grouped Task List */}
           {!isLoading && (
             <div className="space-y-1.5">
-              {filteredGroups.map((group) => (
+              {groups.map((group) => (
                 <CollapsibleTaskGroup
                   key={group.key}
                   groupKey={group.key}
@@ -637,7 +566,6 @@ export function ProjectMyTasksPage(): React.JSX.Element {
                   expanded={isExpanded(group.key)}
                   onToggleExpand={() => toggle(group.key)}
                   onOpenDrawer={handleOpenDrawer}
-                  onStatusChange={handleStatusChange}
                   onMarkDone={handleMarkDone}
                   onStartTask={handleStartTask}
                   focusedTaskId={focusedTaskId}

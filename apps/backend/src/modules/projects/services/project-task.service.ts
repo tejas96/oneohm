@@ -780,14 +780,12 @@ export class ProjectTaskService {
       priority?: string;
     } = {},
   ): Promise<PaginatedResponse<Record<string, unknown>>> {
-    const teamProjectIds = await this.getUserTeamProjectIds(userId);
     const { data, total } = await this.taskRepository.findByUserId(
       userId,
       organizationId,
       page,
       limit,
       filters,
-      teamProjectIds,
     );
 
     const flatData = data.map((task) => ({
@@ -812,12 +810,15 @@ export class ProjectTaskService {
     userId: string,
     organizationId: string,
   ): Promise<{ total: number; overdue: number; dueToday: number; completedThisWeek: number }> {
-    const teamProjectIds = await this.getUserTeamProjectIds(userId);
-    const [summaryCounts, completedThisWeek] = await Promise.all([
-      this.taskRepository.countSummaryForUser(userId, organizationId, teamProjectIds),
-      this.taskRepository.countCompletedThisWeek(userId, organizationId, undefined, teamProjectIds),
-    ]);
-    return { ...summaryCounts, completedThisWeek };
+    // Delegate to getMyTasksGrouped so counts are dependency-aware and always match
+    // what the user sees in the My Tasks list (sidebar badge = page stat chips).
+    const { summary } = await this.getMyTasksGrouped(userId, organizationId, 'dueDate', {});
+    return {
+      total: summary.total,
+      overdue: summary.overdue,
+      dueToday: summary.dueToday,
+      completedThisWeek: summary.completedThisWeek,
+    };
   }
 
   async getMyTasksGrouped(
@@ -841,22 +842,13 @@ export class ProjectTaskService {
       projects: Array<{ id: string; name: string; projectNumber: string }>;
     };
   }> {
-    const teamProjectIds = await this.getUserTeamProjectIds(userId);
-
-    const [tasks, summaryCounts, completedThisWeek, projects, statusMap, priorityMap] =
-      await Promise.all([
-        this.taskRepository.findAllByUserId(userId, organizationId, filters, teamProjectIds),
-        this.taskRepository.countSummaryForUser(userId, organizationId, teamProjectIds),
-        this.taskRepository.countCompletedThisWeek(
-          userId,
-          organizationId,
-          undefined,
-          teamProjectIds,
-        ),
-        this.taskRepository.findUserTaskProjects(userId, organizationId, teamProjectIds),
-        this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
-        this.getLookupMap(LookupTypeCode.PRIORITY),
-      ]);
+    const [tasks, completedThisWeek, projects, statusMap, priorityMap] = await Promise.all([
+      this.taskRepository.findAllByUserId(userId, organizationId, filters),
+      this.taskRepository.countCompletedThisWeek(userId, organizationId),
+      this.taskRepository.findUserTaskProjects(userId, organizationId),
+      this.getLookupMap(LookupTypeCode.DEFAULT_TASK_STATUS),
+      this.getLookupMap(LookupTypeCode.PRIORITY),
+    ]);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -893,14 +885,41 @@ export class ProjectTaskService {
       }
     }
 
-    const enrichedTasks = tasks.map((task) =>
+    const allEnrichedTasks = tasks.map((task) =>
       this.enrichMyTask(task, today, depNameMap, depStatusMap, depCodeMap, statusMap, priorityMap),
     );
 
+    // Exclude tasks that are blocked by unresolved dependencies — these cannot be actioned
+    // and must not appear in "My Tasks". hasDependencyBlockers is computed at runtime from
+    // dependency statuses, so this filter must happen here (not in SQL).
+    const enrichedTasks = allEnrichedTasks.filter((t) => !t.hasDependencyBlockers);
+
+    // Summary counts are derived from enrichedTasks (post-filter) rather than independent DB
+    // queries. This is a deliberate exception to the "aggregate counts must be independent"
+    // rule: hasDependencyBlockers is a runtime computation (requires joining dependency statuses
+    // across a lookup map) and cannot be expressed as a SQL predicate. The counts therefore
+    // MUST be computed after the in-process filter to guarantee they match what the user sees.
+    // completedThisWeek is exempt — done tasks have no dependency-blocker concept.
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const visibleTotal = enrichedTasks.length;
+    const visibleOverdue = enrichedTasks.filter((t) => {
+      const d = t.endDate as string | undefined;
+      return d != null && d < todayStr;
+    }).length;
+    const visibleDueToday = enrichedTasks.filter(
+      (t) => (t.endDate as string | undefined) === todayStr,
+    ).length;
+
+    // Only expose projects that have at least one visible task
+    const visibleProjectIds = new Set(enrichedTasks.map((t) => t.projectId as string));
+    const visibleProjects = projects.filter((p) => visibleProjectIds.has(p.id));
+
     const summary = {
-      ...summaryCounts,
+      total: visibleTotal,
+      overdue: visibleOverdue,
+      dueToday: visibleDueToday,
       completedThisWeek,
-      projects,
+      projects: visibleProjects,
     };
 
     const groups = await this.buildGroups(enrichedTasks, groupBy, today, statusMap, priorityMap);

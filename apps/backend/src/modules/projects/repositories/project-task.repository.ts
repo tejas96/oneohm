@@ -506,7 +506,6 @@ export class ProjectTaskRepository {
       status?: TaskStatus;
       priority?: string;
     } = {},
-    teamProjectIds: string[] = [],
   ): Promise<{ data: ProjectTaskEntity[]; total: number }> {
     const skip = (page - 1) * limit;
 
@@ -531,14 +530,6 @@ export class ProjectTaskRepository {
     }
 
     const whereConditions: Record<string, unknown>[] = [{ ...base, assignedToUserId: userId }];
-
-    if (teamProjectIds.length > 0) {
-      whereConditions.push({
-        ...base,
-        assignedToUserId: IsNull(),
-        projectId: In(teamProjectIds),
-      });
-    }
 
     const [data, total] = await this.repository.findAndCount({
       where: whereConditions,
@@ -588,7 +579,6 @@ export class ProjectTaskRepository {
       search?: string;
       dueDateFilter?: string;
     } = {},
-    teamProjectIds: string[] = [],
   ): Promise<ProjectTaskEntity[]> {
     const qb = this.repository
       .createQueryBuilder('task')
@@ -655,15 +645,8 @@ export class ProjectTaskRepository {
       }
     }
 
-    // Ownership: assigned to user OR unassigned in team projects
-    if (teamProjectIds.length > 0) {
-      qb.andWhere(
-        `(task.assigned_to_user_id = :userId OR (task.assigned_to_user_id IS NULL AND task.project_id IN (:...teamProjectIds)))`,
-        { userId, teamProjectIds },
-      );
-    } else {
-      qb.andWhere('task.assigned_to_user_id = :userId', { userId });
-    }
+    // Ownership: only tasks assigned to this user
+    qb.andWhere('task.assigned_to_user_id = :userId', { userId });
 
     qb.orderBy('task.end_date', 'ASC', 'NULLS LAST').addOrderBy('task.priority', 'DESC');
 
@@ -744,7 +727,6 @@ export class ProjectTaskRepository {
     userId: string,
     organizationId: string,
     projectId?: string,
-    teamProjectIds: string[] = [],
   ): Promise<number> {
     const startOfWeek = new Date();
     const day = startOfWeek.getDay();
@@ -765,24 +747,12 @@ export class ProjectTaskRepository {
 
     const whereConditions: Record<string, unknown>[] = [{ ...base, assignedToUserId: userId }];
 
-    if (teamProjectIds.length > 0) {
-      const teamWhere: Record<string, unknown> = {
-        ...base,
-        assignedToUserId: IsNull(),
-      };
-      if (!projectId) {
-        teamWhere.projectId = In(teamProjectIds);
-      }
-      whereConditions.push(teamWhere);
-    }
-
     return this.repository.count({ where: whereConditions });
   }
 
   async findUserTaskProjects(
     userId: string,
     organizationId: string,
-    teamProjectIds: string[] = [],
   ): Promise<Array<{ id: string; name: string; projectNumber: string }>> {
     const qb = this.repository
       .createQueryBuilder('task')
@@ -796,16 +766,8 @@ export class ProjectTaskRepository {
       .andWhere('task.status NOT IN (:...excludedStatuses)', {
         excludedStatuses: [TaskStatus.DONE, TaskStatus.CANCELLED],
       })
-      .andWhere('property.organization_id = :organizationId', { organizationId });
-
-    if (teamProjectIds.length > 0) {
-      qb.andWhere(
-        `(task.assigned_to_user_id = :userId OR (task.assigned_to_user_id IS NULL AND task.project_id IN (:...teamProjectIds)))`,
-        { userId, teamProjectIds },
-      );
-    } else {
-      qb.andWhere('task.assigned_to_user_id = :userId', { userId });
-    }
+      .andWhere('property.organization_id = :organizationId', { organizationId })
+      .andWhere('task.assigned_to_user_id = :userId', { userId });
 
     return qb.getRawMany<{ id: string; name: string; projectNumber: string }>();
   }
@@ -817,7 +779,6 @@ export class ProjectTaskRepository {
   async countSummaryForUser(
     userId: string,
     organizationId: string,
-    teamProjectIds: string[] = [],
   ): Promise<{ total: number; overdue: number; dueToday: number }> {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -831,20 +792,11 @@ export class ProjectTaskRepository {
       },
     };
 
-    const buildWhere = (extra: Record<string, unknown> = {}): Record<string, unknown>[] => {
-      const conditions: Record<string, unknown>[] = [
-        { ...baseWhere, ...extra, assignedToUserId: userId },
-      ];
-      if (teamProjectIds.length > 0) {
-        conditions.push({
-          ...baseWhere,
-          ...extra,
-          assignedToUserId: IsNull(),
-          projectId: In(teamProjectIds),
-        });
-      }
-      return conditions;
-    };
+    const buildWhere = (extra: Record<string, unknown> = {}): Record<string, unknown> => ({
+      ...baseWhere,
+      ...extra,
+      assignedToUserId: userId,
+    });
 
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
