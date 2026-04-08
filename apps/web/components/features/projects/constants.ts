@@ -348,6 +348,7 @@ export const MS_PER_DAY = 86_400_000;
 
 export const PROJECT_DETAIL_TABS = [
   { value: 'overview', label: 'Overview' },
+  { value: 'summary', label: 'Summary' },
   { value: 'tasks', label: 'Tasks' },
   { value: 'documents', label: 'Documents' },
   { value: 'payments', label: 'Payments' },

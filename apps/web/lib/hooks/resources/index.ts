@@ -155,3 +155,14 @@ export {
   type LookupOption,
   type LookupFilters,
 } from './lookups';
+
+// Projects (FDAL entry point)
+export {
+  useProjectSummary,
+  type ProjectSummary,
+  type ProjectSummaryMetrics,
+  type ActivityFeedItem,
+  type TeamWorkloadEntry,
+  type MilestoneProgressEntry,
+  type UpcomingDeadline,
+} from './projects';

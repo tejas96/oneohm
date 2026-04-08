@@ -1,6 +1,9 @@
 // Project DTOs
 export * from './projects';
 
+// Analytics DTOs
+export * from './analytics';
+
 // Milestone DTOs
 export * from './milestones';
 
