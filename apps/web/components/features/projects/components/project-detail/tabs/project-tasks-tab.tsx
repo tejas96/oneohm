@@ -1,6 +1,6 @@
 'use client';
 
-import { LookupTypeCode } from '@oneohm-epc/shared/types';
+import { LookupTypeCode, type TaskPriority, type TaskStatus } from '@oneohm-epc/shared/types';
 import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import React, { useCallback, useMemo, useState } from 'react';
@@ -9,6 +9,7 @@ import { TaskListTable, TaskListToolbar } from './task-list';
 import {
   TASK_LIST_FILTER_DEFAULTS,
   TASKS_PAGE_SIZE,
+  PROJECT_TASKS_QUERY_KEY,
   type TaskListFilters,
 } from '../../../constants';
 import {
@@ -20,6 +21,7 @@ import {
 import type { ProjectDetail } from '../../../hooks/types';
 
 import { TaskDrawer } from '@/components/features/tasks';
+import { useUpdateTask } from '@/components/features/tasks/hooks';
 import { TablePagination } from '@/components/shared/data-table/pagination';
 import { ErrorState } from '@/components/shared/feedback/empty-state';
 import { Button } from '@/components/ui/button';
@@ -72,6 +74,14 @@ export const ProjectTasksTab = React.memo(
 
     const { data: team } = useProjectTeam(projectId, { enabled: isActive });
 
+    // useUpdateTask handles toasts and myTaskKeys invalidation internally.
+    // We only need to additionally bust the project-tasks list after success.
+    const { mutate: updateTaskMutate } = useUpdateTask();
+
+    const invalidateProjectTasks = useCallback(() => {
+      void queryClient.invalidateQueries({ queryKey: PROJECT_TASKS_QUERY_KEY(organizationId) });
+    }, [queryClient, organizationId]);
+
     const avatarMembers: TeamMemberSummary[] = useMemo(() => {
       if (!team) return [];
       const mapped = team.map((m) => ({
@@ -101,12 +111,25 @@ export const ProjectTasksTab = React.memo(
       setDrawerOpen(false);
     }, []);
 
-    const handleTaskUpdated = useCallback(() => {
-      // Invalidate by the FDAL resource prefix + org — busts all pages/filters for this project
-      void queryClient.invalidateQueries({
-        queryKey: ['project-tasks', organizationId],
-      });
-    }, [queryClient, organizationId, projectId]);
+    const handleStatusChange = useCallback(
+      (taskId: string, status: string) => {
+        updateTaskMutate(
+          { taskId, status: status as TaskStatus },
+          { onSuccess: invalidateProjectTasks },
+        );
+      },
+      [updateTaskMutate, invalidateProjectTasks],
+    );
+
+    const handlePriorityChange = useCallback(
+      (taskId: string, priority: string) => {
+        updateTaskMutate(
+          { taskId, priority: priority as TaskPriority },
+          { onSuccess: invalidateProjectTasks },
+        );
+      },
+      [updateTaskMutate, invalidateProjectTasks],
+    );
 
     const hasActiveFilters =
       !!filters.t_search ||
@@ -165,6 +188,8 @@ export const ProjectTasksTab = React.memo(
             project={project}
             isLoading={isLoading || statusesLoading}
             onOpenTask={handleOpenTask}
+            onStatusChange={handleStatusChange}
+            onPriorityChange={handlePriorityChange}
             hasActiveFilters={hasActiveFilters}
             onClearFilters={clearFilters}
           />
@@ -188,7 +213,7 @@ export const ProjectTasksTab = React.memo(
           taskId={openTaskId}
           open={drawerOpen}
           onClose={handleCloseDrawer}
-          onTaskUpdated={handleTaskUpdated}
+          onTaskUpdated={invalidateProjectTasks}
         />
       </>
     );

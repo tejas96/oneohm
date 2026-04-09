@@ -149,6 +149,17 @@ export const TASK_PRIORITY_DOT_COLOR: Record<string, string> = {
   [TaskPriority.URGENT]: 'bg-error',
 };
 
+/** Hex colors matching the Tailwind semantic tokens above — used for inline styles (e.g. MUI).
+ *  Must stay in sync with the CSS token values in tailwind.config.ts:
+ *  --color-info (#3b82f6), --color-warning (#f59e0b), --color-error (#ef4444). */
+export const TASK_PRIORITY_HEX_COLOR: Record<string, string> = {
+  [TaskPriority.LOW]: '#94a3b8',
+  [TaskPriority.NORMAL]: '#3b82f6',
+  [TaskPriority.MEDIUM]: '#3b82f6',
+  [TaskPriority.HIGH]: '#f59e0b',
+  [TaskPriority.URGENT]: '#ef4444',
+};
+
 export const TASK_GROUP_BY_OPTIONS = [
   { value: 'dueDate', label: 'Group by: Due Date' },
   { value: 'priority', label: 'Group by: Priority' },
@@ -339,6 +350,13 @@ export const MAX_DISPLAYED_TEAM_MEMBERS = 5;
 export const MAX_DISPLAYED_MILESTONES = 6;
 export const MAX_TASKS_PER_COLUMN = 3;
 export const TASKS_PAGE_SIZE = 20;
+
+/**
+ * Base query key for the project task list (FDAL resource).
+ * Must stay in sync with the key used in lib/hooks/resources/projects.ts.
+ */
+export const PROJECT_TASKS_QUERY_KEY = (organizationId: string | undefined) =>
+  ['project-tasks', organizationId] as const;
 export const KANBAN_TASKS_LIMIT = 100;
 export const MS_PER_DAY = 86_400_000;
 

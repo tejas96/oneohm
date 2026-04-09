@@ -1,6 +1,6 @@
 'use client';
 
-import type { PaginatedResponse } from '@oneohm-epc/shared/types';
+import type { PaginatedResponse, TaskPriority } from '@oneohm-epc/shared/types';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { createResourceKeys, defineResource, STALE_TIMES, useOrgContext } from '../core';
@@ -74,7 +74,7 @@ export interface ProjectTaskItem {
   code: string;
   name: string;
   status: string;
-  priority: string;
+  priority: TaskPriority;
   assignedToUserId?: string;
   assigneeName?: string;
   milestoneId?: string;
