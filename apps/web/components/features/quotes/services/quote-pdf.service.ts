@@ -20,8 +20,14 @@ export async function generateAndDownloadPdf(data: QuotePdfData): Promise<void> 
   container.innerHTML = html;
   document.body.appendChild(container);
 
-  const filename = data.quoteNumber
-    ? `Quote-${data.quoteNumber}.pdf`
+  const sanitizedCustomerName = data.customer?.name
+    ? data.customer.name
+        .replace(/[^a-zA-Z0-9 ]/g, '')
+        .trim()
+        .replace(/\s+/g, '_')
+    : '';
+  const filename = sanitizedCustomerName
+    ? `${sanitizedCustomerName}-Quote.pdf`
     : `Quote-Draft-${Date.now()}.pdf`;
 
   try {
