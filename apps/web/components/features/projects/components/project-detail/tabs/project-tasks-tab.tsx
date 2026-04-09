@@ -1,6 +1,6 @@
 'use client';
 
-import { LookupTypeCode, type TaskPriority, type TaskStatus } from '@oneohm-epc/shared/types';
+import { LookupTypeCode, TaskStatus, type TaskPriority } from '@oneohm-epc/shared/types';
 import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import React, { useCallback, useMemo, useState } from 'react';
@@ -32,6 +32,11 @@ import { useLookupOptions } from '@/lib/hooks/resources';
 import { useUrlFilters } from '@/lib/hooks/use-url-filters';
 import { getErrorMessage } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
+
+/** Statuses where the backend auto-sets completionPercentage = 100.
+ *  Any task that ever reached these statuses will have completionPercentage = 100
+ *  in the DB until we explicitly reset it. */
+const FINAL_STATUSES = new Set<string>([TaskStatus.DONE, TaskStatus.CANCELLED]);
 
 interface ProjectTasksTabProps {
   projectId: string;
@@ -112,13 +117,57 @@ export const ProjectTasksTab = React.memo(
     }, []);
 
     const handleStatusChange = useCallback(
-      (taskId: string, status: string) => {
+      (taskId: string, newStatus: string, _currentStatus: string, currentCompletionPct: number) => {
+        // The backend only auto-sets completionPercentage on final status transitions (done/cancelled → 100).
+        // It never auto-resets it when moving back to an active status. So any task that was ever
+        // "done" or "cancelled" retains completionPercentage = 100 in the DB indefinitely.
+        // Fix: whenever moving to a non-final status and the task is at 100%, explicitly send 0.
+        const completionPercentage =
+          !FINAL_STATUSES.has(newStatus) && currentCompletionPct === 100 ? 0 : undefined;
+
+        // Snapshot ALL matching cache entries before the optimistic update so we can
+        // roll back if the mutation fails (e.g. backend rejects due to unresolved dependencies).
+        const queryKey = PROJECT_TASKS_QUERY_KEY(organizationId);
+        type CacheSnapshot = { key: readonly unknown[]; data: unknown };
+        const snapshots: CacheSnapshot[] = [];
+
+        // Optimistic cache update so the progress bar resets instantly before the refetch lands.
+        if (completionPercentage !== undefined) {
+          // Collect snapshots of every matching cache entry before mutating them,
+          // so we can roll back if the mutation fails (e.g. unresolved task dependencies).
+          queryClient
+            .getQueryCache()
+            .findAll({ queryKey })
+            .forEach((q) => {
+              snapshots.push({ key: q.queryKey, data: q.state.data });
+            });
+
+          queryClient.setQueriesData({ queryKey }, (old: unknown) => {
+            if (!old || typeof old !== 'object') return old;
+            const p = old as { data?: unknown[]; meta?: unknown };
+            if (!Array.isArray(p.data)) return old;
+            return {
+              ...p,
+              data: p.data.map((t: unknown) => {
+                const task = t as { id: string; completionPercentage: number };
+                return task.id === taskId ? { ...task, completionPercentage: 0 } : task;
+              }),
+            };
+          });
+        }
+
         updateTaskMutate(
-          { taskId, status: status as TaskStatus },
-          { onSuccess: invalidateProjectTasks },
+          { taskId, status: newStatus as TaskStatus, completionPercentage },
+          {
+            onSuccess: invalidateProjectTasks,
+            onError: () => {
+              // Roll back all optimistic patches so the progress bar reverts to its original values.
+              snapshots.forEach(({ key, data }) => queryClient.setQueryData(key, data));
+            },
+          },
         );
       },
-      [updateTaskMutate, invalidateProjectTasks],
+      [updateTaskMutate, invalidateProjectTasks, queryClient, organizationId],
     );
 
     const handlePriorityChange = useCallback(

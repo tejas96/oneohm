@@ -25,7 +25,12 @@ interface TaskListTableProps {
   project: ProjectDetail;
   isLoading: boolean;
   onOpenTask: (taskId: string) => void;
-  onStatusChange?: (taskId: string, status: string) => void;
+  onStatusChange?: (
+    taskId: string,
+    status: string,
+    currentStatus: string,
+    currentCompletionPct: number,
+  ) => void;
   onPriorityChange?: (taskId: string, priority: string) => void;
   hasActiveFilters?: boolean;
   onClearFilters?: () => void;
@@ -210,7 +215,12 @@ function TaskRow({
   statusLabel: string;
   hasMilestones: boolean;
   onOpenTask: (id: string) => void;
-  onStatusChange?: (taskId: string, status: string) => void;
+  onStatusChange?: (
+    taskId: string,
+    status: string,
+    currentStatus: string,
+    currentCompletionPct: number,
+  ) => void;
   onPriorityChange?: (taskId: string, priority: string) => void;
   statusOptions: MUISelectOption[];
 }): React.JSX.Element {
@@ -346,7 +356,7 @@ function TaskRow({
             color={statusColor}
             label={statusLabel}
             options={statusOptions}
-            onChange={(v) => onStatusChange(task.id, v)}
+            onChange={(v) => onStatusChange(task.id, v, task.status, task.completionPercentage)}
           />
         ) : (
           <span
@@ -384,7 +394,12 @@ function TaskGroupSection({
   milestones: ProjectMilestone[];
   hasMilestones: boolean;
   onOpenTask: (id: string) => void;
-  onStatusChange?: (taskId: string, status: string) => void;
+  onStatusChange?: (
+    taskId: string,
+    status: string,
+    currentStatus: string,
+    currentCompletionPct: number,
+  ) => void;
   onPriorityChange?: (taskId: string, priority: string) => void;
   statusOptions: MUISelectOption[];
 }): React.JSX.Element {

@@ -108,12 +108,25 @@ export function TaskDrawer({
   const handleChecklistToggle = useCallback(
     (checklist: TaskChecklist) => {
       if (!taskId) return;
+
+      // Derive completionPercentage from checklist completion ratio, but only when
+      // the task is in an active (non-final) status. Final statuses (done/cancelled)
+      // are auto-set to 100% by the backend and should not be overridden by checklist math.
+      const isFinalStatus =
+        task?.status === TaskStatus.DONE || task?.status === TaskStatus.CANCELLED;
+      const completionPercentage =
+        !isFinalStatus && checklist.items.length > 0
+          ? Math.round(
+              (checklist.items.filter((i) => i.isCompleted).length / checklist.items.length) * 100,
+            )
+          : undefined;
+
       updateTask.mutate(
-        { taskId, checklist, version: task?.version },
+        { taskId, checklist, completionPercentage, version: task?.version },
         { onSuccess: () => onTaskUpdated?.() },
       );
     },
-    [taskId, task?.version, updateTask, onTaskUpdated],
+    [taskId, task?.status, task?.version, updateTask, onTaskUpdated],
   );
 
   const handleDependenciesChange = useCallback(
