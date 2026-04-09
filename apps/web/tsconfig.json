@@ -1,9 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    /* TypeScript 6.0+ deprecation warnings */
-    "ignoreDeprecations": "6.0",
-
     /* Next.js-specific overrides */
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
