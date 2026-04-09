@@ -106,11 +106,21 @@ export class ProjectTaskService {
     }
 
     // Route name/description to override columns (resolveTaskFields reads from overrides)
+    const createdAtIso = new Date().toISOString();
     const taskData: Record<string, unknown> = {
       ...createDto,
       projectId,
       createdBy: currentUserId,
       updatedBy: currentUserId,
+      // Seed the activity log with a 'created' entry so it surfaces in the analytics feed
+      activityLog: [
+        {
+          id: randomUUID(),
+          activityType: 'created' satisfies TaskActivityType,
+          userId: currentUserId,
+          createdAt: createdAtIso,
+        } satisfies TaskActivityEntry,
+      ],
     };
     // Strip deps from initial create data; we set them after circular check
     const pendingDeps = createDto.dependsOnTaskIds;

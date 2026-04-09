@@ -11,6 +11,7 @@ import { ProjectComingSoonTab } from './tabs/project-coming-soon-tab';
 import { ProjectDocumentsTab } from './tabs/project-documents-tab';
 import { ProjectOverviewTab } from './tabs/project-overview-tab';
 import { ProjectPaymentsTab } from './tabs/project-payments-tab';
+import { ProjectSummaryTab } from './tabs/project-summary-tab';
 import { ProjectSurveysTab } from './tabs/project-surveys-tab';
 import { ProjectTasksTab } from './tabs/project-tasks-tab';
 import { PROJECT_DETAIL_TABS, type ProjectDetailTab } from '../../constants';
@@ -123,8 +124,20 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
           <ProjectOverviewTab project={project} isActive={activeTab === 'overview'} />
         </TabsContent>
 
+        <TabsContent value="summary">
+          <ProjectSummaryTab
+            project={project}
+            projectId={projectId}
+            isActive={activeTab === 'summary'}
+          />
+        </TabsContent>
+
         <TabsContent value="tasks">
-          <ProjectTasksTab projectId={projectId} isActive={activeTab === 'tasks'} />
+          <ProjectTasksTab
+            projectId={projectId}
+            project={project}
+            isActive={activeTab === 'tasks'}
+          />
         </TabsContent>
 
         <TabsContent value="documents">

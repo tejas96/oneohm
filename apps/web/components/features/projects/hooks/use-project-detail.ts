@@ -4,10 +4,11 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 
 import { KANBAN_TASKS_LIMIT } from '../constants';
-import type { ProjectDetail, ProjectTaskItem, ProjectTeamMember, TaskStatsSummary } from './types';
+import type { ProjectDetail, ProjectTeamMember, TaskStatsSummary } from './types';
 import { projectKeys } from './use-projects';
 
 import { apiClient } from '@/lib/api/client';
+import type { ProjectTaskItem } from '@/lib/hooks/resources';
 import { useAuth } from '@/providers/auth-provider';
 
 // ============================================================================

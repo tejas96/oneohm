@@ -1,200 +1,75 @@
 'use client';
 
-import { TaskStatus } from '@oneohm-epc/shared/types';
+import { LookupTypeCode } from '@oneohm-epc/shared/types';
+import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
-import { MAX_TASKS_PER_COLUMN, TASK_PRIORITY_DOT_COLOR } from '../../../constants';
-import type { TeamMemberSummary } from '../../../hooks';
-import type { ProjectTaskItem } from '../../../hooks/types';
-import { useProjectTasks, useProjectTeam } from '../../../hooks/use-project-detail';
-import { useProjectTaskStatuses } from '../../../hooks/use-project-task-statuses';
-import { TeamAvatarGroup } from '../../team-avatar-group';
+import { TaskListTable, TaskListToolbar } from './task-list';
+import {
+  TASK_LIST_FILTER_DEFAULTS,
+  TASKS_PAGE_SIZE,
+  type TaskListFilters,
+} from '../../../constants';
+import {
+  type TeamMemberSummary,
+  useProjectTaskList,
+  useProjectTaskStatuses,
+  useProjectTeam,
+} from '../../../hooks';
+import type { ProjectDetail } from '../../../hooks/types';
 
+import { TaskDrawer } from '@/components/features/tasks';
+import { TablePagination } from '@/components/shared/data-table/pagination';
 import { ErrorState } from '@/components/shared/feedback/empty-state';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { showToast } from '@/components/ui/sonner';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { getErrorMessage } from '@/lib/utils/error';
-import { formatDate, getDueDateColor, getInitials } from '@/lib/utils/format';
+import { useOrgContext } from '@/lib/hooks/core';
+import { useLookupOptions } from '@/lib/hooks/resources';
+import { useUrlFilters } from '@/lib/hooks/use-url-filters';
+import { getErrorMessage } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
 interface ProjectTasksTabProps {
   projectId: string;
+  project: ProjectDetail;
   isActive: boolean;
 }
 
-const PRIORITY_BORDER: Record<string, string> = {
-  urgent: 'border-l-error',
-  high: 'border-l-warning',
-  normal: 'border-l-info',
-  medium: 'border-l-info',
-  low: 'border-l-foreground-tertiary',
-};
-
-function TaskCard({ task, isDone }: { task: ProjectTaskItem; isDone?: boolean }) {
-  const borderAccent = PRIORITY_BORDER[task.priority] ?? '';
-  const initials = task.assigneeName ? getInitials(task.assigneeName) : null;
-  const isBlocked = task.status === TaskStatus.BLOCKED;
-  const priorityDot = TASK_PRIORITY_DOT_COLOR?.[task.priority] ?? 'bg-foreground-tertiary';
-  const fullLabel = `${task.code}: ${task.name}`;
-
-  return (
-    <TooltipProvider delayDuration={300}>
-      <div
-        className={`rounded-md border border-border-light bg-background p-2.5 border-l-[3px] ${borderAccent} ${isDone ? 'opacity-70' : ''}`}
-      >
-        {/* Row 1: task code + priority dot */}
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-2xs text-foreground-secondary font-mono">{task.code}</span>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className={`size-2 rounded-full shrink-0 ${priorityDot}`} />
-            </TooltipTrigger>
-            <TooltipContent side="top" variant="dark">
-              {task.priority} priority
-            </TooltipContent>
-          </Tooltip>
-        </div>
-
-        {/* Row 2: task name with tooltip */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <p
-              className={`text-xs font-medium truncate ${isDone ? 'line-through text-foreground-secondary' : 'text-foreground'}`}
-            >
-              {task.name}
-            </p>
-          </TooltipTrigger>
-          <TooltipContent side="top" variant="dark" className="max-w-[220px]">
-            {fullLabel}
-          </TooltipContent>
-        </Tooltip>
-
-        {/* Row 3: blocked reason OR assignee + date */}
-        {isBlocked && task.blockedReason && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <p className="text-2xs text-error mt-1.5 truncate">{task.blockedReason}</p>
-            </TooltipTrigger>
-            <TooltipContent side="top" variant="dark" className="max-w-[220px]">
-              {task.blockedReason}
-            </TooltipContent>
-          </Tooltip>
-        )}
-        {!isBlocked && (
-          <div className="flex items-center justify-between mt-1.5">
-            {initials ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Avatar size="xs" className="size-5">
-                      <AvatarFallback size="xs" name={task.assigneeName} className="text-[8px]">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="top" variant="dark">
-                  {task.assigneeName}
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <span className="text-2xs text-foreground-tertiary">Unassigned</span>
-            )}
-            {task.endDate && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className={`text-2xs ${getDueDateColor(task.endDate)}`}>
-                    {formatDate(task.endDate, 'short')}
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="top" variant="dark">
-                  Due {formatDate(task.endDate, 'medium')}
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-        )}
-      </div>
-    </TooltipProvider>
-  );
-}
-
-function KanbanColumn({
-  status,
-  label,
-  color,
-  tasks,
-  count,
-}: {
-  status: string;
-  label: string;
-  color: string;
-  tasks: ProjectTaskItem[];
-  count: number;
-}): React.JSX.Element {
-  const [expanded, setExpanded] = useState(false);
-  const toggleExpanded = useCallback(() => setExpanded((prev) => !prev), []);
-
-  const hasOverflow = tasks.length > MAX_TASKS_PER_COLUMN;
-  const displayed = expanded ? tasks : tasks.slice(0, MAX_TASKS_PER_COLUMN);
-  const isDone = status === (TaskStatus.DONE as string);
-
-  // Derive a light tint background from the hex color
-  const bgStyle = { backgroundColor: `${color}0F` }; // ~6% opacity
-
-  return (
-    <div className="rounded-lg p-3" style={bgStyle}>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-2xs font-semibold uppercase" style={{ color }}>
-          {label}
-        </span>
-        <span className="text-2xs font-semibold" style={{ color }}>
-          {count}
-        </span>
-      </div>
-      {tasks.length === 0 ? (
-        <p className="text-2xs text-foreground-tertiary py-4 text-center">No tasks</p>
-      ) : (
-        <div className="space-y-2">
-          {displayed.map((task) => (
-            <TaskCard key={task.id} task={task} isDone={isDone} />
-          ))}
-          {hasOverflow && (
-            <button
-              type="button"
-              onClick={toggleExpanded}
-              className="block w-full text-2xs text-primary font-medium text-center pt-1 hover:underline cursor-pointer"
-            >
-              {expanded ? 'Show less' : `+${tasks.length - MAX_TASKS_PER_COLUMN} more`}
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export const ProjectTasksTab = React.memo(
-  ({ projectId, isActive }: ProjectTasksTabProps): React.JSX.Element => {
+  ({ projectId, project, isActive }: ProjectTasksTabProps): React.JSX.Element => {
     const { user } = useAuth();
+    const { organizationId } = useOrgContext();
+    const queryClient = useQueryClient();
+
+    const { filters, setFilter, clearFilters } =
+      useUrlFilters<TaskListFilters>(TASK_LIST_FILTER_DEFAULTS);
+    const page = Math.max(1, parseInt(filters.t_page, 10) || 1);
+
+    const { taskStatuses, isLoading: statusesLoading } = useProjectTaskStatuses(projectId);
+    const { items: priorityOptions } = useLookupOptions(LookupTypeCode.PRIORITY, isActive);
+
     const {
-      taskStatuses,
-      isLoading: statusesLoading,
-      isError: statusesError,
-      error: statusesErrorMsg,
-    } = useProjectTaskStatuses(projectId);
-    const {
-      data: tasks,
+      data: taskListData,
       isLoading,
       isError,
       error,
       refetch,
-    } = useProjectTasks(projectId, { enabled: isActive });
+    } = useProjectTaskList(
+      projectId,
+      {
+        page,
+        limit: TASKS_PAGE_SIZE,
+        status: filters.t_status || undefined,
+        priority: filters.t_priority || undefined,
+        assignedToUserId: filters.t_assignee || undefined,
+        milestoneId: filters.t_milestone || undefined,
+        search: filters.t_search || undefined,
+      },
+      { enabled: isActive },
+    );
+
     const { data: team } = useProjectTeam(projectId, { enabled: isActive });
 
     const avatarMembers: TeamMemberSummary[] = useMemo(() => {
@@ -213,67 +88,32 @@ export const ProjectTasksTab = React.memo(
       });
     }, [team, user?.id]);
 
-    const isCurrentUserInTeam = useMemo(
-      () => !!user?.id && avatarMembers.some((m) => m.id === user.id),
-      [avatarMembers, user?.id],
-    );
+    // Drawer state
+    const [openTaskId, setOpenTaskId] = useState<string | null>(null);
+    const [drawerOpen, setDrawerOpen] = useState(false);
 
-    const [selectedAssignees, setSelectedAssignees] = useState<Set<string>>(() => new Set());
+    const handleOpenTask = useCallback((taskId: string) => {
+      setOpenTaskId(taskId);
+      setDrawerOpen(true);
+    }, []);
 
-    const initializedRef = useRef(false);
-    useEffect(() => {
-      if (initializedRef.current || !team) return;
-      if (isCurrentUserInTeam && user?.id) {
-        setSelectedAssignees(new Set([user.id]));
-      }
-      initializedRef.current = true;
-    }, [team, isCurrentUserInTeam, user?.id]);
+    const handleCloseDrawer = useCallback(() => {
+      setDrawerOpen(false);
+    }, []);
 
-    const handleToggleAssignee = useCallback((memberId: string) => {
-      setSelectedAssignees((prev) => {
-        const next = new Set(prev);
-        if (next.has(memberId)) {
-          next.delete(memberId);
-        } else {
-          next.add(memberId);
-        }
-        return next;
+    const handleTaskUpdated = useCallback(() => {
+      // Invalidate by the FDAL resource prefix + org — busts all pages/filters for this project
+      void queryClient.invalidateQueries({
+        queryKey: ['project-tasks', organizationId],
       });
-    }, []);
+    }, [queryClient, organizationId, projectId]);
 
-    const handleClearFilter = useCallback(() => {
-      setSelectedAssignees(new Set());
-    }, []);
-
-    const filteredTasks = useMemo(() => {
-      if (!tasks) return [];
-      if (selectedAssignees.size === 0) return tasks;
-      return tasks.filter((t) => t.assignedToUserId && selectedAssignees.has(t.assignedToUserId));
-    }, [tasks, selectedAssignees]);
-
-    const grouped = useMemo(() => {
-      if (taskStatuses.length === 0) return {};
-      const configuredCodes = new Set(taskStatuses.map((s) => s.code));
-      // Safe: length guard above ensures [0] exists
-      const firstCode = taskStatuses[0]!.code;
-      const groups: Record<string, ProjectTaskItem[]> = {};
-      for (const task of filteredTasks) {
-        const columnCode = configuredCodes.has(task.status) ? task.status : firstCode;
-        if (!groups[columnCode]) groups[columnCode] = [];
-        groups[columnCode].push(task);
-      }
-      return groups;
-    }, [filteredTasks, taskStatuses]);
-
-    if ((isLoading || statusesLoading) && isActive) {
-      return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-48 rounded-lg" />
-          ))}
-        </div>
-      );
-    }
+    const hasActiveFilters =
+      !!filters.t_search ||
+      !!filters.t_status ||
+      !!filters.t_priority ||
+      !!filters.t_assignee ||
+      !!filters.t_milestone;
 
     if (isError) {
       return (
@@ -285,60 +125,74 @@ export const ProjectTasksTab = React.memo(
       );
     }
 
-    if (statusesError) {
-      return (
-        <ErrorState
-          title="Failed to load project statuses"
-          description={getErrorMessage(statusesErrorMsg)}
-        />
-      );
-    }
+    const tasks = taskListData?.data ?? [];
+    const meta = taskListData?.meta;
 
     return (
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <h3 className="text-xs font-semibold text-foreground">Project Tasks</h3>
-            {avatarMembers.length > 0 && (
-              <TeamAvatarGroup
-                members={avatarMembers}
-                max={4}
-                size="xs"
-                selectable
-                selectedIds={selectedAssignees}
-                onToggle={handleToggleAssignee}
-                onClear={handleClearFilter}
-              />
-            )}
+      <>
+        <div className="space-y-4">
+          {/* Header */}
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-foreground">Project Tasks</h3>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link href={buildRoute(ROUTES.PROJECTS.BOARD, undefined, { project: projectId })}>
+                  Open Board
+                </Link>
+              </Button>
+              <Button size="sm" onClick={() => showToast.info('Coming Soon')}>
+                + Add Task
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link href={buildRoute(ROUTES.PROJECTS.BOARD, undefined, { project: projectId })}>
-                Open Full Kanban
-              </Link>
-            </Button>
-            <Button size="sm" onClick={() => showToast.info('Coming Soon')}>
-              + Add Task
-            </Button>
-          </div>
+
+          {/* Toolbar */}
+          <TaskListToolbar
+            filters={filters}
+            setFilter={setFilter}
+            clearFilters={clearFilters}
+            taskStatuses={taskStatuses}
+            priorityOptions={priorityOptions}
+            avatarMembers={avatarMembers}
+            milestones={project.milestones ?? []}
+            totalTasks={meta?.total}
+          />
+
+          {/* Table */}
+          <TaskListTable
+            tasks={tasks}
+            taskStatuses={taskStatuses}
+            project={project}
+            isLoading={isLoading || statusesLoading}
+            onOpenTask={handleOpenTask}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={clearFilters}
+          />
+
+          {/* Pagination */}
+          {meta && meta.totalPages > 1 && (
+            <TablePagination
+              currentPage={page}
+              totalPages={meta.totalPages}
+              totalItems={meta.total}
+              itemLabel="tasks"
+              pageSize={TASKS_PAGE_SIZE}
+              variant="simple"
+              onPageChange={(p) => setFilter('t_page', String(p))}
+            />
+          )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {taskStatuses.map((col) => {
-            const columnTasks = grouped[col.code] ?? [];
-            return (
-              <KanbanColumn
-                key={col.code}
-                status={col.code}
-                label={col.label}
-                color={col.color}
-                tasks={columnTasks}
-                count={columnTasks.length}
-              />
-            );
-          })}
-        </div>
-      </div>
+        {/* Task Drawer */}
+        <TaskDrawer
+          taskId={openTaskId}
+          open={drawerOpen}
+          onClose={handleCloseDrawer}
+          onTaskUpdated={handleTaskUpdated}
+        />
+      </>
     );
   },
 );
+
+ProjectTasksTab.displayName = 'ProjectTasksTab';

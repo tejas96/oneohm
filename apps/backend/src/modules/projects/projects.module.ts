@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import {
   MaterialController,
   MilestoneController,
+  ProjectAnalyticsController,
   ProjectController,
   ProjectTaskController,
   ProjectTeamController,
@@ -30,6 +31,7 @@ import {
 import {
   MaterialService,
   MilestoneService,
+  ProjectAnalyticsService,
   ProjectService,
   ProjectTaskService,
   ProjectTeamService,
@@ -59,6 +61,7 @@ import { UsersModule } from '../users/users.module';
     LookupsModule,
   ],
   controllers: [
+    ProjectAnalyticsController, // registered before ProjectController — static 'analytics' segments resolve first
     ProjectController,
     MilestoneController,
     MaterialController,
@@ -83,6 +86,7 @@ import { UsersModule } from '../users/users.module';
     WorkflowEngineService,
     ProjectTaskService,
     ProjectTeamService,
+    ProjectAnalyticsService,
     // Guards
     ProjectTeamGuard,
   ],
@@ -99,6 +103,7 @@ import { UsersModule } from '../users/users.module';
     WorkflowStepService,
     ProjectTaskService,
     ProjectTeamService,
+    ProjectAnalyticsService,
     ProjectTeamGuard,
   ],
 })

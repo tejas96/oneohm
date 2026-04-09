@@ -7,7 +7,6 @@ import type {
   ProjectMetadata,
   ProjectPriority,
   ProjectStatus,
-  TaskPriority,
   TaskStatus,
   TaskStatusConfig,
 } from '@oneohm-epc/shared/types';
@@ -145,17 +144,6 @@ export interface MilestoneWithPayment extends ProjectMilestone {
   paymentStatus: 'received' | 'due' | 'pending';
 }
 
-export interface ProjectTaskItem {
-  id: string;
-  code: string;
-  name: string;
-  status: TaskStatus;
-  priority: TaskPriority;
-  assignedToUserId?: string;
-  assigneeName?: string;
-  startDate?: string;
-  endDate?: string;
-  completionPercentage: number;
-  labels?: string[];
-  blockedReason?: string;
-}
+// ProjectTaskItem is the canonical FDAL type — re-export from the resource layer
+// to avoid duplication while keeping the feature types module as the single barrel for consumers.
+export type { ProjectTaskItem } from '@/lib/hooks/resources';
