@@ -8,10 +8,7 @@ import {
 import { ChevronDown, ChevronRight, Minus } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
-import {
-  TASK_PRIORITY_DOT_COLOR,
-  TASK_PRIORITY_HEX_COLOR,
-} from '../../../../constants';
+import { TASK_PRIORITY_DOT_COLOR, TASK_PRIORITY_HEX_COLOR } from '../../../../constants';
 import type { ProjectDetail, ProjectMilestone, ProjectTaskItem } from '../../../../hooks/types';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -265,10 +262,7 @@ function TaskRow({
       )}
 
       {/* Priority — select when handler provided, static badge otherwise */}
-      <div
-        className="flex items-center shrink-0"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="flex items-center shrink-0" onClick={(e) => e.stopPropagation()}>
         {onPriorityChange ? (
           <QuickSelect
             value={task.priority}
@@ -345,10 +339,7 @@ function TaskRow({
       </div>
 
       {/* Status — select when handler provided, static badge otherwise */}
-      <div
-        className="shrink-0 hidden md:flex items-center"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="shrink-0 hidden md:flex items-center" onClick={(e) => e.stopPropagation()}>
         {onStatusChange ? (
           <QuickSelect
             value={task.status}
