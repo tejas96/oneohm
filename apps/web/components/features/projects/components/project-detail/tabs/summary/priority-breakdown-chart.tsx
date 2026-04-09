@@ -43,7 +43,9 @@ interface CustomTooltipProps {
 
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
-  const { name, count, color } = payload[0].payload;
+  const entry = payload[0];
+  if (!entry) return null;
+  const { name, count, color } = entry.payload;
   return (
     <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-md">
       <div className="flex items-center gap-2">
@@ -80,13 +82,13 @@ export function PriorityBreakdownChart({
 
     return keys.map((key, idx) => {
       const lookup = priorityLookupMap[key];
-      const fallbackColor = CHART_PALETTE[idx % CHART_PALETTE.length];
+      const fallbackColor = CHART_PALETTE[idx % CHART_PALETTE.length] ?? '#94a3b8';
       return {
         key,
         name: lookup?.label ?? key,
         count: tasksByPriority[key] ?? 0,
         color: lookup?.color ?? fallbackColor,
-      };
+      } satisfies PriorityRow;
     });
   }, [tasksByPriority, priorityLookupMap]);
 
