@@ -1,13 +1,21 @@
 'use client';
 
-import type { TaskStatusConfig } from '@oneohm-epc/shared/types';
+import {
+  type TaskPriority,
+  type TaskStatusConfig,
+  TASK_PRIORITY_LABELS,
+} from '@oneohm-epc/shared/types';
 import { ChevronDown, ChevronRight, Minus } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
-import { TASK_PRIORITY_DOT_COLOR } from '../../../../constants';
+import {
+  TASK_PRIORITY_DOT_COLOR,
+  TASK_PRIORITY_HEX_COLOR,
+} from '../../../../constants';
 import type { ProjectDetail, ProjectMilestone, ProjectTaskItem } from '../../../../hooks/types';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { MUISelect, type MUISelectOption } from '@/components/ui/mui-select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn, formatDate, getDueDateColor, getInitials } from '@/lib/utils';
@@ -20,6 +28,8 @@ interface TaskListTableProps {
   project: ProjectDetail;
   isLoading: boolean;
   onOpenTask: (taskId: string) => void;
+  onStatusChange?: (taskId: string, status: string) => void;
+  onPriorityChange?: (taskId: string, priority: string) => void;
   hasActiveFilters?: boolean;
   onClearFilters?: () => void;
 }
@@ -41,20 +51,104 @@ function getMilestoneName(
   return milestones.find((m) => m.id === milestoneId)?.name ?? null;
 }
 
+// ── Shared primitives ────────────────────────────────────────────────────────
+
+/** Dot + label used in both select trigger (renderValue) and menu items (options). */
+function ColorDotLabel({ color, label }: { color: string; label: string }): React.JSX.Element {
+  return (
+    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <span
+        style={{
+          display: 'inline-block',
+          width: '6px',
+          height: '6px',
+          borderRadius: '50%',
+          flexShrink: 0,
+          backgroundColor: color,
+        }}
+      />
+      <span style={{ fontSize: '11px', fontWeight: 500 }}>{label}</span>
+    </span>
+  );
+}
+
+/**
+ * Compact inline select for quick field updates directly from the task row.
+ * Uses ColorDotLabel for both the trigger and each menu item.
+ */
+function QuickSelect({
+  value,
+  color,
+  label,
+  options,
+  onChange,
+}: {
+  value: string;
+  color: string;
+  label: string;
+  options: MUISelectOption[];
+  onChange: (value: string) => void;
+}): React.JSX.Element {
+  return (
+    <MUISelect
+      value={value}
+      onChange={(e) => onChange(e.target.value as string)}
+      size="small"
+      variant="outlined"
+      formControlProps={{
+        size: 'small',
+        sx: {
+          minWidth: '110px',
+          '& .MuiOutlinedInput-root': {
+            fontSize: '11px',
+            height: '24px',
+            '& .MuiOutlinedInput-notchedOutline': { borderColor: `${color}30` },
+            '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: `${color}60` },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: color },
+          },
+          '& .MuiSelect-select': {
+            padding: '2px 8px',
+            color,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+          },
+        },
+      }}
+      renderValue={() => <ColorDotLabel color={color} label={label} />}
+      options={options}
+    />
+  );
+}
+
+// ── Module-level constants ────────────────────────────────────────────────────
+
+// Built once at module load. Object.keys keeps insertion order for string keys
+// (guaranteed in V8 and consistent across all modern JS engines).
+const PRIORITY_OPTIONS: MUISelectOption[] = (
+  Object.keys(TASK_PRIORITY_LABELS) as TaskPriority[]
+).map((code) => ({
+  value: code,
+  label: (
+    <ColorDotLabel
+      color={TASK_PRIORITY_HEX_COLOR[code] ?? '#94a3b8'}
+      label={TASK_PRIORITY_LABELS[code]}
+    />
+  ),
+}));
+
 // ── Skeleton ────────────────────────────────────────────────────────────────
 
-function TableSkeleton() {
+function TableSkeleton(): React.JSX.Element {
   return (
     <div className="border border-border rounded-lg overflow-hidden">
       {Array.from({ length: 3 }).map((_, groupIdx) => (
         <div key={groupIdx}>
-          {/* Group header */}
           <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 border-b border-border">
             <Skeleton className="h-3 w-3 rounded" />
             <Skeleton className="h-3 w-20" />
             <Skeleton className="h-4 w-6 rounded-full" />
           </div>
-          {/* Rows */}
           {Array.from({ length: 3 }).map((_, rowIdx) => (
             <div
               key={rowIdx}
@@ -78,7 +172,7 @@ function TableSkeleton() {
 
 // ── Column Header ────────────────────────────────────────────────────────────
 
-function TableHeader({ hasMilestones }: { hasMilestones: boolean }) {
+function TableHeader({ hasMilestones }: { hasMilestones: boolean }): React.JSX.Element {
   return (
     <div
       className={cn(
@@ -109,6 +203,9 @@ function TaskRow({
   statusLabel,
   hasMilestones,
   onOpenTask,
+  onStatusChange,
+  onPriorityChange,
+  statusOptions,
 }: {
   task: ProjectTaskItem;
   milestones: ProjectMilestone[];
@@ -116,9 +213,14 @@ function TaskRow({
   statusLabel: string;
   hasMilestones: boolean;
   onOpenTask: (id: string) => void;
-}) {
+  onStatusChange?: (taskId: string, status: string) => void;
+  onPriorityChange?: (taskId: string, priority: string) => void;
+  statusOptions: MUISelectOption[];
+}): React.JSX.Element {
   const milestoneName = getMilestoneName(task.milestoneId, milestones);
-  const priorityDot = TASK_PRIORITY_DOT_COLOR?.[task.priority] ?? 'bg-foreground-tertiary';
+  const priorityDot = TASK_PRIORITY_DOT_COLOR[task.priority] ?? 'bg-foreground-tertiary';
+  const priorityColor = TASK_PRIORITY_HEX_COLOR[task.priority] ?? '#94a3b8';
+  const priorityLabel = TASK_PRIORITY_LABELS[task.priority];
   const initials = task.assigneeName ? getInitials(task.assigneeName) : null;
   const dueDateColor = task.endDate ? getDueDateColor(task.endDate) : '';
   const isOverdue = dueDateColor.includes('error');
@@ -162,12 +264,27 @@ function TaskRow({
         </span>
       )}
 
-      {/* Priority */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        <span className={cn('size-2 rounded-full shrink-0', priorityDot)} />
-        <span className="text-2xs text-foreground-secondary capitalize hidden md:inline">
-          {task.priority}
-        </span>
+      {/* Priority — select when handler provided, static badge otherwise */}
+      <div
+        className="flex items-center shrink-0"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {onPriorityChange ? (
+          <QuickSelect
+            value={task.priority}
+            color={priorityColor}
+            label={priorityLabel}
+            options={PRIORITY_OPTIONS}
+            onChange={(v) => onPriorityChange(task.id, v)}
+          />
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <span className={cn('size-2 rounded-full shrink-0', priorityDot)} />
+            <span className="text-2xs text-foreground-secondary capitalize hidden md:inline">
+              {task.priority}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Assignee */}
@@ -227,22 +344,35 @@ function TaskRow({
         </span>
       </div>
 
-      {/* Status badge */}
-      <div className="shrink-0 hidden md:flex items-center">
-        <span
-          className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-2xs font-medium"
-          style={{
-            backgroundColor: `${statusColor}15`,
-            borderColor: `${statusColor}30`,
-            color: statusColor,
-          }}
-        >
-          <span
-            className="inline-block size-1.5 rounded-full shrink-0"
-            style={{ backgroundColor: statusColor }}
+      {/* Status — select when handler provided, static badge otherwise */}
+      <div
+        className="shrink-0 hidden md:flex items-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {onStatusChange ? (
+          <QuickSelect
+            value={task.status}
+            color={statusColor}
+            label={statusLabel}
+            options={statusOptions}
+            onChange={(v) => onStatusChange(task.id, v)}
           />
-          {statusLabel}
-        </span>
+        ) : (
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-2xs font-medium"
+            style={{
+              backgroundColor: `${statusColor}15`,
+              borderColor: `${statusColor}30`,
+              color: statusColor,
+            }}
+          >
+            <span
+              className="inline-block size-1.5 rounded-full shrink-0"
+              style={{ backgroundColor: statusColor }}
+            />
+            {statusLabel}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -255,12 +385,18 @@ function TaskGroupSection({
   milestones,
   hasMilestones,
   onOpenTask,
+  onStatusChange,
+  onPriorityChange,
+  statusOptions,
 }: {
   group: TaskGroup;
   milestones: ProjectMilestone[];
   hasMilestones: boolean;
   onOpenTask: (id: string) => void;
-}) {
+  onStatusChange?: (taskId: string, status: string) => void;
+  onPriorityChange?: (taskId: string, priority: string) => void;
+  statusOptions: MUISelectOption[];
+}): React.JSX.Element {
   const [expanded, setExpanded] = useState(true);
   const toggle = useCallback(() => setExpanded((p) => !p), []);
 
@@ -304,6 +440,9 @@ function TaskGroupSection({
               statusLabel={group.label}
               hasMilestones={hasMilestones}
               onOpenTask={onOpenTask}
+              onStatusChange={onStatusChange}
+              onPriorityChange={onPriorityChange}
+              statusOptions={statusOptions}
             />
           ))}
         </TooltipProvider>
@@ -320,11 +459,22 @@ export function TaskListTable({
   project,
   isLoading,
   onOpenTask,
+  onStatusChange,
+  onPriorityChange,
   hasActiveFilters = false,
   onClearFilters,
-}: TaskListTableProps) {
-  const milestones = project.milestones ?? [];
+}: TaskListTableProps): React.JSX.Element {
+  const milestones = project.milestones;
   const hasMilestones = milestones.length > 0;
+
+  const statusOptions = useMemo<MUISelectOption[]>(
+    () =>
+      taskStatuses.map((s) => ({
+        value: s.code,
+        label: <ColorDotLabel color={s.color} label={s.label} />,
+      })),
+    [taskStatuses],
+  );
 
   const groups = useMemo<TaskGroup[]>(() => {
     if (taskStatuses.length === 0) {
@@ -391,6 +541,9 @@ export function TaskListTable({
           milestones={milestones}
           hasMilestones={hasMilestones}
           onOpenTask={onOpenTask}
+          onStatusChange={onStatusChange}
+          onPriorityChange={onPriorityChange}
+          statusOptions={statusOptions}
         />
       ))}
     </div>
