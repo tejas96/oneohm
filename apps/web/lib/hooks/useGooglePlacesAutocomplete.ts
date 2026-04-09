@@ -11,6 +11,7 @@ import {
   extractAddressComponentsFromPlace,
   isPlaceInIndia,
   sanitizeAddressInput,
+  generateMissingFieldsMessage,
   type AddressComponents,
 } from '../utils/google-maps-geocoding';
 
@@ -24,6 +25,7 @@ export interface AutocompleteOption {
 interface UseGooglePlacesAutocompleteOptions {
   apiKey?: string;
   onPlaceSelected?: (components: AddressComponents) => void;
+  onMissingFieldsFound?: (missingFields: (keyof AddressComponents)[]) => void;
   onError?: (error: Error) => void;
 }
 
@@ -34,20 +36,24 @@ interface UseGooglePlacesAutocompleteOptions {
 export function useGooglePlacesAutocomplete({
   apiKey,
   onPlaceSelected,
+  onMissingFieldsFound,
   onError,
 }: UseGooglePlacesAutocompleteOptions): {
   predictions: AutocompleteOption[];
   isLoading: boolean;
   isInitialized: boolean;
   error: string | null;
+  missingFields: (keyof AddressComponents)[];
   getPredictions: (input: string) => Promise<void>;
   selectPlace: (placeId: string) => Promise<void>;
   clearPredictions: () => void;
+  clearError: () => void;
 } {
   const [predictions, setPredictions] = useState<AutocompleteOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [missingFields, setMissingFields] = useState<(keyof AddressComponents)[]>([]);
 
   const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null);
   const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
@@ -325,18 +331,37 @@ export function useGooglePlacesAutocomplete({
           return;
         }
 
-        // Extract address components
-        const components = extractAddressComponentsFromPlace(place);
+        // Extract address components (now handles partial data)
+        const extractionResult = extractAddressComponentsFromPlace(place);
+        const { components, missingFields: missingFieldsFromResult, hasPartialData } = extractionResult;
 
-        if (!components) {
-          const err = new Error('Could not extract address components. Please try another location.');
+        // Check if we have any usable data
+        if (!hasPartialData) {
+          const err = new Error('Could not extract address components from this location. Please try another address.');
           setError(err.message);
           onError?.(err);
           return;
         }
 
-        setPredictions([]); // Clear predictions
-        onPlaceSelected?.(components);
+        // Auto-fill with whatever we have
+        setPredictions([]);
+
+        if (missingFieldsFromResult.length > 0) {
+          // Store missing fields in state for component access
+          setMissingFields(missingFieldsFromResult);
+          // Notify parent about missing fields
+          onMissingFieldsFound?.(missingFieldsFromResult);
+          // Show informational message about missing fields to user
+          const message = generateMissingFieldsMessage(missingFieldsFromResult);
+          setError(message); // Display message to user (will be shown in blue by component)
+        } else {
+          // Clear error state only if all fields are present
+          setError(null);
+          setMissingFields([]);
+        }
+
+        // Call callback with partial components - form will auto-fill what we have
+        onPlaceSelected?.(components as AddressComponents);
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err));
         setError(error.message);
@@ -356,13 +381,22 @@ export function useGooglePlacesAutocomplete({
     setError(null);
   }, []);
 
+  /**
+   * Clear error message (called when user starts typing)
+   */
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
   return {
     predictions,
     isLoading,
     isInitialized,
     error,
+    missingFields,
     getPredictions,
     selectPlace,
     clearPredictions,
+    clearError,
   };
 }

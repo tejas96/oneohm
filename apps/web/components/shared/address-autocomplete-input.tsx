@@ -29,8 +29,10 @@ interface AddressAutocompleteInputProps<
     pincode: string;
     country: string;
   }) => void;
+  onMissingFieldsDetected?: (missingFields: (keyof AddressComponents)[]) => void;
   disabled?: boolean;
   apiKey?: string;
+  shouldClearMessage?: boolean;
 }
 
 export function AddressAutocompleteInput<
@@ -41,8 +43,10 @@ export function AddressAutocompleteInput<
   name,
   placeholder = 'Enter address and select from suggestions',
   onAddressSelected,
+  onMissingFieldsDetected,
   disabled = false,
   apiKey,
+  shouldClearMessage = false,
 }: AddressAutocompleteInputProps<TFieldValues, TName>): React.ReactElement {
   const { field, fieldState } = useController({
     control,
@@ -63,6 +67,7 @@ export function AddressAutocompleteInput<
     getPredictions,
     selectPlace,
     clearPredictions,
+    clearError,
   } = useGooglePlacesAutocomplete({
     apiKey,
     onPlaceSelected: ((components) => {
@@ -74,6 +79,10 @@ export function AddressAutocompleteInput<
       // Call parent callback for other field updates
       onAddressSelected?.(components);
     }) as ((components: AddressComponents) => void),
+    onMissingFieldsFound: (fields) => {
+      // Notify parent about missing fields so it can track when they're being filled
+      onMissingFieldsDetected?.(fields);
+    },
     onError: ((err: Error) => {
       console.error('Google Places Error:', err);
     }) as ((error: Error) => void),
@@ -83,6 +92,13 @@ export function AddressAutocompleteInput<
   useEffect(() => {
     setInputValue(field.value || '');
   }, [field.value]);
+
+  // Clear message when parent indicates missing field is being filled
+  useEffect(() => {
+    if (shouldClearMessage) {
+      clearError();
+    }
+  }, [shouldClearMessage, clearError]);
 
   // Handle prediction selection (declared first, used by other handlers)
   const handleSelectPrediction = useCallback(
@@ -128,6 +144,16 @@ export function AddressAutocompleteInput<
   // Handle keyboard navigation
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+      // Handle ESC and Enter even when there are no predictions
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowDropdown(false);
+        clearPredictions(); // Clear "No results found" message
+        setSelectedIndex(-1);
+        return;
+      }
+
+      // For other keys, require predictions to be available
       if (!showDropdown || predictions.length === 0) return;
 
       switch (e.key) {
@@ -147,12 +173,11 @@ export function AddressAutocompleteInput<
           e.preventDefault();
           if (selectedIndex >= 0 && predictions[selectedIndex]) {
             void handleSelectPrediction(predictions[selectedIndex]);
+          } else {
+            // Close dropdown if Enter pressed but nothing selected
+            setShowDropdown(false);
+            clearPredictions();
           }
-          break;
-        }
-        case 'Escape': {
-          e.preventDefault();
-          setShowDropdown(false);
           break;
         }
         default: {
@@ -161,7 +186,7 @@ export function AddressAutocompleteInput<
         }
       }
     },
-    [showDropdown, predictions, selectedIndex, handleSelectPrediction],
+    [showDropdown, predictions, selectedIndex, handleSelectPrediction, clearPredictions],
   );
 
   // Close dropdown on outside click
@@ -216,9 +241,13 @@ export function AddressAutocompleteInput<
         )}
       </div>
 
-      {/* Error message */}
+      {/* Error/Info message */}
       {error && (
-        <div className="mt-2 flex items-start gap-2 rounded-md bg-red-50 p-2 text-sm text-red-700">
+        <div className={`mt-2 flex items-start gap-2 rounded-md p-2 text-sm ${
+          (error.toLowerCase().includes('fill') || error.toLowerCase().includes('was') || error.toLowerCase().includes('were'))
+            ? 'bg-blue-50 text-blue-700'
+            : 'bg-red-50 text-red-700'
+        }`}>
           <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>

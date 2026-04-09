@@ -46,10 +46,10 @@ import {
 import {
   CONNECTION_TYPE_OPTIONS,
   DISCOM_OPTIONS,
-  INDIAN_STATES,
   PROPERTY_TYPE_OPTIONS,
 } from '@/lib/config/constants';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { useIndianStates } from '@/lib/hooks';
 import { getErrorMessage } from '@/lib/utils';
 
 // ============================================================================
@@ -104,11 +104,21 @@ export function PropertyForm({
     : customers.find((c) => c.id === selectedCustomerId);
 
   const resolvedCustomer = selectedCustomer ?? customer;
+
+  // Fetch states from API (with fallback to hardcoded if API fails)
+  const { states: indianStates } = useIndianStates();
+
   const customerStateMatch = resolvedCustomer?.state
-    ? INDIAN_STATES.find((s) => s.toLowerCase() === resolvedCustomer.state?.toLowerCase())
+    ? indianStates.find((s) => s.toLowerCase() === resolvedCustomer.state?.toLowerCase())
     : undefined;
 
   const [draftDocuments, setDraftDocuments] = useState<DraftDocument[]>([]);
+
+  // State to track missing fields from address autocomplete
+  const [missingFieldsFromAddress, setMissingFieldsFromAddress] = useState<
+    (keyof (typeof form.getValues))[]
+  >([]);
+  const [shouldClearAddressMessage, setShouldClearAddressMessage] = useState(false);
   const uploadDocsBulk = useUploadDocumentsBulk();
 
   const handleDraftDocsChange = useCallback((docs: DraftDocument[]) => {
@@ -235,6 +245,35 @@ export function PropertyForm({
     : isContextAware
       ? `Add a new property for ${customer ? `${customer.firstName} ${customer.lastName ?? ''}`.trim() : 'this customer'}`
       : 'Add a new property to your database';
+
+  // Watch for changes in city, state, and pincode fields  
+  const cityValue = form.watch('city');
+  const stateValue = form.watch('state');
+  const pincodeValue = form.watch('pincode');
+
+  // Check if user is filling any of the missing fields
+  const checkIfFillingMissingFields = useCallback((): void => {
+    if (missingFieldsFromAddress.length === 0) return;
+
+    // Check if any of the missing fields have been modified
+    const missingFieldNames = missingFieldsFromAddress.filter(
+      (f) => f !== 'lat' && f !== 'lng' && f !== 'country',
+    );
+
+    const hasUserFilledAnyMissingField = missingFieldNames.some((fieldName) => {
+      const value = form.getValues(fieldName as any);
+      return value && typeof value === 'string' && value.trim().length > 0;
+    });
+
+    if (hasUserFilledAnyMissingField) {
+      setShouldClearAddressMessage(true);
+    }
+  }, [missingFieldsFromAddress, form]);
+
+  // Check if missing fields are being filled whenever relevant fields change
+  useEffect(() => {
+    checkIfFillingMissingFields();
+  }, [cityValue, stateValue, pincodeValue, checkIfFillingMissingFields]);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-24">
@@ -462,11 +501,13 @@ export function PropertyForm({
                   name="address"
                   placeholder="Search address or enter street address, area, landmark"
                   onAddressSelected={handleAddressSelected}
+                  onMissingFieldsDetected={handleMissingFieldsDetected}
+                  shouldClearMessage={shouldClearAddressMessage}
                   apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="city" className="text-sm" required>
                     City
@@ -490,7 +531,7 @@ export function PropertyForm({
                       <SelectValue placeholder="Select state" />
                     </SelectTrigger>
                     <SelectContent>
-                      {INDIAN_STATES.map((state) => (
+                      {indianStates.map((state) => (
                         <SelectItem key={state} value={state}>
                           {state}
                         </SelectItem>
@@ -498,6 +539,9 @@ export function PropertyForm({
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="pincode" className="text-sm" required>
                     Pincode
@@ -508,6 +552,16 @@ export function PropertyForm({
                     maxLength={6}
                     {...form.register('pincode')}
                     error={form.formState.errors.pincode?.message}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="country" className="text-sm">
+                    Country
+                  </Label>
+                  <Input
+                    id="country"
+                    value="India"
+                    disabled
                   />
                 </div>
               </div>
@@ -816,6 +870,16 @@ export function PropertyForm({
     form.setValue('city', addressComponents.city, { shouldDirty: true });
     form.setValue('state', addressComponents.state, { shouldDirty: true });
     form.setValue('pincode', addressComponents.pincode, { shouldDirty: true });
+  }
+
+  /**
+   * Handle when missing fields are detected from address
+   */
+  function handleMissingFieldsDetected(
+    missingFields: string[],
+  ): void {
+    setMissingFieldsFromAddress(missingFields as any);
+    setShouldClearAddressMessage(false); // Reset clear flag when new missing fields detected
   }
 
   async function onSubmit(data: CreatePropertyFormData | EditPropertyFormData): Promise<void> {

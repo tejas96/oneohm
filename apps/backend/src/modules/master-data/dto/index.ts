@@ -4,3 +4,4 @@ export * from './subsidy-configuration';
 export * from './quote-configuration';
 export * from './products';
 export * from './brands';
+export * from './states.dto';

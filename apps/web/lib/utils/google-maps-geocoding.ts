@@ -1,6 +1,7 @@
 /**
  * Google Maps Geocoding Utilities
  * Handles address parsing, geocoding, and reverse geocoding for India-only locations
+ * Supports partial address component extraction
  */
 
 export interface AddressComponents {
@@ -13,30 +14,56 @@ export interface AddressComponents {
   lng?: number;
 }
 
+export interface PartialAddressComponents extends Partial<AddressComponents> {
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
+  lat?: number;
+  lng?: number;
+}
+
+export interface ExtractionResult {
+  components: PartialAddressComponents;
+  missingFields: (keyof AddressComponents)[];
+  hasPartialData: boolean;
+}
+
 export interface PlaceDetails {
   placeId: string;
   fullAddress: string;
-  components: AddressComponents;
+  components: PartialAddressComponents;
 }
 
 /**
  * Extract address components from Google Places API result
- * Filters and structures the data specific to Indian addresses
+ * Returns both extracted data and missing fields
+ * Handles partial data gracefully (doesn't fail if some components missing)
+ *
+ * @param place Google Places API PlaceResult
+ * @returns ExtractionResult with components, missing fields, and partial data flag
  */
 export function extractAddressComponentsFromPlace(
   place: google.maps.places.PlaceResult,
-): AddressComponents | null {
-  if (!place.address_components) return null;
+): ExtractionResult {
+  if (!place.address_components) {
+    return {
+      components: {},
+      missingFields: ['address', 'city', 'state', 'pincode', 'country'],
+      hasPartialData: false,
+    };
+  }
 
   const components = place.address_components;
-  const addressObj: Partial<AddressComponents> = {
+  const addressObj: PartialAddressComponents = {
     address: place.formatted_address || '',
     country: 'India',
     lat: place.geometry?.location?.lat(),
     lng: place.geometry?.location?.lng(),
   };
 
-  // Extract components by type
+  // Extract components by type (fill what's available)
   components.forEach((component) => {
     const types = component.types;
     const longName = component.long_name;
@@ -65,12 +92,29 @@ export function extractAddressComponentsFromPlace(
     }
   });
 
-  // Verify we have required fields
-  if (!addressObj.city || !addressObj.state || !addressObj.pincode) {
-    return null;
-  }
+  // Determine which required fields are missing
+  const requiredFields: (keyof AddressComponents)[] = [
+    'address',
+    'city',
+    'state',
+    'pincode',
+    'country',
+  ];
+  const missingFields = requiredFields.filter((field) => !addressObj[field]);
 
-  return addressObj as AddressComponents;
+  // Check if we have any extractable data (at least one optional field exists)
+  const hasPartialData = !!(
+    addressObj.address ||
+    addressObj.city ||
+    addressObj.state ||
+    addressObj.pincode
+  );
+
+  return {
+    components: addressObj,
+    missingFields,
+    hasPartialData,
+  };
 }
 
 /**
@@ -112,4 +156,36 @@ export function sanitizeAddressInput(input: string): string {
  */
 export function hasAllAddressComponents(components: Partial<AddressComponents>): boolean {
   return !!(components.address && components.city && components.state && components.pincode);
+}
+
+/**
+ * Generate user-friendly message for missing components
+ * @param missingFields Array of missing field names
+ * @returns Formatted message string
+ */
+export function generateMissingFieldsMessage(
+  missingFields: (keyof AddressComponents)[],
+): string {
+  if (missingFields.length === 0) return '';
+
+  const fieldLabels: Record<keyof AddressComponents, string> = {
+    address: 'Address',
+    city: 'City',
+    state: 'State',
+    pincode: 'Postal Code',
+    country: 'Country',
+    lat: 'Latitude',
+    lng: 'Longitude',
+  };
+
+  // Filter out lat/lng from labels (these are auto-filled and not user-visible)
+  const userVisibleMissing = missingFields.filter((f) => f !== 'lat' && f !== 'lng');
+  
+  if (userVisibleMissing.length === 0) return '';
+
+  const labels = userVisibleMissing.map((field) => fieldLabels[field]);
+  const fieldList = labels.join(', ');
+  const isPlural = userVisibleMissing.length > 1;
+
+  return `${fieldList} ${isPlural ? 'were' : 'was'} not found in this address. Please fill ${isPlural ? 'them' : 'it'} manually.`;
 }
