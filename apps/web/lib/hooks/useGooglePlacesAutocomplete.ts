@@ -75,9 +75,8 @@ export function useGooglePlacesAutocomplete({
         // Check if Google Maps is already loaded
         if (window.google?.maps?.places?.AutocompleteService) {
           if (isMounted) {
-            autocompleteServiceRef.current =
-              new window.google.maps.places.AutocompleteService();
-            
+            autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
+
             // Create a properly positioned dummy map for PlacesService
             const dummyDiv = document.createElement('div');
             dummyDiv.style.position = 'fixed';
@@ -91,11 +90,9 @@ export function useGooglePlacesAutocomplete({
               center: { lat: 20.5937, lng: 78.9629 }, // Center of India
               zoom: 4,
             });
-            
-            placesServiceRef.current = new window.google.maps.places.PlacesService(
-              mapRef.current,
-            );
-            
+
+            placesServiceRef.current = new window.google.maps.places.PlacesService(mapRef.current);
+
             setIsInitialized(true);
           }
           return;
@@ -110,9 +107,7 @@ export function useGooglePlacesAutocomplete({
             }
 
             // Prevent duplicate scripts
-            const existingScript = document.querySelector(
-              'script[src*="maps.googleapis.com"]'
-            );
+            const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
             if (existingScript) {
               // Wait a bit for the existing script to load
               const checkInterval = setInterval(() => {
@@ -152,9 +147,8 @@ export function useGooglePlacesAutocomplete({
         await loadGoogleMaps();
 
         if (isMounted && window.google?.maps?.places?.AutocompleteService) {
-          autocompleteServiceRef.current =
-            new window.google.maps.places.AutocompleteService();
-          
+          autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
+
           // Create properly positioned dummy map
           const dummyDiv = document.createElement('div');
           dummyDiv.style.position = 'fixed';
@@ -168,11 +162,9 @@ export function useGooglePlacesAutocomplete({
             center: { lat: 20.5937, lng: 78.9629 }, // Center of India
             zoom: 4,
           });
-          
-          placesServiceRef.current = new window.google.maps.places.PlacesService(
-            mapRef.current,
-          );
-          
+
+          placesServiceRef.current = new window.google.maps.places.PlacesService(mapRef.current);
+
           setIsInitialized(true);
         }
       } catch (err) {
@@ -221,16 +213,15 @@ export function useGooglePlacesAutocomplete({
       try {
         const sanitizedInput = sanitizeAddressInput(input);
 
-        const response =
-          await autocompleteServiceRef.current.getPlacePredictions({
-            input: sanitizedInput,
-            componentRestrictions: { country: 'in' }, // Restrict to India
-            types: ['geocode','establishment'], // Broader types for better results
-          });
+        const response = await autocompleteServiceRef.current.getPlacePredictions({
+          input: sanitizedInput,
+          componentRestrictions: { country: 'in' }, // Restrict to India
+          types: ['geocode', 'establishment'], // Broader types for better results
+        });
 
         if (response?.predictions && Array.isArray(response.predictions)) {
           const options: AutocompleteOption[] = response.predictions.map(
-            (prediction) => ({
+            (prediction: google.maps.places.AutocompletePrediction) => ({
               placeId: prediction.place_id,
               description: prediction.description,
               mainText: prediction.structured_formatting?.main_text,
@@ -260,7 +251,9 @@ export function useGooglePlacesAutocomplete({
   const selectPlace = useCallback(
     async (placeId: string) => {
       if (!placesServiceRef.current || !mapRef.current) {
-        const err = new Error('Places Service not initialized. Please wait a moment and try again.');
+        const err = new Error(
+          'Places Service not initialized. Please wait a moment and try again.',
+        );
         setError(err.message);
         onError?.(err);
         return;
@@ -280,18 +273,13 @@ export function useGooglePlacesAutocomplete({
               placesServiceRef.current.getDetails(
                 {
                   placeId,
-                  fields: [
-                    'formatted_address',
-                    'address_components',
-                    'geometry',
-                    'name',
-                  ],
+                  fields: ['formatted_address', 'address_components', 'geometry', 'name'],
                 },
-                (place: google.maps.places.PlaceResult | null, status: google.maps.places.PlacesServiceStatus) => {
-                  if (
-                    status === google.maps.places.PlacesServiceStatus.OK &&
-                    place
-                  ) {
+                (
+                  place: google.maps.places.PlaceResult | null,
+                  status: google.maps.places.PlacesServiceStatus,
+                ) => {
+                  if (status === google.maps.places.PlacesServiceStatus.OK && place) {
                     resolve(place);
                   } else {
                     // Handle status codes
@@ -333,11 +321,17 @@ export function useGooglePlacesAutocomplete({
 
         // Extract address components (now handles partial data)
         const extractionResult = extractAddressComponentsFromPlace(place);
-        const { components, missingFields: missingFieldsFromResult, hasPartialData } = extractionResult;
+        const {
+          components,
+          missingFields: missingFieldsFromResult,
+          hasPartialData,
+        } = extractionResult;
 
         // Check if we have any usable data
         if (!hasPartialData) {
-          const err = new Error('Could not extract address components from this location. Please try another address.');
+          const err = new Error(
+            'Could not extract address components from this location. Please try another address.',
+          );
           setError(err.message);
           onError?.(err);
           return;

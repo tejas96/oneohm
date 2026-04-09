@@ -24,7 +24,13 @@ import {
 } from '../schemas/property.schema';
 
 import { useUploadDocumentsBulk } from '@/components/features/documents/hooks';
-import { Alert, AddressAutocompleteInput, LeadTemperatureSelector, RadioCard, RadioCardGroup } from '@/components/shared';
+import {
+  Alert,
+  AddressAutocompleteInput,
+  LeadTemperatureSelector,
+  RadioCard,
+  RadioCardGroup,
+} from '@/components/shared';
 import { DocumentManager, type DraftDocument } from '@/components/shared/document-manager';
 import {
   Badge,
@@ -116,7 +122,7 @@ export function PropertyForm({
 
   // State to track missing fields from address autocomplete
   const [missingFieldsFromAddress, setMissingFieldsFromAddress] = useState<
-    (keyof (typeof form.getValues))[]
+    (keyof typeof form.getValues)[]
   >([]);
   const [shouldClearAddressMessage, setShouldClearAddressMessage] = useState(false);
   const uploadDocsBulk = useUploadDocumentsBulk();
@@ -246,7 +252,7 @@ export function PropertyForm({
       ? `Add a new property for ${customer ? `${customer.firstName} ${customer.lastName ?? ''}`.trim() : 'this customer'}`
       : 'Add a new property to your database';
 
-  // Watch for changes in city, state, and pincode fields  
+  // Watch for changes in city, state, and pincode fields
   const cityValue = form.watch('city');
   const stateValue = form.watch('state');
   const pincodeValue = form.watch('pincode');
@@ -558,11 +564,7 @@ export function PropertyForm({
                   <Label htmlFor="country" className="text-sm">
                     Country
                   </Label>
-                  <Input
-                    id="country"
-                    value="India"
-                    disabled
-                  />
+                  <Input id="country" value="India" disabled />
                 </div>
               </div>
             </div>
@@ -875,9 +877,7 @@ export function PropertyForm({
   /**
    * Handle when missing fields are detected from address
    */
-  function handleMissingFieldsDetected(
-    missingFields: string[],
-  ): void {
+  function handleMissingFieldsDetected(missingFields: string[]): void {
     setMissingFieldsFromAddress(missingFields as any);
     setShouldClearAddressMessage(false); // Reset clear flag when new missing fields detected
   }

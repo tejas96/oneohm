@@ -122,7 +122,7 @@ export async function seedMasterData(dataSource: DataSource): Promise<void> {
   await queryRunner.startTransaction();
 
   try {
-       // =====================================================
+    // =====================================================
     // FIND OR USE CONFIGURED ORGANIZATION
     // =====================================================
     const orgResult = await queryRunner.query(

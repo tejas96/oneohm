@@ -1,6 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    /* TypeScript 6.0+ deprecation warnings */
+    "ignoreDeprecations": "6.0",
+
     /* Next.js-specific overrides */
     "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
@@ -10,6 +13,10 @@
     "allowJs": true,
     "noEmit": true,
     "incremental": true,
+
+    /* Type declaration paths */
+    "typeRoots": ["./node_modules/@types", "../../node_modules/@types"],
+    "types": ["node", "google.maps"],
 
     /* Base URL - critical for path resolution */
     "baseUrl": ".",

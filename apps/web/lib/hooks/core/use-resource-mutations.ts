@@ -268,7 +268,7 @@ export function useResourceMutations<T extends { id: string }>(
       if (!actionConfig) {
         throw new Error(`Unknown action "${actionName}" for resource "${cfg.resource}"`);
       }
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- axios response.data typed as error in strict mode
+
       return apiClient
         .request<T>({
           method: actionConfig.method,

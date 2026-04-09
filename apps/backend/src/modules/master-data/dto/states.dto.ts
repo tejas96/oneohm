@@ -17,13 +17,7 @@ export class GetStatesResponseDto {
   @ApiProperty({
     description: 'Array of Indian states',
     type: [String],
-    example: [
-      'Andhra Pradesh',
-      'Arunachal Pradesh',
-      'Assam',
-      'Bihar',
-      '... 24 more states',
-    ],
+    example: ['Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', '... 24 more states'],
   })
   data: string[];
 

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return -- permission selection from API */
 'use client';
 
 import { Search, X } from 'lucide-react';

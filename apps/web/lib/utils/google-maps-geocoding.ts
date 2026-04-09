@@ -128,15 +128,15 @@ export function isPlaceInIndia(place: google.maps.places.PlaceResult): boolean {
     component.types.includes('country'),
   );
 
-  return (
-    countryComponent?.short_name === 'IN' || countryComponent?.long_name === 'India'
-  );
+  return countryComponent?.short_name === 'IN' || countryComponent?.long_name === 'India';
 }
 
 /**
  * Format a place prediction into a readable address string
  */
-export function formatPlacePrediction(prediction: google.maps.places.AutocompletePrediction): string {
+export function formatPlacePrediction(
+  prediction: google.maps.places.AutocompletePrediction,
+): string {
   return prediction.description;
 }
 
@@ -145,10 +145,7 @@ export function formatPlacePrediction(prediction: google.maps.places.Autocomplet
  * Remove special characters that might cause issues
  */
 export function sanitizeAddressInput(input: string): string {
-  return input
-    .trim()
-    .replace(/[<>]/g, '')
-    .slice(0, 150); // Limit length
+  return input.trim().replace(/[<>]/g, '').slice(0, 150); // Limit length
 }
 
 /**
@@ -163,9 +160,7 @@ export function hasAllAddressComponents(components: Partial<AddressComponents>):
  * @param missingFields Array of missing field names
  * @returns Formatted message string
  */
-export function generateMissingFieldsMessage(
-  missingFields: (keyof AddressComponents)[],
-): string {
+export function generateMissingFieldsMessage(missingFields: (keyof AddressComponents)[]): string {
   if (missingFields.length === 0) return '';
 
   const fieldLabels: Record<keyof AddressComponents, string> = {
@@ -180,7 +175,7 @@ export function generateMissingFieldsMessage(
 
   // Filter out lat/lng from labels (these are auto-filled and not user-visible)
   const userVisibleMissing = missingFields.filter((f) => f !== 'lat' && f !== 'lng');
-  
+
   if (userVisibleMissing.length === 0) return '';
 
   const labels = userVisibleMissing.map((field) => fieldLabels[field]);

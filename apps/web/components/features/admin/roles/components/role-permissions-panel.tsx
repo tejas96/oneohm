@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return -- role permissions from API */
 'use client';
 
 import { AlertCircle, Loader2 } from 'lucide-react';

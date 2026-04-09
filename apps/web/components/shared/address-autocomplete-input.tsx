@@ -11,7 +11,10 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useController, type Control, type FieldPath, type FieldValues } from 'react-hook-form';
 
 import { Textarea } from '@/components/ui';
-import { useGooglePlacesAutocomplete, type AutocompleteOption } from '@/lib/hooks/useGooglePlacesAutocomplete';
+import {
+  useGooglePlacesAutocomplete,
+  type AutocompleteOption,
+} from '@/lib/hooks/useGooglePlacesAutocomplete';
 import { type AddressComponents } from '@/lib/utils/google-maps-geocoding';
 
 interface AddressAutocompleteInputProps<
@@ -70,7 +73,7 @@ export function AddressAutocompleteInput<
     clearError,
   } = useGooglePlacesAutocomplete({
     apiKey,
-    onPlaceSelected: ((components) => {
+    onPlaceSelected: ((components): void => {
       // Update form fields
       field.onChange(components.address);
       setInputValue(components.address);
@@ -78,14 +81,14 @@ export function AddressAutocompleteInput<
 
       // Call parent callback for other field updates
       onAddressSelected?.(components);
-    }) as ((components: AddressComponents) => void),
-    onMissingFieldsFound: (fields) => {
+    }) as (components: AddressComponents) => void,
+    onMissingFieldsFound: (fields): void => {
       // Notify parent about missing fields so it can track when they're being filled
       onMissingFieldsDetected?.(fields);
     },
-    onError: ((err: Error) => {
+    onError: ((err: Error): void => {
       console.error('Google Places Error:', err);
-    }) as ((error: Error) => void),
+    }) as (error: Error) => void,
   });
 
   // Sync local state with field value on mount
@@ -159,9 +162,7 @@ export function AddressAutocompleteInput<
       switch (e.key) {
         case 'ArrowDown': {
           e.preventDefault();
-          setSelectedIndex((prev) =>
-            prev < predictions.length - 1 ? prev + 1 : prev,
-          );
+          setSelectedIndex((prev) => (prev < predictions.length - 1 ? prev + 1 : prev));
           break;
         }
         case 'ArrowUp': {
@@ -207,7 +208,7 @@ export function AddressAutocompleteInput<
         document.removeEventListener('mousedown', handleClickOutside);
       };
     }
-    
+
     return undefined;
   }, [showDropdown]);
 
@@ -231,9 +232,9 @@ export function AddressAutocompleteInput<
           onFocus={() => inputValue.length > 2 && predictions.length > 0 && setShowDropdown(true)}
           placeholder={placeholder}
           disabled={disabled}
-          className={`${fieldState.error ? 'border-red-500' : ''} min-h-[80px]`}
+          className={`${fieldState.error ? 'border-red-500' : ''} min-h-20`}
         />
-        
+
         {isLoading && (
           <div className="absolute right-3 top-3 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -243,12 +244,16 @@ export function AddressAutocompleteInput<
 
       {/* Error/Info message */}
       {error && (
-        <div className={`mt-2 flex items-start gap-2 rounded-md p-2 text-sm ${
-          (error.toLowerCase().includes('fill') || error.toLowerCase().includes('was') || error.toLowerCase().includes('were'))
-            ? 'bg-blue-50 text-blue-700'
-            : 'bg-red-50 text-red-700'
-        }`}>
-          <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+        <div
+          className={`mt-2 flex items-start gap-2 rounded-md p-2 text-sm ${
+            error.toLowerCase().includes('fill') ||
+            error.toLowerCase().includes('was') ||
+            error.toLowerCase().includes('were')
+              ? 'bg-blue-50 text-blue-700'
+              : 'bg-red-50 text-red-700'
+          }`}
+        >
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
           <span>{error}</span>
         </div>
       )}
@@ -271,9 +276,7 @@ export function AddressAutocompleteInput<
             >
               <div className="font-medium">{option.mainText}</div>
               {option.secondaryText && (
-                <div className="text-xs text-muted-foreground">
-                  {option.secondaryText}
-                </div>
+                <div className="text-xs text-muted-foreground">{option.secondaryText}</div>
               )}
             </button>
           ))}

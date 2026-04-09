@@ -17,7 +17,6 @@ import {
   type Customer,
   type CustomerGroup,
 } from '../hooks/use-customers';
-import { useIndianStates } from '@/lib/hooks';
 import {
   createCustomerProfileSchema,
   type CreateCustomerProfileFormData,
@@ -26,6 +25,7 @@ import {
 import { EmptyState, AddressAutocompleteInput } from '@/components/shared';
 import { Button, Card, CardContent, MUIInput, MUISelect, showToast } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
+import { useIndianStates } from '@/lib/hooks';
 import { getErrorMessage } from '@/lib/utils';
 
 // ============================================================================
@@ -152,7 +152,7 @@ function CustomerFormContent({
 
   // State to track missing fields from address autocomplete
   const [missingFieldsFromAddress, setMissingFieldsFromAddress] = useState<
-    (keyof (typeof form.getValues))[]
+    (keyof typeof form.getValues)[]
   >([]);
   const [shouldClearAddressMessage, setShouldClearAddressMessage] = useState(false);
 
@@ -251,9 +251,7 @@ function CustomerFormContent({
   };
 
   // Handle when missing fields are detected from address
-  const handleMissingFieldsDetected = (
-    missingFields: string[],
-  ): void => {
+  const handleMissingFieldsDetected = (missingFields: string[]): void => {
     setMissingFieldsFromAddress(missingFields as any);
     setShouldClearAddressMessage(false); // Reset clear flag when new missing fields detected
   };
@@ -612,7 +610,7 @@ function CustomerFormContent({
                               groupCode: '',
                             });
                           }
-                          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
                           return matches as typeof opts;
                         }}
                         onInputChange={(text) => {

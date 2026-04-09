@@ -1,8 +1,8 @@
 import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
-import { StatesService } from '../services/states.service';
 import { GetStatesResponseDto } from '../dto/states.dto';
+import { StatesService } from '../services/states.service';
 
 /**
  * States Controller

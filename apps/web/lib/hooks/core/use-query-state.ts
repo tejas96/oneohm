@@ -108,7 +108,7 @@ export function useQueryState<F extends BaseFilters>(
       pageSize: urlLimit ? Number(urlLimit) : undefined,
       search: urlSearch ?? '',
       sortBy: urlSortBy ?? options?.defaultSort?.field,
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- searchParams.get() returns null for missing params
+
       sortOrder: (urlSortOrder as 'ASC' | 'DESC') || options?.defaultSort?.order || 'DESC',
       filters: initialFilters as Partial<F>,
     };

@@ -9,7 +9,12 @@ interface UseStatesOptions {
  * Caches data in component state to avoid refetches
  * Falls back to hardcoded states if API fails
  */
-export function useIndianStates(options: UseStatesOptions = {}) {
+export function useIndianStates(options: UseStatesOptions = {}): {
+  states: string[];
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+} {
   const { enabled = true } = options;
 
   const [states, setStates] = useState<string[]>([]);
@@ -87,7 +92,7 @@ export function useIndianStates(options: UseStatesOptions = {}) {
 
   // Fetch states on mount
   useEffect(() => {
-    fetchStates();
+    void fetchStates();
   }, [fetchStates]);
 
   return {

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return -- permission list from API */
 'use client';
 
 import { ColumnDef } from '@tanstack/react-table';
@@ -43,7 +42,6 @@ export function AdminPermissionsListPage(): JSX.Element {
     refetch,
   } = usePermissions();
 
-  // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents -- AdminPermission from permissions module
   const [selectedPermission, setSelectedPermission] = useState<AdminPermission | null>(null);
 
   const handleClearAll = useCallback(() => {
