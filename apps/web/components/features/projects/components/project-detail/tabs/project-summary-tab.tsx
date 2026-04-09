@@ -11,6 +11,7 @@ import { SummaryMetricsCards } from './summary/summary-metrics-cards';
 import { TeamWorkloadPanel } from './summary/team-workload-panel';
 import type { ProjectDetail } from '../../../hooks/types';
 
+import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useProjectSummary, useLookupsByTypeCode, useLookupOptions } from '@/lib/hooks/resources';
 
 interface ProjectSummaryTabProps {
@@ -40,6 +41,9 @@ export function ProjectSummaryTab({ project, projectId, isActive }: ProjectSumma
     [priorityLookupQuery.items],
   );
 
+  // Resolved project path used for deep-links into the Tasks tab
+  const projectPath = buildRoute(ROUTES.PROJECTS.DETAIL, { id: projectId });
+
   // Show skeletons on first fetch; keep data visible on background refetches
   const isLoading = summaryLoading && !summary;
 
@@ -54,7 +58,11 @@ export function ProjectSummaryTab({ project, projectId, isActive }: ProjectSumma
   return (
     <div className="space-y-4">
       {/* Row 1: Metric cards — full width */}
-      <SummaryMetricsCards metrics={summary?.metrics} isLoading={isLoading} />
+      <SummaryMetricsCards
+        metrics={summary?.metrics}
+        isLoading={isLoading}
+        projectPath={projectPath}
+      />
 
       {/* Row 2: Status donut + Priority bars — 2 equal columns */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -63,11 +71,13 @@ export function ProjectSummaryTab({ project, projectId, isActive }: ProjectSumma
           taskStatuses={project.taskStatuses}
           statusLookupMap={statusLookupMap}
           isLoading={isLoading}
+          projectPath={projectPath}
         />
         <PriorityBreakdownChart
           tasksByPriority={summary?.tasksByPriority}
           priorityLookupMap={priorityLookupMap}
           isLoading={isLoading}
+          projectPath={projectPath}
         />
       </div>
 
@@ -76,6 +86,7 @@ export function ProjectSummaryTab({ project, projectId, isActive }: ProjectSumma
         teamWorkload={summary?.teamWorkload}
         taskStatuses={project.taskStatuses}
         isLoading={isLoading}
+        projectPath={projectPath}
       />
 
       {/* Row 4: Recent activity + Milestone progress — 2 columns; milestone hidden if empty */}

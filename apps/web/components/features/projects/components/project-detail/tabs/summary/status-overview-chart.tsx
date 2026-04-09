@@ -1,11 +1,14 @@
 'use client';
 
 import type { TaskStatus, TaskStatusConfig } from '@oneohm-epc/shared/types';
-import React, { useMemo } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import React, { useCallback, useMemo } from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import type { LookupByTypeCode } from '@/lib/hooks/resources';
+import { buildTasksTabUrl } from '@/lib/utils';
 
 const FALLBACK_COLOR = '#94a3b8';
 
@@ -14,6 +17,7 @@ interface StatusOverviewChartProps {
   taskStatuses: TaskStatusConfig[] | null | undefined;
   statusLookupMap: Record<string, LookupByTypeCode>;
   isLoading: boolean;
+  projectPath: string;
 }
 
 interface TooltipPayload {
@@ -45,7 +49,10 @@ export function StatusOverviewChart({
   taskStatuses,
   statusLookupMap,
   isLoading,
+  projectPath,
 }: StatusOverviewChartProps) {
+  const router = useRouter();
+
   const chartData = useMemo(() => {
     if (!tasksByStatus) return [];
     return Object.entries(tasksByStatus)
@@ -59,6 +66,16 @@ export function StatusOverviewChart({
   }, [tasksByStatus, taskStatuses, statusLookupMap]);
 
   const total = useMemo(() => chartData.reduce((sum, d) => sum + d.value, 0), [chartData]);
+
+  const handleSliceClick = useCallback(
+    (data: unknown) => {
+      const entry = data as { code: string };
+      if (entry?.code) {
+        router.push(buildTasksTabUrl(projectPath, { status: entry.code }));
+      }
+    },
+    [router, projectPath],
+  );
 
   if (isLoading) {
     return (
@@ -96,7 +113,7 @@ export function StatusOverviewChart({
       <p className="text-sm font-semibold text-foreground mb-4">Status Overview</p>
 
       <div className="flex items-center gap-4">
-        {/* Donut chart */}
+        {/* Donut chart — slices are clickable */}
         <div className="relative shrink-0" style={{ width: 160, height: 160 }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -109,42 +126,55 @@ export function StatusOverviewChart({
                 paddingAngle={2}
                 dataKey="value"
                 strokeWidth={0}
+                onClick={handleSliceClick}
               >
                 {chartData.map((entry) => (
                   <Cell
                     key={entry.code}
                     fill={entry.color}
                     style={{ cursor: 'pointer', outline: 'none' }}
+                    className="hover:opacity-80 transition-opacity"
                   />
                 ))}
               </Pie>
               <Tooltip content={<CustomTooltip />} />
             </PieChart>
           </ResponsiveContainer>
-          {/* Center label — absolutely positioned over the SVG */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          {/* Center label — total tasks, clicking navigates to all tasks */}
+          <Link
+            href={buildTasksTabUrl(projectPath)}
+            className="absolute inset-0 flex flex-col items-center justify-center rounded-full hover:bg-black/5 transition-colors"
+            title="View all tasks"
+          >
             <span className="text-2xl font-bold text-foreground leading-none">{total}</span>
             <span className="text-[11px] text-foreground-secondary mt-0.5">tasks</span>
-          </div>
+          </Link>
         </div>
 
-        {/* Legend — vertical, scrollable if long */}
-        <ul className="flex-1 space-y-2 overflow-y-auto max-h-[160px]">
+        {/* Legend — each row is a link filtered by status */}
+        <ul className="flex-1 space-y-1.5 overflow-y-auto max-h-[160px]">
           {chartData.map((entry) => {
             const pct = total > 0 ? Math.round((entry.value / total) * 100) : 0;
             return (
-              <li key={entry.code} className="flex items-center gap-2 min-w-0">
-                <span
-                  className="size-2.5 rounded-full shrink-0"
-                  style={{ backgroundColor: entry.color }}
-                />
-                <span className="text-xs text-foreground truncate flex-1">{entry.name}</span>
-                <span className="text-xs font-semibold text-foreground shrink-0">
-                  {entry.value}
-                </span>
-                <span className="text-[11px] text-foreground-tertiary shrink-0 w-8 text-right">
-                  {pct}%
-                </span>
+              <li key={entry.code}>
+                <Link
+                  href={buildTasksTabUrl(projectPath, { status: entry.code })}
+                  className="flex items-center gap-2 min-w-0 rounded-md px-1.5 py-1 hover:bg-muted transition-colors group"
+                >
+                  <span
+                    className="size-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: entry.color }}
+                  />
+                  <span className="text-xs text-foreground truncate flex-1 group-hover:text-primary transition-colors">
+                    {entry.name}
+                  </span>
+                  <span className="text-xs font-semibold text-foreground shrink-0">
+                    {entry.value}
+                  </span>
+                  <span className="text-[11px] text-foreground-tertiary shrink-0 w-8 text-right">
+                    {pct}%
+                  </span>
+                </Link>
               </li>
             );
           })}

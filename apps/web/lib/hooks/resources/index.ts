@@ -159,10 +159,13 @@ export {
 // Projects (FDAL entry point)
 export {
   useProjectSummary,
+  useProjectTaskList,
   type ProjectSummary,
   type ProjectSummaryMetrics,
   type ActivityFeedItem,
   type TeamWorkloadEntry,
   type MilestoneProgressEntry,
   type UpcomingDeadline,
+  type ProjectTaskItem,
+  type ProjectTaskListParams,
 } from './projects';

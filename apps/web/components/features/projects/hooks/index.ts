@@ -38,6 +38,13 @@ export {
   useProjectTasks,
 } from './use-project-detail';
 
+// FDAL resource hooks — re-exported for feature consumers
+export {
+  useProjectTaskList,
+  type ProjectTaskItem,
+  type ProjectTaskListParams,
+} from '@/lib/hooks/resources';
+
 export {
   paymentKeys,
   useProjectPayments,
@@ -60,7 +67,6 @@ export type {
   ProjectMaterial,
   ProjectMilestone,
   ProjectPayment,
-  ProjectTaskItem,
   ProjectTeamMember,
   TaskStatsSummary,
 } from './types';

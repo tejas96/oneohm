@@ -133,7 +133,11 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
         </TabsContent>
 
         <TabsContent value="tasks">
-          <ProjectTasksTab projectId={projectId} isActive={activeTab === 'tasks'} />
+          <ProjectTasksTab
+            projectId={projectId}
+            project={project}
+            isActive={activeTab === 'tasks'}
+          />
         </TabsContent>
 
         <TabsContent value="documents">

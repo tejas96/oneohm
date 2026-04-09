@@ -1,12 +1,13 @@
 'use client';
 
 import type { TaskStatusConfig } from '@oneohm-epc/shared/types';
+import Link from 'next/link';
 import React, { useMemo } from 'react';
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { TeamWorkloadEntry } from '@/lib/hooks/resources';
-import { getInitials } from '@/lib/utils/format';
+import { buildTasksTabUrl, getInitials } from '@/lib/utils';
 
 const FALLBACK_BAR_COLOR = '#94a3b8';
 
@@ -51,12 +52,14 @@ interface TeamWorkloadPanelProps {
   teamWorkload: TeamWorkloadEntry[] | undefined;
   taskStatuses: TaskStatusConfig[] | null | undefined;
   isLoading: boolean;
+  projectPath: string;
 }
 
 export function TeamWorkloadPanel({
   teamWorkload,
   taskStatuses,
   isLoading,
+  projectPath,
 }: TeamWorkloadPanelProps) {
   const maxTasks = useMemo(
     () => Math.max(...(teamWorkload?.map((m) => m.totalTasks) ?? [1]), 1),
@@ -121,43 +124,54 @@ export function TeamWorkloadPanel({
           No tasks assigned yet
         </div>
       ) : (
-        <ul className="space-y-4">
+        <ul className="space-y-3">
           {teamWorkload.map((member) => {
             const relativeWidth =
               maxTasks > 0 ? Math.round((member.totalTasks / maxTasks) * 100) : 0;
+            // Unassigned entries (userId === '') have no assignee filter
+            const href = buildTasksTabUrl(
+              projectPath,
+              member.userId ? { assignee: member.userId } : undefined,
+            );
+
             return (
-              <li key={member.userId || 'unassigned'} className="flex items-center gap-3">
-                <Avatar className="size-8 shrink-0">
-                  <AvatarFallback className="text-[11px] font-semibold">
-                    {member.userId === '' ? '?' : getInitials(member.userName)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0 space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-medium text-foreground truncate">
-                      {member.userName}
-                    </span>
-                    <span className="text-[11px] text-foreground-secondary shrink-0">
-                      {member.totalTasks} task{member.totalTasks !== 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  {/* Outer track scoped to this member's relative share */}
-                  <div className="relative h-3 w-full rounded-full bg-border-light/60 overflow-hidden">
-                    <div
-                      className="absolute inset-y-0 left-0 rounded-full overflow-hidden"
-                      style={{ width: `${relativeWidth}%` }}
-                    >
-                      <WorkloadBar
-                        tasksByStatus={member.tasksByStatus}
-                        totalTasks={member.totalTasks}
-                        taskStatuses={taskStatuses}
-                      />
+              <li key={member.userId || 'unassigned'}>
+                <Link
+                  href={href}
+                  className="flex items-center gap-3 rounded-lg px-2 py-1.5 -mx-2 hover:bg-muted transition-colors group"
+                >
+                  <Avatar className="size-8 shrink-0">
+                    <AvatarFallback className="text-[11px] font-semibold">
+                      {member.userId === '' ? '?' : getInitials(member.userName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                        {member.userName}
+                      </span>
+                      <span className="text-[11px] text-foreground-secondary shrink-0">
+                        {member.totalTasks} task{member.totalTasks !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    {/* Outer track scoped to this member's relative share */}
+                    <div className="relative h-3 w-full rounded-full bg-border-light/60 overflow-hidden">
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-full overflow-hidden"
+                        style={{ width: `${relativeWidth}%` }}
+                      >
+                        <WorkloadBar
+                          tasksByStatus={member.tasksByStatus}
+                          totalTasks={member.totalTasks}
+                          taskStatuses={taskStatuses}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-                <span className="text-[11px] font-semibold text-foreground-secondary shrink-0 w-9 text-right">
-                  {member.workloadPercent}%
-                </span>
+                  <span className="text-[11px] font-semibold text-foreground-secondary shrink-0 w-9 text-right">
+                    {member.workloadPercent}%
+                  </span>
+                </Link>
               </li>
             );
           })}

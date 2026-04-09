@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import React, { useCallback, useMemo } from 'react';
 import {
   Bar,
   BarChart,
@@ -14,6 +16,7 @@ import {
 
 import { Skeleton } from '@/components/ui/skeleton';
 import type { LookupOption } from '@/lib/hooks/resources';
+import { buildTasksTabUrl } from '@/lib/utils';
 
 /**
  * Chart color palette derived from the app's tailwind chart tokens.
@@ -63,13 +66,17 @@ interface PriorityBreakdownChartProps {
   tasksByPriority: Record<string, number> | undefined;
   priorityLookupMap: Record<string, LookupOption>;
   isLoading: boolean;
+  projectPath: string;
 }
 
 export function PriorityBreakdownChart({
   tasksByPriority,
   priorityLookupMap,
   isLoading,
+  projectPath,
 }: PriorityBreakdownChartProps) {
+  const router = useRouter();
+
   const chartData = useMemo<PriorityRow[]>(() => {
     if (!tasksByPriority) return [];
 
@@ -91,6 +98,16 @@ export function PriorityBreakdownChart({
       } satisfies PriorityRow;
     });
   }, [tasksByPriority, priorityLookupMap]);
+
+  const handleBarClick = useCallback(
+    (data: unknown) => {
+      const entry = data as PriorityRow;
+      if (entry?.key) {
+        router.push(buildTasksTabUrl(projectPath, { priority: entry.key }));
+      }
+    },
+    [router, projectPath],
+  );
 
   if (isLoading) {
     return (
@@ -130,10 +147,15 @@ export function PriorityBreakdownChart({
     <div className="bg-surface border border-border-light rounded-xl p-5">
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm font-semibold text-foreground">Priority Breakdown</p>
-        <span className="text-xs text-foreground-tertiary">{total} total</span>
+        <Link
+          href={buildTasksTabUrl(projectPath)}
+          className="text-xs text-foreground-tertiary hover:text-primary transition-colors"
+        >
+          {total} total
+        </Link>
       </div>
 
-      {/* Vertical bar chart — no layout="vertical" means bars grow upward */}
+      {/* Vertical bar chart — bars are clickable */}
       <ResponsiveContainer width="100%" height={180}>
         <BarChart
           data={chartData}
@@ -154,7 +176,14 @@ export function PriorityBreakdownChart({
             allowDecimals={false}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
-          <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={48} isAnimationActive>
+          <Bar
+            dataKey="count"
+            radius={[4, 4, 0, 0]}
+            maxBarSize={48}
+            isAnimationActive
+            onClick={handleBarClick}
+            style={{ cursor: 'pointer' }}
+          >
             {chartData.map((entry, index) => (
               <Cell key={index} fill={entry.color} fillOpacity={0.9} />
             ))}
@@ -167,19 +196,25 @@ export function PriorityBreakdownChart({
         </BarChart>
       </ResponsiveContainer>
 
-      {/* Dot legend with percentages */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 pt-3 border-t border-border-light">
+      {/* Dot legend with percentages — each item is a link */}
+      <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 pt-3 border-t border-border-light">
         {chartData.map((row) => {
           const pct = total > 0 ? Math.round((row.count / total) * 100) : 0;
           return (
-            <div key={row.key} className="flex items-center gap-1.5">
+            <Link
+              key={row.key}
+              href={buildTasksTabUrl(projectPath, { priority: row.key })}
+              className="flex items-center gap-1.5 rounded-md px-1.5 py-0.5 hover:bg-muted transition-colors group"
+            >
               <span
                 className="size-2 rounded-full shrink-0"
                 style={{ backgroundColor: row.color }}
               />
-              <span className="text-xs text-foreground-secondary">{row.name}</span>
+              <span className="text-xs text-foreground-secondary group-hover:text-primary transition-colors">
+                {row.name}
+              </span>
               <span className="text-xs text-foreground-tertiary">({pct}%)</span>
-            </div>
+            </Link>
           );
         })}
       </div>

@@ -1,10 +1,13 @@
 'use client';
 
+import { TaskStatus } from '@oneohm-epc/shared/types';
 import { AlertTriangle, CheckCircle2, Clock, ListTodo, UserX, Zap } from 'lucide-react';
+import Link from 'next/link';
 import React from 'react';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ProjectSummaryMetrics } from '@/lib/hooks/resources';
+import { buildTasksTabUrl } from '@/lib/utils';
 
 interface MetricCardProps {
   icon: React.ElementType;
@@ -12,7 +15,8 @@ interface MetricCardProps {
   value: number;
   chipBg: string;
   chipIcon: string;
-  valueColor?: string; // only applied when value > 0
+  valueColor?: string;
+  href: string;
   isLoading?: boolean;
 }
 
@@ -23,14 +27,20 @@ function MetricCard({
   chipBg,
   chipIcon,
   valueColor,
+  href,
   isLoading,
 }: MetricCardProps) {
   const activeValueColor = valueColor && value > 0 ? valueColor : 'text-foreground';
 
   return (
-    <div className="bg-surface border border-border rounded-xl p-4 flex items-center gap-3 hover:shadow-sm transition-shadow">
+    <Link
+      href={href}
+      className="bg-surface border border-border rounded-xl p-4 flex items-center gap-3 hover:shadow-md hover:border-primary/30 hover:-translate-y-px transition-all duration-150 group"
+    >
       {/* Icon chip */}
-      <div className={`shrink-0 rounded-lg p-2 ${chipBg}`}>
+      <div
+        className={`shrink-0 rounded-lg p-2 ${chipBg} group-hover:scale-105 transition-transform`}
+      >
         <Icon className={`size-4 ${chipIcon}`} />
       </div>
 
@@ -43,19 +53,22 @@ function MetricCard({
       ) : (
         <div className="flex flex-col gap-0.5 min-w-0">
           <span className={`text-xl font-bold leading-none ${activeValueColor}`}>{value}</span>
-          <span className="text-xs text-foreground-secondary truncate">{label}</span>
+          <span className="text-xs text-foreground-secondary truncate group-hover:text-primary/70 transition-colors">
+            {label}
+          </span>
         </div>
       )}
-    </div>
+    </Link>
   );
 }
 
 interface SummaryMetricsCardsProps {
   metrics: ProjectSummaryMetrics | undefined;
   isLoading: boolean;
+  projectPath: string;
 }
 
-export function SummaryMetricsCards({ metrics, isLoading }: SummaryMetricsCardsProps) {
+export function SummaryMetricsCards({ metrics, isLoading, projectPath }: SummaryMetricsCardsProps) {
   const cards: Omit<MetricCardProps, 'isLoading'>[] = [
     {
       icon: ListTodo,
@@ -63,6 +76,7 @@ export function SummaryMetricsCards({ metrics, isLoading }: SummaryMetricsCardsP
       value: metrics?.totalTasks ?? 0,
       chipBg: 'bg-primary/10',
       chipIcon: 'text-primary',
+      href: buildTasksTabUrl(projectPath),
     },
     {
       icon: CheckCircle2,
@@ -71,6 +85,7 @@ export function SummaryMetricsCards({ metrics, isLoading }: SummaryMetricsCardsP
       chipBg: 'bg-success/10',
       chipIcon: 'text-success',
       valueColor: 'text-success',
+      href: buildTasksTabUrl(projectPath, { status: TaskStatus.DONE }),
     },
     {
       icon: Clock,
@@ -79,6 +94,7 @@ export function SummaryMetricsCards({ metrics, isLoading }: SummaryMetricsCardsP
       chipBg: 'bg-info/10',
       chipIcon: 'text-info',
       valueColor: 'text-info',
+      href: buildTasksTabUrl(projectPath, { status: TaskStatus.IN_PROGRESS }),
     },
     {
       icon: AlertTriangle,
@@ -87,6 +103,8 @@ export function SummaryMetricsCards({ metrics, isLoading }: SummaryMetricsCardsP
       chipBg: 'bg-warning/10',
       chipIcon: 'text-warning',
       valueColor: 'text-warning',
+      // Overdue is a derived state (past endDate) — no dedicated URL filter; navigate to all tasks
+      href: buildTasksTabUrl(projectPath),
     },
     {
       icon: Zap,
@@ -95,6 +113,7 @@ export function SummaryMetricsCards({ metrics, isLoading }: SummaryMetricsCardsP
       chipBg: 'bg-error/10',
       chipIcon: 'text-error',
       valueColor: 'text-error',
+      href: buildTasksTabUrl(projectPath, { status: TaskStatus.BLOCKED }),
     },
     {
       icon: UserX,
@@ -102,6 +121,8 @@ export function SummaryMetricsCards({ metrics, isLoading }: SummaryMetricsCardsP
       value: metrics?.unassignedTasks ?? 0,
       chipBg: 'bg-gray-100',
       chipIcon: 'text-foreground-secondary',
+      // Unassigned is a derived state — no dedicated URL filter; navigate to all tasks
+      href: buildTasksTabUrl(projectPath),
     },
   ];
 

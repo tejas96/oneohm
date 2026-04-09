@@ -6,7 +6,7 @@ import React from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ActivityFeedItem, LookupByTypeCode, LookupOption } from '@/lib/hooks/resources';
-import { getInitials } from '@/lib/utils/format';
+import { getInitials } from '@/lib/utils';
 
 function formatDistanceToNow(isoDate: string): string {
   const diff = Date.now() - new Date(isoDate).getTime();

@@ -360,3 +360,18 @@ export const PROJECT_DETAIL_TABS = [
 ] as const;
 
 export type ProjectDetailTab = (typeof PROJECT_DETAIL_TABS)[number]['value'];
+
+// ---------------------------------------------------------------------------
+// Task List (List View) filter defaults — used by useUrlFilters
+// ---------------------------------------------------------------------------
+
+export const TASK_LIST_FILTER_DEFAULTS = {
+  t_search: '',
+  t_status: '',
+  t_priority: '',
+  t_assignee: '',
+  t_milestone: '',
+  t_page: '1',
+} as const;
+
+export type TaskListFilters = typeof TASK_LIST_FILTER_DEFAULTS;
