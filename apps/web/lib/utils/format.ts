@@ -19,6 +19,18 @@ export function formatLabel(key: string): string {
 }
 
 /**
+ * Convert enum-like or snake_case values to user-friendly title labels.
+ * Example: "SITE_VISIT_DONE" -> "Site Visit Done"
+ */
+export function toTitleLabel(raw: string): string {
+  return raw
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+}
+
+/**
  * Return a Tailwind text-color class based on whether a due date is overdue,
  * due today, or in the future.
  */

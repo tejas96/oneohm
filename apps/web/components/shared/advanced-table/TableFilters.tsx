@@ -21,7 +21,7 @@ import {
 } from '@mui/material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { type JSX, memo, useCallback, useRef } from 'react';
+import { type JSX, memo, useCallback, useEffect, useRef, useState } from 'react';
 
 import type { ColumnConfig, FilterState, FilterType } from './types';
 import { toSortableString } from './utils';
@@ -47,17 +47,84 @@ interface FilterControlProps<TRow> {
   onChange: (field: string, value: unknown) => void;
 }
 
+const DATE_ONLY_REGEX = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+function parseDateLike(raw: unknown): Date | null {
+  if (typeof raw !== 'string' || !raw) return null;
+
+  const match = DATE_ONLY_REGEX.exec(raw);
+  if (match) {
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    return new Date(year, month - 1, day);
+  }
+
+  const parsed = new Date(raw);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+/**
+ * Text filter with internal debouncing.
+ * The input updates instantly (controlled local state) but `onChange` is only
+ * called after the debounce delay so server-mode tables don't get an API call
+ * on every keystroke.
+ * Per-column delay is configurable via `column.filterDebounceMs` (default 400ms).
+ */
 function TextFilterControl<TRow>({
   column,
   value,
   onChange,
 }: FilterControlProps<TRow>): JSX.Element {
+  const debounceMs = column.filterDebounceMs ?? 400;
+  const externalValue = typeof value === 'string' ? value : '';
+
+  // Local state drives the input — prevents the cursor jumping on every parent re-render
+  const [localValue, setLocalValue] = useState(externalValue);
+
+  // Sync local value when the external filter is cleared (e.g. "Reset all").
+  // Also cancels any in-flight debounce timer so a pending onChange call cannot
+  // overwrite the reset with stale data (rapid type → reset-all race condition).
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setLocalValue(externalValue);
+  }, [externalValue]);
+
+  // Stable ref so the timer callback always calls the latest onChange
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleChange = useCallback(
+    (raw: string): void => {
+      setLocalValue(raw);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (debounceMs === 0) {
+        onChangeRef.current(column.field, raw);
+      } else {
+        timerRef.current = setTimeout(() => {
+          onChangeRef.current(column.field, raw);
+        }, debounceMs);
+      }
+    },
+    [column.field, debounceMs],
+  );
+
+  // Clear the timer on unmount to avoid calling onChange on a dead component
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    [],
+  );
+
   return (
     <TextField
       size="small"
       label={column.headerName}
-      value={typeof value === 'string' ? value : ''}
-      onChange={(e) => onChange(column.field, e.target.value)}
+      value={localValue}
+      onChange={(e) => handleChange(e.target.value)}
       placeholder={`Filter ${column.headerName}...`}
       sx={{ minWidth: 160 }}
     />
@@ -97,12 +164,19 @@ function DateFilterControl<TRow>({
   value,
   onChange,
 }: FilterControlProps<TRow>): JSX.Element {
+  const toLocalDate = (d: Date): string =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <DatePicker
         label={column.headerName}
-        value={value ? new Date(value as string) : null}
-        onChange={(date) => onChange(column.field, date ? date.toISOString() : null)}
+        value={parseDateLike(value)}
+        onChange={(date) => {
+          // Keep date-only local value (YYYY-MM-DD) to avoid timezone day shifts.
+          const emittedValue = date ? toLocalDate(date) : null;
+          onChange(column.field, emittedValue);
+        }}
         slotProps={{ textField: { size: 'small', sx: { minWidth: 160 } } }}
       />
     </LocalizationProvider>
@@ -198,11 +272,8 @@ function ActiveFilterChips<TRow>({
       return `${col.headerName}: ${parts.join(' ')}`;
     }
     if (col.filterType === 'date') {
-      try {
-        return `${col.headerName}: ${new Date(value as string).toLocaleDateString()}`;
-      } catch {
-        return `${col.headerName}: ${toSortableString(value)}`;
-      }
+      const parsedDate = parseDateLike(value);
+      return `${col.headerName}: ${parsedDate ? parsedDate.toLocaleDateString() : toSortableString(value)}`;
     }
     return `${col.headerName}: ${toSortableString(value)}`;
   };
@@ -235,7 +306,7 @@ function ActiveFilterChips<TRow>({
 }
 
 // ============================================================================
-// TableFilters — toggle button + collapsible panel
+// TableFiltersToggle — the toolbar button that opens/closes the panel
 // ============================================================================
 
 interface TableFiltersToggleProps {
@@ -281,8 +352,7 @@ function TableFiltersInner<TRow>({
 }: TableFiltersProps<TRow>): JSX.Element | null {
   const filterableColumns = allColumns.filter((c) => c.filterable);
 
-  // Stable ref so individual filter controls don't re-render when onFilterChange
-  // identity changes (e.g. every parent render in non-URL-sync mode)
+  // Stable ref so callbacks don't bust memo() when onFilterChange identity changes
   const onFilterChangeRef = useRef(onFilterChange);
   onFilterChangeRef.current = onFilterChange;
 
@@ -290,7 +360,7 @@ function TableFiltersInner<TRow>({
     (field: string, value: unknown): void => {
       onFilterChangeRef.current({ ...filters, [field]: value });
     },
-    // filters needs to be a dep so we always spread the latest filter state
+    // filters dep required to always spread the latest state
     [filters],
   );
 

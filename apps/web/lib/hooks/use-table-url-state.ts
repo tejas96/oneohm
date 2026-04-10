@@ -65,18 +65,59 @@ function buildKey(prefix: string, name: string): string {
   return prefix ? `${prefix}_${name}` : name;
 }
 
+const BLOCKED_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+
+/**
+ * Remove empty/null/unsafe entries from a user-supplied filter record.
+ *
+ * Security: CodeQL "Remote property injection" fires when a tainted key from
+ * JSON.parse flows into `obj[key] = value`.  We eliminate that flow entirely
+ * by collecting entries into a `Map` first (Map.set never touches
+ * Object.prototype regardless of the key) and converting to a plain object
+ * only at the final step via Object.fromEntries — at which point the keys are
+ * no longer considered tainted because they came from a Map we control.
+ */
+function normalizeFilters(filters: TableUrlFilterRecord): TableUrlFilterRecord {
+  const entries = new Map<string, unknown>();
+
+  for (const [key, value] of Object.entries(filters)) {
+    if (BLOCKED_KEYS.has(key)) continue;
+    if (value == null || value === '') continue;
+
+    if (typeof value === 'object' && !Array.isArray(value)) {
+      const nestedEntries = new Map<string, unknown>();
+      for (const [nestedKey, nestedValue] of Object.entries(value as Record<string, unknown>)) {
+        if (BLOCKED_KEYS.has(nestedKey)) continue;
+        if (nestedValue == null || nestedValue === '') continue;
+        nestedEntries.set(nestedKey, nestedValue);
+      }
+      if (nestedEntries.size === 0) continue;
+      entries.set(key, Object.fromEntries(nestedEntries));
+      continue;
+    }
+
+    entries.set(key, value);
+  }
+
+  return Object.fromEntries(entries);
+}
+
 /** Read table state from a URLSearchParams instance */
 export function parseTableStateFromParams(
   params: URLSearchParams,
   prefix: string,
   defaultPageSize: number,
 ): TableUrlState {
+  // URL is 1-based for readability, internal state remains 0-based.
+  const urlPage = safeInt(params.get(buildKey(prefix, 'page')), 1, 1);
   return {
-    page: safeInt(params.get(buildKey(prefix, 'page')), 0),
+    page: Math.max(0, urlPage - 1),
     pageSize: safeInt(params.get(buildKey(prefix, 'pageSize')), defaultPageSize, 1),
     search: params.get(buildKey(prefix, 'search')) ?? '',
     sortModel: safeJsonParse<TableUrlSortModel | null>(params.get(buildKey(prefix, 'sort')), null),
-    filters: safeJsonParse<TableUrlFilterRecord>(params.get(buildKey(prefix, 'filters')), {}),
+    filters: normalizeFilters(
+      safeJsonParse<TableUrlFilterRecord>(params.get(buildKey(prefix, 'filters')), {}),
+    ),
   };
 }
 
@@ -88,9 +129,11 @@ export function writeTableStateToParams(
   defaultPageSize: number,
 ): void {
   const k = (name: string): string => buildKey(prefix, name);
+  const normalizedFilters = normalizeFilters(next.filters);
 
   // omit defaults to keep URLs clean
-  if (next.page > 0) params.set(k('page'), String(next.page));
+  // URL is 1-based for readability, internal state remains 0-based.
+  if (next.page > 0) params.set(k('page'), String(next.page + 1));
   else params.delete(k('page'));
 
   if (next.pageSize !== defaultPageSize) params.set(k('pageSize'), String(next.pageSize));
@@ -102,9 +145,9 @@ export function writeTableStateToParams(
   if (next.sortModel) params.set(k('sort'), JSON.stringify(next.sortModel));
   else params.delete(k('sort'));
 
-  const hasFilters = Object.values(next.filters).some((v) => v !== '' && v != null);
-  if (hasFilters) params.set(k('filters'), JSON.stringify(next.filters));
-  else params.delete(k('filters'));
+  if (Object.keys(normalizedFilters).length > 0) {
+    params.set(k('filters'), JSON.stringify(normalizedFilters));
+  } else params.delete(k('filters'));
 }
 
 // ============================================================================
@@ -190,49 +233,67 @@ export function useTableUrlState(options: UseTableUrlStateOptions = {}): UseTabl
 
   // ── Public setters (all stable — empty or minimal deps) ───────────────────
 
+  const commitState = useCallback(
+    (next: TableUrlState, push: boolean): void => {
+      // Keep ref in sync immediately so multiple setters fired in the same tick
+      // (e.g. setPageSize -> setPage(0)) never read stale state.
+      stateRef.current = next;
+      setState(next);
+      writeUrl(next, push);
+    },
+    [writeUrl],
+  );
+
   const setPage = useCallback(
     (page: number): void => {
+      if (page === stateRef.current.page) return;
       const next = { ...stateRef.current, page };
-      setState(next);
-      writeUrl(next, pushForPageChanges);
+      commitState(next, pushForPageChanges);
     },
-    [writeUrl, pushForPageChanges],
+    [commitState, pushForPageChanges],
   );
 
   const setPageSize = useCallback(
     (pageSize: number): void => {
+      if (pageSize === stateRef.current.pageSize && stateRef.current.page === 0) return;
       const next = { ...stateRef.current, pageSize, page: 0 };
-      setState(next);
-      writeUrl(next, false);
+      commitState(next, false);
     },
-    [writeUrl],
+    [commitState],
   );
 
   const setSearch = useCallback(
     (search: string): void => {
+      if (search === stateRef.current.search && stateRef.current.page === 0) return;
       const next = { ...stateRef.current, search, page: 0 };
-      setState(next);
-      writeUrl(next, false);
+      commitState(next, false);
     },
-    [writeUrl],
+    [commitState],
   );
 
   const setSortModel = useCallback(
     (sortModel: TableUrlSortModel | null): void => {
+      const prevSort = stateRef.current.sortModel;
+      const sameSort =
+        (prevSort == null && sortModel == null) ||
+        (prevSort?.field === sortModel?.field && prevSort?.direction === sortModel?.direction);
+      if (sameSort && stateRef.current.page === 0) return;
       const next = { ...stateRef.current, sortModel, page: 0 };
-      setState(next);
-      writeUrl(next, false);
+      commitState(next, false);
     },
-    [writeUrl],
+    [commitState],
   );
 
   const setFilters = useCallback(
     (filters: TableUrlFilterRecord): void => {
-      const next = { ...stateRef.current, filters, page: 0 };
-      setState(next);
-      writeUrl(next, false);
+      const normalized = normalizeFilters(filters);
+      const prevFiltersJson = JSON.stringify(normalizeFilters(stateRef.current.filters));
+      const nextFiltersJson = JSON.stringify(normalized);
+      if (prevFiltersJson === nextFiltersJson && stateRef.current.page === 0) return;
+      const next = { ...stateRef.current, filters: normalized, page: 0 };
+      commitState(next, false);
     },
-    [writeUrl],
+    [commitState],
   );
 
   const resetAll = useCallback((): void => {
@@ -243,9 +304,8 @@ export function useTableUrlState(options: UseTableUrlStateOptions = {}): UseTabl
       sortModel: null,
       filters: {},
     };
-    setState(next);
-    writeUrl(next, false);
-  }, [writeUrl]);
+    commitState(next, false);
+  }, [commitState]);
 
   return { state, setPage, setPageSize, setSearch, setSortModel, setFilters, resetAll };
 }

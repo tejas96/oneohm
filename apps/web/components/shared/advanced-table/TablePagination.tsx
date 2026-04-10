@@ -44,15 +44,17 @@ function AdvancedTablePaginationInner({
 }: AdvancedTablePaginationProps): JSX.Element {
   const totalPages = totalRowCount === 0 ? 1 : Math.ceil(totalRowCount / pageSize);
 
-  // Guard: if current page is beyond total (e.g. after filter reduces result set), clamp display
-  const displayPage = Math.min(page, totalPages - 1);
+  // Trust the controlled `page` prop directly — do NOT clamp against totalPages.
+  // Clamping caused a stale-display bug: while data is loading totalRowCount=0 → totalPages=1
+  // → displayPage=0, so clicking next always appeared to stay on page 1.
+  const displayPage = page;
 
   const start = totalRowCount === 0 ? 0 : displayPage * pageSize + 1;
   // Clamp end so last page never shows e.g. "91–100 of 95"
   const end = Math.min((displayPage + 1) * pageSize, totalRowCount);
 
   const canPrev = displayPage > 0;
-  const canNext = displayPage < totalPages - 1;
+  const canNext = totalRowCount > 0 && displayPage < totalPages - 1;
 
   const handlePrev = useCallback((): void => {
     if (canPrev) onPageChange(displayPage - 1);

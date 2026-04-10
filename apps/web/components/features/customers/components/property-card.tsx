@@ -1,15 +1,10 @@
 'use client';
 
-import {
-  LeadTemperature,
-  PropertyStatus,
-  PropertyType,
-  QuoteStatus,
-} from '@oneohm-epc/shared/types';
+import { PropertyStatus, PropertyType } from '@oneohm-epc/shared/types';
 import { CircleDollarSign, Eye, FileText, Folder, MoreVertical, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { type MouseEvent, useState } from 'react';
 
 import type { CustomerPropertyResponse } from '../hooks';
 
@@ -22,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { cn } from '@/lib/utils';
+import { cn, pickDeterministic, toTitleLabel } from '@/lib/utils';
 
 // ============================================================================
 // Types
@@ -38,23 +33,24 @@ interface PropertyCardProps {
 // Constants
 // ============================================================================
 
-const TEMP_COLORS: Record<LeadTemperature, { dot: string; text: string; label: string }> = {
-  [LeadTemperature.HOT]: {
-    dot: 'bg-destructive',
-    text: 'text-destructive',
-    label: 'Hot',
+const COLOR_TOKEN_POOL = [
+  { dot: 'bg-primary', text: 'text-primary', badgeBg: 'bg-primary/10', badgeText: 'text-primary' },
+  { dot: 'bg-success', text: 'text-success', badgeBg: 'bg-success/10', badgeText: 'text-success' },
+  { dot: 'bg-warning', text: 'text-warning', badgeBg: 'bg-warning/10', badgeText: 'text-warning' },
+  { dot: 'bg-info', text: 'text-info', badgeBg: 'bg-info/10', badgeText: 'text-info' },
+  {
+    dot: 'bg-foreground-tertiary',
+    text: 'text-foreground-secondary',
+    badgeBg: 'bg-muted',
+    badgeText: 'text-foreground-secondary',
   },
-  [LeadTemperature.WARM]: {
-    dot: 'bg-warning',
-    text: 'text-warning',
-    label: 'Warm',
-  },
-  [LeadTemperature.COLD]: {
-    dot: 'bg-info',
-    text: 'text-info',
-    label: 'Cold',
-  },
-};
+] as const;
+
+type ColorToken = (typeof COLOR_TOKEN_POOL)[number];
+
+function getStableColorToken(value: string): ColorToken {
+  return pickDeterministic(value, COLOR_TOKEN_POOL, COLOR_TOKEN_POOL[0]) as ColorToken;
+}
 
 const PROPERTY_TYPE_LABELS: Partial<Record<PropertyType, string>> = {
   [PropertyType.RESIDENTIAL]: 'Residential',
@@ -63,15 +59,6 @@ const PROPERTY_TYPE_LABELS: Partial<Record<PropertyType, string>> = {
   [PropertyType.INDUSTRIAL]: 'Industrial',
   [PropertyType.AGRICULTURAL]: 'Agricultural',
   [PropertyType.INSTITUTIONAL]: 'Institutional',
-};
-
-const QUOTE_STATUS_STYLES: Record<QuoteStatus, { bg: string; text: string; label: string }> = {
-  [QuoteStatus.DRAFT]: { bg: 'bg-muted', text: 'text-foreground-secondary', label: 'Draft' },
-  [QuoteStatus.SENT]: { bg: 'bg-warning/10', text: 'text-warning', label: 'Quote Sent' },
-  [QuoteStatus.VIEWED]: { bg: 'bg-primary/10', text: 'text-primary', label: 'Viewed' },
-  [QuoteStatus.ACCEPTED]: { bg: 'bg-success/10', text: 'text-success', label: 'Accepted' },
-  [QuoteStatus.REJECTED]: { bg: 'bg-destructive/10', text: 'text-destructive', label: 'Rejected' },
-  [QuoteStatus.EXPIRED]: { bg: 'bg-muted', text: 'text-foreground-tertiary', label: 'Expired' },
 };
 
 // ============================================================================
@@ -98,10 +85,14 @@ export function PropertyCard({
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const tempConfig = TEMP_COLORS[property.leadTemperature] || TEMP_COLORS[LeadTemperature.COLD];
+  const tempToken = getStableColorToken(property.leadTemperature);
+  const tempLabel = toTitleLabel(property.leadTemperature);
   const propertyTypeLabel = PROPERTY_TYPE_LABELS[property.propertyType] || 'Property';
   const quoteStatusConfig = property.latestQuoteStatus
-    ? QUOTE_STATUS_STYLES[property.latestQuoteStatus]
+    ? {
+        token: getStableColorToken(property.latestQuoteStatus),
+        label: toTitleLabel(property.latestQuoteStatus),
+      }
     : null;
 
   // Format property display name
@@ -152,7 +143,7 @@ export function PropertyCard({
               variant="outline"
               size="icon"
               className="size-8 bg-white shadow-sm"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: MouseEvent<HTMLButtonElement>) => e.stopPropagation()}
             >
               <MoreVertical className="size-4" />
               <span className="sr-only">Property actions</span>
@@ -198,8 +189,8 @@ export function PropertyCard({
             )}
           </div>
           <div className="ml-2 flex shrink-0 items-center gap-2">
-            <span className={cn('size-2 rounded-full', tempConfig.dot)} />
-            <span className={cn('text-xs font-medium', tempConfig.text)}>{tempConfig.label}</span>
+            <span className={cn('size-2 rounded-full', tempToken.dot)} />
+            <span className={cn('text-xs font-medium', tempToken.text)}>{tempLabel}</span>
           </div>
         </div>
 
@@ -235,8 +226,8 @@ export function PropertyCard({
             <span
               className={cn(
                 'rounded px-2 py-0.5 text-xs font-medium',
-                quoteStatusConfig.bg,
-                quoteStatusConfig.text,
+                quoteStatusConfig.token.badgeBg,
+                quoteStatusConfig.token.badgeText,
               )}
             >
               {quoteStatusConfig.label}

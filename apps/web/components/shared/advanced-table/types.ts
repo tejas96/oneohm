@@ -1,3 +1,4 @@
+import type { SxProps, Theme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 
 // ============================================================================
@@ -44,6 +45,13 @@ export interface ColumnConfig<TRow = Record<string, unknown>> {
   /** Options for 'select' filterType */
   filterOptions?: Array<{ label: string; value: string | number }>;
 
+  /**
+   * Debounce delay (ms) for 'text' filter controls.
+   * Defaults to 400ms. Set to 0 to disable debouncing for that column.
+   * Ignored for 'select', 'date', and 'range' filter types.
+   */
+  filterDebounceMs?: number;
+
   /** Format raw value to display string */
   valueFormatter?: (value: unknown) => string;
 
@@ -72,7 +80,7 @@ export type TableFilterModel = FilterState;
 export type PaginationMode = 'server' | 'client';
 
 // ============================================================================
-// Row Selection
+// Row Selection / Bulk Actions
 // ============================================================================
 
 export interface BulkAction<TRow = Record<string, unknown>> {
@@ -80,6 +88,10 @@ export interface BulkAction<TRow = Record<string, unknown>> {
   icon?: ReactNode;
   onClick: (selectedRows: TRow[]) => void;
   color?: 'primary' | 'secondary' | 'error' | 'warning' | 'success' | 'info';
+  /** Render the button in a disabled state */
+  disabled?: boolean;
+  /** Tooltip shown when the action is disabled */
+  disabledTooltip?: string;
 }
 
 // ============================================================================
@@ -93,7 +105,18 @@ export interface AdvancedTableProps<TRow = Record<string, unknown>> {
   /** Unique row identifier field — defaults to 'id' */
   rowIdField?: string;
 
+  /**
+   * Shows skeleton rows on initial load (no data yet).
+   * Use `refetching` for subsequent background fetches.
+   */
   loading?: boolean;
+
+  /**
+   * Shows a subtle LinearProgress bar above the table while a background
+   * refetch is in progress (e.g. page change, filter change in server mode).
+   * Does not replace the existing rows with a skeleton — keeps the UI stable.
+   */
+  refetching?: boolean;
 
   // ── Pagination ─────────────────────────────────────────────────────────────
   page?: number;
@@ -114,8 +137,17 @@ export interface AdvancedTableProps<TRow = Record<string, unknown>> {
   filterModel?: TableFilterModel;
   onFilterChange?: (filters: TableFilterModel) => void;
 
+  // ── Search ─────────────────────────────────────────────────────────────────
+  /**
+   * Called with the debounced search term whenever it changes.
+   * Use this in server mode (without enableUrlSync) to trigger a new API call.
+   * The table still manages the input value internally.
+   */
+  onSearchChange?: (search: string) => void;
+
   // ── Row interaction ────────────────────────────────────────────────────────
   onRowClick?: (row: TRow) => void;
+  onRowDoubleClick?: (row: TRow) => void;
 
   // ── Expandable rows ────────────────────────────────────────────────────────
   renderExpandedRow?: (row: TRow) => ReactNode;
@@ -137,11 +169,25 @@ export interface AdvancedTableProps<TRow = Record<string, unknown>> {
   emptyMessage?: string;
   itemLabel?: string;
 
+  /**
+   * Fully replace the default empty state (icon + message).
+   * Receives a boolean indicating whether any filters/search are currently active
+   * so you can show different content (e.g. "No results — clear filters" vs "No data yet").
+   */
+  renderEmptyState?: (hasActiveFilters: boolean) => ReactNode;
+
   /** Extra actions rendered in the toolbar (right side) */
   toolbarActions?: ReactNode;
 
   /** Applied to the outermost Box */
-  sx?: object;
+  sx?: SxProps<Theme>;
+
+  /**
+   * Max height of the scrollable table body.
+   * Defaults to 'calc(100vh - 300px)'.
+   * Pass a pixel number or any CSS string (e.g. 600, '70vh', '500px').
+   */
+  maxHeight?: number | string;
 
   // ── URL sync ───────────────────────────────────────────────────────────────
   /**

@@ -1,6 +1,6 @@
 'use client';
 
-import { LeadTemperature, PropertyType } from '@oneohm-epc/shared/types';
+import { PropertyType } from '@oneohm-epc/shared/types';
 import { Building2, MapPin, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ROUTES } from '@/lib/config/routes';
-import { cn } from '@/lib/utils';
+import { cn, pickDeterministic, toTitleLabel } from '@/lib/utils';
 
 // ============================================================================
 // Types
@@ -35,11 +35,19 @@ interface PropertySelectModalProps {
 // Constants
 // ============================================================================
 
-const TEMP_COLORS: Record<LeadTemperature, { dot: string; label: string }> = {
-  [LeadTemperature.HOT]: { dot: 'bg-destructive', label: 'Hot' },
-  [LeadTemperature.WARM]: { dot: 'bg-warning', label: 'Warm' },
-  [LeadTemperature.COLD]: { dot: 'bg-info', label: 'Cold' },
-};
+const DOT_COLOR_POOL = [
+  'bg-primary',
+  'bg-success',
+  'bg-warning',
+  'bg-info',
+  'bg-foreground-tertiary',
+] as const;
+
+type DotColor = (typeof DOT_COLOR_POOL)[number];
+
+function getStableDotColor(value: string): DotColor {
+  return pickDeterministic(value, DOT_COLOR_POOL, DOT_COLOR_POOL[0]) as DotColor;
+}
 
 const PROPERTY_TYPE_LABELS: Partial<Record<PropertyType, string>> = {
   [PropertyType.RESIDENTIAL]: 'Residential',
@@ -103,8 +111,10 @@ export function PropertySelectModal({
           ) : (
             properties.map((property) => {
               const isSelected = selectedPropertyId === property.id;
-              const tempConfig =
-                TEMP_COLORS[property.leadTemperature] || TEMP_COLORS[LeadTemperature.COLD];
+              const tempConfig = {
+                dot: getStableDotColor(property.leadTemperature),
+                label: toTitleLabel(property.leadTemperature),
+              };
               const typeLabel = PROPERTY_TYPE_LABELS[property.propertyType] || 'Property';
               const displayName = property.propertyName || property.address || 'Unnamed Property';
 
