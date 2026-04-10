@@ -65,32 +65,51 @@ function buildKey(prefix: string, name: string): string {
   return prefix ? `${prefix}_${name}` : name;
 }
 
-function isSafeObjectKey(key: string): boolean {
-  return key !== '__proto__' && key !== 'prototype' && key !== 'constructor';
+/**
+ * URL params are user-controlled, so `JSON.parse` could produce keys like
+ * `__proto__`, `constructor`, or `prototype`.  Writing those keys onto a
+ * regular `{}` literal opens a prototype-pollution vector (CodeQL:
+ * "Remote property injection").
+ *
+ * Defence-in-depth: we use two independent layers so neither alone is a
+ * single point of failure:
+ *
+ * 1. Denylist — fast path, keeps the common case readable.
+ * 2. Null-prototype object — structural guarantee: even if a key slips past
+ *    the denylist (e.g. a future alias), writing it onto a null-prototype
+ *    object has no effect on `Object.prototype` because the chain does not
+ *    exist.
+ */
+const BLOCKED_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+
+function isSafeKey(key: string): boolean {
+  return !BLOCKED_KEYS.has(key);
 }
 
 function normalizeFilters(filters: TableUrlFilterRecord): TableUrlFilterRecord {
-  const normalized: TableUrlFilterRecord = {};
+  // null-prototype: writing any key — even a future bypass — cannot mutate Object.prototype
+  const normalized: TableUrlFilterRecord = Object.create(null) as TableUrlFilterRecord;
 
-  Object.entries(filters).forEach(([key, value]) => {
-    if (!isSafeObjectKey(key)) return;
-    if (value == null || value === '') return;
+  for (const [key, value] of Object.entries(filters)) {
+    if (!isSafeKey(key)) continue;
+    if (value == null || value === '') continue;
 
     if (typeof value === 'object' && !Array.isArray(value)) {
       const obj = value as Record<string, unknown>;
-      const cleaned = Object.fromEntries(
-        Object.entries(obj).filter(([nestedKey, nestedValue]) => {
-          if (!isSafeObjectKey(nestedKey)) return false;
-          return nestedValue != null && nestedValue !== '';
-        }),
-      );
-      if (Object.keys(cleaned).length === 0) return;
+      // Nested object also on a null-prototype so nested keys cannot pollute
+      const cleaned: Record<string, unknown> = Object.create(null) as Record<string, unknown>;
+      for (const [nestedKey, nestedValue] of Object.entries(obj)) {
+        if (!isSafeKey(nestedKey)) continue;
+        if (nestedValue == null || nestedValue === '') continue;
+        cleaned[nestedKey] = nestedValue;
+      }
+      if (Object.keys(cleaned).length === 0) continue;
       normalized[key] = cleaned;
-      return;
+      continue;
     }
 
     normalized[key] = value;
-  });
+  }
 
   return normalized;
 }
