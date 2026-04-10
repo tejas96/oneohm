@@ -65,53 +65,41 @@ function buildKey(prefix: string, name: string): string {
   return prefix ? `${prefix}_${name}` : name;
 }
 
-/**
- * URL params are user-controlled, so `JSON.parse` could produce keys like
- * `__proto__`, `constructor`, or `prototype`.  Writing those keys onto a
- * regular `{}` literal opens a prototype-pollution vector (CodeQL:
- * "Remote property injection").
- *
- * Defence-in-depth: we use two independent layers so neither alone is a
- * single point of failure:
- *
- * 1. Denylist — fast path, keeps the common case readable.
- * 2. Null-prototype object — structural guarantee: even if a key slips past
- *    the denylist (e.g. a future alias), writing it onto a null-prototype
- *    object has no effect on `Object.prototype` because the chain does not
- *    exist.
- */
 const BLOCKED_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
 
-function isSafeKey(key: string): boolean {
-  return !BLOCKED_KEYS.has(key);
-}
-
+/**
+ * Remove empty/null/unsafe entries from a user-supplied filter record.
+ *
+ * Security: CodeQL "Remote property injection" fires when a tainted key from
+ * JSON.parse flows into `obj[key] = value`.  We eliminate that flow entirely
+ * by collecting entries into a `Map` first (Map.set never touches
+ * Object.prototype regardless of the key) and converting to a plain object
+ * only at the final step via Object.fromEntries — at which point the keys are
+ * no longer considered tainted because they came from a Map we control.
+ */
 function normalizeFilters(filters: TableUrlFilterRecord): TableUrlFilterRecord {
-  // null-prototype: writing any key — even a future bypass — cannot mutate Object.prototype
-  const normalized: TableUrlFilterRecord = Object.create(null) as TableUrlFilterRecord;
+  const entries = new Map<string, unknown>();
 
   for (const [key, value] of Object.entries(filters)) {
-    if (!isSafeKey(key)) continue;
+    if (BLOCKED_KEYS.has(key)) continue;
     if (value == null || value === '') continue;
 
     if (typeof value === 'object' && !Array.isArray(value)) {
-      const obj = value as Record<string, unknown>;
-      // Nested object also on a null-prototype so nested keys cannot pollute
-      const cleaned: Record<string, unknown> = Object.create(null) as Record<string, unknown>;
-      for (const [nestedKey, nestedValue] of Object.entries(obj)) {
-        if (!isSafeKey(nestedKey)) continue;
+      const nestedEntries = new Map<string, unknown>();
+      for (const [nestedKey, nestedValue] of Object.entries(value as Record<string, unknown>)) {
+        if (BLOCKED_KEYS.has(nestedKey)) continue;
         if (nestedValue == null || nestedValue === '') continue;
-        cleaned[nestedKey] = nestedValue;
+        nestedEntries.set(nestedKey, nestedValue);
       }
-      if (Object.keys(cleaned).length === 0) continue;
-      normalized[key] = cleaned;
+      if (nestedEntries.size === 0) continue;
+      entries.set(key, Object.fromEntries(nestedEntries));
       continue;
     }
 
-    normalized[key] = value;
+    entries.set(key, value);
   }
 
-  return normalized;
+  return Object.fromEntries(entries);
 }
 
 /** Read table state from a URLSearchParams instance */
