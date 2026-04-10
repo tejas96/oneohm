@@ -65,16 +65,24 @@ function buildKey(prefix: string, name: string): string {
   return prefix ? `${prefix}_${name}` : name;
 }
 
+function isSafeObjectKey(key: string): boolean {
+  return key !== '__proto__' && key !== 'prototype' && key !== 'constructor';
+}
+
 function normalizeFilters(filters: TableUrlFilterRecord): TableUrlFilterRecord {
   const normalized: TableUrlFilterRecord = {};
 
   Object.entries(filters).forEach(([key, value]) => {
+    if (!isSafeObjectKey(key)) return;
     if (value == null || value === '') return;
 
     if (typeof value === 'object' && !Array.isArray(value)) {
       const obj = value as Record<string, unknown>;
       const cleaned = Object.fromEntries(
-        Object.entries(obj).filter(([, v]) => v != null && v !== ''),
+        Object.entries(obj).filter(([nestedKey, nestedValue]) => {
+          if (!isSafeObjectKey(nestedKey)) return false;
+          return nestedValue != null && nestedValue !== '';
+        }),
       );
       if (Object.keys(cleaned).length === 0) return;
       normalized[key] = cleaned;
