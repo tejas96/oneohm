@@ -218,9 +218,17 @@ export type {
   MUIAvatarGroupMember,
 } from './mui-user-assignee-selector';
 
+// MUI Avatar
+export { MUIAvatar } from './mui-avatar';
+export type { MUIAvatarProps } from './mui-avatar';
+
 // MUI Typography
 export { MUITypography } from './mui-typography';
 export type { MUITypographyProps, MUITypographyVariant } from './mui-typography';
+
+// MUI Status Chip
+export { MUIStatusChip } from './mui-status-chip';
+export type { MUIStatusChipProps, StatusChipColor, StatusChipVariant } from './mui-status-chip';
 
 // Sonner (Toasts)
 export { Toaster, showToast } from './sonner';

@@ -43,7 +43,7 @@ export interface ColumnConfig<TRow = Record<string, unknown>> {
   /** Type of filter UI shown in the filter panel */
   filterType?: FilterType;
   /** Options for 'select' filterType */
-  filterOptions?: Array<{ label: string; value: string | number }>;
+  filterOptions?: ReadonlyArray<{ label: string; value: string | number }>;
 
   /**
    * Debounce delay (ms) for 'text' filter controls.
@@ -60,6 +60,12 @@ export interface ColumnConfig<TRow = Record<string, unknown>> {
 
   /** Default hidden */
   defaultHidden?: boolean;
+
+  /**
+   * Extra sx props applied to the body TableCell for this column.
+   * Use to override per-column cell styles (e.g. allow wrapping, custom padding).
+   */
+  cellSx?: SxProps<Theme>;
 }
 
 // ============================================================================

@@ -37,4 +37,4 @@ export { formatPhoneForWhatsApp, formatPhoneForDisplay, isValidPhone } from './u
 export { getRecentViews, recordRecentView } from './utils/recent-views';
 export type { RecentViewItem, RecentViewType } from './utils/recent-views';
 export { buildTasksTabUrl } from './utils/project';
-export { deterministicIndex, pickDeterministic } from './utils/color';
+export { deterministicIndex, getMuiAvatarColors, pickDeterministic } from './utils/color';

@@ -17,12 +17,12 @@ const FONT_SIZE = MUI_FONT_SIZE;
 
 export const muiTheme = createTheme({
   palette: {
-    primary: { main: '#76c044', dark: '#5ea031', light: '#8fd35f' },
-    secondary: { main: '#0d74b8', dark: '#0a5c92', light: '#2b8fd4' },
-    success: { main: '#22c55e' },
-    warning: { main: '#eab308' },
-    error: { main: '#dc2626' },
-    info: { main: '#0ea5e9' },
+    primary: { main: '#76c044', dark: '#4d7c0f', light: '#8fd35f', contrastText: '#ffffff' },
+    secondary: { main: '#0d74b8', dark: '#0a5c92', light: '#2b8fd4', contrastText: '#ffffff' },
+    success: { main: '#22c55e', dark: '#15803d', contrastText: '#ffffff' },
+    warning: { main: '#eab308', dark: '#a16207', contrastText: 'rgba(0,0,0,0.87)' },
+    error: { main: '#dc2626', contrastText: '#ffffff' },
+    info: { main: '#0ea5e9', dark: '#0369a1', contrastText: '#ffffff' },
     text: { primary: '#18181b', secondary: '#52525b' },
     divider: '#e4e4e7',
     background: { default: '#ffffff', paper: '#ffffff' },
@@ -165,7 +165,7 @@ export const muiTheme = createTheme({
       defaultProps: { size: 'small' },
     },
 
-    /* ---- Chip (used in Autocomplete tags) ---- */
+    /* ---- Chip (used in Autocomplete tags + MUIStatusChip) ---- */
     MuiChip: {
       defaultProps: { size: 'small' },
       styleOverrides: {
@@ -218,6 +218,20 @@ export const muiTheme = createTheme({
       styleOverrides: {
         root: { marginLeft: 0, marginRight: 0 },
         label: { fontSize: FONT_SIZE },
+      },
+    },
+
+    /* ---- Avatar ---- */
+    MuiAvatar: {
+      styleOverrides: {
+        root: {
+          fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
+          fontWeight: 600,
+          // Neutral fallback when neither src nor deterministic color is set.
+          // Individual MUIAvatar instances override bgcolor/color via sx.
+          backgroundColor: '#e4e4e7', // theme divider — subtle and on-brand
+          color: '#52525b', // theme text.secondary
+        },
       },
     },
 

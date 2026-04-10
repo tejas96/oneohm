@@ -33,6 +33,7 @@ export {
   usePropertyMutations,
   useUpdateProperty,
   useDeleteProperty,
+  useProperties,
   useProperty,
   usePropertyQuotes,
 } from './hooks';
