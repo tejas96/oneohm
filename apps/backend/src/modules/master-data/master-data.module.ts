@@ -8,6 +8,7 @@ import {
   ProductController,
   ProductTypeController,
   QuoteConfigurationController,
+  StatesController,
   SubsidyConfigurationController,
 } from './controllers';
 import {
@@ -38,6 +39,7 @@ import {
   ProductService,
   ProductTypeService,
   QuoteConfigurationService,
+  StatesService,
   SubsidyConfigurationService,
 } from './services';
 
@@ -61,6 +63,7 @@ import {
     ProductController,
     InstallationPricingController,
     QuoteConfigurationController,
+    StatesController,
     SubsidyConfigurationController,
     ProductPriceController,
   ],
@@ -80,6 +83,7 @@ import {
     InstallationPricingService,
     QuoteConfigurationRepository,
     QuoteConfigurationService,
+    StatesService,
   ],
   exports: [
     ProductTypeService,
@@ -88,6 +92,7 @@ import {
     ProductPriceService,
     SubsidyConfigurationService,
     QuoteConfigurationService,
+    StatesService,
     ProductTypeRepository,
     BrandRepository,
     BrandProductTypeRepository,

@@ -4,6 +4,9 @@
 export { StatsCard } from '../ui';
 export type { StatsCardProps } from '../ui';
 
+// Address Autocomplete
+export { AddressAutocompleteInput } from './address-autocomplete-input';
+
 // Command Palette
 export { CommandPalette } from './command-palette';
 

@@ -11,6 +11,10 @@
     "noEmit": true,
     "incremental": true,
 
+    /* Type declaration paths */
+    "typeRoots": ["./node_modules/@types", "../../node_modules/@types"],
+    "types": ["node", "google.maps"],
+
     /* Base URL - critical for path resolution */
     "baseUrl": ".",
 
@@ -43,5 +47,12 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ]
 }

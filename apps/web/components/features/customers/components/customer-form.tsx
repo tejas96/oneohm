@@ -5,7 +5,7 @@ import { CustomerStatus, LeadSource } from '@oneohm-epc/shared/types';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type JSX, useMemo } from 'react';
+import { type JSX, useMemo, useState, useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { useCreateCustomer, useCheckAvailability } from '../hooks/use-create-customer';
@@ -22,9 +22,10 @@ import {
   type CreateCustomerProfileFormData,
 } from '../schemas/customer.schema';
 
-import { EmptyState } from '@/components/shared';
+import { EmptyState, AddressAutocompleteInput } from '@/components/shared';
 import { Button, Card, CardContent, MUIInput, MUISelect, showToast } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
+import { useIndianStates } from '@/lib/hooks';
 import { getErrorMessage } from '@/lib/utils';
 
 // ============================================================================
@@ -46,8 +47,6 @@ interface CustomerFormContentProps {
 // ============================================================================
 // Constants
 // ============================================================================
-
-const INDIAN_STATES_AND_UTS = ['Karnataka', 'Maharashtra'];
 
 const LEAD_SOURCE_OPTIONS = [
   { value: LeadSource.REFERRAL, label: 'Referral' },
@@ -148,6 +147,15 @@ function CustomerFormContent({
   const updateCustomerStatus = useUpdateCustomerStatus();
   const availability = useCheckAvailability();
 
+  // Fetch states from API (with fallback to hardcoded if API fails)
+  const { states } = useIndianStates();
+
+  // State to track missing fields from address autocomplete
+  const [missingFieldsFromAddress, setMissingFieldsFromAddress] = useState<
+    (keyof typeof form.getValues)[]
+  >([]);
+  const [shouldClearAddressMessage, setShouldClearAddressMessage] = useState(false);
+
   // Compute default values
   const defaultLeadSource = resolveLeadSourceForForm(customer?.leadSource);
 
@@ -227,6 +235,55 @@ function CustomerFormContent({
       availability.checkEmail(email, isEditMode ? customerId : undefined);
     }
   };
+
+  // Handle address selection from Google Places autocomplete
+  const handleAddressSelected = (addressComponents: {
+    address: string;
+    city: string;
+    state: string;
+    pincode: string;
+    country: string;
+  }): void => {
+    form.setValue('address', addressComponents.address);
+    form.setValue('city', addressComponents.city);
+    form.setValue('state', addressComponents.state);
+    form.setValue('pincode', addressComponents.pincode);
+  };
+
+  // Handle when missing fields are detected from address
+  const handleMissingFieldsDetected = (missingFields: string[]): void => {
+    setMissingFieldsFromAddress(missingFields as any);
+    setShouldClearAddressMessage(false); // Reset clear flag when new missing fields detected
+  };
+
+  // Check if user is filling any of the missing fields
+  const checkIfFillingMissingFields = (): void => {
+    if (missingFieldsFromAddress.length === 0) return;
+
+    // Check if any of the missing fields have been modified
+    const missingFieldNames = missingFieldsFromAddress.filter(
+      (f) => f !== 'lat' && f !== 'lng' && f !== 'country',
+    );
+
+    const hasUserFilledAnyMissingField = missingFieldNames.some((fieldName) => {
+      const value = form.getValues(fieldName as any);
+      return value && typeof value === 'string' && value.trim().length > 0;
+    });
+
+    if (hasUserFilledAnyMissingField) {
+      setShouldClearAddressMessage(true);
+    }
+  };
+
+  // Watch for changes in city, state, and pincode fields
+  const cityValue = form.watch('city');
+  const stateValue = form.watch('state');
+  const pincodeValue = form.watch('pincode');
+
+  // Check if missing fields are being filled whenever relevant fields change
+  useEffect(() => {
+    checkIfFillingMissingFields();
+  }, [cityValue, stateValue, pincodeValue]);
 
   const onSubmit = async (data: CreateCustomerProfileFormData): Promise<void> => {
     if (availability.hasErrors) {
@@ -396,12 +453,15 @@ function CustomerFormContent({
                 Address
               </h3>
 
-              <MUIInput
-                id="address"
-                fieldLabel="Street Address"
-                placeholder="Enter street address"
-                error={form.formState.errors.address?.message}
-                {...form.register('address')}
+              <AddressAutocompleteInput
+                control={form.control}
+                name="address"
+                label="Street Address"
+                placeholder="Enter or search address"
+                onAddressSelected={handleAddressSelected}
+                onMissingFieldsDetected={handleMissingFieldsDetected}
+                shouldClearMessage={shouldClearAddressMessage}
+                apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
               />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -424,7 +484,7 @@ function CustomerFormContent({
                       value={field.value}
                       onChange={(e) => field.onChange(e.target.value)}
                       error={form.formState.errors.state?.message}
-                      options={INDIAN_STATES_AND_UTS.map((s) => ({ value: s, label: s }))}
+                      options={states.map((s) => ({ value: s, label: s }))}
                     />
                   )}
                 />
@@ -550,7 +610,7 @@ function CustomerFormContent({
                               groupCode: '',
                             });
                           }
-                          // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+
                           return matches as typeof opts;
                         }}
                         onInputChange={(text) => {
