@@ -1,447 +1,761 @@
 'use client';
 
-import { LookupTypeCode, type ProjectPriority, type ProjectStatus } from '@oneohm-epc/shared/types';
-import { Inbox, LayoutGrid, List, Plus, Search, X } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-
-import { STATUS_FILTER_OPTIONS, TYPE_FILTER_OPTIONS } from '../constants';
-import { useProjects, type ProjectFilters } from '../hooks';
-import { ProjectCard } from './project-card';
-import { projectColumns } from './project-table-columns';
-
-import { DataTable } from '@/components/shared/data-table/data-table';
-import { TablePagination } from '@/components/shared/data-table/pagination';
-import { EmptyState, ErrorState } from '@/components/shared/feedback/empty-state';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import AddIcon from '@mui/icons-material/Add';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import FormatListBulletedOutlinedIcon from '@mui/icons-material/FormatListBulletedOutlined';
+import GridViewOutlinedIcon from '@mui/icons-material/GridViewOutlined';
+import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ROUTES } from '@/lib/config/routes';
-import { useDebounce } from '@/lib/hooks';
-import { useLookupOptions } from '@/lib/hooks/resources';
+  Box,
+  Button,
+  IconButton,
+  LinearProgress,
+  Link as MuiLink,
+  ListItemIcon,
+  Menu,
+  MenuItem,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
+} from '@mui/material';
+import { ProjectPriority, ProjectStatus } from '@oneohm-epc/shared/types';
+import NextLink from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { type JSX, type MouseEvent, useCallback, useMemo, useState } from 'react';
 
-const DEFAULT_PAGE_SIZE = 10;
+import {
+  PHASE_LABELS,
+  PROJECT_PRIORITY_LABELS,
+  PROJECT_PRIORITY_OPTIONS,
+  PROJECT_STATUS_LABELS,
+  PROJECT_STATUS_OPTIONS,
+  PROJECT_TYPE_LABELS,
+  PROJECT_TYPE_OPTIONS,
+} from '../constants';
+import { type ProjectFilters, type ProjectListItem, useProjects } from '../hooks';
+import { ProjectCard } from './project-card';
+import { TeamAvatarGroup } from './team-avatar-group';
 
-function useUrlState() {
-  const searchParams = useSearchParams();
+import {
+  AdvancedTable,
+  type BulkAction,
+  type ColumnConfig,
+} from '@/components/shared/advanced-table';
+import { MUIAvatar } from '@/components/ui/mui-avatar';
+import { MUIStatusChip } from '@/components/ui/mui-status-chip';
+import { MUITypography } from '@/components/ui/mui-typography';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
+import {
+  formatCurrency,
+  formatDate,
+  formatRelativeDate,
+  formatSystemSize,
+  getErrorMessage,
+  toTitleLabel,
+} from '@/lib/utils';
 
-  const get = useCallback((key: string) => searchParams.get(key) ?? '', [searchParams]);
+// ============================================================================
+// Types
+// ============================================================================
 
-  const set = useCallback((updates: Record<string, string>) => {
-    const params = new URLSearchParams(window.location.search);
-    for (const [key, value] of Object.entries(updates)) {
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
-    }
-    const qs = params.toString();
-    const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
-    window.history.replaceState(null, '', url);
-  }, []);
+type ProjectRow = ProjectListItem & Record<string, unknown>;
 
-  return { get, set, searchParams };
+// ============================================================================
+// Module-level stable references
+// ============================================================================
+
+const EMPTY_PROJECT_ROWS: ProjectRow[] = [];
+
+const BULK_ACTIONS: BulkAction<ProjectRow>[] = [];
+
+const SORT_FIELD_MAP: Record<string, string> = {
+  projectNumber: 'name',
+  systemSizeKw: 'systemSizeKw',
+  estimatedCost: 'estimatedCost',
+  progressPercentage: 'progressPercentage',
+  endDate: 'endDate',
+  status: 'status',
+  createdAt: 'createdAt',
+};
+
+// ============================================================================
+// Adapter functions (module-level — no closures, no re-creation per render)
+// ============================================================================
+
+function toApiSortField(model: { field: string; direction: string } | null): string {
+  if (!model) return 'createdAt';
+  return SORT_FIELD_MAP[model.field] ?? 'createdAt';
 }
 
-export function ProjectListPage() {
-  const router = useRouter();
-  const url = useUrlState();
+function toApiSortOrder(model: { field: string; direction: string } | null): 'ASC' | 'DESC' {
+  return model?.direction === 'asc' ? 'ASC' : 'DESC';
+}
 
-  const [statusFilter, setStatusFilter] = useState(url.get('status'));
-  const [priorityFilter, setPriorityFilter] = useState(url.get('priority'));
-  const [typeFilter, setTypeFilter] = useState(url.get('projectType'));
-  const [searchInput, setSearchInput] = useState(url.get('search'));
-  const [currentView, setCurrentView] = useState<'card' | 'table'>(
-    (url.get('view') as 'card' | 'table') || 'table',
-  );
-  const [currentPage, setCurrentPage] = useState(parseInt(url.get('page') || '1', 10));
-  const [pageSize, setPageSize] = useState(
-    parseInt(url.get('limit') || url.get('pageSize') || String(DEFAULT_PAGE_SIZE), 10),
-  );
+function toLocalDateString(raw: unknown): string | undefined {
+  if (!raw || typeof raw !== 'string') return undefined;
+  const m = /^(\d{4}-\d{2}-\d{2})/.exec(raw);
+  return m?.[1];
+}
 
-  useEffect(() => {
-    setStatusFilter(url.searchParams.get('status') ?? '');
-    setPriorityFilter(url.searchParams.get('priority') ?? '');
-    setTypeFilter(url.searchParams.get('projectType') ?? '');
-    setSearchInput(url.searchParams.get('search') ?? '');
-    setCurrentView((url.searchParams.get('view') as 'card' | 'table') || 'table');
-    setCurrentPage(parseInt(url.searchParams.get('page') || '1', 10));
-    setPageSize(
-      parseInt(
-        url.searchParams.get('limit') ||
-          url.searchParams.get('pageSize') ||
-          String(DEFAULT_PAGE_SIZE),
-        10,
-      ),
-    );
-  }, [url.searchParams]);
+function localDateToUtcDayRange(local: string): { fromIso: string; toIso: string } {
+  const parts = local.split('-').map(Number);
+  const y = parts[0] ?? 2000;
+  const mo = parts[1] ?? 1;
+  const d = parts[2] ?? 1;
+  const from = new Date(y, mo - 1, d, 0, 0, 0, 0);
+  const to = new Date(y, mo - 1, d, 23, 59, 59, 999);
+  return { fromIso: from.toISOString(), toIso: to.toISOString() };
+}
 
-  const debouncedSearch = useDebounce(searchInput, 550);
+function toProjectFilters(filters: TableUrlFilterRecord): Partial<ProjectFilters> {
+  const raw = filters as Record<string, unknown>;
+  const result: Partial<ProjectFilters> = {};
 
-  const filters: ProjectFilters = useMemo(
-    () => ({
-      page: currentPage,
-      limit: pageSize,
-      status: (statusFilter || undefined) as ProjectStatus | undefined,
-      priority: (priorityFilter || undefined) as ProjectPriority | undefined,
-      projectType: typeFilter || undefined,
-      search: debouncedSearch || undefined,
-    }),
-    [currentPage, pageSize, statusFilter, priorityFilter, typeFilter, debouncedSearch],
-  );
+  const status = raw.status;
+  if (status && typeof status === 'string' && status !== 'all') {
+    result.status = status as ProjectStatus;
+  }
 
-  const { data, isLoading, isError, refetch } = useProjects(filters);
-  const {
-    items: projectPriorityItems,
-    isLoading: priorityLoading,
-    isError: priorityError,
-  } = useLookupOptions(LookupTypeCode.PRIORITY);
+  const priority = raw.priority;
+  if (priority && typeof priority === 'string' && priority !== 'all') {
+    result.priority = priority as ProjectPriority;
+  }
 
-  const projects = data?.data ?? [];
-  const totalItems = data?.meta?.total ?? 0;
-  const totalPages = data?.meta?.totalPages ?? 1;
+  const projectType = raw.projectType;
+  if (projectType && typeof projectType === 'string' && projectType !== 'all') {
+    result.projectType = projectType;
+  }
 
-  const handleFilterChange = useCallback(
-    (key: string, value: string) => {
-      url.set({ [key]: value, page: '' });
-      setCurrentPage(1);
-      if (key === 'status') setStatusFilter(value);
-      if (key === 'priority') setPriorityFilter(value);
-      if (key === 'projectType') setTypeFilter(value);
-    },
-    [url],
-  );
+  // endDate column date filter → backend fromDate/toDate (project.endDate range)
+  const endDateRaw = toLocalDateString(raw.endDate);
+  if (endDateRaw) {
+    const { fromIso, toIso } = localDateToUtcDayRange(endDateRaw);
+    result.fromDate = fromIso;
+    result.toDate = toIso;
+  }
 
-  const handleSearchChange = useCallback(
-    (value: string) => {
-      setSearchInput(value);
-      url.set({ search: value, page: '' });
-      setCurrentPage(1);
-    },
-    [url],
-  );
+  return result;
+}
 
-  const handleViewChange = useCallback(
-    (view: 'card' | 'table') => {
-      setCurrentView(view);
-      url.set({ view });
-    },
-    [url],
-  );
+// ============================================================================
+// Sub-components (module-level — must not be defined inside the page component)
+// ============================================================================
 
-  const handlePageChange = useCallback(
-    (page: number) => {
-      setCurrentPage(page);
-      url.set({ page: page > 1 ? String(page) : '' });
-    },
-    [url],
-  );
-
-  const handlePageSizeChange = useCallback(
-    (size: number) => {
-      setPageSize(size);
-      setCurrentPage(1);
-      url.set({
-        limit: size !== DEFAULT_PAGE_SIZE ? String(size) : '',
-        pageSize: '',
-        page: '',
-      });
-    },
-    [url],
-  );
-
-  const hasActiveFilters = statusFilter || priorityFilter || typeFilter || debouncedSearch;
-
-  const priorityFilterOptions = useMemo((): Array<{ value: string; label: string }> => {
-    if (priorityLoading || priorityError || projectPriorityItems.length === 0) {
-      return [{ value: '', label: priorityError ? 'Failed to load priorities' : 'All Priority' }];
-    }
-    const mapped: Array<{ value: string; label: string }> = projectPriorityItems.map((item) => ({
-      value: item.value,
-      label: item.label,
-    }));
-    return [{ value: '', label: 'All Priority' }, ...mapped];
-  }, [priorityError, priorityLoading, projectPriorityItems]);
-
+function ProjectRowActionsMenu({ project }: { project: ProjectListItem }): JSX.Element {
+  const [anchor, setAnchor] = useState<null | HTMLElement>(null);
   return (
-    <div className="space-y-5">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">All Projects</h1>
-          <p className="text-sm text-foreground-secondary mt-0.5">
-            Manage and track all your solar installation projects
-          </p>
-        </div>
-        <Button asChild>
-          <Link href={ROUTES.PROJECTS.NEW}>
-            <Plus className="size-4 mr-1.5" />
-            New Project
-          </Link>
-        </Button>
-      </div>
-
-      {/* Search & Filters Row */}
-      <div className="flex items-center gap-3">
-        {/* Search Bar */}
-        <div className="relative w-72">
-          <Input
-            placeholder="Search projects..."
-            value={searchInput}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            leftIcon={<Search className="size-icon-sm" />}
-            className="h-8 text-sm"
-          />
-          {searchInput && (
-            <button
-              type="button"
-              onClick={() => handleSearchChange('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded"
-            >
-              <X className="size-3.5 text-foreground-tertiary" />
-            </button>
-          )}
-        </div>
-
-        {/* Divider */}
-        <div className="h-5 w-px bg-border-light" />
-
-        {/* Status */}
-        <Select
-          value={statusFilter || 'all'}
-          onValueChange={(v) => handleFilterChange('status', v === 'all' ? '' : v)}
+    <>
+      <IconButton
+        size="small"
+        onClick={(e) => setAnchor(e.currentTarget)}
+        aria-label="Project actions"
+      >
+        <MoreVertIcon fontSize="small" />
+      </IconButton>
+      <Menu
+        anchorEl={anchor}
+        open={Boolean(anchor)}
+        onClose={() => setAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MenuItem
+          component={NextLink}
+          href={buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id })}
+          onClick={() => setAnchor(null)}
         >
-          <SelectTrigger className="w-36 h-8 text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUS_FILTER_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <ListItemIcon>
+            <VisibilityIcon fontSize="small" />
+          </ListItemIcon>
+          View Details
+        </MenuItem>
+      </Menu>
+    </>
+  );
+}
 
-        {/* Priority */}
-        <Select
-          value={priorityFilter || 'all'}
-          onValueChange={(v) => handleFilterChange('priority', v === 'all' ? '' : v)}
-        >
-          <SelectTrigger className="w-32 h-8 text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {priorityFilterOptions.map((opt) => (
-              <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+// ============================================================================
+// Column definitions (module-level — no dynamic captures)
+// ============================================================================
 
-        {/* Type */}
-        <Select
-          value={typeFilter || 'all'}
-          onValueChange={(v) => handleFilterChange('projectType', v === 'all' ? '' : v)}
-        >
-          <SelectTrigger className="w-32 h-8 text-sm">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {TYPE_FILTER_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value || 'all'} value={opt.value || 'all'}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Clear Filters */}
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setStatusFilter('');
-              setPriorityFilter('');
-              setTypeFilter('');
-              setSearchInput('');
-              setCurrentPage(1);
-              url.set({ status: '', priority: '', projectType: '', search: '', page: '' });
-            }}
-            className="text-foreground-secondary h-8"
+const COLUMNS: ColumnConfig<ProjectRow>[] = [
+  {
+    field: 'projectNumber',
+    headerName: 'Project',
+    sortable: true,
+    cellSx: { verticalAlign: 'top', py: 1 },
+    renderCell: ({ row }): JSX.Element => {
+      const project = row as ProjectListItem;
+      const typeLabel =
+        PROJECT_TYPE_LABELS[project.projectType] ?? toTitleLabel(project.projectType);
+      return (
+        <Box sx={{ minWidth: 0 }}>
+          <MuiLink
+            component={NextLink}
+            href={buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id })}
+            underline="hover"
+            sx={{ display: 'block', fontWeight: 500, fontSize: '0.875rem', whiteSpace: 'nowrap' }}
           >
-            <X className="mr-1 size-3" />
-            Clear
+            {project.projectNumber}
+          </MuiLink>
+          <MUIStatusChip label={typeLabel} colorSeed={project.projectType} sx={{ mt: 0.375 }} />
+        </Box>
+      );
+    },
+  },
+  {
+    field: 'customer',
+    headerName: 'Customer',
+    flex: 2,
+    cellSx: { whiteSpace: 'normal', verticalAlign: 'top', py: 1 },
+    renderCell: ({ row }): JSX.Element => {
+      const project = row as ProjectListItem;
+      const name = project.property.customerName ?? '';
+      if (!name) return <MUITypography variant="placeholder">-</MUITypography>;
+      const address = [project.property.address, project.property.city].filter(Boolean).join(', ');
+      const tooltipText = address ? `${name}\n${address}` : name;
+      return (
+        <Tooltip
+          title={<span style={{ whiteSpace: 'pre-line' }}>{tooltipText}</span>}
+          placement="bottom-start"
+          enterDelay={500}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+            <MUIAvatar name={name} size="sm" sx={{ mt: 0.25, flexShrink: 0 }} />
+            <Box sx={{ minWidth: 0 }}>
+              <MUITypography variant="bodyPrimary" noWrap sx={{ fontWeight: 500 }}>
+                {name}
+              </MUITypography>
+              {address && (
+                <MUITypography
+                  variant="timestamp"
+                  sx={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {address}
+                </MUITypography>
+              )}
+            </Box>
+          </Box>
+        </Tooltip>
+      );
+    },
+  },
+  {
+    field: 'systemSizeKw',
+    headerName: 'System Size',
+    sortable: true,
+    filterable: true,
+    filterType: 'range',
+    width: 130,
+    renderCell: ({ row }): JSX.Element => {
+      const project = row as ProjectListItem;
+      return (
+        <MUITypography variant="bodyPrimary" noWrap sx={{ fontWeight: 500 }}>
+          {formatSystemSize(project.systemSizeKw)} kW
+        </MUITypography>
+      );
+    },
+  },
+  {
+    field: 'estimatedCost',
+    headerName: 'Value',
+    sortable: true,
+    width: 160,
+    cellSx: { verticalAlign: 'top', py: 1 },
+    renderCell: ({ row }): JSX.Element => {
+      const project = row as ProjectListItem;
+      const estimated = project.estimatedCost ?? null;
+      const actual = project.actualCost ?? null;
+      if (estimated === null && actual === null) {
+        return <MUITypography variant="placeholder">-</MUITypography>;
+      }
+      const quoteHref = buildRoute(ROUTES.QUOTES.DETAIL, { id: project.quoteId });
+      return (
+        <Box>
+          {estimated != null && (
+            <MuiLink
+              component={NextLink}
+              href={quoteHref}
+              underline="hover"
+              onClick={(e: MouseEvent) => e.stopPropagation()}
+              sx={{ display: 'block', fontWeight: 500, fontSize: '0.875rem', whiteSpace: 'nowrap' }}
+            >
+              {formatCurrency(estimated)}
+            </MuiLink>
+          )}
+          {actual != null && (
+            <Box sx={{ mt: estimated != null ? 0.5 : 0 }}>
+              <MUITypography variant="timestamp" sx={{ color: 'text.disabled' }}>
+                Actual
+              </MUITypography>
+              <MuiLink
+                component={NextLink}
+                href={quoteHref}
+                underline="hover"
+                onClick={(e: MouseEvent) => e.stopPropagation()}
+                sx={{
+                  display: 'block',
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  whiteSpace: 'nowrap',
+                  color: actual > (estimated ?? 0) ? 'error.main' : 'success.main',
+                  '&:hover': {
+                    color: actual > (estimated ?? 0) ? 'error.dark' : 'success.dark',
+                  },
+                }}
+              >
+                {formatCurrency(actual)}
+              </MuiLink>
+            </Box>
+          )}
+        </Box>
+      );
+    },
+  },
+  {
+    field: 'progressPercentage',
+    headerName: 'Progress',
+    sortable: true,
+    width: 130,
+    renderCell: ({ row }): JSX.Element => {
+      const pct = Math.min(100, Math.max(0, (row as ProjectListItem).progressPercentage));
+      return (
+        <Box sx={{ minWidth: 0, width: '100%' }}>
+          <LinearProgress
+            variant="determinate"
+            value={pct}
+            sx={{ height: 6, borderRadius: 3, mb: 0.5 }}
+          />
+          <MUITypography variant="timestamp" sx={{ color: 'text.secondary' }}>
+            {pct}%
+          </MUITypography>
+        </Box>
+      );
+    },
+  },
+  {
+    field: 'currentPhase',
+    headerName: 'Phase',
+    width: 130,
+    renderCell: ({ row }): JSX.Element => {
+      const phase = (row as ProjectListItem).currentPhase;
+      if (!phase) return <MUITypography variant="placeholder">-</MUITypography>;
+      const label = PHASE_LABELS[phase] ?? toTitleLabel(phase);
+      return (
+        <Tooltip title={label} placement="top" enterDelay={400}>
+          <span>
+            <MUIStatusChip label={label} colorSeed={phase} />
+          </span>
+        </Tooltip>
+      );
+    },
+  },
+  {
+    field: 'status',
+    headerName: 'Status',
+    sortable: true,
+    filterable: true,
+    filterType: 'select',
+    filterOptions: PROJECT_STATUS_OPTIONS,
+    width: 130,
+    renderCell: ({ row }): JSX.Element => {
+      const status = (row as ProjectListItem).status;
+      return (
+        <MUIStatusChip
+          label={PROJECT_STATUS_LABELS[status] ?? toTitleLabel(status)}
+          colorSeed={status}
+        />
+      );
+    },
+  },
+  {
+    field: 'priority',
+    headerName: 'Priority',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: PROJECT_PRIORITY_OPTIONS,
+    width: 110,
+    renderCell: ({ row }): JSX.Element => {
+      const priority = (row as ProjectListItem).priority;
+      return (
+        <MUIStatusChip
+          label={PROJECT_PRIORITY_LABELS[priority] ?? toTitleLabel(priority)}
+          colorSeed={priority}
+        />
+      );
+    },
+  },
+  {
+    field: 'projectType',
+    headerName: 'Type',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: PROJECT_TYPE_OPTIONS,
+    defaultHidden: true,
+    width: 140,
+    renderCell: ({ row }): JSX.Element => {
+      const pt = (row as ProjectListItem).projectType;
+      return <MUIStatusChip label={PROJECT_TYPE_LABELS[pt] ?? toTitleLabel(pt)} colorSeed={pt} />;
+    },
+  },
+  {
+    field: 'endDate',
+    headerName: 'Due Date',
+    sortable: true,
+    filterable: true,
+    filterType: 'date',
+    renderCell: ({ row }): JSX.Element => {
+      const project = row as ProjectListItem;
+      if (project.status === ProjectStatus.ON_HOLD) {
+        return (
+          <MUITypography variant="body" sx={{ color: 'text.secondary' }}>
+            On Hold
+          </MUITypography>
+        );
+      }
+      if (!project.endDate) return <MUITypography variant="placeholder">-</MUITypography>;
+      const relative = formatRelativeDate(project.endDate);
+      const isOverdue = relative.startsWith('Overdue');
+      const displayText = isOverdue ? relative : formatDate(project.endDate, 'short');
+      const fullDate = formatDate(project.endDate, 'long');
+      return (
+        <Box sx={{ minWidth: 0 }}>
+          <MUITypography
+            variant="body"
+            sx={{
+              whiteSpace: 'nowrap',
+              color: isOverdue ? 'error.main' : 'text.secondary',
+              fontWeight: isOverdue ? 500 : 400,
+            }}
+          >
+            {displayText}
+          </MUITypography>
+          <MUITypography variant="timestamp" sx={{ color: 'text.disabled', whiteSpace: 'nowrap' }}>
+            {fullDate}
+          </MUITypography>
+        </Box>
+      );
+    },
+  },
+  {
+    field: 'team',
+    headerName: 'Team',
+    width: 110,
+    renderCell: ({ row }): JSX.Element => (
+      <TeamAvatarGroup members={(row as ProjectListItem).teamMembers} max={3} size="xs" />
+    ),
+  },
+  {
+    field: 'payment',
+    headerName: 'Payment',
+    width: 140,
+    renderCell: ({ row }): JSX.Element => {
+      const { totalExpected, totalPaid } = (row as ProjectListItem).paymentSummary;
+      if (totalExpected === 0) return <MUITypography variant="placeholder">-</MUITypography>;
+      if (totalPaid >= totalExpected) {
+        return (
+          <Tooltip
+            title={`Total paid: ${formatCurrency(totalPaid)}`}
+            placement="top"
+            enterDelay={400}
+          >
+            <span>
+              <MUITypography variant="body" sx={{ color: 'success.main', fontWeight: 500 }}>
+                ✓ Paid
+              </MUITypography>
+            </span>
+          </Tooltip>
+        );
+      }
+      const pending = totalExpected - totalPaid;
+      return (
+        <Tooltip
+          title={`Paid: ${formatCurrency(totalPaid)} / Total: ${formatCurrency(totalExpected)}`}
+          placement="top"
+          enterDelay={400}
+        >
+          <span>
+            <MUITypography variant="body" noWrap sx={{ color: 'warning.main', fontWeight: 500 }}>
+              {formatCurrency(pending)} pending
+            </MUITypography>
+          </span>
+        </Tooltip>
+      );
+    },
+  },
+  {
+    field: 'actions',
+    headerName: '',
+    hideable: false,
+    width: 48,
+    renderCell: ({ row }): JSX.Element => (
+      <ProjectRowActionsMenu project={row as ProjectListItem} />
+    ),
+  },
+];
+
+// ============================================================================
+// Page component
+// ============================================================================
+
+export function ProjectListPage(): JSX.Element {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // URL-synced table state — owned by this page (controlled AdvancedTable pattern)
+  const urlState = useTableUrlState({ prefix: 'projects', defaultPageSize: 10 });
+
+  // View toggle — also URL-synced for shareable links
+  const [currentView, setCurrentView] = useState<'card' | 'table'>(() => {
+    const v = searchParams.get('projects_view');
+    return v === 'card' ? 'card' : 'table';
+  });
+
+  const handleViewChange = useCallback((_: MouseEvent, v: 'card' | 'table' | null): void => {
+    if (!v) return;
+    setCurrentView(v);
+    const params = new URLSearchParams(window.location.search);
+    if (v === 'table') {
+      params.delete('projects_view');
+    } else {
+      params.set('projects_view', v);
+    }
+    const qs = params.toString();
+    history.replaceState(
+      null,
+      '',
+      qs ? `${window.location.pathname}?${qs}` : window.location.pathname,
+    );
+  }, []);
+
+  // API call — driven entirely by URL state
+  const { data, isLoading, isFetching, isError, error, refetch } = useProjects({
+    page: urlState.state.page + 1,
+    limit: urlState.state.pageSize,
+    search: urlState.state.search || undefined,
+    sortBy: toApiSortField(urlState.state.sortModel),
+    sortOrder: toApiSortOrder(urlState.state.sortModel),
+    ...toProjectFilters(urlState.state.filters),
+  });
+
+  const tableRows = useMemo<ProjectRow[]>(
+    () => (data?.data as ProjectRow[] | undefined) ?? EMPTY_PROJECT_ROWS,
+    [data?.data],
+  );
+
+  const renderEmptyState = useCallback(
+    (hasFilters: boolean): JSX.Element => (
+      <Box sx={{ py: 6, textAlign: 'center' }}>
+        <InboxOutlinedIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
+        <MUITypography variant="body" sx={{ color: 'text.secondary', display: 'block' }}>
+          {hasFilters ? 'No projects match your filters.' : 'No projects yet.'}
+        </MUITypography>
+        {hasFilters && (
+          <Button
+            size="small"
+            sx={{ mt: 1 }}
+            onClick={() => {
+              urlState.resetAll();
+            }}
+          >
+            Clear Filters
           </Button>
         )}
-
-        {/* Spacer + View Toggle */}
-        <div className="ml-auto flex items-center bg-muted rounded-lg p-0.5">
-          <button
-            type="button"
-            onClick={() => handleViewChange('table')}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors ${
-              currentView === 'table'
-                ? 'bg-primary/10 text-primary'
-                : 'text-foreground-secondary hover:text-foreground'
-            }`}
+        {!hasFilters && (
+          <Button
+            size="small"
+            variant="contained"
+            sx={{ mt: 1 }}
+            onClick={() => {
+              void router.push(ROUTES.PROJECTS.NEW);
+            }}
           >
-            <List className="size-4" />
-            Table
-          </button>
-          <button
-            type="button"
-            onClick={() => handleViewChange('card')}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors ${
-              currentView === 'card'
-                ? 'bg-primary/10 text-primary'
-                : 'text-foreground-secondary hover:text-foreground'
-            }`}
+            New Project
+          </Button>
+        )}
+      </Box>
+    ),
+    [router, urlState.resetAll],
+  );
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      {/* Page header */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box>
+          <MUITypography variant="drawerTitle" sx={{ fontWeight: 600 }}>
+            All Projects
+          </MUITypography>
+          <MUITypography variant="body" sx={{ color: 'text.secondary', mt: 0.25 }}>
+            Manage and track all your solar installation projects
+          </MUITypography>
+        </Box>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <ToggleButtonGroup
+            value={currentView}
+            exclusive
+            onChange={handleViewChange}
+            size="small"
+            sx={{ height: 30 }}
           >
-            <LayoutGrid className="size-4" />
-            Cards
-          </button>
-        </div>
-      </div>
+            <ToggleButton value="table" aria-label="Table view">
+              <FormatListBulletedOutlinedIcon fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="card" aria-label="Card view">
+              <GridViewOutlinedIcon fontSize="small" />
+            </ToggleButton>
+          </ToggleButtonGroup>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<AddIcon />}
+            component={NextLink}
+            href={ROUTES.PROJECTS.NEW}
+          >
+            New Project
+          </Button>
+        </Stack>
+      </Box>
 
-      {/* Error State */}
-      {isError && <ErrorState onRetry={() => refetch()} />}
+      {/* Error banner */}
+      {isError && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            p: 1.5,
+            bgcolor: 'rgba(220,38,38,0.06)',
+            borderRadius: 1.5,
+            border: '1px solid',
+            borderColor: 'error.light',
+          }}
+        >
+          <ErrorOutlineIcon sx={{ color: 'error.main', fontSize: 18, flexShrink: 0 }} />
+          <MUITypography variant="body" sx={{ color: 'error.main', flex: 1 }}>
+            {getErrorMessage(error)}
+          </MUITypography>
+          <Button size="small" color="error" onClick={() => void refetch()}>
+            Retry
+          </Button>
+        </Box>
+      )}
 
-      {/* Content */}
-      {!isError && (
+      {/* Table view */}
+      {currentView === 'table' && (
+        <AdvancedTable
+          rows={tableRows}
+          columns={COLUMNS}
+          rowIdField="id"
+          loading={isLoading}
+          refetching={isFetching && !isLoading}
+          paginationMode="server"
+          page={urlState.state.page}
+          pageSize={urlState.state.pageSize}
+          totalRowCount={data?.meta.total ?? 0}
+          sortModel={urlState.state.sortModel}
+          filterModel={urlState.state.filters}
+          onPageChange={urlState.setPage}
+          onPageSizeChange={urlState.setPageSize}
+          onSearchChange={urlState.setSearch}
+          onSortChange={urlState.setSortModel}
+          onFilterChange={urlState.setFilters}
+          bulkActions={BULK_ACTIONS}
+          enableSearch
+          enableFilters
+          enablePagination
+          enableColumnVisibility
+          renderEmptyState={renderEmptyState}
+        />
+      )}
+
+      {/* Card view */}
+      {currentView === 'card' && (
         <>
-          {/* Empty States */}
-          {!isLoading && projects.length === 0 && (
-            <div className="bg-background rounded-lg border border-border-light overflow-hidden">
-              <div className="p-8">
-                {hasActiveFilters ? (
-                  <EmptyState
-                    title="No projects found"
-                    description={
-                      debouncedSearch
-                        ? `No results match your search and filters. Try adjusting your criteria.`
-                        : 'No projects match the selected filters. Try different filter options.'
-                    }
-                    icon={<Search className="w-full h-full" />}
-                    iconColor="muted"
-                    action={{
-                      label: 'Clear Filters',
-                      onClick: () => {
-                        setStatusFilter('');
-                        setPriorityFilter('');
-                        setTypeFilter('');
-                        setSearchInput('');
-                        setCurrentPage(1);
-                        url.set({
-                          status: '',
-                          priority: '',
-                          projectType: '',
-                          search: '',
-                          page: '',
-                        });
-                      },
-                    }}
-                  />
-                ) : (
-                  <EmptyState
-                    title="No projects yet"
-                    description="Get started by creating your first project to track solar installations."
-                    icon={<Inbox className="w-full h-full" />}
-                    iconColor="primary"
-                    action={{
-                      label: 'New Project',
-                      onClick: () => {
-                        router.push(ROUTES.PROJECTS.NEW);
-                      },
-                    }}
-                  />
-                )}
-              </div>
-            </div>
+          {isLoading && (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                gap: 2,
+              }}
+            >
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Box
+                  key={i}
+                  sx={{
+                    bgcolor: 'background.paper',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 1.5,
+                    p: 2,
+                    height: 220,
+                  }}
+                >
+                  <LinearProgress sx={{ borderRadius: 1 }} />
+                </Box>
+              ))}
+            </Box>
           )}
-
-          {/* Card View */}
-          {currentView === 'card' && (
-            <>
-              {isLoading && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="bg-background rounded-lg border border-border-light p-4 animate-pulse"
-                    >
-                      <div className="h-4 bg-muted rounded w-1/3 mb-2" />
-                      <div className="h-5 bg-muted rounded w-2/3 mb-3" />
-                      <div className="h-3 bg-muted rounded w-1/2 mb-2" />
-                      <div className="h-3 bg-muted rounded w-2/5 mb-3" />
-                      <div className="h-2 bg-muted rounded w-full mb-3" />
-                      <div className="h-8 bg-muted rounded w-full mt-3" />
-                    </div>
-                  ))}
-                </div>
+          {!isLoading && tableRows.length === 0 && (
+            <Box sx={{ py: 6, textAlign: 'center' }}>
+              <InboxOutlinedIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
+              <MUITypography variant="body" sx={{ color: 'text.secondary', display: 'block' }}>
+                {Object.keys(urlState.state.filters).length > 0 || urlState.state.search
+                  ? 'No projects match your filters.'
+                  : 'No projects yet.'}
+              </MUITypography>
+              {Object.keys(urlState.state.filters).length > 0 || urlState.state.search ? (
+                <Button
+                  size="small"
+                  sx={{ mt: 1 }}
+                  onClick={() => {
+                    urlState.resetAll();
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              ) : (
+                <Button
+                  size="small"
+                  variant="contained"
+                  sx={{ mt: 1 }}
+                  onClick={() => {
+                    void router.push(ROUTES.PROJECTS.NEW);
+                  }}
+                >
+                  New Project
+                </Button>
               )}
-              {!isLoading && projects.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {projects.map((project) => (
-                    <ProjectCard key={project.id} project={project} />
-                  ))}
-                </div>
-              )}
-            </>
+            </Box>
           )}
-
-          {/* Table View */}
-          {currentView === 'table' && (projects.length > 0 || isLoading) && (
-            <div className="bg-background rounded-lg border border-border-light overflow-hidden">
-              <DataTable
-                columns={projectColumns}
-                data={projects}
-                isLoading={isLoading}
-                enablePagination={false}
-                enableSearch={false}
-              />
-              {!isLoading && projects.length > 0 && (
-                <TablePagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  totalItems={totalItems}
-                  pageSize={pageSize}
-                  itemLabel="projects"
-                  variant="full"
-                  onPageChange={handlePageChange}
-                  onPageSizeChange={handlePageSizeChange}
-                />
-              )}
-            </div>
-          )}
-
-          {/* Card View Pagination */}
-          {currentView === 'card' && !isLoading && projects.length > 0 && (
-            <div className="bg-background rounded-lg border border-border-light overflow-hidden">
-              <TablePagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={totalItems}
-                pageSize={pageSize}
-                itemLabel="projects"
-                variant="full"
-                onPageChange={handlePageChange}
-                onPageSizeChange={handlePageSizeChange}
-              />
-            </div>
+          {!isLoading && tableRows.length > 0 && (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                gap: 2,
+              }}
+            >
+              {tableRows.map((p) => (
+                <ProjectCard key={p.id} project={p as ProjectListItem} />
+              ))}
+            </Box>
           )}
         </>
       )}
-    </div>
+    </Box>
   );
 }

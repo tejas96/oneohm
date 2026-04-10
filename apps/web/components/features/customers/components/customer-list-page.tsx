@@ -26,9 +26,8 @@ import {
 import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@oneohm-epc/shared/types';
 import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type JSX, useMemo, useState } from 'react';
+import { type JSX, type MouseEvent, useCallback, useMemo, useState } from 'react';
 
-import { DeleteCustomerModal } from './delete-customer-modal';
 import { ImportCustomersModal } from './import-customers-modal';
 import {
   Customer as CustomerBase,
@@ -171,7 +170,7 @@ function RowActionsMenu({ customer }: { customer: Customer }): JSX.Element {
         <MenuItem
           onClick={() => {
             handleClose();
-            router.push(buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: customer.id }));
+            void router.push(buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: customer.id }));
           }}
         >
           <ListItemIcon>
@@ -183,7 +182,7 @@ function RowActionsMenu({ customer }: { customer: Customer }): JSX.Element {
         <MenuItem
           onClick={() => {
             handleClose();
-            router.push(buildRoute(ROUTES.CUSTOMERS.EDIT, { id: customer.id }));
+            void router.push(buildRoute(ROUTES.CUSTOMERS.EDIT, { id: customer.id }));
           }}
         >
           <ListItemIcon>
@@ -195,7 +194,7 @@ function RowActionsMenu({ customer }: { customer: Customer }): JSX.Element {
         <MenuItem
           onClick={() => {
             handleClose();
-            router.push(buildRoute(ROUTES.CUSTOMERS.ADD_PROPERTY, { id: customer.id }));
+            void router.push(buildRoute(ROUTES.CUSTOMERS.ADD_PROPERTY, { id: customer.id }));
           }}
         >
           <ListItemIcon>
@@ -310,7 +309,7 @@ const COLUMNS: ColumnConfig<Customer>[] = [
               size="small"
               component="a"
               href={`tel:${phone}`}
-              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              onClick={(e: MouseEvent) => e.stopPropagation()}
               sx={{ p: 0.5 }}
             >
               <PhoneIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
@@ -323,10 +322,10 @@ const COLUMNS: ColumnConfig<Customer>[] = [
               href={`https://wa.me/${whatsappNumber}`}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              onClick={(e: MouseEvent) => e.stopPropagation()}
               sx={{ p: 0.5 }}
             >
-              <WhatsAppIcon className="size-3.5 text-success" />
+              <WhatsAppIcon style={{ fontSize: 14, color: '#25D366' }} />
             </IconButton>
           </Tooltip>
         </Stack>
@@ -446,8 +445,36 @@ export function CustomerListPage(): JSX.Element {
   const urlState = useTableUrlState({ prefix: 'customers', defaultPageSize: 10 });
 
   // Modal state
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
+
+  const renderEmptyState = useCallback(
+    (hasActiveFilters: boolean): JSX.Element =>
+      hasActiveFilters ? (
+        <Box sx={{ py: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          <MUITypography variant="body">No customers match your search and filters.</MUITypography>
+          <Button size="small" variant="outlined" onClick={urlState.resetAll}>
+            Clear all filters
+          </Button>
+        </Box>
+      ) : (
+        <Box sx={{ py: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          <MUITypography variant="body">
+            No customers yet. Get started by adding your first customer.
+          </MUITypography>
+          <Button
+            size="small"
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => {
+              void router.push(ROUTES.CUSTOMERS.NEW);
+            }}
+          >
+            Add Customer
+          </Button>
+        </Box>
+      ),
+    [router, urlState.resetAll],
+  );
 
   // Server-side data fetch — driven entirely by URL state
   const {
@@ -502,7 +529,7 @@ export function CustomerListPage(): JSX.Element {
             Import
           </Button>
 
-          <Button variant="outlined" size="small" startIcon={<DownloadIcon />}>
+          <Button variant="outlined" size="small" startIcon={<DownloadIcon />} disabled>
             Export
           </Button>
 
@@ -510,7 +537,9 @@ export function CustomerListPage(): JSX.Element {
             variant="contained"
             size="small"
             startIcon={<AddIcon />}
-            onClick={() => router.push(ROUTES.CUSTOMERS.NEW)}
+            onClick={() => {
+              void router.push(ROUTES.CUSTOMERS.NEW);
+            }}
           >
             Add Customer
           </Button>
@@ -562,7 +591,9 @@ export function CustomerListPage(): JSX.Element {
         onSortChange={urlState.setSortModel}
         onFilterChange={urlState.setFilters}
         onSearchChange={urlState.setSearch}
-        onRowClick={(row) => router.push(buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: row.id }))}
+        onRowClick={(row) => {
+          void router.push(buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: row.id }));
+        }}
         enableRowSelection
         bulkActions={BULK_ACTIONS}
         enableSearch
@@ -571,56 +602,10 @@ export function CustomerListPage(): JSX.Element {
         enableColumnVisibility
         searchPlaceholder="Search by name, phone, email, city..."
         itemLabel="customers"
-        renderEmptyState={(hasActiveFilters) =>
-          hasActiveFilters ? (
-            <Box
-              sx={{
-                py: 6,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 1,
-              }}
-            >
-              <MUITypography variant="body">
-                No customers match your search and filters.
-              </MUITypography>
-              <Button size="small" variant="outlined" onClick={urlState.resetAll}>
-                Clear all filters
-              </Button>
-            </Box>
-          ) : (
-            <Box
-              sx={{
-                py: 6,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 1,
-              }}
-            >
-              <MUITypography variant="body">
-                No customers yet. Get started by adding your first customer.
-              </MUITypography>
-              <Button
-                size="small"
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => router.push(ROUTES.CUSTOMERS.NEW)}
-              >
-                Add Customer
-              </Button>
-            </Box>
-          )
-        }
+        renderEmptyState={renderEmptyState}
       />
 
       {/* ── Modals ── */}
-      <DeleteCustomerModal
-        open={deleteModalOpen}
-        onOpenChange={setDeleteModalOpen}
-        customer={null}
-      />
       <ImportCustomersModal open={importModalOpen} onOpenChange={setImportModalOpen} />
     </Box>
   );

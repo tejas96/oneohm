@@ -224,7 +224,7 @@ function RowActionsMenu({ property, onMarkAsLost }: RowActionsMenuProps): JSX.El
         <MenuItem
           onClick={() => {
             handleClose();
-            router.push(buildRoute(ROUTES.PROPERTIES.DETAIL, { id: property.id }));
+            void router.push(buildRoute(ROUTES.PROPERTIES.DETAIL, { id: property.id }));
           }}
         >
           <ListItemIcon>
@@ -236,7 +236,7 @@ function RowActionsMenu({ property, onMarkAsLost }: RowActionsMenuProps): JSX.El
         <MenuItem
           onClick={() => {
             handleClose();
-            router.push(buildRoute(ROUTES.PROPERTIES.EDIT, { id: property.id }));
+            void router.push(buildRoute(ROUTES.PROPERTIES.EDIT, { id: property.id }));
           }}
         >
           <ListItemIcon>
@@ -248,7 +248,7 @@ function RowActionsMenu({ property, onMarkAsLost }: RowActionsMenuProps): JSX.El
         <MenuItem
           onClick={() => {
             handleClose();
-            router.push(
+            void router.push(
               `${ROUTES.QUOTES.NEW}?propertyId=${property.id}&customerId=${property.customerId}`,
             );
           }}
@@ -262,7 +262,7 @@ function RowActionsMenu({ property, onMarkAsLost }: RowActionsMenuProps): JSX.El
         <MenuItem
           onClick={() => {
             handleClose();
-            router.push(`${ROUTES.FOLLOWUPS.NEW}?propertyId=${property.id}`);
+            void router.push(`${ROUTES.FOLLOWUPS.NEW}?propertyId=${property.id}`);
           }}
         >
           <ListItemIcon>
@@ -621,6 +621,37 @@ export function PropertyListPage(): JSX.Element {
     [handleMarkAsLost, stats],
   );
 
+  const renderEmptyState = useCallback(
+    (hasActiveFilters: boolean): JSX.Element =>
+      hasActiveFilters ? (
+        <Box sx={{ py: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          <RadioButtonUncheckedIcon sx={{ fontSize: 32, color: 'text.disabled', mb: 0.5 }} />
+          <MUITypography variant="body">No properties match your search and filters.</MUITypography>
+          <Button size="small" variant="outlined" onClick={urlState.resetAll}>
+            Clear all filters
+          </Button>
+        </Box>
+      ) : (
+        <Box sx={{ py: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+          <RadioButtonUncheckedIcon sx={{ fontSize: 32, color: 'text.disabled', mb: 0.5 }} />
+          <MUITypography variant="body">
+            No properties yet. Get started by adding your first property.
+          </MUITypography>
+          <Button
+            size="small"
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => {
+              void router.push(ROUTES.PROPERTIES.NEW);
+            }}
+          >
+            Add Property
+          </Button>
+        </Box>
+      ),
+    [router, urlState.resetAll],
+  );
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
       {/* ── Page Header ── */}
@@ -646,7 +677,9 @@ export function PropertyListPage(): JSX.Element {
           variant="contained"
           size="small"
           startIcon={<AddIcon />}
-          onClick={() => router.push(ROUTES.PROPERTIES.NEW)}
+          onClick={() => {
+            void router.push(ROUTES.PROPERTIES.NEW);
+          }}
         >
           Add Property
         </Button>
@@ -700,7 +733,9 @@ export function PropertyListPage(): JSX.Element {
         onFilterChange={urlState.setFilters}
         onSearchChange={urlState.setSearch}
         // Row interaction
-        onRowClick={(row) => router.push(buildRoute(ROUTES.PROPERTIES.DETAIL, { id: row.id }))}
+        onRowClick={(row) => {
+          void router.push(buildRoute(ROUTES.PROPERTIES.DETAIL, { id: row.id }));
+        }}
         // Row selection
         enableRowSelection
         bulkActions={BULK_ACTIONS}
@@ -711,50 +746,7 @@ export function PropertyListPage(): JSX.Element {
         enableColumnVisibility
         searchPlaceholder="Search by name, address, city, consumer no..."
         itemLabel="properties"
-        renderEmptyState={(hasActiveFilters) =>
-          hasActiveFilters ? (
-            <Box
-              sx={{
-                py: 6,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 1,
-              }}
-            >
-              <RadioButtonUncheckedIcon sx={{ fontSize: 32, color: 'text.disabled', mb: 0.5 }} />
-              <MUITypography variant="body">
-                No properties match your search and filters.
-              </MUITypography>
-              <Button size="small" variant="outlined" onClick={urlState.resetAll}>
-                Clear all filters
-              </Button>
-            </Box>
-          ) : (
-            <Box
-              sx={{
-                py: 6,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 1,
-              }}
-            >
-              <RadioButtonUncheckedIcon sx={{ fontSize: 32, color: 'text.disabled', mb: 0.5 }} />
-              <MUITypography variant="body">
-                No properties yet. Get started by adding your first property.
-              </MUITypography>
-              <Button
-                size="small"
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => router.push(ROUTES.PROPERTIES.NEW)}
-              >
-                Add Property
-              </Button>
-            </Box>
-          )
-        }
+        renderEmptyState={renderEmptyState}
       />
 
       {/* ── Modals ── */}

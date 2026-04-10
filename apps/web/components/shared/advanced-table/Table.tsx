@@ -817,8 +817,8 @@ function BulkActionsBar<TRow>({
         sx={{ backgroundColor: 'primary.dark', color: 'primary.contrastText', fontWeight: 600 }}
       />
       <Stack direction="row" spacing={1}>
-        {bulkActions.map((action, idx) => (
-          <BulkActionButton key={idx} action={action} selectedRows={selectedRows} />
+        {bulkActions.map((action) => (
+          <BulkActionButton key={action.label} action={action} selectedRows={selectedRows} />
         ))}
       </Stack>
       <Box sx={{ flex: 1 }} />
