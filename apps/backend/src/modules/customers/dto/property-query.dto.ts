@@ -4,6 +4,7 @@ import {
   PropertySortField,
   PropertyStatus,
   PropertyType,
+  QuoteStatus,
   SortOrder,
 } from '@oneohm-epc/shared/types';
 import { Transform, Type } from 'class-transformer';
@@ -11,6 +12,7 @@ import {
   IsDateString,
   IsEnum,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   Max,
@@ -142,6 +144,37 @@ export class PropertyQueryDto {
   @ValidateIf((o: PropertyQueryDto) => !!o.toDate)
   @IsDateString({}, { message: 'toDate must be a valid ISO 8601 date (e.g., 2025-12-31)' })
   toDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by latest quote status',
+    enum: QuoteStatus,
+    example: QuoteStatus.ACCEPTED,
+  })
+  @IsOptional()
+  @IsEnum(QuoteStatus)
+  quoteStatus?: QuoteStatus;
+
+  @ApiPropertyOptional({
+    description: 'Filter by minimum system size (kW, inclusive)',
+    example: 5,
+    minimum: 0,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  systemSizeMin?: number;
+
+  @ApiPropertyOptional({
+    description: 'Filter by maximum system size (kW, inclusive)',
+    example: 100,
+    minimum: 0,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  systemSizeMax?: number;
 
   // ==================== Sorting ====================
 

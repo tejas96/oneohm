@@ -176,7 +176,11 @@ export class CustomerPropertyRepository {
     organizationId: string,
     query: PropertyQueryDto,
   ): Promise<[CustomerPropertyEntity[], number]> {
-    const needsQuoteJoin = QUOTE_SORT_FIELDS.has(query.sortBy);
+    const needsQuoteJoin =
+      QUOTE_SORT_FIELDS.has(query.sortBy) ||
+      query.quoteStatus !== undefined ||
+      query.systemSizeMin !== undefined ||
+      query.systemSizeMax !== undefined;
 
     const qb = this.repository
       .createQueryBuilder('property')
@@ -254,9 +258,22 @@ export class CustomerPropertyRepository {
     }
 
     if (query.toDate) {
-      qb.andWhere('property.created_at <= :toDate', {
-        toDate: `${query.toDate}T23:59:59.999Z`,
-      });
+      // Backend already has a time component check pattern from customer profile repo.
+      // For consistency we keep the T23:59:59.999Z append for date-only strings.
+      const toDateStr = query.toDate.includes('T') ? query.toDate : `${query.toDate}T23:59:59.999Z`;
+      qb.andWhere('property.created_at <= :toDate', { toDate: toDateStr });
+    }
+
+    if (query.quoteStatus !== undefined) {
+      qb.andWhere('latestQuote.status = :quoteStatus', { quoteStatus: query.quoteStatus });
+    }
+
+    if (query.systemSizeMin !== undefined) {
+      qb.andWhere('cv.systemSizeKw >= :systemSizeMin', { systemSizeMin: query.systemSizeMin });
+    }
+
+    if (query.systemSizeMax !== undefined) {
+      qb.andWhere('cv.systemSizeKw <= :systemSizeMax', { systemSizeMax: query.systemSizeMax });
     }
 
     // ===== Sorting (using safe field mapping) =====

@@ -1,624 +1,768 @@
 'use client';
 
-import { LeadTemperature, PropertySortField, PropertyType } from '@oneohm-epc/shared/types';
-import type { ColumnDef } from '@tanstack/react-table';
+import AddIcon from '@mui/icons-material/Add';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import EditIcon from '@mui/icons-material/Edit';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import NoteAddIcon from '@mui/icons-material/NoteAdd';
+import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
-  AlertCircle,
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  Calendar,
-  Edit,
-  Eye,
-  FileText,
-  Loader2,
-  MoreHorizontal,
-  Plus,
-  Search,
-  X,
-} from 'lucide-react';
-import Link from 'next/link';
+  Box,
+  Button,
+  IconButton,
+  Link as MuiLink,
+  ListItemIcon,
+  Menu,
+  MenuItem,
+  Tooltip,
+} from '@mui/material';
+import { PropertySortField, SortOrder } from '@oneohm-epc/shared/types';
+import NextLink from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, useCallback, useMemo, type JSX } from 'react';
+import { type JSX, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { MarkAsLostModal } from './mark-as-lost-modal';
-
 import {
-  DataTable,
-  EmptyState,
-  FilterTabs,
-  TablePagination,
-  type FilterTab,
-} from '@/components/shared';
+  LEAD_TEMPERATURE_OPTIONS,
+  PROPERTY_STATUS_OPTIONS,
+  PROPERTY_TYPE_LABELS,
+  PROPERTY_TYPE_OPTIONS,
+  QUOTE_STATUS_OPTIONS,
+  TEMP_DOT_MUI_COLOR,
+} from '../constants';
 import {
-  Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Typography,
-} from '@/components/ui';
-import { buildRoute, ROUTES } from '@/lib/config/routes';
-import {
-  usePropertyList,
+  type Property as PropertyBase,
+  type PropertyFilters,
+  useProperties,
   usePropertyTemperatureStats,
-  type PropertyItem,
-} from '@/lib/hooks/resources';
-import { cn, formatCurrency } from '@/lib/utils';
+} from '../hooks';
+
+import {
+  AdvancedTable,
+  type BulkAction,
+  type ColumnConfig,
+} from '@/components/shared/advanced-table';
+import { MUIAvatar } from '@/components/ui/mui-avatar';
+import { MUIStatusChip } from '@/components/ui/mui-status-chip';
+import { MUITypography } from '@/components/ui/mui-typography';
+import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
+import { formatCurrency, getErrorMessage, toTitleLabel } from '@/lib/utils';
 
 // ============================================================================
-// Constants
+// Types
 // ============================================================================
 
-const TEMPERATURE_LABELS: Record<LeadTemperature, string> = {
-  [LeadTemperature.HOT]: 'Hot',
-  [LeadTemperature.WARM]: 'Warm',
-  [LeadTemperature.COLD]: 'Cold',
+// AdvancedTable requires TRow extends Record<string, unknown>.
+// PropertyBase has explicit typed fields, so we widen it here for table usage only.
+type PropertyRow = PropertyBase & Record<string, unknown>;
+const EMPTY_PROPERTY_ROWS: PropertyRow[] = [];
+
+// ============================================================================
+// Adapter functions — pure, module-level, no React deps
+// ============================================================================
+
+const SORT_FIELD_MAP: Record<string, PropertySortField> = {
+  propertyCode: PropertySortField.PROPERTY_NAME,
+  latestQuoteSystemSizeKw: PropertySortField.SYSTEM_SIZE,
+  latestQuoteFinalPrice: PropertySortField.QUOTE_COST,
+  createdAt: PropertySortField.CREATED_AT,
 };
 
-const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
-  [PropertyType.RESIDENTIAL]: 'Residential',
-  [PropertyType.RESIDENTIAL_APARTMENT]: 'Apartment',
-  [PropertyType.COMMERCIAL]: 'Commercial',
-  [PropertyType.INDUSTRIAL]: 'Industrial',
-  [PropertyType.AGRICULTURAL]: 'Agricultural',
-  [PropertyType.INSTITUTIONAL]: 'Institutional',
-};
+function toApiSortField(
+  model: { field: string; direction: 'asc' | 'desc' } | null,
+): PropertySortField {
+  if (!model) return PropertySortField.CREATED_AT;
+  return SORT_FIELD_MAP[model.field] ?? PropertySortField.CREATED_AT;
+}
 
-const PROPERTY_TYPE_OPTIONS = [
-  { value: 'all', label: 'All Types' },
-  ...Object.entries(PROPERTY_TYPE_LABELS).map(([value, label]) => ({ value, label })),
+function toApiSortOrder(model: { field: string; direction: 'asc' | 'desc' } | null): SortOrder {
+  return model?.direction === 'asc' ? SortOrder.ASC : SortOrder.DESC;
+}
+
+/** Convert any date value to a YYYY-MM-DD local string, or undefined if invalid. */
+function toLocalDateString(raw: string): string | undefined {
+  if (!raw) return undefined;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return undefined;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Convert a YYYY-MM-DD local date string to UTC start-of-day / end-of-day ISO range. */
+function localDateToUtcDayRange(localDate: string): { fromIso: string; toIso: string } | undefined {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(localDate);
+  if (!match) return undefined;
+  const yy = Number(match[1]);
+  const mm = Number(match[2]);
+  const dd = Number(match[3]);
+  return {
+    fromIso: new Date(yy, mm - 1, dd, 0, 0, 0, 0).toISOString(),
+    toIso: new Date(yy, mm - 1, dd, 23, 59, 59, 999).toISOString(),
+  };
+}
+
+/**
+ * Map AdvancedTable URL filter record to PropertyFilters for the API.
+ *
+ * Rules:
+ * - Strip 'all' values — backend @IsEnum rejects them (400).
+ * - createdAt date column → fromDate/toDate ISO day range.
+ * - systemSize range stored as {min?, max?} under 'latestQuoteSystemSizeKw'.
+ * - quoteStatus is filterable via backend after Phase-2 backend param was added.
+ * - createdBy is passed as userId (or 'me' — backend resolves to current user id).
+ */
+function toPropertyFilters(filters: TableUrlFilterRecord): Partial<PropertyFilters> {
+  const raw = filters as Record<string, unknown>;
+  const result: Partial<PropertyFilters> = {};
+
+  if (typeof raw.leadTemperature === 'string' && raw.leadTemperature !== 'all') {
+    result.leadTemperature = raw.leadTemperature as PropertyFilters['leadTemperature'];
+  }
+  if (typeof raw.propertyType === 'string' && raw.propertyType !== 'all') {
+    result.propertyType = raw.propertyType as PropertyFilters['propertyType'];
+  }
+  if (typeof raw.status === 'string' && raw.status !== 'all') {
+    result.status = raw.status as PropertyFilters['status'];
+  }
+  if (typeof raw.quoteStatus === 'string' && raw.quoteStatus !== 'all') {
+    result.quoteStatus = raw.quoteStatus as PropertyFilters['quoteStatus'];
+  }
+  if (typeof raw.city === 'string' && raw.city) result.city = raw.city;
+  if (typeof raw.state === 'string' && raw.state) result.state = raw.state;
+  if (typeof raw.createdBy === 'string' && raw.createdBy) result.createdBy = raw.createdBy;
+
+  // Numeric range for system size (stored as { min?, max? } object by 'range' filterType)
+  const sizeRange = raw.latestQuoteSystemSizeKw as { min?: string; max?: string } | undefined;
+  if (sizeRange?.min !== undefined && sizeRange.min !== '') {
+    const n = Number(sizeRange.min);
+    if (!Number.isNaN(n)) result.systemSizeMin = n;
+  }
+  if (sizeRange?.max !== undefined && sizeRange.max !== '') {
+    const n = Number(sizeRange.max);
+    if (!Number.isNaN(n)) result.systemSizeMax = n;
+  }
+
+  // Date range from the createdAt date column filter
+  const rawDate = typeof raw.createdAt === 'string' ? raw.createdAt : undefined;
+  const localDate = rawDate ? toLocalDateString(rawDate) : undefined;
+  const utcRange = localDate ? localDateToUtcDayRange(localDate) : undefined;
+  if (utcRange) {
+    result.fromDate = utcRange.fromIso;
+    result.toDate = utcRange.toIso;
+  }
+
+  return result;
+}
+
+// ============================================================================
+// Bulk actions (stable module-level constant — no re-creation on render)
+// ============================================================================
+
+const BULK_ACTIONS: BulkAction<PropertyRow>[] = [
+  {
+    label: 'Export Selected',
+    onClick: (_rows) => {
+      // placeholder — export API pending
+    },
+  },
+  {
+    label: 'Change Temperature',
+    disabled: true,
+    disabledTooltip: 'Coming in Phase 2',
+    onClick: () => undefined,
+  },
+  {
+    label: 'Mark as Lost',
+    color: 'error',
+    disabled: true,
+    disabledTooltip: 'Coming in Phase 2',
+    onClick: () => undefined,
+  },
 ];
 
-const QUOTE_STATUS_COLORS: Record<string, string> = {
-  draft: 'bg-muted text-foreground-secondary',
-  sent: 'bg-info/10 text-info',
-  pending: 'bg-warning/10 text-warning',
-  accepted: 'bg-success/10 text-success',
-  rejected: 'bg-error/10 text-error',
-};
+// ============================================================================
+// Row Actions Menu (private sub-component — keeps PropertyListPage clean)
+// ============================================================================
 
-const TEMPERATURE_TABS: FilterTab<string>[] = [
-  { id: 'all', label: 'All' },
-  { id: LeadTemperature.HOT, label: 'Hot' },
-  { id: LeadTemperature.WARM, label: 'Warm' },
-  { id: LeadTemperature.COLD, label: 'Cold' },
-];
+interface RowActionsMenuProps {
+  property: PropertyRow;
+  onMarkAsLost: (property: PropertyRow) => void;
+}
+
+function RowActionsMenu({ property, onMarkAsLost }: RowActionsMenuProps): JSX.Element {
+  const router = useRouter();
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+
+  const handleClose = (): void => setAnchorEl(null);
+
+  return (
+    <>
+      <IconButton
+        size="small"
+        onClick={(e) => {
+          e.stopPropagation();
+          setAnchorEl(e.currentTarget);
+        }}
+        aria-label="Row actions"
+      >
+        <MoreVertIcon fontSize="small" />
+      </IconButton>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleClose}
+        onClick={(e) => e.stopPropagation()}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{ paper: { elevation: 2, sx: { minWidth: 180 } } }}
+      >
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            router.push(buildRoute(ROUTES.PROPERTIES.DETAIL, { id: property.id }));
+          }}
+        >
+          <ListItemIcon>
+            <VisibilityIcon fontSize="small" />
+          </ListItemIcon>
+          View Details
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            router.push(buildRoute(ROUTES.PROPERTIES.EDIT, { id: property.id }));
+          }}
+        >
+          <ListItemIcon>
+            <EditIcon fontSize="small" />
+          </ListItemIcon>
+          Edit Property
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            router.push(
+              `${ROUTES.QUOTES.NEW}?propertyId=${property.id}&customerId=${property.customerId}`,
+            );
+          }}
+        >
+          <ListItemIcon>
+            <NoteAddIcon fontSize="small" />
+          </ListItemIcon>
+          Create Quote
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            router.push(`${ROUTES.FOLLOWUPS.NEW}?propertyId=${property.id}`);
+          }}
+        >
+          <ListItemIcon>
+            <CalendarTodayIcon fontSize="small" />
+          </ListItemIcon>
+          Schedule Followup
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            onMarkAsLost(property);
+          }}
+          sx={{ color: 'error.main' }}
+        >
+          <ListItemIcon>
+            <WarningAmberIcon fontSize="small" sx={{ color: 'error.main' }} />
+          </ListItemIcon>
+          Mark as Lost
+        </MenuItem>
+      </Menu>
+    </>
+  );
+}
 
 // ============================================================================
-// Component
+// Column factory (receives callbacks + stats — defined outside component to
+// prevent reference churn; only rebuilt when deps change via useMemo)
+// ============================================================================
+
+interface BuildColumnsArgs {
+  onMarkAsLost: (property: PropertyRow) => void;
+  tempStats: Record<string, number> | undefined;
+}
+
+function buildColumns({ onMarkAsLost, tempStats }: BuildColumnsArgs): ColumnConfig<PropertyRow>[] {
+  // Augment lead temperature options with live counts from the stats API
+  const leadTempOptions = LEAD_TEMPERATURE_OPTIONS.map(({ value, label }) => {
+    const count = tempStats?.[value];
+    return { value, label: count !== undefined ? `${label} (${count})` : label };
+  });
+
+  return [
+    {
+      field: 'propertyCode',
+      headerName: 'Property',
+      sortable: true,
+      flex: 3,
+      cellSx: { whiteSpace: 'normal', verticalAlign: 'top', py: 1 },
+      renderCell: ({ row }) => {
+        const address = (row.address as string | undefined) ?? '';
+        const customer = (row.customerName as string | undefined) ?? '';
+        const tooltipText = [address, customer].filter(Boolean).join('\n') || '-';
+
+        return (
+          <Box>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                minWidth: 0,
+                overflow: 'hidden',
+              }}
+            >
+              <MuiLink
+                component={NextLink}
+                href={buildRoute(ROUTES.PROPERTIES.DETAIL, { id: row.id })}
+                prefetch={false}
+                underline="hover"
+                color="inherit"
+                noWrap
+                sx={{
+                  fontWeight: 500,
+                  fontSize: '0.875rem',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  '&:hover': { color: 'primary.main' },
+                }}
+                onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              >
+                {row.propertyCode ?? row.propertyName ?? 'Unnamed Property'}
+              </MuiLink>
+
+              {/* Temperature dot — uses theme color tokens from constants */}
+              <Box
+                sx={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  bgcolor: TEMP_DOT_MUI_COLOR[row.leadTemperature] ?? 'text.disabled',
+                  flexShrink: 0,
+                }}
+                title={`${toTitleLabel(row.leadTemperature)} Lead`}
+              />
+
+              {/* Loan indicator */}
+              {row.wantsLoan && (
+                <MUITypography
+                  variant="inherit"
+                  component="span"
+                  color="primary.main"
+                  sx={{ fontWeight: 600, flexShrink: 0, fontSize: '0.75rem' }}
+                  title="Loan Required"
+                >
+                  $
+                </MUITypography>
+              )}
+            </Box>
+
+            {/* Address (up to 2 lines) + customer name (always visible below) */}
+            <Tooltip
+              title={<span style={{ whiteSpace: 'pre-line' }}>{tooltipText}</span>}
+              placement="bottom-start"
+              enterDelay={500}
+            >
+              <Box sx={{ mt: 0.25, minWidth: 0 }}>
+                {address && (
+                  <MUITypography
+                    variant="timestamp"
+                    sx={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                      whiteSpace: 'normal',
+                      wordBreak: 'break-word',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {address}
+                  </MUITypography>
+                )}
+                {customer && (
+                  <MUITypography
+                    variant="timestamp"
+                    noWrap
+                    sx={{ color: 'text.disabled', fontStyle: 'italic', mt: 0.125 }}
+                  >
+                    {customer}
+                  </MUITypography>
+                )}
+                {!address && !customer && <MUITypography variant="placeholder">-</MUITypography>}
+              </Box>
+            </Tooltip>
+          </Box>
+        );
+      },
+    },
+    {
+      field: 'latestQuoteSystemSizeKw',
+      headerName: 'System Size',
+      sortable: true,
+      filterable: true,
+      filterType: 'range',
+      flex: 1,
+      renderCell: ({ row }) => {
+        const size = row.latestQuoteSystemSizeKw;
+        if (size == null) return <MUITypography variant="placeholder">-</MUITypography>;
+        return <MUITypography variant="bodyPrimary">{Number(size).toFixed(2)} kW</MUITypography>;
+      },
+    },
+    {
+      field: 'latestQuoteFinalPrice',
+      headerName: 'Quote Cost',
+      sortable: true,
+      flex: 1,
+      renderCell: ({ row }) => {
+        const price = row.latestQuoteFinalPrice;
+        if (price == null) return <MUITypography variant="placeholder">-</MUITypography>;
+        return <MUITypography variant="bodyPrimary">{formatCurrency(Number(price))}</MUITypography>;
+      },
+    },
+    {
+      field: 'latestQuoteStatus',
+      headerName: 'Quote Status',
+      filterable: true,
+      filterType: 'select',
+      filterOptions: QUOTE_STATUS_OPTIONS,
+      flex: 1,
+      renderCell: ({ row }) => {
+        const status = row.latestQuoteStatus as string | undefined;
+        if (!status) return <MUITypography variant="placeholder">None</MUITypography>;
+        return <MUIStatusChip label={toTitleLabel(status)} colorSeed={status} />;
+      },
+    },
+    {
+      field: 'leadTemperature',
+      headerName: 'Temperature',
+      filterable: true,
+      filterType: 'select',
+      filterOptions: leadTempOptions,
+      flex: 1,
+      renderCell: ({ row }) => {
+        const temp = row.leadTemperature as string;
+        const color = temp === 'hot' ? 'error' : temp === 'warm' ? 'warning' : ('info' as const);
+        return <MUIStatusChip label={toTitleLabel(temp)} color={color} autoColor={false} />;
+      },
+    },
+    {
+      field: 'propertyType',
+      headerName: 'Type',
+      filterable: true,
+      filterType: 'select',
+      filterOptions: PROPERTY_TYPE_OPTIONS,
+      flex: 1,
+      renderCell: ({ row }) => (
+        <MUIStatusChip
+          label={PROPERTY_TYPE_LABELS[row.propertyType] ?? toTitleLabel(row.propertyType)}
+          colorSeed={row.propertyType}
+        />
+      ),
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      filterable: true,
+      filterType: 'select',
+      filterOptions: PROPERTY_STATUS_OPTIONS,
+      flex: 1,
+      renderCell: ({ row }) => {
+        const status = row.status as string | undefined;
+        if (!status) return <MUITypography variant="placeholder">-</MUITypography>;
+        return <MUIStatusChip label={toTitleLabel(status)} colorSeed={status} variant="filled" />;
+      },
+    },
+    {
+      field: 'createdAt',
+      headerName: 'Added',
+      sortable: true,
+      filterable: true,
+      filterType: 'date',
+      flex: 1.5,
+      renderCell: ({ row }) => {
+        const ts = row.createdAt as string | undefined;
+        if (!ts) return <MUITypography variant="placeholder">-</MUITypography>;
+        return (
+          <MUITypography variant="body">
+            {new Date(ts).toLocaleDateString('en-IN', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            })}
+          </MUITypography>
+        );
+      },
+    },
+    {
+      field: 'creatorName',
+      headerName: 'Created By',
+      filterable: true,
+      filterType: 'text',
+      flex: 1,
+      renderCell: ({ row }) => {
+        const name = (row.creatorName as string | undefined) ?? '';
+        if (!name) return <MUITypography variant="placeholder">-</MUITypography>;
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <MUIAvatar name={name} size="sm" sx={{ flexShrink: 0 }} />
+            <MUITypography variant="body" noWrap>
+              {name}
+            </MUITypography>
+          </Box>
+        );
+      },
+    },
+    {
+      field: 'actions',
+      headerName: '',
+      hideable: false,
+      width: 48,
+      actions: (row) => <RowActionsMenu property={row} onMarkAsLost={onMarkAsLost} />,
+    },
+  ];
+}
+
+// ============================================================================
+// Main component
 // ============================================================================
 
 export function PropertyListPage(): JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // FDAL hooks — handles pagination, filters, sorting, search, URL sync
+  // URL-synced table state — single source of truth for all table interactions
+  const urlState = useTableUrlState({ prefix: 'properties', defaultPageSize: 10 });
+
+  // Bridge for Next.js <Link> sidebar navigation (e.g. ?leadTemperature=hot).
+  // App Router <Link> does NOT fire `popstate`, so useTableUrlState cannot detect it.
+  // We use refs to hold the latest setters to satisfy react-hooks/exhaustive-deps.
+  const setFiltersRef = useRef(urlState.setFilters);
+  setFiltersRef.current = urlState.setFilters;
+  const filtersRef = useRef(urlState.state.filters);
+  filtersRef.current = urlState.state.filters;
+
+  useEffect(() => {
+    const urlTemp = searchParams.get('leadTemperature');
+    if (urlTemp && urlTemp !== 'all') {
+      // Absorb the bare ?leadTemperature param into the managed filter state,
+      // then immediately strip it from the URL so it cannot re-trigger this effect.
+      // Without stripping, every searchParams change (e.g. clearing properties_filters)
+      // would re-fire this effect and re-apply the filter, creating an infinite loop.
+      const next = new URLSearchParams(window.location.search);
+      next.delete('leadTemperature');
+      const qs = next.toString();
+      window.history.replaceState(
+        null,
+        '',
+        qs ? `${window.location.pathname}?${qs}` : window.location.pathname,
+      );
+
+      setFiltersRef.current({ ...filtersRef.current, leadTemperature: urlTemp });
+    }
+  }, [searchParams]);
+
+  // Temperature stats for filter option count labels (e.g. "Hot (12)")
+  const { stats } = usePropertyTemperatureStats();
+
+  // Server-side data fetch — driven entirely by URL state
   const {
-    items: properties,
-    meta,
-    search,
-    setSearch,
-    clearSearch,
-    filters,
-    setFilter,
-    clearFilters,
-    hasActiveFilters,
-    pagination,
-    sorting,
+    data: propertyData,
     isLoading,
     isFetching,
     isError,
     error,
     refetch,
-  } = usePropertyList();
+  } = useProperties({
+    page: urlState.state.page + 1, // 0-based internal → 1-based API
+    limit: urlState.state.pageSize,
+    search: urlState.state.search || undefined,
+    sortBy: toApiSortField(urlState.state.sortModel),
+    sortOrder: toApiSortOrder(urlState.state.sortModel),
+    ...toPropertyFilters(urlState.state.filters),
+  });
 
-  const { stats } = usePropertyTemperatureStats();
+  const tableRows = useMemo<PropertyRow[]>(
+    () => (propertyData?.data as PropertyRow[] | undefined) ?? EMPTY_PROPERTY_ROWS,
+    [propertyData?.data],
+  );
 
-  // Sync sidebar navigation: Next.js <Link> with ?leadTemperature=hot
-  // does NOT trigger popstate, so FDAL's useQueryState won't pick it up.
-  // IMPORTANT: Only depend on searchParamsString — NOT filters.leadTemperature.
-  // FDAL writes URL via replaceState which doesn't update searchParams,
-  // so this only fires on actual Next.js navigations (sidebar <Link> clicks).
-  const searchParamsString = searchParams.toString();
-  useEffect(() => {
-    const urlTemp = searchParams.get('leadTemperature') ?? 'all';
-    setFilter('leadTemperature', urlTemp);
-  }, [searchParamsString]); // intentionally omit filters/setFilter to avoid reset loop
-
-  // Local UI state (not part of FDAL)
-  const [selectedProperty, setSelectedProperty] = useState<PropertyItem | null>(null);
+  // Modal state
+  const [selectedProperty, setSelectedProperty] = useState<PropertyRow | null>(null);
   const [lostModalOpen, setLostModalOpen] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<PropertyItem[]>([]);
 
-  // Build tabs with counts
-  const temperatureTabsWithCounts: FilterTab<string>[] = useMemo(() => {
-    if (!stats) return TEMPERATURE_TABS;
-    const s = stats as Record<string, number>;
-    const total = (s.hot ?? 0) + (s.warm ?? 0) + (s.cold ?? 0);
-    return [
-      { id: 'all', label: 'All', count: total },
-      { id: LeadTemperature.HOT, label: 'Hot', count: s.hot ?? 0 },
-      { id: LeadTemperature.WARM, label: 'Warm', count: s.warm ?? 0 },
-      { id: LeadTemperature.COLD, label: 'Cold', count: s.cold ?? 0 },
-    ];
-  }, [stats]);
-
-  const handleRowSelectionChange = useCallback((rows: PropertyItem[]) => {
-    setSelectedRows(rows);
+  const handleMarkAsLost = useCallback((property: PropertyRow): void => {
+    setSelectedProperty(property);
+    setLostModalOpen(true);
   }, []);
 
-  const clearSelection = (): void => {
-    setSelectedRows([]);
-  };
-
-  // Sortable column header component
-  const SortableHeader = useCallback(
-    ({ field, label }: { field: string; label: string }) => {
-      const isActive = sorting.sortBy === field;
-      return (
-        <button
-          type="button"
-          onClick={() => sorting.toggleSort(field)}
-          className="flex items-center gap-1 font-semibold text-2xs uppercase tracking-wider hover:text-foreground transition-colors"
-        >
-          {label}
-          {isActive ? (
-            sorting.sortOrder === 'ASC' ? (
-              <ArrowUp className="size-3" />
-            ) : (
-              <ArrowDown className="size-3" />
-            )
-          ) : (
-            <ArrowUpDown className="size-3 text-foreground-tertiary" />
-          )}
-        </button>
-      );
-    },
-    [sorting],
+  const columns = useMemo(
+    (): ColumnConfig<PropertyRow>[] =>
+      buildColumns({
+        onMarkAsLost: handleMarkAsLost,
+        tempStats: stats as Record<string, number> | undefined,
+      }),
+    [handleMarkAsLost, stats],
   );
-
-  // Table columns
-  const columns: ColumnDef<PropertyItem>[] = useMemo(
-    () => [
-      {
-        accessorKey: 'propertyCode',
-        header: () => <SortableHeader field={PropertySortField.PROPERTY_NAME} label="Property" />,
-        enableSorting: false,
-        cell: ({ row }) => {
-          const property = row.original;
-          return (
-            <div>
-              <div className="flex items-center gap-2">
-                <Link
-                  href={buildRoute(ROUTES.PROPERTIES.DETAIL, { id: property.id })}
-                  prefetch={false}
-                  className="text-sm font-medium text-primary hover:underline"
-                >
-                  {property.propertyCode || property.propertyName || 'Unnamed Property'}
-                </Link>
-                <span
-                  className={cn(
-                    'w-2 h-2 rounded-full shrink-0',
-                    property.leadTemperature === LeadTemperature.HOT && 'bg-error',
-                    property.leadTemperature === LeadTemperature.WARM && 'bg-warning',
-                    property.leadTemperature === LeadTemperature.COLD && 'bg-info',
-                  )}
-                  title={`${TEMPERATURE_LABELS[property.leadTemperature]} Lead`}
-                />
-                {property.wantsLoan && (
-                  <span
-                    className="text-primary font-semibold text-xs shrink-0"
-                    title="Loan Required"
-                  >
-                    $
-                  </span>
-                )}
-              </div>
-              <div className="text-foreground-tertiary text-2xs leading-tight mt-0.5">
-                {property.address || '-'}{' '}
-                {property.customerName ? `• ${property.customerName}` : ''} •{' '}
-                {PROPERTY_TYPE_LABELS[property.propertyType]}
-              </div>
-            </div>
-          );
-        },
-      },
-
-      {
-        accessorKey: 'latestQuoteSystemSizeKw',
-        header: () => <SortableHeader field={PropertySortField.SYSTEM_SIZE} label="System Size" />,
-        enableSorting: false,
-        cell: ({ row }) => {
-          const size = row.original.latestQuoteSystemSizeKw;
-          if (size == null) {
-            return <span className="text-foreground-tertiary">-</span>;
-          }
-          return (
-            <span className="text-sm text-foreground-secondary font-medium">
-              {Number(size).toFixed(2)} kW
-            </span>
-          );
-        },
-      },
-
-      {
-        accessorKey: 'latestQuoteFinalPrice',
-        header: () => <SortableHeader field={PropertySortField.QUOTE_COST} label="Quote Cost" />,
-        enableSorting: false,
-        cell: ({ row }) => {
-          const price = row.original.latestQuoteFinalPrice;
-          if (price == null) {
-            return <span className="text-foreground-tertiary">-</span>;
-          }
-          return (
-            <span className="text-sm text-foreground-secondary font-medium">
-              {formatCurrency(price)}
-            </span>
-          );
-        },
-      },
-
-      {
-        accessorKey: 'latestQuoteStatus',
-        header: 'Quote Status',
-        enableSorting: false,
-        cell: ({ row }) => {
-          const status = row.original.latestQuoteStatus;
-          if (!status) {
-            return <span className="text-foreground-tertiary text-2xs">None</span>;
-          }
-          return (
-            <span
-              className={cn(
-                'px-1.5 py-0.5 text-2xs font-medium rounded',
-                QUOTE_STATUS_COLORS[status] || 'bg-muted text-foreground-secondary',
-              )}
-            >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </span>
-          );
-        },
-      },
-
-      {
-        accessorKey: 'createdAt',
-        header: () => <SortableHeader field={PropertySortField.CREATED_AT} label="Added" />,
-        enableSorting: false,
-        cell: ({ row }) => {
-          const date = row.original.createdAt;
-          return (
-            <span className="text-foreground-secondary text-sm">
-              {new Date(date).toLocaleDateString('en-IN', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })}
-            </span>
-          );
-        },
-      },
-
-      {
-        accessorKey: 'creatorName',
-        header: 'Created By',
-        enableSorting: false,
-        cell: ({ row }) => (
-          <span className="text-sm text-foreground-secondary">
-            {row.original.creatorName || '-'}
-          </span>
-        ),
-      },
-
-      {
-        id: 'actions',
-        header: '',
-        cell: ({ row }) => (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="size-8 p-0">
-                <MoreHorizontal className="size-icon-sm" />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() =>
-                  router.push(buildRoute(ROUTES.PROPERTIES.DETAIL, { id: row.original.id }))
-                }
-              >
-                <Eye className="mr-2 size-icon-sm" />
-                View Details
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() =>
-                  router.push(buildRoute(ROUTES.PROPERTIES.EDIT, { id: row.original.id }))
-                }
-              >
-                <Edit className="mr-2 size-icon-sm" />
-                Edit Property
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() =>
-                  router.push(
-                    `${ROUTES.QUOTES.NEW}?propertyId=${row.original.id}&customerId=${row.original.customerId}`,
-                  )
-                }
-              >
-                <FileText className="mr-2 size-icon-sm" />
-                Create Quote
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => router.push(`${ROUTES.FOLLOWUPS.NEW}?propertyId=${row.original.id}`)}
-              >
-                <Calendar className="mr-2 size-icon-sm" />
-                Schedule Followup
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => {
-                  setSelectedProperty(row.original);
-                  setLostModalOpen(true);
-                }}
-                className="text-error"
-              >
-                <AlertCircle className="mr-2 size-icon-sm" />
-                Mark as Lost
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ),
-      },
-    ],
-    [router, SortableHeader],
-  );
-
-  // ============================================================================
-  // Loading State
-  // ============================================================================
-
-  if (isLoading) {
-    return (
-      <div className="space-y-5">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-          <div>
-            <Typography variant="h2">All Properties</Typography>
-            <Typography variant="body" color="muted" className="mt-1">
-              Track properties and their lead status
-            </Typography>
-          </div>
-          <Button size="sm" disabled>
-            <Plus className="mr-2 size-icon-sm" />
-            Add Property
-          </Button>
-        </div>
-        <div className="bg-white rounded-lg border border-border-light p-12 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="size-8 animate-spin text-primary" />
-            <p className="text-sm text-foreground-secondary">Loading properties...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ============================================================================
-  // Error State
-  // ============================================================================
-
-  if (isError) {
-    return (
-      <div className="space-y-5">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-          <div>
-            <Typography variant="h2">All Properties</Typography>
-            <Typography variant="body" color="muted" className="mt-1">
-              Track properties and their lead status
-            </Typography>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg border border-error/30 p-6">
-          <div className="flex items-center gap-3 text-error">
-            <AlertCircle className="size-5 shrink-0" />
-            <div className="flex-1">
-              <p className="font-medium">Failed to load properties</p>
-              <p className="text-sm text-foreground-secondary mt-1">{error?.message}</p>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => void refetch()}>
-              Retry
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ============================================================================
-  // Main Render
-  // ============================================================================
 
   return (
-    <div className="space-y-5">
-      {/* Page Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-        <div>
-          <Typography variant="h2">All Properties</Typography>
-          <Typography variant="body" color="muted" className="mt-1">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+      {/* ── Page Header ── */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', lg: 'row' },
+          alignItems: { lg: 'center' },
+          justifyContent: 'space-between',
+          gap: 1.5,
+        }}
+      >
+        <Box>
+          <MUITypography variant="drawerTitle" component="h1">
+            All Properties
+          </MUITypography>
+          <MUITypography variant="body" sx={{ mt: 0.25 }}>
             Track properties and their lead status
-          </Typography>
-        </div>
-        <Button size="sm" onClick={() => router.push(ROUTES.PROPERTIES.NEW)}>
-          <Plus className="mr-2 size-icon-sm" />
+          </MUITypography>
+        </Box>
+
+        <Button
+          variant="contained"
+          size="small"
+          startIcon={<AddIcon />}
+          onClick={() => router.push(ROUTES.PROPERTIES.NEW)}
+        >
           Add Property
         </Button>
-      </div>
+      </Box>
 
-      {/* Search & Filters Row */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Search Bar */}
-        <div className="relative w-72">
-          <Input
-            type="text"
-            placeholder="Search by name, address, city, or consumer no..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            leftIcon={<Search className="size-icon-sm" />}
-            className="h-8 text-sm"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={clearSearch}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded"
-            >
-              <X className="size-3.5 text-foreground-tertiary" />
-            </button>
-          )}
-          {isFetching && search && (
-            <Loader2 className="absolute right-8 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-foreground-tertiary" />
-          )}
-        </div>
-
-        {/* Divider */}
-        <div className="h-5 w-px bg-border-light" />
-
-        {/* Temperature Tabs */}
-        <FilterTabs
-          tabs={temperatureTabsWithCounts}
-          value={filters.leadTemperature ?? 'all'}
-          onChange={(value) => setFilter('leadTemperature', value)}
-          size="xs"
-        />
-
-        {/* Property Type Dropdown */}
-        <Select
-          value={filters.propertyType ?? 'all'}
-          onValueChange={(value) => setFilter('propertyType', value)}
+      {/* ── Error Banner ── */}
+      {isError && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            p: 2,
+            borderRadius: '6px',
+            border: '1px solid',
+            borderColor: 'error.light',
+            backgroundColor: 'rgba(220,38,38,0.06)',
+          }}
         >
-          <SelectTrigger className="w-[130px] h-8 text-sm">
-            <SelectValue placeholder="All Types" />
-          </SelectTrigger>
-          <SelectContent>
-            {PROPERTY_TYPE_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Clear Filters */}
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearFilters}
-            className="text-foreground-secondary h-8"
-          >
-            <X className="mr-1 size-3" />
-            Clear
+          <ErrorOutlineIcon color="error" />
+          <Box sx={{ flex: 1 }}>
+            <MUITypography variant="alertTitle" sx={{ color: 'error.main' }}>
+              Failed to load properties
+            </MUITypography>
+            <MUITypography variant="finePrint">{getErrorMessage(error)}</MUITypography>
+          </Box>
+          <Button variant="outlined" color="error" size="small" onClick={() => void refetch()}>
+            Retry
           </Button>
-        )}
-      </div>
+        </Box>
+      )}
 
-      {/* Data Table */}
-      <div className="bg-white rounded-lg border border-border-light overflow-hidden">
-        {/* Bulk Actions Bar */}
-        {selectedRows.length > 0 && (
-          <div className="px-4 py-2 bg-primary/5 border-b border-border-light flex items-center gap-4">
-            <span className="text-sm text-foreground-secondary">
-              <strong className="text-foreground">{selectedRows.length}</strong> selected
-            </span>
-            {/* TODO: Phase 2 - Implement bulk temperature change */}
-            <Button variant="ghost" size="sm" className="text-foreground-secondary" disabled>
-              Change Temperature
-            </Button>
-            {/* TODO: Phase 2 - Implement bulk export */}
-            <Button variant="ghost" size="sm" className="text-foreground-secondary" disabled>
-              Export
-            </Button>
-            {/* TODO: Phase 2 - Implement bulk mark as lost */}
-            <Button variant="ghost" size="sm" className="text-error" disabled>
-              Mark as Lost
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-auto text-foreground-secondary"
-              onClick={clearSelection}
+      {/* ── Table ── */}
+      <AdvancedTable<PropertyRow>
+        columns={columns}
+        rows={tableRows}
+        rowIdField="id"
+        paginationMode="server"
+        loading={isLoading}
+        refetching={isFetching && !isLoading}
+        // Controlled state from URL
+        page={urlState.state.page}
+        pageSize={urlState.state.pageSize}
+        totalRowCount={propertyData?.meta.total ?? 0}
+        sortModel={urlState.state.sortModel}
+        filterModel={urlState.state.filters}
+        // Callbacks write back to URL → trigger new API call
+        onPageChange={urlState.setPage}
+        onPageSizeChange={urlState.setPageSize}
+        onSortChange={urlState.setSortModel}
+        onFilterChange={urlState.setFilters}
+        onSearchChange={urlState.setSearch}
+        // Row interaction
+        onRowClick={(row) => router.push(buildRoute(ROUTES.PROPERTIES.DETAIL, { id: row.id }))}
+        // Row selection
+        enableRowSelection
+        bulkActions={BULK_ACTIONS}
+        // Features
+        enableSearch
+        enableFilters
+        enablePagination
+        enableColumnVisibility
+        searchPlaceholder="Search by name, address, city, consumer no..."
+        itemLabel="properties"
+        renderEmptyState={(hasActiveFilters) =>
+          hasActiveFilters ? (
+            <Box
+              sx={{
+                py: 6,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 1,
+              }}
             >
-              Clear selection
-            </Button>
-          </div>
-        )}
+              <RadioButtonUncheckedIcon sx={{ fontSize: 32, color: 'text.disabled', mb: 0.5 }} />
+              <MUITypography variant="body">
+                No properties match your search and filters.
+              </MUITypography>
+              <Button size="small" variant="outlined" onClick={urlState.resetAll}>
+                Clear all filters
+              </Button>
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                py: 6,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
+              <RadioButtonUncheckedIcon sx={{ fontSize: 32, color: 'text.disabled', mb: 0.5 }} />
+              <MUITypography variant="body">
+                No properties yet. Get started by adding your first property.
+              </MUITypography>
+              <Button
+                size="small"
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => router.push(ROUTES.PROPERTIES.NEW)}
+              >
+                Add Property
+              </Button>
+            </Box>
+          )
+        }
+      />
 
-        {isFetching || properties.length > 0 ? (
-          <>
-            <DataTable
-              columns={columns}
-              data={properties}
-              enableSearch={false}
-              enablePagination={false}
-              enableRowSelection
-              onRowSelectionChange={handleRowSelectionChange}
-              isLoading={isFetching}
-            />
-
-            {properties.length > 0 && (
-              <TablePagination
-                currentPage={pagination.page}
-                totalPages={pagination.totalPages}
-                pageSize={pagination.pageSize}
-                totalItems={meta?.total ?? 0}
-                itemLabel="properties"
-                variant="full"
-                onPageChange={pagination.setPage}
-                onPageSizeChange={pagination.setPageSize}
-              />
-            )}
-          </>
-        ) : (
-          <div className="p-8">
-            {hasActiveFilters ? (
-              <EmptyState
-                title="No properties found"
-                description={
-                  search
-                    ? 'No results match your search and filters. Try adjusting your criteria.'
-                    : 'No properties match the selected filters. Try different filter options.'
-                }
-                action={{
-                  label: 'Clear Filters',
-                  onClick: clearFilters,
-                }}
-              />
-            ) : (
-              <EmptyState
-                title="No properties yet"
-                description="Get started by adding your first property"
-                action={{
-                  label: 'Add Property',
-                  onClick: () => router.push(ROUTES.PROPERTIES.NEW),
-                }}
-              />
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Modals */}
+      {/* ── Modals ── */}
       <MarkAsLostModal
         open={lostModalOpen}
         onOpenChange={setLostModalOpen}
         property={selectedProperty}
       />
-    </div>
+    </Box>
   );
 }

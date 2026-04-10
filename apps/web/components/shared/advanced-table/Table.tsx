@@ -672,6 +672,8 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 maxWidth: col.width ?? (col.flex ? undefined : 240),
+                                // Per-column cell style overrides (e.g. allow wrapping)
+                                ...col.cellSx,
                               }}
                             >
                               {col.renderCell

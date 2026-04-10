@@ -7,7 +7,6 @@ import SearchIcon from '@mui/icons-material/Search';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Alert,
-  Avatar,
   Box,
   Button,
   CircularProgress,
@@ -32,26 +31,8 @@ import {
 } from 'react';
 
 import type { Employee } from '@/components/features/employees/hooks/use-employees';
+import { MUIAvatar } from '@/components/ui/mui-avatar';
 import { MUITypography } from '@/components/ui/mui-typography';
-
-/* -------------------------------------------------------------------------- */
-/*  Helpers (private — shared by both components in this file)                 */
-/* -------------------------------------------------------------------------- */
-
-function stringToColor(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return `hsl(${Math.abs(hash) % 360}, 45%, 45%)`;
-}
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return (parts[0]?.[0] ?? '').toUpperCase();
-  return ((parts[0]?.[0] ?? '') + (parts[parts.length - 1]?.[0] ?? '')).toUpperCase();
-}
 
 /* -------------------------------------------------------------------------- */
 /*  MUIAvatarGroup — public types                                              */
@@ -126,18 +107,6 @@ export function MUIAvatarGroup({
   const hasSelection = selectable && selectedIds && selectedIds.size > 0;
   const overlap = Math.round(size * 0.3);
 
-  // Scale font to ~35% of avatar diameter so initials always fit without clipping
-  const avatarFontSize = Math.round(size * 0.35);
-
-  const baseAvatarSx = {
-    width: size,
-    height: size,
-    fontSize: avatarFontSize,
-    border: '2px solid',
-    borderColor: 'background.paper',
-    transition: 'transform 0.15s',
-  };
-
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
       {/* Stacked visible avatars */}
@@ -146,13 +115,16 @@ export function MUIAvatarGroup({
           const isSelected = selectedIds?.has(member.id) ?? false;
           return (
             <Tooltip key={member.id} title={member.displayName} placement="top" arrow>
-              <Avatar
+              <MUIAvatar
+                name={member.displayName}
                 src={member.avatarUrl}
+                size={size}
                 onClick={selectable ? () => onToggle?.(member.id) : undefined}
                 sx={{
-                  ...baseAvatarSx,
                   ml: idx === 0 ? 0 : `-${overlap}px`,
-                  bgcolor: stringToColor(member.displayName),
+                  border: '2px solid',
+                  borderColor: 'background.paper',
+                  transition: 'transform 0.15s',
                   zIndex: visible.length - idx,
                   cursor: selectable ? 'pointer' : 'default',
                   outline: isSelected ? '2px solid' : 'none',
@@ -160,9 +132,7 @@ export function MUIAvatarGroup({
                   outlineOffset: '1px',
                   '&:hover': selectable ? { transform: 'scale(1.1)', zIndex: 20 } : {},
                 }}
-              >
-                {getInitials(member.displayName)}
-              </Avatar>
+              />
             </Tooltip>
           );
         })}
@@ -170,21 +140,24 @@ export function MUIAvatarGroup({
         {/* "+N" overflow trigger */}
         {hasOverflow && (
           <Tooltip title={`${overflow.length} more — click to view all`} placement="top" arrow>
-            <Avatar
+            <MUIAvatar
+              name=""
+              initials={`+${overflow.length}`}
+              size={size}
               onClick={(e: MouseEvent<HTMLElement>) => setOverflowAnchor(e.currentTarget)}
               sx={{
-                ...baseAvatarSx,
                 ml: `-${overlap}px`,
+                border: '2px solid',
+                borderColor: 'background.paper',
+                transition: 'transform 0.15s',
                 bgcolor: 'action.selected',
                 color: 'text.secondary',
                 fontWeight: 600,
                 cursor: 'pointer',
                 zIndex: 0,
-                '&:hover': { bgcolor: 'action.hover', transform: 'scale(1.08)', zIndex: 20 },
+                '&:hover': { bgcolor: 'action.focus', transform: 'scale(1.08)', zIndex: 20 },
               }}
-            >
-              +{overflow.length}
-            </Avatar>
+            />
           </Tooltip>
         )}
       </Box>
@@ -262,23 +235,13 @@ export function MUIAvatarGroup({
                   mb: 0.25,
                   cursor: selectable ? 'pointer' : 'default',
                   '&.Mui-selected': {
-                    backgroundColor: 'primary.50',
-                    '&:hover': { backgroundColor: 'primary.100' },
+                    backgroundColor: 'action.selected',
+                    '&:hover': { backgroundColor: 'action.focus' },
                   },
                 }}
               >
                 <ListItemAvatar sx={{ minWidth: 36 }}>
-                  <Avatar
-                    src={member.avatarUrl}
-                    sx={{
-                      width: 28,
-                      height: 28,
-                      fontSize: 10,
-                      bgcolor: stringToColor(member.displayName),
-                    }}
-                  >
-                    {getInitials(member.displayName)}
-                  </Avatar>
+                  <MUIAvatar name={member.displayName} src={member.avatarUrl} size={28} />
                 </ListItemAvatar>
                 <ListItemText
                   primary={member.displayName}
@@ -452,18 +415,12 @@ export function MUIUserAssigneeSelector({
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         {currentName ? (
           <>
-            <Avatar
+            <MUIAvatar
+              name={currentName}
               src={currentOption?.avatarUrl}
-              sx={{
-                width: 24,
-                height: 24,
-                fontSize: 9,
-                bgcolor: stringToColor(currentName),
-                flexShrink: 0,
-              }}
-            >
-              {getInitials(currentName)}
-            </Avatar>
+              size="sm"
+              sx={{ flexShrink: 0 }}
+            />
             <MUITypography variant="bodyPrimary" component="span" noWrap>
               {currentName}
             </MUITypography>
@@ -508,18 +465,12 @@ export function MUIUserAssigneeSelector({
       {loading ? (
         <CircularProgress size={16} sx={{ mr: 0.5, flexShrink: 0 }} />
       ) : currentName ? (
-        <Avatar
+        <MUIAvatar
+          name={currentName}
           src={currentOption?.avatarUrl}
-          sx={{
-            width: 22,
-            height: 22,
-            fontSize: 8,
-            bgcolor: stringToColor(currentName),
-            flexShrink: 0,
-          }}
-        >
-          {getInitials(currentName)}
-        </Avatar>
+          size={22}
+          sx={{ flexShrink: 0 }}
+        />
       ) : (
         <PersonAddOutlinedIcon sx={{ fontSize: 16, flexShrink: 0 }} />
       )}
@@ -634,7 +585,7 @@ export function MUIUserAssigneeSelector({
                   borderRadius: 1,
                   px: 1,
                   gap: 1,
-                  '&:hover': { backgroundColor: 'error.50', color: 'error.main' },
+                  '&:hover': { backgroundColor: 'rgba(220,38,38,0.08)', color: 'error.main' },
                 }}
               >
                 <PersonRemoveOutlinedIcon
@@ -709,23 +660,13 @@ export function MUIUserAssigneeSelector({
                       px: 1,
                       mb: 0.25,
                       '&.Mui-selected': {
-                        backgroundColor: 'primary.50',
-                        '&:hover': { backgroundColor: 'primary.100' },
+                        backgroundColor: 'action.selected',
+                        '&:hover': { backgroundColor: 'action.focus' },
                       },
                     }}
                   >
                     <ListItemAvatar sx={{ minWidth: 36 }}>
-                      <Avatar
-                        src={option.avatarUrl}
-                        sx={{
-                          width: 28,
-                          height: 28,
-                          fontSize: 10,
-                          bgcolor: stringToColor(option.displayName),
-                        }}
-                      >
-                        {getInitials(option.displayName)}
-                      </Avatar>
+                      <MUIAvatar name={option.displayName} src={option.avatarUrl} size={28} />
                     </ListItemAvatar>
                     <ListItemText
                       primary={option.displayName}

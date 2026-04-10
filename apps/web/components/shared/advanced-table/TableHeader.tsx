@@ -4,7 +4,7 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
 import { Box, Checkbox, TableCell, TableHead, TableRow, TableSortLabel } from '@mui/material';
-import { type JSX, memo } from 'react';
+import { type JSX, memo, useCallback, useEffect, useRef, useState } from 'react';
 
 import type { ColumnConfig, TableSortModel } from './types';
 import { toggleSortDirection } from './utils';
@@ -49,14 +49,92 @@ function AdvancedTableHeaderInner<TRow>({
     }
   };
 
+  // ── Column resize ────────────────────────────────────────────────────────
+  // colWidths is committed state — set once on mouseup, not on every mousemove.
+  // Live width during drag is tracked in dragRef to avoid re-renders mid-drag.
+  const [colWidths, setColWidths] = useState<Record<string, number>>(() => {
+    const init: Record<string, number> = {};
+    columns.forEach((c) => {
+      if (c.width) init[c.field] = c.width;
+    });
+    return init;
+  });
+
+  // Seed widths for any new columns added after mount (e.g. dynamic column sets)
+  useEffect(() => {
+    setColWidths((prev) => {
+      const additions: Record<string, number> = {};
+      columns.forEach((c) => {
+        if (c.width && !(c.field in prev)) additions[c.field] = c.width;
+      });
+      return Object.keys(additions).length > 0 ? { ...prev, ...additions } : prev;
+    });
+  }, [columns]);
+
+  const dragRef = useRef<{
+    field: string;
+    startX: number;
+    startWidth: number;
+    currentWidth: number;
+  } | null>(null);
+
+  // Attach/clean up drag listeners on document (stable across renders)
+  useEffect(() => {
+    const onMove = (e: MouseEvent): void => {
+      if (!dragRef.current) return;
+      const delta = e.clientX - dragRef.current.startX;
+      dragRef.current.currentWidth = Math.max(60, dragRef.current.startWidth + delta);
+    };
+
+    const onUp = (): void => {
+      if (!dragRef.current) return;
+      const { field, currentWidth } = dragRef.current;
+      dragRef.current = null;
+      // Single setState on release — no re-renders during drag
+      setColWidths((prev) => ({ ...prev, [field]: currentWidth }));
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+  }, []);
+
+  const handleResizeMouseDown = useCallback(
+    (field: string, width: number) =>
+      (e: React.MouseEvent): void => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragRef.current = {
+          field,
+          startX: e.clientX,
+          startWidth: width,
+          currentWidth: width,
+        };
+        // Prevent text selection and show cursor globally during drag
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+      },
+    [],
+  );
+
+  // ── Styles ───────────────────────────────────────────────────────────────
+
   const headerCellSx = {
-    backgroundColor: 'action.hover',
-    borderBottom: '1px solid',
+    // Opaque — prevents row content bleeding through on scroll.
+    // #f4f4f5 = zinc-100: subtle tint that distinguishes header from body rows.
+    backgroundColor: '#f4f4f5',
+    borderBottom: '2px solid',
     borderColor: 'divider',
     py: 1.25,
     px: 2,
     whiteSpace: 'nowrap',
     userSelect: 'none',
+    position: 'relative',
   } as const;
 
   const headerTextSx = {
@@ -94,6 +172,8 @@ function AdvancedTableHeaderInner<TRow>({
           .map((col) => {
             const isSorted = sortModel?.field === col.field;
             const direction = isSorted ? sortModel.direction : undefined;
+            // Use committed width (post-drag) for rendering
+            const resolvedWidth = colWidths[col.field] ?? col.width;
 
             return (
               <TableCell
@@ -101,8 +181,8 @@ function AdvancedTableHeaderInner<TRow>({
                 sortDirection={direction}
                 sx={{
                   ...headerCellSx,
-                  width: col.width,
-                  ...(col.flex ? { flex: col.flex } : {}),
+                  ...(resolvedWidth ? { width: resolvedWidth, minWidth: resolvedWidth } : {}),
+                  ...(col.flex && !resolvedWidth ? { flex: col.flex } : {}),
                 }}
               >
                 {col.sortable ? (
@@ -133,6 +213,39 @@ function AdvancedTableHeaderInner<TRow>({
                   <Box component="span" sx={headerTextSx}>
                     {col.headerName}
                   </Box>
+                )}
+
+                {/* Resize handle — not shown on the actions (empty-header) column */}
+                {col.headerName !== '' && (
+                  <Box
+                    onMouseDown={handleResizeMouseDown(col.field, resolvedWidth ?? 120)}
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      right: 0,
+                      bottom: 0,
+                      width: 8,
+                      cursor: 'col-resize',
+                      zIndex: 1,
+                      // Visible indicator on hover
+                      '&::after': {
+                        content: '""',
+                        position: 'absolute',
+                        top: '15%',
+                        bottom: '15%',
+                        right: 3,
+                        width: 2,
+                        borderRadius: '2px',
+                        backgroundColor: 'divider',
+                        opacity: 0,
+                        transition: 'opacity 150ms',
+                      },
+                      '&:hover::after': {
+                        opacity: 1,
+                        backgroundColor: 'primary.main',
+                      },
+                    }}
+                  />
                 )}
               </TableCell>
             );

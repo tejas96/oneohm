@@ -24,7 +24,7 @@ export type {
 } from './use-create-property';
 
 // Update and delete (kept for detail/form pages — will migrate to usePropertyMutations later)
-export { useUpdateProperty, useDeleteProperty } from './use-properties';
+export { useUpdateProperty, useDeleteProperty, useProperties } from './use-properties';
 
 export type {
   Property,

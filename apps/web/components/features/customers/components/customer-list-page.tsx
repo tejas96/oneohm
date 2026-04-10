@@ -12,10 +12,8 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import UploadIcon from '@mui/icons-material/Upload';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
-  Avatar,
   Box,
   Button,
-  Chip,
   Divider,
   IconButton,
   Link as MuiLink,
@@ -24,7 +22,6 @@ import {
   MenuItem,
   Stack,
   Tooltip,
-  Typography,
 } from '@mui/material';
 import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@oneohm-epc/shared/types';
 import NextLink from 'next/link';
@@ -45,33 +42,17 @@ import {
   type ColumnConfig,
 } from '@/components/shared/advanced-table';
 import { WhatsAppIcon } from '@/components/ui';
+import { MUIAvatar } from '@/components/ui/mui-avatar';
+import { MUIStatusChip } from '@/components/ui/mui-status-chip';
+import { MUITypography } from '@/components/ui/mui-typography';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
-import {
-  formatPhoneForWhatsApp,
-  getInitials,
-  getErrorMessage,
-  pickDeterministic,
-  toTitleLabel,
-} from '@/lib/utils';
+import { formatPhoneForWhatsApp, getErrorMessage, toTitleLabel } from '@/lib/utils';
 
 // AdvancedTable requires TRow extends Record<string, unknown>.
 // Customer has explicit typed fields, so we widen it here for table usage only.
 type Customer = CustomerBase & Record<string, unknown>;
 const EMPTY_CUSTOMER_ROWS: Customer[] = [];
-
-type ChipColor = 'default' | 'primary' | 'secondary' | 'warning' | 'error' | 'info' | 'success';
-const CHIP_COLOR_POOL: readonly ChipColor[] = [
-  'primary',
-  'secondary',
-  'info',
-  'success',
-  'warning',
-];
-
-function getStableChipColor(value: string): ChipColor {
-  return pickDeterministic(value, CHIP_COLOR_POOL, 'default') as ChipColor;
-}
 
 const LEAD_SOURCE_OPTIONS = Object.values(LeadSource).map((value) => ({
   value,
@@ -118,9 +99,10 @@ function localDateToUtcDayRange(localDate: string): { fromIso: string; toIso: st
   const yy = Number(match[1]);
   const mm = Number(match[2]);
   const dd = Number(match[3]);
-  const startLocal = new Date(yy, mm - 1, dd, 0, 0, 0, 0);
-  const endLocal = new Date(yy, mm - 1, dd, 23, 59, 59, 999);
-  return { fromIso: startLocal.toISOString(), toIso: endLocal.toISOString() };
+  return {
+    fromIso: new Date(yy, mm - 1, dd, 0, 0, 0, 0).toISOString(),
+    toIso: new Date(yy, mm - 1, dd, 23, 59, 59, 999).toISOString(),
+  };
 }
 
 function toCustomerFilters(filters: TableUrlFilterRecord): Partial<CustomerFilters> {
@@ -236,6 +218,26 @@ function RowActionsMenu({ customer }: { customer: Customer }): JSX.Element {
 }
 
 // ============================================================================
+// Bulk actions (module-level constant — never recreated on render)
+// ============================================================================
+
+const BULK_ACTIONS: BulkAction<Customer>[] = [
+  {
+    label: 'Export Selected',
+    onClick: (_rows) => {
+      // placeholder — export API pending
+    },
+  },
+  {
+    label: 'Delete',
+    color: 'error',
+    disabled: true,
+    disabledTooltip: 'Bulk delete is not yet available',
+    onClick: () => undefined,
+  },
+];
+
+// ============================================================================
 // Column definitions
 // ============================================================================
 
@@ -246,7 +248,7 @@ const COLUMNS: ColumnConfig<Customer>[] = [
     sortable: true,
     flex: 3,
     renderCell: ({ row }) => {
-      const initials = getInitials(`${row.firstName} ${row.lastName ?? ''}`.trim());
+      const fullName = `${row.firstName} ${row.lastName ?? ''}`.trim();
       return (
         <MuiLink
           component={NextLink}
@@ -262,41 +264,28 @@ const COLUMNS: ColumnConfig<Customer>[] = [
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <Avatar
-            sx={{
-              width: 32,
-              height: 32,
-              fontSize: '0.6875rem',
-              bgcolor: 'primary.main',
-              color: 'primary.contrastText',
-              flexShrink: 0,
-            }}
-          >
-            {initials}
-          </Avatar>
+          <MUIAvatar name={fullName} size="md" sx={{ flexShrink: 0 }} />
           <Box sx={{ minWidth: 0 }}>
-            <Typography variant="body2" fontWeight={500} noWrap>
-              {row.firstName} {row.lastName ?? ''}
-            </Typography>
+            <MUITypography variant="bodyPrimary" noWrap sx={{ fontWeight: 500 }}>
+              {fullName}
+            </MUITypography>
             <Stack direction="row" spacing={0.5} alignItems="center">
-              <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 160 }}>
-                {row.email ?? '-'}
-              </Typography>
+              <MUITypography variant="timestamp" noWrap sx={{ maxWidth: 160 }}>
+                {(row.email as string | undefined) ?? '-'}
+              </MUITypography>
               <Tooltip title="Properties">
                 <Stack direction="row" spacing={0.25} alignItems="center">
                   <HouseOutlinedIcon sx={{ fontSize: 11, color: 'text.disabled' }} />
-                  <Typography variant="caption" color="text.disabled">
-                    {row.propertyCount}
-                  </Typography>
+                  <MUITypography variant="timestamp">{row.propertyCount}</MUITypography>
                 </Stack>
               </Tooltip>
             </Stack>
             {row.groupCode && (
-              <Chip
-                label={row.groupName ? `${row.groupName} (${row.groupCode})` : row.groupCode}
-                size="small"
+              <MUIStatusChip
+                label={
+                  row.groupName ? `${row.groupName} (${row.groupCode})` : (row.groupCode as string)
+                }
                 color="info"
-                variant="outlined"
                 sx={{ mt: 0.25 }}
               />
             )}
@@ -310,14 +299,12 @@ const COLUMNS: ColumnConfig<Customer>[] = [
     headerName: 'Contact',
     flex: 2,
     renderCell: ({ row }) => {
-      const phone = row.phone || row.alternatePhone;
-      if (!phone) return <Typography color="text.disabled">-</Typography>;
+      const phone = (row.phone as string | undefined) || (row.alternatePhone as string | undefined);
+      if (!phone) return <MUITypography variant="placeholder">-</MUITypography>;
       const whatsappNumber = formatPhoneForWhatsApp(phone);
       return (
         <Stack direction="row" spacing={0.5} alignItems="center">
-          <Typography variant="body2" color="text.secondary">
-            {phone}
-          </Typography>
+          <MUITypography variant="body">{phone}</MUITypography>
           <Tooltip title="Call">
             <IconButton
               size="small"
@@ -355,9 +342,7 @@ const COLUMNS: ColumnConfig<Customer>[] = [
     filterDebounceMs: 400,
     flex: 1,
     renderCell: ({ row }) => (
-      <Typography variant="body2" color="text.secondary">
-        {row.city ?? '-'}
-      </Typography>
+      <MUITypography variant="body">{(row.city as string | undefined) ?? '-'}</MUITypography>
     ),
   },
   {
@@ -369,11 +354,8 @@ const COLUMNS: ColumnConfig<Customer>[] = [
     flex: 1.5,
     renderCell: ({ row }) => {
       const rawSrc = row.leadSource as string | undefined;
-      if (!rawSrc) return <Typography color="text.disabled">-</Typography>;
-      const knownSrc = Object.values(LeadSource).find((v) => (v as string) === rawSrc);
-      const label = knownSrc ? toTitleLabel(knownSrc) : toTitleLabel(rawSrc);
-      const color = getStableChipColor(knownSrc ?? rawSrc);
-      return <Chip label={label} size="small" color={color} variant="outlined" />;
+      if (!rawSrc) return <MUITypography variant="placeholder">-</MUITypography>;
+      return <MUIStatusChip label={toTitleLabel(rawSrc)} colorSeed={rawSrc} />;
     },
   },
   {
@@ -385,14 +367,10 @@ const COLUMNS: ColumnConfig<Customer>[] = [
     flex: 1,
     renderCell: ({ row }) => {
       const rawStatus = row.status as string | undefined;
-      const knownStatus = Object.values(CustomerStatus).find((v) => (v as string) === rawStatus);
-      const label = knownStatus
-        ? toTitleLabel(knownStatus)
-        : rawStatus
-          ? toTitleLabel(rawStatus)
-          : '-';
-      const color = knownStatus ? getStableChipColor(knownStatus) : ('default' as const);
-      return <Chip label={label} size="small" color={color} variant="filled" />;
+      if (!rawStatus) return <MUITypography variant="placeholder">-</MUITypography>;
+      return (
+        <MUIStatusChip label={toTitleLabel(rawStatus)} colorSeed={rawStatus} variant="filled" />
+      );
     },
   },
   {
@@ -412,29 +390,41 @@ const COLUMNS: ColumnConfig<Customer>[] = [
     filterable: true,
     filterType: 'date',
     flex: 1.5,
-    renderCell: ({ row }) => (
-      <Typography variant="body2" color="text.secondary">
-        {new Date(row.createdAt).toLocaleDateString('en-IN', {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric',
-        })}
-      </Typography>
-    ),
+    renderCell: ({ row }) => {
+      const ts = row.createdAt as string | undefined;
+      if (!ts) return <MUITypography variant="placeholder">-</MUITypography>;
+      return (
+        <MUITypography variant="body">
+          {new Date(ts).toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          })}
+        </MUITypography>
+      );
+    },
   },
   {
     field: 'creatorName',
     headerName: 'Created By',
     flex: 1,
-    renderCell: ({ row }) => (
-      <Typography
-        variant="body2"
-        color={row.creatorName === 'Self' ? 'primary.main' : 'text.secondary'}
-        fontWeight={row.creatorName === 'Self' ? 600 : 400}
-      >
-        {row.creatorName ?? '-'}
-      </Typography>
-    ),
+    renderCell: ({ row }) => {
+      const name = (row.creatorName as string | undefined) ?? '';
+      if (!name) return <MUITypography variant="placeholder">-</MUITypography>;
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <MUIAvatar name={name} size="sm" sx={{ flexShrink: 0 }} />
+          <MUITypography
+            variant="body"
+            noWrap
+            color={name === 'Self' ? 'primary.main' : undefined}
+            sx={name === 'Self' ? { fontWeight: 600 } : undefined}
+          >
+            {name}
+          </MUITypography>
+        </Box>
+      );
+    },
   },
   {
     field: 'actions',
@@ -481,22 +471,6 @@ export function CustomerListPage(): JSX.Element {
     [customerData?.data],
   );
 
-  const bulkActions: BulkAction<Customer>[] = [
-    {
-      label: 'Export Selected',
-      onClick: (_rows) => {
-        // placeholder — export API pending
-      },
-    },
-    {
-      label: 'Delete',
-      color: 'error',
-      disabled: true,
-      disabledTooltip: 'Bulk delete is not yet available',
-      onClick: () => undefined,
-    },
-  ];
-
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
       {/* ── Page Header ── */}
@@ -510,12 +484,12 @@ export function CustomerListPage(): JSX.Element {
         }}
       >
         <Box>
-          <Typography variant="h5" fontWeight={700}>
+          <MUITypography variant="drawerTitle" component="h1">
             All Customers
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+          </MUITypography>
+          <MUITypography variant="body" sx={{ mt: 0.25 }}>
             Manage your customers and track their journey
-          </Typography>
+          </MUITypography>
         </Box>
 
         <Stack direction="row" spacing={1.5} alignItems="center">
@@ -528,7 +502,6 @@ export function CustomerListPage(): JSX.Element {
             Import
           </Button>
 
-          {/* Export placeholder — future API */}
           <Button variant="outlined" size="small" startIcon={<DownloadIcon />}>
             Export
           </Button>
@@ -560,12 +533,10 @@ export function CustomerListPage(): JSX.Element {
         >
           <ErrorOutlineIcon color="error" />
           <Box sx={{ flex: 1 }}>
-            <Typography variant="body2" fontWeight={600} color="error.main">
+            <MUITypography variant="alertTitle" sx={{ color: 'error.main' }}>
               Failed to load customers
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {getErrorMessage(error)}
-            </Typography>
+            </MUITypography>
+            <MUITypography variant="finePrint">{getErrorMessage(error)}</MUITypography>
           </Box>
           <Button variant="outlined" color="error" size="small" onClick={() => void refetch()}>
             Retry
@@ -581,31 +552,25 @@ export function CustomerListPage(): JSX.Element {
         paginationMode="server"
         loading={isLoading}
         refetching={isFetching && !isLoading}
-        // Controlled props — driven by urlState
         page={urlState.state.page}
         pageSize={urlState.state.pageSize}
         totalRowCount={customerData?.meta.total ?? 0}
         sortModel={urlState.state.sortModel}
         filterModel={urlState.state.filters}
-        // Callbacks — each writes to URL, which re-drives useCustomers
         onPageChange={urlState.setPage}
         onPageSizeChange={urlState.setPageSize}
         onSortChange={urlState.setSortModel}
         onFilterChange={urlState.setFilters}
         onSearchChange={urlState.setSearch}
-        // Row interaction
         onRowClick={(row) => router.push(buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: row.id }))}
-        // Row selection
         enableRowSelection
-        bulkActions={bulkActions}
-        // Features
+        bulkActions={BULK_ACTIONS}
         enableSearch
         enableFilters
         enablePagination
         enableColumnVisibility
         searchPlaceholder="Search by name, phone, email, city..."
         itemLabel="customers"
-        // Custom empty states
         renderEmptyState={(hasActiveFilters) =>
           hasActiveFilters ? (
             <Box
@@ -617,9 +582,9 @@ export function CustomerListPage(): JSX.Element {
                 gap: 1,
               }}
             >
-              <Typography variant="body2" color="text.secondary">
+              <MUITypography variant="body">
                 No customers match your search and filters.
-              </Typography>
+              </MUITypography>
               <Button size="small" variant="outlined" onClick={urlState.resetAll}>
                 Clear all filters
               </Button>
@@ -634,9 +599,9 @@ export function CustomerListPage(): JSX.Element {
                 gap: 1,
               }}
             >
-              <Typography variant="body2" color="text.secondary">
+              <MUITypography variant="body">
                 No customers yet. Get started by adding your first customer.
-              </Typography>
+              </MUITypography>
               <Button
                 size="small"
                 variant="contained"
