@@ -16,6 +16,7 @@ import {
   FormControlLabel,
   IconButton,
   InputAdornment,
+  LinearProgress,
   Menu,
   MenuItem,
   Paper,
@@ -44,7 +45,13 @@ import {
 import { TableFilters, TableFiltersToggle } from './TableFilters';
 import { AdvancedTableHeader } from './TableHeader';
 import { AdvancedTablePagination } from './TablePagination';
-import type { AdvancedTableProps, FilterState, TableFilterModel, TableSortModel } from './types';
+import type {
+  AdvancedTableProps,
+  BulkAction,
+  FilterState,
+  TableFilterModel,
+  TableSortModel,
+} from './types';
 import {
   exportToCsv,
   filterRows,
@@ -67,6 +74,7 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
   rows,
   rowIdField = 'id',
   loading = false,
+  refetching = false,
 
   // Pagination
   page: controlledPage,
@@ -85,8 +93,12 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
   filterModel: controlledFilterModel,
   onFilterChange,
 
+  // Search
+  onSearchChange,
+
   // Row interaction
   onRowClick,
+  onRowDoubleClick,
 
   // Expandable rows
   renderExpandedRow,
@@ -109,8 +121,10 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
   searchPlaceholder = 'Search...',
   emptyMessage = 'No results found.',
   itemLabel = 'rows',
+  renderEmptyState,
   toolbarActions,
   sx,
+  maxHeight = 'calc(100vh - 300px)',
 }: AdvancedTableProps<TRow>): JSX.Element {
   // ── URL state ──────────────────────────────────────────────────────────────
   // Always called (rule of hooks). When enableUrlSync=false the hook is mounted
@@ -154,22 +168,10 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
     }
   }, [columns]);
 
-  // Clear row selection when the rows dataset reference changes (no ghost IDs across pages)
-  const prevRowsRef = useRef(rows);
-  useEffect(() => {
-    if (rows !== prevRowsRef.current) {
-      prevRowsRef.current = rows;
-      setSelectedRowIds(new Set());
-    }
-  }, [rows]);
-
   // Initialise searchQuery from URL once on mount (enableUrlSync path only)
   useEffect(() => {
     if (enableUrlSync) setSearchQuery(urlStateRef.current.state.search);
     // Runs once on mount to seed the search input from URL.
-    // Subsequent URL back/fwd changes are handled by the popstate handler inside
-    // useTableUrlState which updates urlState.state.search, and the effect below
-    // keeps searchQuery in sync with it.
   }, []);
 
   // Keep searchQuery in sync with URL state on browser back/forward
@@ -198,8 +200,6 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
     if (ps !== (controlledPageSize ?? 10)) onPageSizeChangeStableRef.current?.(ps);
     if (sm) onSortChangeStableRef.current?.(sm as TableSortModel);
     if (Object.keys(f).length > 0) onFilterChangeStableRef.current?.(f);
-    // Intentionally depends only on enableUrlSync + controlledPageSize — runs once on mount.
-    // Callback refs ensure the most current versions are called without re-registering.
   }, [enableUrlSync, controlledPageSize]);
 
   // ── Resolve controlled vs. uncontrolled vs. URL-synced ──────────────────────
@@ -227,12 +227,16 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
     setSearchQuery(e.target.value);
   }, []);
 
-  // Flush debounced search to URL (URL-sync mode only)
+  // Flush debounced search to URL (URL-sync mode)
   useEffect(() => {
     if (enableUrlSync) urlStateRef.current.setSearch(debouncedSearch);
   }, [debouncedSearch, enableUrlSync]);
 
-  // Reset page on search change (non-URL mode)
+  // Notify external server-side consumers of search changes (non-URL-sync mode)
+  const onSearchChangeRef = useRef(onSearchChange);
+  onSearchChangeRef.current = onSearchChange;
+  // Declared here (before first use in the search effect below) so all refs are
+  // in one place and declaration order matches usage order.
   const onPageChangeRef = useRef(onPageChange);
   onPageChangeRef.current = onPageChange;
   const isFirstSearchRender = useRef(true);
@@ -242,8 +246,12 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
       isFirstSearchRender.current = false;
       return;
     }
-    if (enableUrlSync) return; // URL mode handles reset inside setSearch
-    if (onPageChangeRef.current) onPageChangeRef.current(0);
+    if (enableUrlSync) return; // URL mode handles search reset internally
+    // Notify parent for server-side consumers
+    onSearchChangeRef.current?.(debouncedSearch);
+    // Also reset page on search change
+    const pageChangeCallback = onPageChangeRef.current;
+    if (pageChangeCallback) pageChangeCallback(0);
     else setInternalPage(0);
   }, [debouncedSearch, enableUrlSync]);
 
@@ -286,7 +294,6 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
 
   // ── Filter handler ──────────────────────────────────────────────────────────
 
-  // Stable ref so TableFilters memo is not busted on every render
   const handleFilterChangeRef = useRef<(newFilters: TableFilterModel) => void>(() => undefined);
 
   const handleFilterChange = useCallback(
@@ -312,7 +319,6 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
 
   // ── Pagination handlers ─────────────────────────────────────────────────────
 
-  // Ref used by the page-clamp effect (declared before handlePageChange to avoid forward-ref)
   const handlePageChangeRef = useRef<(page: number) => void>(() => undefined);
 
   const handlePageChange = useCallback(
@@ -370,6 +376,17 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
     [rowIdField],
   );
 
+  // Keep selection in sync with currently available rows without hard-resetting.
+  // This avoids update-depth loops when parents provide fresh-but-equivalent arrays.
+  useEffect(() => {
+    if (selectedRowIds.size === 0) return;
+    const availableIds = new Set(rows.map(getRowId));
+    const next = new Set(Array.from(selectedRowIds).filter((id) => availableIds.has(id)));
+    const changed = next.size !== selectedRowIds.size;
+
+    if (changed) setSelectedRowIds(next);
+  }, [rows, getRowId, selectedRowIds]);
+
   // ── Row selection ───────────────────────────────────────────────────────────
 
   const selectedRows = useMemo(
@@ -419,7 +436,7 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
     exportToCsv(exportRows, columns);
   }, [paginationMode, processedRows, rows, columns]);
 
-  // ── Derived display helpers (memoised to avoid inline .every/.some on render) ──
+  // ── Derived display helpers ─────────────────────────────────────────────────
 
   const visibleColList = useMemo(
     () => columns.filter((c) => visibleColumns.has(c.field)),
@@ -439,6 +456,12 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
   }, [displayRows, selectedRowIds, getRowId]);
 
   const hasFilterableColumns = useMemo(() => columns.some((c) => c.filterable), [columns]);
+
+  // Whether any filter or search is currently active (used by renderEmptyState)
+  const hasActiveFilters = useMemo(
+    () => debouncedSearch.length > 0 || Object.values(filters).some((v) => v !== '' && v != null),
+    [debouncedSearch, filters],
+  );
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -515,6 +538,16 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
           {toolbarActions}
         </Box>
 
+        {/* ── Refetch progress bar — subtle indicator while background fetch runs ── */}
+        <LinearProgress
+          sx={{
+            height: 2,
+            // visible only while refetching; hidden otherwise without layout shift
+            opacity: refetching ? 1 : 0,
+            transition: 'opacity 200ms ease',
+          }}
+        />
+
         {/* ── Filter panel + active chips ── */}
         {enableFilters && (
           <TableFilters
@@ -536,7 +569,7 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
 
         {/* ── Table ── */}
         {/* TODO: add mobile-responsive card view for small viewports */}
-        <TableContainer sx={{ maxHeight: 'calc(100vh - 300px)' }}>
+        <TableContainer sx={{ maxHeight }}>
           <Table stickyHeader size="small">
             <AdvancedTableHeader
               columns={columns}
@@ -554,7 +587,15 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
               {loading ? (
                 <SkeletonRows colCount={totalColCount} rowCount={pageSize} />
               ) : displayRows.length === 0 ? (
-                <EmptyState message={emptyMessage} colCount={totalColCount} />
+                <TableRow>
+                  <TableCell colSpan={totalColCount} sx={{ border: 'none' }}>
+                    {renderEmptyState ? (
+                      renderEmptyState(hasActiveFilters)
+                    ) : (
+                      <DefaultEmptyState message={emptyMessage} />
+                    )}
+                  </TableCell>
+                </TableRow>
               ) : (
                 displayRows.map((row) => {
                   const rowId = getRowId(row);
@@ -564,11 +605,12 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
                   return (
                     <Fragment key={rowId}>
                       <TableRow
-                        hover={!!onRowClick}
+                        hover={!!onRowClick || !!onRowDoubleClick}
                         selected={isSelected}
                         onClick={() => onRowClick?.(row)}
+                        onDoubleClick={() => onRowDoubleClick?.(row)}
                         sx={{
-                          cursor: onRowClick ? 'pointer' : 'default',
+                          cursor: onRowClick || onRowDoubleClick ? 'pointer' : 'default',
                           '&.Mui-selected': {
                             backgroundColor: 'primary.50',
                             '&:hover': { backgroundColor: 'primary.100' },
@@ -619,11 +661,12 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
                             <TableCell
                               key={col.field}
                               sx={{
-                                width: col.width,
+                                // width takes precedence; flex expressed as a percentage width
+                                width: col.width ?? (col.flex ? `${col.flex * 10}%` : undefined),
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
-                                maxWidth: col.width ?? 240,
+                                maxWidth: col.width ?? (col.flex ? undefined : 240),
                               }}
                             >
                               {col.renderCell
@@ -684,9 +727,8 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
 
 // ============================================================================
 // Private sub-components
-// All kept in this file intentionally — they are tightly coupled to the table's
-// internal types and are not consumed anywhere else. If any grows beyond ~60 lines
-// it should be extracted to its own file under advanced-table/.
+// Kept co-located — they are tightly coupled to the table's internal types and
+// are not consumed elsewhere. Extract to own file if any grows beyond ~60 lines.
 // ============================================================================
 
 interface ColumnVisibilityMenuProps<TRow> {
@@ -769,22 +811,7 @@ function BulkActionsBar<TRow>({
       />
       <Stack direction="row" spacing={1}>
         {bulkActions.map((action, idx) => (
-          <Button
-            key={idx}
-            size="small"
-            variant="contained"
-            color={action.color ?? 'primary'}
-            startIcon={action.icon}
-            onClick={() => action.onClick(selectedRows)}
-            sx={{
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              color: 'white',
-              '&:hover': { backgroundColor: 'rgba(255,255,255,0.25)' },
-              fontWeight: 500,
-            }}
-          >
-            {action.label}
-          </Button>
+          <BulkActionButton key={idx} action={action} selectedRows={selectedRows} />
         ))}
       </Stack>
       <Box sx={{ flex: 1 }} />
@@ -798,6 +825,44 @@ function BulkActionsBar<TRow>({
       </Button>
     </Box>
   );
+}
+
+/** Renders a single bulk-action button, optionally wrapped in a Tooltip when disabled */
+function BulkActionButton<TRow>({
+  action,
+  selectedRows,
+}: {
+  action: BulkAction<TRow>;
+  selectedRows: TRow[];
+}): JSX.Element {
+  const btn = (
+    <span>
+      {/* span is required so Tooltip works on disabled buttons */}
+      <Button
+        size="small"
+        variant="contained"
+        color={action.color ?? 'primary'}
+        startIcon={action.icon}
+        disabled={action.disabled}
+        onClick={() => action.onClick(selectedRows)}
+        sx={{
+          backgroundColor: action.disabled ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.15)',
+          color: action.disabled ? 'rgba(255,255,255,0.4)' : 'white',
+          '&:hover': { backgroundColor: 'rgba(255,255,255,0.25)' },
+          '&.Mui-disabled': { color: 'rgba(255,255,255,0.4)' },
+          fontWeight: 500,
+          pointerEvents: action.disabled ? 'none' : 'auto',
+        }}
+      >
+        {action.label}
+      </Button>
+    </span>
+  );
+
+  if (action.disabled && action.disabledTooltip) {
+    return <Tooltip title={action.disabledTooltip}>{btn}</Tooltip>;
+  }
+  return btn;
 }
 
 function SkeletonRows({ colCount, rowCount }: { colCount: number; rowCount: number }): JSX.Element {
@@ -816,17 +881,21 @@ function SkeletonRows({ colCount, rowCount }: { colCount: number; rowCount: numb
   );
 }
 
-function EmptyState({ message, colCount }: { message: string; colCount: number }): JSX.Element {
+function DefaultEmptyState({ message }: { message: string }): JSX.Element {
   return (
-    <TableRow>
-      <TableCell colSpan={colCount} sx={{ py: 6, textAlign: 'center', border: 'none' }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-          <InboxOutlinedIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
-          <Typography variant="body2" color="text.secondary">
-            {message}
-          </Typography>
-        </Box>
-      </TableCell>
-    </TableRow>
+    <Box
+      sx={{
+        py: 6,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 1,
+      }}
+    >
+      <InboxOutlinedIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
+      <Typography variant="body2" color="text.secondary">
+        {message}
+      </Typography>
+    </Box>
   );
 }

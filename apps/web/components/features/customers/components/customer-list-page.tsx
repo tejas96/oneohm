@@ -1,249 +1,480 @@
 'use client';
 
-import { CustomerStatus, CustomerSortField, LeadSource, SortOrder } from '@oneohm-epc/shared/types';
-import { ColumnDef } from '@tanstack/react-table';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import DownloadIcon from '@mui/icons-material/Download';
+import EditIcon from '@mui/icons-material/Edit';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import HouseOutlinedIcon from '@mui/icons-material/HouseOutlined';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import PhoneIcon from '@mui/icons-material/Phone';
+import UploadIcon from '@mui/icons-material/Upload';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  Building2,
-  Download,
-  Eye,
-  Edit,
-  MoreHorizontal,
-  Phone,
-  Plus,
-  Search,
-  Trash2,
-  Upload,
-  ChevronDown,
-  AlertCircle,
-  Loader2,
-  X,
-} from 'lucide-react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, useCallback, useMemo, useRef, type JSX } from 'react';
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  Divider,
+  IconButton,
+  Link as MuiLink,
+  ListItemIcon,
+  Menu,
+  MenuItem,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import { CustomerSortField, CustomerStatus, LeadSource, SortOrder } from '@oneohm-epc/shared/types';
+import NextLink from 'next/link';
+import { useRouter } from 'next/navigation';
+import { type JSX, useMemo, useState } from 'react';
 
 import { DeleteCustomerModal } from './delete-customer-modal';
 import { ImportCustomersModal } from './import-customers-modal';
-import { useCustomers, type Customer } from '../hooks';
+import {
+  Customer as CustomerBase,
+  type CustomerFilters,
+  useCustomers,
+} from '../hooks/use-customers';
 
 import {
-  DataTable,
-  EmptyState,
-  FilterTabs,
-  TablePagination,
-  type FilterTab,
-} from '@/components/shared';
-import {
-  Avatar,
-  AvatarFallback,
-  Badge,
-  Button,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Typography,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  WhatsAppIcon,
-} from '@/components/ui';
+  AdvancedTable,
+  type BulkAction,
+  type ColumnConfig,
+} from '@/components/shared/advanced-table';
+import { WhatsAppIcon } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { useDebounce } from '@/lib/hooks';
-import { cn, formatPhoneForWhatsApp, getErrorMessage, getInitials } from '@/lib/utils';
+import { type TableUrlFilterRecord, useTableUrlState } from '@/lib/hooks';
+import {
+  formatPhoneForWhatsApp,
+  getInitials,
+  getErrorMessage,
+  pickDeterministic,
+  toTitleLabel,
+} from '@/lib/utils';
 
-// ============================================================================
-// Constants
-// ============================================================================
+// AdvancedTable requires TRow extends Record<string, unknown>.
+// Customer has explicit typed fields, so we widen it here for table usage only.
+type Customer = CustomerBase & Record<string, unknown>;
+const EMPTY_CUSTOMER_ROWS: Customer[] = [];
 
-const DEFAULT_PAGE_SIZE = 10;
-const SEARCH_DEBOUNCE_MS = 550;
-
-// ============================================================================
-// Badge Mappings
-// ============================================================================
-
-const STATUS_BADGE_VARIANTS: Record<CustomerStatus, 'success' | 'warning' | 'info' | 'muted'> = {
-  [CustomerStatus.ACTIVE]: 'success',
-  [CustomerStatus.LEAD]: 'info',
-  [CustomerStatus.PROSPECT]: 'warning',
-  [CustomerStatus.INACTIVE]: 'muted',
-};
-
-const STATUS_LABELS: Record<CustomerStatus, string> = {
-  [CustomerStatus.ACTIVE]: 'Active',
-  [CustomerStatus.LEAD]: 'Lead',
-  [CustomerStatus.PROSPECT]: 'Prospect',
-  [CustomerStatus.INACTIVE]: 'Inactive',
-};
-
-const LEAD_SOURCE_COLORS: Record<LeadSource, string> = {
-  [LeadSource.REFERRAL]: 'bg-muted text-foreground-secondary',
-  [LeadSource.WEBSITE]: 'bg-primary/10 text-primary',
-  [LeadSource.WALK_IN]: 'bg-success/10 text-success',
-  [LeadSource.SOCIAL_MEDIA]: 'bg-warning/10 text-warning',
-  [LeadSource.RESELLER]: 'bg-primary/10 text-primary',
-  [LeadSource.ADVERTISEMENT]: 'bg-primary/10 text-primary',
-  [LeadSource.EXHIBITION]: 'bg-info/10 text-info',
-  [LeadSource.COLD_CALL]: 'bg-muted text-foreground-secondary',
-  [LeadSource.OTHER]: 'bg-muted text-foreground-secondary',
-};
-
-const LEAD_SOURCE_LABELS: Record<LeadSource, string> = {
-  [LeadSource.REFERRAL]: 'Referral',
-  [LeadSource.WEBSITE]: 'Website',
-  [LeadSource.WALK_IN]: 'Walk-in',
-  [LeadSource.SOCIAL_MEDIA]: 'Social Media',
-  [LeadSource.RESELLER]: 'Reseller',
-  [LeadSource.ADVERTISEMENT]: 'Advertisement',
-  [LeadSource.EXHIBITION]: 'Exhibition',
-  [LeadSource.COLD_CALL]: 'Cold Call',
-  [LeadSource.OTHER]: 'Other',
-};
-
-// ============================================================================
-// Filter Configuration
-// ============================================================================
-
-const STATUS_TABS: FilterTab<string>[] = [
-  { id: 'all', label: 'All' },
-  { id: CustomerStatus.LEAD, label: 'Lead' },
-  { id: CustomerStatus.PROSPECT, label: 'Prospect' },
-  { id: CustomerStatus.ACTIVE, label: 'Active' },
-  { id: CustomerStatus.INACTIVE, label: 'Inactive' },
+type ChipColor = 'default' | 'primary' | 'secondary' | 'warning' | 'error' | 'info' | 'success';
+const CHIP_COLOR_POOL: readonly ChipColor[] = [
+  'primary',
+  'secondary',
+  'info',
+  'success',
+  'warning',
 ];
 
-const LEAD_SOURCE_OPTIONS = [
-  { value: 'all', label: 'All Sources' },
-  ...Object.entries(LEAD_SOURCE_LABELS).map(([value, label]) => ({ value, label })),
+function getStableChipColor(value: string): ChipColor {
+  return pickDeterministic(value, CHIP_COLOR_POOL, 'default') as ChipColor;
+}
+
+const LEAD_SOURCE_OPTIONS = Object.values(LeadSource).map((value) => ({
+  value,
+  label: toTitleLabel(value),
+}));
+
+const STATUS_OPTIONS = Object.values(CustomerStatus).map((value) => ({
+  value,
+  label: toTitleLabel(value),
+}));
+
+// ============================================================================
+// Adapter functions — pure, module-level, no React deps
+// ============================================================================
+
+const SORT_FIELD_MAP: Record<string, CustomerSortField> = {
+  name: CustomerSortField.FIRST_NAME,
+  city: CustomerSortField.CITY,
+  createdAt: CustomerSortField.CREATED_AT,
+};
+
+function toApiSortField(
+  model: { field: string; direction: 'asc' | 'desc' } | null,
+): CustomerSortField {
+  if (!model) return CustomerSortField.CREATED_AT;
+  return SORT_FIELD_MAP[model.field] ?? CustomerSortField.CREATED_AT;
+}
+
+function toApiSortOrder(model: { field: string; direction: 'asc' | 'desc' } | null): SortOrder {
+  return model?.direction === 'asc' ? SortOrder.ASC : SortOrder.DESC;
+}
+
+function toLocalDateString(raw: string): string | undefined {
+  if (!raw) return undefined;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return undefined;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function localDateToUtcDayRange(localDate: string): { fromIso: string; toIso: string } | undefined {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(localDate);
+  if (!match) return undefined;
+  const yy = Number(match[1]);
+  const mm = Number(match[2]);
+  const dd = Number(match[3]);
+  const startLocal = new Date(yy, mm - 1, dd, 0, 0, 0, 0);
+  const endLocal = new Date(yy, mm - 1, dd, 23, 59, 59, 999);
+  return { fromIso: startLocal.toISOString(), toIso: endLocal.toISOString() };
+}
+
+function toCustomerFilters(filters: TableUrlFilterRecord): Partial<CustomerFilters> {
+  const createdAtLocalDate =
+    typeof filters.createdAt === 'string' ? toLocalDateString(filters.createdAt) : undefined;
+  const createdAtUtcRange = createdAtLocalDate
+    ? localDateToUtcDayRange(createdAtLocalDate)
+    : undefined;
+  return {
+    status:
+      typeof filters.status === 'string' && filters.status
+        ? (filters.status as CustomerStatus)
+        : undefined,
+    leadSource:
+      typeof filters.leadSource === 'string' && filters.leadSource
+        ? (filters.leadSource as LeadSource)
+        : undefined,
+    groupSearch:
+      typeof filters.groupSearch === 'string' && filters.groupSearch
+        ? filters.groupSearch
+        : undefined,
+    fromDate:
+      typeof filters.fromDate === 'string' && filters.fromDate
+        ? filters.fromDate
+        : createdAtUtcRange?.fromIso,
+    toDate:
+      typeof filters.toDate === 'string' && filters.toDate
+        ? filters.toDate
+        : createdAtUtcRange?.toIso,
+    city: typeof filters.city === 'string' && filters.city ? filters.city : undefined,
+  };
+}
+
+// ============================================================================
+// Row Actions Menu (private sub-component)
+// ============================================================================
+
+function RowActionsMenu({ customer }: { customer: Customer }): JSX.Element {
+  const router = useRouter();
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+
+  const handleClose = (): void => setAnchorEl(null);
+
+  return (
+    <>
+      <IconButton
+        size="small"
+        onClick={(e) => {
+          e.stopPropagation();
+          setAnchorEl(e.currentTarget);
+        }}
+        aria-label="Row actions"
+      >
+        <MoreVertIcon fontSize="small" />
+      </IconButton>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleClose}
+        onClick={(e) => e.stopPropagation()}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{ paper: { elevation: 2, sx: { minWidth: 180 } } }}
+      >
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            router.push(buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: customer.id }));
+          }}
+        >
+          <ListItemIcon>
+            <VisibilityIcon fontSize="small" />
+          </ListItemIcon>
+          View Details
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            router.push(buildRoute(ROUTES.CUSTOMERS.EDIT, { id: customer.id }));
+          }}
+        >
+          <ListItemIcon>
+            <EditIcon fontSize="small" />
+          </ListItemIcon>
+          Edit Customer
+        </MenuItem>
+
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            router.push(buildRoute(ROUTES.CUSTOMERS.ADD_PROPERTY, { id: customer.id }));
+          }}
+        >
+          <ListItemIcon>
+            <PersonAddIcon fontSize="small" />
+          </ListItemIcon>
+          Add Property
+        </MenuItem>
+
+        <Divider />
+
+        <MenuItem disabled sx={{ color: 'error.main' }}>
+          <ListItemIcon>
+            <DeleteIcon fontSize="small" sx={{ color: 'error.main' }} />
+          </ListItemIcon>
+          Delete
+        </MenuItem>
+      </Menu>
+    </>
+  );
+}
+
+// ============================================================================
+// Column definitions
+// ============================================================================
+
+const COLUMNS: ColumnConfig<Customer>[] = [
+  {
+    field: 'name',
+    headerName: 'Customer',
+    sortable: true,
+    flex: 3,
+    renderCell: ({ row }) => {
+      const initials = getInitials(`${row.firstName} ${row.lastName ?? ''}`.trim());
+      return (
+        <MuiLink
+          component={NextLink}
+          href={buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: row.id })}
+          prefetch={false}
+          underline="none"
+          color="inherit"
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            '&:hover': { color: 'primary.main' },
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Avatar
+            sx={{
+              width: 32,
+              height: 32,
+              fontSize: '0.75rem',
+              bgcolor: 'primary.main',
+              flexShrink: 0,
+            }}
+          >
+            {initials}
+          </Avatar>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="body2" fontWeight={500} noWrap>
+              {row.firstName} {row.lastName ?? ''}
+            </Typography>
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 160 }}>
+                {row.email ?? '-'}
+              </Typography>
+              <Tooltip title="Properties">
+                <Stack direction="row" spacing={0.25} alignItems="center">
+                  <HouseOutlinedIcon sx={{ fontSize: 11, color: 'text.disabled' }} />
+                  <Typography variant="caption" color="text.disabled">
+                    {row.propertyCount}
+                  </Typography>
+                </Stack>
+              </Tooltip>
+            </Stack>
+            {row.groupCode && (
+              <Chip
+                label={row.groupName ? `${row.groupName} (${row.groupCode})` : row.groupCode}
+                size="small"
+                color="info"
+                variant="outlined"
+                sx={{ height: 16, fontSize: '0.65rem', mt: 0.25 }}
+              />
+            )}
+          </Box>
+        </MuiLink>
+      );
+    },
+  },
+  {
+    field: 'contact',
+    headerName: 'Contact',
+    flex: 2,
+    renderCell: ({ row }) => {
+      const phone = row.phone || row.alternatePhone;
+      if (!phone) return <Typography color="text.disabled">-</Typography>;
+      const whatsappNumber = formatPhoneForWhatsApp(phone);
+      return (
+        <Stack direction="row" spacing={0.5} alignItems="center">
+          <Typography variant="body2" color="text.secondary">
+            {phone}
+          </Typography>
+          <Tooltip title="Call">
+            <IconButton
+              size="small"
+              component="a"
+              href={`tel:${phone}`}
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              sx={{ p: 0.5 }}
+            >
+              <PhoneIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="WhatsApp">
+            <IconButton
+              size="small"
+              component="a"
+              href={`https://wa.me/${whatsappNumber}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              sx={{ p: 0.5 }}
+            >
+              <WhatsAppIcon className="size-3.5 text-success" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      );
+    },
+  },
+  {
+    field: 'city',
+    headerName: 'City',
+    sortable: true,
+    filterable: true,
+    filterType: 'text',
+    filterDebounceMs: 400,
+    flex: 1,
+    renderCell: ({ row }) => (
+      <Typography variant="body2" color="text.secondary">
+        {row.city ?? '-'}
+      </Typography>
+    ),
+  },
+  {
+    field: 'leadSource',
+    headerName: 'Lead Source',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: LEAD_SOURCE_OPTIONS,
+    flex: 1.5,
+    renderCell: ({ row }) => {
+      const rawSrc = row.leadSource as string | undefined;
+      if (!rawSrc) return <Typography color="text.disabled">-</Typography>;
+      const knownSrc = Object.values(LeadSource).find((v) => (v as string) === rawSrc);
+      const label = knownSrc ? toTitleLabel(knownSrc) : toTitleLabel(rawSrc);
+      const color = getStableChipColor(knownSrc ?? rawSrc);
+      return (
+        <Chip
+          label={label}
+          size="small"
+          color={color}
+          variant="outlined"
+          sx={{ fontSize: '0.7rem' }}
+        />
+      );
+    },
+  },
+  {
+    field: 'status',
+    headerName: 'Status',
+    filterable: true,
+    filterType: 'select',
+    filterOptions: STATUS_OPTIONS,
+    flex: 1,
+    renderCell: ({ row }) => {
+      const rawStatus = row.status as string | undefined;
+      const knownStatus = Object.values(CustomerStatus).find((v) => (v as string) === rawStatus);
+      const label = knownStatus
+        ? toTitleLabel(knownStatus)
+        : rawStatus
+          ? toTitleLabel(rawStatus)
+          : '-';
+      const color = knownStatus ? getStableChipColor(knownStatus) : ('default' as const);
+      return (
+        <Chip
+          label={label}
+          size="small"
+          color={color}
+          variant="filled"
+          sx={{ fontSize: '0.7rem' }}
+        />
+      );
+    },
+  },
+  {
+    // pseudo-column for group search filter — hidden from table display
+    field: 'groupSearch',
+    headerName: 'Group',
+    filterable: true,
+    filterType: 'text',
+    filterDebounceMs: 400,
+    defaultHidden: true,
+    hideable: false,
+  },
+  {
+    field: 'createdAt',
+    headerName: 'Onboarded',
+    sortable: true,
+    filterable: true,
+    filterType: 'date',
+    flex: 1.5,
+    renderCell: ({ row }) => (
+      <Typography variant="body2" color="text.secondary">
+        {new Date(row.createdAt).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        })}
+      </Typography>
+    ),
+  },
+  {
+    field: 'creatorName',
+    headerName: 'Created By',
+    flex: 1,
+    renderCell: ({ row }) => (
+      <Typography
+        variant="body2"
+        color={row.creatorName === 'Self' ? 'primary.main' : 'text.secondary'}
+        fontWeight={row.creatorName === 'Self' ? 600 : 400}
+      >
+        {row.creatorName ?? '-'}
+      </Typography>
+    ),
+  },
+  {
+    field: 'actions',
+    headerName: '',
+    hideable: false,
+    width: 48,
+    actions: (row) => <RowActionsMenu customer={row} />,
+  },
 ];
 
 // ============================================================================
-// Helper Functions
-// ============================================================================
-
-// Type-safe URL param helpers
-function getValidSortField(value: string | null): CustomerSortField {
-  const validFields = Object.values(CustomerSortField);
-  return validFields.includes(value as CustomerSortField)
-    ? (value as CustomerSortField)
-    : CustomerSortField.CREATED_AT;
-}
-
-function getValidSortOrder(value: string | null): SortOrder {
-  return value === SortOrder.ASC ? SortOrder.ASC : SortOrder.DESC;
-}
-
-// ============================================================================
-// Component
+// Main component
 // ============================================================================
 
 export function CustomerListPage(): JSX.Element {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  // Read URL params for initial state
-  const initialPage = Number(searchParams.get('page')) || 1;
-  const initialLimit = Number(searchParams.get('limit')) || DEFAULT_PAGE_SIZE;
-  const initialSearch = searchParams.get('search') || '';
-  const initialStatus = searchParams.get('status') || 'all';
-  const initialLeadSource = searchParams.get('leadSource') || 'all';
-  const initialSortBy = getValidSortField(searchParams.get('sortBy'));
-  const initialSortOrder = getValidSortOrder(searchParams.get('sortOrder'));
-
-  // Local state for pagination and search
-  const [page, setPage] = useState(initialPage);
-  const [pageSize, setPageSize] = useState(initialLimit);
-  const [searchInput, setSearchInput] = useState(initialSearch);
-
-  // Filter state
-  const [statusFilter, setStatusFilter] = useState(initialStatus);
-  const [leadSourceFilter, setLeadSourceFilter] = useState(initialLeadSource);
-  const [groupSearch, setGroupSearch] = useState(searchParams.get('groupSearch') || '');
-  const [sortBy, setSortBy] = useState<CustomerSortField>(initialSortBy);
-  const [sortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder);
-
-  // Debounce all filter values to prevent rapid API calls
-  const debouncedSearch = useDebounce(searchInput, SEARCH_DEBOUNCE_MS);
-  const debouncedStatusFilter = useDebounce(statusFilter, SEARCH_DEBOUNCE_MS);
-  const debouncedLeadSourceFilter = useDebounce(leadSourceFilter, SEARCH_DEBOUNCE_MS);
-  const debouncedGroupSearch = useDebounce(groupSearch, SEARCH_DEBOUNCE_MS);
-  const debouncedSortBy = useDebounce(sortBy, SEARCH_DEBOUNCE_MS);
-  const debouncedSortOrder = useDebounce(sortOrder, SEARCH_DEBOUNCE_MS);
-
-  // Sync state from URL when external navigation occurs
-  const searchParamsString = searchParams.toString();
-  useEffect(() => {
-    const newPage = Number(searchParams.get('page')) || 1;
-    const newLimit = Number(searchParams.get('limit')) || DEFAULT_PAGE_SIZE;
-    setPage(newPage);
-    setPageSize(newLimit);
-    setSearchInput(searchParams.get('search') || '');
-    setStatusFilter(searchParams.get('status') || 'all');
-    setLeadSourceFilter(searchParams.get('leadSource') || 'all');
-    setGroupSearch(searchParams.get('groupSearch') || '');
-    setSortBy(getValidSortField(searchParams.get('sortBy')));
-    setSortOrder(getValidSortOrder(searchParams.get('sortOrder')));
-  }, [searchParamsString]);
-
-  // Reset to page 1 when search or filters change (skip initial mount)
-  const isInitialMount = useRef(true);
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    setPage(1);
-  }, [
-    debouncedSearch,
-    debouncedStatusFilter,
-    debouncedLeadSourceFilter,
-    debouncedGroupSearch,
-    pageSize,
-  ]);
-
-  // Sync state to URL when filters change
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (page > 1) params.set('page', String(page));
-    if (pageSize !== DEFAULT_PAGE_SIZE) params.set('limit', String(pageSize));
-    if (debouncedSearch) params.set('search', debouncedSearch);
-    if (statusFilter !== 'all') params.set('status', statusFilter);
-    if (leadSourceFilter !== 'all') params.set('leadSource', leadSourceFilter);
-    if (groupSearch) params.set('groupSearch', groupSearch);
-    if (sortBy !== CustomerSortField.CREATED_AT) params.set('sortBy', sortBy);
-    if (sortOrder !== SortOrder.DESC) params.set('sortOrder', sortOrder);
-
-    const query = params.toString();
-    const newUrl = query ? `?${query}` : window.location.pathname;
-
-    // Use replaceState to avoid adding to history on every filter change
-    window.history.replaceState({}, '', newUrl);
-  }, [
-    page,
-    pageSize,
-    debouncedSearch,
-    statusFilter,
-    leadSourceFilter,
-    groupSearch,
-    sortBy,
-    sortOrder,
-  ]);
+  // URL-synced table state — single source of truth for all pagination/sort/filter/search
+  const urlState = useTableUrlState({ prefix: 'customers', defaultPageSize: 10 });
 
   // Modal state
-  const [selectedCustomer] = useState<Customer | null>(null);
-  const [selectedRows, setSelectedRows] = useState<Customer[]>([]);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
 
-  // Fetch customers with filters
+  // Server-side data fetch — driven entirely by URL state
   const {
     data: customerData,
     isLoading,
@@ -252,630 +483,195 @@ export function CustomerListPage(): JSX.Element {
     error,
     refetch,
   } = useCustomers({
-    page,
-    limit: pageSize,
-    search: debouncedSearch.length >= 2 ? debouncedSearch : undefined,
-    status: debouncedStatusFilter !== 'all' ? (debouncedStatusFilter as CustomerStatus) : undefined,
-    leadSource:
-      debouncedLeadSourceFilter !== 'all' ? (debouncedLeadSourceFilter as LeadSource) : undefined,
-    groupSearch: debouncedGroupSearch.length >= 2 ? debouncedGroupSearch : undefined,
-    sortBy: debouncedSortBy,
-    sortOrder: debouncedSortOrder,
+    page: urlState.state.page + 1,
+    limit: urlState.state.pageSize,
+    search: urlState.state.search || undefined,
+    sortBy: toApiSortField(urlState.state.sortModel),
+    sortOrder: toApiSortOrder(urlState.state.sortModel),
+    ...toCustomerFilters(urlState.state.filters),
   });
 
-  // Derived values for render
-  const customers = customerData?.data ?? [];
+  const tableRows = useMemo<Customer[]>(
+    () => (customerData?.data as Customer[] | undefined) ?? EMPTY_CUSTOMER_ROWS,
+    [customerData?.data],
+  );
 
-  // Handle page size change
-  const handlePageSizeChange = (newSize: number): void => {
-    setPageSize(newSize);
-    setPage(1); // Reset to first page when page size changes
-  };
-
-  const totalItems = customerData?.meta.total ?? 0;
-  const totalPages = customerData?.meta.totalPages ?? 1;
-
-  // Handle row selection - memoized to prevent infinite loop in DataTable's useEffect
-  const handleRowSelectionChange = useCallback((rows: Customer[]) => {
-    setSelectedRows(rows);
-  }, []);
-
-  // Clear selection
-  const clearSelection = (): void => {
-    setSelectedRows([]);
-  };
-
-  // Clear search
-  const clearSearch = (): void => {
-    setSearchInput('');
-    setPage(1);
-  };
-
-  // Check if any filters are active
-  const hasActiveFilters =
-    statusFilter !== 'all' || leadSourceFilter !== 'all' || debouncedSearch || groupSearch;
-
-  // Clear all filters
-  const clearAllFilters = (): void => {
-    setStatusFilter('all');
-    setLeadSourceFilter('all');
-    setGroupSearch('');
-    setSearchInput('');
-    setSortBy(CustomerSortField.CREATED_AT);
-    setSortOrder(SortOrder.DESC);
-    setPage(1);
-  };
-
-  // Memoized sort handler for column headers
-  const handleSort = useCallback(
-    (field: CustomerSortField) => {
-      if (sortBy === field) {
-        // Same column clicked - toggle sort order
-        setSortOrder((current) => (current === SortOrder.ASC ? SortOrder.DESC : SortOrder.ASC));
-      } else {
-        // Different column clicked - switch to new column with ASC
-        setSortBy(field);
-        setSortOrder(SortOrder.ASC);
-      }
-      setPage(1);
+  const bulkActions: BulkAction<Customer>[] = [
+    {
+      label: 'Export Selected',
+      onClick: (_rows) => {
+        // placeholder — export API pending
+      },
     },
-    [sortBy],
-  );
-
-  // Sortable column header component
-  const SortableHeader = useCallback(
-    ({ field, label }: { field: CustomerSortField; label: string }) => {
-      const isActive = sortBy === field;
-      return (
-        <button
-          type="button"
-          onClick={() => handleSort(field)}
-          className="flex items-center gap-1 font-semibold text-2xs uppercase tracking-wider hover:text-foreground transition-colors"
-        >
-          {label}
-          {isActive ? (
-            sortOrder === SortOrder.ASC ? (
-              <ArrowUp className="size-3" />
-            ) : (
-              <ArrowDown className="size-3" />
-            )
-          ) : (
-            <ArrowUpDown className="size-3 text-foreground-tertiary" />
-          )}
-        </button>
-      );
+    {
+      label: 'Delete',
+      color: 'error',
+      disabled: true,
+      disabledTooltip: 'Bulk delete is not yet available',
+      onClick: () => undefined,
     },
-    [sortBy, sortOrder, handleSort],
-  );
-
-  // Table columns matching UX spec
-  const columns: ColumnDef<Customer>[] = useMemo(
-    () => [
-      // Customer column with avatar, name, email, property count
-      {
-        accessorKey: 'name',
-        header: () => <SortableHeader field={CustomerSortField.FIRST_NAME} label="Customer" />,
-        enableSorting: false, // Disable client-side sorting
-        accessorFn: (row) => `${row.firstName} ${row.lastName || ''}`,
-        cell: ({ row }) => {
-          const customer = row.original;
-          const initials = getInitials(`${customer.firstName} ${customer.lastName ?? ''}`.trim());
-
-          return (
-            <Link
-              href={buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: customer.id })}
-              prefetch={false}
-              className="flex items-center gap-2.5 hover:text-primary transition-colors"
-            >
-              {/* Avatar */}
-              <Avatar size="sm" className="shrink-0">
-                <AvatarFallback name={customer.id}>{initials}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <div className="font-medium text-foreground leading-tight">
-                  {customer.firstName} {customer.lastName || ''}
-                </div>
-                <div className="text-foreground-tertiary text-2xs flex items-center gap-1.5 leading-tight mt-0.5">
-                  <span className="truncate">{customer.email || '-'}</span>
-                  <span className="inline-flex items-center gap-0.5 shrink-0">
-                    <Building2 className="size-3" />
-                    {customer.propertyCount}
-                  </span>
-                </div>
-                {customer.groupCode && (
-                  <div className="mt-0.5">
-                    <span className="px-1 py-0.5 text-2xs rounded bg-info/10 text-info font-medium">
-                      {customer.groupName
-                        ? `${customer.groupName} (${customer.groupCode})`
-                        : customer.groupCode}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </Link>
-          );
-        },
-      },
-
-      // Contact column with phone number and icons
-      {
-        accessorKey: 'contact',
-        header: 'Contact',
-        enableSorting: false,
-        cell: ({ row }) => {
-          // Use phone, fallback to alternatePhone if phone is empty
-          const phone = row.original.phone || row.original.alternatePhone;
-
-          if (!phone) {
-            return <span className="text-foreground-tertiary">-</span>;
-          }
-
-          const whatsappNumber = formatPhoneForWhatsApp(phone);
-
-          return (
-            <div className="flex items-center gap-2">
-              {/* Phone number text */}
-              <span className="text-foreground-secondary text-sm">{phone}</span>
-              {/* Action icons */}
-              <div className="flex items-center gap-0.5">
-                <a
-                  href={`tel:${phone}`}
-                  className="p-1 hover:bg-muted rounded transition-colors"
-                  title="Call"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Phone className="size-3.5 text-foreground-tertiary" />
-                </a>
-                <a
-                  href={`https://wa.me/${whatsappNumber}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1 hover:bg-success/10 rounded transition-colors"
-                  title="WhatsApp"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <WhatsAppIcon className="size-3.5 text-success" />
-                </a>
-              </div>
-            </div>
-          );
-        },
-      },
-
-      // City column (sortable)
-      {
-        accessorKey: 'city',
-        header: () => <SortableHeader field={CustomerSortField.CITY} label="City" />,
-        enableSorting: false, // Disable client-side sorting
-        cell: ({ row }) => (
-          <span className="text-foreground-secondary">{row.original.city || '-'}</span>
-        ),
-      },
-
-      // Lead Source column with colored badges
-      {
-        accessorKey: 'leadSource',
-        header: 'Lead Source',
-        enableSorting: false,
-        cell: ({ row }) => {
-          const rawSource = row.original.leadSource;
-          if (!rawSource) return <span className="text-foreground-tertiary">-</span>;
-
-          const isKnown = Object.values(LeadSource).includes(rawSource as LeadSource);
-          const displayLabel = isKnown
-            ? LEAD_SOURCE_LABELS[rawSource as LeadSource] || rawSource
-            : rawSource.charAt(0).toUpperCase() + rawSource.slice(1);
-          const colorClass = isKnown
-            ? LEAD_SOURCE_COLORS[rawSource as LeadSource] || 'bg-muted text-foreground-secondary'
-            : 'bg-muted text-foreground-secondary';
-
-          return (
-            <span className={cn('px-1.5 py-0.5 text-2xs font-medium rounded', colorClass)}>
-              {displayLabel}
-            </span>
-          );
-        },
-      },
-
-      // Status column
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        enableSorting: false,
-        cell: ({ row }) => (
-          <Badge variant={STATUS_BADGE_VARIANTS[row.original.status]} size="xs">
-            {STATUS_LABELS[row.original.status]}
-          </Badge>
-        ),
-      },
-
-      // Onboarded column (sortable by createdAt)
-      {
-        accessorKey: 'createdAt',
-        header: () => <SortableHeader field={CustomerSortField.CREATED_AT} label="Onboarded" />,
-        enableSorting: false,
-        cell: ({ row }) => {
-          const date = row.original.createdAt;
-          return (
-            <span className="text-foreground-secondary text-sm">
-              {new Date(date).toLocaleDateString('en-IN', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })}
-            </span>
-          );
-        },
-      },
-
-      // Created By column
-      {
-        accessorKey: 'creatorName',
-        header: 'Created By',
-        enableSorting: false,
-        cell: ({ row }) => {
-          const creatorName = row.original.creatorName;
-          return (
-            <span
-              className={cn(
-                'text-sm',
-                creatorName === 'Self' ? 'text-primary font-medium' : 'text-foreground-secondary',
-              )}
-            >
-              {creatorName || '-'}
-            </span>
-          );
-        },
-      },
-
-      // Actions column
-      {
-        id: 'actions',
-        header: '',
-        cell: ({ row }) => (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="size-8 p-0">
-                <MoreHorizontal className="size-icon-sm" />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() =>
-                  router.push(buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: row.original.id }))
-                }
-              >
-                <Eye className="mr-2 size-icon-sm" />
-                View Details
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() =>
-                  router.push(buildRoute(ROUTES.CUSTOMERS.EDIT, { id: row.original.id }))
-                }
-              >
-                <Edit className="mr-2 size-icon-sm" />
-                Edit Customer
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() =>
-                  router.push(buildRoute(ROUTES.CUSTOMERS.ADD_PROPERTY, { id: row.original.id }))
-                }
-              >
-                <Plus className="mr-2 size-icon-sm" />
-                Add Property
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem disabled className="text-error">
-                <Trash2 className="mr-2 size-icon-sm" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ),
-      },
-    ],
-    [router, SortableHeader],
-  );
-
-  // Loading state (initial load only)
-  if (isLoading) {
-    return (
-      <div className="space-y-5">
-        {/* Page Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-          <div>
-            <Typography variant="h2">All Customers</Typography>
-            <Typography variant="body" color="muted" className="mt-1">
-              Manage your customers and track their journey
-            </Typography>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" disabled>
-              <Upload className="mr-2 size-icon-sm" />
-              Import
-            </Button>
-            <Button variant="outline" size="sm" disabled>
-              <Download className="mr-2 size-icon-sm" />
-              Export
-              <ChevronDown className="ml-2 size-icon-xs" />
-            </Button>
-            <Button size="sm" disabled>
-              <Plus className="mr-2 size-icon-sm" />
-              Add Customer
-            </Button>
-          </div>
-        </div>
-
-        {/* Loading Spinner */}
-        <div className="bg-white rounded-lg border border-border-light p-12 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="size-8 animate-spin text-primary" />
-            <p className="text-sm text-foreground-secondary">Loading customers...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (isError) {
-    return (
-      <div className="space-y-5">
-        {/* Page Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-          <div>
-            <Typography variant="h2">All Customers</Typography>
-            <Typography variant="body" color="muted" className="mt-1">
-              Manage your customers and track their journey
-            </Typography>
-          </div>
-        </div>
-
-        {/* Error State */}
-        <div className="bg-white rounded-lg border border-error/30 p-6">
-          <div className="flex items-center gap-3 text-error">
-            <AlertCircle className="size-5 shrink-0" />
-            <div className="flex-1">
-              <p className="font-medium">Failed to load customers</p>
-              <p className="text-sm text-foreground-secondary mt-1">{getErrorMessage(error)}</p>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => void refetch()}>
-              Retry
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  ];
 
   return (
-    <div className="space-y-5">
-      {/* Page Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-        <div>
-          <Typography variant="h2">All Customers</Typography>
-          <Typography variant="body" color="muted" className="mt-1">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+      {/* ── Page Header ── */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', lg: 'row' },
+          alignItems: { lg: 'center' },
+          justifyContent: 'space-between',
+          gap: 1.5,
+        }}
+      >
+        <Box>
+          <Typography variant="h5" fontWeight={700}>
+            All Customers
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
             Manage your customers and track their journey
           </Typography>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => setImportModalOpen(true)}>
-            <Upload className="mr-2 size-icon-sm" />
+        </Box>
+
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<UploadIcon />}
+            onClick={() => setImportModalOpen(true)}
+          >
             Import
           </Button>
 
-          {/* Export Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Download className="mr-2 size-icon-sm" />
-                Export
-                <ChevronDown className="ml-2 size-icon-xs" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>Export as CSV</DropdownMenuItem>
-              <DropdownMenuItem>Export as Excel</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Export placeholder — future API */}
+          <Button variant="outlined" size="small" startIcon={<DownloadIcon />}>
+            Export
+          </Button>
 
-          <Button size="sm" onClick={() => router.push(ROUTES.CUSTOMERS.NEW)}>
-            <Plus className="mr-2 size-icon-sm" />
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<AddIcon />}
+            onClick={() => router.push(ROUTES.CUSTOMERS.NEW)}
+          >
             Add Customer
           </Button>
-        </div>
-      </div>
+        </Stack>
+      </Box>
 
-      {/* Search & Filters Row */}
-      <div className="flex items-center gap-3">
-        {/* Search Bar */}
-        <div className="relative w-72">
-          <Input
-            type="text"
-            placeholder="Search by name, phone, email, city, or group..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            leftIcon={<Search className="size-icon-sm" />}
-            className="h-8 text-sm"
-          />
-          {searchInput && (
-            <button
-              type="button"
-              onClick={clearSearch}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded"
-            >
-              <X className="size-3.5 text-foreground-tertiary" />
-            </button>
-          )}
-          {isFetching && debouncedSearch && (
-            <Loader2 className="absolute right-8 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-foreground-tertiary" />
-          )}
-        </div>
-
-        {/* Divider */}
-        <div className="h-5 w-px bg-border-light" />
-
-        {/* Status Tabs */}
-        <FilterTabs
-          tabs={STATUS_TABS}
-          value={statusFilter}
-          onChange={(value) => {
-            setStatusFilter(value);
-            setPage(1);
-          }}
-          size="xs"
-        />
-
-        {/* Lead Source Dropdown */}
-        <Select
-          value={leadSourceFilter}
-          onValueChange={(value) => {
-            setLeadSourceFilter(value);
-            setPage(1);
+      {/* ── Error banner ── */}
+      {isError && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            p: 2,
+            borderRadius: 1,
+            border: '1px solid',
+            borderColor: 'error.light',
+            backgroundColor: 'error.50',
           }}
         >
-          <SelectTrigger className="w-[130px] h-8 text-sm">
-            <SelectValue placeholder="All Sources" />
-          </SelectTrigger>
-          <SelectContent>
-            {LEAD_SOURCE_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Group Search */}
-        <div className="relative">
-          <Input
-            type="text"
-            placeholder="Filter by group..."
-            value={groupSearch}
-            onChange={(e) => {
-              setGroupSearch(e.target.value);
-              setPage(1);
-            }}
-            leftIcon={<Search className="size-icon-sm" />}
-            className="h-8 text-sm w-44"
-          />
-          {groupSearch && (
-            <button
-              type="button"
-              onClick={() => {
-                setGroupSearch('');
-                setPage(1);
-              }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded"
-            >
-              <X className="size-3.5 text-foreground-tertiary" />
-            </button>
-          )}
-        </div>
-
-        {/* Clear Filters - only show when filters active */}
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearAllFilters}
-            className="text-foreground-secondary h-8"
-          >
-            <X className="mr-1 size-3" />
-            Clear
+          <ErrorOutlineIcon color="error" />
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="body2" fontWeight={600} color="error.main">
+              Failed to load customers
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {getErrorMessage(error)}
+            </Typography>
+          </Box>
+          <Button variant="outlined" color="error" size="small" onClick={() => void refetch()}>
+            Retry
           </Button>
-        )}
-      </div>
+        </Box>
+      )}
 
-      {/* Data Table */}
-      <div className="bg-white rounded-lg border border-border-light overflow-hidden">
-        {/* Bulk Actions Bar - shown when items selected */}
-        {selectedRows.length > 0 && (
-          <div className="px-4 py-2 bg-primary/5 border-b border-border-light flex items-center gap-4">
-            <span className="text-sm text-foreground-secondary">
-              <strong className="text-foreground">{selectedRows.length}</strong> selected
-            </span>
-            <Button variant="ghost" size="sm" className="text-foreground-secondary">
-              Export Selected
-            </Button>
-            <Button variant="ghost" size="sm" className="text-error" disabled>
-              Delete
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-auto text-foreground-secondary"
-              onClick={clearSelection}
+      {/* ── Table ── */}
+      <AdvancedTable<Customer>
+        columns={COLUMNS}
+        rows={tableRows}
+        rowIdField="id"
+        paginationMode="server"
+        loading={isLoading}
+        refetching={isFetching && !isLoading}
+        // Controlled props — driven by urlState
+        page={urlState.state.page}
+        pageSize={urlState.state.pageSize}
+        totalRowCount={customerData?.meta.total ?? 0}
+        sortModel={urlState.state.sortModel}
+        filterModel={urlState.state.filters}
+        // Callbacks — each writes to URL, which re-drives useCustomers
+        onPageChange={urlState.setPage}
+        onPageSizeChange={urlState.setPageSize}
+        onSortChange={urlState.setSortModel}
+        onFilterChange={urlState.setFilters}
+        onSearchChange={urlState.setSearch}
+        // Row interaction
+        onRowClick={(row) => router.push(buildRoute(ROUTES.CUSTOMERS.DETAIL, { id: row.id }))}
+        // Row selection
+        enableRowSelection
+        bulkActions={bulkActions}
+        // Features
+        enableSearch
+        enableFilters
+        enablePagination
+        enableColumnVisibility
+        searchPlaceholder="Search by name, phone, email, city..."
+        itemLabel="customers"
+        // Custom empty states
+        renderEmptyState={(hasActiveFilters) =>
+          hasActiveFilters ? (
+            <Box
+              sx={{
+                py: 6,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 1,
+              }}
             >
-              Clear selection
-            </Button>
-          </div>
-        )}
+              <Typography variant="body2" color="text.secondary">
+                No customers match your search and filters.
+              </Typography>
+              <Button size="small" variant="outlined" onClick={urlState.resetAll}>
+                Clear all filters
+              </Button>
+            </Box>
+          ) : (
+            <Box
+              sx={{
+                py: 6,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
+              <Typography variant="body2" color="text.secondary">
+                No customers yet. Get started by adding your first customer.
+              </Typography>
+              <Button
+                size="small"
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => router.push(ROUTES.CUSTOMERS.NEW)}
+              >
+                Add Customer
+              </Button>
+            </Box>
+          )
+        }
+      />
 
-        {/* Show DataTable when fetching OR has data, show EmptyState when not fetching AND no data */}
-        {isFetching || customers.length > 0 ? (
-          <>
-            <DataTable
-              columns={columns}
-              data={customers}
-              enableSearch={false}
-              enablePagination={false}
-              enableRowSelection
-              onRowSelectionChange={handleRowSelectionChange}
-              isLoading={isFetching}
-            />
-
-            {customers.length > 0 && (
-              <TablePagination
-                currentPage={page}
-                totalPages={totalPages}
-                pageSize={pageSize}
-                totalItems={totalItems}
-                itemLabel="customers"
-                variant="full"
-                onPageChange={setPage}
-                onPageSizeChange={handlePageSizeChange}
-              />
-            )}
-          </>
-        ) : (
-          <div className="p-8">
-            {hasActiveFilters ? (
-              <EmptyState
-                title="No customers found"
-                description={
-                  debouncedSearch
-                    ? `No results match your search and filters. Try adjusting your criteria.`
-                    : 'No customers match the selected filters. Try different filter options.'
-                }
-                action={{
-                  label: 'Clear Filters',
-                  onClick: clearAllFilters,
-                }}
-              />
-            ) : (
-              <EmptyState
-                title="No customers yet"
-                description="Get started by adding your first customer"
-                action={{
-                  label: 'Add Customer',
-                  onClick: () => router.push(ROUTES.CUSTOMERS.NEW),
-                }}
-              />
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Modals */}
+      {/* ── Modals ── */}
       <DeleteCustomerModal
         open={deleteModalOpen}
         onOpenChange={setDeleteModalOpen}
-        customer={selectedCustomer}
+        customer={null}
       />
-
       <ImportCustomersModal open={importModalOpen} onOpenChange={setImportModalOpen} />
-    </div>
+    </Box>
   );
 }

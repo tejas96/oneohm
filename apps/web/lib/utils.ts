@@ -5,7 +5,7 @@ import { twMerge } from 'tailwind-merge';
  * Utility function to merge Tailwind CSS classes
  * Combines clsx for conditional classes with tailwind-merge for deduplication
  */
-export function cn(...inputs: ClassValue[]) {
+export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
 }
 
@@ -31,8 +31,10 @@ export {
   formatSystemSize,
   formatTimeAgo,
   getInitials,
+  toTitleLabel,
 } from './utils/format';
 export { formatPhoneForWhatsApp, formatPhoneForDisplay, isValidPhone } from './utils/phone';
 export { getRecentViews, recordRecentView } from './utils/recent-views';
 export type { RecentViewItem, RecentViewType } from './utils/recent-views';
 export { buildTasksTabUrl } from './utils/project';
+export { deterministicIndex, pickDeterministic } from './utils/color';

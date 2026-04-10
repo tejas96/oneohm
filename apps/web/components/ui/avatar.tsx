@@ -4,7 +4,7 @@ import * as AvatarPrimitive from '@radix-ui/react-avatar';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
-import { cn } from '@/lib/utils';
+import { cn, pickDeterministic } from '@/lib/utils';
 
 /**
  * Avatar Component - OneOhm V2 Design System
@@ -59,23 +59,14 @@ const AVATAR_FALLBACK_COLORS = [
   'bg-foreground-tertiary/20 text-foreground-secondary',
 ] as const;
 
-/**
- * Hash a string to a stable index for avatar color selection.
- * Same string always returns the same color.
- */
-function getAvatarColorIndex(name: string): number {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    const char = name.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash);
-}
+type AvatarFallbackColorClass = (typeof AVATAR_FALLBACK_COLORS)[number];
 
 export function getAvatarFallbackColorClass(name: string): string {
-  const index = getAvatarColorIndex(name) % AVATAR_FALLBACK_COLORS.length;
-  return AVATAR_FALLBACK_COLORS[index] ?? AVATAR_FALLBACK_COLORS[0];
+  return pickDeterministic(
+    name,
+    AVATAR_FALLBACK_COLORS,
+    AVATAR_FALLBACK_COLORS[0],
+  ) as AvatarFallbackColorClass;
 }
 
 export interface AvatarProps

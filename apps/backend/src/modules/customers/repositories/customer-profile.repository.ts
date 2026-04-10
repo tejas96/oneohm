@@ -341,14 +341,18 @@ export class CustomerProfileRepository {
     }
 
     if (query.toDate) {
-      // Add time to make toDate inclusive (end of day)
+      // If toDate already includes a time component, trust it as an exact boundary.
+      // For date-only values, append end-of-day UTC to preserve previous behavior.
+      const normalizedToDate = query.toDate.includes('T')
+        ? query.toDate
+        : `${query.toDate}T23:59:59.999Z`;
       qb.andWhere('customer.createdAt <= :toDate', {
-        toDate: `${query.toDate}T23:59:59.999Z`,
+        toDate: normalizedToDate,
       });
     }
 
     // ===== Sorting (using safe field mapping) =====
-    const sortColumn = SORT_FIELD_MAP[query.sortBy] ?? SORT_FIELD_MAP[CustomerSortField.CREATED_AT];
+    const sortColumn = SORT_FIELD_MAP[query.sortBy];
     const sortDirection = query.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
     qb.orderBy(sortColumn, sortDirection);
 
