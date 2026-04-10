@@ -469,7 +469,12 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
     <Box sx={{ width: '100%', ...sx }}>
       <Paper
         elevation={0}
-        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}
+        sx={{
+          border: '1px solid',
+          borderColor: 'divider',
+          borderRadius: '6px',
+          overflow: 'hidden',
+        }}
       >
         {/* ── Toolbar ── */}
         <Box
@@ -612,8 +617,8 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
                         sx={{
                           cursor: onRowClick || onRowDoubleClick ? 'pointer' : 'default',
                           '&.Mui-selected': {
-                            backgroundColor: 'primary.50',
-                            '&:hover': { backgroundColor: 'primary.100' },
+                            backgroundColor: 'action.selected',
+                            '&:hover': { backgroundColor: 'action.focus' },
                           },
                         }}
                       >
@@ -690,7 +695,7 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
                                 sx={{
                                   px: 3,
                                   py: 2,
-                                  backgroundColor: 'grey.50',
+                                  backgroundColor: 'action.hover',
                                   borderTop: '1px solid',
                                   borderColor: 'divider',
                                 }}
@@ -807,7 +812,7 @@ function BulkActionsBar<TRow>({
       <Chip
         label={`${selectedRows.length} selected`}
         size="small"
-        sx={{ backgroundColor: 'primary.dark', color: 'white', fontWeight: 600 }}
+        sx={{ backgroundColor: 'primary.dark', color: 'primary.contrastText', fontWeight: 600 }}
       />
       <Stack direction="row" spacing={1}>
         {bulkActions.map((action, idx) => (
@@ -819,7 +824,11 @@ function BulkActionsBar<TRow>({
         size="small"
         variant="text"
         onClick={onClear}
-        sx={{ color: 'rgba(255,255,255,0.8)', '&:hover': { color: 'white' } }}
+        sx={{
+          color: 'primary.contrastText',
+          opacity: 0.8,
+          '&:hover': { opacity: 1, backgroundColor: 'transparent' },
+        }}
       >
         Clear selection
       </Button>
@@ -847,9 +856,10 @@ function BulkActionButton<TRow>({
         onClick={() => action.onClick(selectedRows)}
         sx={{
           backgroundColor: action.disabled ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.15)',
-          color: action.disabled ? 'rgba(255,255,255,0.4)' : 'white',
+          color: action.disabled ? 'primary.contrastText' : 'primary.contrastText',
+          opacity: action.disabled ? 0.4 : 1,
           '&:hover': { backgroundColor: 'rgba(255,255,255,0.25)' },
-          '&.Mui-disabled': { color: 'rgba(255,255,255,0.4)' },
+          '&.Mui-disabled': { color: 'primary.contrastText', opacity: 0.4 },
           fontWeight: 500,
           pointerEvents: action.disabled ? 'none' : 'auto',
         }}

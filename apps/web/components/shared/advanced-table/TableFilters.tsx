@@ -390,7 +390,7 @@ function TableFiltersInner<TRow>({
 
       <Collapse in={open}>
         <Divider />
-        <Box sx={{ px: 2, py: 2, backgroundColor: 'grey.50' }}>
+        <Box sx={{ px: 2, py: 2, backgroundColor: 'action.hover' }}>
           <Stack direction="row" flexWrap="wrap" gap={2} alignItems="flex-end">
             {filterableColumns.map((col) => (
               <FilterControl

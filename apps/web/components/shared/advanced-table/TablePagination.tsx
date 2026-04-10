@@ -105,10 +105,7 @@ function AdvancedTablePaginationInner({
               value={pageSize}
               onChange={handleRowsPerPageChange}
               sx={{
-                fontSize: '0.75rem',
-                height: 28,
                 '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
-                '& .MuiSelect-select': { py: '4px', px: '8px' },
               }}
             >
               {pageSizeOptions.map((opt) => (

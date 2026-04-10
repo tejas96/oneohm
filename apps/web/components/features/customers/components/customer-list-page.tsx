@@ -266,8 +266,9 @@ const COLUMNS: ColumnConfig<Customer>[] = [
             sx={{
               width: 32,
               height: 32,
-              fontSize: '0.75rem',
+              fontSize: '0.6875rem',
               bgcolor: 'primary.main',
+              color: 'primary.contrastText',
               flexShrink: 0,
             }}
           >
@@ -296,7 +297,7 @@ const COLUMNS: ColumnConfig<Customer>[] = [
                 size="small"
                 color="info"
                 variant="outlined"
-                sx={{ height: 16, fontSize: '0.65rem', mt: 0.25 }}
+                sx={{ mt: 0.25 }}
               />
             )}
           </Box>
@@ -372,15 +373,7 @@ const COLUMNS: ColumnConfig<Customer>[] = [
       const knownSrc = Object.values(LeadSource).find((v) => (v as string) === rawSrc);
       const label = knownSrc ? toTitleLabel(knownSrc) : toTitleLabel(rawSrc);
       const color = getStableChipColor(knownSrc ?? rawSrc);
-      return (
-        <Chip
-          label={label}
-          size="small"
-          color={color}
-          variant="outlined"
-          sx={{ fontSize: '0.7rem' }}
-        />
-      );
+      return <Chip label={label} size="small" color={color} variant="outlined" />;
     },
   },
   {
@@ -399,15 +392,7 @@ const COLUMNS: ColumnConfig<Customer>[] = [
           ? toTitleLabel(rawStatus)
           : '-';
       const color = knownStatus ? getStableChipColor(knownStatus) : ('default' as const);
-      return (
-        <Chip
-          label={label}
-          size="small"
-          color={color}
-          variant="filled"
-          sx={{ fontSize: '0.7rem' }}
-        />
-      );
+      return <Chip label={label} size="small" color={color} variant="filled" />;
     },
   },
   {
@@ -567,10 +552,10 @@ export function CustomerListPage(): JSX.Element {
             alignItems: 'center',
             gap: 1.5,
             p: 2,
-            borderRadius: 1,
+            borderRadius: '6px',
             border: '1px solid',
             borderColor: 'error.light',
-            backgroundColor: 'error.50',
+            backgroundColor: 'rgba(220,38,38,0.06)',
           }}
         >
           <ErrorOutlineIcon color="error" />

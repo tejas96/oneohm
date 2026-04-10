@@ -50,7 +50,7 @@ function AdvancedTableHeaderInner<TRow>({
   };
 
   const headerCellSx = {
-    backgroundColor: 'grey.50',
+    backgroundColor: 'action.hover',
     borderBottom: '1px solid',
     borderColor: 'divider',
     py: 1.25,
