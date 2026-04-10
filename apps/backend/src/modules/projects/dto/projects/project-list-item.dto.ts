@@ -87,17 +87,22 @@ export class ProjectListItemDto {
 
   @ApiProperty({ example: 10, description: 'Derived from quote current version' })
   @Expose()
-  @Transform(({ obj }) =>
-    toNum(obj.quote?.versions?.find((v: { isCurrent?: boolean }) => v.isCurrent)?.systemSizeKw),
-  )
+  @Transform(({ obj }) => {
+    const version =
+      obj.quote?.versions?.find((v: { isCurrent?: boolean }) => v.isCurrent) ??
+      obj.quote?.versions?.[0];
+    return toNum(version?.systemSizeKw);
+  })
   systemSizeKw!: number;
 
   @ApiProperty({ example: 'residential', description: 'Derived from quote current version' })
   @Expose()
-  @Transform(
-    ({ obj }) =>
-      obj.quote?.versions?.find((v: { isCurrent?: boolean }) => v.isCurrent)?.projectType,
-  )
+  @Transform(({ obj }) => {
+    const version =
+      obj.quote?.versions?.find((v: { isCurrent?: boolean }) => v.isCurrent) ??
+      obj.quote?.versions?.[0];
+    return version?.projectType;
+  })
   projectType!: string;
 
   @ApiProperty({ enum: Object.values(ProjectStatus), example: ProjectStatus.IN_PROGRESS })
@@ -122,11 +127,12 @@ export class ProjectListItemDto {
 
   @ApiPropertyOptional({ example: 450000, description: 'Derived from quote current version' })
   @Expose()
-  @Transform(
-    ({ obj }) =>
-      toNum(obj.quote?.versions?.find((v: { isCurrent?: boolean }) => v.isCurrent)?.finalPrice) ??
-      null,
-  )
+  @Transform(({ obj }) => {
+    const version =
+      obj.quote?.versions?.find((v: { isCurrent?: boolean }) => v.isCurrent) ??
+      obj.quote?.versions?.[0];
+    return toNum(version?.finalPrice) ?? null;
+  })
   estimatedCost?: number;
 
   @ApiPropertyOptional({ example: 425000, description: 'Derived from metadata.actualCost' })

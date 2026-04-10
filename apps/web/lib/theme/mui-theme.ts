@@ -235,6 +235,18 @@ export const muiTheme = createTheme({
       },
     },
 
+    /* ---- Link ---- */
+    MuiLink: {
+      styleOverrides: {
+        root: {
+          color: '#76c044', // primary.main
+          '&:hover': {
+            color: '#4d7c0f', // primary.dark
+          },
+        },
+      },
+    },
+
     /* ---- Dialog ---- */
     MuiDialog: {
       defaultProps: { scroll: 'paper' },

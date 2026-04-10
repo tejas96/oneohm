@@ -24,6 +24,8 @@ export interface ProjectFilters {
   status?: ProjectStatus;
   priority?: ProjectPriority;
   projectType?: string;
+  fromDate?: string;
+  toDate?: string;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
   // Query control
@@ -56,8 +58,8 @@ export interface ProjectListItem {
   progressPercentage: number;
   startDate?: string;
   endDate?: string;
-  estimatedCost?: number;
-  actualCost?: number;
+  estimatedCost?: number | null;
+  actualCost?: number | null;
   metadata?: ProjectMetadata;
   taskStatuses?: TaskStatusConfig[];
   property: {
@@ -120,13 +122,15 @@ export function useProjects(
       if (queryFilters.status) params.append('status', queryFilters.status);
       if (queryFilters.priority) params.append('priority', queryFilters.priority);
       if (queryFilters.projectType) params.append('projectType', queryFilters.projectType);
+      if (queryFilters.fromDate) params.append('fromDate', queryFilters.fromDate);
+      if (queryFilters.toDate) params.append('toDate', queryFilters.toDate);
       if (queryFilters.sortBy) params.append('sortBy', queryFilters.sortBy);
       if (queryFilters.sortOrder) params.append('sortOrder', queryFilters.sortOrder);
 
-      const { data } = await apiClient.get<ProjectListResponse>(`/projects?${params.toString()}`, {
+      const response = await apiClient.get<ProjectListResponse>(`/projects?${params.toString()}`, {
         headers: { 'X-Organization-Id': organizationId },
       });
-      return data;
+      return response.data as ProjectListResponse;
     },
     enabled: !!organizationId && callerEnabled !== false,
     placeholderData: keepPreviousData,

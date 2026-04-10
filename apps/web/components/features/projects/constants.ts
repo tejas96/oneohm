@@ -12,6 +12,8 @@ import {
   TaskStatus,
 } from '@oneohm-epc/shared/types';
 
+import { toTitleLabel } from '@/lib/utils';
+
 export const DEFAULT_MILESTONES = [
   { name: 'Site Survey & Design', type: MilestoneType.SITE_SURVEY },
   { name: 'Permits & Approvals', type: MilestoneType.PERMITS },
@@ -105,34 +107,27 @@ export const PHASE_LABELS: Record<string, string> = {
   [MilestoneType.CUSTOM]: 'Custom',
 };
 
-export const STATUS_FILTER_OPTIONS = [
-  { value: '', label: 'All Status' },
-  { value: ProjectStatus.DRAFT, label: 'Draft' },
-  { value: ProjectStatus.PLANNING, label: 'Planning' },
-  { value: ProjectStatus.APPROVED, label: 'Approved' },
-  { value: ProjectStatus.IN_PROGRESS, label: 'Active' },
-  { value: ProjectStatus.TESTING, label: 'Testing' },
-  { value: ProjectStatus.ON_HOLD, label: 'On Hold' },
-  { value: ProjectStatus.COMPLETED, label: 'Completed' },
-  { value: ProjectStatus.CANCELLED, label: 'Cancelled' },
-] as const;
+/**
+ * AdvancedTable select filterOptions — enum-driven, stays in sync automatically.
+ * Use these in ColumnConfig.filterOptions for the project list AdvancedTable.
+ */
+export const PROJECT_STATUS_OPTIONS: ReadonlyArray<{ value: ProjectStatus; label: string }> =
+  Object.values(ProjectStatus).map((v) => ({
+    value: v,
+    label: PROJECT_STATUS_LABELS[v] ?? toTitleLabel(v),
+  }));
 
-export const PRIORITY_FILTER_OPTIONS = [
-  { value: '', label: 'All Priority' },
-  { value: ProjectPriority.URGENT, label: 'Urgent' },
-  { value: ProjectPriority.HIGH, label: 'High' },
-  { value: ProjectPriority.NORMAL, label: 'Normal' },
-  { value: ProjectPriority.LOW, label: 'Low' },
-] as const;
+export const PROJECT_PRIORITY_OPTIONS: ReadonlyArray<{ value: ProjectPriority; label: string }> =
+  Object.values(ProjectPriority).map((v) => ({
+    value: v,
+    label: PROJECT_PRIORITY_LABELS[v] ?? toTitleLabel(v),
+  }));
 
-export const TYPE_FILTER_OPTIONS = [
-  { value: '', label: 'All Types' },
-  { value: 'residential', label: 'Residential' },
-  { value: 'residential_apartment', label: 'Residential Apt' },
-  { value: 'commercial', label: 'Commercial' },
-  { value: 'industrial', label: 'Industrial' },
-  { value: 'agricultural', label: 'Agricultural' },
-] as const;
+export const PROJECT_TYPE_OPTIONS: ReadonlyArray<{ value: ProjectType; label: string }> =
+  Object.values(ProjectType).map((v) => ({
+    value: v,
+    label: PROJECT_TYPE_LABELS[v] ?? toTitleLabel(v),
+  }));
 
 // ---------------------------------------------------------------------------
 // Task constants (for My Tasks)

@@ -168,18 +168,16 @@ function DateFilterControl<TRow>({
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <DatePicker
-        label={column.headerName}
-        value={parseDateLike(value)}
-        onChange={(date) => {
-          // Keep date-only local value (YYYY-MM-DD) to avoid timezone day shifts.
-          const emittedValue = date ? toLocalDate(date) : null;
-          onChange(column.field, emittedValue);
-        }}
-        slotProps={{ textField: { size: 'small', sx: { minWidth: 160 } } }}
-      />
-    </LocalizationProvider>
+    <DatePicker
+      label={column.headerName}
+      value={parseDateLike(value)}
+      onChange={(date) => {
+        // Keep date-only local value (YYYY-MM-DD) to avoid timezone day shifts.
+        const emittedValue = date ? toLocalDate(date) : null;
+        onChange(column.field, emittedValue);
+      }}
+      slotProps={{ textField: { size: 'small', sx: { minWidth: 160 } } }}
+    />
   );
 }
 
@@ -380,41 +378,43 @@ function TableFiltersInner<TRow>({
   if (filterableColumns.length === 0) return null;
 
   return (
-    <>
-      <ActiveFilterChips
-        filters={filters}
-        columns={allColumns}
-        onRemove={handleRemove}
-        onClearAll={handleClearAll}
-      />
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <>
+        <ActiveFilterChips
+          filters={filters}
+          columns={allColumns}
+          onRemove={handleRemove}
+          onClearAll={handleClearAll}
+        />
 
-      <Collapse in={open}>
-        <Divider />
-        <Box sx={{ px: 2, py: 2, backgroundColor: 'action.hover' }}>
-          <Stack direction="row" flexWrap="wrap" gap={2} alignItems="flex-end">
-            {filterableColumns.map((col) => (
-              <FilterControl
-                key={col.field}
-                column={col}
-                value={filters[col.field]}
-                onChange={handleChange}
-              />
-            ))}
-            <Button
-              size="small"
-              variant="text"
-              color="inherit"
-              onClick={handleClearAll}
-              startIcon={<FilterListOffIcon />}
-              sx={{ color: 'text.secondary', alignSelf: 'center' }}
-            >
-              Reset
-            </Button>
-          </Stack>
-        </Box>
-        <Divider />
-      </Collapse>
-    </>
+        <Collapse in={open}>
+          <Divider />
+          <Box sx={{ px: 2, py: 2, backgroundColor: 'action.hover' }}>
+            <Stack direction="row" flexWrap="wrap" gap={2} alignItems="flex-end">
+              {filterableColumns.map((col) => (
+                <FilterControl
+                  key={col.field}
+                  column={col}
+                  value={filters[col.field]}
+                  onChange={handleChange}
+                />
+              ))}
+              <Button
+                size="small"
+                variant="text"
+                color="inherit"
+                onClick={handleClearAll}
+                startIcon={<FilterListOffIcon />}
+                sx={{ color: 'text.secondary', alignSelf: 'center' }}
+              >
+                Reset
+              </Button>
+            </Stack>
+          </Box>
+          <Divider />
+        </Collapse>
+      </>
+    </LocalizationProvider>
   );
 }
 
