@@ -72,7 +72,8 @@ const RICH_TEXT_COLORS = {
 } as const;
 
 export interface TooltipContentProps
-  extends React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>,
+  extends
+    React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>,
     VariantProps<typeof tooltipContentVariants> {
   /** Show arrow indicator */
   showArrow?: boolean;

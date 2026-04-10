@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class DropLocationCoordinatesFromCustomerProperties1778000000000
-  implements MigrationInterface
-{
+export class DropLocationCoordinatesFromCustomerProperties1778000000000 implements MigrationInterface {
   name = 'DropLocationCoordinatesFromCustomerProperties1778000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

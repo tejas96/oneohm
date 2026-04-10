@@ -64,8 +64,7 @@ const badgeVariants = cva(
 );
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof badgeVariants> {
   /** Show a dot indicator before the text */
   dot?: boolean;
   /** Animate the dot (for "hot" leads) */

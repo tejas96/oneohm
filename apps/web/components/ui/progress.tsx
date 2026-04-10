@@ -49,7 +49,8 @@ const indicatorVariants = cva('h-full rounded-full transition-all', {
 });
 
 export interface ProgressProps
-  extends React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>,
+  extends
+    React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>,
     VariantProps<typeof progressVariants>,
     VariantProps<typeof indicatorVariants> {
   /** Show percentage label */

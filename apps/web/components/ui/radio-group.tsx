@@ -44,7 +44,8 @@ const INDICATOR_SIZES = {
 } as const;
 
 export interface RadioGroupItemProps
-  extends React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>,
+  extends
+    React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>,
     VariantProps<typeof radioItemVariants> {}
 
 const RadioGroupItem = React.forwardRef<

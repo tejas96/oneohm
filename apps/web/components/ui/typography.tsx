@@ -187,7 +187,8 @@ type TypographyElement =
   | 'a';
 
 export interface TypographyProps
-  extends Omit<React.HTMLAttributes<HTMLElement>, 'color'>,
+  extends
+    Omit<React.HTMLAttributes<HTMLElement>, 'color'>,
     VariantProps<typeof typographyVariants> {
   /** Render as a different HTML element */
   as?: TypographyElement;

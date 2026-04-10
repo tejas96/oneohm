@@ -3,6 +3,7 @@ import { PaymentStatus, PurchaseOrderStatus } from '@oneohm-epc/shared/types';
 
 import { OrganizationRepository } from '../../organizations/repositories/organization.repository';
 import { CreatePurchaseOrderDto, ReceivePurchaseOrderDto, UpdatePurchaseOrderDto } from '../dto';
+import { InventoryStockService } from './inventory-stock.service';
 import { PurchaseOrderEntity } from '../entities/purchase-order.entity';
 import {
   PurchaseOrderItemRepository,
@@ -10,7 +11,6 @@ import {
   VendorRepository,
   WarehouseRepository,
 } from '../repositories';
-import { InventoryStockService } from './inventory-stock.service';
 
 /**
  * Purchase Order Service

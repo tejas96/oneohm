@@ -51,7 +51,8 @@ const switchThumbVariants = cva(
 );
 
 export interface SwitchProps
-  extends React.ComponentPropsWithoutRef<typeof SwitchPrimitive.Root>,
+  extends
+    React.ComponentPropsWithoutRef<typeof SwitchPrimitive.Root>,
     VariantProps<typeof switchVariants> {
   /** Label text */
   label?: string;
