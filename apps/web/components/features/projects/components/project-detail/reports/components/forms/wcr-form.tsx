@@ -4,7 +4,6 @@ import { Box, Divider } from '@mui/material';
 import { useEffect, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
-
 import type { WcrFields } from '../../templates/wcr.template';
 import type { ReportFormProps } from '../../types/report.types';
 
@@ -35,8 +34,7 @@ export function WcrForm({ fields, onChange, disabled }: ReportFormProps<WcrField
       if (timerRef.current) clearTimeout(timerRef.current);
     };
     // values object reference changes every render; serialised is the stable dep
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [serialised]);
+  }, [serialised]); // serialised is a stable JSON snapshot — other deps are refs
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>

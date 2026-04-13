@@ -10,7 +10,6 @@ import type { ReportTemplate } from '../types/report.types';
 import { EmptyState } from '@/components/shared';
 import { MUITypography } from '@/components/ui';
 
-
 interface ReportTemplateGridProps {
   projectId: string;
   onSelectTemplate: (template: ReportTemplate) => void;

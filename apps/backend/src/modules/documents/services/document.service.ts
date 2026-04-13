@@ -73,8 +73,9 @@ export class DocumentService {
     entityType: DocumentEntityType,
     entityId: string,
     organizationId: string,
+    filters?: { tag?: string; category?: string },
   ): Promise<DocumentEntity[]> {
-    return this.documentRepository.findByEntity(entityType, entityId, organizationId);
+    return this.documentRepository.findByEntity(entityType, entityId, organizationId, filters);
   }
 
   async findByEntityBatch(

@@ -12,7 +12,6 @@ import { deleteFile, uploadFile } from '@/lib/api/storage';
 import { useOrgContext } from '@/lib/hooks/core';
 import { extractFileKey } from '@/lib/utils';
 
-
 export function useGenerateReport(projectId: string) {
   const [status, setStatus] = useState<GenerateStatus>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -73,6 +72,8 @@ export function useGenerateReport(projectId: string) {
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
             // Cut at the explicit .pdf-page-break element; also honour
             // page-break-inside:avoid on table rows and paragraphs.
+            // @ts-expect-error — 'pagebreak' is a valid html2pdf.js option but
+            // is missing from the community @types/html2pdf.js type definitions.
             pagebreak: { mode: ['css', 'legacy'], after: '.pdf-page-break' },
           })
           .from(target)
@@ -97,7 +98,11 @@ export function useGenerateReport(projectId: string) {
             existing.map(async (doc) => {
               const fileKey = extractFileKey(doc.fileUrl);
               if (fileKey) {
-                try { await deleteFile(fileKey); } catch { /* already gone */ }
+                try {
+                  await deleteFile(fileKey);
+                } catch {
+                  /* already gone */
+                }
               }
               await deleteDocument(doc.id, organizationId, { permanent: true });
             }),
@@ -117,7 +122,7 @@ export function useGenerateReport(projectId: string) {
 
         // 5. Create the single new DB record.
         setStatus('saving');
-        const createdDoc = await uploadMutateRef.current({
+        await uploadMutateRef.current({
           entityType: DocumentEntityType.PROJECT,
           entityId: projectId,
           category: DocumentCategory.REPORT,

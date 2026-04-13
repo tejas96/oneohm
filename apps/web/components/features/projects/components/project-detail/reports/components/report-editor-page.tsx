@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ReportPreviewPanel } from './report-preview-panel';
 import { useGenerateReport } from '../hooks/use-generate-report';
 import { useReportDownload } from '../hooks/use-report-download';
-import { type ReportTemplate , GENERATE_STATUS_LABELS } from '../types/report.types';
+import { type ReportTemplate, GENERATE_STATUS_LABELS } from '../types/report.types';
 
 import { useDocuments } from '@/components/features/documents/hooks';
 import {
@@ -22,8 +22,6 @@ import {
 } from '@/components/ui';
 import type { DocumentRecord } from '@/lib/api/documents';
 
-
-
 function getInitialFields(
   template: ReportTemplate,
   existingDoc: DocumentRecord | null,
@@ -31,13 +29,15 @@ function getInitialFields(
   const defaults = { ...template.defaultFields } as Record<string, string>;
   if (!existingDoc?.metadata?.reportFields) return defaults;
   const saved = existingDoc.metadata.reportFields as Record<string, unknown>;
-  // Merge: saved values win; new template fields fall back to defaults
+  // Merge: saved values win; new template fields fall back to defaults.
+  // Cast needed because Object.fromEntries infers string | undefined from the
+  // index signature even though every key is guaranteed to be present.
   return Object.fromEntries(
     Object.keys(defaults).map((key) => [
       key,
-      typeof saved[key] === 'string' ? (saved[key]) : defaults[key],
+      typeof saved[key] === 'string' ? saved[key] : (defaults[key] ?? ''),
     ]),
-  );
+  ) as Record<string, string>;
 }
 
 interface ReportEditorModalProps {
@@ -47,12 +47,7 @@ interface ReportEditorModalProps {
   projectId: string;
 }
 
-export function ReportEditorModal({
-  open,
-  onClose,
-  template,
-  projectId,
-}: ReportEditorModalProps) {
+export function ReportEditorModal({ open, onClose, template, projectId }: ReportEditorModalProps) {
   // Fetch documents first so existingDoc is available for the useState initializer.
   // In practice the cache is already warm (ReportTemplateCard uses the same query key),
   // so existingDoc will be non-null on the very first render.
@@ -67,12 +62,10 @@ export function ReportEditorModal({
   // This prevents post-generation cache invalidations from wiping the user's form.
   const hasHydratedRef = useRef(allDocs !== undefined);
 
-  const [fields, setFields] = useState<Record<string, string>>(
-    () => getInitialFields(template, existingDoc),
+  const [fields, setFields] = useState<Record<string, string>>(() =>
+    getInitialFields(template, existingDoc),
   );
-  const [previewHtml, setPreviewHtml] = useState<string>(() =>
-    template.generateHtml(fields),
-  );
+  const [previewHtml, setPreviewHtml] = useState<string>(() => template.generateHtml(fields));
   const [formKey, setFormKey] = useState(0);
 
   const { generate, status, errorMsg, isRunning, reset } = useGenerateReport(projectId);

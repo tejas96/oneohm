@@ -12,7 +12,6 @@ import type { ReportTemplate } from '../types/report.types';
 import { useDocuments } from '@/components/features/documents/hooks';
 import { MUIStatusChip, MUITypography } from '@/components/ui';
 
-
 interface ReportTemplateCardProps {
   template: ReportTemplate;
   projectId: string;

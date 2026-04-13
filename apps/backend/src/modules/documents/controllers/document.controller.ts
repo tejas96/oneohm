@@ -102,6 +102,7 @@ export class DocumentController {
         queryDto.entityType,
         queryDto.entityId,
         organizationId,
+        { tag: queryDto.tag, category: queryDto.category },
       );
       return toDtoArray(DocumentResponseDto, docs);
     }

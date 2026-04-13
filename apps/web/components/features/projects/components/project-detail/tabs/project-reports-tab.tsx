@@ -15,10 +15,7 @@ export function ProjectReportsTab({ projectId }: ProjectReportsTabProps): React.
 
   return (
     <>
-      <ReportTemplateGrid
-        projectId={projectId}
-        onSelectTemplate={setActiveTemplate}
-      />
+      <ReportTemplateGrid projectId={projectId} onSelectTemplate={setActiveTemplate} />
 
       {activeTemplate && (
         <ReportEditorModal

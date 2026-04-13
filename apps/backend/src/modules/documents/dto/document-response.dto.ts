@@ -22,7 +22,10 @@ export class DocumentResponseDto {
   @ApiProperty() @Expose() fileUrl!: string;
   @ApiPropertyOptional() @Expose() fileSizeBytes?: number;
   @ApiPropertyOptional() @Expose() mimeType?: string;
-  @ApiPropertyOptional() @Expose() @Transform(({ obj }) => obj.metadata) metadata?: Record<string, unknown>;
+  @ApiPropertyOptional() @Expose() @Transform(({ obj }) => obj.metadata) metadata?: Record<
+    string,
+    unknown
+  >;
   @ApiPropertyOptional() @Expose() notes?: string;
   @ApiProperty() @Expose() createdAt!: Date;
   @ApiProperty() @Expose() updatedAt!: Date;

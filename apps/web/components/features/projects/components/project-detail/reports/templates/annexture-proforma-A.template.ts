@@ -48,7 +48,7 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
-function sanitizeFields(fields: AnnexureProformaFields): AnnexureProformaFields {
+function sanitizeAnnexureProformaFields(fields: AnnexureProformaFields): AnnexureProformaFields {
   const sanitized = {} as AnnexureProformaFields;
   for (const key of Object.keys(fields) as Array<keyof AnnexureProformaFields>) {
     sanitized[key] = escapeHtml(fields[key]);
@@ -57,7 +57,7 @@ function sanitizeFields(fields: AnnexureProformaFields): AnnexureProformaFields 
 }
 
 export function generateAnnexureProformaHtml(fields: AnnexureProformaFields): string {
-  const f = sanitizeFields(fields);
+  const f = sanitizeAnnexureProformaFields(fields);
   return `<!doctype html>
   <html lang="en">
     <head>
@@ -71,7 +71,7 @@ export function generateAnnexureProformaHtml(fields: AnnexureProformaFields): st
   
         body {
           font-family: 'Inter', Arial, sans-serif;
-          font-size: 11pt;
+          font-size: 9pt;
           color: #1a1a1a;
           background: #fff;
         }
@@ -84,7 +84,7 @@ export function generateAnnexureProformaHtml(fields: AnnexureProformaFields): st
   
         .pdf-page {
           width: 210mm;
-          padding: 14mm 14mm 14mm 14mm;
+          padding: 10mm 12mm 10mm 12mm;
           background: #fff;
           page-break-inside: avoid;
           break-inside: avoid;
@@ -97,30 +97,15 @@ export function generateAnnexureProformaHtml(fields: AnnexureProformaFields): st
   
         /* ── MAHAVITARAN HEADER ── */
         .maha-header {
-          display: flex;
-          align-items: center;
+          display: block;
+          text-align: center;
+          padding: 10px 16px;
           border: 1px solid #ccc;
           margin-bottom: 0;
         }
   
-        .maha-header .logo-cell {
-          width: 140px;
-          min-width: 140px;
-          padding: 10px 12px;
-          border-right: 1px solid #ccc;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-  
-        .maha-header .logo-cell img {
-          width: 110px;
-        }
-  
         .maha-header .title-cell {
-          padding: 10px 16px;
           text-align: center;
-          flex: 1;
         }
   
         .maha-header .title-cell .org-name {
@@ -161,7 +146,7 @@ export function generateAnnexureProformaHtml(fields: AnnexureProformaFields): st
         table.main-table {
           width: 100%;
           border-collapse: collapse;
-          font-size: 10pt;
+          font-size: 8.5pt;
         }
   
         table.main-table thead tr {
@@ -318,11 +303,6 @@ export function generateAnnexureProformaHtml(fields: AnnexureProformaFields): st
         <div class="pdf-page">
   
           <div class="maha-header">
-            <div class="logo-cell">
-              <!-- Replace src with actual MAHAVITARAN logo path -->
-              <!-- <img src="mahavitaran_logo.png" alt="MAHAVITARAN Logo" /> -->
-              <div style="font-size:9pt; color:#888; text-align:center;">[MAHAVITARAN<br>Logo]</div>
-            </div>
             <div class="title-cell">
               <div class="org-name">Maharashtra State Electricity</div>
               <div class="org-name">Distribution Co. Ltd.</div>
