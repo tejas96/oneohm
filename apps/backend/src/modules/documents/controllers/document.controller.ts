@@ -102,6 +102,7 @@ export class DocumentController {
         queryDto.entityType,
         queryDto.entityId,
         organizationId,
+        { tag: queryDto.tag, category: queryDto.category },
       );
       return toDtoArray(DocumentResponseDto, docs);
     }
@@ -145,13 +146,18 @@ export class DocumentController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Soft delete a document' })
+  @ApiOperation({ summary: 'Delete a document (soft by default, permanent with ?permanent=true)' })
   @ApiResponse({ status: HttpStatus.NO_CONTENT })
   async delete(
     @OrganizationContext() organizationId: string,
     @Param('id', ParseUUIDPipe) id: string,
+    @Query('permanent') permanent?: string,
   ): Promise<void> {
-    await this.documentService.delete(id, organizationId);
+    if (permanent === 'true') {
+      await this.documentService.hardDelete(id, organizationId);
+    } else {
+      await this.documentService.delete(id, organizationId);
+    }
   }
 
   @Get(':id/download')

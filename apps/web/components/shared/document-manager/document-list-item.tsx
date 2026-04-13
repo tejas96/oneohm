@@ -2,17 +2,17 @@
 
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import DownloadIcon from '@mui/icons-material/Download';
-import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { Box, Chip, CircularProgress, IconButton, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 
+import { FileTypeIcon } from './file-type-icon';
 import type { DraftDocument } from './types';
 import { formatBytes, formatDocDate, getTagLabel } from './utils';
 
 import type { DocumentRecord } from '@/lib/api/documents';
 import { getDownloadUrl } from '@/lib/api/storage';
-import { extractFileKey, isImageFile } from '@/lib/utils';
+import { extractFileKey, isImageFile } from '@/lib/utils/file';
 
 type AnyDocItem = DocumentRecord | DraftDocument;
 
@@ -88,7 +88,7 @@ function Thumbnail({ doc }: { doc: AnyDocItem }): React.JSX.Element {
 
   return (
     <Box sx={boxSx}>
-      <InsertDriveFileIcon sx={{ fontSize: 20, color: 'text.disabled' }} />
+      <FileTypeIcon fileName={doc.fileName} fontSize={20} />
     </Box>
   );
 }

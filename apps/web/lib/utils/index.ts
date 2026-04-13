@@ -2,11 +2,14 @@
 export { getErrorMessage } from './error';
 export {
   extractFileKey,
+  FILE_TYPE_CONFIG,
   getFileExtension,
+  getFileType,
   isImageFile,
   isPdfFile,
   isPreviewableFile,
 } from './file';
+export type { FileType } from './file';
 export {
   formatCurrency,
   formatCurrencyCompact,

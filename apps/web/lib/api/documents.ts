@@ -105,8 +105,15 @@ export async function updateDocument(
   return data;
 }
 
-export async function deleteDocument(id: string, organizationId?: string): Promise<void> {
-  await apiClient.delete(`/documents/${id}`, { headers: orgHeader(organizationId) });
+export async function deleteDocument(
+  id: string,
+  organizationId?: string,
+  options?: { permanent?: boolean },
+): Promise<void> {
+  await apiClient.delete(`/documents/${id}`, {
+    headers: orgHeader(organizationId),
+    params: options?.permanent ? { permanent: 'true' } : undefined,
+  });
 }
 
 export async function getDocumentDownloadUrl(id: string, organizationId?: string): Promise<string> {

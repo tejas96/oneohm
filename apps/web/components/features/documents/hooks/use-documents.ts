@@ -13,4 +13,5 @@ export {
   useUploadDocumentsBulk,
   useUpdateDocument,
   useDeleteDocument,
+  type DeleteDocumentInput,
 } from '@/lib/hooks/resources/documents';

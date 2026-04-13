@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DocumentCategory, DocumentEntityType } from '@oneohm-epc/shared/types';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsEnum,
@@ -71,6 +71,7 @@ export class CreateDocumentDto {
 
   @ApiPropertyOptional({ description: 'Additional metadata' })
   @IsOptional()
+  @Transform(({ value }: { value: unknown }) => value ?? undefined)
   metadata?: Record<string, unknown>;
 
   @ApiPropertyOptional({ description: 'Notes' })

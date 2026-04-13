@@ -366,6 +366,7 @@ export const PROJECT_DETAIL_TABS = [
   { value: 'documents', label: 'Documents' },
   { value: 'payments', label: 'Payments' },
   { value: 'bom', label: 'BOM & Inventory' },
+  { value: 'reports', label: 'Reports' },
   { value: 'communication', label: 'Communication' },
   { value: 'compliance', label: 'Compliance' },
   { value: 'surveys', label: 'Surveys' },

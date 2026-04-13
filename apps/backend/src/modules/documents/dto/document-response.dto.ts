@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { DocumentCategory, DocumentEntityType } from '@oneohm-epc/shared/types';
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Exclude, Expose, Transform, Type } from 'class-transformer';
 
 @Exclude()
 class DocumentUserDto {
@@ -22,7 +22,10 @@ export class DocumentResponseDto {
   @ApiProperty() @Expose() fileUrl!: string;
   @ApiPropertyOptional() @Expose() fileSizeBytes?: number;
   @ApiPropertyOptional() @Expose() mimeType?: string;
-  @ApiPropertyOptional() @Expose() metadata?: Record<string, unknown>;
+  @ApiPropertyOptional() @Expose() @Transform(({ obj }) => obj.metadata) metadata?: Record<
+    string,
+    unknown
+  >;
   @ApiPropertyOptional() @Expose() notes?: string;
   @ApiProperty() @Expose() createdAt!: Date;
   @ApiProperty() @Expose() updatedAt!: Date;

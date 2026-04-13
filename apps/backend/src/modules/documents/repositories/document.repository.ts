@@ -32,9 +32,18 @@ export class DocumentRepository {
     entityType: DocumentEntityType,
     entityId: string,
     organizationId: string,
+    filters?: { tag?: string; category?: string },
   ): Promise<DocumentEntity[]> {
+    const where: Record<string, unknown> = {
+      entityType,
+      entityId,
+      organizationId,
+      deletedAt: IsNull(),
+    };
+    if (filters?.tag) where.tag = filters.tag;
+    if (filters?.category) where.category = filters.category;
     return this.repository.find({
-      where: { entityType, entityId, organizationId, deletedAt: IsNull() },
+      where,
       relations: ['uploadedByUser'],
       order: { createdAt: 'DESC' },
     });
@@ -109,5 +118,9 @@ export class DocumentRepository {
 
   async softDelete(id: string): Promise<void> {
     await this.repository.softDelete(id);
+  }
+
+  async hardDelete(id: string): Promise<void> {
+    await this.repository.delete(id);
   }
 }
