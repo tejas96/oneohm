@@ -444,7 +444,7 @@ export function generateAnnexureProformaHtml(fields: AnnexureProformaFields): st
           </div>
   
           <p class="proforma-body">
-            Certified that a Grid Connected SPV Power Plant of ${f.re_installed_capacity_rooftop_kw} KWp capacity has been installed at the site ${f.address_of_installation} District ${f.district} of ${f.state} which has been installed by M/S ${f.vendor_name} On ${f.installation_date} The system is as per BIS/MNRE specifications. The system has been checked for its performance and found in order for further commissioning.
+            Certified that a Grid Connected SPV Power Plant of <strong>${f.re_installed_capacity_rooftop_kw} KWp</strong> capacity has been installed at the site <strong>${f.address_of_installation}</strong> District <strong>${f.district}</strong> of <strong>${f.state}</strong> which has been installed by M/S <strong>${f.vendor_name}</strong> On <strong>${f.installation_date}</strong> The system is as per BIS/MNRE specifications. The system has been checked for its performance and found in order for further commissioning.
           </p>
   
           <div class="proforma-sig-row">

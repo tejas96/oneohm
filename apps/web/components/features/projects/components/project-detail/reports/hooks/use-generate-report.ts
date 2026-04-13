@@ -109,7 +109,8 @@ export function useGenerateReport(projectId: string) {
           );
         }
 
-        // 4. Upload new PDF to storage
+        // 4. Upload new PDF to storage.
+        // Keep a machine-safe unique filename for S3 key generation.
         const fileName = `${template.id}-${projectId}-${Date.now()}.pdf`;
         const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
         const uploadResult = await uploadFile({
@@ -121,13 +122,15 @@ export function useGenerateReport(projectId: string) {
         });
 
         // 5. Create the single new DB record.
+        // Use template.name as the display filename stored in the DB — the S3 key
+        // is already fixed inside uploadResult.publicUrl and is unaffected by this.
         setStatus('saving');
         await uploadMutateRef.current({
           entityType: DocumentEntityType.PROJECT,
           entityId: projectId,
           category: DocumentCategory.REPORT,
           tag: template.documentTag,
-          fileName: uploadResult.fileName,
+          fileName: `${template.name}.pdf`,
           fileUrl: uploadResult.publicUrl,
           fileSizeBytes: file.size,
           mimeType: 'application/pdf',

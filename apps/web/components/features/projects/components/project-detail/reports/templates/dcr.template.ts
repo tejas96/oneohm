@@ -228,7 +228,7 @@ export function generateDcrHtml(fields: DcrFields): string {
 
         <!-- Clause 4 -->
         <p class="clause">
-          4. I, on behalf of M/S <strong>${f.vendor_name}</strong> further declare that the
+          4. I,  <strong>${f.consumer_name}</strong> on behalf of M/S <strong>${f.vendor_name}</strong> further declare that the
           information given above is true and correct and nothing has been concealed therein. If
           anything is found incorrect at any stage then the due Central Financial Assistance (CFA)
           that I have not charged from the consumer can be withheld and appropriate action may be

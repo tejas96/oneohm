@@ -132,8 +132,8 @@ export function generateNetMeteringAgreementHtml(fields: NetMeteringAgreementFie
         font-size: 9pt;
         font-weight: 700;
         color: #1a1a1a;
-        margin-top: 10px;
-        margin-bottom: 4px;
+        margin-top: 8px;
+        margin-bottom: 3px;
         page-break-inside: avoid;
         break-inside: avoid;
         page-break-after: avoid;
@@ -184,7 +184,7 @@ export function generateNetMeteringAgreementHtml(fields: NetMeteringAgreementFie
       .sig-table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 20px;
+        margin-top: 12px;
         font-size: 9pt;
         page-break-inside: avoid;
         break-inside: avoid;
@@ -192,23 +192,23 @@ export function generateNetMeteringAgreementHtml(fields: NetMeteringAgreementFie
 
       .sig-table td {
         width: 50%;
-        padding: 6px 4px;
+        padding: 4px 4px;
         vertical-align: top;
       }
 
       .sig-line {
         border-top: 1px solid #1a1a1a;
-        padding-top: 5px;
+        padding-top: 4px;
         font-weight: 600;
         font-size: 8.5pt;
         color: #1a1a1a;
-        margin-top: 28px;
+        margin-top: 16px;
       }
 
       .witness-label {
         font-size: 8.5pt;
         color: #444;
-        margin-top: 6px;
+        margin-top: 4px;
       }
     </style>
   </head>
@@ -234,7 +234,7 @@ export function generateNetMeteringAgreementHtml(fields: NetMeteringAgreementFie
         <p class="and-separator">AND</p>
 
         <p class="clause-block">
-          The Distribution Licensee Maharashtra State Electricity Distribution Co. Ltd (hereinafter
+          The Distribution Licensee <strong>Maharashtra State Electricity Distribution Co. Ltd</strong> (hereinafter
           referred to as 'the Licensee') and having its Registered Office at
           <strong>${f.licensee_address}</strong> as second Party of this Agreement;
         </p>
@@ -419,7 +419,7 @@ export function generateNetMeteringAgreementHtml(fields: NetMeteringAgreementFie
           billing which has not been redressed by the Licensee.
         </p>
 
-        <p class="clause-block" style="margin-top: 14px;">
+        <p class="clause-block" style="margin-top: 8px;">
           In the witness where of <strong>${f.witness_consumer_name}</strong> for and on behalf of
           Eligible Consumer and Shri. <strong>${f.witness_licensee_name}</strong> for and on behalf of
           MSEDCL agree to this agreement.
@@ -449,11 +449,11 @@ export function generateNetMeteringAgreementHtml(fields: NetMeteringAgreementFie
             </tr>
             <tr>
               <td>
-                <div class="witness-label" style="margin-top: 14px;">Witness 1: ___________________</div>
+                <div class="witness-label" style="margin-top: 8px;">Witness 1: ___________________</div>
                 <div class="witness-label">Witness 2: ___________________</div>
               </td>
               <td>
-                <div class="witness-label" style="margin-top: 14px;">Witness 1: ___________________</div>
+                <div class="witness-label" style="margin-top: 8px;">Witness 1: ___________________</div>
                 <div class="witness-label">Witness 2: ___________________</div>
               </td>
             </tr>

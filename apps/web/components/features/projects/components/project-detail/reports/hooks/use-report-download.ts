@@ -21,7 +21,7 @@ export function useReportDownload() {
       const url = await getDownloadUrl(fileKey, doc.fileName);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = doc.fileName;
+      anchor.target = '_blank';
       anchor.rel = 'noopener noreferrer';
       document.body.appendChild(anchor);
       anchor.click();
