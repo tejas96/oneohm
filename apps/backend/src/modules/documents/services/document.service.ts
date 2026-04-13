@@ -22,7 +22,7 @@ export class DocumentService {
     const propertyId =
       dto.propertyId ?? (await this.resolvePropertyId(dto.entityType, dto.entityId));
 
-    return this.documentRepository.create({
+    const created = await this.documentRepository.create({
       organizationId: dto.organizationId,
       propertyId,
       entityType: dto.entityType,
@@ -38,6 +38,7 @@ export class DocumentService {
       createdBy: userId,
       updatedBy: userId,
     });
+    return created;
   }
 
   async createBulk(dtos: CreateDocumentDto[], userId: string): Promise<DocumentEntity[]> {
@@ -134,6 +135,11 @@ export class DocumentService {
   async delete(id: string, organizationId: string): Promise<void> {
     await this.findById(id, organizationId);
     await this.documentRepository.softDelete(id);
+  }
+
+  async hardDelete(id: string, organizationId: string): Promise<void> {
+    await this.findById(id, organizationId);
+    await this.documentRepository.hardDelete(id);
   }
 
   /**

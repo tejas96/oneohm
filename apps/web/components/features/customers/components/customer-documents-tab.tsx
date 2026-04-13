@@ -138,7 +138,7 @@ function AllPropertiesDocumentsView({
   const confirmDelete = useCallback(async () => {
     if (!docToDelete || !('id' in docToDelete)) return;
     try {
-      await deleteMutation.mutateAsync(docToDelete.id);
+      await deleteMutation.mutateAsync({ id: docToDelete.id, fileUrl: docToDelete.fileUrl });
       showToast.success('Document deleted');
     } catch {
       showToast.error('Failed to delete document');

@@ -139,7 +139,7 @@ export function DocumentManager({
     }
 
     try {
-      await deleteMutation.mutateAsync(docToDelete.id);
+      await deleteMutation.mutateAsync({ id: docToDelete.id, fileUrl: docToDelete.fileUrl });
       showToast.success('Document deleted');
     } catch {
       showToast.error('Failed to delete document');

@@ -110,4 +110,8 @@ export class DocumentRepository {
   async softDelete(id: string): Promise<void> {
     await this.repository.softDelete(id);
   }
+
+  async hardDelete(id: string): Promise<void> {
+    await this.repository.delete(id);
+  }
 }

@@ -19,6 +19,8 @@ import {
   type CreateDocumentPayload,
   type DocumentRecord,
 } from '@/lib/api/documents';
+import { deleteFile } from '@/lib/api/storage';
+import { extractFileKey } from '@/lib/utils';
 
 // ── Query Keys (FDAL-compliant with orgId) ─────────────────────
 
@@ -123,12 +125,27 @@ export function useUpdateDocument(): UseMutationResult<
   });
 }
 
-export function useDeleteDocument(): UseMutationResult<void, unknown, string> {
+export interface DeleteDocumentInput {
+  id: string;
+  fileUrl: string;
+}
+
+export function useDeleteDocument(): UseMutationResult<void, unknown, DeleteDocumentInput> {
   const queryClient = useQueryClient();
   const { organizationId } = useOrgContext();
 
   return useMutation({
-    mutationFn: (id: string): Promise<void> => deleteDocument(id, organizationId),
+    mutationFn: async ({ id, fileUrl }: DeleteDocumentInput): Promise<void> => {
+      const fileKey = extractFileKey(fileUrl);
+      if (fileKey) {
+        try {
+          await deleteFile(fileKey);
+        } catch {
+          // Storage delete is non-blocking — file may already be gone or key invalid
+        }
+      }
+      await deleteDocument(id, organizationId);
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: documentKeys.all(organizationId) });
     },

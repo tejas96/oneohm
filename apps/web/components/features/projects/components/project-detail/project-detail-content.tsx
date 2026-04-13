@@ -11,6 +11,7 @@ import { ProjectComingSoonTab } from './tabs/project-coming-soon-tab';
 import { ProjectDocumentsTab } from './tabs/project-documents-tab';
 import { ProjectOverviewTab } from './tabs/project-overview-tab';
 import { ProjectPaymentsTab } from './tabs/project-payments-tab';
+import { ProjectReportsTab } from './tabs/project-reports-tab';
 import { ProjectSummaryTab } from './tabs/project-summary-tab';
 import { ProjectSurveysTab } from './tabs/project-surveys-tab';
 import { ProjectTasksTab } from './tabs/project-tasks-tab';
@@ -150,6 +151,10 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
 
         <TabsContent value="bom">
           <ProjectBomTab materials={project.materials ?? []} />
+        </TabsContent>
+
+        <TabsContent value="reports">
+          <ProjectReportsTab projectId={projectId} />
         </TabsContent>
 
         <TabsContent value="communication">
