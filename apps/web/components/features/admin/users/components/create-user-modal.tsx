@@ -1,11 +1,17 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
-import { useEffect, type JSX } from 'react';
+import { useEffect, type ChangeEvent, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
-import { createUserSchema, type CreateUserFormData } from '../schemas/create-user.schema';
+import {
+  createUserSchema,
+  editUserSchema,
+  type CreateUserFormData,
+  type EditUserFormData,
+} from '../schemas/create-user.schema';
 
 import {
   Button,
@@ -25,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui';
+import { apiClient } from '@/lib/api/client';
 import {
   useAdminUserMutations,
   useCheckUserAvailability,
@@ -34,24 +41,58 @@ import { useDebounce } from '@/lib/hooks/use-debounce';
 import { getErrorMessage } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 
+type UserFormData = CreateUserFormData | EditUserFormData;
+
+interface EmployeeProfileSummary {
+  id: string;
+  userId: string;
+  organizationId: string;
+  employeeId?: string | null;
+  department?: string | null;
+  designation?: string | null;
+}
+
 interface CreateUserModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  mode?: 'create' | 'edit';
+  user?: AdminUser;
 }
 
-export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps): JSX.Element {
+export function CreateUserModal({
+  open,
+  onOpenChange,
+  mode = 'create',
+  user,
+}: CreateUserModalProps): JSX.Element {
+  const isEditMode = mode === 'edit';
   const { user: currentUser } = useAuth();
-  const { create: createUser } = useAdminUserMutations();
+  const { create: createUser, update: updateUser } = useAdminUserMutations();
   const availability = useCheckUserAvailability();
 
-  const form = useForm<CreateUserFormData>({
-    resolver: zodResolver(createUserSchema),
+  const employeeProfileQuery = useQuery({
+    queryKey: ['admin-users', 'employee-profile', user?.id, currentUser?.organizationId],
+    queryFn: async (): Promise<EmployeeProfileSummary | null> => {
+      if (!user?.id) return null;
+      const response = await apiClient.get<unknown>(`/employees/user/${user.id}`);
+      if (!Array.isArray(response.data) || response.data.length === 0) return null;
+      const profiles = response.data as EmployeeProfileSummary[];
+      if (currentUser?.organizationId) {
+        return profiles.find((p) => p.organizationId === currentUser.organizationId) ?? null;
+      }
+      return profiles[0] ?? null;
+    },
+    enabled: isEditMode && open && !!user?.id,
+  });
+
+  const form = useForm<UserFormData>({
+    resolver: zodResolver(isEditMode ? editUserSchema : createUserSchema),
     defaultValues: {
       firstName: '',
       lastName: '',
       email: '',
       phone: '',
-      password: '',
+      password: undefined,
       employeeId: '',
       department: '',
       designation: '',
@@ -65,12 +106,31 @@ export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps): J
   const debouncedPhone = useDebounce(watchedPhone, 500);
 
   useEffect(() => {
+    if (isEditMode) return;
     if (debouncedEmail) availability.checkEmail(debouncedEmail);
-  }, [debouncedEmail, availability.checkEmail]);
+  }, [isEditMode, debouncedEmail, availability.checkEmail]);
 
   useEffect(() => {
+    if (isEditMode) return;
     if (debouncedPhone) availability.checkPhone(debouncedPhone);
-  }, [debouncedPhone, availability.checkPhone]);
+  }, [isEditMode, debouncedPhone, availability.checkPhone]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (!isEditMode || !user) return;
+
+    form.reset({
+      firstName: user.firstName ?? '',
+      lastName: user.lastName ?? '',
+      email: user.email ?? '',
+      phone: user.phone?.replace(/^\+91/, '') ?? '',
+      password: undefined,
+      employeeId: employeeProfileQuery.data?.employeeId ?? '',
+      department: employeeProfileQuery.data?.department ?? '',
+      designation: employeeProfileQuery.data?.designation ?? '',
+      status: (user.status as UserFormData['status']) ?? 'active',
+    });
+  }, [open, isEditMode, user, employeeProfileQuery.data, form]);
 
   const handleClose = (isOpen: boolean): void => {
     if (!isOpen) {
@@ -80,33 +140,56 @@ export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps): J
     onOpenChange(isOpen);
   };
 
-  const onSubmit = async (data: CreateUserFormData): Promise<void> => {
-    if (availability.hasErrors) return;
+  const onSubmit = async (data: UserFormData): Promise<void> => {
+    if (!isEditMode && availability.hasErrors) return;
 
     try {
-      const profileData: Record<string, unknown> = {};
-      if (data.employeeId) profileData.employeeId = data.employeeId;
-      if (data.department) profileData.department = data.department;
-      if (data.designation) profileData.designation = data.designation;
+      if (isEditMode) {
+        if (!user?.id) return;
 
-      const payload: Record<string, unknown> = {
-        firstName: data.firstName,
-        phone: `+91${data.phone}`,
-        password: data.password,
-        status: data.status,
-      };
-      if (data.lastName) payload.lastName = data.lastName;
-      if (data.email) payload.email = data.email;
+        const userPayload: Partial<AdminUser> = {
+          firstName: data.firstName,
+          lastName: data.lastName || undefined,
+          phone: `+91${data.phone}`,
+          status: data.status,
+        };
 
-      if (currentUser?.organizationId) {
-        payload.organizationId = currentUser.organizationId;
-        payload.profileType = 'employee';
-        if (Object.keys(profileData).length > 0) {
-          payload.profileData = profileData;
+        await updateUser.mutateAsync({ id: user.id, data: userPayload });
+
+        if (employeeProfileQuery.data?.id) {
+          await apiClient.put(`/employees/${employeeProfileQuery.data.id}`, {
+            employeeId: data.employeeId || undefined,
+            department: data.department || undefined,
+            designation: data.designation || undefined,
+            status: data.status,
+          });
         }
+      } else {
+        const profileData: Record<string, unknown> = {};
+        if (data.employeeId) profileData.employeeId = data.employeeId;
+        if (data.department) profileData.department = data.department;
+        if (data.designation) profileData.designation = data.designation;
+
+        const payload: Record<string, unknown> = {
+          firstName: data.firstName,
+          phone: `+91${data.phone}`,
+          password: data.password,
+          status: data.status,
+        };
+        if (data.lastName) payload.lastName = data.lastName;
+        if (data.email) payload.email = data.email;
+
+        if (currentUser?.organizationId) {
+          payload.organizationId = currentUser.organizationId;
+          payload.profileType = 'employee';
+          if (Object.keys(profileData).length > 0) {
+            payload.profileData = profileData;
+          }
+        }
+
+        await createUser.mutateAsync(payload as Partial<AdminUser>);
       }
 
-      await createUser.mutateAsync(payload as Partial<AdminUser>);
       handleClose(false);
     } catch (err) {
       const message = getErrorMessage(err);
@@ -125,15 +208,22 @@ export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps): J
 
   const emailError = form.formState.errors.email?.message || availability.errors.email;
   const phoneError = form.formState.errors.phone?.message || availability.errors.phone;
+  const isSaving = createUser.isPending || updateUser.isPending;
   const isSubmitDisabled =
-    createUser.isPending || availability.hasErrors || availability.isAnyChecking;
+    isSaving ||
+    (isEditMode ? false : availability.hasErrors || availability.isAnyChecking) ||
+    (isEditMode && employeeProfileQuery.isLoading);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[560px]">
         <DialogHeader>
-          <DialogTitle>Add Employee</DialogTitle>
-          <DialogDescription>Create a new employee account with profile details.</DialogDescription>
+          <DialogTitle>{isEditMode ? 'Edit Employee' : 'Add Employee'}</DialogTitle>
+          <DialogDescription>
+            {isEditMode
+              ? 'Update employee details and save changes.'
+              : 'Create a new employee account with profile details.'}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)}>
           <DialogBody className="space-y-4">
@@ -158,14 +248,15 @@ export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps): J
                   id="email"
                   type="email"
                   placeholder="e.g., rahul@company.com"
+                  disabled={isEditMode}
                   {...form.register('email')}
                 />
-                {availability.isChecking.email && (
+                {!isEditMode && availability.isChecking.email && (
                   <p className="text-xs text-foreground-tertiary flex items-center gap-1">
                     <Loader2 className="size-3 animate-spin" /> Checking...
                   </p>
                 )}
-                {emailError && !availability.isChecking.email && (
+                {emailError && !availability.isChecking.email && !isEditMode && (
                   <p className="text-xs text-error">{emailError}</p>
                 )}
               </div>
@@ -179,33 +270,35 @@ export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps): J
                   maxLength={10}
                   inputMode="numeric"
                   {...form.register('phone', {
-                    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+                    onChange: (e: ChangeEvent<HTMLInputElement>) => {
                       e.target.value = e.target.value.replace(/\D/g, '');
                     },
                   })}
                 />
-                {availability.isChecking.phone && (
+                {!isEditMode && availability.isChecking.phone && (
                   <p className="text-xs text-foreground-tertiary flex items-center gap-1">
                     <Loader2 className="size-3 animate-spin" /> Checking...
                   </p>
                 )}
-                {phoneError && !availability.isChecking.phone && (
+                {phoneError && !availability.isChecking.phone && !isEditMode && (
                   <p className="text-xs text-error">{phoneError}</p>
                 )}
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="password">Password *</Label>
-              <PasswordInput
-                id="password"
-                placeholder="Minimum 8 characters"
-                {...form.register('password')}
-              />
-              {form.formState.errors.password && (
-                <p className="text-xs text-error">{form.formState.errors.password.message}</p>
-              )}
-            </div>
+            {!isEditMode && (
+              <div className="space-y-1.5">
+                <Label htmlFor="password">Password *</Label>
+                <PasswordInput
+                  id="password"
+                  placeholder="Minimum 8 characters"
+                  {...form.register('password')}
+                />
+                {form.formState.errors.password && (
+                  <p className="text-xs text-error">{form.formState.errors.password.message}</p>
+                )}
+              </div>
+            )}
 
             <div className="border-t border-border-light pt-4 mt-2">
               <p className="text-sm font-medium text-foreground-secondary mb-3">Employee Profile</p>
@@ -258,18 +351,18 @@ export function CreateUserModal({ open, onOpenChange }: CreateUserModalProps): J
               type="button"
               variant="outline"
               onClick={() => handleClose(false)}
-              disabled={createUser.isPending}
+              disabled={isSaving}
             >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitDisabled}>
-              {createUser.isPending ? (
+              {isSaving ? (
                 <>
                   <Loader2 className="mr-2 size-4 animate-spin" />
-                  Creating...
+                  {isEditMode ? 'Saving...' : 'Creating...'}
                 </>
               ) : (
-                'Create Employee'
+                (isEditMode ? 'Save Changes' : 'Create Employee')
               )}
             </Button>
           </DialogFooter>

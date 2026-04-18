@@ -7,6 +7,7 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  Pencil,
   Eye,
   Loader2,
   MoreHorizontal,
@@ -83,6 +84,7 @@ export function AdminUsersListPage(): JSX.Element {
   const mutations = useAdminUserMutations();
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<AdminUser | null>(null);
   // TODO: Re-enable invite state when email service is implemented
   // const [inviteOpen, setInviteOpen] = useState(false);
   const [statusChangeTarget, setStatusChangeTarget] = useState<{
@@ -283,6 +285,9 @@ export function AdminUsersListPage(): JSX.Element {
                       }
                     >
                       <Eye className="mr-2 size-icon-sm" /> View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setEditTarget(row.original)}>
+                      <Pencil className="mr-2 size-icon-sm" /> Edit Employee
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() =>
@@ -491,6 +496,14 @@ export function AdminUsersListPage(): JSX.Element {
       </div>
 
       <CreateUserModal open={createOpen} onOpenChange={setCreateOpen} />
+      <CreateUserModal
+        open={!!editTarget}
+        onOpenChange={(open) => {
+          if (!open) setEditTarget(null);
+        }}
+        mode="edit"
+        user={editTarget ?? undefined}
+      />
 
       {/* Delete confirmation (replaces DeleteUserModal) */}
       <Dialog

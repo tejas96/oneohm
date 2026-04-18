@@ -3,12 +3,13 @@ import {
   Controller,
   Headers,
   Param,
+  Patch,
   ParseIntPipe,
   ParseUUIDPipe,
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { UserStatus } from '@oneohm-epc/shared/types';
 import { plainToInstance } from 'class-transformer';
 
@@ -189,6 +190,23 @@ export class UserController {
     responseType: UserResponseDto,
   })
   async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateDto: UpdateUserDto,
+  ): Promise<UserResponseDto> {
+    const user = await this.userService.update(id, updateDto);
+    return plainToInstance(UserResponseDto, user, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  // Backward-compatible alias to support PATCH /users/:id in addition to PUT.
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Patch user',
+    description:
+      'Partially updates core user fields. Alias for PUT /users/:id to support PATCH clients.',
+  })
+  async patchUpdate(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDto: UpdateUserDto,
   ): Promise<UserResponseDto> {
