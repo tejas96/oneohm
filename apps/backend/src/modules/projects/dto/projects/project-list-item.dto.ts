@@ -9,6 +9,9 @@ import { Expose, Transform, Type } from 'class-transformer';
 
 import { toNum } from '../../../../common/utils';
 
+const latestQuoteVersion = (obj: Record<string, unknown>) =>
+  (obj.quote as { versions?: Array<Record<string, unknown>> } | undefined)?.versions?.[0];
+
 class ProjectListPropertyDto {
   @Expose()
   id!: string;
@@ -85,24 +88,14 @@ export class ProjectListItemDto {
   @Transform(({ obj }) => obj.quote?.quoteNumber)
   quoteNumber?: string;
 
-  @ApiProperty({ example: 10, description: 'Derived from quote current version' })
+  @ApiProperty({ example: 10, description: 'Derived from latest quote version' })
   @Expose()
-  @Transform(({ obj }) => {
-    const version =
-      obj.quote?.versions?.find((v: { isCurrent?: boolean }) => v.isCurrent) ??
-      obj.quote?.versions?.[0];
-    return toNum(version?.systemSizeKw);
-  })
+  @Transform(({ obj }) => toNum(latestQuoteVersion(obj)?.systemSizeKw))
   systemSizeKw!: number;
 
-  @ApiProperty({ example: 'residential', description: 'Derived from quote current version' })
+  @ApiProperty({ example: 'residential', description: 'Derived from latest quote version' })
   @Expose()
-  @Transform(({ obj }) => {
-    const version =
-      obj.quote?.versions?.find((v: { isCurrent?: boolean }) => v.isCurrent) ??
-      obj.quote?.versions?.[0];
-    return version?.projectType;
-  })
+  @Transform(({ obj }) => latestQuoteVersion(obj)?.projectType)
   projectType!: string;
 
   @ApiProperty({ enum: Object.values(ProjectStatus), example: ProjectStatus.IN_PROGRESS })
@@ -125,14 +118,9 @@ export class ProjectListItemDto {
   @Expose()
   endDate?: Date;
 
-  @ApiPropertyOptional({ example: 450000, description: 'Derived from quote current version' })
+  @ApiPropertyOptional({ example: 450000, description: 'Derived from latest quote version' })
   @Expose()
-  @Transform(({ obj }) => {
-    const version =
-      obj.quote?.versions?.find((v: { isCurrent?: boolean }) => v.isCurrent) ??
-      obj.quote?.versions?.[0];
-    return toNum(version?.finalPrice) ?? null;
-  })
+  @Transform(({ obj }) => toNum(latestQuoteVersion(obj)?.finalPrice) ?? null)
   estimatedCost?: number;
 
   @ApiPropertyOptional({ example: 425000, description: 'Derived from metadata.actualCost' })

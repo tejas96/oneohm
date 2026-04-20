@@ -1,10 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  CalculatorInputs,
-  PricingBreakdown,
-  ProjectType,
-  SystemType,
-} from '@oneohm-epc/shared/types';
+import { ProjectType, QuoteSnapshot, SystemType } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -53,13 +48,13 @@ export class CreateQuoteDto {
   @IsOptional()
   resellerId?: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     example: '123e4567-e89b-12d3-a456-426614174000',
     description: 'Property ID for installation site',
   })
   @IsUUID()
-  @IsOptional()
-  propertyId?: string;
+  @IsNotEmpty()
+  propertyId!: string;
 
   // ==================== Quote Info ====================
   @ApiPropertyOptional({
@@ -129,13 +124,6 @@ export class CreateQuoteDto {
   discountAmount?: number;
 
   @ApiPropertyOptional({
-    description: 'Pre-calculated pricing breakdown (bypasses internal pricing recalculation)',
-  })
-  @IsOptional()
-  @IsObject()
-  pricingBreakdown?: PricingBreakdown;
-
-  @ApiPropertyOptional({
     example: 327180,
     description: 'Final price after GST and discount',
   })
@@ -153,13 +141,13 @@ export class CreateQuoteDto {
   @IsOptional()
   effectivePrice?: number;
 
-  // ==================== Calculator Inputs ====================
+  // ==================== Quote Snapshot ====================
   @ApiPropertyOptional({
-    description: 'All calculator input parameters for this quote',
+    description: 'Complete quote snapshot (inputs + calculation + pricing)',
   })
   @IsOptional()
   @IsObject()
-  calculatorInputs?: CalculatorInputs;
+  quoteSnapshot?: QuoteSnapshot;
 
   // ==================== Loan Financing ====================
   @ApiPropertyOptional({

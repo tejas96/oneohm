@@ -1,10 +1,10 @@
 import { createTheme } from '@mui/material/styles';
 
 export const MUI_INPUT_HEIGHT = 34;
-export const MUI_FONT_SIZE = '0.8125rem';
-export const MUI_LABEL_FONT_SIZE = '0.875rem';
-export const MUI_CAPTION_FONT_SIZE = '0.75rem';
-export const MUI_FINE_PRINT_FONT_SIZE = '0.6875rem';
+export const MUI_FONT_SIZE = '0.8125rem'; // 13px — base body / inputs / buttons
+export const MUI_LABEL_FONT_SIZE = '0.8125rem'; // 13px — body copy in tables & cards (same as base)
+export const MUI_CAPTION_FONT_SIZE = '0.75rem'; // 12px — secondary / timestamps
+export const MUI_FINE_PRINT_FONT_SIZE = '0.6875rem'; // 11px — meta labels / fine print
 export const MUI_DRAWER_TITLE_FONT_SIZE = '1.25rem';
 export const MUI_BORDER_RADIUS = 6;
 export const MUI_BORDER_COLOR = '#d4d4d8';
@@ -14,6 +14,7 @@ export const MUI_LABEL_MB = '6px';
 
 const INPUT_HEIGHT = MUI_INPUT_HEIGHT;
 const FONT_SIZE = MUI_FONT_SIZE;
+const FINE_PRINT_FONT_SIZE = MUI_FINE_PRINT_FONT_SIZE;
 
 export const muiTheme = createTheme({
   palette: {
@@ -30,6 +31,14 @@ export const muiTheme = createTheme({
   typography: {
     fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
     fontSize: 13,
+    // Explicit scale so every raw MUI <Typography> and any component that
+    // inherits from the type scale (Table, Pagination, List, etc.) uses the
+    // compact SaaS sizes by default — no per-component patches needed.
+    body1: { fontSize: '0.8125rem' }, // 13px — primary content / table cells
+    body2: { fontSize: '0.75rem' }, // 12px — secondary content
+    caption: { fontSize: '0.6875rem' }, // 11px — captions / meta labels
+    subtitle1: { fontSize: '0.8125rem', fontWeight: 500 },
+    subtitle2: { fontSize: '0.75rem', fontWeight: 500 },
   },
   spacing: 8,
   components: {
@@ -163,6 +172,33 @@ export const muiTheme = createTheme({
     /* ---- IconButton ---- */
     MuiIconButton: {
       defaultProps: { size: 'small' },
+    },
+
+    /* ---- Table — compact scale matches the rest of the app ---- */
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          fontSize: FONT_SIZE, // 13px — body cells
+          lineHeight: 1.4,
+        },
+        head: {
+          // Header cells inherit from TableHeader.tsx which sets
+          // 0.6875rem / uppercase / semibold — keep consistent here too.
+          fontSize: FINE_PRINT_FONT_SIZE,
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+          lineHeight: 1.4,
+        },
+      },
+    },
+
+    MuiTablePagination: {
+      styleOverrides: {
+        selectLabel: { fontSize: FONT_SIZE },
+        displayedRows: { fontSize: FONT_SIZE },
+        menuItem: { fontSize: FONT_SIZE },
+      },
     },
 
     /* ---- Chip (used in Autocomplete tags + MUIStatusChip) ---- */

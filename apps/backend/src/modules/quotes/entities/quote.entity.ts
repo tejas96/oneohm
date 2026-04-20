@@ -61,10 +61,6 @@ export class QuoteEntity extends BaseEntity {
   @Column({ type: 'date', name: 'valid_until' })
   validUntil!: Date;
 
-  // ==================== Version Control ====================
-  @Column({ type: 'integer', name: 'current_version', default: 1 })
-  currentVersion!: number;
-
   @OneToMany(() => QuoteVersionEntity, (version) => version.quote, { cascade: true })
   versions!: QuoteVersionEntity[];
 

@@ -30,6 +30,13 @@ export interface UseTableUrlStateOptions {
   defaultPageSize?: number;
   /** Use pushState for page changes so browser back = previous page */
   pushForPageChanges?: boolean;
+  /**
+   * Filter values to seed on first render when the URL does not already contain
+   * prefixed filter params. Useful for bridging unprefixed URL params (e.g. a
+   * sidebar link with `?status=draft`) into the table's filter state without a
+   * post-mount useEffect that would cause a second render / URL rewrite race.
+   */
+  initialFilters?: TableUrlFilterRecord;
 }
 
 export interface UseTableUrlStateReturn {
@@ -181,24 +188,46 @@ export function writeTableStateToParams(
  * ```
  */
 export function useTableUrlState(options: UseTableUrlStateOptions = {}): UseTableUrlStateReturn {
-  const { prefix = '', defaultPageSize = 10, pushForPageChanges = true } = options;
+  const { prefix = '', defaultPageSize = 10, pushForPageChanges = true, initialFilters } = options;
 
-  // useSearchParams is the SSR-safe way to read params in Next.js App Router.
-  // It does NOT require useRouter — remove that import entirely.
   const searchParams = useSearchParams();
 
-  // Initialise from current URL params (SSR-safe: searchParams is available on first render)
+  const buildStateFromParams = useCallback(
+    (paramsRaw: URLSearchParams): TableUrlState => {
+      const parsed = parseTableStateFromParams(paramsRaw, prefix, defaultPageSize);
+      if (initialFilters && Object.keys(parsed.filters).length === 0) {
+        const merged = normalizeFilters({ ...initialFilters });
+        if (Object.keys(merged).length > 0) {
+          return { ...parsed, filters: merged };
+        }
+      }
+      return parsed;
+    },
+    [defaultPageSize, initialFilters, prefix],
+  );
+
+  // Initialise from current URL params (SSR-safe: searchParams is available on first render).
   const [state, setState] = useState<TableUrlState>(() =>
-    parseTableStateFromParams(
-      new URLSearchParams(searchParams.toString()),
-      prefix,
-      defaultPageSize,
-    ),
+    buildStateFromParams(new URLSearchParams(searchParams.toString())),
   );
 
   // Stable ref so URL-write callbacks always see the latest state without deps
   const stateRef = useRef(state);
   stateRef.current = state;
+
+  useEffect(() => {
+    const parsed = buildStateFromParams(new URLSearchParams(searchParams.toString()));
+    const same =
+      parsed.page === stateRef.current.page &&
+      parsed.pageSize === stateRef.current.pageSize &&
+      parsed.search === stateRef.current.search &&
+      JSON.stringify(parsed.sortModel) === JSON.stringify(stateRef.current.sortModel) &&
+      JSON.stringify(parsed.filters) === JSON.stringify(stateRef.current.filters);
+    if (!same) {
+      stateRef.current = parsed;
+      setState(parsed);
+    }
+  }, [buildStateFromParams, searchParams]);
 
   // Stable option refs so effects don't need to re-register when options change
   const prefixRef = useRef(prefix);
@@ -208,17 +237,22 @@ export function useTableUrlState(options: UseTableUrlStateOptions = {}): UseTabl
 
   // ── Write state → browser URL ─────────────────────────────────────────────
 
-  const writeUrl = useCallback((next: TableUrlState, push: boolean): void => {
-    // Preserve all OTHER params already in the URL (e.g. from other tables / filters)
-    const params = new URLSearchParams(window.location.search);
-    writeTableStateToParams(params, next, prefixRef.current, defaultPageSizeRef.current);
+  const writeUrl = useCallback(
+    (next: TableUrlState, push: boolean, clearKeys?: string[]): void => {
+      const params = new URLSearchParams(window.location.search);
+      if (clearKeys && clearKeys.length > 0) {
+        clearKeys.forEach((key) => params.delete(key));
+      }
+      writeTableStateToParams(params, next, prefixRef.current, defaultPageSizeRef.current);
 
-    const qs = params.toString();
-    const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+      const qs = params.toString();
+      const url = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
 
-    if (push) window.history.pushState(null, '', url);
-    else window.history.replaceState(null, '', url);
-  }, []); // no deps — reads via refs
+      if (push) window.history.pushState(null, '', url);
+      else window.history.replaceState(null, '', url);
+    },
+    [], // no deps — reads via refs
+  );
 
   // ── Sync state ← URL on browser back/forward ──────────────────────────────
 
@@ -234,12 +268,12 @@ export function useTableUrlState(options: UseTableUrlStateOptions = {}): UseTabl
   // ── Public setters (all stable — empty or minimal deps) ───────────────────
 
   const commitState = useCallback(
-    (next: TableUrlState, push: boolean): void => {
+    (next: TableUrlState, push: boolean, clearKeys?: string[]): void => {
       // Keep ref in sync immediately so multiple setters fired in the same tick
       // (e.g. setPageSize -> setPage(0)) never read stale state.
       stateRef.current = next;
       setState(next);
-      writeUrl(next, push);
+      writeUrl(next, push, clearKeys);
     },
     [writeUrl],
   );
@@ -291,9 +325,13 @@ export function useTableUrlState(options: UseTableUrlStateOptions = {}): UseTabl
       const nextFiltersJson = JSON.stringify(normalized);
       if (prevFiltersJson === nextFiltersJson && stateRef.current.page === 0) return;
       const next = { ...stateRef.current, filters: normalized, page: 0 };
-      commitState(next, false);
+      const clearKeys =
+        Object.keys(normalized).length === 0 && initialFilters
+          ? Object.keys(initialFilters)
+          : undefined;
+      commitState(next, false, clearKeys);
     },
-    [commitState],
+    [commitState, initialFilters],
   );
 
   const resetAll = useCallback((): void => {
@@ -304,8 +342,11 @@ export function useTableUrlState(options: UseTableUrlStateOptions = {}): UseTabl
       sortModel: null,
       filters: {},
     };
-    commitState(next, false);
-  }, [commitState]);
+    // Also clear unprefixed bridge params (e.g. `status`) that may have seeded
+    // initialFilters, otherwise they immediately rehydrate the cleared filters.
+    const clearKeys = initialFilters ? Object.keys(initialFilters) : undefined;
+    commitState(next, false, clearKeys);
+  }, [commitState, initialFilters]);
 
   return { state, setPage, setPageSize, setSearch, setSortModel, setFilters, resetAll };
 }

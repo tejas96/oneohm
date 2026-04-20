@@ -309,15 +309,20 @@ export class ProjectService {
       throw new NotFoundException(`Organization with ID ${organizationId} not found`);
     }
 
-    const currentVersion = quote.versions?.find((v) => v.isCurrent) || quote.versions?.[0];
+    const latestVersion =
+      [...(quote.versions ?? [])].sort((a, b) => {
+        const createdDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        if (createdDiff !== 0) return createdDiff;
+        return b.versionNumber - a.versionNumber;
+      })[0] ?? null;
 
     const customerName =
       property?.consumerName ||
       `${quote.customer.firstName} ${quote.customer.lastName || ''}`.trim() ||
       'Customer';
     const autoName =
-      `${customerName} - ${currentVersion?.systemSizeKw ?? ''}kW Solar Installation`.trim();
-    const paymentMilestones: PaymentMilestone[] = currentVersion?.paymentMilestones || [];
+      `${customerName} - ${latestVersion?.systemSizeKw ?? ''}kW Solar Installation`.trim();
+    const paymentMilestones: PaymentMilestone[] = latestVersion?.paymentMilestones || [];
 
     const milestones = convertDto?.milestones?.length
       ? convertDto.milestones.map((m) => ({

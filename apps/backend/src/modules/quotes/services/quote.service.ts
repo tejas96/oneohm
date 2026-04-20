@@ -5,10 +5,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  type CalculatorInputs,
   PaymentMilestone,
   type PaymentMilestoneConfig,
   type PricingBreakdown,
   ProjectType,
+  type QuoteCalculationOutput,
+  type QuoteSnapshot,
   QuoteStatus,
 } from '@oneohm-epc/shared/types';
 import { DataSource } from 'typeorm';
@@ -21,7 +24,7 @@ import { OrganizationRepository } from '../../organizations/repositories/organiz
 import { CreateQuoteDto, QuoteQueryDto, UpdateQuoteDto, UpdateQuoteStatusDto } from '../dto';
 import { QuoteVersionEntity } from '../entities/quote-version.entity';
 import { QuoteEntity } from '../entities/quote.entity';
-import { QuoteRepository, QuoteVersionRepository } from '../repositories';
+import { QuoteRepository } from '../repositories';
 
 const CENTS_ROUNDING_FACTOR = 100;
 
@@ -33,7 +36,6 @@ const CENTS_ROUNDING_FACTOR = 100;
 export class QuoteService {
   constructor(
     private readonly quoteRepository: QuoteRepository,
-    private readonly quoteVersionRepository: QuoteVersionRepository,
     private readonly organizationRepository: OrganizationRepository,
     private readonly quoteConfigRepo: QuoteConfigurationRepository,
     private readonly subsidyConfigRepo: SubsidyConfigurationRepository,
@@ -47,11 +49,27 @@ export class QuoteService {
     organizationId: string,
     createDto: CreateQuoteDto,
     createdBy: string,
-  ): Promise<QuoteEntity> {
+  ): Promise<QuoteEntity & { versionId: string }> {
+    if (!createDto.propertyId) {
+      throw new BadRequestException('Property ID is required to create a quote');
+    }
+
     const org = await this.organizationRepository.findOneById(organizationId);
 
     if (!org) {
       throw new NotFoundException(`Organization with ID ${organizationId} not found`);
+    }
+
+    if (createDto.propertyId) {
+      const accepted = await this.quoteRepository.findAcceptedByPropertyId(
+        createDto.propertyId,
+        organizationId,
+      );
+      if (accepted) {
+        throw new BadRequestException(
+          `Property already has an accepted quote (${accepted.quoteNumber}). No new quotes can be created.`,
+        );
+      }
     }
 
     const customerExists = await this.dataSource
@@ -68,14 +86,15 @@ export class QuoteService {
 
     const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
 
-    if (!createDto.pricingBreakdown) {
-      throw new BadRequestException('pricingBreakdown is required');
+    if (!createDto.quoteSnapshot?.pricing) {
+      throw new BadRequestException('quoteSnapshot with pricing is required');
     }
 
-    const pricingBreakdown = createDto.pricingBreakdown;
+    const snapshot = createDto.quoteSnapshot;
+    const pricingBreakdown = snapshot.pricing;
     const finalPrice = createDto.finalPrice ?? pricingBreakdown.totalPrice;
 
-    const isSubsidyApplicable = createDto.calculatorInputs?.subsidyApplicable ?? false;
+    const isSubsidyApplicable = snapshot.inputs?.subsidyApplicable ?? false;
     const subsidyAmount =
       pricingBreakdown.subsidyAmount ??
       (isSubsidyApplicable
@@ -88,7 +107,7 @@ export class QuoteService {
       createDto.paymentMilestones ||
       this.generatePaymentMilestones(pricingBreakdown.totalPrice, quoteConfig.paymentMilestones);
 
-    const quoteId = await this.dataSource.transaction(async (manager) => {
+    const result = await this.dataSource.transaction(async (manager) => {
       const quoteRepo = manager.getRepository(QuoteEntity);
       const versionRepo = manager.getRepository(QuoteVersionEntity);
 
@@ -104,7 +123,6 @@ export class QuoteService {
           quoteNumber,
           quoteDate: createDto.quoteDate ? new Date(createDto.quoteDate) : new Date(),
           validUntil: new Date(createDto.validUntil),
-          currentVersion: 1,
           status: QuoteStatus.DRAFT,
           internalNotes: createDto.internalNotes,
           customerNotes: createDto.customerNotes,
@@ -112,7 +130,7 @@ export class QuoteService {
         }),
       );
 
-      await versionRepo.save(
+      const savedVersion = await versionRepo.save(
         versionRepo.create({
           quoteId: quote.id,
           versionNumber: 1,
@@ -122,20 +140,19 @@ export class QuoteService {
           projectType: createDto.projectType,
           finalPrice,
           effectivePrice,
-          calculatorInputs: createDto.calculatorInputs,
-          pricingBreakdown,
+          quoteSnapshot: snapshot,
           paymentMilestones,
           projectCompletionWeeks:
             createDto.projectCompletionWeeks || quoteConfig.defaultCompletionWeeks,
-          isCurrent: true,
           createdBy,
         }),
       );
 
-      return quote.id;
+      return { quoteId: quote.id, versionId: savedVersion.id };
     });
 
-    return this.quoteRepository.findById(quoteId, organizationId);
+    const quote = await this.quoteRepository.findById(result.quoteId, organizationId);
+    return Object.assign(quote, { versionId: result.versionId });
   }
 
   /**
@@ -156,55 +173,8 @@ export class QuoteService {
   async findAll(
     organizationId: string,
     query: QuoteQueryDto,
-  ): Promise<{ data: QuoteEntity[]; total: number }>;
-  async findAll(
-    organizationId: string,
-    page: number,
-    limit: number,
-    filters?: {
-      status?: QuoteStatus;
-      customerId?: string;
-      propertyId?: string;
-      salesPersonId?: string;
-      resellerId?: string;
-      fromDate?: string;
-      toDate?: string;
-      search?: string;
-    },
-  ): Promise<{ data: QuoteEntity[]; total: number }>;
-  async findAll(
-    organizationId: string,
-    pageOrQuery: number | QuoteQueryDto = 1,
-    limit = 20,
-    filters?: {
-      status?: QuoteStatus;
-      customerId?: string;
-      propertyId?: string;
-      salesPersonId?: string;
-      resellerId?: string;
-      fromDate?: string;
-      toDate?: string;
-      search?: string;
-    },
   ): Promise<{ data: QuoteEntity[]; total: number }> {
-    if (typeof pageOrQuery === 'object') {
-      const [data, total] = await this.quoteRepository.findWithFilters(organizationId, pageOrQuery);
-      return { data, total };
-    }
-
-    const legacyQuery = new QuoteQueryDto();
-    legacyQuery.page = pageOrQuery;
-    legacyQuery.limit = limit;
-    if (filters?.status) legacyQuery.status = filters.status;
-    if (filters?.customerId) legacyQuery.customerId = filters.customerId;
-    if (filters?.propertyId) legacyQuery.propertyId = filters.propertyId;
-    if (filters?.salesPersonId) legacyQuery.salesPersonId = filters.salesPersonId;
-    if (filters?.resellerId) legacyQuery.resellerId = filters.resellerId;
-    if (filters?.fromDate) legacyQuery.fromDate = filters.fromDate;
-    if (filters?.toDate) legacyQuery.toDate = filters.toDate;
-    if (filters?.search) legacyQuery.search = filters.search;
-
-    const [data, total] = await this.quoteRepository.findWithFilters(organizationId, legacyQuery);
+    const [data, total] = await this.quoteRepository.findWithFilters(organizationId, query);
     return { data, total };
   }
 
@@ -215,6 +185,10 @@ export class QuoteService {
     return this.quoteRepository.findById(id, organizationId);
   }
 
+  async findAllByPropertyId(propertyId: string, organizationId: string): Promise<QuoteEntity[]> {
+    return this.quoteRepository.findAllByPropertyId(propertyId, organizationId);
+  }
+
   /**
    * Update quote (creates new version)
    */
@@ -223,7 +197,7 @@ export class QuoteService {
     organizationId: string,
     updateDto: UpdateQuoteDto,
     updatedBy: string,
-  ): Promise<QuoteEntity> {
+  ): Promise<QuoteEntity & { versionId: string }> {
     const quote = await this.quoteRepository.findById(id, organizationId);
 
     if ([QuoteStatus.ACCEPTED, QuoteStatus.REJECTED].includes(quote.status)) {
@@ -232,7 +206,8 @@ export class QuoteService {
 
     const quoteConfig = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
 
-    const newVersionNumber = quote.currentVersion + 1;
+    const latestVersionNumber = Math.max(...(quote.versions?.map((v) => v.versionNumber) ?? [0]));
+    const newVersionNumber = latestVersionNumber + 1;
 
     if (
       quoteConfig.maxVersions != null &&
@@ -244,40 +219,45 @@ export class QuoteService {
       );
     }
 
-    const currentVersion = await this.quoteVersionRepository.getCurrentVersion(quote.id);
+    const latestVersion =
+      [...(quote.versions ?? [])].sort((a, b) => {
+        const createdDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        if (createdDiff !== 0) return createdDiff;
+        return b.versionNumber - a.versionNumber;
+      })[0] ?? null;
 
-    if (!currentVersion) {
-      throw new NotFoundException('Current quote version not found');
+    if (!latestVersion) {
+      throw new NotFoundException('Latest quote version not found');
     }
 
-    // Resolve values: DTO overrides > current version fallbacks
-    const systemType = updateDto.systemType || currentVersion.systemType;
-    const systemSizeKw = updateDto.systemSizeKw || currentVersion.systemSizeKw;
-    const totalWattageWp = updateDto.totalWattageWp || currentVersion.totalWattageWp;
-    const projectType = (updateDto.projectType || currentVersion.projectType) as ProjectType;
+    // Resolve values: DTO overrides > latest version fallbacks
+    const systemType = updateDto.systemType || latestVersion.systemType;
+    const systemSizeKw = updateDto.systemSizeKw || latestVersion.systemSizeKw;
+    const totalWattageWp = updateDto.totalWattageWp || latestVersion.totalWattageWp;
+    const projectType = (updateDto.projectType || latestVersion.projectType) as ProjectType;
 
     let pricingBreakdown: PricingBreakdown;
     let finalPrice: number;
 
-    if (updateDto.pricingBreakdown) {
-      pricingBreakdown = updateDto.pricingBreakdown;
+    if (updateDto.quoteSnapshot?.pricing) {
+      pricingBreakdown = updateDto.quoteSnapshot.pricing;
       finalPrice = updateDto.finalPrice ?? pricingBreakdown.totalPrice;
     } else {
-      pricingBreakdown = currentVersion.pricingBreakdown;
-      finalPrice = currentVersion.finalPrice;
+      pricingBreakdown = latestVersion.quoteSnapshot?.pricing ?? ({} as PricingBreakdown);
+      finalPrice = latestVersion.finalPrice;
     }
 
     const isSubsidyApplicable =
-      updateDto.calculatorInputs?.subsidyApplicable ??
-      currentVersion.pricingBreakdown?.isSubsidyApplicable ??
+      updateDto.quoteSnapshot?.inputs?.subsidyApplicable ??
+      latestVersion.quoteSnapshot?.pricing?.isSubsidyApplicable ??
       false;
 
     const subsidy = isSubsidyApplicable
-      ? (updateDto.pricingBreakdown?.subsidyAmount ??
+      ? (updateDto.quoteSnapshot?.pricing?.subsidyAmount ??
         (await this.calculateSubsidy(organizationId, systemSizeKw, projectType)))
       : 0;
 
-    if (!updateDto.pricingBreakdown) {
+    if (!updateDto.quoteSnapshot?.pricing) {
       pricingBreakdown = {
         ...pricingBreakdown,
         subsidyAmount: subsidy,
@@ -287,11 +267,23 @@ export class QuoteService {
 
     const effectivePrice = updateDto.effectivePrice ?? Math.max(0, finalPrice - subsidy);
 
-    await this.dataSource.transaction(async (manager) => {
+    const newSnapshot: QuoteSnapshot = {
+      inputs:
+        updateDto.quoteSnapshot?.inputs ??
+        latestVersion.quoteSnapshot?.inputs ??
+        ({} as CalculatorInputs),
+      calculation:
+        updateDto.quoteSnapshot?.calculation ??
+        latestVersion.quoteSnapshot?.calculation ??
+        ({} as QuoteCalculationOutput),
+      pricing: pricingBreakdown,
+      discountAmount: pricingBreakdown.discountAmount ?? 0,
+    };
+
+    const versionId = await this.dataSource.transaction(async (manager) => {
       const quoteRepo = manager.getRepository(QuoteEntity);
       const versionRepo = manager.getRepository(QuoteVersionEntity);
 
-      // Only update identity/lifecycle fields on the quotes table
       await quoteRepo.update(
         { id, organizationId },
         {
@@ -300,16 +292,11 @@ export class QuoteService {
           validUntil: updateDto.validUntil ? new Date(updateDto.validUntil) : undefined,
           internalNotes: updateDto.internalNotes,
           customerNotes: updateDto.customerNotes,
-          currentVersion: newVersionNumber,
           updatedBy,
         },
       );
 
-      // Mark old versions as not current
-      await versionRepo.update({ quoteId: quote.id, isCurrent: true }, { isCurrent: false });
-
-      // Create new version with all calculation data
-      await versionRepo.save(
+      const savedVersion = await versionRepo.save(
         versionRepo.create({
           quoteId: quote.id,
           versionNumber: newVersionNumber,
@@ -319,26 +306,27 @@ export class QuoteService {
           projectType,
           finalPrice,
           effectivePrice,
-          calculatorInputs: updateDto.calculatorInputs || currentVersion.calculatorInputs,
-          pricingBreakdown,
+          quoteSnapshot: newSnapshot,
           paymentMilestones:
             updateDto.paymentMilestones ||
-            (updateDto.pricingBreakdown && currentVersion?.paymentMilestones
-              ? this.recalculateMilestoneAmounts(currentVersion.paymentMilestones, finalPrice)
-              : currentVersion?.paymentMilestones) ||
+            (updateDto.quoteSnapshot?.pricing && latestVersion.paymentMilestones
+              ? this.recalculateMilestoneAmounts(latestVersion.paymentMilestones, finalPrice)
+              : latestVersion.paymentMilestones) ||
             this.generatePaymentMilestones(finalPrice, quoteConfig.paymentMilestones),
           projectCompletionWeeks:
             updateDto.projectCompletionWeeks ||
-            currentVersion?.projectCompletionWeeks ||
+            latestVersion.projectCompletionWeeks ||
             quoteConfig.defaultCompletionWeeks,
           changeSummary: updateDto.changeSummary,
-          isCurrent: true,
           createdBy: updatedBy,
         }),
       );
+
+      return savedVersion.id;
     });
 
-    return this.quoteRepository.findById(id, organizationId);
+    const updated = await this.quoteRepository.findById(id, organizationId);
+    return Object.assign(updated, { versionId });
   }
 
   /**
@@ -351,6 +339,19 @@ export class QuoteService {
     updatedBy: string,
   ): Promise<QuoteEntity> {
     const quote = await this.quoteRepository.findById(id, organizationId);
+
+    if (quote.propertyId) {
+      const accepted = await this.quoteRepository.findAcceptedByPropertyId(
+        quote.propertyId,
+        organizationId,
+        quote.id,
+      );
+      if (accepted) {
+        throw new BadRequestException(
+          `Another quote for this property has already been accepted (${accepted.quoteNumber}). Status changes are locked.`,
+        );
+      }
+    }
 
     this.validateStatusTransition(quote.status, statusDto.status);
 
@@ -380,27 +381,6 @@ export class QuoteService {
   }
 
   /**
-   * Find a specific version of a quote, with line items.
-   * Validates quote ownership by organizationId to prevent IDOR.
-   */
-  async findVersionById(
-    quoteId: string,
-    versionId: string,
-    organizationId: string,
-  ): Promise<import('../entities/quote-version.entity').QuoteVersionEntity> {
-    // First verify the quote belongs to this organization
-    await this.quoteRepository.findById(quoteId, organizationId);
-
-    const version = await this.quoteVersionRepository.findByIdAndQuoteId(versionId, quoteId);
-
-    if (!version) {
-      throw new NotFoundException(`Version with ID ${versionId} not found for quote ${quoteId}`);
-    }
-
-    return version;
-  }
-
-  /**
    * Delete quote
    */
   async delete(id: string, organizationId: string): Promise<void> {
@@ -411,6 +391,23 @@ export class QuoteService {
     }
 
     return this.quoteRepository.delete(id, organizationId);
+  }
+
+  /**
+   * Check if a property is locked (has an accepted quote).
+   */
+  async getPropertyLockStatus(
+    propertyId: string,
+    organizationId: string,
+  ): Promise<{ locked: boolean; acceptedQuoteNumber?: string }> {
+    const accepted = await this.quoteRepository.findAcceptedByPropertyId(
+      propertyId,
+      organizationId,
+    );
+    return {
+      locked: !!accepted,
+      acceptedQuoteNumber: accepted?.quoteNumber,
+    };
   }
 
   /**

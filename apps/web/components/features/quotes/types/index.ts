@@ -26,4 +26,5 @@ export type {
   QuotePdfData,
   QuotePdfOrgConfig,
   PdfCompanyInfo,
+  QuoteSnapshot,
 } from './calculator.types';

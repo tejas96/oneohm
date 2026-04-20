@@ -3,6 +3,7 @@ import {
   type CalculatorInputs,
   type PaymentMilestone,
   type PricingBreakdown,
+  type QuoteSnapshot,
   ProjectType,
   QuoteStatus,
   SystemType,
@@ -12,18 +13,34 @@ import { Expose, Transform } from 'class-transformer';
 import { QuoteVersionResponseDto } from './quote-version-response.dto';
 import { toNum } from '../../../../common/utils';
 
-const cv = (obj: Record<string, unknown>) => {
-  const versions = obj.versions as Array<Record<string, unknown>> | undefined;
-  return versions?.find((v) => v.isCurrent);
+const toTimestamp = (value: unknown): number => {
+  if (typeof value === 'string' || value instanceof Date) {
+    return new Date(value).getTime();
+  }
+  return 0;
 };
 
+const cv = (obj: Record<string, unknown>) => {
+  const versions = obj.versions as Array<Record<string, unknown>> | undefined;
+  if (!versions || versions.length === 0) return undefined;
+  return [...versions].sort((a, b) => {
+    const aCreated = toTimestamp(a.createdAt);
+    const bCreated = toTimestamp(b.createdAt);
+    if (bCreated !== aCreated) return bCreated - aCreated;
+    return Number(b.versionNumber ?? 0) - Number(a.versionNumber ?? 0);
+  })[0];
+};
+
+const qs = (obj: Record<string, unknown>) =>
+  cv(obj)?.quoteSnapshot as Record<string, unknown> | undefined;
+
 const pb = (obj: Record<string, unknown>) =>
-  cv(obj)?.pricingBreakdown as Record<string, unknown> | undefined;
+  qs(obj)?.pricing as Record<string, unknown> | undefined;
 
 /**
  * Quote Response DTO
  * Serialized response for quote entities.
- * Reads system/pricing data from the current version so the frontend
+ * Reads system/pricing data from the latest version so the frontend
  * receives the same flat shape it always did.
  * Also includes enriched fields for the detail view: versions,
  * customer contact info, property address, pricing breakdown, and milestones.
@@ -101,11 +118,7 @@ export class QuoteResponseDto {
   @Expose()
   validUntil!: string;
 
-  @ApiProperty({ example: 1 })
-  @Expose()
-  currentVersion!: number;
-
-  // ==================== Current Version Flat Fields ====================
+  // ==================== Latest Version Flat Fields ====================
 
   @ApiProperty({
     enum: Object.values(SystemType),
@@ -177,7 +190,7 @@ export class QuoteResponseDto {
 
   @ApiPropertyOptional({ description: 'Calculator input parameters for this quote' })
   @Expose()
-  @Transform(({ obj }) => cv(obj)?.calculatorInputs)
+  @Transform(({ obj }) => qs(obj)?.inputs)
   calculatorInputs?: CalculatorInputs;
 
   // ==================== Status & Lifecycle ====================
@@ -222,17 +235,22 @@ export class QuoteResponseDto {
 
   // ==================== Enriched Detail Fields ====================
 
-  @ApiPropertyOptional({ description: 'Full pricing breakdown from current version' })
+  @ApiPropertyOptional({ description: 'Full pricing breakdown from latest version' })
   @Expose()
-  @Transform(({ obj }) => cv(obj)?.pricingBreakdown ?? undefined)
+  @Transform(({ obj }) => qs(obj)?.pricing ?? undefined)
   pricingBreakdown?: PricingBreakdown;
 
-  @ApiPropertyOptional({ description: 'Payment milestones from current version' })
+  @ApiPropertyOptional({ description: 'Full quote snapshot from latest version' })
+  @Expose()
+  @Transform(({ obj }) => cv(obj)?.quoteSnapshot ?? undefined)
+  quoteSnapshot?: QuoteSnapshot;
+
+  @ApiPropertyOptional({ description: 'Payment milestones from latest version' })
   @Expose()
   @Transform(({ obj }) => cv(obj)?.paymentMilestones ?? undefined)
   paymentMilestones?: PaymentMilestone[];
 
-  @ApiPropertyOptional({ description: 'Project completion weeks from current version' })
+  @ApiPropertyOptional({ description: 'Project completion weeks from latest version' })
   @Expose()
   @Transform(({ obj }) => cv(obj)?.projectCompletionWeeks ?? undefined)
   projectCompletionWeeks?: number;
@@ -248,25 +266,28 @@ export class QuoteResponseDto {
       (a: { versionNumber?: number }, b: { versionNumber?: number }) =>
         (b.versionNumber ?? 0) - (a.versionNumber ?? 0),
     );
-    return sorted.map((v: Record<string, unknown>) => ({
-      id: v.id,
-      quoteId: v.quoteId,
-      versionNumber: v.versionNumber,
-      systemType: v.systemType,
-      systemSizeKw: v.systemSizeKw != null ? Number(v.systemSizeKw) : undefined,
-      totalWattageWp: v.totalWattageWp != null ? Number(v.totalWattageWp) : undefined,
-      projectType: v.projectType,
-      finalPrice: v.finalPrice != null ? Number(v.finalPrice) : undefined,
-      effectivePrice: v.effectivePrice != null ? Number(v.effectivePrice) : undefined,
-      pricingBreakdown: v.pricingBreakdown,
-      paymentMilestones: v.paymentMilestones,
-      calculatorInputs: v.calculatorInputs,
-      projectCompletionWeeks: v.projectCompletionWeeks,
-      changeSummary: v.changeSummary,
-      isCurrent: v.isCurrent,
-      createdBy: v.createdBy,
-      createdAt: v.createdAt,
-    }));
+    return sorted.map((v: Record<string, unknown>) => {
+      const snap = v.quoteSnapshot as Record<string, unknown> | undefined;
+      return {
+        id: v.id,
+        quoteId: v.quoteId,
+        versionNumber: v.versionNumber,
+        systemType: v.systemType,
+        systemSizeKw: v.systemSizeKw != null ? Number(v.systemSizeKw) : undefined,
+        totalWattageWp: v.totalWattageWp != null ? Number(v.totalWattageWp) : undefined,
+        projectType: v.projectType,
+        finalPrice: v.finalPrice != null ? Number(v.finalPrice) : undefined,
+        effectivePrice: v.effectivePrice != null ? Number(v.effectivePrice) : undefined,
+        pricingBreakdown: snap?.pricing,
+        paymentMilestones: v.paymentMilestones,
+        calculatorInputs: snap?.inputs,
+        quoteSnapshot: snap,
+        projectCompletionWeeks: v.projectCompletionWeeks,
+        changeSummary: v.changeSummary,
+        createdBy: v.createdBy,
+        createdAt: v.createdAt,
+      };
+    });
   })
   versions?: QuoteVersionResponseDto[];
 }

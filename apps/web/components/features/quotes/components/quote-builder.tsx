@@ -13,7 +13,6 @@ import {
   Search,
   Settings2,
   AlertTriangle,
-  Archive,
   StickyNote,
   Truck,
   Wrench,
@@ -38,7 +37,6 @@ import { useInstallationPricing } from '../hooks/use-installation-pricing';
 import { useQuoteConfig } from '../hooks/use-quote-config';
 import { useQuoteFormLogic } from '../hooks/use-quote-form-logic';
 import { useQuotePdf } from '../hooks/use-quote-pdf';
-import { useDeleteQuote } from '../hooks/use-quotes';
 import { useSaveQuote } from '../hooks/use-save-quote';
 import { applyPreGstDiscount } from '../pricing-utils';
 import { quoteBuilderSchema, type QuoteBuilderFormData } from '../schemas/quote.schema';
@@ -76,13 +74,6 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogBody,
-  DialogFooter,
   Sheet,
   SheetContent,
   SheetHeader,
@@ -361,29 +352,9 @@ export function QuoteBuilder(): JSX.Element {
 
   // ── Save / Download state ──
   const saveMutation = useSaveQuote();
-  const deleteMutation = useDeleteQuote();
-  const [savedQuoteId, setSavedQuoteId] = useState<string | null>(null);
   const [savedQuoteNumber, setSavedQuoteNumber] = useState<string | null>(null);
-  const [savedVersionInfo, setSavedVersionInfo] = useState<{
-    current: number;
-    max: number | null;
-  } | null>(null);
   const [savedMilestones, setSavedMilestones] = useState<PaymentMilestone[] | null>(null);
   const [paymentTermsModalOpen, setPaymentTermsModalOpen] = useState(false);
-  const [maxVersionsDialog, setMaxVersionsDialog] = useState<{
-    open: boolean;
-    maxVersions: number;
-    quotes: {
-      quoteId: string;
-      quoteNumber: string;
-      currentVersion: number;
-      status: string;
-      createdAt: string;
-      updatedAt: string;
-    }[];
-    pendingMilestones: PaymentMilestone[];
-    selectedQuoteId: string | null;
-  } | null>(null);
   const { generatePdf, isGenerating: isDownloading } = useQuotePdf();
 
   // ── Handlers ──
@@ -395,7 +366,6 @@ export function QuoteBuilder(): JSX.Element {
       form.setValue('customerId', customer?.id ?? '');
       form.setValue('propertyId', undefined);
       setCalculation(null);
-      setSavedQuoteId(null);
       setSavedQuoteNumber(null);
     },
     [form],
@@ -527,72 +497,44 @@ export function QuoteBuilder(): JSX.Element {
 
   const handleSave = useCallback(() => {
     if (!calculation) return;
+    if (!propertyId) {
+      showToast.error('Please select a property before saving the quote');
+      return;
+    }
     setPaymentTermsModalOpen(true);
-  }, [calculation]);
+  }, [calculation, propertyId]);
 
   const handlePaymentTermsConfirm = useCallback(
     (milestones: PaymentMilestone[]) => {
       setPaymentTermsModalOpen(false);
       if (!calculation) return;
       const values = form.getValues();
+      if (!values.propertyId) {
+        showToast.error('Please select a property before saving the quote');
+        return;
+      }
       const request: CreateFromCalculationRequest = {
         ...buildCalculateRequest(values),
+        propertyId: values.propertyId,
         discountAmount: values.discountAmount,
         internalNotes: values.internalNotes || undefined,
         customerNotes: values.customerNotes || undefined,
         paymentMilestones: milestones,
-        ...(savedQuoteId ? { quoteId: savedQuoteId } : {}),
       };
 
       saveMutation.mutate(request, {
         onSuccess: (data) => {
-          setSavedQuoteId(data.quoteId);
           setSavedQuoteNumber(data.quoteNumber);
-          setSavedVersionInfo({ current: data.currentVersion, max: data.maxVersions });
           setSavedMilestones(milestones);
-          const versionLabel = data.maxVersions
-            ? `(Version ${data.currentVersion} of ${data.maxVersions})`
-            : `(Version ${data.currentVersion})`;
-          showToast.success(`Quote ${data.quoteNumber} saved ${versionLabel}`);
+          showToast.success(`Quote ${data.quoteNumber} saved`);
         },
         onError: (error: unknown) => {
-          const respData = isAxiosError(error) ? error.response?.data : undefined;
-          if (respData?.error === 'MAX_VERSIONS_REACHED' && Array.isArray(respData.quotes)) {
-            setMaxVersionsDialog({
-              open: true,
-              maxVersions: respData.maxVersions,
-              quotes: respData.quotes,
-              pendingMilestones: milestones,
-              selectedQuoteId: respData.quotes.length === 1 ? respData.quotes[0].quoteId : null,
-            });
-          } else {
-            showToast.error(getErrorMessage(error));
-          }
+          showToast.error(getErrorMessage(error));
         },
       });
     },
-    [calculation, form, buildCalculateRequest, saveMutation, savedQuoteId],
+    [calculation, form, buildCalculateRequest, saveMutation],
   );
-
-  const handleArchiveAndCreateNew = useCallback(() => {
-    if (!maxVersionsDialog?.selectedQuoteId) return;
-    const { selectedQuoteId, pendingMilestones, quotes } = maxVersionsDialog;
-    const archivedQuote = quotes.find((q) => q.quoteId === selectedQuoteId);
-
-    deleteMutation.mutate(selectedQuoteId, {
-      onSuccess: () => {
-        setSavedQuoteId(null);
-        setSavedQuoteNumber(null);
-        setSavedVersionInfo(null);
-        setMaxVersionsDialog(null);
-        showToast.success(`Quote ${archivedQuote?.quoteNumber ?? ''} archived`);
-        handlePaymentTermsConfirm(pendingMilestones);
-      },
-      onError: (err) => {
-        showToast.error(`Failed to archive: ${getErrorMessage(err)}`);
-      },
-    });
-  }, [maxVersionsDialog, deleteMutation, handlePaymentTermsConfirm]);
 
   const handleDownload = useCallback(async () => {
     if (!calculation || !savedQuoteNumber) return;
@@ -684,7 +626,7 @@ export function QuoteBuilder(): JSX.Element {
       onRecalculate={handleRecalculate}
       isSaving={saveMutation.isPending}
       savedQuoteNumber={savedQuoteNumber}
-      savedVersionInfo={savedVersionInfo}
+      isSaveDisabled={!propertyId}
       onSave={handleSave}
       isDownloading={isDownloading}
       onDownload={() => void handleDownload()}
@@ -1680,79 +1622,6 @@ export function QuoteBuilder(): JSX.Element {
         }
         onConfirm={handlePaymentTermsConfirm}
       />
-
-      {/* ── Max Versions Dialog ── */}
-      <Dialog
-        open={!!maxVersionsDialog?.open}
-        onOpenChange={(open) => {
-          if (!open) setMaxVersionsDialog(null);
-        }}
-      >
-        <DialogContent size="sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="size-5 text-warning" />
-              Revision Limit Reached
-            </DialogTitle>
-            <DialogDescription>
-              The maximum of {maxVersionsDialog?.maxVersions} revisions has been reached. Select a
-              quote to archive, then a new quote will be created.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogBody className="space-y-3">
-            {maxVersionsDialog?.quotes.map((q) => (
-              <button
-                key={q.quoteId}
-                type="button"
-                onClick={() =>
-                  setMaxVersionsDialog((prev) =>
-                    prev ? { ...prev, selectedQuoteId: q.quoteId } : null,
-                  )
-                }
-                className={cn(
-                  'w-full rounded-lg border p-3 text-left transition-colors',
-                  maxVersionsDialog.selectedQuoteId === q.quoteId
-                    ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                    : 'border-border hover:border-primary/50',
-                )}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{q.quoteNumber}</span>
-                  <Badge variant={q.status === 'draft' ? 'secondary' : 'default'} size="sm">
-                    {q.status}
-                  </Badge>
-                </div>
-                <div className="mt-1 flex gap-4 text-xs text-text-secondary">
-                  <span>
-                    Version {q.currentVersion} of {maxVersionsDialog.maxVersions}
-                  </span>
-                  <span>Updated {new Date(q.updatedAt).toLocaleDateString()}</span>
-                </div>
-              </button>
-            ))}
-            <p className="text-xs text-text-secondary">
-              The archived quote will be preserved for your records but won&apos;t appear in the
-              active quotes list.
-            </p>
-          </DialogBody>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setMaxVersionsDialog(null)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleArchiveAndCreateNew}
-              disabled={deleteMutation.isPending || !maxVersionsDialog?.selectedQuoteId}
-            >
-              {deleteMutation.isPending ? (
-                <Spinner size="xs" className="mr-1.5" />
-              ) : (
-                <Archive className="mr-1.5 size-4" />
-              )}
-              Archive &amp; Create New
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* ── Mobile preview: Sheet drawer ── */}
       <div className="fixed bottom-6 right-6 lg:hidden">

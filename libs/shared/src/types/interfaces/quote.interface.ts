@@ -1,5 +1,6 @@
 import type { ProjectType } from '../enums/product.enum';
 import type { DcrPreference, QuoteCalculationMode } from '../enums/quote.enum';
+import type { QuoteCalculationOutput } from './quote-calculator.interface';
 
 /**
  * Payment Milestone Interface
@@ -118,4 +119,21 @@ export interface SubsidyConfiguration {
 
   /** Project type applicability */
   projectType?: string;
+}
+
+/**
+ * Quote Snapshot
+ * Single JSONB blob on quote_versions combining user inputs, full calculator
+ * output, and post-discount pricing so that historical quotes are fully
+ * self-contained for PDF generation and audit.
+ */
+export interface QuoteSnapshot {
+  /** User-chosen calculator parameters */
+  inputs: CalculatorInputs;
+  /** Complete calculator output (panels, inverters, structure, installation, subsidy, profitability, etc.) */
+  calculation: QuoteCalculationOutput;
+  /** Post-discount pricing breakdown with GST recalculated via applyPreGstDiscount */
+  pricing: PricingBreakdown;
+  /** Discount applied by the sales person */
+  discountAmount: number;
 }

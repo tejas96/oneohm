@@ -30,7 +30,6 @@ import {
   CreateQuoteDto,
   QuoteQueryDto,
   QuoteResponseDto,
-  QuoteVersionResponseDto,
   UpdateQuoteDto,
   UpdateQuoteStatusDto,
 } from '../dto';
@@ -97,6 +96,41 @@ export class QuoteController {
   }
 
   /**
+   * Check if a property is locked (has an accepted quote)
+   */
+  @Get('property-lock-status')
+  @ApiOperation({
+    summary: 'Get property lock status',
+    description:
+      'Returns whether a property has an accepted quote, blocking further status changes and new quote creation.',
+  })
+  @ApiResponse({ status: HttpStatus.OK })
+  async getPropertyLockStatus(
+    @OrganizationContext() organizationId: string,
+    @Query('propertyId', ParseUUIDPipe) propertyId: string,
+  ): Promise<{ locked: boolean; acceptedQuoteNumber?: string }> {
+    return this.quoteService.getPropertyLockStatus(propertyId, organizationId);
+  }
+
+  /**
+   * Get all quote entries for a property, ordered by creation date (latest first)
+   */
+  @Get('property/:propertyId/versions')
+  @ApiOperation({
+    summary: 'Get property quote versions',
+    description:
+      'Returns all quotes for a property (accepted-first, then latest by creation date).',
+  })
+  @ApiResponse({ status: HttpStatus.OK, type: [QuoteResponseDto] })
+  async findByProperty(
+    @OrganizationContext() organizationId: string,
+    @Param('propertyId', ParseUUIDPipe) propertyId: string,
+  ): Promise<QuoteResponseDto[]> {
+    const quotes = await this.quoteService.findAllByPropertyId(propertyId, organizationId);
+    return plainToInstance(QuoteResponseDto, quotes, { excludeExtraneousValues: true });
+  }
+
+  /**
    * Get quote by ID
    */
   @Get(':id')
@@ -113,28 +147,6 @@ export class QuoteController {
     const quote = await this.quoteService.findById(id, organizationId);
 
     return plainToInstance(QuoteResponseDto, quote, {
-      excludeExtraneousValues: true,
-    });
-  }
-
-  /**
-   * Get a specific version of a quote with its line items
-   */
-  @Get(':id/versions/:versionId')
-  @ApiReadOne({
-    summary: 'Get quote version by ID',
-    description: 'Retrieve a specific version of a quote',
-    responseType: QuoteVersionResponseDto,
-  })
-  async findVersion(
-    @OrganizationContext() organizationId: string,
-    @CurrentUser() _currentUser: CurrentUserType,
-    @Param('id', ParseUUIDPipe) id: string,
-    @Param('versionId', ParseUUIDPipe) versionId: string,
-  ): Promise<QuoteVersionResponseDto> {
-    const version = await this.quoteService.findVersionById(id, versionId, organizationId);
-
-    return plainToInstance(QuoteVersionResponseDto, version, {
       excludeExtraneousValues: true,
     });
   }
@@ -211,10 +223,9 @@ export class QuoteController {
   })
   async delete(
     @OrganizationContext() organizationId: string,
-    @CurrentUser() currentUser: CurrentUserType,
+    @CurrentUser() _currentUser: CurrentUserType,
     @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{ message: string }> {
+  ): Promise<void> {
     await this.quoteService.delete(id, organizationId);
-    return { message: 'Quote deleted successfully' };
   }
 }

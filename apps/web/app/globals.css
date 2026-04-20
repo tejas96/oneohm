@@ -35,15 +35,50 @@
 }
 
 /* ============================================================================
-   BASE STYLES
+   BASE STYLES + GLOBAL SCROLLBAR
+   Wrapped in @layer base so Tailwind v4 includes these in its output.
    ============================================================================ */
 
-html {
-  font-size: 16px;
-}
+@layer base {
+  html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+  }
 
-body {
-  @apply text-sm leading-normal;
+  body {
+    @apply text-sm leading-normal;
+  }
+
+  /* ── Global scrollbar — thin pill, transparent track ── */
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #d4d4d8 transparent;
+  }
+
+  /* Chromium / Safari */
+  *::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: #d4d4d8;
+    border-radius: 999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: #a1a1aa;
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }
 
 /* ============================================================================

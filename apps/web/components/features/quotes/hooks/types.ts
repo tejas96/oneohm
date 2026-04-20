@@ -7,6 +7,8 @@ import type {
   SystemType,
 } from '@oneohm-epc/shared/types';
 
+import type { QuoteSnapshot } from '../types/calculator.types';
+
 // ============================================================================
 // Quote Detail Types
 // ============================================================================
@@ -27,7 +29,6 @@ export interface QuoteDetail {
   quoteNumber: string;
   quoteDate: string;
   validUntil: string;
-  currentVersion: number;
   systemType: SystemType;
   systemSizeKw: number;
   totalWattageWp: number;
@@ -50,6 +51,7 @@ export interface QuoteDetail {
   updatedAt: string;
   createdBy: string;
   pricingBreakdown?: PricingBreakdown;
+  quoteSnapshot?: QuoteSnapshot;
   paymentMilestones?: PaymentMilestone[];
   projectCompletionWeeks?: number;
   versions?: QuoteVersionDetail[];
@@ -70,10 +72,11 @@ export interface QuoteVersionDetail {
   finalPrice: number;
   effectivePrice?: number;
   pricingBreakdown?: PricingBreakdown;
+  calculatorInputs?: CalculatorInputs;
+  quoteSnapshot?: QuoteSnapshot;
   paymentMilestones?: PaymentMilestone[];
   projectCompletionWeeks: number;
   changeSummary?: string;
-  isCurrent: boolean;
   createdBy: string;
   createdAt: string;
 }

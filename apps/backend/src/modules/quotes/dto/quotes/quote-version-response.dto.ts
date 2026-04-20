@@ -3,6 +3,7 @@ import {
   type CalculatorInputs,
   type PaymentMilestone,
   type PricingBreakdown,
+  type QuoteSnapshot,
   ProjectType,
   SystemType,
 } from '@oneohm-epc/shared/types';
@@ -56,7 +57,11 @@ export class QuoteVersionResponseDto {
 
   @ApiPropertyOptional({ description: 'Full pricing breakdown' })
   @Expose()
-  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
+  @Transform(({ obj }) =>
+    (obj as Record<string, unknown>).quoteSnapshot
+      ? ((obj as Record<string, unknown>).quoteSnapshot as Record<string, unknown>).pricing
+      : undefined,
+  )
   pricingBreakdown?: PricingBreakdown;
 
   @ApiPropertyOptional({ description: 'Payment milestones' })
@@ -66,8 +71,17 @@ export class QuoteVersionResponseDto {
 
   @ApiPropertyOptional({ description: 'Calculator inputs used to generate this version' })
   @Expose()
-  @Transform(({ key, obj }) => (obj as Record<string, unknown>)[key])
+  @Transform(({ obj }) =>
+    (obj as Record<string, unknown>).quoteSnapshot
+      ? ((obj as Record<string, unknown>).quoteSnapshot as Record<string, unknown>).inputs
+      : undefined,
+  )
   calculatorInputs?: CalculatorInputs;
+
+  @ApiPropertyOptional({ description: 'Full quote snapshot' })
+  @Expose()
+  @Transform(({ obj }) => (obj as Record<string, unknown>).quoteSnapshot ?? undefined)
+  quoteSnapshot?: QuoteSnapshot;
 
   @ApiProperty({ example: 4 })
   @Expose()
@@ -76,10 +90,6 @@ export class QuoteVersionResponseDto {
   @ApiPropertyOptional({ example: 'Updated panel configuration' })
   @Expose()
   changeSummary?: string;
-
-  @ApiProperty({ example: true })
-  @Expose()
-  isCurrent!: boolean;
 
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()

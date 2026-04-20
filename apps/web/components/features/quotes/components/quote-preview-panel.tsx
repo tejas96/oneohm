@@ -70,7 +70,7 @@ export interface QuotePreviewPanelProps {
   onRecalculate: () => void;
   isSaving: boolean;
   savedQuoteNumber: string | null;
-  savedVersionInfo: { current: number; max: number | null } | null;
+  isSaveDisabled?: boolean;
   onSave: () => void;
   isDownloading: boolean;
   onDownload: () => void;
@@ -98,7 +98,7 @@ export function QuotePreviewPanel({
   onRecalculate,
   isSaving,
   savedQuoteNumber,
-  savedVersionInfo,
+  isSaveDisabled = false,
   onSave,
   isDownloading,
   onDownload,
@@ -876,7 +876,7 @@ export function QuotePreviewPanel({
               type="button"
               className="w-full"
               onClick={onSave}
-              disabled={isSaving || hasQuantityChanges}
+              disabled={isSaving || hasQuantityChanges || isSaveDisabled}
             >
               {isSaving ? (
                 <Spinner size="xs" className="mr-1.5" />
@@ -894,12 +894,6 @@ export function QuotePreviewPanel({
                   </Badge>
                   <span className="text-sm font-medium">{savedQuoteNumber}</span>
                 </div>
-                {savedVersionInfo && (
-                  <span className="text-xs text-text-secondary">
-                    Version {savedVersionInfo.current}
-                    {savedVersionInfo.max ? ` of ${savedVersionInfo.max}` : ''}
-                  </span>
-                )}
               </div>
               <Button
                 type="button"

@@ -261,7 +261,8 @@ export class QuoteCalculatorService {
       profitabilityPercent,
     );
 
-    const effectivePrice = Math.max(MIN_EFFECTIVE_PRICE, pricing.finalPrice - subsidy.amount);
+    const effectivePrice =
+      Math.round(Math.max(MIN_EFFECTIVE_PRICE, pricing.finalPrice - subsidy.amount) * 100) / 100;
 
     // Determine if any overrides or manual counts were used
     const hasOverrides = !!(
@@ -680,7 +681,7 @@ export class QuoteCalculatorService {
    * The logic:
    * 1. Calculate required wattage per panel: requiredKw * WATTS_PER_KW / targetCount
    * 2. Find panels with wattage >= required wattage per panel
-   * 3. Pick the one with minimum overage (smallest wattage that still works)
+   * 3. Pick the highest wattage panel (consistent with auto-calculation behavior)
    * 4. If no panel can meet the requirement:
    *    a. If capacity < minCapacityKw (subsidy floor) -> hard error with suggestion
    *    b. If capacity >= minCapacityKw -> allow undersized with warning
@@ -784,8 +785,21 @@ export class QuoteCalculatorService {
       return { panel: panelConfig, actualSizeKw: actualCapacityKw };
     }
 
-    // Pick panel with minimum wattage (least overage) - sorted ascending by findAllSolarPanels
-    const selectedPanel = suitablePanels[0]!;
+    // Pick panel with maximum wattage — consistent with auto-calculation (findSolarPanel orders
+    // DESC by wattage then ASC by price). findAllSolarPanels sorts ASC, so we sort descending
+    // here to replicate the same tie-breaking: highest wattage first, then cheapest among equals.
+    const sorted = [...suitablePanels].sort((a, b) => {
+      const wa =
+        Number(a.specifications?.wattage ?? 0) ||
+        (Number(a.specifications?.min_wattage ?? 0) + Number(a.specifications?.max_wattage ?? 0)) /
+          2;
+      const wb =
+        Number(b.specifications?.wattage ?? 0) ||
+        (Number(b.specifications?.min_wattage ?? 0) + Number(b.specifications?.max_wattage ?? 0)) /
+          2;
+      return wb - wa; // highest wattage first
+    });
+    const selectedPanel = sorted[0]!;
     const specs = selectedPanel.specifications;
 
     if (!specs) {

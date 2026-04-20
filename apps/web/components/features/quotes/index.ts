@@ -26,11 +26,12 @@ export {
   useQuotePdf,
   quoteDetailKeys,
   useQuoteDetail,
-  useQuoteVersion,
+  usePropertyQuoteVersions,
 } from './hooks';
 export type {
   QuoteFilters,
   QuoteListItem,
+  PropertyQuoteVersionItem,
   QuoteListResponse,
   QuoteStatusCounts,
   UseQuoteFormLogicOptions,
@@ -62,7 +63,6 @@ export {
   QUOTE_STATUS_BADGE_VARIANTS,
   QUOTE_STATUS_TRANSITIONS,
   SYSTEM_TYPE_LABELS,
-  QUOTE_FILTER_TABS,
   QUOTE_DETAIL_TABS,
   ITEM_CATEGORY_LABELS,
   PROJECT_TYPE_LABELS,

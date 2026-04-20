@@ -32,6 +32,16 @@ export class ProjectRepository {
     public readonly repository: Repository<ProjectEntity>,
   ) {}
 
+  private latestVersionJoinCondition(quoteAlias: string): string {
+    return `cv.id = (
+      SELECT qv.id
+      FROM quote_versions qv
+      WHERE qv.quote_id = ${quoteAlias}.id
+      ORDER BY qv.created_at DESC, qv.version_number DESC, qv.id DESC
+      LIMIT 1
+    )`;
+  }
+
   /**
    * Create a new project
    */
@@ -77,7 +87,7 @@ export class ProjectRepository {
       .createQueryBuilder('project')
       .innerJoinAndSelect('project.property', 'property')
       .innerJoinAndSelect('project.quote', 'quote')
-      .leftJoinAndSelect('quote.versions', 'cv', 'cv.isCurrent = :isCurrent', { isCurrent: true })
+      .leftJoinAndSelect('quote.versions', 'cv', this.latestVersionJoinCondition('quote'))
       .leftJoinAndSelect('property.customer', 'customer')
       .leftJoinAndSelect('property.organization', 'organization')
       .leftJoinAndSelect('project.creator', 'creator')
@@ -120,7 +130,7 @@ export class ProjectRepository {
       .createQueryBuilder('project')
       .innerJoinAndSelect('project.property', 'property')
       .innerJoinAndSelect('project.quote', 'quote')
-      .leftJoinAndSelect('quote.versions', 'cv', 'cv.isCurrent = :isCurrent', { isCurrent: true })
+      .leftJoinAndSelect('quote.versions', 'cv', this.latestVersionJoinCondition('quote'))
       .leftJoinAndSelect('property.customer', 'customer')
       .leftJoinAndSelect('project.teamMembers', 'teamMember')
       .leftJoinAndSelect('teamMember.user', 'teamUser')
@@ -292,7 +302,7 @@ export class ProjectRepository {
       .createQueryBuilder('project')
       .innerJoinAndSelect('project.property', 'property')
       .innerJoinAndSelect('project.quote', 'quote')
-      .leftJoinAndSelect('quote.versions', 'cv', 'cv.isCurrent = :isCurrent', { isCurrent: true })
+      .leftJoinAndSelect('quote.versions', 'cv', this.latestVersionJoinCondition('quote'))
       .leftJoinAndSelect('property.customer', 'customer')
       .leftJoinAndSelect('project.milestones', 'milestones')
       .leftJoinAndSelect('project.materials', 'materials')
@@ -329,7 +339,7 @@ export class ProjectRepository {
       .createQueryBuilder('project')
       .innerJoinAndSelect('project.property', 'property')
       .innerJoinAndSelect('project.quote', 'quote')
-      .leftJoinAndSelect('quote.versions', 'cv', 'cv.isCurrent = :isCurrent', { isCurrent: true })
+      .leftJoinAndSelect('quote.versions', 'cv', this.latestVersionJoinCondition('quote'))
       .leftJoinAndSelect('property.customer', 'customer')
       .leftJoinAndSelect('project.milestones', 'milestones')
       .where('project.propertyId = :propertyId', { propertyId })
