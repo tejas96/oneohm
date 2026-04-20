@@ -53,8 +53,7 @@ const ICON_TEXT_COLORS = {
 } as const;
 
 export interface EmptyStateProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof emptyStateVariants> {
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof emptyStateVariants> {
   /** Custom icon to display */
   icon?: React.ReactNode;
   /** Icon color scheme */
@@ -163,8 +162,10 @@ export const NoData = React.forwardRef<
 NoData.displayName = 'NoData';
 
 /** No search results state */
-export interface NoSearchResultsProps
-  extends Omit<EmptyStateProps, 'icon' | 'title' | 'description'> {
+export interface NoSearchResultsProps extends Omit<
+  EmptyStateProps,
+  'icon' | 'title' | 'description'
+> {
   searchTerm?: string;
   onClear?: () => void;
 }

@@ -11,7 +11,8 @@ const labelVariants = cva(
 );
 
 export interface LabelProps
-  extends React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>,
+  extends
+    React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>,
     VariantProps<typeof labelVariants> {
   /** Show red asterisk for required fields */
   required?: boolean;

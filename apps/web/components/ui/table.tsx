@@ -30,8 +30,7 @@ const tableVariants = cva('w-full caption-bottom text-sm', {
 });
 
 export interface TableProps
-  extends React.HTMLAttributes<HTMLTableElement>,
-    VariantProps<typeof tableVariants> {}
+  extends React.HTMLAttributes<HTMLTableElement>, VariantProps<typeof tableVariants> {}
 
 const Table = React.forwardRef<HTMLTableElement, TableProps>(
   ({ className, variant, ...props }, ref) => (

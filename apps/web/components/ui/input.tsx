@@ -33,7 +33,8 @@ const inputVariants = cva(
 );
 
 export interface InputProps
-  extends Omit<React.ComponentProps<'input'>, 'size' | 'prefix'>,
+  extends
+    Omit<React.ComponentProps<'input'>, 'size' | 'prefix'>,
     VariantProps<typeof inputVariants> {
   /** Show error styling - accepts boolean or error message string (truthy = error state) */
   error?: boolean | string;

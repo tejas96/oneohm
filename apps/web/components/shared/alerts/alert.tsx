@@ -76,8 +76,7 @@ const iconColorVariants = {
 };
 
 export interface AlertProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof alertVariants> {
+  extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof alertVariants> {
   /** Alert title (optional) */
   title?: string;
   /** Show icon */

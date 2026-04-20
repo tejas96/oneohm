@@ -20,8 +20,11 @@ import { useQueryState, type UseQueryStateReturn } from './use-query-state';
 
 import { apiClient } from '@/lib/api/client';
 
-export interface UseResourceListReturn<T, F extends BaseFilters, R = ResourceListResponse<T>>
-  extends Omit<UseQueryStateReturn<F>, 'setMeta'> {
+export interface UseResourceListReturn<
+  T,
+  F extends BaseFilters,
+  R = ResourceListResponse<T>,
+> extends Omit<UseQueryStateReturn<F>, 'setMeta'> {
   items: T[];
   meta: ResourceListResponse<T>['meta'] | undefined;
   selected: R;
