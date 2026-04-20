@@ -8,21 +8,6 @@ import { QuoteQueryDto } from '../dto/quotes/quote-query.dto';
 import { QuoteEntity } from '../entities/quote.entity';
 
 /**
- * Field mapping for safe sorting (prevents SQL injection via sortBy)
- * Maps enum values to entity property paths — TypeORM resolves these to DB columns
- */
-const SORT_FIELD_MAP: Record<QuoteSortField, string> = {
-  [QuoteSortField.CREATED_AT]: 'quote.createdAt',
-  [QuoteSortField.UPDATED_AT]: 'quote.updatedAt',
-  [QuoteSortField.QUOTE_DATE]: 'quote.quoteDate',
-  [QuoteSortField.VALID_UNTIL]: 'quote.validUntil',
-  [QuoteSortField.SYSTEM_SIZE]: 'cv.systemSizeKw',
-  [QuoteSortField.EFFECTIVE_PRICE]: 'cv.effectivePrice',
-  [QuoteSortField.STATUS]: 'quote.status',
-  [QuoteSortField.CUSTOMER_NAME]: 'customer.firstName',
-};
-
-/**
  * Latest quote info for property enrichment
  */
 export interface LatestQuoteInfo {
@@ -32,6 +17,14 @@ export interface LatestQuoteInfo {
   finalPrice?: number;
   systemSizeKw?: number;
 }
+
+const latestVersionJoinCondition = (quoteAlias: string): string => `cv.id = (
+  SELECT qv.id
+  FROM quote_versions qv
+  WHERE qv.quote_id = ${quoteAlias}.id
+  ORDER BY qv.created_at DESC, qv.version_number DESC, qv.id DESC
+  LIMIT 1
+)`;
 
 /**
  * Quote Repository
@@ -69,86 +62,6 @@ export class QuoteRepository {
   }
 
   /**
-   * Find all quotes with filters
-   */
-  async findAll(
-    organizationId: string,
-    page = 1,
-    limit = 20,
-    filters?: {
-      status?: QuoteStatus;
-      customerId?: string;
-      propertyId?: string;
-      salesPersonId?: string;
-      resellerId?: string;
-      fromDate?: string;
-      toDate?: string;
-      search?: string;
-    },
-  ): Promise<{ quotes: QuoteEntity[]; total: number }> {
-    const query = this.repository
-      .createQueryBuilder('quote')
-      .leftJoinAndSelect('quote.versions', 'cv', 'cv.isCurrent = :isCurrent', { isCurrent: true })
-      .leftJoinAndSelect('quote.customer', 'customer')
-      .leftJoinAndSelect('quote.salesPerson', 'salesPerson')
-      .leftJoinAndSelect('quote.reseller', 'reseller')
-      .leftJoinAndSelect('quote.property', 'property')
-      .where('quote.organizationId = :organizationId', { organizationId })
-      .andWhere('quote.deletedAt IS NULL');
-
-    // Apply filters
-    if (filters?.status) {
-      query.andWhere('quote.status = :status', { status: filters.status });
-    }
-
-    if (filters?.customerId) {
-      query.andWhere('quote.customerId = :customerId', { customerId: filters.customerId });
-    }
-
-    if (filters?.propertyId) {
-      query.andWhere('quote.propertyId = :propertyId', { propertyId: filters.propertyId });
-    }
-
-    if (filters?.salesPersonId) {
-      query.andWhere('quote.salesPersonId = :salesPersonId', {
-        salesPersonId: filters.salesPersonId,
-      });
-    }
-
-    if (filters?.resellerId) {
-      query.andWhere('quote.resellerId = :resellerId', {
-        resellerId: filters.resellerId,
-      });
-    }
-
-    if (filters?.fromDate) {
-      query.andWhere('quote.quoteDate >= :fromDate', { fromDate: filters.fromDate });
-    }
-
-    if (filters?.toDate) {
-      query.andWhere('quote.quoteDate <= :toDate', { toDate: filters.toDate });
-    }
-
-    if (filters?.search) {
-      query.andWhere(
-        '(quote.quoteNumber ILIKE :search OR customer.firstName ILIKE :search OR customer.lastName ILIKE :search)',
-        { search: `%${filters.search}%` },
-      );
-    }
-
-    // Split getCount + getMany to avoid TypeORM getManyAndCount crash
-    // when leftJoinAndSelect is combined with orderBy on a joined alias.
-    const total = await query.getCount();
-    const quotes = await query
-      .orderBy('quote.createdAt', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getMany();
-
-    return { quotes, total };
-  }
-
-  /**
    * Find quotes with comprehensive filtering, sorting, and pagination
    * Primary method for the quote list API
    *
@@ -162,13 +75,14 @@ export class QuoteRepository {
   ): Promise<[QuoteEntity[], number]> {
     const qb = this.repository
       .createQueryBuilder('quote')
-      .leftJoinAndSelect('quote.versions', 'cv', 'cv.isCurrent = :isCurrent', { isCurrent: true })
+      .leftJoinAndSelect('quote.versions', 'cv', latestVersionJoinCondition('quote'))
       .leftJoinAndSelect('quote.customer', 'customer')
       .leftJoinAndSelect('quote.salesPerson', 'salesPerson')
       .leftJoinAndSelect('quote.reseller', 'reseller')
       .leftJoinAndSelect('quote.property', 'property')
       .where('quote.organizationId = :organizationId', { organizationId })
-      .andWhere('quote.deletedAt IS NULL');
+      .andWhere('quote.deletedAt IS NULL')
+      .andWhere('quote.propertyId IS NOT NULL');
 
     // ===== Search (case-insensitive, multiple fields) =====
     if (query.search && query.search.length >= 2) {
@@ -216,29 +130,92 @@ export class QuoteRepository {
     }
 
     if (query.toDate) {
-      qb.andWhere('quote.quoteDate <= :toDate', {
-        toDate: `${query.toDate}T23:59:59.999Z`,
-      });
+      // Accept both bare YYYY-MM-DD dates and full ISO timestamps.
+      // When the caller sends a full ISO string (already includes time), use it
+      // as-is. When only a date is provided, extend it to end-of-day so the
+      // filter is inclusive of the entire selected day.
+      const toDateValue = query.toDate.includes('T')
+        ? query.toDate
+        : `${query.toDate}T23:59:59.999Z`;
+      qb.andWhere('quote.quoteDate <= :toDate', { toDate: toDateValue });
     }
 
-    // ===== Sorting (using safe field mapping) =====
-    const sortColumn = SORT_FIELD_MAP[query.sortBy] ?? SORT_FIELD_MAP[QuoteSortField.CREATED_AT];
-    const sortDirection = query.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
-    qb.orderBy(sortColumn, sortDirection, 'NULLS LAST');
-
-    if (query.sortBy === QuoteSortField.CUSTOMER_NAME) {
-      qb.addOrderBy('customer.lastName', sortDirection, 'NULLS LAST');
-    }
-
-    // Split getCount + getMany to avoid TypeORM getManyAndCount crash
-    // when leftJoinAndSelect is combined with addOrderBy on a joined alias.
-    const total = await qb.getCount();
-    const quotes = await qb
-      .skip((query.page - 1) * query.limit)
-      .take(query.limit)
+    // Fetch all matching quotes ordered by createdAt desc, then keep one row per property.
+    // Rule: if a property has any accepted quote, show the latest accepted quote; otherwise
+    // show the latest quote by creation date.
+    const allMatched = await qb
+      .orderBy('quote.createdAt', 'DESC')
+      .addOrderBy('quote.id', 'DESC')
       .getMany();
 
-    return [quotes, total];
+    const latestPerProperty = new Map<string, QuoteEntity>();
+    for (const quote of allMatched) {
+      if (!quote.propertyId) continue;
+      const existing = latestPerProperty.get(quote.propertyId);
+      if (!existing) {
+        latestPerProperty.set(quote.propertyId, quote);
+        continue;
+      }
+
+      const existingAccepted = existing.status === QuoteStatus.ACCEPTED;
+      const candidateAccepted = quote.status === QuoteStatus.ACCEPTED;
+      if (!existingAccepted && candidateAccepted) {
+        latestPerProperty.set(quote.propertyId, quote);
+      }
+    }
+
+    const groupedQuotes = Array.from(latestPerProperty.values());
+    const sortDirection = query.sortOrder === SortOrder.ASC ? 'ASC' : 'DESC';
+    groupedQuotes.sort((a, b) => {
+      const dir = sortDirection === 'ASC' ? 1 : -1;
+      const av = a.versions[0];
+      const bv = b.versions[0];
+      switch (query.sortBy) {
+        case QuoteSortField.UPDATED_AT:
+          return dir * (new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime());
+        case QuoteSortField.QUOTE_DATE:
+          return dir * (new Date(a.quoteDate).getTime() - new Date(b.quoteDate).getTime());
+        case QuoteSortField.VALID_UNTIL:
+          return dir * (new Date(a.validUntil).getTime() - new Date(b.validUntil).getTime());
+        case QuoteSortField.SYSTEM_SIZE:
+          return dir * ((av?.systemSizeKw ?? 0) - (bv?.systemSizeKw ?? 0));
+        case QuoteSortField.EFFECTIVE_PRICE:
+          return dir * ((av?.effectivePrice ?? 0) - (bv?.effectivePrice ?? 0));
+        case QuoteSortField.STATUS:
+          return dir * a.status.localeCompare(b.status);
+        case QuoteSortField.CUSTOMER_NAME: {
+          const aName = `${a.customer.firstName} ${a.customer.lastName ?? ''}`.trim();
+          const bName = `${b.customer.firstName} ${b.customer.lastName ?? ''}`.trim();
+          return dir * aName.localeCompare(bName);
+        }
+        case QuoteSortField.CREATED_AT:
+        default:
+          return dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      }
+    });
+
+    const total = groupedQuotes.length;
+    const start = (query.page - 1) * query.limit;
+    const end = start + query.limit;
+    return [groupedQuotes.slice(start, end), total];
+  }
+
+  async findAllByPropertyId(propertyId: string, organizationId: string): Promise<QuoteEntity[]> {
+    return this.repository
+      .createQueryBuilder('quote')
+      .leftJoinAndSelect('quote.versions', 'cv', latestVersionJoinCondition('quote'))
+      .leftJoinAndSelect('quote.customer', 'customer')
+      .leftJoinAndSelect('quote.salesPerson', 'salesPerson')
+      .leftJoinAndSelect('quote.reseller', 'reseller')
+      .leftJoinAndSelect('quote.property', 'property')
+      .where('quote.organizationId = :organizationId', { organizationId })
+      .andWhere('quote.propertyId = :propertyId', { propertyId })
+      .andWhere('quote.deletedAt IS NULL')
+      .orderBy('CASE WHEN quote.status = :acceptedStatus THEN 0 ELSE 1 END', 'ASC')
+      .setParameter('acceptedStatus', QuoteStatus.ACCEPTED)
+      .addOrderBy('quote.createdAt', 'DESC')
+      .addOrderBy('quote.id', 'DESC')
+      .getMany();
   }
 
   /**
@@ -328,76 +305,24 @@ export class QuoteRepository {
   }
 
   /**
-   * Find the most recent revisable (DRAFT or SENT) quote for a customer+property.
-   * When maxVersions is provided, prefers quotes that still have version capacity.
-   * Falls back to any revisable quote if all are at the limit.
+   * Find an accepted quote for a given property.
+   * Used to enforce property-level locking once any quote is accepted.
    */
-  async findRevisableQuote(
+  async findAcceptedByPropertyId(
+    propertyId: string,
     organizationId: string,
-    customerId: string,
-    propertyId?: string,
-    maxVersions?: number | null,
+    excludeQuoteId?: string,
   ): Promise<QuoteEntity | null> {
-    const baseConditions = (qb: import('typeorm').SelectQueryBuilder<QuoteEntity>) => {
-      qb.where('quote.organizationId = :organizationId', { organizationId })
-        .andWhere('quote.customerId = :customerId', { customerId })
-        .andWhere('quote.status IN (:...statuses)', {
-          statuses: [QuoteStatus.DRAFT, QuoteStatus.SENT],
-        })
-        .andWhere('quote.deletedAt IS NULL');
-
-      if (propertyId) {
-        qb.andWhere('quote.propertyId = :propertyId', { propertyId });
-      } else {
-        qb.andWhere('quote.propertyId IS NULL');
-      }
-    };
-
-    // When maxVersions is set, only return quotes with remaining capacity.
-    // If all quotes are maxed out, return null so a brand-new quote is created.
-    if (maxVersions != null && maxVersions > 0) {
-      const qb = this.repository.createQueryBuilder('quote');
-      baseConditions(qb);
-      qb.andWhere('quote.currentVersion < :maxVersions', { maxVersions });
-      qb.orderBy('quote.createdAt', 'DESC');
-      const withCapacity = await qb.getOne();
-      return withCapacity;
-    }
-
-    // No maxVersions configured: return the most recent revisable quote
-    const qb = this.repository.createQueryBuilder('quote');
-    baseConditions(qb);
-    qb.orderBy('quote.createdAt', 'DESC');
-    return qb.getOne();
-  }
-
-  /**
-   * Find ALL revisable (DRAFT or SENT) quotes for a customer+property.
-   * Used to present the user with a choice of which quote to archive.
-   */
-  async findAllRevisableQuotes(
-    organizationId: string,
-    customerId: string,
-    propertyId?: string,
-  ): Promise<QuoteEntity[]> {
     const qb = this.repository
       .createQueryBuilder('quote')
       .where('quote.organizationId = :organizationId', { organizationId })
-      .andWhere('quote.customerId = :customerId', { customerId })
-      .andWhere('quote.status IN (:...statuses)', {
-        statuses: [QuoteStatus.DRAFT, QuoteStatus.SENT],
-      })
+      .andWhere('quote.propertyId = :propertyId', { propertyId })
+      .andWhere('quote.status = :status', { status: QuoteStatus.ACCEPTED })
       .andWhere('quote.deletedAt IS NULL');
-
-    if (propertyId) {
-      qb.andWhere('quote.propertyId = :propertyId', { propertyId });
-    } else {
-      qb.andWhere('quote.propertyId IS NULL');
+    if (excludeQuoteId) {
+      qb.andWhere('quote.id != :excludeQuoteId', { excludeQuoteId });
     }
-
-    qb.orderBy('quote.createdAt', 'DESC');
-
-    return qb.getMany();
+    return qb.getOne();
   }
 
   /**
@@ -418,11 +343,11 @@ export class QuoteRepository {
     }
 
     // PostgreSQL DISTINCT ON gives us the first row per property_id
-    // Combined with ORDER BY quoteDate DESC, we get the latest quote per property
-    // Join current version to get finalPrice and systemSizeKw
+    // Combined with ORDER BY createdAt DESC, we get the latest quote per property
+    // Join latest quote version by creation date to get finalPrice/systemSizeKw
     const quotes = await this.repository
       .createQueryBuilder('quote')
-      .leftJoinAndSelect('quote.versions', 'cv', 'cv.versionNumber = quote.currentVersion')
+      .leftJoinAndSelect('quote.versions', 'cv', latestVersionJoinCondition('quote'))
       .select([
         'quote.propertyId',
         'quote.quoteNumber',
@@ -437,14 +362,15 @@ export class QuoteRepository {
       .andWhere('quote.organizationId = :organizationId', { organizationId })
       .andWhere('quote.deletedAt IS NULL')
       .orderBy('quote.propertyId')
-      .addOrderBy('quote.quoteDate', 'DESC')
+      .addOrderBy('quote.createdAt', 'DESC')
+      .addOrderBy('quote.id', 'DESC')
       .getMany();
 
     // Convert to Map for O(1) lookup
     const result = new Map<string, LatestQuoteInfo>();
     for (const quote of quotes) {
       if (quote.propertyId) {
-        const cv = quote.versions?.[0];
+        const cv = quote.versions[0];
         result.set(quote.propertyId, {
           quoteNumber: quote.quoteNumber,
           status: quote.status,

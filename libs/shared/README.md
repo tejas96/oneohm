@@ -90,7 +90,7 @@ cp .env.example .env
 npm run setup
 ```
 
-Generate a token with `read:packages` scope at https://github.com/settings/tokens/new?scopes=read:packages
+Generate a token with `read:packages` scope at [https://github.com/settings/tokens/new?scopes=read:packages](https://github.com/settings/tokens/new?scopes=read:packages)
 
 The `npm run setup` script automatically loads `GITHUB_PACKAGES_TOKEN` from `.env` and passes it to `npm install`. This works on macOS, Linux, and Windows with no shell-specific configuration needed.
 

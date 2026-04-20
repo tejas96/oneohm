@@ -1,10 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  CalculatorInputs,
-  PricingBreakdown,
-  ProjectType,
-  SystemType,
-} from '@oneohm-epc/shared/types';
+import { ProjectType, QuoteSnapshot, SystemType } from '@oneohm-epc/shared/types';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -87,18 +82,17 @@ export class UpdateQuoteDto {
   @IsOptional()
   projectType?: ProjectType;
 
-  // ==================== Calculator Inputs ====================
+  // ==================== Quote Snapshot ====================
   @ApiPropertyOptional({
-    description: 'All calculator input parameters for this quote version',
+    description: 'Complete quote snapshot (inputs + calculation + pricing)',
   })
   @IsOptional()
   @IsObject()
-  calculatorInputs?: CalculatorInputs;
+  quoteSnapshot?: QuoteSnapshot;
 
   // ==================== Pricing ====================
   @ApiPropertyOptional({
-    description:
-      'Pre-calculated final price (post-discount, post-GST). When provided, avoids re-deriving from pricingBreakdown.',
+    description: 'Pre-calculated final price (post-discount, post-GST).',
   })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
@@ -112,13 +106,6 @@ export class UpdateQuoteDto {
   @Min(0)
   @IsOptional()
   effectivePrice?: number;
-
-  @ApiPropertyOptional({
-    description: 'Pre-calculated pricing breakdown',
-  })
-  @IsOptional()
-  @IsObject()
-  pricingBreakdown?: PricingBreakdown;
 
   @ApiPropertyOptional({
     example: 'Updated pricing based on customer feedback',

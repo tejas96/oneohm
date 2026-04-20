@@ -1,5 +1,7 @@
 'use client';
 
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import { Menu, MenuItem, Tooltip } from '@mui/material';
 import { QuoteStatus } from '@oneohm-epc/shared/types';
 import { ChevronDown } from 'lucide-react';
 import React, { useState } from 'react';
@@ -13,22 +15,15 @@ import { useAcceptQuote, useRejectQuote, useSendQuote } from '../hooks';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import {
+  MUIDialog,
+  MUIDialogBody,
+  MUIDialogDescription,
+  MUIDialogFooter,
+  MUIDialogHeader,
+  MUIDialogTitle,
+} from '@/components/ui/mui-dialog';
 import { showToast } from '@/components/ui/sonner';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -39,10 +34,19 @@ interface QuoteStatusDropdownProps {
   status: QuoteStatus;
   /** Badge size — xs for list rows, sm for detail header */
   size?: 'xs' | 'sm' | 'default';
+  disabled?: boolean;
+  disabledReason?: string;
 }
 
 export const QuoteStatusDropdown = React.memo(
-  ({ quoteId, status, size = 'default' }: QuoteStatusDropdownProps): React.JSX.Element => {
+  ({
+    quoteId,
+    status,
+    size = 'default',
+    disabled,
+    disabledReason,
+  }: QuoteStatusDropdownProps): React.JSX.Element => {
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const [acceptModalOpen, setAcceptModalOpen] = useState(false);
     const [rejectModalOpen, setRejectModalOpen] = useState(false);
     const [sendModalOpen, setSendModalOpen] = useState(false);
@@ -58,7 +62,25 @@ export const QuoteStatusDropdown = React.memo(
     const variant = QUOTE_STATUS_BADGE_VARIANTS[status] as BadgeVariant;
     const isTerminal = transitions.length === 0;
 
-    const handleTransition = (target: QuoteStatus): void => {
+    const handleOpen = (event: React.MouseEvent<HTMLButtonElement>): void => {
+      event.stopPropagation();
+      setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = (event?: React.MouseEvent | {}): void => {
+      if (event && 'stopPropagation' in event) {
+        (event as React.MouseEvent).stopPropagation();
+      }
+      setAnchorEl(null);
+    };
+
+    const handleMenuClick = (event: React.MouseEvent): void => {
+      event.stopPropagation();
+    };
+
+    const handleTransition = (event: React.MouseEvent, target: QuoteStatus): void => {
+      event.stopPropagation();
+      setAnchorEl(null);
       switch (target) {
         case QuoteStatus.SENT:
           setSendModalOpen(true);
@@ -137,6 +159,19 @@ export const QuoteStatusDropdown = React.memo(
       );
     };
 
+    if (disabled) {
+      return (
+        <Tooltip title={disabledReason ?? 'Status changes are locked'} arrow>
+          <span className="inline-flex items-center gap-1 cursor-help">
+            <Badge variant={variant} shape="pill" size={size}>
+              {label}
+            </Badge>
+            <HelpOutlineIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+          </span>
+        </Tooltip>
+      );
+    }
+
     if (isTerminal) {
       return (
         <Badge variant={variant} shape="pill" size={size}>
@@ -147,148 +182,159 @@ export const QuoteStatusDropdown = React.memo(
 
     return (
       <>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button type="button" className="group cursor-pointer focus:outline-none">
-              <Badge variant={variant} shape="pill" size={size} className="gap-1 pr-1.5">
-                {label}
-                <ChevronDown className="size-3 opacity-50 group-hover:opacity-100 transition-opacity" />
-              </Badge>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="min-w-[140px]">
-            {transitions.map((target) => {
-              const targetVariant = QUOTE_STATUS_BADGE_VARIANTS[target] as BadgeVariant;
-              return (
-                <DropdownMenuItem
-                  key={target}
-                  onClick={() => handleTransition(target)}
-                  className="gap-2"
-                >
-                  <Badge variant={targetVariant} shape="pill" size="xs">
-                    {QUOTE_STATUS_LABELS[target]}
-                  </Badge>
-                </DropdownMenuItem>
-              );
-            })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <button
+          type="button"
+          className="group cursor-pointer focus:outline-none"
+          onClick={handleOpen}
+        >
+          <Badge variant={variant} shape="pill" size={size} className="gap-1 pr-1.5">
+            {label}
+            <ChevronDown className="size-3 opacity-50 group-hover:opacity-100 transition-opacity" />
+          </Badge>
+        </button>
+
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleClose}
+          onClick={handleMenuClick}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+          slotProps={{
+            paper: {
+              elevation: 2,
+              sx: { minWidth: 140, borderRadius: 1.5, mt: 0.5 },
+            },
+          }}
+        >
+          {transitions.map((target) => {
+            const targetVariant = QUOTE_STATUS_BADGE_VARIANTS[target] as BadgeVariant;
+            return (
+              <MenuItem
+                key={target}
+                dense
+                onClick={(e) => handleTransition(e, target)}
+                sx={{ gap: 1, px: 1.5 }}
+              >
+                <Badge variant={targetVariant} shape="pill" size="xs">
+                  {QUOTE_STATUS_LABELS[target]}
+                </Badge>
+              </MenuItem>
+            );
+          })}
+        </Menu>
 
         {/* Send Modal */}
-        <Dialog open={sendModalOpen} onOpenChange={setSendModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Send Quote</DialogTitle>
-              <DialogDescription>Send this quote to the customer.</DialogDescription>
-            </DialogHeader>
-            <DialogBody>
-              <p className="text-sm text-foreground-secondary">
-                This will change the quote status from Draft to Sent.
-              </p>
-            </DialogBody>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setSendModalOpen(false)}
-                disabled={sendMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleSend} disabled={sendMutation.isPending}>
-                {sendMutation.isPending ? 'Sending...' : 'Send Quote'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <MUIDialog open={sendModalOpen} onOpenChange={setSendModalOpen} size="sm">
+          <MUIDialogHeader>
+            <MUIDialogTitle>Send Quote</MUIDialogTitle>
+            <MUIDialogDescription>Send this quote to the customer.</MUIDialogDescription>
+          </MUIDialogHeader>
+          <MUIDialogBody>
+            <p className="text-sm text-foreground-secondary">
+              This will change the quote status from Draft to Sent.
+            </p>
+          </MUIDialogBody>
+          <MUIDialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setSendModalOpen(false)}
+              disabled={sendMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSend} disabled={sendMutation.isPending}>
+              {sendMutation.isPending ? 'Sending...' : 'Send Quote'}
+            </Button>
+          </MUIDialogFooter>
+        </MUIDialog>
 
         {/* Accept Modal */}
-        <Dialog
+        <MUIDialog
           open={acceptModalOpen}
-          onOpenChange={(open: boolean) => {
+          onOpenChange={(open) => {
             setAcceptModalOpen(open);
             if (!open) setCustomerSignature('');
           }}
+          size="sm"
         >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Accept Quote</DialogTitle>
-              <DialogDescription>
-                Confirm that the customer has accepted this quote.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogBody className="space-y-4">
-              <p className="text-sm text-foreground-secondary">
-                This will mark the quote as accepted. You can then convert it to a project.
-              </p>
-              <div>
-                <label htmlFor="dropdown-signature" className="text-sm font-medium text-foreground">
-                  Customer Name (as signature)
-                </label>
-                <Input
-                  id="dropdown-signature"
-                  placeholder="Enter customer name..."
-                  value={customerSignature}
-                  onChange={(e) => setCustomerSignature(e.target.value)}
-                  className="mt-1.5"
-                />
-              </div>
-            </DialogBody>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setAcceptModalOpen(false)}
-                disabled={acceptMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleAccept}
-                disabled={acceptMutation.isPending || !customerSignature.trim()}
-              >
-                {acceptMutation.isPending ? 'Accepting...' : 'Confirm Acceptance'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          <MUIDialogHeader>
+            <MUIDialogTitle>Accept Quote</MUIDialogTitle>
+            <MUIDialogDescription>
+              Confirm that the customer has accepted this quote.
+            </MUIDialogDescription>
+          </MUIDialogHeader>
+          <MUIDialogBody sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <p className="text-sm text-foreground-secondary">
+              This will mark the quote as accepted. You can then convert it to a project.
+            </p>
+            <div>
+              <label htmlFor="dropdown-signature" className="text-sm font-medium text-foreground">
+                Customer Name (as signature)
+              </label>
+              <Input
+                id="dropdown-signature"
+                placeholder="Enter customer name..."
+                value={customerSignature}
+                onChange={(e) => setCustomerSignature(e.target.value)}
+                className="mt-1.5"
+              />
+            </div>
+          </MUIDialogBody>
+          <MUIDialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setAcceptModalOpen(false)}
+              disabled={acceptMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAccept}
+              disabled={acceptMutation.isPending || !customerSignature.trim()}
+            >
+              {acceptMutation.isPending ? 'Accepting...' : 'Confirm Acceptance'}
+            </Button>
+          </MUIDialogFooter>
+        </MUIDialog>
 
         {/* Reject Modal */}
-        <Dialog
+        <MUIDialog
           open={rejectModalOpen}
-          onOpenChange={(open: boolean) => {
+          onOpenChange={(open) => {
             setRejectModalOpen(open);
             if (!open) setRejectionReason('');
           }}
+          size="sm"
         >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Reject Quote</DialogTitle>
-              <DialogDescription>Please provide a reason for rejection.</DialogDescription>
-            </DialogHeader>
-            <DialogBody>
-              <Textarea
-                placeholder="Reason for rejection..."
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-              />
-            </DialogBody>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setRejectModalOpen(false)}
-                disabled={rejectMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleReject}
-                disabled={rejectMutation.isPending || !rejectionReason.trim()}
-              >
-                {rejectMutation.isPending ? 'Rejecting...' : 'Reject Quote'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          <MUIDialogHeader>
+            <MUIDialogTitle>Reject Quote</MUIDialogTitle>
+            <MUIDialogDescription>Please provide a reason for rejection.</MUIDialogDescription>
+          </MUIDialogHeader>
+          <MUIDialogBody>
+            <Textarea
+              placeholder="Reason for rejection..."
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+            />
+          </MUIDialogBody>
+          <MUIDialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRejectModalOpen(false)}
+              disabled={rejectMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleReject}
+              disabled={rejectMutation.isPending || !rejectionReason.trim()}
+            >
+              {rejectMutation.isPending ? 'Rejecting...' : 'Reject Quote'}
+            </Button>
+          </MUIDialogFooter>
+        </MUIDialog>
       </>
     );
   },

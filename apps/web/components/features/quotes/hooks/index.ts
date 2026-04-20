@@ -14,7 +14,7 @@ import { useAuth } from '@/providers/auth-provider';
 export * from './use-quotes';
 
 // Quote detail hooks
-export { quoteDetailKeys, useQuoteDetail, useQuoteVersion } from './use-quote-detail';
+export { quoteDetailKeys, useQuoteDetail } from './use-quote-detail';
 
 // Types
 export type { QuoteDetail, QuoteVersionDetail, QuotePaymentMilestone } from './types';

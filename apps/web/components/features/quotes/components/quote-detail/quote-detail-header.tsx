@@ -1,14 +1,19 @@
 'use client';
 
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
 import { QuoteStatus } from '@oneohm-epc/shared/types';
-import { History } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 
-import type { QuoteDetail, QuoteVersionDetail } from '../../hooks/types';
+import type { QuoteDetail } from '../../hooks/types';
+import { useDeleteQuote, usePropertyLockStatus } from '../../hooks/use-quotes';
 import { QuoteStatusDropdown } from '../quote-status-dropdown';
 
+import { Can } from '@/components/shared/guards';
 import { Badge } from '@/components/ui/badge';
 import {
   Breadcrumb,
@@ -19,25 +24,74 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
+import {
+  MUIDialog,
+  MUIDialogBody,
+  MUIDialogFooter,
+  MUIDialogHeader,
+  MUIDialogTitle,
+} from '@/components/ui/mui-dialog';
+import { showToast } from '@/components/ui/sonner';
 import { ROUTES } from '@/lib/config/routes';
 import { formatDate } from '@/lib/utils/format';
 
 interface QuoteDetailHeaderProps {
   quote: QuoteDetail;
-  viewingVersion?: QuoteVersionDetail;
-  isViewingHistorical: boolean;
-  onClearVersionView: () => void;
+  isLatestPropertyQuote: boolean;
 }
 
 export const QuoteDetailHeader = React.memo(
-  ({
-    quote,
-    viewingVersion,
-    isViewingHistorical,
-    onClearVersionView,
-  }: QuoteDetailHeaderProps): React.JSX.Element => {
+  ({ quote, isLatestPropertyQuote }: QuoteDetailHeaderProps): React.JSX.Element => {
     const router = useRouter();
     const isExpired = new Date(quote.validUntil) < new Date();
+    const deleteQuote = useDeleteQuote();
+    const { data: lockStatus } = usePropertyLockStatus(quote.propertyId);
+
+    const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+    const [deleteOpen, setDeleteOpen] = useState(false);
+
+    const isPropertyLocked = lockStatus?.locked && quote.status !== QuoteStatus.ACCEPTED;
+    const lockReason = lockStatus?.acceptedQuoteNumber
+      ? `Another quote for this property has been accepted (${lockStatus.acceptedQuoteNumber}). Status changes are locked.`
+      : undefined;
+
+    const handleMenuOpen = useCallback((e: React.MouseEvent<HTMLElement>) => {
+      setMenuAnchor(e.currentTarget);
+    }, []);
+
+    const handleMenuClose = useCallback(() => {
+      setMenuAnchor(null);
+    }, []);
+
+    const handleEdit = useCallback(() => {
+      handleMenuClose();
+      const params = new URLSearchParams({
+        quoteId: quote.id,
+        customerId: quote.customerId,
+      });
+      if (quote.propertyId) params.set('propertyId', quote.propertyId);
+      router.push(`${ROUTES.QUOTES.NEW}?${params.toString()}`);
+    }, [handleMenuClose, quote, router]);
+
+    const handleDeleteClick = useCallback(() => {
+      handleMenuClose();
+      setDeleteOpen(true);
+    }, [handleMenuClose]);
+
+    const handleDeleteConfirm = useCallback(() => {
+      deleteQuote.mutate(quote.id, {
+        onSuccess: () => {
+          showToast.success('Quote deleted successfully');
+          router.push(ROUTES.QUOTES.LIST);
+        },
+        onError: () => {
+          showToast.error('Failed to delete quote');
+        },
+      });
+      setDeleteOpen(false);
+    }, [deleteQuote, quote.id, router]);
+
+    const canDelete = quote.status !== QuoteStatus.ACCEPTED;
 
     return (
       <div className="space-y-3">
@@ -61,9 +115,15 @@ export const QuoteDetailHeader = React.memo(
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-semibold text-foreground">{quote.quoteNumber}</h1>
-              <QuoteStatusDropdown quoteId={quote.id} status={quote.status} size="sm" />
-              <Badge variant="muted" shape="pill" size="xs">
-                v{quote.currentVersion}
+              <QuoteStatusDropdown
+                quoteId={quote.id}
+                status={quote.status}
+                size="sm"
+                disabled={!!isPropertyLocked}
+                disabledReason={lockReason}
+              />
+              <Badge variant={isLatestPropertyQuote ? 'success' : 'muted'} shape="pill" size="xs">
+                {isLatestPropertyQuote ? 'Current' : 'Historical'}
               </Badge>
               {isExpired && quote.status !== QuoteStatus.EXPIRED && (
                 <Badge variant="warning" shape="pill" size="xs">
@@ -94,21 +154,59 @@ export const QuoteDetailHeader = React.memo(
                 Convert to Project
               </Button>
             )}
+
+            <IconButton size="small" onClick={handleMenuOpen}>
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
+            <Menu
+              anchorEl={menuAnchor}
+              open={Boolean(menuAnchor)}
+              onClose={handleMenuClose}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+              <MenuItem onClick={handleEdit}>
+                <ListItemIcon>
+                  <AddIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Create New Quote</ListItemText>
+              </MenuItem>
+              <Can permission="quotes:delete">
+                {canDelete && (
+                  <MenuItem onClick={handleDeleteClick} sx={{ color: 'error.main' }}>
+                    <ListItemIcon>
+                      <DeleteIcon fontSize="small" color="error" />
+                    </ListItemIcon>
+                    <ListItemText>Delete Quote</ListItemText>
+                  </MenuItem>
+                )}
+              </Can>
+            </Menu>
           </div>
         </div>
 
-        {isViewingHistorical && viewingVersion && (
-          <div className="flex items-center gap-2 rounded-lg bg-info/5 border border-info/20 px-3 py-2">
-            <History className="size-icon-sm text-info shrink-0" />
-            <p className="text-xs text-foreground-secondary flex-1">
-              Viewing version {viewingVersion.versionNumber} of {quote.currentVersion}
-              {viewingVersion.changeSummary ? ` — ${viewingVersion.changeSummary}` : ''}
-            </p>
-            <Button variant="ghost" size="sm" onClick={onClearVersionView}>
-              View Current
+        <MUIDialog open={deleteOpen} onOpenChange={setDeleteOpen} size="sm">
+          <MUIDialogHeader>
+            <MUIDialogTitle>Delete Quote</MUIDialogTitle>
+          </MUIDialogHeader>
+          <MUIDialogBody>
+            Are you sure you want to delete quote <strong>{quote.quoteNumber}</strong>? This will
+            remove all versions and associated data. This action cannot be undone.
+          </MUIDialogBody>
+          <MUIDialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setDeleteOpen(false)}>
+              Cancel
             </Button>
-          </div>
-        )}
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleDeleteConfirm}
+              disabled={deleteQuote.isPending}
+            >
+              {deleteQuote.isPending ? 'Deleting...' : 'Delete'}
+            </Button>
+          </MUIDialogFooter>
+        </MUIDialog>
       </div>
     );
   },

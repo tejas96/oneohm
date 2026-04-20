@@ -9,8 +9,6 @@ import {
 } from '@oneohm-epc/shared/types';
 import { type LucideIcon, Building2, Factory, Home, Landmark, Warehouse } from 'lucide-react';
 
-import type { FilterTab } from '@/components/shared';
-
 // ============================================================================
 // Status Labels & Badge Variants
 // ============================================================================
@@ -55,19 +53,6 @@ export const SYSTEM_TYPE_LABELS: Record<SystemType, string> = {
   [SystemType.OFF_GRID]: 'Off Grid',
   [SystemType.HYBRID]: 'Hybrid',
 };
-
-// ============================================================================
-// Filter Tabs
-// ============================================================================
-
-export const QUOTE_FILTER_TABS: FilterTab<string>[] = [
-  { id: 'all', label: 'All' },
-  { id: QuoteStatus.DRAFT, label: 'Draft' },
-  { id: QuoteStatus.SENT, label: 'Sent' },
-  { id: QuoteStatus.VIEWED, label: 'Viewed' },
-  { id: QuoteStatus.ACCEPTED, label: 'Accepted' },
-  { id: QuoteStatus.REJECTED, label: 'Rejected' },
-];
 
 // ============================================================================
 // Defaults
@@ -193,9 +178,7 @@ export const PRICING_AFFECTING_FIELDS = [
 
 export const QUOTE_DETAIL_TABS = [
   { value: 'overview', label: 'Overview' },
-  { value: 'versions', label: 'Versions' },
   { value: 'payments', label: 'Payments' },
-  { value: 'activity', label: 'Activity' },
 ] as const;
 
 export type QuoteDetailTab = (typeof QUOTE_DETAIL_TABS)[number]['value'];

@@ -169,3 +169,9 @@ export {
   type ProjectTaskItem,
   type ProjectTaskListParams,
 } from './projects';
+
+// Quotes list (FDAL resource)
+export { useQuoteListResource, quoteResourceKeys, type QuoteListFilters } from './quotes';
+
+// BOM (FDAL resource)
+export { useEntityBom, bomResourceKeys, type Bom, type BomItem } from './bom';

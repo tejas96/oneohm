@@ -74,12 +74,22 @@ export interface QuoteListItem {
   status: QuoteStatus;
   validUntil: string;
   quoteDate: string;
-  currentVersion: number;
   internalNotes?: string;
   customerNotes?: string;
   createdAt: string;
   updatedAt: string;
   createdBy: string;
+}
+
+export interface PropertyQuoteVersionItem {
+  id: string;
+  quoteNumber: string;
+  status: QuoteStatus;
+  createdAt: string;
+  quoteDate: string;
+  systemSizeKw?: number;
+  totalWattageWp?: number;
+  effectivePrice?: number;
 }
 
 export type { PaginationMeta };
@@ -114,6 +124,8 @@ export const quoteKeys = {
     [...quoteKeys.all(orgId), 'customer', customerId] as const,
   byProperty: (orgId: string | undefined, propertyId: string) =>
     [...quoteKeys.all(orgId), 'property', propertyId] as const,
+  propertyVersions: (orgId: string | undefined, propertyId: string) =>
+    [...quoteKeys.all(orgId), 'property-versions', propertyId] as const,
   statusCounts: (orgId?: string) => [...quoteKeys.all(orgId), 'statusCounts'] as const,
 };
 
@@ -270,5 +282,54 @@ export function useDeleteQuote(): UseMutationResult<void, AxiosError, string> {
       queryClient.removeQueries({ queryKey: quoteKeys.detail(organizationId, quoteId) });
       void queryClient.invalidateQueries({ queryKey: quoteKeys.all(organizationId) });
     },
+  });
+}
+
+/**
+ * Fetch all quotes for a property ordered by creation date (latest first).
+ */
+export function usePropertyQuoteVersions(
+  propertyId: string | undefined,
+): UseQueryResult<PropertyQuoteVersionItem[], AxiosError> {
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
+
+  return useQuery({
+    queryKey: quoteKeys.propertyVersions(organizationId, propertyId ?? ''),
+    queryFn: async (): Promise<PropertyQuoteVersionItem[]> => {
+      if (!propertyId) return [];
+      const { data } = await apiClient.get<PropertyQuoteVersionItem[]>(
+        `/quotes/property/${propertyId}/versions`,
+        { headers: { 'X-Organization-Id': organizationId } },
+      );
+      return data;
+    },
+    enabled: !!propertyId && !!organizationId,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Check if a property is locked (has an accepted quote).
+ */
+export function usePropertyLockStatus(
+  propertyId: string | undefined,
+): UseQueryResult<{ locked: boolean; acceptedQuoteNumber?: string }, AxiosError> {
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
+
+  return useQuery({
+    queryKey: [...quoteKeys.all(organizationId), 'property-lock', propertyId],
+    queryFn: async () => {
+      const { data } = await apiClient.get<{ locked: boolean; acceptedQuoteNumber?: string }>(
+        '/quotes/property-lock-status',
+        {
+          params: { propertyId },
+          headers: { 'X-Organization-Id': organizationId },
+        },
+      );
+      return data;
+    },
+    enabled: !!propertyId && !!organizationId,
   });
 }

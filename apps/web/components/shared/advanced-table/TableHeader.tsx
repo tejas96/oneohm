@@ -134,7 +134,10 @@ function AdvancedTableHeaderInner<TRow>({
     px: 2,
     whiteSpace: 'nowrap',
     userSelect: 'none',
-    position: 'relative',
+    position: 'sticky',
+    // Sticky is scoped to the TableContainer scroll context (internal table body scroll).
+    top: 0,
+    zIndex: 3,
   } as const;
 
   const headerTextSx = {

@@ -1,6 +1,8 @@
 import type {
   ProjectType,
   DcrPreference,
+  CalculatorInputs,
+  PricingBreakdown,
   PaymentMilestone as SharedPaymentMilestone,
   ProfitMarginTier,
   SubsidyTier as SharedSubsidyTier,
@@ -57,7 +59,7 @@ export interface CalculateQuoteRequest {
 }
 
 export interface CreateFromCalculationRequest extends CalculateQuoteRequest {
-  quoteId?: string;
+  propertyId: string;
   discountAmount?: number;
   internalNotes?: string;
   customerNotes?: string;
@@ -182,11 +184,16 @@ export interface CalculateQuoteResponse {
   calculatedAt: string;
 }
 
+export interface QuoteSnapshot {
+  inputs: CalculatorInputs;
+  calculation: CalculateQuoteResponse;
+  pricing: PricingBreakdown;
+  discountAmount: number;
+}
+
 export interface SaveQuoteResponse {
   quoteId: string;
   quoteNumber: string;
-  currentVersion: number;
-  maxVersions: number | null;
   finalPrice: number;
   effectivePrice: number;
   discountAmount: number;

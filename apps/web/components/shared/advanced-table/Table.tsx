@@ -1,6 +1,7 @@
 'use client';
 
 // external
+import CloseIcon from '@mui/icons-material/Close';
 import DownloadIcon from '@mui/icons-material/Download';
 import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -473,7 +474,9 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
           border: '1px solid',
           borderColor: 'divider',
           borderRadius: '6px',
-          overflow: 'hidden',
+          // Do NOT set overflow:hidden here — it would clip the sticky thead.
+          // Border-radius is applied via Paper's own borderRadius above;
+          // clipping the corners is handled by the TableContainer below.
         }}
       >
         {/* ── Toolbar ── */}
@@ -502,6 +505,19 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
                     <SearchIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
                   </InputAdornment>
                 ),
+                endAdornment: searchQuery ? (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      edge="end"
+                      onClick={() => setSearchQuery('')}
+                      aria-label="Clear search"
+                      sx={{ p: 0.25 }}
+                    >
+                      <CloseIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </InputAdornment>
+                ) : null,
               }}
               sx={{ width: 240, '& .MuiOutlinedInput-root': { borderRadius: 1.5 } }}
             />
@@ -574,7 +590,7 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
 
         {/* ── Table ── */}
         {/* TODO: add mobile-responsive card view for small viewports */}
-        <TableContainer sx={{ maxHeight }}>
+        <TableContainer sx={{ maxHeight, overflowY: 'auto' }}>
           <Table stickyHeader size="small">
             <AdvancedTableHeader
               columns={columns}
@@ -612,8 +628,17 @@ export function AdvancedTable<TRow extends Record<string, unknown>>({
                       <TableRow
                         hover={!!onRowClick || !!onRowDoubleClick}
                         selected={isSelected}
-                        onClick={() => onRowClick?.(row)}
-                        onDoubleClick={() => onRowDoubleClick?.(row)}
+                        onClick={(e) => {
+                          // Ignore clicks that originate from portal-rendered elements
+                          // (MUI Menu, MUI Dialog, Radix, Drawer, etc.) — their DOM lives
+                          // in document.body, not inside this row, so contains() is false.
+                          if (!e.currentTarget.contains(e.target as Node)) return;
+                          onRowClick?.(row);
+                        }}
+                        onDoubleClick={(e) => {
+                          if (!e.currentTarget.contains(e.target as Node)) return;
+                          onRowDoubleClick?.(row);
+                        }}
                         sx={{
                           cursor: onRowClick || onRowDoubleClick ? 'pointer' : 'default',
                           '&.Mui-selected': {

@@ -69,13 +69,13 @@ export class InverterOverrideDto {
  * This is the main input from the sales person
  */
 export class CalculateQuoteDto {
-  @ApiProperty({
-    description: 'Customer ID',
+  @ApiPropertyOptional({
+    description: 'Customer ID (required when saving a quote, optional for preview calculations)',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @IsUUID()
-  @IsNotEmpty()
-  customerId!: string;
+  @IsOptional()
+  customerId?: string;
 
   @ApiPropertyOptional({
     description: 'Property ID for the installation site',
@@ -312,6 +312,14 @@ export class CalculateQuoteDto {
  * DTO for creating a quote from calculated result
  */
 export class CreateQuoteFromCalculationDto extends CalculateQuoteDto {
+  @ApiProperty({
+    description: 'Property ID for the installation site',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  override propertyId!: string;
+
   @ApiPropertyOptional({
     enum: Object.values(SystemType),
     enumName: 'SystemType',
@@ -321,15 +329,6 @@ export class CreateQuoteFromCalculationDto extends CalculateQuoteDto {
   @IsEnum(SystemType)
   @IsOptional()
   systemType?: SystemType;
-
-  @ApiPropertyOptional({
-    description:
-      'Existing quote ID. When provided, creates a new version of the existing quote instead of a new quote.',
-    example: '550e8400-e29b-41d4-a716-446655440000',
-  })
-  @IsUUID()
-  @IsOptional()
-  quoteId?: string;
 
   @ApiPropertyOptional({
     description: 'Discount amount in INR',

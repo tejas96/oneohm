@@ -337,7 +337,6 @@ function buildColumns({ onMarkAsLost, tempStats }: BuildColumnsArgs): ColumnConf
                 noWrap
                 sx={{
                   fontWeight: 500,
-                  fontSize: '0.875rem',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   '&:hover': { color: 'primary.main' },

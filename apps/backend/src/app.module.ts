@@ -9,6 +9,7 @@ import { DatabaseModule } from './database/database.module';
 import { ApprovalModule } from './modules/approvals/approval.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { BomModule } from './modules/bom/bom.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { ComplianceModule } from './modules/compliance/compliance.module';
 import { CustomerFeedbackModule } from './modules/customer-feedback/customer-feedback.module';
@@ -56,6 +57,7 @@ import { UsersModule } from './modules/users/users.module';
     MasterDataModule,
     LookupsModule,
     QuotesModule,
+    BomModule,
     ProjectsModule,
     InventoryModule,
     ApprovalModule,

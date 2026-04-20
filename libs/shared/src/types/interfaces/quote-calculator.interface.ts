@@ -445,3 +445,31 @@ export interface QuoteCalculationResult {
  * QUOTE VERSION SNAPSHOT INTERFACES
  * ============================================================================
  */
+
+/**
+ * Full calculator output stored in the quote snapshot.
+ * Extends QuoteCalculationResult with runtime fields that the calculator
+ * produces but QuoteCalculationResult omits (inventory, warnings, actuals, profitability).
+ */
+export interface QuoteCalculationOutput extends QuoteCalculationResult {
+  inventoryStatus?: Array<{
+    productId: string;
+    productName: string;
+    requiredQuantity: number;
+    availableStock: number;
+    isSufficient: boolean;
+  }>;
+  warnings?: Array<{
+    code: string;
+    message: string;
+    severity: 'info' | 'warning' | 'error';
+  }>;
+  hasOverrides: boolean;
+  actualTotalWattage: number;
+  actualSystemSizeKw: number;
+  actualDcrSizeKw: number;
+  actualNonDcrSizeKw: number;
+  profitabilityPercent: number;
+  profitabilityAmount: number;
+  calculatedAt: string;
+}

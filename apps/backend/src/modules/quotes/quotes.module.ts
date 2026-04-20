@@ -3,8 +3,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { QuoteController, QuoteCalculatorController } from './controllers';
 import { QuoteEntity, QuoteVersionEntity } from './entities';
-import { QuoteRepository, QuoteVersionRepository } from './repositories';
+import { QuoteRepository } from './repositories';
 import { QuoteService, QuoteCalculatorService } from './services';
+import { BomModule } from '../bom/bom.module';
 import { MasterDataModule } from '../master-data/master-data.module';
 import { OrganizationsModule } from '../organizations/organizations.module';
 
@@ -16,11 +17,12 @@ import { OrganizationsModule } from '../organizations/organizations.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([QuoteEntity, QuoteVersionEntity]),
-    OrganizationsModule, // For organization repository
-    MasterDataModule, // For product, pricing, subsidy, installation, quote config repositories
+    OrganizationsModule,
+    MasterDataModule,
+    BomModule,
   ],
   controllers: [QuoteController, QuoteCalculatorController],
-  providers: [QuoteService, QuoteRepository, QuoteVersionRepository, QuoteCalculatorService],
+  providers: [QuoteService, QuoteRepository, QuoteCalculatorService],
   exports: [QuoteService, QuoteRepository, QuoteCalculatorService],
 })
 export class QuotesModule {}

@@ -12,6 +12,9 @@ import { CustomerPropertyResponseDto } from '../../../customers/dto/customer-pro
 import { MaterialResponseDto } from '../materials/material-response.dto';
 import { MilestoneResponseDto } from '../milestones/milestone-response.dto';
 
+const latestQuoteVersion = (obj: Record<string, unknown>) =>
+  (obj.quote as { versions?: Array<Record<string, unknown>> } | undefined)?.versions?.[0];
+
 /**
  * Project Response DTO
  *
@@ -62,19 +65,14 @@ export class ProjectResponseDto {
   @Expose()
   description?: string;
 
-  @ApiProperty({ example: 5.5, description: 'Derived from quote current version' })
+  @ApiProperty({ example: 5.5, description: 'Derived from latest quote version' })
   @Expose()
-  @Transform(({ obj }) =>
-    toNum(obj.quote?.versions?.find((v: { isCurrent?: boolean }) => v.isCurrent)?.systemSizeKw),
-  )
+  @Transform(({ obj }) => toNum(latestQuoteVersion(obj)?.systemSizeKw))
   systemSizeKw!: number;
 
-  @ApiProperty({ example: 'residential', description: 'Derived from quote current version' })
+  @ApiProperty({ example: 'residential', description: 'Derived from latest quote version' })
   @Expose()
-  @Transform(
-    ({ obj }) =>
-      obj.quote?.versions?.find((v: { isCurrent?: boolean }) => v.isCurrent)?.projectType,
-  )
+  @Transform(({ obj }) => latestQuoteVersion(obj)?.projectType)
   projectType!: string;
 
   @ApiProperty({ enum: Object.values(ProjectStatus), example: ProjectStatus.IN_PROGRESS })
@@ -97,13 +95,9 @@ export class ProjectResponseDto {
   @Expose()
   endDate?: Date;
 
-  @ApiPropertyOptional({ example: 350000, description: 'Derived from quote current version' })
+  @ApiPropertyOptional({ example: 350000, description: 'Derived from latest quote version' })
   @Expose()
-  @Transform(
-    ({ obj }) =>
-      toNum(obj.quote?.versions?.find((v: { isCurrent?: boolean }) => v.isCurrent)?.finalPrice) ??
-      null,
-  )
+  @Transform(({ obj }) => toNum(latestQuoteVersion(obj)?.finalPrice) ?? null)
   estimatedCost?: number;
 
   @ApiPropertyOptional({ example: 325000, description: 'Derived from metadata.actualCost' })

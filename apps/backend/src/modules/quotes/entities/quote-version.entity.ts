@@ -1,4 +1,4 @@
-import { CalculatorInputs, PaymentMilestone, PricingBreakdown } from '@oneohm-epc/shared/types';
+import { PaymentMilestone, QuoteSnapshot } from '@oneohm-epc/shared/types';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 import { QuoteEntity } from './quote.entity';
@@ -53,13 +53,9 @@ export class QuoteVersionEntity extends BaseEntity {
   @Column({ type: 'decimal', precision: 15, scale: 2, name: 'effective_price', nullable: true })
   effectivePrice?: number;
 
-  // ==================== Calculator Inputs (JSONB) ====================
-  @Column({ type: 'jsonb', name: 'calculator_inputs', nullable: true })
-  calculatorInputs?: CalculatorInputs;
-
-  // ==================== Pricing Breakdown (JSONB) ====================
-  @Column({ type: 'jsonb', name: 'pricing_breakdown' })
-  pricingBreakdown!: PricingBreakdown;
+  // ==================== Quote Snapshot (JSONB) ====================
+  @Column({ type: 'jsonb', name: 'quote_snapshot', nullable: true })
+  quoteSnapshot?: QuoteSnapshot;
 
   // ==================== Payment Milestones (JSONB) ====================
   @Column({ type: 'jsonb', name: 'payment_milestones', nullable: true })
@@ -76,9 +72,6 @@ export class QuoteVersionEntity extends BaseEntity {
   // ==================== Version Metadata ====================
   @Column({ type: 'text', name: 'change_summary', nullable: true })
   changeSummary?: string;
-
-  @Column({ type: 'boolean', name: 'is_current', default: true })
-  isCurrent!: boolean;
 
   // ==================== Audit ====================
   @Column({ type: 'uuid', name: 'created_by' })

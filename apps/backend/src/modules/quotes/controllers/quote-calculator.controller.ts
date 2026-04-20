@@ -1,10 +1,10 @@
 import {
   BadRequestException,
   Body,
-  ConflictException,
   Controller,
   Get,
   HttpStatus,
+  Logger,
   Post,
   Query,
   UseGuards,
@@ -15,7 +15,9 @@ import {
   DcrPreference,
   type PricingBreakdown,
   ProjectType,
+  type QuoteCalculationOutput,
   QuoteCalculationMode,
+  type QuoteSnapshot,
   SystemType,
 } from '@oneohm-epc/shared/types';
 import { applyPreGstDiscount, GstSplitPercentagesInvalidError } from '@oneohm-epc/shared/utils';
@@ -25,6 +27,7 @@ import { OrganizationContext } from '../../../common/decorators';
 import { CurrentUser } from '../../auth/decorators';
 import { JwtAuthGuard } from '../../auth/guards';
 import type { CurrentUserType } from '../../auth/types';
+import { BomService } from '../../bom/services/bom.service';
 import {
   InstallationPricingResponseDto,
   QuoteConfigurationResponseDto,
@@ -40,7 +43,6 @@ import {
   CalculateQuoteResponseDto,
   CreateQuoteDto,
   CreateQuoteFromCalculationDto,
-  UpdateQuoteDto,
   InstallationPricingQueryDto,
 } from '../dto';
 import { QuoteRepository } from '../repositories';
@@ -63,6 +65,8 @@ import { QuoteService } from '../services/quote.service';
 @Controller('quote-calculator')
 @UseGuards(JwtAuthGuard)
 export class QuoteCalculatorController {
+  private readonly logger = new Logger(QuoteCalculatorController.name);
+
   constructor(
     private readonly calculatorService: QuoteCalculatorService,
     private readonly quoteService: QuoteService,
@@ -70,6 +74,7 @@ export class QuoteCalculatorController {
     private readonly subsidyConfigRepo: SubsidyConfigurationRepository,
     private readonly installationPricingRepo: InstallationPricingRepository,
     private readonly quoteConfigRepo: QuoteConfigurationRepository,
+    private readonly bomService: BomService,
   ) {}
 
   /**
@@ -110,17 +115,16 @@ export class QuoteCalculatorController {
   }
 
   /**
-   * Create or revise a quote from calculated result.
-   * When `quoteId` is omitted a brand-new quote (version 1) is created.
-   * When `quoteId` is provided the existing quote gets a new version.
+   * Create a quote from calculated result.
+   * Property-level versioning is modeled as separate quote records.
    */
   @Post('create-from-calculation')
   @ApiOperation({
-    summary: 'Create or revise quote from calculation',
+    summary: 'Create quote from calculation',
     description: `
       Calculates a quote and saves it.
-      - Without quoteId: creates a new quote (version 1).
-      - With quoteId: creates a new version of the existing quote.
+      - Always creates a new quote record.
+      - Property-level history is represented by multiple quotes for the same property.
     `,
   })
   @ApiResponse({
@@ -138,8 +142,6 @@ export class QuoteCalculatorController {
   ): Promise<{
     quoteId: string;
     quoteNumber: string;
-    currentVersion: number;
-    maxVersions: number | null;
     finalPrice: number;
     effectivePrice: number;
     discountAmount: number;
@@ -155,6 +157,9 @@ export class QuoteCalculatorController {
     if (!input.customerId) {
       throw new BadRequestException('Customer ID is required to save a quote');
     }
+    if (!input.propertyId) {
+      throw new BadRequestException('Property ID is required to save a quote');
+    }
 
     if (input.paymentMilestones && input.paymentMilestones.length > 0) {
       const totalPercent = input.paymentMilestones.reduce((sum, m) => sum + m.percentage, 0);
@@ -166,6 +171,14 @@ export class QuoteCalculatorController {
     }
 
     const discountAmount = input.discountAmount || 0;
+
+    // BUG-8: Prevent discount exceeding the base price (would produce a $0 quote)
+    if (discountAmount > calculation.pricing.basePrice) {
+      throw new BadRequestException(
+        `Discount amount (${discountAmount}) cannot exceed the base price (${calculation.pricing.basePrice})`,
+      );
+    }
+
     let discounted: ReturnType<typeof applyPreGstDiscount>;
     try {
       discounted = applyPreGstDiscount(
@@ -180,7 +193,9 @@ export class QuoteCalculatorController {
       throw err;
     }
     const finalPrice = discounted.grossTotal;
-    const effectivePrice = Math.max(0, finalPrice - calculation.subsidy.amount);
+    // BUG-3: Round to 2 decimal places to prevent floating-point display errors
+    const effectivePrice =
+      Math.round(Math.max(0, finalPrice - calculation.subsidy.amount) * 100) / 100;
 
     const systemType = input.systemType ?? SystemType.ON_GRID;
 
@@ -222,119 +237,27 @@ export class QuoteCalculatorController {
       isSubsidyApplicable: calculation.subsidy.isApplicable,
     };
 
-    // ── Determine if this is a revision or a new quote ──
-    // If quoteId is explicitly provided, verify it still has version capacity.
-    // If maxed out, throw MAX_VERSIONS_REACHED so the user can choose to archive.
-    let existingQuoteId: string | null = null;
+    const quoteSnapshot: QuoteSnapshot = {
+      inputs: calculatorInputs,
+      calculation: calculation as unknown as QuoteCalculationOutput,
+      pricing: pricingBreakdown,
+      discountAmount,
+    };
 
-    if (input.quoteId) {
-      const explicit = await this.quoteRepository.findById(input.quoteId, organizationId);
-      const hasCapacity =
-        !quoteConfig.maxVersions || explicit.currentVersion < quoteConfig.maxVersions;
-      if (!hasCapacity) {
-        const allRevisable = await this.quoteRepository.findAllRevisableQuotes(
-          organizationId,
-          input.customerId,
-          input.propertyId,
+    // Property-level versioning model:
+    // every save creates a brand-new quote record for the property.
+    if (input.propertyId) {
+      const accepted = await this.quoteRepository.findAcceptedByPropertyId(
+        input.propertyId,
+        organizationId,
+      );
+      if (accepted) {
+        throw new BadRequestException(
+          `Property already has an accepted quote (${accepted.quoteNumber}). No new quotes can be created.`,
         );
-        throw new ConflictException({
-          error: 'MAX_VERSIONS_REACHED',
-          message: `The revision limit (${quoteConfig.maxVersions}) has been reached. Archive a quote to create a new one.`,
-          maxVersions: quoteConfig.maxVersions,
-          quotes: allRevisable.map((q) => ({
-            quoteId: q.id,
-            quoteNumber: q.quoteNumber,
-            currentVersion: q.currentVersion,
-            status: q.status,
-            createdAt: q.createdAt,
-            updatedAt: q.updatedAt,
-          })),
-        });
-      }
-      existingQuoteId = explicit.id;
-    }
-
-    if (!existingQuoteId) {
-      existingQuoteId =
-        (
-          await this.quoteRepository.findRevisableQuote(
-            organizationId,
-            input.customerId,
-            input.propertyId,
-            quoteConfig.maxVersions,
-          )
-        )?.id ?? null;
-    }
-
-    if (existingQuoteId) {
-      try {
-        const updateDto: UpdateQuoteDto = {
-          salesPersonId: input.salesPersonId,
-          resellerId: input.resellerId,
-          validUntil: validUntil.toISOString().split('T')[0],
-          systemType,
-          systemSizeKw: calculation.systemConfig.totalSystemSizeKw,
-          totalWattageWp: calculation.actualTotalWattage,
-          projectType: input.projectType,
-          calculatorInputs,
-          pricingBreakdown,
-          finalPrice,
-          effectivePrice,
-          internalNotes: input.internalNotes,
-          customerNotes: input.customerNotes,
-          projectCompletionWeeks: calculation.completionWeeks,
-          paymentMilestones: input.paymentMilestones,
-          changeSummary: 'Revised via calculator',
-        };
-
-        const quote = await this.quoteService.update(
-          existingQuoteId,
-          organizationId,
-          updateDto,
-          currentUser.id,
-        );
-
-        return {
-          quoteId: quote.id,
-          quoteNumber: quote.quoteNumber,
-          currentVersion: quote.currentVersion,
-          maxVersions: quoteConfig.maxVersions ?? null,
-          finalPrice,
-          effectivePrice,
-          discountAmount,
-          subsidyAmount: calculation.subsidy.amount,
-          calculation,
-        };
-      } catch (err) {
-        if (
-          err instanceof BadRequestException &&
-          String(err.message).includes('Maximum number of versions')
-        ) {
-          // Only happens when input.quoteId was explicitly provided for a maxed quote
-          const allRevisable = await this.quoteRepository.findAllRevisableQuotes(
-            organizationId,
-            input.customerId,
-            input.propertyId,
-          );
-          throw new ConflictException({
-            error: 'MAX_VERSIONS_REACHED',
-            message: `The revision limit (${quoteConfig.maxVersions}) has been reached. Archive a quote to create a new one.`,
-            maxVersions: quoteConfig.maxVersions ?? null,
-            quotes: allRevisable.map((q) => ({
-              quoteId: q.id,
-              quoteNumber: q.quoteNumber,
-              currentVersion: q.currentVersion,
-              status: q.status,
-              createdAt: q.createdAt,
-              updatedAt: q.updatedAt,
-            })),
-          });
-        }
-        throw err;
       }
     }
 
-    // ── Create brand-new quote (version 1) ──
     const createDto: CreateQuoteDto = {
       customerId: input.customerId,
       propertyId: input.propertyId,
@@ -345,8 +268,7 @@ export class QuoteCalculatorController {
       totalWattageWp: calculation.actualTotalWattage,
       projectType: input.projectType,
       validUntil: validUntil.toISOString().split('T')[0] as string,
-      calculatorInputs,
-      pricingBreakdown,
+      quoteSnapshot,
       finalPrice,
       effectivePrice,
       discountAmount,
@@ -358,11 +280,11 @@ export class QuoteCalculatorController {
 
     const quote = await this.quoteService.create(organizationId, createDto, currentUser.id);
 
+    await this.persistBom(organizationId, quote.versionId, calculation, currentUser.id);
+
     return {
       quoteId: quote.id,
       quoteNumber: quote.quoteNumber,
-      currentVersion: quote.currentVersion,
-      maxVersions: quoteConfig.maxVersions ?? null,
       finalPrice,
       effectivePrice,
       discountAmount,
@@ -390,7 +312,9 @@ export class QuoteCalculatorController {
     status: HttpStatus.OK,
     description: 'Quote configuration',
   })
-  async getConfig(@OrganizationContext() organizationId: string) {
+  async getConfig(
+    @OrganizationContext() organizationId: string,
+  ): Promise<QuoteConfigurationResponseDto> {
     const config = await this.quoteConfigRepo.getOrCreateDefault(organizationId);
     return plainToInstance(QuoteConfigurationResponseDto, config, {
       excludeExtraneousValues: true,
@@ -507,5 +431,28 @@ export class QuoteCalculatorController {
     return plainToInstance(InstallationPricingResponseDto, result.data, {
       excludeExtraneousValues: true,
     });
+  }
+
+  /**
+   * Create a BOM snapshot from the calculation result.
+   * Non-fatal: failures are logged but don't block the quote save.
+   */
+  private async persistBom(
+    organizationId: string,
+    versionId: string,
+    calculation: CalculateQuoteResponseDto,
+    userId: string,
+  ): Promise<void> {
+    try {
+      await this.bomService.createFromCalculation(
+        organizationId,
+        'quote_version',
+        versionId,
+        calculation,
+        userId,
+      );
+    } catch (error) {
+      this.logger.warn(`BOM creation failed for version ${versionId}: ${(error as Error).message}`);
+    }
   }
 }

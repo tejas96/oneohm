@@ -194,12 +194,20 @@ export class CustomerPropertyRepository {
         'latestQuote.id = ' +
           '(SELECT q2.id FROM quotes q2 WHERE q2.property_id = property.id ' +
           'AND q2.organization_id = :sortOrgId AND q2.deleted_at IS NULL ' +
-          'ORDER BY q2.quote_date DESC LIMIT 1)',
+          'ORDER BY q2.created_at DESC, q2.id DESC LIMIT 1)',
         { sortOrgId: organizationId },
       );
-      qb.leftJoin('latestQuote.versions', 'cv', 'cv.isCurrent = :cvIsCurrent', {
-        cvIsCurrent: true,
-      });
+      qb.leftJoin(
+        'latestQuote.versions',
+        'cv',
+        `cv.id = (
+          SELECT qv.id
+          FROM quote_versions qv
+          WHERE qv.quote_id = latestQuote.id
+          ORDER BY qv.created_at DESC, qv.version_number DESC, qv.id DESC
+          LIMIT 1
+        )`,
+      );
       qb.addSelect(['cv.systemSizeKw', 'cv.finalPrice']);
     }
 

@@ -198,7 +198,7 @@ const COLUMNS: ColumnConfig<ProjectRow>[] = [
             component={NextLink}
             href={buildRoute(ROUTES.PROJECTS.DETAIL, { id: project.id })}
             underline="hover"
-            sx={{ display: 'block', fontWeight: 500, fontSize: '0.875rem', whiteSpace: 'nowrap' }}
+            sx={{ display: 'block', fontWeight: 500, whiteSpace: 'nowrap' }}
           >
             {project.projectNumber}
           </MuiLink>
