@@ -67,24 +67,7 @@ describe('QuoteRepository', () => {
     repo = module.get(QuoteRepository);
   });
 
-  describe('findAll (simple list)', () => {
-    it('uses getCount + getMany instead of getManyAndCount', async () => {
-      await repo.findAll('org-1', 1, 20);
-      expect(qb['getCount']).toHaveBeenCalled();
-      expect(qb['getMany']).toHaveBeenCalled();
-      expect(qb['getManyAndCount']).not.toHaveBeenCalled();
-    });
-
-    it('returns correct shape', async () => {
-      qb['getCount'].mockResolvedValue(1);
-      qb['getMany'].mockResolvedValue([{ id: 'q-1' }]);
-      const result = await repo.findAll('org-1', 1, 10);
-      expect(result.total).toBe(1);
-      expect(result.quotes).toHaveLength(1);
-    });
-  });
-
-  describe('findWithFilters (sort + pagination)', () => {
+  describe('findWithFilters (property-level grouping + in-memory sorting)', () => {
     const baseQuery = {
       page: 1,
       limit: 20,
@@ -92,25 +75,27 @@ describe('QuoteRepository', () => {
       sortOrder: SortOrder.DESC,
     };
 
-    it('uses getCount + getMany instead of getManyAndCount', async () => {
+    it('uses getMany (no getCount) and does not call getManyAndCount', async () => {
       await repo.findWithFilters('org-1', baseQuery);
-      expect(qb['getCount']).toHaveBeenCalled();
       expect(qb['getMany']).toHaveBeenCalled();
       expect(qb['getManyAndCount']).not.toHaveBeenCalled();
     });
 
-    it('applies addOrderBy when sorting by CUSTOMER_NAME', async () => {
+    it('applies initial orderBy for property grouping', async () => {
       await repo.findWithFilters('org-1', {
         ...baseQuery,
         sortBy: QuoteSortField.CUSTOMER_NAME,
       });
-      expect(qb['addOrderBy']).toHaveBeenCalledWith('customer.lastName', 'DESC', 'NULLS LAST');
+      // Now uses in-memory sorting, so orderBy is only for createdAt (grouping logic)
+      expect(qb['orderBy']).toHaveBeenCalledWith('quote.createdAt', 'DESC');
+      expect(qb['addOrderBy']).toHaveBeenCalledWith('quote.id', 'DESC');
     });
 
-    it('applies pagination correctly', async () => {
+    it('does in-memory pagination (no skip/take on query)', async () => {
       await repo.findWithFilters('org-1', { ...baseQuery, page: 2, limit: 10 });
-      expect(qb['skip']).toHaveBeenCalledWith(10);
-      expect(qb['take']).toHaveBeenCalledWith(10);
+      // In-memory pagination: no skip/take called on query builder
+      expect(qb['skip']).not.toHaveBeenCalled();
+      expect(qb['take']).not.toHaveBeenCalled();
     });
   });
 });

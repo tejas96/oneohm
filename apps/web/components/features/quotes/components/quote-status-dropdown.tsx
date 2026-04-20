@@ -67,10 +67,7 @@ export const QuoteStatusDropdown = React.memo(
       setAnchorEl(event.currentTarget);
     };
 
-    const handleClose = (event?: React.MouseEvent | {}): void => {
-      if (event && 'stopPropagation' in event) {
-        (event as React.MouseEvent).stopPropagation();
-      }
+    const handleClose = (): void => {
       setAnchorEl(null);
     };
 

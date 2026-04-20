@@ -108,6 +108,7 @@ export function MapComponent() {
 export function Logger() {
   const log = (...args: any[]) => {
     if (config.isDevelopment) {
+      // eslint-disable-next-line no-console
       console.log('[DEV]', ...args);
     } else if (config.isProduction) {
       // Send to logging service in production
