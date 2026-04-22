@@ -33,7 +33,13 @@ export {
   getInitials,
   toTitleLabel,
 } from './utils/format';
-export { formatPhoneForWhatsApp, formatPhoneForDisplay, isValidPhone } from './utils/phone';
+export {
+  formatPhoneForWhatsApp,
+  formatPhoneForDisplay,
+  isValidPhone,
+  normalizePhoneToE164,
+  stripPhoneCountryCode,
+} from './utils/phone';
 export { getRecentViews, recordRecentView } from './utils/recent-views';
 export type { RecentViewItem, RecentViewType } from './utils/recent-views';
 export { buildTasksTabUrl } from './utils/project';

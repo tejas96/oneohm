@@ -1,35 +1,26 @@
-/* eslint-disable @typescript-eslint/no-redundant-type-constituents, @typescript-eslint/no-unsafe-return -- table column definitions from API */
 'use client';
 
-import { ColumnDef } from '@tanstack/react-table';
 import {
   AlertCircle,
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
   Eye,
   Loader2,
   MoreHorizontal,
+  Pencil,
   Plus,
   RotateCcw,
-  Search,
-  Shield,
   Trash2,
   UserCheck,
   UserX,
-  X,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type JSX, useState, useCallback, useMemo } from 'react';
+import { type JSX, type MouseEvent, useState, useCallback, useMemo } from 'react';
 
-import { CreateUserModal } from './create-user-modal';
-// TODO: Re-enable InviteUserModal when email service is implemented
-// import { InviteUserModal } from './invite-user-modal';
+import { UserFormModal } from './user-form-modal';
 import { UserStatusBadge } from './user-status-badge';
-import { USER_STATUS_TABS } from '../../constants';
 
-import { DataTable, EmptyState, FilterTabs, TablePagination } from '@/components/shared';
+import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
+import { EmptyState } from '@/components/shared';
 import {
   Avatar,
   AvatarFallback,
@@ -41,7 +32,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Input,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -51,40 +41,227 @@ import {
 } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useDeleteConfirmation } from '@/lib/hooks/core';
-import { useAdminUsers, useAdminUserMutations, type AdminUserFilters } from '@/lib/hooks/resources';
+import {
+  useAdminUsersList,
+  useAdminUserMutations,
+  useRoles,
+  type AdminUserListFilters,
+} from '@/lib/hooks/resources';
 import type { AdminUser } from '@/lib/hooks/resources/users';
+import {
+  type TableUrlFilterRecord,
+  type TableUrlSortModel,
+  useTableUrlState,
+} from '@/lib/hooks/use-table-url-state';
 import { formatDate, formatRoleCode, formatTimeAgo, getInitials } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
+
+// AdvancedTable requires TRow extends Record<string, unknown>
+type UserRow = AdminUser & Record<string, unknown>;
+const EMPTY_ROWS: UserRow[] = [];
+
+// ============================================================================
+// Filter options
+// ============================================================================
+
+const STATUS_OPTIONS = [
+  { label: 'Active', value: 'active' },
+  { label: 'Inactive', value: 'inactive' },
+  { label: 'Suspended', value: 'suspended' },
+  { label: 'Archived', value: 'archived' },
+] as const;
+
+// ============================================================================
+// Sort adapter — maps AdvancedTable sort model to API fields
+// ============================================================================
+
+const SORT_FIELD_MAP: Record<string, string> = {
+  name: 'firstName',
+  lastLoginAt: 'lastLoginAt',
+  createdAt: 'createdAt',
+};
+
+function toApiSortField(model: TableUrlSortModel | null): string {
+  if (!model) return 'createdAt';
+  return SORT_FIELD_MAP[model.field] ?? 'createdAt';
+}
+
+function toApiSortOrder(model: TableUrlSortModel | null): 'ASC' | 'DESC' {
+  return model?.direction === 'asc' ? 'ASC' : 'DESC';
+}
+
+// ============================================================================
+// Filter adapter — maps AdvancedTable filterModel → API params
+// ============================================================================
+
+function toLocalDateString(raw: string): string | undefined {
+  if (!raw) return undefined;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return undefined;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function localDateToUtcDayRange(localDate: string): { fromIso: string; toIso: string } | undefined {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(localDate);
+  if (!match) return undefined;
+  const yy = Number(match[1]);
+  const mm = Number(match[2]);
+  const dd = Number(match[3]);
+  return {
+    fromIso: new Date(yy, mm - 1, dd, 0, 0, 0, 0).toISOString(),
+    toIso: new Date(yy, mm - 1, dd, 23, 59, 59, 999).toISOString(),
+  };
+}
+
+function toUserFilters(
+  filters: TableUrlFilterRecord,
+): Pick<AdminUserListFilters, 'status' | 'roleId' | 'showDeleted' | 'fromDate' | 'toDate'> {
+  const statusVal = typeof filters.status === 'string' && filters.status ? filters.status : undefined;
+  const isArchived = statusVal === 'archived';
+
+  const createdAtLocal =
+    typeof filters.createdAt === 'string' ? toLocalDateString(filters.createdAt) : undefined;
+  const createdAtRange = createdAtLocal ? localDateToUtcDayRange(createdAtLocal) : undefined;
+
+  return {
+    status: isArchived ? undefined : statusVal,
+    showDeleted: isArchived || undefined,
+    roleId: typeof filters.roleId === 'string' && filters.roleId ? filters.roleId : undefined,
+    fromDate: createdAtRange?.fromIso,
+    toDate: createdAtRange?.toIso,
+  };
+}
+
+// ============================================================================
+// Row Actions Menu
+// ============================================================================
+
+interface UserRowActionsMenuProps {
+  user: AdminUser;
+  isSelf: boolean;
+  onEdit: (id: string) => void;
+  onStatusChange: (user: AdminUser, newStatus: string) => void;
+  onDelete: (user: AdminUser) => void;
+  onRestore: (user: AdminUser) => void;
+}
+
+function UserRowActionsMenu({
+  user,
+  isSelf,
+  onEdit,
+  onStatusChange,
+  onDelete,
+  onRestore,
+}: UserRowActionsMenuProps): JSX.Element {
+  const router = useRouter();
+  const isDeleted = !!user.deletedAt;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="size-8 p-0"
+          onClick={(e: MouseEvent) => e.stopPropagation()}
+        >
+          <MoreHorizontal className="size-icon-sm" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" onClick={(e: MouseEvent) => e.stopPropagation()}>
+        {isDeleted ? (
+          <DropdownMenuItem onClick={() => onRestore(user)}>
+            <RotateCcw className="mr-2 size-icon-sm" /> Restore Employee
+          </DropdownMenuItem>
+        ) : (
+          <>
+            <DropdownMenuItem
+              onClick={() =>
+                router.push(buildRoute(ROUTES.ADMIN.USER_DETAIL, { id: user.id }))
+              }
+            >
+              <Eye className="mr-2 size-icon-sm" /> View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={isSelf} onClick={() => !isSelf && onEdit(user.id)}>
+              <Pencil className="mr-2 size-icon-sm" />
+              {isSelf ? 'Cannot edit yourself' : 'Edit Employee'}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            {user.status === 'active' ? (
+              <DropdownMenuItem
+                disabled={isSelf}
+                onClick={() => onStatusChange(user, 'inactive')}
+              >
+                <UserX className="mr-2 size-icon-sm" />
+                {isSelf ? 'Cannot deactivate yourself' : 'Deactivate'}
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={() => onStatusChange(user, 'active')}>
+                <UserCheck className="mr-2 size-icon-sm" /> Activate
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem
+              disabled={isSelf}
+              className="text-error"
+              onClick={() => !isSelf && onDelete(user)}
+            >
+              <Trash2 className="mr-2 size-icon-sm" />
+              {isSelf ? 'Cannot delete yourself' : 'Delete'}
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ============================================================================
+// Main component
+// ============================================================================
 
 export function AdminUsersListPage(): JSX.Element {
   const router = useRouter();
   const { user: currentUser } = useAuth();
 
-  const {
-    items: users,
-    meta,
-    search,
-    setSearch,
-    debouncedSearch,
-    clearSearch,
-    filters,
-    setFilters,
-    clearFilters,
-    hasActiveFilters,
-    pagination,
-    sorting,
-    isLoading,
-    isFetching,
-    isError,
-    error,
-    refetch,
-  } = useAdminUsers();
+  // URL-synced table state
+  const urlState = useTableUrlState({ prefix: 'users', defaultPageSize: 10 });
 
+  // Fetch roles for filter dropdown
+  const { items: allRoles } = useRoles({ syncToUrl: false, defaultPageSize: 100 });
+  const roleFilterOptions = useMemo(
+    () => (allRoles ?? []).map((r) => ({ label: r.name, value: r.id })),
+    [allRoles],
+  );
+
+  // Build API filters from URL state
+  const apiFilters: AdminUserListFilters = useMemo(
+    () => ({
+      page: urlState.state.page + 1,
+      limit: urlState.state.pageSize,
+      search: urlState.state.search || undefined,
+      sortBy: toApiSortField(urlState.state.sortModel),
+      sortOrder: toApiSortOrder(urlState.state.sortModel),
+      ...toUserFilters(urlState.state.filters),
+    }),
+    [urlState.state],
+  );
+
+  // Data fetch
+  const { data, isLoading, isFetching, isError, error, refetch } =
+    useAdminUsersList(apiFilters);
+
+  const tableRows = useMemo<UserRow[]>(
+    () => (data?.items as UserRow[] | undefined) ?? EMPTY_ROWS,
+    [data?.items],
+  );
+
+  // Mutations
   const mutations = useAdminUserMutations();
 
+  // Modal state
   const [createOpen, setCreateOpen] = useState(false);
-  // TODO: Re-enable invite state when email service is implemented
-  // const [inviteOpen, setInviteOpen] = useState(false);
+  const [editUserId, setEditUserId] = useState<string | null>(null);
   const [statusChangeTarget, setStatusChangeTarget] = useState<{
     user: AdminUser;
     newStatus: string;
@@ -94,27 +271,16 @@ export function AdminUsersListPage(): JSX.Element {
 
   const deleteConfirmation = useDeleteConfirmation<AdminUser>({
     mutation: mutations.remove,
-    getId: (user) => user.id,
+    getId: (u) => u.id,
     entityName: 'user',
   });
 
-  const statusTabValue = filters.showDeleted ? 'archived' : (filters.status as string) || 'all';
-
-  const handleStatusTabChange = useCallback(
-    (value: string): void => {
-      if (value === 'archived') {
-        setFilters({ status: 'all', showDeleted: true } as Partial<AdminUserFilters>);
-      } else {
-        setFilters({ status: value, showDeleted: undefined } as Partial<AdminUserFilters>);
-      }
-    },
-    [setFilters],
+  // Stable callback so columns memo doesn't recompute when deleteConfirmation object identity changes
+  const requestDelete = useCallback(
+    (u: AdminUser) => deleteConfirmation.requestDelete(u),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [deleteConfirmation.requestDelete],
   );
-
-  const handleClearAll = useCallback(() => {
-    clearFilters();
-    sorting.clearSort();
-  }, [clearFilters, sorting]);
 
   const confirmStatusChange = useCallback(async () => {
     if (!statusChangeTarget) return;
@@ -142,52 +308,32 @@ export function AdminUsersListPage(): JSX.Element {
     }
   }, [mutations, restoreTarget]);
 
-  const SortableHeader = useCallback(
-    ({ field, label }: { field: string; label: string }): JSX.Element => {
-      const isActive = sorting.sortBy === field;
-      return (
-        <button
-          type="button"
-          onClick={() => sorting.toggleSort(field)}
-          className="flex items-center gap-1 font-semibold text-2xs uppercase tracking-wider hover:text-foreground transition-colors"
-        >
-          {label}
-          {isActive ? (
-            sorting.sortOrder === 'ASC' ? (
-              <ArrowUp className="size-3" />
-            ) : (
-              <ArrowDown className="size-3" />
-            )
-          ) : (
-            <ArrowUpDown className="size-3 text-foreground-tertiary" />
-          )}
-        </button>
-      );
-    },
-    [sorting],
-  );
-
-  const columns: ColumnDef<AdminUser>[] = useMemo(
+  // Column definitions
+  const columns: ColumnConfig<UserRow>[] = useMemo(
     () => [
       {
-        accessorKey: 'name',
-        header: () => <SortableHeader field="firstName" label="User" />,
-        enableSorting: false,
-        cell: ({ row }) => {
-          const isDeleted = !!row.original.deletedAt;
+        field: 'name',
+        headerName: 'User',
+        sortable: true,
+        searchable: true,
+        flex: 2,
+        renderCell: ({ row }) => {
+          const isDeleted = !!row.deletedAt;
           const inner = (
             <>
               <Avatar className={`size-8 shrink-0${isDeleted ? ' opacity-50' : ''}`}>
                 <AvatarFallback>
-                  {getInitials(`${row.original.firstName} ${row.original.lastName ?? ''}`.trim())}
+                  {getInitials(
+                    `${row.firstName} ${(row.lastName as string | undefined) ?? ''}`.trim(),
+                  )}
                 </AvatarFallback>
               </Avatar>
               <div className={`min-w-0${isDeleted ? ' opacity-50' : ''}`}>
                 <div className="font-medium text-foreground leading-tight">
-                  {row.original.firstName} {row.original.lastName}
+                  {row.firstName} {row.lastName as string | undefined}
                 </div>
                 <div className="text-foreground-tertiary text-2xs leading-tight mt-0.5 truncate">
-                  {row.original.email || '-'}
+                  {(row.email as string | undefined) || '-'}
                 </div>
               </div>
             </>
@@ -197,8 +343,9 @@ export function AdminUsersListPage(): JSX.Element {
           }
           return (
             <Link
-              href={buildRoute(ROUTES.ADMIN.USER_DETAIL, { id: row.original.id })}
+              href={buildRoute(ROUTES.ADMIN.USER_DETAIL, { id: row.id })}
               className="flex items-center gap-2.5 hover:text-primary transition-colors"
+              onClick={(e: MouseEvent) => e.stopPropagation()}
             >
               {inner}
             </Link>
@@ -206,185 +353,118 @@ export function AdminUsersListPage(): JSX.Element {
         },
       },
       {
-        accessorKey: 'phone',
-        header: 'Contact',
-        enableSorting: false,
-        cell: ({ row }) => (
-          <span className="text-foreground-secondary text-sm">{row.original.phone}</span>
+        field: 'phone',
+        headerName: 'Contact',
+        searchable: true,
+        flex: 1,
+        renderCell: ({ row }) => (
+          <span className="text-foreground-secondary text-sm">{row.phone as string}</span>
         ),
       },
       {
-        accessorKey: 'roles',
-        header: 'Roles',
-        enableSorting: false,
-        cell: ({ row }) => (
-          <div className="flex flex-wrap gap-1">
-            {row.original.roles?.length > 0 ? (
-              row.original.roles.map((role) => (
-                <Badge key={role} variant="secondary" size="xs">
-                  {formatRoleCode(role)}
-                </Badge>
-              ))
-            ) : (
-              <span className="text-foreground-tertiary">--</span>
-            )}
-          </div>
-        ),
-      },
-      {
-        accessorKey: 'status',
-        header: 'Status',
-        enableSorting: false,
-        cell: ({ row }) => <UserStatusBadge status={row.original.status} />,
-      },
-      {
-        accessorKey: 'lastLoginAt',
-        header: () => <SortableHeader field="lastLoginAt" label="Last Login" />,
-        enableSorting: false,
-        cell: ({ row }) => (
-          <span className="text-foreground-secondary text-sm">
-            {row.original.lastLoginAt ? formatTimeAgo(row.original.lastLoginAt) : 'Never'}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'createdAt',
-        header: () => <SortableHeader field="createdAt" label="Created" />,
-        enableSorting: false,
-        cell: ({ row }) => (
-          <span className="text-foreground-secondary text-sm">
-            {formatDate(row.original.createdAt)}
-          </span>
-        ),
-      },
-      {
-        id: 'actions',
-        header: '',
-        cell: ({ row }) => {
-          const isSelf = currentUser?.id === row.original.id;
-          const isDeleted = !!row.original.deletedAt;
+        field: 'roles',
+        headerName: 'Roles',
+        flex: 1.5,
+        renderCell: ({ row }) => {
+          const roles = row.roles as string[] | undefined;
           return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="size-8 p-0">
-                  <MoreHorizontal className="size-icon-sm" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {isDeleted ? (
-                  <DropdownMenuItem onClick={() => setRestoreTarget(row.original)}>
-                    <RotateCcw className="mr-2 size-icon-sm" /> Restore Employee
-                  </DropdownMenuItem>
-                ) : (
-                  <>
-                    <DropdownMenuItem
-                      onClick={() =>
-                        router.push(buildRoute(ROUTES.ADMIN.USER_DETAIL, { id: row.original.id }))
-                      }
-                    >
-                      <Eye className="mr-2 size-icon-sm" /> View Details
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() =>
-                        router.push(buildRoute(ROUTES.ADMIN.USER_DETAIL, { id: row.original.id }))
-                      }
-                    >
-                      <Shield className="mr-2 size-icon-sm" /> Manage Roles
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    {row.original.status === 'active' ? (
-                      <DropdownMenuItem
-                        disabled={isSelf}
-                        onClick={() =>
-                          setStatusChangeTarget({ user: row.original, newStatus: 'inactive' })
-                        }
-                      >
-                        <UserX className="mr-2 size-icon-sm" />
-                        {isSelf ? 'Cannot deactivate yourself' : 'Deactivate'}
-                      </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem
-                        onClick={() =>
-                          setStatusChangeTarget({ user: row.original, newStatus: 'active' })
-                        }
-                      >
-                        <UserCheck className="mr-2 size-icon-sm" /> Activate
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem
-                      disabled={isSelf}
-                      className="text-error"
-                      onClick={() => !isSelf && deleteConfirmation.requestDelete(row.original)}
-                    >
-                      <Trash2 className="mr-2 size-icon-sm" />
-                      {isSelf ? 'Cannot delete yourself' : 'Delete'}
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex flex-wrap gap-1">
+              {roles && roles.length > 0 ? (
+                roles.map((role) => (
+                  <Badge key={role} variant="secondary" size="xs">
+                    {formatRoleCode(role)}
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-foreground-tertiary">--</span>
+              )}
+            </div>
           );
         },
       },
+      {
+        field: 'status',
+        headerName: 'Status',
+        filterable: true,
+        filterType: 'select',
+        filterOptions: STATUS_OPTIONS,
+        flex: 1,
+        renderCell: ({ row }) => <UserStatusBadge status={row.status as string} />,
+      },
+      {
+        field: 'roleId',
+        headerName: 'Role',
+        filterable: true,
+        filterType: 'select',
+        filterOptions: roleFilterOptions,
+        defaultHidden: true,
+        hideable: false,
+      },
+      {
+        field: 'lastLoginAt',
+        headerName: 'Last Login',
+        sortable: true,
+        flex: 1,
+        renderCell: ({ row }) => (
+          <span className="text-foreground-secondary text-sm">
+            {row.lastLoginAt ? formatTimeAgo(row.lastLoginAt as string) : 'Never'}
+          </span>
+        ),
+      },
+      {
+        field: 'createdAt',
+        headerName: 'Created',
+        sortable: true,
+        filterable: true,
+        filterType: 'date',
+        flex: 1,
+        renderCell: ({ row }) => (
+          <span className="text-foreground-secondary text-sm">
+            {formatDate(row.createdAt as string)}
+          </span>
+        ),
+      },
+      {
+        field: 'actions',
+        headerName: '',
+        hideable: false,
+        width: 48,
+        actions: (row) => (
+          <UserRowActionsMenu
+            user={row as unknown as AdminUser}
+            isSelf={currentUser?.id === row.id}
+            onEdit={(id) => setEditUserId(id)}
+            onStatusChange={(u, status) => setStatusChangeTarget({ user: u, newStatus: status })}
+            onDelete={(u) => requestDelete(u)}
+            onRestore={(u) => setRestoreTarget(u)}
+          />
+        ),
+      },
     ],
-    [currentUser?.id, router, SortableHeader, deleteConfirmation],
+    [currentUser?.id, requestDelete, roleFilterOptions],
   );
 
-  if (isLoading) {
-    return (
-      <div className="space-y-5">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-          <div>
-            <Typography variant="h2">Users</Typography>
-            <Typography variant="body" color="muted" className="mt-1">
-              Manage employees, roles, and access
-            </Typography>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* TODO: Enable Invite Employee button when email service is implemented */}
-            <Button size="sm" disabled>
-              <Plus className="mr-2 size-icon-sm" />
-              Add Employee
-            </Button>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg border border-border-light p-12 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="size-8 animate-spin text-primary" />
-            <p className="text-sm text-foreground-secondary">Loading users...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="space-y-5">
-        <div>
-          <Typography variant="h2">Users</Typography>
-          <Typography variant="body" color="muted" className="mt-1">
-            Manage employees, roles, and access
-          </Typography>
-        </div>
-        <div className="bg-white rounded-lg border border-error/30 p-6">
-          <div className="flex items-center gap-3 text-error">
-            <AlertCircle className="size-5 shrink-0" />
-            <div className="flex-1">
-              <p className="font-medium">Failed to load users</p>
-              <p className="text-sm text-foreground-secondary mt-1">{error?.message}</p>
-            </div>
-            <Button variant="outline" size="sm" onClick={refetch}>
-              Retry
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const renderEmptyState = useCallback(
+    (hasActiveFilters: boolean): JSX.Element =>
+      hasActiveFilters ? (
+        <EmptyState
+          title="No users found"
+          description="No results match your search and filters. Try adjusting your criteria."
+          action={{ label: 'Clear Filters', onClick: urlState.resetAll }}
+        />
+      ) : (
+        <EmptyState
+          title="No users yet"
+          description="Get started by adding your first employee"
+          action={{ label: 'Add Employee', onClick: () => setCreateOpen(true) }}
+        />
+      ),
+    [urlState.resetAll],
+  );
 
   return (
     <div className="space-y-5">
+      {/* Page Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
         <div>
           <Typography variant="h2">Users</Typography>
@@ -392,107 +472,80 @@ export function AdminUsersListPage(): JSX.Element {
             Manage employees, roles, and access
           </Typography>
         </div>
-        <div className="flex items-center gap-3">
-          {/* TODO: Enable Invite Employee button when email service is implemented */}
+      </div>
+
+      {/* Error banner */}
+      {isError && (
+        <div className="bg-background rounded-lg border border-error/30 p-6">
+          <div className="flex items-center gap-3 text-error">
+            <AlertCircle className="size-5 shrink-0" />
+            <div className="flex-1">
+              <p className="font-medium">Failed to load users</p>
+              <p className="text-sm text-foreground-secondary mt-1">
+                {(error as Error | null)?.message}
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => void refetch()}>
+              Retry
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Table */}
+      <AdvancedTable<UserRow>
+        columns={columns}
+        rows={tableRows}
+        rowIdField="id"
+        paginationMode="server"
+        loading={isLoading}
+        refetching={isFetching && !isLoading}
+        page={urlState.state.page}
+        pageSize={urlState.state.pageSize}
+        totalRowCount={data?.total ?? 0}
+        sortModel={urlState.state.sortModel}
+        filterModel={urlState.state.filters}
+        onPageChange={urlState.setPage}
+        onPageSizeChange={urlState.setPageSize}
+        onSortChange={urlState.setSortModel}
+        onFilterChange={urlState.setFilters}
+        onSearchChange={urlState.setSearch}
+        onRowClick={(row) => {
+          if (!row.deletedAt) {
+            void router.push(buildRoute(ROUTES.ADMIN.USER_DETAIL, { id: row.id }));
+          }
+        }}
+        enableSearch
+        enableFilters
+        enablePagination
+        enableColumnVisibility
+        searchPlaceholder="Search by name, email, phone..."
+        itemLabel="users"
+        toolbarActions={
           <Button size="sm" onClick={() => setCreateOpen(true)}>
             <Plus className="mr-2 size-icon-sm" />
             Add Employee
           </Button>
-        </div>
-      </div>
+        }
+        renderEmptyState={renderEmptyState}
+      />
 
-      <div className="flex items-center gap-3">
-        <div className="relative w-72">
-          <Input
-            type="text"
-            placeholder="Search users..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            leftIcon={<Search className="size-icon-sm" />}
-            className="h-8 text-sm"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={clearSearch}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded"
-            >
-              <X className="size-3.5 text-foreground-tertiary" />
-            </button>
-          )}
-          {isFetching && debouncedSearch && (
-            <Loader2 className="absolute right-8 top-1/2 -translate-y-1/2 size-3.5 animate-spin text-foreground-tertiary" />
-          )}
-        </div>
-        <div className="h-5 w-px bg-border-light" />
-        <FilterTabs
-          tabs={USER_STATUS_TABS}
-          value={statusTabValue}
-          onChange={handleStatusTabChange}
-          size="xs"
+      {/* Create Modal */}
+      <UserFormModal mode="create" open={createOpen} onOpenChange={setCreateOpen} />
+
+      {/* Edit Modal — conditionally rendered so hooks only mount when needed */}
+      {editUserId && (
+        <UserFormModal
+          mode="edit"
+          open
+          userId={editUserId}
+          onOpenChange={(open) => {
+            if (!open) setEditUserId(null);
+          }}
         />
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClearAll}
-            className="text-foreground-secondary h-8"
-          >
-            <X className="mr-1 size-3" /> Clear
-          </Button>
-        )}
-      </div>
+      )}
 
-      <div className="bg-white rounded-lg border border-border-light overflow-hidden">
-        {isFetching || users.length > 0 ? (
-          <>
-            <DataTable
-              columns={columns}
-              data={users as AdminUser[]}
-              enableSearch={false}
-              enablePagination={false}
-              isLoading={isFetching}
-            />
-            {users.length > 0 && (
-              <TablePagination
-                currentPage={pagination.page}
-                totalPages={pagination.totalPages}
-                pageSize={pagination.pageSize}
-                totalItems={meta?.total ?? 0}
-                itemLabel="users"
-                variant="full"
-                onPageChange={pagination.setPage}
-                onPageSizeChange={pagination.setPageSize}
-              />
-            )}
-          </>
-        ) : (
-          <div className="p-8">
-            {hasActiveFilters ? (
-              <EmptyState
-                title="No users found"
-                description={
-                  debouncedSearch
-                    ? 'No results match your search and filters. Try adjusting your criteria.'
-                    : 'No users match the selected filters. Try different filter options.'
-                }
-                action={{ label: 'Clear Filters', onClick: handleClearAll }}
-              />
-            ) : (
-              <EmptyState
-                title="No users yet"
-                description="Get started by adding your first employee"
-                action={{ label: 'Add Employee', onClick: () => setCreateOpen(true) }}
-                /* TODO: Re-add secondaryAction for Invite Employee when email service is implemented */
-              />
-            )}
-          </div>
-        )}
-      </div>
-
-      <CreateUserModal open={createOpen} onOpenChange={setCreateOpen} />
-
-      {/* Delete confirmation (replaces DeleteUserModal) */}
+      {/* Delete confirmation */}
       <Dialog
         open={deleteConfirmation.isOpen}
         onOpenChange={(open) => {

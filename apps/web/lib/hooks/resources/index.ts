@@ -2,11 +2,14 @@
 export {
   useAdminUsers,
   useAdminUser,
+  useAdminUsersList,
   useAdminUserMutations,
   useAdminUserPermissions,
   useCheckUserAvailability,
   type AdminUser,
   type AdminUserFilters,
+  type AdminUserListFilters,
+  type AdminUserListResponse,
 } from './users';
 
 // User Roles
