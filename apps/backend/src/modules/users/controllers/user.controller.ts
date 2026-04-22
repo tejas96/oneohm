@@ -72,17 +72,21 @@ export class UserController {
   @ApiReadAll({
     path: 'check-availability',
     summary: 'Check if email or phone is already registered',
-    description: 'Returns availability status for email and phone fields.',
+    description:
+      'Returns availability status for email and phone fields. ' +
+      'Pass excludeId to ignore a specific user (useful when editing).',
     responseType: Object,
   })
   @ApiQuery({ name: 'email', required: false })
   @ApiQuery({ name: 'phone', required: false })
+  @ApiQuery({ name: 'excludeId', required: false, description: 'User ID to exclude from check' })
   async checkAvailability(
     @Query('email') email?: string,
     @Query('phone') phone?: string,
+    @Query('excludeId', new ParseUUIDPipe({ optional: true })) excludeId?: string,
   ): Promise<{ emailExists: boolean; phoneExists: boolean }> {
-    const emailExists = email ? await this.userService.emailExists(email) : false;
-    const phoneExists = phone ? await this.userService.phoneExists(phone) : false;
+    const emailExists = email ? await this.userService.emailExists(email, excludeId) : false;
+    const phoneExists = phone ? await this.userService.phoneExists(phone, excludeId) : false;
     return { emailExists, phoneExists };
   }
 
@@ -114,6 +118,16 @@ export class UserController {
   })
   @ApiQuery({ name: 'sortBy', required: false, example: 'createdAt' })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'] })
+  @ApiQuery({
+    name: 'fromDate',
+    required: false,
+    description: 'Filter users created on or after this ISO date',
+  })
+  @ApiQuery({
+    name: 'toDate',
+    required: false,
+    description: 'Filter users created on or before this ISO date',
+  })
   async findAll(
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,
@@ -124,6 +138,8 @@ export class UserController {
     @Query('showDeleted') showDeleted?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: string,
+    @Query('fromDate') fromDate?: string,
+    @Query('toDate') toDate?: string,
     @Headers('x-organization-id') headerOrgId?: string,
   ): Promise<{
     items: UserResponseDto[];
@@ -155,6 +171,8 @@ export class UserController {
       showDeleted: showDeleted === 'true',
       sortBy: validatedSortBy,
       sortOrder: validatedSortOrder,
+      fromDate,
+      toDate,
     });
 
     const response = {
@@ -187,6 +205,7 @@ export class UserController {
     description:
       'Updates core user authentication fields only. Use profile endpoints for profile-specific fields.',
     responseType: UserResponseDto,
+    method: 'PATCH',
   })
   async update(
     @Param('id', ParseUUIDPipe) id: string,

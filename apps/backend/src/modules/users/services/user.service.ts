@@ -208,29 +208,61 @@ export class UserService {
     return user;
   }
 
-  async emailExists(email: string): Promise<boolean> {
-    const user = await this.userRepository.findByEmailIncludingDeleted(email);
+  async emailExists(email: string, excludeId?: string): Promise<boolean> {
+    const user = await this.userRepository.findByEmailIncludingDeleted(email, excludeId);
     return !!user;
   }
 
-  async phoneExists(phone: string): Promise<boolean> {
-    const user = await this.userRepository.findByPhoneIncludingDeleted(phone);
+  async phoneExists(phone: string, excludeId?: string): Promise<boolean> {
+    const user = await this.userRepository.findByPhoneIncludingDeleted(phone, excludeId);
     return !!user;
   }
 
   async update(id: string, updateDto: UpdateUserDto): Promise<UserEntity> {
     const user = await this.findById(id);
 
-    // If phone is being updated, check for conflicts
+    // If email is being updated, check for conflicts
+    if (updateDto.email && updateDto.email !== user.email) {
+      const existingEmail = await this.userRepository.findByEmailIncludingDeleted(
+        updateDto.email,
+        id,
+      );
+      if (existingEmail) {
+        if (existingEmail.deletedAt) {
+          throw new ConflictException(
+            `Email ${updateDto.email} belongs to a previously deleted account. Please restore that account instead.`,
+          );
+        }
+        throw new ConflictException(`Email ${updateDto.email} is already in use`);
+      }
+    }
+
+    // If phone is being updated, check for conflicts (include soft-deleted to prevent phone theft from deleted accounts)
     if (updateDto.phone && updateDto.phone !== user.phone) {
-      const existingPhone = await this.userRepository.findByPhone(updateDto.phone);
-      if (existingPhone && existingPhone.id !== id) {
+      const existingPhone = await this.userRepository.findByPhoneIncludingDeleted(
+        updateDto.phone,
+        id,
+      );
+      if (existingPhone) {
+        if (existingPhone.deletedAt) {
+          throw new ConflictException(
+            `Phone ${updateDto.phone} belongs to a previously deleted account. Please restore that account instead.`,
+          );
+        }
         throw new ConflictException(`Phone ${updateDto.phone} is already in use`);
       }
     }
 
-    // Extract roles from DTO
-    const { roles, ...userData } = updateDto;
+    // Strip fields that don't belong on UserEntity
+    const { roles, ...rest } = updateDto as UpdateUserDto & {
+      profileData?: unknown;
+      profileType?: unknown;
+      organizationId?: unknown;
+    };
+    const { profileData, profileType, organizationId, ...userData } = rest;
+    void profileData;
+    void profileType;
+    void organizationId;
 
     // Update user
     const updatedUser = await this.userRepository.update(id, userData);
@@ -246,6 +278,8 @@ export class UserService {
 
     this.logger.log(`User updated: ${updatedUser.phone}`);
 
+    // Second findById is intentional: re-fetches with role JOIN to return a consistent UserEntity.
+    // Acceptable trade-off for correctness; optimise to a single query if update volume grows.
     return this.findById(id);
   }
 

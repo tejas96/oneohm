@@ -1,5 +1,7 @@
 'use client';
 
+import { useQuery, keepPreviousData, type UseQueryResult } from '@tanstack/react-query';
+import type { AxiosError } from 'axios';
 import { useCallback, useMemo } from 'react';
 
 import {
@@ -14,6 +16,10 @@ import {
   type ResourceConfig,
   type BaseFilters,
 } from '../core';
+import { createResourceKeys } from '../core/query-keys';
+
+import { apiClient } from '@/lib/api/client';
+import { useAuth } from '@/providers/auth-provider';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -38,6 +44,26 @@ export interface AdminUserFilters extends BaseFilters {
   status?: string;
   roleId?: string;
   showDeleted?: boolean;
+}
+
+export interface AdminUserListFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  roleId?: string;
+  showDeleted?: boolean;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+  fromDate?: string;
+  toDate?: string;
+}
+
+export interface AdminUserListResponse {
+  items: AdminUser[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 // ── Resource Registration ──────────────────────────────────────
@@ -68,11 +94,15 @@ export function useAdminUsers(): ReturnType<typeof useResourceList<AdminUser, Ad
   return useResourceList<AdminUser, AdminUserFilters>(config);
 }
 
-export function useAdminUser(userId: string): ReturnType<typeof useResourceDetail<AdminUser>> {
+export function useAdminUser(
+  userId: string,
+  options?: { enabled?: boolean },
+): ReturnType<typeof useResourceDetail<AdminUser>> {
   return useResourceDetail<AdminUser>({
     resource: 'users',
     endpoint: '/users',
     id: userId,
+    enabled: options?.enabled,
   });
 }
 
@@ -101,13 +131,55 @@ export function useAdminUserPermissions(): ReturnType<typeof useResourcePermissi
   return useResourcePermissions(getResourcePermissions('users'));
 }
 
-export function useCheckUserAvailability(): ReturnType<typeof useFieldAvailability> & {
+/**
+ * Caller-owned filter hook for use with AdvancedTable + useTableUrlState.
+ * Unlike `useAdminUsers()` (which manages its own internal state via useResourceList),
+ * this hook accepts external filters and only returns data.
+ * Query keys are aligned with the 'users' resource so mutations invalidate this cache.
+ */
+export function useAdminUsersList(
+  filters: AdminUserListFilters,
+): UseQueryResult<AdminUserListResponse, AxiosError> {
+  const { user } = useAuth();
+  const organizationId = user?.organizationId;
+  const keys = useMemo(() => createResourceKeys('users'), []);
+
+  return useQuery({
+    queryKey: keys.list(organizationId, filters as unknown as Record<string, unknown>),
+    queryFn: async (): Promise<AdminUserListResponse> => {
+      const params = new URLSearchParams();
+      if (filters.page != null) params.append('page', String(filters.page));
+      if (filters.limit != null) params.append('limit', String(filters.limit));
+      if (filters.search && filters.search.length >= 2) {
+        params.append('search', filters.search);
+      }
+      if (filters.status) params.append('status', filters.status);
+      if (filters.roleId) params.append('roleId', filters.roleId);
+      if (filters.showDeleted) params.append('showDeleted', 'true');
+      if (filters.sortBy) params.append('sortBy', filters.sortBy);
+      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+      if (filters.fromDate) params.append('fromDate', filters.fromDate);
+      if (filters.toDate) params.append('toDate', filters.toDate);
+      const { data } = await apiClient.get(`/users?${params.toString()}`, {
+        headers: organizationId ? { 'X-Organization-Id': organizationId } : {},
+      });
+      return data as AdminUserListResponse;
+    },
+    enabled: !!organizationId,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useCheckUserAvailability(excludeId?: string): ReturnType<
+  typeof useFieldAvailability
+> & {
   checkPhone: (phone: string) => void;
   checkEmail: (email: string) => void;
 } {
   const fieldConfig = useMemo(
     () => ({
       endpoint: '/users/check-availability',
+      excludeIdParam: 'excludeId',
       validateResponse: (field: string, data: unknown) => {
         const res = data as { emailExists?: boolean; phoneExists?: boolean };
         if (field === 'email' && res.emailExists) return 'This email is already registered';
@@ -117,7 +189,7 @@ export function useCheckUserAvailability(): ReturnType<typeof useFieldAvailabili
     }),
     [],
   );
-  const availability = useFieldAvailability(fieldConfig);
+  const availability = useFieldAvailability(fieldConfig, excludeId);
 
   const { checkField } = availability;
 

@@ -23,6 +23,8 @@ export interface UserListFilters {
   showDeleted?: boolean;
   sortBy?: UserSortField;
   sortOrder?: SortOrder;
+  fromDate?: string;
+  toDate?: string;
 }
 
 @Injectable()
@@ -50,22 +52,28 @@ export class UserRepository {
     });
   }
 
-  /** Includes soft-deleted rows — used for uniqueness checks during create */
-  async findByEmailIncludingDeleted(email: string): Promise<UserEntity | null> {
-    return this.repository
+  /** Includes soft-deleted rows — used for uniqueness checks */
+  async findByEmailIncludingDeleted(email: string, excludeId?: string): Promise<UserEntity | null> {
+    const qb = this.repository
       .createQueryBuilder('user')
       .withDeleted()
-      .where('user.email = :email', { email })
-      .getOne();
+      .where('user.email = :email', { email });
+    if (excludeId) {
+      qb.andWhere('user.id != :excludeId', { excludeId });
+    }
+    return qb.getOne();
   }
 
-  /** Includes soft-deleted rows — used for uniqueness checks during create */
-  async findByPhoneIncludingDeleted(phone: string): Promise<UserEntity | null> {
-    return this.repository
+  /** Includes soft-deleted rows — used for uniqueness checks */
+  async findByPhoneIncludingDeleted(phone: string, excludeId?: string): Promise<UserEntity | null> {
+    const qb = this.repository
       .createQueryBuilder('user')
       .withDeleted()
-      .where('user.phone = :phone', { phone })
-      .getOne();
+      .where('user.phone = :phone', { phone });
+    if (excludeId) {
+      qb.andWhere('user.id != :excludeId', { excludeId });
+    }
+    return qb.getOne();
   }
 
   async findByEmailOrPhone(emailOrPhone: string): Promise<UserEntity | null> {
@@ -140,6 +148,13 @@ export class UserRepository {
         'EXISTS (SELECT 1 FROM user_roles ur_filter WHERE ur_filter.user_id = user.id AND ur_filter.role_id = :roleId)',
         { roleId: filters.roleId },
       );
+    }
+
+    if (filters?.fromDate) {
+      qb.andWhere('user.created_at >= :fromDate', { fromDate: filters.fromDate });
+    }
+    if (filters?.toDate) {
+      qb.andWhere('user.created_at <= :toDate', { toDate: filters.toDate });
     }
 
     const total = await qb.getCount();
