@@ -53,10 +53,7 @@ export class UserRepository {
   }
 
   /** Includes soft-deleted rows — used for uniqueness checks */
-  async findByEmailIncludingDeleted(
-    email: string,
-    excludeId?: string,
-  ): Promise<UserEntity | null> {
+  async findByEmailIncludingDeleted(email: string, excludeId?: string): Promise<UserEntity | null> {
     const qb = this.repository
       .createQueryBuilder('user')
       .withDeleted()
@@ -68,10 +65,7 @@ export class UserRepository {
   }
 
   /** Includes soft-deleted rows — used for uniqueness checks */
-  async findByPhoneIncludingDeleted(
-    phone: string,
-    excludeId?: string,
-  ): Promise<UserEntity | null> {
+  async findByPhoneIncludingDeleted(phone: string, excludeId?: string): Promise<UserEntity | null> {
     const qb = this.repository
       .createQueryBuilder('user')
       .withDeleted()

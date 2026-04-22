@@ -254,11 +254,12 @@ export class UserService {
     }
 
     // Strip fields that don't belong on UserEntity
-    const { roles, profileData, profileType, organizationId, ...userData } = updateDto as UpdateUserDto & {
-      profileData?: unknown;
-      profileType?: unknown;
-      organizationId?: unknown;
-    };
+    const { roles, profileData, profileType, organizationId, ...userData } =
+      updateDto as UpdateUserDto & {
+        profileData?: unknown;
+        profileType?: unknown;
+        organizationId?: unknown;
+      };
 
     // Update user
     const updatedUser = await this.userRepository.update(id, userData);

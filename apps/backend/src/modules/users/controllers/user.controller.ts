@@ -118,8 +118,16 @@ export class UserController {
   })
   @ApiQuery({ name: 'sortBy', required: false, example: 'createdAt' })
   @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'] })
-  @ApiQuery({ name: 'fromDate', required: false, description: 'Filter users created on or after this ISO date' })
-  @ApiQuery({ name: 'toDate', required: false, description: 'Filter users created on or before this ISO date' })
+  @ApiQuery({
+    name: 'fromDate',
+    required: false,
+    description: 'Filter users created on or after this ISO date',
+  })
+  @ApiQuery({
+    name: 'toDate',
+    required: false,
+    description: 'Filter users created on or before this ISO date',
+  })
   async findAll(
     @Query('page', new ParseIntPipe({ optional: true })) page = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit = 20,

@@ -19,8 +19,8 @@ import { type JSX, type MouseEvent, useState, useCallback, useMemo } from 'react
 import { UserFormModal } from './user-form-modal';
 import { UserStatusBadge } from './user-status-badge';
 
-import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
 import { EmptyState } from '@/components/shared';
+import { AdvancedTable, type ColumnConfig } from '@/components/shared/advanced-table';
 import {
   Avatar,
   AvatarFallback,
@@ -117,7 +117,8 @@ function localDateToUtcDayRange(localDate: string): { fromIso: string; toIso: st
 function toUserFilters(
   filters: TableUrlFilterRecord,
 ): Pick<AdminUserListFilters, 'status' | 'roleId' | 'showDeleted' | 'fromDate' | 'toDate'> {
-  const statusVal = typeof filters.status === 'string' && filters.status ? filters.status : undefined;
+  const statusVal =
+    typeof filters.status === 'string' && filters.status ? filters.status : undefined;
   const isArchived = statusVal === 'archived';
 
   const createdAtLocal =
@@ -177,9 +178,7 @@ function UserRowActionsMenu({
         ) : (
           <>
             <DropdownMenuItem
-              onClick={() =>
-                router.push(buildRoute(ROUTES.ADMIN.USER_DETAIL, { id: user.id }))
-              }
+              onClick={() => router.push(buildRoute(ROUTES.ADMIN.USER_DETAIL, { id: user.id }))}
             >
               <Eye className="mr-2 size-icon-sm" /> View Details
             </DropdownMenuItem>
@@ -189,10 +188,7 @@ function UserRowActionsMenu({
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {user.status === 'active' ? (
-              <DropdownMenuItem
-                disabled={isSelf}
-                onClick={() => onStatusChange(user, 'inactive')}
-              >
+              <DropdownMenuItem disabled={isSelf} onClick={() => onStatusChange(user, 'inactive')}>
                 <UserX className="mr-2 size-icon-sm" />
                 {isSelf ? 'Cannot deactivate yourself' : 'Deactivate'}
               </DropdownMenuItem>
@@ -248,8 +244,7 @@ export function AdminUsersListPage(): JSX.Element {
   );
 
   // Data fetch
-  const { data, isLoading, isFetching, isError, error, refetch } =
-    useAdminUsersList(apiFilters);
+  const { data, isLoading, isFetching, isError, error, refetch } = useAdminUsersList(apiFilters);
 
   const tableRows = useMemo<UserRow[]>(
     () => (data?.items as UserRow[] | undefined) ?? EMPTY_ROWS,

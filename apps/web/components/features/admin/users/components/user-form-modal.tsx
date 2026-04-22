@@ -233,9 +233,7 @@ export function UserFormModal({
               <AlertCircle className="size-5 text-error shrink-0" />
               <div className="flex-1">
                 <p className="font-medium text-sm text-error">Failed to load user details</p>
-                <p className="text-xs text-foreground-secondary mt-0.5">
-                  {userError?.message}
-                </p>
+                <p className="text-xs text-foreground-secondary mt-0.5">{userError?.message}</p>
               </div>
               <Button variant="outline" size="sm" onClick={() => void refetchUser()}>
                 Retry
@@ -250,24 +248,14 @@ export function UserFormModal({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="firstName">First Name *</Label>
-                  <Input
-                    id="firstName"
-                    placeholder="e.g., Rahul"
-                    {...form.register('firstName')}
-                  />
+                  <Input id="firstName" placeholder="e.g., Rahul" {...form.register('firstName')} />
                   {form.formState.errors.firstName && (
-                    <p className="text-xs text-error">
-                      {form.formState.errors.firstName.message}
-                    </p>
+                    <p className="text-xs text-error">{form.formState.errors.firstName.message}</p>
                   )}
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    placeholder="e.g., Sharma"
-                    {...form.register('lastName')}
-                  />
+                  <Input id="lastName" placeholder="e.g., Sharma" {...form.register('lastName')} />
                 </div>
               </div>
 
@@ -322,11 +310,16 @@ export function UserFormModal({
                   <PasswordInput
                     id="password"
                     placeholder="Minimum 8 characters"
-                    {...(form as ReturnType<typeof useForm<CreateUserFormData>>).register('password')}
+                    {...(form as ReturnType<typeof useForm<CreateUserFormData>>).register(
+                      'password',
+                    )}
                   />
                   {(form.formState.errors as Record<string, { message?: string }>).password && (
                     <p className="text-xs text-error">
-                      {(form.formState.errors as Record<string, { message?: string }>).password?.message}
+                      {
+                        (form.formState.errors as Record<string, { message?: string }>).password
+                          ?.message
+                      }
                     </p>
                   )}
                 </div>
@@ -371,7 +364,10 @@ export function UserFormModal({
                   onValueChange={(v) => form.setValue('status', v as FormData['status'])}
                   disabled={isSelf}
                 >
-                  <SelectTrigger id="status" className={isSelf ? 'opacity-60 cursor-not-allowed' : ''}>
+                  <SelectTrigger
+                    id="status"
+                    className={isSelf ? 'opacity-60 cursor-not-allowed' : ''}
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
