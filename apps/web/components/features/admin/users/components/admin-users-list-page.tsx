@@ -270,11 +270,9 @@ export function AdminUsersListPage(): JSX.Element {
     entityName: 'user',
   });
 
-  // Stable callback so columns memo doesn't recompute when deleteConfirmation object identity changes
   const requestDelete = useCallback(
     (u: AdminUser) => deleteConfirmation.requestDelete(u),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [deleteConfirmation.requestDelete],
+    [deleteConfirmation],
   );
 
   const confirmStatusChange = useCallback(async () => {
