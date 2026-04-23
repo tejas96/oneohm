@@ -8,12 +8,13 @@
  */
 
 import { ConnectionType, LeadTemperature, PropertyType } from '@oneohm-epc/shared/types';
+import { INDIAN_STATE_LABELS } from '@oneohm-epc/shared/constants';
 
 // ============================================================================
 // Indian States
 // ============================================================================
 
-export const INDIAN_STATES = ['Karnataka', 'Maharashtra'] as const;
+export const INDIAN_STATES = INDIAN_STATE_LABELS;
 
 // ============================================================================
 // Property Type Options

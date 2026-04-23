@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { normalizeIndianStateLabel } from '@oneohm-epc/shared/constants';
 import { CustomerStatus, LeadSource } from '@oneohm-epc/shared/types';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -162,7 +163,7 @@ function CustomerFormContent({
           alternatePhone: stripPhonePrefix(customer.alternatePhone),
           address: customer.address ?? '',
           city: customer.city ?? '',
-          state: customer.state ?? '',
+          state: normalizeIndianStateLabel(customer.state ?? ''),
           pincode: customer.pincode ?? '',
           leadSource: defaultLeadSource.leadSource,
           leadSourceOther: defaultLeadSource.leadSourceOther,
@@ -399,9 +400,85 @@ function CustomerFormContent({
               <MUIInput
                 id="address"
                 fieldLabel="Street Address"
-                placeholder="Enter street address"
-                error={form.formState.errors.address?.message}
-                {...form.register('address')}
+                options={addressLookup.suggestions}
+                value={selectedAddressOption}
+                inputValue={watchedAddress ?? ''}
+                loading={addressLookup.isLoadingSuggestions}
+                freeSolo
+                clearable
+                onClear={() => {
+                  setSelectedAddressOption(null);
+                  addressLookup.clearSuggestions();
+                }}
+                onInputChange={(value) => {
+                  setSelectedAddressOption(null);
+                  form.setValue('address', value, { shouldDirty: true, shouldValidate: true });
+                  addressLookup.setQuery(value);
+                }}
+                onChange={(selected) => {
+                  if (!selected || typeof selected === 'string') {
+                    const nextAddress = typeof selected === 'string' ? selected : '';
+                    setSelectedAddressOption(null);
+                    form.setValue('address', nextAddress, { shouldDirty: true, shouldValidate: true });
+                    addressLookup.setQuery(nextAddress);
+                    return;
+                  }
+
+                  const option = selected as AddressSuggestionOption;
+                  setSelectedAddressOption(option);
+                  form.setValue('address', option.label, { shouldDirty: true, shouldValidate: true });
+
+                  void (async () => {
+                    const details = await addressLookup.fetchAddressDetails(option.placeId);
+                    if (!details) return;
+
+                    if (details.city) {
+                      form.setValue('city', details.city, { shouldDirty: true, shouldValidate: true });
+                    }
+                    if (details.state) {
+                      form.setValue('state', normalizeIndianStateLabel(details.state), {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                    }
+                    if (details.pincode) {
+                      form.setValue('pincode', details.pincode, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                    }
+                  })();
+                }}
+                getOptionLabel={(option) =>
+                  typeof option === 'string'
+                    ? option
+                    : String((option as AddressSuggestionOption).label ?? '')
+                }
+                isOptionEqualToValue={(option, value) => {
+                  if (typeof option === 'string' || typeof value === 'string') {
+                    return option === value;
+                  }
+                  return (
+                    (option as AddressSuggestionOption).placeId ===
+                    (value as AddressSuggestionOption).placeId
+                  );
+                }}
+                noOptionsText={
+                  watchedAddress?.trim()
+                    ? 'No suggestions found. Continue typing manually.'
+                    : 'Start typing an address'
+                }
+                textFieldProps={{
+                  id: 'address',
+                  placeholder: 'Enter street address',
+                  error: !!form.formState.errors.address,
+                  onKeyDown: (event) => {
+                    if (event.key === 'Escape') {
+                      addressLookup.clearSuggestions();
+                    }
+                  },
+                }}
+                error={form.formState.errors.address?.message ?? addressLookup.errorMessage ?? undefined}
               />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

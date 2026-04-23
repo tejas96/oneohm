@@ -17,6 +17,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from '@mui/material';
+import { normalizeIndianStateLabel } from '@oneohm-epc/shared/constants';
 import { ConnectionType, DocumentEntityType, PropertyType } from '@oneohm-epc/shared/types';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -54,6 +55,10 @@ import {
   PROPERTY_TYPE_OPTIONS,
 } from '@/lib/config/constants';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
+import {
+  type AddressSuggestionOption,
+  useGooglePlacesAddress,
+} from '@/lib/hooks/use-google-places-address';
 import { getErrorMessage } from '@/lib/utils';
 
 // ============================================================================
@@ -160,9 +165,7 @@ export function PropertyForm({
     : (customersData?.data ?? []).find((c) => c.id === selectedCustomerId);
 
   const resolvedCustomer = selectedCustomer ?? customer;
-  const customerStateMatch = resolvedCustomer?.state
-    ? INDIAN_STATES.find((s) => s.toLowerCase() === resolvedCustomer.state?.toLowerCase())
-    : undefined;
+  const customerStateMatch = normalizeIndianStateLabel(resolvedCustomer?.state ?? '');
 
   const [draftDocuments, setDraftDocuments] = useState<DraftDocument[]>([]);
   const uploadDocsBulk = useUploadDocumentsBulk();
@@ -195,7 +198,7 @@ export function PropertyForm({
           isPrimary: false,
           address: resolvedCustomer?.address || '',
           city: resolvedCustomer?.city || '',
-          state: customerStateMatch || '',
+          state: customerStateMatch,
           pincode: resolvedCustomer?.pincode || '',
           consumerNumber: '',
           discomName: '',
@@ -217,7 +220,7 @@ export function PropertyForm({
         propertyType: initialData.propertyType as PropertyType,
         address: initialData.address || '',
         city: initialData.city || '',
-        state: initialData.state ?? '',
+        state: normalizeIndianStateLabel(initialData.state ?? ''),
         pincode: initialData.pincode || '',
         consumerNumber: initialData.consumerNumber || '',
         discomName: initialData.discomName ?? '',
@@ -246,6 +249,9 @@ export function PropertyForm({
   const watchedCity = form.watch('city');
   const watchedPincode = form.watch('pincode');
   const watchedLeadTemp = form.watch('leadTemperature');
+  const [selectedAddressOption, setSelectedAddressOption] =
+    useState<AddressSuggestionOption | null>(null);
+  const addressLookup = useGooglePlacesAddress('in');
   const filledCount = isEditMode
     ? 0
     : [
@@ -518,15 +524,101 @@ export function PropertyForm({
               )}
 
               <MUIInput
+                mode="autocomplete"
                 fieldLabel="Full Address"
                 required
-                id="address"
-                placeholder="Street address, area, landmark"
-                size="small"
-                multiline
-                rows={3}
-                {...form.register('address')}
-                error={form.formState.errors.address?.message}
+                options={addressLookup.suggestions}
+                value={selectedAddressOption}
+                inputValue={watchedAddress ?? ''}
+                loading={addressLookup.isLoadingSuggestions}
+                freeSolo
+                clearable
+                onClear={() => {
+                  setSelectedAddressOption(null);
+                  addressLookup.clearSuggestions();
+                }}
+                onInputChange={(value) => {
+                  setSelectedAddressOption(null);
+                  form.setValue('address', value, { shouldDirty: true, shouldValidate: true });
+                  addressLookup.setQuery(value);
+                }}
+                onChange={(selected) => {
+                  if (!selected || typeof selected === 'string') {
+                    const nextAddress = typeof selected === 'string' ? selected : '';
+                    setSelectedAddressOption(null);
+                    form.setValue('address', nextAddress, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                    addressLookup.setQuery(nextAddress);
+                    return;
+                  }
+
+                  const option = selected as AddressSuggestionOption;
+                  setSelectedAddressOption(option);
+                  form.setValue('address', option.label ?? '', {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+
+                  void (async () => {
+                    const details = await addressLookup.fetchAddressDetails(option.placeId);
+                    if (!details) return;
+
+                    if (details.city) {
+                      form.setValue('city', details.city, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                    }
+                    if (details.state) {
+                      form.setValue('state', normalizeIndianStateLabel(details.state), {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                    }
+                    if (details.pincode) {
+                      form.setValue('pincode', details.pincode, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                    }
+                  })();
+                }}
+                getOptionLabel={(option) =>
+                  typeof option === 'string'
+                    ? option
+                    : String((option as AddressSuggestionOption).label ?? '')
+                }
+                isOptionEqualToValue={(option, value) => {
+                  if (typeof option === 'string' || typeof value === 'string') {
+                    return option === value;
+                  }
+                  return (
+                    (option as AddressSuggestionOption).placeId ===
+                    (value as AddressSuggestionOption).placeId
+                  );
+                }}
+                noOptionsText={
+                  watchedAddress?.trim()
+                    ? 'No suggestions found. Continue typing manually.'
+                    : 'Start typing an address'
+                }
+                textFieldProps={{
+                  id: 'address',
+                  placeholder: 'Street address, area, landmark',
+                  multiline: true,
+                  rows: 3,
+                  size: 'small',
+                  onKeyDown: (event) => {
+                    if (event.key === 'Escape') {
+                      addressLookup.clearSuggestions();
+                    }
+                  },
+                }}
+                error={
+                  form.formState.errors.address?.message ?? addressLookup.errorMessage ?? undefined
+                }
               />
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
