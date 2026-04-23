@@ -76,7 +76,6 @@ export const ROUTES = {
     NEW: '/projects/new',
     BOARD: '/projects/board',
     MY_TASKS: '/projects/my-tasks',
-    TIMELINE: '/projects/timeline',
   },
 
   // Pipeline

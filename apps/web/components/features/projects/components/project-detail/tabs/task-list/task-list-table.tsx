@@ -100,7 +100,8 @@ function QuickSelect({
       formControlProps={{
         size: 'small',
         sx: {
-          minWidth: '110px',
+          minWidth: '92px',
+          maxWidth: '100%',
           '& .MuiOutlinedInput-root': {
             fontSize: '11px',
             height: '24px',
@@ -138,6 +139,11 @@ const PRIORITY_OPTIONS: MUISelectOption[] = (
     />
   ),
 }));
+
+const HEADER_GRID_COLS_WITH_MILESTONES = 'grid-cols-[72px_1fr_112px_96px_56px_88px_78px_104px]';
+const HEADER_GRID_COLS_WITHOUT_MILESTONES = 'grid-cols-[72px_1fr_96px_56px_88px_78px_104px]';
+const ROW_GRID_COLS_WITH_MILESTONES = 'md:grid-cols-[72px_1fr_112px_96px_56px_88px_78px_104px]';
+const ROW_GRID_COLS_WITHOUT_MILESTONES = 'md:grid-cols-[72px_1fr_96px_56px_88px_78px_104px]';
 
 // ── Skeleton ────────────────────────────────────────────────────────────────
 
@@ -179,19 +185,17 @@ function TableHeader({ hasMilestones }: { hasMilestones: boolean }): React.JSX.E
     <div
       className={cn(
         'hidden md:grid items-center gap-3 px-3 py-2 bg-muted/30 border-b border-border text-2xs font-medium text-foreground-tertiary uppercase tracking-wide',
-        hasMilestones
-          ? 'grid-cols-[80px_1fr_120px_100px_32px_100px_80px_110px]'
-          : 'grid-cols-[80px_1fr_100px_32px_100px_80px_110px]',
+        hasMilestones ? HEADER_GRID_COLS_WITH_MILESTONES : HEADER_GRID_COLS_WITHOUT_MILESTONES,
       )}
     >
-      <span>Key</span>
-      <span>Summary</span>
-      {hasMilestones && <span>Milestone</span>}
-      <span>Priority</span>
-      <span>Assignee</span>
-      <span>Due date</span>
-      <span>Progress</span>
-      <span>Status</span>
+      <span className="truncate">Key</span>
+      <span className="truncate">Summary</span>
+      {hasMilestones && <span className="truncate">Milestone</span>}
+      <span className="truncate">Priority</span>
+      <span className="truncate">Assignee</span>
+      <span className="truncate">Due date</span>
+      <span className="truncate">Progress</span>
+      <span className="truncate">Status</span>
     </div>
   );
 }
@@ -242,9 +246,7 @@ function TaskRow({
         'group flex items-center gap-3 px-3 py-2.5 border-b border-border-light last:border-0',
         'cursor-pointer hover:bg-muted/40 transition-colors duration-fast',
         'md:grid md:gap-3',
-        hasMilestones
-          ? 'md:grid-cols-[80px_1fr_120px_100px_32px_100px_80px_110px]'
-          : 'md:grid-cols-[80px_1fr_100px_32px_100px_80px_110px]',
+        hasMilestones ? ROW_GRID_COLS_WITH_MILESTONES : ROW_GRID_COLS_WITHOUT_MILESTONES,
       )}
     >
       {/* Key */}
@@ -292,7 +294,7 @@ function TaskRow({
       </div>
 
       {/* Assignee */}
-      <div className="shrink-0">
+      <div className="shrink-0 flex items-center justify-center">
         {initials ? (
           <Tooltip>
             <TooltipTrigger asChild>

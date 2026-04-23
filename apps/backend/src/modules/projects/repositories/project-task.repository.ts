@@ -18,6 +18,7 @@ import { ProjectTaskEntity } from '../entities/project-task.entity';
 const REPOSITORY_CONSTANTS = {
   MAX_ACTIVITY_LOG_ENTRIES: 100,
   DEFAULT_KANBAN_ORDER: 1000,
+  UNASSIGNED_TASK_FILTER: '__unassigned__',
 } as const;
 
 @Injectable()
@@ -123,9 +124,13 @@ export class ProjectTaskRepository {
       qb.andWhere('task.milestone_id = :milestoneId', { milestoneId: filters.milestoneId });
     }
     if (filters.assignedToUserId) {
-      qb.andWhere('task.assigned_to_user_id = :assignedToUserId', {
-        assignedToUserId: filters.assignedToUserId,
-      });
+      if (filters.assignedToUserId === REPOSITORY_CONSTANTS.UNASSIGNED_TASK_FILTER) {
+        qb.andWhere('task.assigned_to_user_id IS NULL');
+      } else {
+        qb.andWhere('task.assigned_to_user_id = :assignedToUserId', {
+          assignedToUserId: filters.assignedToUserId,
+        });
+      }
     }
     if (filters.status) {
       qb.andWhere('task.status = :status', { status: filters.status });

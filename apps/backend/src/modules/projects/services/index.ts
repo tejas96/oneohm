@@ -1,4 +1,5 @@
 export * from './project.service';
+export * from './project-attention.service';
 export * from './milestone.service';
 export * from './material.service';
 export * from './workflow-step.service';

@@ -4,6 +4,8 @@ import type { TaskStatusConfig } from '@oneohm-epc/shared/types';
 import Link from 'next/link';
 import React, { useMemo } from 'react';
 
+import { UNASSIGNED_TASK_FILTER } from '../../../../constants';
+
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { TeamWorkloadEntry } from '@/lib/hooks/resources';
@@ -128,10 +130,10 @@ export function TeamWorkloadPanel({
           {teamWorkload.map((member) => {
             const relativeWidth =
               maxTasks > 0 ? Math.round((member.totalTasks / maxTasks) * 100) : 0;
-            // Unassigned entries (userId === '') have no assignee filter
+            // Preserve unassigned intent in deep-link filters.
             const href = buildTasksTabUrl(
               projectPath,
-              member.userId ? { assignee: member.userId } : undefined,
+              member.userId ? { assignee: member.userId } : { assignee: UNASSIGNED_TASK_FILTER },
             );
 
             return (

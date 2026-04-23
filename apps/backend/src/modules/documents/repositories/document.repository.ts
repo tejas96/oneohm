@@ -32,7 +32,7 @@ export class DocumentRepository {
     entityType: DocumentEntityType,
     entityId: string,
     organizationId: string,
-    filters?: { tag?: string; category?: string },
+    filters?: { tag?: string; tags?: string[]; category?: string },
   ): Promise<DocumentEntity[]> {
     const where: Record<string, unknown> = {
       entityType,
@@ -40,7 +40,11 @@ export class DocumentRepository {
       organizationId,
       deletedAt: IsNull(),
     };
-    if (filters?.tag) where.tag = filters.tag;
+    if (filters?.tags?.length) {
+      where.tag = In(filters.tags);
+    } else if (filters?.tag) {
+      where.tag = filters.tag;
+    }
     if (filters?.category) where.category = filters.category;
     return this.repository.find({
       where,
@@ -65,7 +69,7 @@ export class DocumentRepository {
   async findByProperty(
     propertyId: string,
     organizationId: string,
-    filters?: { entityType?: DocumentEntityType; category?: string; tag?: string },
+    filters?: { entityType?: DocumentEntityType; category?: string; tag?: string; tags?: string[] },
   ): Promise<DocumentEntity[]> {
     const where: Record<string, unknown> = {
       propertyId,
@@ -74,7 +78,11 @@ export class DocumentRepository {
     };
     if (filters?.entityType) where.entityType = filters.entityType;
     if (filters?.category) where.category = filters.category;
-    if (filters?.tag) where.tag = filters.tag;
+    if (filters?.tags?.length) {
+      where.tag = In(filters.tags);
+    } else if (filters?.tag) {
+      where.tag = filters.tag;
+    }
 
     return this.repository.find({
       where,
@@ -89,6 +97,7 @@ export class DocumentRepository {
       entityType?: DocumentEntityType;
       category?: string;
       tag?: string;
+      tags?: string[];
     },
     page = 1,
     limit = 20,
@@ -102,7 +111,11 @@ export class DocumentRepository {
     if (filters?.entityType)
       qb.andWhere('doc.entityType = :entityType', { entityType: filters.entityType });
     if (filters?.category) qb.andWhere('doc.category = :category', { category: filters.category });
-    if (filters?.tag) qb.andWhere('doc.tag = :tag', { tag: filters.tag });
+    if (filters?.tags?.length) {
+      qb.andWhere('doc.tag IN (:...tags)', { tags: filters.tags });
+    } else if (filters?.tag) {
+      qb.andWhere('doc.tag = :tag', { tag: filters.tag });
+    }
 
     qb.orderBy('doc.createdAt', 'DESC')
       .skip((page - 1) * limit)

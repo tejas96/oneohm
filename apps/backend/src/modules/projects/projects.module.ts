@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import {
   MaterialController,
+  ProjectAttentionController,
   MilestoneController,
   ProjectAnalyticsController,
   ProjectController,
@@ -31,6 +32,7 @@ import {
 import {
   MaterialService,
   MilestoneService,
+  ProjectAttentionService,
   ProjectAnalyticsService,
   ProjectService,
   ProjectTaskService,
@@ -62,6 +64,7 @@ import { UsersModule } from '../users/users.module';
   ],
   controllers: [
     ProjectAnalyticsController, // registered before ProjectController — static 'analytics' segments resolve first
+    ProjectAttentionController, // static ':id/attention' should resolve before generic ':id' routes
     ProjectController,
     MilestoneController,
     MaterialController,
@@ -80,6 +83,7 @@ import { UsersModule } from '../users/users.module';
     ProjectTeamRepository,
     // Services
     ProjectService,
+    ProjectAttentionService,
     MilestoneService,
     MaterialService,
     WorkflowStepService,
@@ -98,6 +102,7 @@ import { UsersModule } from '../users/users.module';
     ProjectTaskRepository,
     ProjectTeamRepository,
     ProjectService,
+    ProjectAttentionService,
     MilestoneService,
     MaterialService,
     WorkflowStepService,

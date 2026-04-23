@@ -20,6 +20,7 @@
 - Multi-org support — always filter by organizationId
 - Pagination required — never fetch all data
 - Soft delete — always check `deletedAt IS NULL`
+- GitHub workflow — use GitHub MCP tools first for PR/issue actions, call `get_me` before repo operations, and do not fallback to `gh` unless explicitly requested
 
 **Quality Bar:**
 - Strict TypeScript (no `any`)

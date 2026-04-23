@@ -44,6 +44,8 @@ export interface MUIAvatarGroupMember {
   id: string;
   /** Full display name used for initials and tooltip */
   displayName: string;
+  /** Optional initials override (e.g. '?' for unassigned) */
+  initials?: string;
   /** Optional avatar image URL */
   avatarUrl?: string;
 }
@@ -117,6 +119,7 @@ export function MUIAvatarGroup({
             <Tooltip key={member.id} title={member.displayName} placement="top" arrow>
               <MUIAvatar
                 name={member.displayName}
+                initials={member.initials}
                 src={member.avatarUrl}
                 size={size}
                 onClick={selectable ? () => onToggle?.(member.id) : undefined}
@@ -241,7 +244,12 @@ export function MUIAvatarGroup({
                 }}
               >
                 <ListItemAvatar sx={{ minWidth: 36 }}>
-                  <MUIAvatar name={member.displayName} src={member.avatarUrl} size={28} />
+                  <MUIAvatar
+                    name={member.displayName}
+                    initials={member.initials}
+                    src={member.avatarUrl}
+                    size={28}
+                  />
                 </ListItemAvatar>
                 <ListItemText
                   primary={member.displayName}

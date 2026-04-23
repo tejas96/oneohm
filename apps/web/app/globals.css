@@ -186,6 +186,23 @@
 }
 
 /* ============================================================================
+   OVERVIEW TAB — HERO GRADIENT
+   Subtle brand-tinted gradient background for the project overview hero card.
+   ============================================================================ */
+
+.hero-gradient {
+  background:
+    radial-gradient(ellipse at top left, rgba(118, 192, 68, 0.1), transparent 55%),
+    radial-gradient(ellipse at bottom right, rgba(13, 116, 184, 0.07), transparent 55%),
+    linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+}
+
+/* Circular progress ring in project overview hero (starts at 12 o'clock) */
+.progress-ring {
+  transform: rotate(-90deg);
+}
+
+/* ============================================================================
    ANIMATION DELAY UTILITIES
    ============================================================================ */
 

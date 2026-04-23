@@ -3,7 +3,7 @@
 import { Flag, Milestone, Search, SlidersHorizontal, X } from 'lucide-react';
 import React, { useCallback, useMemo } from 'react';
 
-import type { TaskListFilters } from '../../../../constants';
+import { UNASSIGNED_TASK_FILTER, type TaskListFilters } from '../../../../constants';
 import type { TeamMemberSummary } from '../../../../hooks';
 import type { ProjectMilestone } from '../../../../hooks/types';
 import { TeamAvatarGroup } from '../../../team-avatar-group';
@@ -157,6 +157,7 @@ export function TaskListToolbar({
   );
   const activeAssigneeName = useMemo(() => {
     if (!filters.t_assignee) return '';
+    if (filters.t_assignee === UNASSIGNED_TASK_FILTER) return 'Unassigned';
     const member = avatarMembers.find((m) => m.id === filters.t_assignee);
     if (!member) return '';
     return `${member.firstName} ${member.lastName ?? ''}`.trim();
@@ -323,18 +324,23 @@ export function TaskListToolbar({
 
         <div className="h-5 w-px bg-border-light" />
 
-        {/* Assignee — avatar group single-select */}
-        {avatarMembers.length > 0 && (
-          <TeamAvatarGroup
-            members={avatarMembers}
-            max={5}
-            size="xs"
-            selectable
-            selectedIds={selectedAssigneeIds}
-            onToggle={handleToggleAssignee}
-            onClear={handleClearAssignee}
-          />
-        )}
+        {/* Assignee — includes unassigned as Jira-style '?' avatar */}
+        <TeamAvatarGroup
+          members={avatarMembers}
+          extraMembers={[
+            {
+              id: UNASSIGNED_TASK_FILTER,
+              displayName: 'Unassigned',
+              initials: '?',
+            },
+          ]}
+          max={5}
+          size="xs"
+          selectable
+          selectedIds={selectedAssigneeIds}
+          onToggle={handleToggleAssignee}
+          onClear={handleClearAssignee}
+        />
 
         {/* Spacer */}
         <div className="flex-1" />

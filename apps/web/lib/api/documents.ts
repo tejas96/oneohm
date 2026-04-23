@@ -55,6 +55,7 @@ export async function getDocuments(params: {
   entityIds?: string;
   category?: string;
   tag?: string;
+  tags?: string;
   organizationId?: string;
 }): Promise<DocumentRecord[]> {
   const { organizationId, ...queryParams } = params;

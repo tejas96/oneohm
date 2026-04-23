@@ -1,5 +1,6 @@
 // Project DTOs
 export * from './projects';
+export * from './attention-response.dto';
 
 // Analytics DTOs
 export * from './analytics';

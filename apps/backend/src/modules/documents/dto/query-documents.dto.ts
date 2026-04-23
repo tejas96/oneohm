@@ -36,6 +36,11 @@ export class QueryDocumentsDto {
   @IsString()
   tag?: string;
 
+  @ApiPropertyOptional({ description: 'Comma-separated tags for OR filter' })
+  @IsOptional()
+  @IsString()
+  tags?: string;
+
   @ApiPropertyOptional({ description: 'Page number', default: 1 })
   @IsInt()
   @Min(1)

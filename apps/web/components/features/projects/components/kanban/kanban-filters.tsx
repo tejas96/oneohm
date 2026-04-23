@@ -4,6 +4,7 @@ import { TaskPriority } from '@oneohm-epc/shared/types';
 import { SlidersHorizontal, Flag, Milestone, Tag, User, X } from 'lucide-react';
 import React, { useCallback, useMemo } from 'react';
 
+import { UNASSIGNED_TASK_FILTER } from '../../constants';
 import type { BoardFilters, KanbanFilterState } from '../../hooks/use-kanban-board';
 import type { TeamMemberSummary } from '../../hooks/use-projects';
 import { TeamAvatarGroup } from '../team-avatar-group';
@@ -88,18 +89,23 @@ export function KanbanFilters({
 
       <div className="h-5 w-px bg-border-light" />
 
-      {/* Team avatar group — inline selectable */}
-      {teamMembers.length > 0 && (
-        <TeamAvatarGroup
-          members={teamMembers}
-          max={3}
-          size="xs"
-          selectable
-          selectedIds={selectedAssigneeIds}
-          onToggle={handleToggleAssignee}
-          onClear={handleClearAssignee}
-        />
-      )}
+      {/* Team avatar group — includes Jira-style '?' unassigned avatar */}
+      <TeamAvatarGroup
+        members={teamMembers}
+        extraMembers={[
+          {
+            id: UNASSIGNED_TASK_FILTER,
+            displayName: 'Unassigned',
+            initials: '?',
+          },
+        ]}
+        max={3}
+        size="xs"
+        selectable
+        selectedIds={selectedAssigneeIds}
+        onToggle={handleToggleAssignee}
+        onClear={handleClearAssignee}
+      />
 
       <div className="h-5 w-px bg-border-light" />
 
