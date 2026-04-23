@@ -73,7 +73,7 @@ export class DocumentService {
     entityType: DocumentEntityType,
     entityId: string,
     organizationId: string,
-    filters?: { tag?: string; category?: string },
+    filters?: { tag?: string; tags?: string[]; category?: string },
   ): Promise<DocumentEntity[]> {
     return this.documentRepository.findByEntity(entityType, entityId, organizationId, filters);
   }
@@ -97,7 +97,7 @@ export class DocumentService {
   findByProperty(
     propertyId: string,
     organizationId: string,
-    filters?: { entityType?: DocumentEntityType; category?: string; tag?: string },
+    filters?: { entityType?: DocumentEntityType; category?: string; tag?: string; tags?: string[] },
   ): Promise<DocumentEntity[]> {
     return this.documentRepository.findByProperty(propertyId, organizationId, filters);
   }
@@ -126,7 +126,7 @@ export class DocumentService {
 
   async findByOrganization(
     organizationId: string,
-    filters?: { entityType?: DocumentEntityType; category?: string; tag?: string },
+    filters?: { entityType?: DocumentEntityType; category?: string; tag?: string; tags?: string[] },
     page = 1,
     limit = 20,
   ): Promise<[DocumentEntity[], number]> {

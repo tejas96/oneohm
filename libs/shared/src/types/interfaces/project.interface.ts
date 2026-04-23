@@ -232,3 +232,24 @@ export interface Project {
   updatedAt: string;
   deletedAt?: string;
 }
+
+export type AttentionSeverity = 'critical' | 'warning' | 'info';
+
+export type AttentionKind =
+  | 'task_blocked'
+  | 'task_overdue'
+  | 'milestone_late'
+  | 'milestone_due_soon'
+  | 'material_pending'
+  | 'payment_due';
+
+export interface AttentionItem {
+  id: string;
+  kind: AttentionKind;
+  severity: AttentionSeverity;
+  title: string;
+  subtitle: string;
+  href: string;
+  dueDate?: string;
+  assigneeName?: string;
+}

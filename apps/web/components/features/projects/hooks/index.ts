@@ -51,6 +51,9 @@ export {
   useProjectPaymentSummary,
   usePaymentMilestones,
 } from './use-project-payments';
+export { projectAttentionKeys, useProjectAttention } from './use-project-attention';
+export { projectReportKeys, useProjectReports } from './use-project-reports';
+export type { ProjectReportsData } from './use-project-reports';
 
 export { useDocumentDownload } from './use-document-download';
 export { useCreateProjectTask, type CreateProjectTaskPayload } from './use-create-project-task';

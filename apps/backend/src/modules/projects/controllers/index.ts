@@ -1,4 +1,5 @@
 export * from './project-analytics.controller';
+export * from './project-attention.controller';
 export * from './project.controller';
 export * from './milestone.controller';
 export * from './material.controller';

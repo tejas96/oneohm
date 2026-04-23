@@ -21,6 +21,12 @@ export interface ProjectDetailProperty {
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
+  consumerNumber?: string;
+  consumerName?: string;
+  discomName?: string;
+  connectionType?: string;
+  sanctionedLoad?: number;
+  monthlyBill?: number;
   propertyName?: string;
   address?: string;
   city?: string;

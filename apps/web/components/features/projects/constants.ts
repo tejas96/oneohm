@@ -389,3 +389,9 @@ export const TASK_LIST_FILTER_DEFAULTS = {
 } as const;
 
 export type TaskListFilters = typeof TASK_LIST_FILTER_DEFAULTS;
+
+/**
+ * Sentinel value used in URL/query filters to represent tasks with no assignee.
+ * Kept explicit (instead of empty string) so deep-links can preserve intent.
+ */
+export const UNASSIGNED_TASK_FILTER: string = '__unassigned__';

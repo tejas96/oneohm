@@ -8,3 +8,4 @@ export * from './enum-helpers';
 export * from './pagination';
 export * from './debounce';
 export * from './avatar';
+export * from './solar-impact';

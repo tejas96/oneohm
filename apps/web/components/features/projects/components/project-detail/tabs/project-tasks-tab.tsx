@@ -11,6 +11,7 @@ import {
   TASK_LIST_FILTER_DEFAULTS,
   TASKS_PAGE_SIZE,
   PROJECT_TASKS_QUERY_KEY,
+  UNASSIGNED_TASK_FILTER,
   type TaskListFilters,
 } from '../../../constants';
 import {
@@ -70,7 +71,10 @@ export const ProjectTasksTab = React.memo(
         limit: TASKS_PAGE_SIZE,
         status: filters.t_status || undefined,
         priority: filters.t_priority || undefined,
-        assignedToUserId: filters.t_assignee || undefined,
+        assignedToUserId:
+          filters.t_assignee === UNASSIGNED_TASK_FILTER
+            ? UNASSIGNED_TASK_FILTER
+            : filters.t_assignee || undefined,
         milestoneId: filters.t_milestone || undefined,
         search: filters.t_search || undefined,
       },

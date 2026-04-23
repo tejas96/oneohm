@@ -12,6 +12,7 @@ import { MUIAvatarGroup, type MUIAvatarGroupMember } from '@/components/ui';
 
 interface TeamAvatarGroupProps {
   members: TeamMemberSummary[];
+  extraMembers?: MUIAvatarGroupMember[];
   max?: number;
   size?: 'xs' | 'sm';
   selectable?: boolean;
@@ -29,6 +30,7 @@ const SIZE_PX: Record<'xs' | 'sm', number> = { xs: 28, sm: 32 };
 
 export function TeamAvatarGroup({
   members,
+  extraMembers,
   max = 3,
   size = 'xs',
   selectable,
@@ -37,12 +39,14 @@ export function TeamAvatarGroup({
   onClear,
 }: TeamAvatarGroupProps): JSX.Element {
   const groupMembers = useMemo<MUIAvatarGroupMember[]>(
-    () =>
-      members.map((m) => ({
+    () => [
+      ...(extraMembers ?? []),
+      ...members.map((m) => ({
         id: m.id,
         displayName: `${m.firstName}${m.lastName ? ` ${m.lastName}` : ''}`.trim() || 'Unknown',
       })),
-    [members],
+    ],
+    [extraMembers, members],
   );
 
   return (

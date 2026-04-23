@@ -35,6 +35,15 @@ import { DocumentService } from '../services/document.service';
 export class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
 
+  private parseCsv(value?: string): string[] | undefined {
+    if (!value) return undefined;
+    const items = value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+    return items.length > 0 ? [...new Set(items)] : undefined;
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a document record' })
@@ -74,6 +83,7 @@ export class DocumentController {
   ): Promise<DocumentResponseDto[]> {
     const page = queryDto.page ?? 1;
     const limit = queryDto.limit ?? 50;
+    const tags = this.parseCsv(queryDto.tags);
 
     // Property-wide query (all entity types for a property)
     if (queryDto.propertyId) {
@@ -81,6 +91,7 @@ export class DocumentController {
         entityType: queryDto.entityType,
         category: queryDto.category,
         tag: queryDto.tag,
+        tags,
       });
       return toDtoArray(DocumentResponseDto, docs);
     }
@@ -102,7 +113,7 @@ export class DocumentController {
         queryDto.entityType,
         queryDto.entityId,
         organizationId,
-        { tag: queryDto.tag, category: queryDto.category },
+        { tag: queryDto.tag, tags, category: queryDto.category },
       );
       return toDtoArray(DocumentResponseDto, docs);
     }
@@ -113,6 +124,7 @@ export class DocumentController {
         entityType: queryDto.entityType,
         category: queryDto.category,
         tag: queryDto.tag,
+        tags,
       },
       page,
       limit,

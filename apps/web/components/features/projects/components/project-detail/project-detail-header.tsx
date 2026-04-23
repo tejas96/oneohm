@@ -1,7 +1,6 @@
 'use client';
 
-import { ProjectStatus } from '@oneohm-epc/shared/types';
-import { Pencil, KanbanSquare } from 'lucide-react';
+import { KanbanSquare } from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';
 
@@ -36,15 +35,13 @@ export const ProjectDetailHeader = React.memo(
     const statusVariant = PROJECT_STATUS_BADGE_VARIANT[project.status] ?? 'secondary';
     const priorityLabel = PROJECT_PRIORITY_LABELS[project.priority] ?? project.priority;
     const priorityVariant = PROJECT_PRIORITY_BADGE_VARIANT[project.priority] ?? 'secondary';
-    const isEditable = project.status !== ProjectStatus.CANCELLED;
-
     return (
       <div className="space-y-3">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link href={ROUTES.PROJECTS.DASHBOARD}>Projects</Link>
+                <Link href={ROUTES.PROJECTS.LIST}>Projects</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
@@ -79,10 +76,6 @@ export const ProjectDetailHeader = React.memo(
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <Button variant="outline" size="sm" disabled={!isEditable}>
-              <Pencil className="size-icon-xs mr-1.5" />
-              Edit
-            </Button>
             <Button size="sm" asChild>
               <Link
                 href={buildRoute(ROUTES.PROJECTS.BOARD, undefined, {

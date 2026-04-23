@@ -5,6 +5,8 @@ import { AlertTriangle, CheckCircle2, Clock, ListTodo, UserX, Zap } from 'lucide
 import Link from 'next/link';
 import React from 'react';
 
+import { UNASSIGNED_TASK_FILTER } from '../../../../constants';
+
 import { Skeleton } from '@/components/ui/skeleton';
 import type { ProjectSummaryMetrics } from '@/lib/hooks/resources';
 import { buildTasksTabUrl } from '@/lib/utils';
@@ -121,8 +123,7 @@ export function SummaryMetricsCards({ metrics, isLoading, projectPath }: Summary
       value: metrics?.unassignedTasks ?? 0,
       chipBg: 'bg-gray-100',
       chipIcon: 'text-foreground-secondary',
-      // Unassigned is a derived state — no dedicated URL filter; navigate to all tasks
-      href: buildTasksTabUrl(projectPath),
+      href: buildTasksTabUrl(projectPath, { assignee: UNASSIGNED_TASK_FILTER }),
     },
   ];
 

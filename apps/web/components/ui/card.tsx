@@ -28,10 +28,10 @@ const cardVariants = cva(
   {
     variants: {
       variant: {
-        default: 'border border-border-light',
-        elevated: 'border border-border-light shadow-sm',
+        default: 'border border-border-light/70 shadow-card',
+        elevated: 'border border-border-light/70 shadow-card hover:shadow-card-hover',
         interactive:
-          'border border-border-light cursor-pointer hover:border-primary hover:shadow-md group',
+          'border border-border-light/70 shadow-card cursor-pointer hover:border-primary hover:shadow-card-hover group',
         minimal: 'bg-background-secondary',
       },
       padding: {

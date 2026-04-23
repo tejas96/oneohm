@@ -16,6 +16,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 
 import { KanbanColumn } from './kanban-column';
 import { KanbanTaskCard } from './kanban-task-card';
+import { UNASSIGNED_TASK_FILTER } from '../../constants';
 import type {
   BoardColumnTask,
   BoardResponse,
@@ -62,7 +63,10 @@ export function KanbanBoard({
     return data.columns.map((col) => {
       let tasks = col.tasks;
       if (filters.assigneeId) {
-        tasks = tasks.filter((t) => t.assigneeId === filters.assigneeId);
+        tasks =
+          filters.assigneeId === UNASSIGNED_TASK_FILTER
+            ? tasks.filter((t) => !t.assigneeId)
+            : tasks.filter((t) => t.assigneeId === filters.assigneeId);
       }
       if (filters.priority) {
         tasks = tasks.filter((t) => t.priority === filters.priority);
