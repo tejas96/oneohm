@@ -76,13 +76,14 @@ export class ProjectTaskController {
   @ApiCreate({ responseType: ProjectTaskResponseDto, summary: 'Create a new project task' })
   async create(
     @CurrentUser() currentUser: CurrentUserType,
+    @OrganizationContext() organizationId: string,
     @Param('projectId', ParseUUIDPipe) projectId: string,
     @Body() createDto: CreateProjectTaskDto,
   ): Promise<ProjectTaskResponseDto> {
     // Override projectId from route param
     createDto.projectId = projectId;
 
-    const task = await this.taskService.create(createDto, currentUser.id);
+    const task = await this.taskService.create(createDto, currentUser.id, organizationId);
     return plainToInstance(ProjectTaskResponseDto, task, {
       excludeExtraneousValues: true,
     });

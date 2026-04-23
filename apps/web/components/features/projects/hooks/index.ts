@@ -53,6 +53,7 @@ export {
 } from './use-project-payments';
 
 export { useDocumentDownload } from './use-document-download';
+export { useCreateProjectTask, type CreateProjectTaskPayload } from './use-create-project-task';
 
 export {
   useProjectTaskStatuses,

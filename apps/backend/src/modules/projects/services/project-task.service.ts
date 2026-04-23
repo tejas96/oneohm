@@ -75,7 +75,11 @@ export class ProjectTaskService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async create(createDto: CreateProjectTaskDto, currentUserId: string): Promise<ProjectTaskEntity> {
+  async create(
+    createDto: CreateProjectTaskDto,
+    currentUserId: string,
+    organizationId?: string,
+  ): Promise<ProjectTaskEntity> {
     if (!createDto.projectId) {
       throw new BadRequestException('Project ID is required');
     }
@@ -89,6 +93,10 @@ export class ProjectTaskService {
       throw new BadRequestException(
         'Name is required for ad-hoc tasks (tasks without a workflow step)',
       );
+    }
+
+    if (!createDto.code) {
+      createDto.code = await this.generateTaskCode(projectId, organizationId);
     }
 
     if (createDto.code) {
