@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import React, { useCallback, useMemo, useState } from 'react';
 
+import { CreateProjectTaskModal } from './create-project-task-modal';
 import { TaskListTable, TaskListToolbar } from './task-list';
 import {
   TASK_LIST_FILTER_DEFAULTS,
@@ -25,7 +26,6 @@ import { useUpdateTask } from '@/components/features/tasks/hooks';
 import { TablePagination } from '@/components/shared/data-table/pagination';
 import { ErrorState } from '@/components/shared/feedback/empty-state';
 import { Button } from '@/components/ui/button';
-import { showToast } from '@/components/ui/sonner';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useOrgContext } from '@/lib/hooks/core';
 import { useLookupOptions } from '@/lib/hooks/resources';
@@ -106,6 +106,7 @@ export const ProjectTasksTab = React.memo(
     // Drawer state
     const [openTaskId, setOpenTaskId] = useState<string | null>(null);
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
     const handleOpenTask = useCallback((taskId: string) => {
       setOpenTaskId(taskId);
@@ -212,7 +213,7 @@ export const ProjectTasksTab = React.memo(
                   Open Board
                 </Link>
               </Button>
-              <Button size="sm" onClick={() => showToast.info('Coming Soon')}>
+              <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
                 + Add Task
               </Button>
             </div>
@@ -263,6 +264,13 @@ export const ProjectTasksTab = React.memo(
           open={drawerOpen}
           onClose={handleCloseDrawer}
           onTaskUpdated={invalidateProjectTasks}
+        />
+        <CreateProjectTaskModal
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+          projectId={projectId}
+          project={project}
+          taskStatuses={taskStatuses}
         />
       </>
     );
