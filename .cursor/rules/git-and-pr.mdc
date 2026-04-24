@@ -1,0 +1,33 @@
+---
+alwaysApply: true
+---
+
+# Git & Pull Request Rules
+
+## GitHub Operations — MCP Only
+
+- **Always use GitHub MCP tools** for all GitHub operations (PRs, issues, reviews, comments).
+- **Call `get_me` first** to get user context before any repo operation.
+- **Never use `gh` CLI** unless the user explicitly requests it.
+- Available MCP tools: `create_pull_request`, `list_pull_requests`, `search_issues`, `create_issue`, `add_comment_to_pending_review`, etc.
+
+## Commit Messages
+
+- Concise, imperative mood: "Add customer search" not "Added customer search".
+- Focus on **why**, not what — the diff shows what changed.
+- One logical change per commit.
+
+## Pull Requests
+
+When creating a PR:
+1. Follow the repository's PR template if one exists (check `.github/PULL_REQUEST_TEMPLATE.md`).
+2. Write a clear summary with bullet points describing what changed.
+3. Include a test plan.
+4. Use the GitHub MCP `create_pull_request` tool — never `gh pr create`.
+
+## Branch Naming
+
+- Feature: `feature/short-description`
+- Bug fix: `fix/short-description`
+- Refactor: `refactor/short-description`
+- Cursor-generated: `cursor/short-description`

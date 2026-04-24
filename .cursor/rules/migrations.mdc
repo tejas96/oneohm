@@ -2,13 +2,9 @@
 globs: apps/backend/src/database/migrations/**/*.ts
 ---
 
-# TypeORM Migrations
+# Migration Rules
 
-> **DDL only. Always include down(). Test both directions.**
-
----
-
-## 📝 Template
+## Template
 
 ```typescript
 import { MigrationInterface, QueryRunner } from 'typeorm';
@@ -32,16 +28,14 @@ export class AddColumnName1770300000000 implements MigrationInterface {
 }
 ```
 
----
-
-## ⚡ Common Patterns
+## Common Patterns
 
 ```sql
 -- Add column
 ALTER TABLE "t" ADD COLUMN "c" type DEFAULT value;
 
 -- Add index (partial for soft delete)
-CREATE INDEX "idx_t_c" ON "t" ("c") WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS "idx_t_c" ON "t" ("c") WHERE deleted_at IS NULL;
 
 -- Add trigger for updated_at
 CREATE TRIGGER update_t_updated_at
@@ -49,13 +43,12 @@ CREATE TRIGGER update_t_updated_at
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 ```
 
----
+## Rules
 
-## 🚫 NEVER
-
-```
-❌ DML in migrations (INSERT/UPDATE/DELETE)
-❌ Skip down() method
-❌ Modify existing migration files
-❌ Hardcode data — use seeds
-```
+- DDL only — no data manipulation (INSERT/UPDATE/DELETE) in migrations.
+- Always include `down()` — every migration must be reversible.
+- Never modify existing migration files — create a new migration instead.
+- Use `IF NOT EXISTS` for index creation — ensures idempotency.
+- Use `IF EXISTS` in `down()` for drops — prevents errors on re-run.
+- Hardcode no data — use seed scripts for data population.
+- Use `.withDeleted()` in sequence generation queries — soft-deleted rows still occupy sequences.

@@ -28,7 +28,7 @@
     "format:check": "prettier --check \"apps/**/*.{ts,tsx,js,jsx,json,css,md}\" \"libs/**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "lint": "nx run-many --target=lint --all",
     "lint:check": "nx run-many --target=lint --all",
-    "lint:fix": "nx run-many --target=lint --all --fix",
+    "lint:fix": "nx run-many --target=lint --all --fix && prettier --write \"apps/**/*.{ts,tsx,js,jsx,json,css,md}\" \"libs/**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "typecheck": "nx run-many --target=typecheck --all",
     "typecheck:backend": "tsc --noEmit -p apps/backend/tsconfig.json",
     "typecheck:web": "tsc --noEmit -p apps/web/tsconfig.json",

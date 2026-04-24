@@ -11,6 +11,7 @@ export interface JwtPayload {
   organizationId?: string; // Organization ID for multi-tenancy (optional - use profile context instead)
   roles: string[]; // User roles (for backward compatibility)
   permissions: string[]; // NEW: User permissions (e.g., ['customers:read', 'customers:create'])
+  loginAt?: number; // Unix timestamp of the original login (carried forward across refreshes for absolute session expiry)
   iat?: number; // Issued at
   exp?: number; // Expiration time
 }

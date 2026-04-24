@@ -60,6 +60,13 @@ export const muiTheme = createTheme({
           padding: '6px 10px',
           height: 'auto',
           '&:focus-visible': { outline: 'none' },
+          '&:-webkit-autofill, &:-webkit-autofill:hover, &:-webkit-autofill:focus, &:-webkit-autofill:active':
+            {
+              WebkitBoxShadow: '0 0 0 30px #ffffff inset !important',
+              WebkitTextFillColor: '#18181b !important',
+              caretColor: '#18181b',
+              transition: 'background-color 5000s ease-in-out 0s',
+            },
         },
         notchedOutline: {
           borderColor: '#d4d4d8',

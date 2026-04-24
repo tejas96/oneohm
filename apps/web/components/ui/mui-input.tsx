@@ -3,16 +3,19 @@
 import CloseIcon from '@mui/icons-material/Close';
 import {
   Autocomplete,
+  Box,
   CircularProgress,
   IconButton,
   InputAdornment,
   MenuItem,
   TextField,
+  Typography,
   type AutocompleteProps,
   type TextFieldProps,
 } from '@mui/material';
 import * as React from 'react';
 
+import { MUIAvatar } from './mui-avatar';
 import { MUIFieldLabel, mergeRefs } from './mui-shared';
 
 /* -------------------------------------------------------------------------- */
@@ -84,6 +87,26 @@ type AutocompleteModeProps = CommonExtras &
     onInputChange?: (value: string) => void;
     textFieldProps?: Omit<TextFieldProps, 'value' | 'onChange' | 'label'>;
     disableClearable?: boolean;
+    /**
+     * When true each dropdown option renders a MUIAvatar beside the label.
+     * The avatar name is read from the option's `label` field (or the string itself).
+     * Pair with `secondaryTextKey` to show a subtitle (e.g. phone number).
+     */
+    showAvatar?: boolean;
+    /**
+     * Key of the option object whose value is used as the avatar image URL.
+     * Falls back to initials when the key is missing or the URL is falsy.
+     * Only relevant when `showAvatar` is true.
+     * @default 'avatarUrl'
+     */
+    avatarUrlKey?: string;
+    /**
+     * Key of the option object whose value is shown as the secondary line
+     * (subtitle) under the main label in the dropdown.
+     * Only relevant when `showAvatar` is true.
+     * @default 'secondaryText'
+     */
+    secondaryTextKey?: string;
   };
 
 export type MUIInputProps = BaseFieldProps | AutocompleteModeProps;
@@ -189,6 +212,10 @@ const MUIInputInner = (
       loadingText,
       textFieldProps,
       disableClearable,
+      showAvatar = false,
+      avatarUrlKey = 'avatarUrl',
+      secondaryTextKey = 'secondaryText',
+      renderOption: callerRenderOption,
       ...autocompleteProps
     } = props;
     /* eslint-enable @typescript-eslint/no-unused-vars */
@@ -198,6 +225,56 @@ const MUIInputInner = (
       tfProps.color ?? (hasError ? 'error' : success ? 'success' : 'primary');
     const helperText = tfProps.helperText ?? errorMsg ?? successMsg;
     const mergedRef = mergeRefs<HTMLInputElement>(tfProps.inputRef, ref);
+
+    // Avatar renderOption — only used when showAvatar=true and caller didn't supply their own
+    const avatarRenderOption = showAvatar
+      ? (
+          optionProps: React.HTMLAttributes<HTMLLIElement> & { key?: React.Key },
+          option: SearchOption,
+        ): React.ReactNode => {
+          // Destructure key out so it is NOT spread — we set our own unique key below.
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { key, ...liProps } = optionProps;
+          const label = defaultGetOptionLabel(option);
+          const optObj = typeof option === 'object' ? (option as Record<string, unknown>) : null;
+          // Use the option's `value` field as the key — it must be unique (e.g. entity ID).
+          // Falls back to label only when `value` is absent (e.g. plain string options).
+          const uniqueKey = (optObj?.['value'] as string | undefined) ?? label;
+          const avatarSrc = (optObj?.[avatarUrlKey] as string | undefined) ?? '';
+          const secondary = (optObj?.[secondaryTextKey] as string | undefined) ?? '';
+          return (
+            <Box
+              key={uniqueKey}
+              component="li"
+              {...liProps}
+              sx={{ display: 'flex', alignItems: 'center', gap: 1.25, px: 1.5, py: 0.75 }}
+            >
+              <MUIAvatar
+                name={label}
+                src={avatarSrc || undefined}
+                size="sm"
+                sx={{ flexShrink: 0 }}
+              />
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="body2" noWrap sx={{ fontWeight: 500, lineHeight: 1.3 }}>
+                  {label}
+                </Typography>
+                {secondary && (
+                  <Typography
+                    variant="caption"
+                    noWrap
+                    sx={{ color: 'text.secondary', lineHeight: 1.2 }}
+                  >
+                    {secondary}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+          );
+        }
+      : undefined;
+
+    const resolvedRenderOption = callerRenderOption ?? avatarRenderOption;
 
     return (
       <div>
@@ -218,6 +295,7 @@ const MUIInputInner = (
           loading={loading}
           noOptionsText={noOptionsText}
           loadingText={loadingText}
+          renderOption={resolvedRenderOption}
           renderInput={(params) => (
             <TextField
               {...params}

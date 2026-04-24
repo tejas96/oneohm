@@ -7,7 +7,6 @@ import { MobileNav } from './mobile-nav';
 import { UserMenu } from './user-menu';
 
 import { SearchTrigger } from '@/components/shared/search';
-import { DotBadge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface GlobalHeaderProps {
@@ -57,11 +56,6 @@ export function GlobalHeader({ className, onCommandOpen }: GlobalHeaderProps) {
 
       {/* Right: Actions */}
       <div className="flex items-center space-x-1 lg:space-x-2">
-        {/* Live Activity Indicator - Desktop only */}
-        <div className="hidden xl:flex items-center mr-2">
-          <DotBadge color="green">3 online</DotBadge>
-        </div>
-
         {/* Notifications */}
         <button
           className="relative p-2 hover:bg-background-secondary rounded-lg transition-colors"

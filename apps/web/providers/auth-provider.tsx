@@ -12,12 +12,7 @@ import {
   type ReactNode,
 } from 'react';
 
-import apiClient, {
-  clearTokens,
-  getAccessToken,
-  getRefreshToken,
-  setTokens,
-} from '@/lib/api/client';
+import apiClient, { clearTokens, getRefreshToken, setTokens } from '@/lib/api/client';
 import { useAuthStore } from '@/lib/stores/auth-store';
 import type {
   AuthUser,
@@ -134,32 +129,24 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
 
     const initAuth = async (): Promise<void> => {
       try {
-        let token = getAccessToken();
+        const refreshToken = getRefreshToken();
 
-        if (!token) {
-          const refreshToken = getRefreshToken();
-          if (refreshToken) {
-            try {
-              const response = await apiClient.post<{ accessToken: string; refreshToken: string }>(
-                '/auth/refresh',
-                { refreshToken },
-              );
-              if (cancelled) return;
-              const { accessToken, refreshToken: newRefreshToken } = response.data;
-              setTokens(accessToken, newRefreshToken);
-              token = accessToken;
-            } catch {
-              if (cancelled) return;
-              clearTokens();
-              storeLogout();
-            }
+        if (refreshToken) {
+          try {
+            const response = await apiClient.post<{ accessToken: string; refreshToken: string }>(
+              '/auth/refresh',
+              { refreshToken },
+            );
+            if (cancelled) return;
+            const { accessToken, refreshToken: newRefreshToken } = response.data;
+            setTokens(accessToken, newRefreshToken);
+          } catch {
+            if (cancelled) return;
+            clearTokens();
+            storeLogout();
           }
-        }
-
-        if (cancelled) return;
-
-        // Read user from ref to get latest value without depending on it
-        if (!token && userRef.current) {
+        } else if (userRef.current) {
+          clearTokens();
           storeLogout();
         }
       } finally {

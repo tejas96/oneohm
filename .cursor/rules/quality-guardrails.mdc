@@ -1,97 +1,98 @@
 ---
-description: AI mistake tracking and pre-implementation edge case analysis. Ensures continuous quality improvement and thorough scenario coverage across web and backend.
 alwaysApply: true
 ---
 
-# Quality Guardrails — Feedback Loop & Edge Case Discipline
+# Quality Guardrails
 
-## Rule 1: AI Mistakes Log
+These rules apply to EVERY task — planning, implementation, and review.
 
-A file exists at `.cursor/ai-mistakes.md` that tracks mistakes made by AI during development.
+## Before Writing Any Code
 
-### Before Starting Any Task
+1. **Search the codebase** — verify the component, hook, util, or pattern does not already exist.
+2. **Read related files** — understand the existing structure, naming, and conventions before changing anything.
+3. **List scenarios** — identify happy path, empty state, error state, edge cases, auth, and multi-tenancy concerns.
+4. **State what you will handle and what you are deferring.** Deferred items get `// TODO:` comments.
 
-1. **Read `.cursor/ai-mistakes.md`** before writing any code.
-2. Scan for patterns relevant to your current task.
-3. Actively avoid repeating any listed mistake.
+## Scenario Checklist
 
-### When a Mistake Happens
+Every feature must consider these scenarios. State which are handled and which are deferred.
 
-A "mistake" is any of:
-- Code that causes a runtime error, crash, or lint failure.
-- Code that breaks an existing feature.
-- A wrong assumption about the codebase (wrong file, wrong service, wrong type, wrong pattern).
-- Missing an obvious edge case that the user has to point out.
-- Violating a rule from `frontend.mdc`, `backend.mdc`, `testing.mdc`, or `shared-libs.mdc`.
-- Using raw `useQuery`/`useMutation` instead of FDAL core hooks in frontend.
-- Using `apiClient` directly instead of service layer patterns.
-- Forgetting org isolation, auth guards, or soft delete filters in backend.
-- Suggesting a pattern the user corrects.
-- Generating duplicate code that already exists in the codebase.
+**Data states:**
+- Happy path — ideal flow works end to end
+- Empty — no data, no results, null/undefined values
+- Loading — spinner, skeleton, or progress indicator
+- Error — API failure, validation error, network timeout
 
-### How to Log
+**Error codes (frontend):**
+- 400 — field-level validation shown to user
+- 401 — token refresh handled by interceptors; UI must not break
+- 403 — "No permission" message, never blank screen
+- 404 — user informed, graceful navigation
+- 500 — generic error with retry option
 
-Append to `.cursor/ai-mistakes.md` using this format (max 2 lines):
+**Boundaries:**
+- Long text — truncated or wrapped
+- Special characters — no injection, no breakage
+- Rapid actions — debounced or disabled after first click
+- Concurrent mutations — idempotent or queued
 
+**Security (critical):**
+- Organization isolation — every query filtered by org
+- Role permissions — features gated by role
+- Token expiry mid-action — handled without data loss
+- Cross-org data leak — impossible by design
+
+**Backend-specific:**
+- Transaction safety — multi-entity writes are atomic
+- Soft delete — `deletedAt: IsNull()` on all queries
+- Audit trail — `createdBy`/`updatedBy` tracked
+- Pagination — `parsePaginationParams()`, never manual parsing
+
+## File Size Limit — 500 Lines Maximum
+
+Every file in the project must be under 500 lines. This is a hard limit.
+
+When a file approaches the limit:
+- Extract sub-components into their own files
+- Extract hooks into dedicated `use-*.ts` files
+- Extract utility functions into `lib/utils/`
+- Extract constants into `constants.ts`
+- Split large services into focused sub-services
+
+Check file length before adding code to an existing file.
+
+## Post-Implementation Verification (MANDATORY)
+
+This must be the **last TODO item** for every task. No exceptions.
+
+Run these commands from the project root:
+
+```bash
+npm run lint:fix && npm run typecheck
 ```
-- **YYYY-MM-DD — <title>**: <What went wrong> → <Correct approach>. Max 2 lines.
-```
 
-### Rules
+**Process:**
+1. Run the command.
+2. Review **only `typecheck` output** for errors. `lint:fix` auto-fixes everything (including Prettier formatting) — do not review its output.
+3. If typecheck errors exist, fix them and re-run.
+4. Repeat until zero errors.
+5. Only then is the task complete.
 
-- **Max 2 lines per entry** — be concise and impactful. No filler words.
-- Focus on root cause + correct approach, not symptoms.
-- Do NOT delete or modify past entries — append-only.
-- Review the full log at the start of every new task.
+These commands cover:
+- `npm run lint:fix` — runs ESLint with auto-fix on all apps, then runs Prettier to auto-format all files. No need to review output.
+- `npm run typecheck` — runs `tsc --noEmit` on all apps. Review this output for errors.
 
----
+## Code Review Self-Check
 
-## Rule 2: Pre-Implementation Scenario Analysis
+Before considering any implementation done:
 
-Before writing ANY implementation, think through all scenarios. The existing `frontend.mdc` and `backend.mdc` rules require this — this rule defines the full checklist.
-
-### Scenarios to Cover (Every Feature)
-
-**Happy path** — The ideal flow works end to end.
-
-**Empty states** — No data, no results, no permissions, null/undefined values.
-
-**Error states**
-- 400 — Field-level validation errors shown to user.
-- 401 — Token refresh and retry (interceptors handle, but UI must not break).
-- 403 — "No permission" message, not a blank screen.
-- 404 — User informed, navigation graceful.
-- 500 — Generic error with retry option.
-- Network offline — Offline message, retry when back online.
-- Timeout — Loading cleared, retry available.
-
-**Boundary cases**
-- Very long text — Truncation or wrapping handled.
-- Special characters — No injection, no breakage.
-- Large numbers — Formatting holds.
-- Rapid actions — Debounced or disabled after first action.
-- Concurrent mutations — Idempotent or queued.
-
-**Auth & multi-tenancy** (critical for this project)
-- Organization isolation — Every query filtered by org.
-- Role permissions — Feature gated by role.
-- Token expiry mid-action — Handled without data loss.
-- Cross-org data leak — Impossible by design.
-
-**Frontend-specific**
-- Mobile responsive — Works on small viewports.
-- Keyboard navigation — Accessible.
-- URL state — Filters/tabs survive refresh.
-- Back/forward — Browser history intact.
-
-**Backend-specific**
-- Transaction safety — Multi-entity writes atomic.
-- Soft delete — `deletedAt: IsNull()` on all queries.
-- Audit trail — `createdBy`/`updatedBy` tracked.
-- Pagination — Uses `parsePaginationParams()`, not manual parsing.
-
-### Before Writing Code
-
-State which scenarios you will handle and which you are deferring. If deferring, add a `// TODO:` comment.
-
-Do NOT ship code with unhandled scenarios unless explicitly agreed with the user.
+- [ ] No `any` types anywhere
+- [ ] No `console.log` statements
+- [ ] No dead/unused code
+- [ ] No hardcoded values — use constants
+- [ ] No duplicate code — reuse existing
+- [ ] All imports from barrels, not deep paths
+- [ ] All files under 500 lines
+- [ ] All data states handled (loading, error, empty)
+- [ ] All links/routes verified to work
+- [ ] `npm run lint:fix && npm run typecheck` passes with zero errors

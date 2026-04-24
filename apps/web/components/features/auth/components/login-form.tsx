@@ -1,174 +1,152 @@
 'use client';
 
-import { Mail } from 'lucide-react';
+import MailOutlineIcon from '@mui/icons-material/MailOutline';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import {
+  Alert,
+  Button,
+  Checkbox,
+  CircularProgress,
+  FormControlLabel,
+  IconButton,
+  InputAdornment,
+  TextField,
+} from '@mui/material';
 import Link from 'next/link';
+import { useState } from 'react';
 
 import { useLoginForm } from '../hooks/use-login-form';
 
-import { Alert } from '@/components/shared';
-import {
-  Button,
-  Card,
-  Checkbox,
-  Input,
-  PasswordInput,
-  Spinner,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  Typography,
-} from '@/components/ui';
+import { MUITypography } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
 
-/**
- * LoginForm Component
- * Pure UI component - all logic delegated to useLoginForm hook.
- * Uses enhanced Input components for cleaner code.
- */
 export function LoginForm(): React.JSX.Element {
-  const {
-    activeTab,
-    setActiveTab,
-    isLoading,
-    displayError,
-    passwordForm,
-    otpForm,
-    onPasswordSubmit,
-    onOtpSubmit,
-  } = useLoginForm();
+  const { isLoading, displayError, passwordForm, onPasswordSubmit } = useLoginForm();
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <Card variant="elevated" padding="default">
-      {/* Header */}
-      <div className="mb-6">
-        <Typography variant="h3" className="mb-1">
-          Welcome back
-        </Typography>
-        <Typography variant="body" color="muted" size="sm">
+    <div className="rounded-2xl border border-border-light bg-card p-8 shadow-lg">
+      <div className="mb-8">
+        <MUITypography variant="drawerTitle">Welcome back</MUITypography>
+        <MUITypography variant="body" className="mt-1">
           Sign in to your account to continue
-        </Typography>
+        </MUITypography>
       </div>
 
-      {/* Tab Switcher */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-5">
-        <TabsList className="w-full">
-          <TabsTrigger value="password" className="flex-1">
-            Password
-          </TabsTrigger>
-          <TabsTrigger value="otp" className="flex-1">
-            OTP
-          </TabsTrigger>
-        </TabsList>
+      {displayError && (
+        <Alert severity="error" className="mb-5">
+          {displayError}
+        </Alert>
+      )}
 
-        {/* Error Alert */}
-        {displayError && (
-          <Alert variant="error" appearance="minimal" className="mt-4">
-            {displayError}
-          </Alert>
-        )}
+      <form className="flex flex-col gap-5" onSubmit={onPasswordSubmit}>
+        <TextField
+          {...passwordForm.register('email')}
+          type="email"
+          label="Email Address"
+          placeholder="you@company.com"
+          autoComplete="email"
+          disabled={isLoading}
+          error={!!passwordForm.formState.errors.email}
+          helperText={passwordForm.formState.errors.email?.message}
+          fullWidth
+          InputProps={{
+            sx: { height: 44 },
+            startAdornment: (
+              <InputAdornment position="start">
+                <MailOutlineIcon fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
 
-        {/* Password Login Form */}
-        <TabsContent value="password" className="mt-4">
-          <form className="space-y-4" onSubmit={onPasswordSubmit}>
-            <Input
-              {...passwordForm.register('email')}
-              type="email"
-              label="Email Address"
-              leftIcon={<Mail />}
-              placeholder="you@company.com"
-              autoComplete="email"
-              disabled={isLoading}
-              error={!!passwordForm.formState.errors.email}
-              errorMessage={passwordForm.formState.errors.email?.message}
-            />
+        <TextField
+          {...passwordForm.register('password')}
+          type={showPassword ? 'text' : 'password'}
+          label="Password"
+          placeholder="Enter your password"
+          autoComplete="current-password"
+          disabled={isLoading}
+          error={!!passwordForm.formState.errors.password}
+          helperText={passwordForm.formState.errors.password?.message}
+          fullWidth
+          InputProps={{
+            sx: { height: 44 },
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  size="small"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  edge="end"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <VisibilityOff fontSize="small" />
+                  ) : (
+                    <Visibility fontSize="small" />
+                  )}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
 
-            <PasswordInput
-              {...passwordForm.register('password')}
-              label="Password"
-              placeholder="Enter your password"
-              autoComplete="current-password"
-              disabled={isLoading}
-              error={!!passwordForm.formState.errors.password}
-              errorMessage={passwordForm.formState.errors.password?.message}
-            />
-
-            <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between -mt-1">
+          <FormControlLabel
+            control={
               <Checkbox
+                size="small"
                 checked={passwordForm.watch('rememberMe')}
-                onCheckedChange={(checked) => passwordForm.setValue('rememberMe', checked === true)}
-                size="sm"
-                label="Remember me"
+                onChange={(e) => passwordForm.setValue('rememberMe', e.target.checked)}
               />
-              <Typography variant="link" size="sm" color="primary" asChild>
-                <Link href={ROUTES.AUTH.FORGOT_PASSWORD}>Forgot password?</Link>
-              </Typography>
-            </div>
+            }
+            label={<MUITypography variant="body">Remember me</MUITypography>}
+          />
+          <Link href={ROUTES.AUTH.FORGOT_PASSWORD} className="no-underline">
+            <MUITypography variant="body" color="primary">
+              Forgot password?
+            </MUITypography>
+          </Link>
+        </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Spinner size="xs" variant="white" className="mr-2" />
-                  Signing in...
-                </>
-              ) : (
-                'Sign In'
-              )}
-            </Button>
-          </form>
-        </TabsContent>
+        <Button
+          type="submit"
+          variant="contained"
+          fullWidth
+          disabled={isLoading}
+          size="large"
+          disableElevation
+        >
+          {isLoading ? (
+            <span className="flex items-center gap-2">
+              <CircularProgress size={18} color="inherit" />
+              Signing in...
+            </span>
+          ) : (
+            'Log In'
+          )}
+        </Button>
+      </form>
 
-        {/* OTP Login Form */}
-        <TabsContent value="otp" className="mt-4">
-          <form className="space-y-4" onSubmit={onOtpSubmit}>
-            <Input
-              type="tel"
-              inputMode="numeric"
-              prefix="+91"
-              value={otpForm.watch('phone')}
-              onChange={(e) =>
-                otpForm.setValue('phone', e.target.value.replace(/\D/g, '').slice(0, 10))
-              }
-              label="Phone Number"
-              placeholder="98765 43210"
-              disabled={isLoading}
-              error={!!otpForm.formState.errors.phone}
-              errorMessage={otpForm.formState.errors.phone?.message}
-              helperText="We'll send a one-time password to this number"
-            />
-
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Spinner size="xs" variant="white" className="mr-2" />
-                  Sending OTP...
-                </>
-              ) : (
-                'Send OTP'
-              )}
-            </Button>
-          </form>
-        </TabsContent>
-      </Tabs>
-
-      {/* Divider */}
-      <div className="flex items-center my-5">
+      <div className="flex items-center my-6">
         <div className="flex-1 border-t border-border-light" />
-        <Typography variant="caption" color="muted" className="px-3">
+        <MUITypography variant="finePrint" className="px-3">
           or
-        </Typography>
+        </MUITypography>
         <div className="flex-1 border-t border-border-light" />
       </div>
 
-      {/* Sign Up Link */}
       <div className="text-center">
-        <Typography variant="body" size="sm" color="muted">
+        <MUITypography variant="body">
           Don&apos;t have an account?{' '}
-          <Typography variant="link" color="primary" asChild>
-            <Link href={ROUTES.AUTH.REGISTER}>Contact your administrator</Link>
-          </Typography>
-        </Typography>
+          <Link href={ROUTES.AUTH.REGISTER} className="no-underline">
+            <MUITypography variant="body" color="primary" component="span">
+              Contact your administrator
+            </MUITypography>
+          </Link>
+        </MUITypography>
       </div>
-    </Card>
+    </div>
   );
 }

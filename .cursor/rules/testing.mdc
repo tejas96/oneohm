@@ -1,116 +1,72 @@
 ---
 alwaysApply: false
 ---
-# 🔥 QA Protocol — Feature Not Done Until Tested
 
-> **Assume users break things. Prove it works. Break it yourself first.**
+# Testing Rules
 
----
-
-## 🔐 Test Credentials
+## Test Credentials
 
 ```
 Email: test.employe.1@gmail.com
 Pass:  admin@123
 ```
 
----
+## Mandatory Test Flow
 
-## ✅ Mandatory Test Flow
+### 1. Auth Verification
+- Login succeeds with valid credentials
+- Login fails gracefully with invalid credentials
 
-### 1. Auth
-- Login succeeds with valid creds
-- Login fails gracefully with invalid creds
-
-### 2. Happy Path
+### 2. CRUD Happy Path
 ```
-Create → Read → Update → Delete → Refresh (still persisted?)
+Create → Read → Update → Delete → Refresh (data persists correctly?)
 ```
 
-### 3. Break It
-| Attack | Expected |
-|--------|----------|
-| Empty input | Validation error |
+### 3. Error Scenarios
+
+| Input | Expected Result |
+|-------|----------------|
+| Empty required field | Validation error message |
 | Wrong format | Helpful error |
 | Expired token | Redirect to login |
-| Unauthorized | 403 + message |
-| Huge payload | Rejection |
+| Unauthorized action | 403 + permission message |
+| Large payload | Rejection with error |
 
 ### 4. Edge Cases
-- Empty states
-- Min/max values
-- Special chars & emojis
-- Rapid double-click
-- Refresh mid-mutation
-- Slow network
+- Empty states — no data exists
+- Min/max values — boundaries respected
+- Special characters and emojis — no breakage
+- Rapid double-click — debounced or disabled
+- Refresh mid-mutation — state consistent
+- Slow network — loading states visible
 
 ### 5. Security
-- User sees ONLY their data
+- User sees only their organization's data
 - Cross-org access blocked
 - Role permissions enforced
 
 ### 6. UI States
-```
-✅ Loading indicator
-✅ Error message
-✅ Empty state
-✅ Success feedback
-✅ Disabled during submit
-```
+- Loading indicator visible during data fetch
+- Error message displayed on failure
+- Empty state shown when no data
+- Success feedback after mutation
+- Form disabled during submit
 
----
-
-## 🧪 Quick Test Matrix
-
-```
-Feature: [Name]
-
-Functional
-[ ] Create  [ ] Read  [ ] Update  [ ] Delete  [ ] Search  [ ] Pagination
-
-Failures
-[ ] Validation  [ ] API errors  [ ] 401/403  [ ] Network timeout
-
-States
-[ ] Loading  [ ] Empty  [ ] Error  [ ] Success
-
-Security
-[ ] Org isolation  [ ] Role check  [ ] No data leak
-```
-
----
-
-## 🚨 Not Complete If
-
-- Only happy path tested
-- No error scenarios verified
-- Edge cases skipped
-- Auth/permissions unchecked
-- UI states missing
-
----
-
-## 🧼 Before Closing
-
-```
-❌ console.log
-❌ Debug code
-❌ Hardcoded test data
-❌ Dev shortcuts
-```
-
----
-
-## 🌐 API Test Template
+## API Test Template
 
 ```bash
-# Login
 TOKEN=$(curl -s -X POST http://localhost:8085/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test.employe.1@gmail.com","password":"admin@123"}' \
   | jq -r '.accessToken')
 
-# Test endpoint
 curl -s http://localhost:8085/api/v1/[endpoint] \
   -H "Authorization: Bearer $TOKEN" | jq
 ```
+
+## Before Closing
+
+- No `console.log` in code
+- No debug/test code committed
+- No hardcoded test data in production code
+- No dev shortcuts or workarounds
