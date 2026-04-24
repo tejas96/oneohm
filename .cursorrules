@@ -1,28 +1,57 @@
 # OneOhm EPC — Cursor Rules
 
-> **Detailed context-aware rules are in `.cursor/rules/`**
+> Detailed rules live in `.cursor/rules/`. This file is the global baseline.
 
-## Quick Reference
+## Project
 
-**Before ANY code:**
-1. Search existing code — never duplicate
-2. Read related files — understand context
-3. Follow existing patterns exactly
+Solar EPC platform — CRM, project management, quoting, and field ops for solar installation companies.
 
-**Tech Stack:**
-- Backend: NestJS + TypeORM + PostgreSQL
-- Frontend: Next.js 15 + React 19 + TanStack Query
-- Shared: `@oneohm-epc/shared` (sub-paths: `/types`, `/utils`, `/schemas`, `/constants`)
+## Tech Stack
 
-**Core Rules:**
-- Repository pattern — no TypeORM in services
-- Shared types go in `@oneohm-epc/shared/types`, app-specific types stay in app
-- Multi-org support — always filter by organizationId
-- Pagination required — never fetch all data
-- Soft delete — always check `deletedAt IS NULL`
-- GitHub workflow — use GitHub MCP tools first for PR/issue actions, call `get_me` before repo operations, and do not fallback to `gh` unless explicitly requested
+| Layer | Stack |
+|-------|-------|
+| Backend | NestJS 10 · TypeORM · PostgreSQL |
+| Web | Next.js 15 · React 19 · MUI 6 · Tailwind CSS · TanStack Query |
+| Shared | `@oneohm-epc/shared` (`/types`, `/utils`, `/schemas`, `/constants`) |
+| Monorepo | Nx |
 
-**Quality Bar:**
-- Strict TypeScript (no `any`)
-- Handle loading/error/empty states
-- Clean, readable, production-ready
+## Architecture Principles
+
+1. **Search before writing** — never duplicate code that already exists.
+2. **Read related files first** — understand context and existing patterns before touching anything.
+3. **Follow existing patterns exactly** — consistency beats personal preference.
+4. **Repository pattern** — no direct TypeORM usage in services.
+5. **Multi-org isolation** — every query filters by `organizationId`.
+6. **Soft delete** — always check `deletedAt IS NULL`; never hard-delete.
+7. **Pagination required** — never return unbounded result sets.
+8. **Shared types** — cross-app types go in `@oneohm-epc/shared/types`; app-specific types stay in that app.
+
+## Design System
+
+- **MUI is the primary design system** — all interactive components, typography, icons.
+- **Tailwind CSS is for layout only** — flex, grid, spacing, responsive breakpoints.
+- **Icons** — `@mui/icons-material` exclusively; never `lucide-react` in new code.
+- **Radix UI is deprecated** — do not add new Radix primitives; migrating existing ones on touch.
+
+## Quality Bar
+
+- **Strict TypeScript** — no `any`; no `@ts-ignore` without justification.
+- **Handle all states** — loading, error, empty, success for every data-driven component.
+- **File size limit** — every file must be under 500 lines. If it grows beyond, split into smaller focused files.
+- **Clean code** — no dead code, no `console.log`, no hardcoded values.
+
+## Post-Implementation Verification (MANDATORY)
+
+After every plan or implementation, run these checks as the **last TODO item**:
+
+```bash
+npm run lint:fix && npm run typecheck
+```
+
+`lint:fix` auto-fixes lint and formatting — do not review its output. Only review `typecheck` output for errors. Fix and re-run until zero errors.
+
+## GitHub Workflow
+
+- **Always use GitHub MCP tools** for PR creation, issue management, and repo operations.
+- Call `get_me` first to get user context, then use MCP tools (`create_pull_request`, `search_issues`, etc.).
+- **Never use `gh` CLI** unless the user explicitly requests it.

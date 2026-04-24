@@ -38,6 +38,7 @@ interface OtpRequestDto {
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  private readonly MAX_SESSION_DURATION_SECONDS = 7 * 24 * 60 * 60; // 7 days
 
   constructor(
     private readonly userRepository: UserRepository,
@@ -256,6 +257,19 @@ export class AuthService {
         secret: this.configService.jwt.refreshSecret,
       });
 
+      // Reject tokens without loginAt (pre-deploy tokens or tampered tokens)
+      if (!payload.loginAt) {
+        this.logger.warn(`Refresh token missing loginAt for user: ${payload.sub}`);
+        throw new UnauthorizedException('Session expired. Please login again.');
+      }
+
+      // Enforce absolute session expiry
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      if (nowSeconds > payload.loginAt + this.MAX_SESSION_DURATION_SECONDS) {
+        this.logger.log(`Absolute session expired for user: ${payload.sub}`);
+        throw new UnauthorizedException('Session expired. Please login again.');
+      }
+
       // Check if user still exists and is active
       const user = await this.userRepository.findByIdWithRoles(payload.sub);
 
@@ -263,13 +277,16 @@ export class AuthService {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      // TOKEN ROTATION: Generate new tokens (including new refresh token)
-      const tokens = await this.generateTokens(user.id, user.roles ?? []);
+      // TOKEN ROTATION: Generate new tokens, carrying forward the original loginAt
+      const tokens = await this.generateTokens(user.id, user.roles ?? [], payload.loginAt);
 
       this.logger.log(`Token refreshed with rotation for user: ${user.id}`);
 
       return tokens;
     } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
       this.logger.error('Invalid refresh token', error);
       throw new UnauthorizedException('Invalid refresh token');
     }
@@ -483,6 +500,7 @@ export class AuthService {
   private async generateTokens(
     userId: string,
     roles: string[],
+    loginAt?: number,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     // Load user permissions from database
     let permissions: string[] = [];
@@ -493,18 +511,25 @@ export class AuthService {
       this.logger.warn(`Failed to load permissions for user ${userId}:`, error);
     }
 
-    const payload: JwtPayload = {
+    const accessPayload: JwtPayload = {
       sub: userId,
       roles,
       permissions,
     };
 
+    const refreshPayload: JwtPayload = {
+      sub: userId,
+      roles,
+      permissions,
+      loginAt: loginAt ?? Math.floor(Date.now() / 1000),
+    };
+
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, {
+      this.jwtService.signAsync(accessPayload, {
         secret: this.configService.jwt.secret,
         expiresIn: this.configService.jwt.expiresIn as ms.StringValue,
       }),
-      this.jwtService.signAsync(payload, {
+      this.jwtService.signAsync(refreshPayload, {
         secret: this.configService.jwt.refreshSecret,
         expiresIn: this.configService.jwt.refreshExpiresIn as ms.StringValue,
       }),

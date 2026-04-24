@@ -1,14 +1,30 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import BoltOutlinedIcon from '@mui/icons-material/BoltOutlined';
+import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import DeviceThermostatOutlinedIcon from '@mui/icons-material/DeviceThermostatOutlined';
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
+import PlaceOutlinedIcon from '@mui/icons-material/PlaceOutlined';
+import {
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Checkbox,
+  FormControlLabel,
+  ToggleButton,
+  ToggleButtonGroup,
+} from '@mui/material';
 import { ConnectionType, DocumentEntityType, PropertyType } from '@oneohm-epc/shared/types';
-import { ArrowLeft, Banknote, FileText, Home, MapPin, Thermometer, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState, type JSX } from 'react';
+import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { type CustomerResponse } from '../../customers';
+import { useCustomers } from '../../customers/hooks';
 import { PROPERTY_ALERTS, REQUIRED_FIELDS_TOTAL } from '../constants';
 import {
   useCreateProperty,
@@ -26,23 +42,11 @@ import {
 import { useUploadDocumentsBulk } from '@/components/features/documents/hooks';
 import { Alert, LeadTemperatureSelector, RadioCard, RadioCardGroup } from '@/components/shared';
 import { DocumentManager, type DraftDocument } from '@/components/shared/document-manager';
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  Checkbox,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  showToast,
-  Switch,
-  Textarea,
-} from '@/components/ui';
+import { showToast } from '@/components/ui';
+import { MUIAvatar } from '@/components/ui/mui-avatar';
+import { MUIInput } from '@/components/ui/mui-input';
+import { MUISwitch } from '@/components/ui/mui-switch';
+import { MUITypography } from '@/components/ui/mui-typography';
 import {
   CONNECTION_TYPE_OPTIONS,
   DISCOM_OPTIONS,
@@ -62,10 +66,41 @@ interface PropertyFormProps {
   mode: PropertyFormMode;
   customerId?: string;
   customer?: CustomerResponse;
-  customers?: CustomerResponse[];
-  isLoadingCustomers?: boolean;
   propertyId?: string;
   initialData?: CustomerPropertyResponse;
+}
+
+// ============================================================================
+// Section header — reused across all 5 sections
+// ============================================================================
+
+function SectionHeader({
+  icon,
+  title,
+  subtitle,
+  chip,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  chip?: string;
+}): JSX.Element {
+  return (
+    <div className="flex items-center gap-3 px-5 py-3 border-b border-border-light">
+      <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 text-primary">
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <MUITypography variant="sectionTitle">{title}</MUITypography>
+          {chip && (
+            <Chip label={chip} size="small" variant="outlined" sx={{ height: 18, fontSize: 10 }} />
+          )}
+        </div>
+        <MUITypography variant="body">{subtitle}</MUITypography>
+      </div>
+    </div>
+  );
 }
 
 // ============================================================================
@@ -76,8 +111,6 @@ export function PropertyForm({
   mode,
   customerId: initialCustomerId,
   customer: preloadedCustomer,
-  customers = [],
-  isLoadingCustomers = false,
   propertyId,
   initialData,
 }: PropertyFormProps): JSX.Element {
@@ -93,6 +126,29 @@ export function PropertyForm({
 
   const customer = preloadedCustomer ?? fetchedCustomer;
 
+  // ── Customer search state (standalone create mode only) ──────────────────
+  const [customerSearch, setCustomerSearch] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  const handleCustomerInputChange = (value: string): void => {
+    setCustomerSearch(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedSearch(value), 300);
+  };
+
+  const { data: customersData, isLoading: isLoadingCustomers } = useCustomers({
+    search: debouncedSearch.length >= 2 ? debouncedSearch : undefined,
+    limit: 10,
+    enabled: !isEditMode && !initialCustomerId,
+  });
+
+  const customerOptions = (customersData?.data ?? []).map((c) => ({
+    value: c.id,
+    label: `${c.firstName} ${c.lastName ?? ''}`.trim(),
+    secondaryText: c.phone,
+  }));
+
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>(initialCustomerId ?? '');
 
   const effectiveCustomerId = isEditMode
@@ -101,7 +157,7 @@ export function PropertyForm({
 
   const selectedCustomer = initialCustomerId
     ? customer
-    : customers.find((c) => c.id === selectedCustomerId);
+    : (customersData?.data ?? []).find((c) => c.id === selectedCustomerId);
 
   const resolvedCustomer = selectedCustomer ?? customer;
   const customerStateMatch = resolvedCustomer?.state
@@ -237,158 +293,158 @@ export function PropertyForm({
       : 'Add a new property to your database';
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 pb-24">
-      {/* Page Header */}
-      <div>
-        <Link
-          href={backLink}
-          className="inline-flex items-center gap-2 text-sm text-foreground-secondary hover:text-foreground mb-4 transition-colors"
-        >
-          <ArrowLeft className="size-icon-sm" />
-          {backLabel}
+    <div className="max-w-3xl mx-auto pb-24">
+      {/* ── Page Header ───────────────────────────────────────────────── */}
+      <div className="mb-6">
+        <Link href={backLink} className="inline-flex items-center gap-1.5 mb-3 no-underline">
+          <MUITypography variant="body" component="span">
+            ← {backLabel}
+          </MUITypography>
         </Link>
-        <h1 className="text-xl font-semibold text-foreground">{pageTitle}</h1>
-        <p className="text-foreground-secondary text-sm mt-1">{pageSubtitle}</p>
+        <MUITypography variant="drawerTitle">{pageTitle}</MUITypography>
+        <MUITypography variant="body" sx={{ mt: 0.5 }}>
+          {pageSubtitle}
+        </MUITypography>
       </div>
 
-      {/* Customer Card / Selector (create mode only) */}
+      {/* ── Customer Card / Selector (create mode only) ───────────────── */}
       {!isEditMode && (
-        <>
+        <div className="mb-5">
           {isContextAware ? (
             customer && (
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="size-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <span className="text-base font-semibold text-primary">
-                        {customer.firstName.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">
+              <Card variant="outlined">
+                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                  <div className="flex items-center gap-3">
+                    <MUIAvatar
+                      name={`${customer.firstName} ${customer.lastName ?? ''}`}
+                      size="lg"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <MUITypography variant="bodyPrimary" noWrap sx={{ fontWeight: 600 }}>
                         {customer.firstName} {customer.lastName ?? ''}
-                      </p>
-                      <p className="text-sm text-foreground-secondary">{customer.phone}</p>
+                      </MUITypography>
+                      <MUITypography variant="timestamp">{customer.phone}</MUITypography>
                     </div>
-                    <Badge variant="success" size="xs" shape="pill" className="ml-auto shrink-0">
-                      Customer
-                    </Badge>
+                    <Chip label="Customer" size="small" color="success" variant="outlined" />
                   </div>
                 </CardContent>
               </Card>
             )
           ) : (
-            <Card>
-              <CardContent className="p-5 space-y-4">
-                <div className="space-y-1">
-                  <h3 className="text-sm font-semibold text-foreground">Select Customer</h3>
-                  <p className="text-xs text-foreground-secondary">
-                    Choose which customer this property belongs to
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="customerId" required>
-                    Customer
-                  </Label>
-                  <Select
-                    value={selectedCustomerId}
-                    onValueChange={setSelectedCustomerId}
-                    disabled={isLoadingCustomers}
-                  >
-                    <SelectTrigger id="customerId">
-                      <SelectValue
-                        placeholder={
-                          isLoadingCustomers ? 'Loading customers...' : 'Select a customer'
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customers.length === 0 && !isLoadingCustomers ? (
-                        <div className="p-2 text-sm text-foreground-secondary text-center">
-                          No customers found.{' '}
-                          <button
-                            type="button"
-                            onClick={() => router.push(ROUTES.CUSTOMERS.NEW)}
-                            className="text-primary hover:underline"
-                          >
-                            Create one first
-                          </button>
-                        </div>
-                      ) : (
-                        customers.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.firstName} {c.lastName ?? ''} &bull; {c.phone}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  {'customerId' in form.formState.errors && form.formState.errors.customerId && (
-                    <p className="text-xs text-error">
-                      {(form.formState.errors.customerId as { message?: string }).message}
-                    </p>
-                  )}
-                </div>
+            <Card variant="outlined">
+              <CardContent sx={{ p: 2.5 }}>
+                <MUITypography variant="sectionTitle" sx={{ mb: 0.5 }}>
+                  Select Customer
+                </MUITypography>
+                <MUITypography variant="body" sx={{ display: 'block', mb: 2 }}>
+                  Choose which customer this property belongs to
+                </MUITypography>
+
+                <MUIInput
+                  mode="autocomplete"
+                  fieldLabel="Customer"
+                  required
+                  options={customerOptions}
+                  value={
+                    selectedCustomerId
+                      ? (customerOptions.find((o) => o.value === selectedCustomerId) ?? null)
+                      : null
+                  }
+                  inputValue={customerSearch}
+                  onInputChange={handleCustomerInputChange}
+                  onChange={(option) => {
+                    const id =
+                      option && typeof option === 'object' && 'value' in option
+                        ? String(option.value)
+                        : '';
+                    setSelectedCustomerId(id);
+                  }}
+                  loading={isLoadingCustomers}
+                  showAvatar
+                  secondaryTextKey="secondaryText"
+                  getOptionLabel={(option) =>
+                    typeof option === 'string'
+                      ? option
+                      : `${(option as { label?: string }).label ?? ''}`
+                  }
+                  isOptionEqualToValue={(option, val) =>
+                    typeof option === 'object' &&
+                    typeof val === 'object' &&
+                    (option as { value?: string }).value === (val as { value?: string }).value
+                  }
+                  noOptionsText={
+                    debouncedSearch.length < 2
+                      ? 'Type at least 2 characters to search'
+                      : 'No customers found'
+                  }
+                  loadingText="Searching customers…"
+                  clearable
+                  onClear={() => {
+                    setSelectedCustomerId('');
+                    setCustomerSearch('');
+                    setDebouncedSearch('');
+                  }}
+                  error={
+                    'customerId' in form.formState.errors
+                      ? (form.formState.errors.customerId as { message?: string }).message
+                      : undefined
+                  }
+                  textFieldProps={{ placeholder: 'Search by name or phone…', size: 'small' }}
+                />
 
                 {selectedCustomer && (
-                  <div className="flex items-center gap-3 p-3 bg-background-secondary rounded-lg">
-                    <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <span className="text-sm font-semibold text-primary">
-                        {selectedCustomer.firstName.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-3 mt-3 p-3 bg-background-secondary rounded-lg">
+                    <MUIAvatar
+                      name={`${selectedCustomer.firstName} ${selectedCustomer.lastName ?? ''}`}
+                      size="sm"
+                    />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">
+                      <MUITypography variant="bodyPrimary" noWrap sx={{ fontWeight: 500 }}>
                         {selectedCustomer.firstName} {selectedCustomer.lastName ?? ''}
-                      </p>
-                      <p className="text-xs text-foreground-secondary">{selectedCustomer.phone}</p>
+                      </MUITypography>
+                      <MUITypography variant="timestamp">{selectedCustomer.phone}</MUITypography>
                     </div>
                   </div>
                 )}
               </CardContent>
             </Card>
           )}
-        </>
+        </div>
       )}
 
-      {/* Form */}
+      {/* ── Form ─────────────────────────────────────────────────────── */}
       <form onSubmit={(e) => void form.handleSubmit(onSubmit)(e)} className="space-y-5">
         {/* Section 1: Property Details */}
-        <Card>
-          <CardContent className="p-0">
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
-              <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                <Home className="size-icon-sm text-primary" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">Property Details</h3>
-                <p className="text-xs text-foreground-secondary">
-                  Basic information about the property
-                </p>
-              </div>
-            </div>
-
-            <div className="p-5 space-y-5">
+        <Card variant="outlined">
+          <SectionHeader
+            icon={<HomeOutlinedIcon fontSize="small" />}
+            title="Property Details"
+            subtitle="Basic information about the property"
+          />
+          <CardContent sx={{ p: 2.5 }}>
+            <div className="space-y-5">
               <Alert variant="info" appearance="minimal" title={PROPERTY_ALERTS.propertyTip.title}>
                 {PROPERTY_ALERTS.propertyTip.message}
               </Alert>
 
-              <div className="space-y-2">
-                <Label htmlFor="propertyName" className="text-sm" required>
-                  Property Name
-                </Label>
-                <Input
-                  id="propertyName"
-                  placeholder="e.g., Main Residence, Office Building"
-                  {...form.register('propertyName')}
-                  error={form.formState.errors.propertyName?.message}
-                />
-              </div>
+              <MUIInput
+                fieldLabel="Property Name"
+                required
+                id="propertyName"
+                placeholder="e.g., Main Residence, Office Building"
+                size="small"
+                {...form.register('propertyName')}
+                error={form.formState.errors.propertyName?.message}
+              />
 
-              <div className="space-y-2">
-                <Label className="text-sm" required>
-                  Property Type
-                </Label>
+              {/* Property Type */}
+              <div>
+                <MUITypography variant="bodyPrimary" sx={{ fontWeight: 500, mb: 1 }}>
+                  Property Type{' '}
+                  <MUITypography variant="inherit" component="span" color="error">
+                    *
+                  </MUITypography>
+                </MUITypography>
                 <RadioCardGroup
                   value={form.watch('propertyType')}
                   onValueChange={(v) =>
@@ -406,25 +462,40 @@ export function PropertyForm({
                   ))}
                 </RadioCardGroup>
                 {form.formState.errors.propertyType && (
-                  <p className="text-xs text-error">{form.formState.errors.propertyType.message}</p>
+                  <MUITypography
+                    variant="alertTitle"
+                    color="error"
+                    sx={{ mt: 0.5, display: 'block' }}
+                  >
+                    {form.formState.errors.propertyType.message}
+                  </MUITypography>
                 )}
               </div>
 
-              {/* isPrimary checkbox — create mode only */}
+              {/* isPrimary — create mode only */}
               {!isEditMode && (
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-background-secondary">
-                  <Checkbox
-                    id="isPrimary"
-                    checked={
-                      form.watch('isPrimary' as keyof CreatePropertyFormData) as boolean | undefined
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        size="small"
+                        checked={
+                          (form.watch('isPrimary' as keyof CreatePropertyFormData) as
+                            | boolean
+                            | undefined) ?? false
+                        }
+                        onChange={(e) =>
+                          form.setValue(
+                            'isPrimary' as keyof CreatePropertyFormData,
+                            e.target.checked,
+                          )
+                        }
+                      />
                     }
-                    onCheckedChange={(checked) =>
-                      form.setValue('isPrimary' as keyof CreatePropertyFormData, checked === true)
+                    label={
+                      <MUITypography variant="bodyPrimary">Set as primary property</MUITypography>
                     }
                   />
-                  <Label htmlFor="isPrimary" className="cursor-pointer text-sm">
-                    Set as primary property
-                  </Label>
                 </div>
               )}
             </div>
@@ -432,109 +503,81 @@ export function PropertyForm({
         </Card>
 
         {/* Section 2: Address */}
-        <Card>
-          <CardContent className="p-0">
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
-              <div className="size-9 rounded-lg bg-info/10 flex items-center justify-center shrink-0">
-                <MapPin className="size-icon-sm text-info" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">Property Address</h3>
-                <p className="text-xs text-foreground-secondary">
-                  Location details for site visits and installation
-                </p>
-              </div>
-            </div>
-
-            <div className="p-5 space-y-5">
+        <Card variant="outlined">
+          <SectionHeader
+            icon={<PlaceOutlinedIcon fontSize="small" />}
+            title="Property Address"
+            subtitle="Location details for site visits and installation"
+          />
+          <CardContent sx={{ p: 2.5 }}>
+            <div className="space-y-5">
               {!isEditMode && resolvedCustomer?.address && (
                 <Alert variant="info" appearance="minimal">
                   {PROPERTY_ALERTS.addressPrefill.message}
                 </Alert>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="address" className="text-sm" required>
-                  Full Address
-                </Label>
-                <Textarea
-                  id="address"
-                  placeholder="Street address, area, landmark"
-                  {...form.register('address')}
-                  error={form.formState.errors.address?.message}
-                />
-              </div>
+              <MUIInput
+                fieldLabel="Full Address"
+                required
+                id="address"
+                placeholder="Street address, area, landmark"
+                size="small"
+                multiline
+                rows={3}
+                {...form.register('address')}
+                error={form.formState.errors.address?.message}
+              />
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="city" className="text-sm" required>
-                    City
-                  </Label>
-                  <Input
-                    id="city"
-                    placeholder="Enter city"
-                    {...form.register('city')}
-                    error={form.formState.errors.city?.message}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="state" className="text-sm">
-                    State
-                  </Label>
-                  <Select
-                    value={form.watch('state')}
-                    onValueChange={(v) => form.setValue('state', v, { shouldDirty: true })}
-                  >
-                    <SelectTrigger id="state">
-                      <SelectValue placeholder="Select state" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {INDIAN_STATES.map((state) => (
-                        <SelectItem key={state} value={state}>
-                          {state}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="pincode" className="text-sm" required>
-                    Pincode
-                  </Label>
-                  <Input
-                    id="pincode"
-                    placeholder="123456"
-                    maxLength={6}
-                    {...form.register('pincode')}
-                    error={form.formState.errors.pincode?.message}
-                  />
-                </div>
+                <MUIInput
+                  fieldLabel="City"
+                  required
+                  id="city"
+                  placeholder="Enter city"
+                  size="small"
+                  {...form.register('city')}
+                  error={form.formState.errors.city?.message}
+                />
+
+                <MUIInput
+                  mode="select"
+                  fieldLabel="State"
+                  id="state"
+                  size="small"
+                  value={form.watch('state') ?? ''}
+                  onChange={(e) =>
+                    form.setValue('state', e.target.value as string, { shouldDirty: true })
+                  }
+                  options={INDIAN_STATES.map((s) => ({ value: s, label: s }))}
+                  placeholder="Select state"
+                />
+
+                <MUIInput
+                  fieldLabel="Pincode"
+                  required
+                  id="pincode"
+                  placeholder="123456"
+                  size="small"
+                  inputProps={{ maxLength: 6 }}
+                  {...form.register('pincode')}
+                  error={form.formState.errors.pincode?.message}
+                />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Section 3: Electricity Details */}
-        <Card>
-          <CardContent className="p-0">
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
-              <div className="size-9 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
-                <Zap className="size-icon-sm text-warning" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-foreground">Electricity Details</h3>
-                  <Badge variant="muted" size="xs" shape="pill">
-                    OPTIONAL
-                  </Badge>
-                </div>
-                <p className="text-xs text-foreground-secondary">
-                  Power connection and billing information
-                </p>
-              </div>
-            </div>
-
-            <div className="p-5 space-y-5">
+        <Card variant="outlined">
+          <SectionHeader
+            icon={<BoltOutlinedIcon fontSize="small" />}
+            title="Electricity Details"
+            subtitle="Power connection and billing information"
+            chip="OPTIONAL"
+          />
+          <CardContent sx={{ p: 2.5 }}>
+            <div className="space-y-5">
               <Alert
                 variant="info"
                 appearance="minimal"
@@ -544,135 +587,117 @@ export function PropertyForm({
               </Alert>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="discomName" className="text-sm">
-                    DISCOM Provider
-                  </Label>
-                  <Select
-                    value={form.watch('discomName')}
-                    onValueChange={(v) => form.setValue('discomName', v, { shouldDirty: true })}
-                  >
-                    <SelectTrigger id="discomName">
-                      <SelectValue placeholder="Select DISCOM" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DISCOM_OPTIONS.map((discom) => (
-                        <SelectItem key={discom.value} value={discom.value}>
-                          {discom.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="consumerNumber" className="text-sm">
-                    Consumer Number
-                  </Label>
-                  <Input
-                    id="consumerNumber"
-                    placeholder="Enter consumer number"
-                    {...form.register('consumerNumber')}
-                  />
-                </div>
+                <MUIInput
+                  mode="select"
+                  fieldLabel="DISCOM Provider"
+                  id="discomName"
+                  size="small"
+                  value={form.watch('discomName') ?? ''}
+                  onChange={(e) =>
+                    form.setValue('discomName', e.target.value as string, { shouldDirty: true })
+                  }
+                  options={DISCOM_OPTIONS.map((d) => ({ value: d.value, label: d.label }))}
+                  placeholder="Select DISCOM"
+                />
+
+                <MUIInput
+                  fieldLabel="Consumer Number"
+                  id="consumerNumber"
+                  placeholder="Enter consumer number"
+                  size="small"
+                  {...form.register('consumerNumber')}
+                />
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm">Connection Type</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  {CONNECTION_TYPE_OPTIONS.map((type) => {
-                    const isSelected = form.watch('connectionType') === type.value;
-                    return (
-                      <button
-                        key={type.value}
-                        type="button"
-                        onClick={() =>
-                          form.setValue('connectionType', type.value as ConnectionType, {
-                            shouldDirty: true,
-                          })
-                        }
-                        className={`flex flex-col items-center gap-1 rounded-lg border-2 p-4 text-center transition-all ${
-                          isSelected
-                            ? 'border-primary bg-primary/5 text-primary'
-                            : 'border-border-light bg-background hover:border-primary/30'
-                        }`}
-                      >
-                        <span className="text-sm font-medium">{type.label}</span>
-                        <span className="text-xs text-foreground-secondary">
-                          {type.value === ConnectionType.SINGLE_PHASE
-                            ? 'Homes & small shops'
-                            : 'Offices & factories'}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+              {/* Connection Type toggle */}
+              <div>
+                <MUITypography variant="bodyPrimary" sx={{ fontWeight: 500, mb: 1 }}>
+                  Connection Type
+                </MUITypography>
+                <ToggleButtonGroup
+                  value={form.watch('connectionType') ?? null}
+                  exclusive
+                  onChange={(_, val) => {
+                    if (val !== null) {
+                      form.setValue('connectionType', val as ConnectionType, { shouldDirty: true });
+                    }
+                  }}
+                  size="small"
+                  fullWidth
+                >
+                  {CONNECTION_TYPE_OPTIONS.map((type) => (
+                    <ToggleButton
+                      key={type.value}
+                      value={type.value}
+                      sx={{ flexDirection: 'column', gap: 0.25, py: 1.5 }}
+                    >
+                      <MUITypography variant="bodyPrimary" sx={{ fontWeight: 500 }}>
+                        {type.label}
+                      </MUITypography>
+                      <MUITypography variant="timestamp">
+                        {type.value === ConnectionType.SINGLE_PHASE
+                          ? 'Homes & small shops'
+                          : 'Offices & factories'}
+                      </MUITypography>
+                    </ToggleButton>
+                  ))}
+                </ToggleButtonGroup>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="sanctionedLoad" className="text-sm">
-                    Sanctioned Load (kW)
-                  </Label>
-                  <Input
-                    id="sanctionedLoad"
-                    type="number"
-                    step="0.5"
-                    placeholder="e.g., 5"
-                    {...form.register('sanctionedLoad', {
-                      setValueAs: (v: string) => (v === '' ? undefined : Number(v)),
-                    })}
-                    error={form.formState.errors.sanctionedLoad?.message}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="meterNumber" className="text-sm">
-                    Meter Number
-                  </Label>
-                  <Input
-                    id="meterNumber"
-                    placeholder="Enter meter number"
-                    {...form.register('meterNumber')}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="monthlyBill" className="text-sm">
-                    Avg. Monthly Bill
-                  </Label>
-                  <Input
-                    id="monthlyBill"
-                    type="number"
-                    prefix="₹"
-                    placeholder="e.g., 2500"
-                    {...form.register('monthlyBill', {
-                      setValueAs: (v: string) => (v === '' ? undefined : Number(v)),
-                    })}
-                  />
-                </div>
+                <MUIInput
+                  fieldLabel="Sanctioned Load (kW)"
+                  id="sanctionedLoad"
+                  type="number"
+                  step="0.5"
+                  placeholder="e.g., 5"
+                  size="small"
+                  {...form.register('sanctionedLoad', {
+                    setValueAs: (v: string) => (v === '' ? undefined : Number(v)),
+                  })}
+                  error={form.formState.errors.sanctionedLoad?.message}
+                />
+
+                <MUIInput
+                  fieldLabel="Meter Number"
+                  id="meterNumber"
+                  placeholder="Enter meter number"
+                  size="small"
+                  {...form.register('meterNumber')}
+                />
+
+                <MUIInput
+                  fieldLabel="Avg. Monthly Bill"
+                  id="monthlyBill"
+                  type="number"
+                  placeholder="e.g., 2500"
+                  size="small"
+                  startIcon={<CurrencyRupeeIcon sx={{ fontSize: 16 }} />}
+                  {...form.register('monthlyBill', {
+                    setValueAs: (v: string) => (v === '' ? undefined : Number(v)),
+                  })}
+                />
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Section 4: Lead Status & Financing */}
-        <Card>
-          <CardContent className="p-0">
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
-              <div className="size-9 rounded-lg bg-error/10 flex items-center justify-center shrink-0">
-                <Thermometer className="size-icon-sm text-error" />
-              </div>
+        <Card variant="outlined">
+          <SectionHeader
+            icon={<DeviceThermostatOutlinedIcon fontSize="small" />}
+            title="Lead Status & Financing"
+            subtitle="Interest level and loan preferences"
+          />
+          <CardContent sx={{ p: 2.5 }}>
+            <div className="space-y-5">
               <div>
-                <h3 className="text-sm font-semibold text-foreground">Lead Status & Financing</h3>
-                <p className="text-xs text-foreground-secondary">
-                  Interest level and loan preferences
-                </p>
-              </div>
-            </div>
-
-            <div className="p-5 space-y-5">
-              <div className="space-y-2">
-                <Label className="text-sm" required>
-                  Lead Temperature
-                </Label>
+                <MUITypography variant="bodyPrimary" sx={{ fontWeight: 500, mb: 1 }}>
+                  Lead Temperature{' '}
+                  <MUITypography variant="inherit" component="span" color="error">
+                    *
+                  </MUITypography>
+                </MUITypography>
                 <LeadTemperatureSelector
                   value={form.watch('leadTemperature')}
                   onChange={(v) => form.setValue('leadTemperature', v, { shouldDirty: true })}
@@ -682,21 +707,21 @@ export function PropertyForm({
                 />
               </div>
 
-              <div className="flex items-center justify-between rounded-lg border border-border-light p-4 bg-background-secondary/50">
+              <div className="flex items-center justify-between p-4 border border-border-light rounded-lg bg-background-secondary/50">
                 <div className="flex items-center gap-3">
-                  <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <Banknote className="size-icon-sm text-primary" />
+                  <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                    <CurrencyRupeeIcon sx={{ fontSize: 16 }} />
                   </div>
                   <div>
-                    <Label htmlFor="wantsLoan" className="cursor-pointer text-sm font-medium">
+                    <MUITypography variant="bodyPrimary" sx={{ fontWeight: 500 }}>
                       Interested in financing / loan
-                    </Label>
-                    <p className="text-xs text-foreground-secondary">
+                    </MUITypography>
+                    <MUITypography variant="body">
                       Enable if customer wants EMI options
-                    </p>
+                    </MUITypography>
                   </div>
                 </div>
-                <Switch
+                <MUISwitch
                   id="wantsLoan"
                   checked={wantsLoan}
                   onCheckedChange={(checked) =>
@@ -715,63 +740,53 @@ export function PropertyForm({
                 </Alert>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="notes" className="text-sm">
-                  Notes
-                </Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Any additional notes about this lead..."
-                  rows={3}
-                  {...form.register('notes')}
-                />
-              </div>
+              <MUIInput
+                fieldLabel="Notes"
+                id="notes"
+                placeholder="Any additional notes about this lead..."
+                size="small"
+                multiline
+                rows={3}
+                {...form.register('notes')}
+              />
             </div>
           </CardContent>
         </Card>
 
         {/* Section 5: Documents */}
-        <Card>
-          <CardContent className="p-0">
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-border-light">
-              <div className="size-9 rounded-lg bg-foreground/5 flex items-center justify-center shrink-0">
-                <FileText className="size-icon-sm text-foreground-secondary" />
-              </div>
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">Documents</h3>
-                <p className="text-xs text-foreground-secondary">
-                  Upload property documents, identity proofs, and KYC documents
-                </p>
-              </div>
-            </div>
-
-            <DocumentManager
-              entityType={DocumentEntityType.PROPERTY}
-              entityId={isEditMode && propertyId ? propertyId : undefined}
-              title="Property Documents"
-              description="Upload electricity bills, identity proofs, site photos, or other documents."
-              readOnly={isSubmitting}
-              onDraftDocumentsChange={!isEditMode ? handleDraftDocsChange : undefined}
-            />
-          </CardContent>
+        <Card variant="outlined">
+          <SectionHeader
+            icon={<DescriptionOutlinedIcon fontSize="small" />}
+            title="Documents"
+            subtitle="Upload property documents, identity proofs, and KYC documents"
+          />
+          <DocumentManager
+            entityType={DocumentEntityType.PROPERTY}
+            entityId={isEditMode && propertyId ? propertyId : undefined}
+            title="Property Documents"
+            description="Upload electricity bills, identity proofs, site photos, or other documents."
+            readOnly={isSubmitting}
+            onDraftDocumentsChange={!isEditMode ? handleDraftDocsChange : undefined}
+          />
         </Card>
 
-        {/* Sticky Footer */}
+        {/* ── Sticky Footer ─────────────────────────────────────────── */}
         <div className="sticky bottom-0 z-10">
-          <div className="absolute inset-x-0 -top-6 h-6 bg-linear-to-t from-background-tertiary to-transparent pointer-events-none" />
+          <div className="absolute inset-x-0 -top-6 h-6 bg-gradient-to-t from-background-tertiary to-transparent pointer-events-none" />
           <div className="bg-background border-t border-border-light py-4 px-4">
             <div className="flex items-center justify-between gap-4">
               {!isEditMode && (
-                <p className="text-xs text-foreground-secondary hidden sm:block">
+                <MUITypography variant="body" sx={{ display: { xs: 'none', sm: 'block' } }}>
                   {isComplete
                     ? 'Ready to create property'
                     : `${REQUIRED_FIELDS_TOTAL - filledCount} required field(s) remaining`}
-                </p>
+                </MUITypography>
               )}
               <div className="flex items-center gap-3 ml-auto">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="outlined"
+                  size="small"
                   onClick={() => router.push(backLink)}
                   disabled={isSubmitting}
                 >
@@ -779,12 +794,14 @@ export function PropertyForm({
                 </Button>
                 <Button
                   type="submit"
+                  variant="contained"
+                  size="small"
                   disabled={isSubmitting || (isEditMode ? !canSave : !effectiveCustomerId)}
                 >
                   {isSubmitting
                     ? isEditMode
-                      ? 'Saving...'
-                      : 'Creating...'
+                      ? 'Saving…'
+                      : 'Creating…'
                     : isEditMode
                       ? 'Save Changes'
                       : 'Create Property'}
@@ -804,17 +821,13 @@ export function PropertyForm({
   async function onSubmit(data: CreatePropertyFormData | EditPropertyFormData): Promise<void> {
     try {
       if (isEditMode && propertyId) {
-        await updatePropertyMutation.mutateAsync({
-          id: propertyId,
-          data,
-        });
+        await updatePropertyMutation.mutateAsync({ id: propertyId, data });
         showToast.success('Property updated successfully');
         router.push(buildRoute(ROUTES.PROPERTIES.DETAIL, { id: propertyId }));
       } else {
         const createData = data as CreatePropertyFormData;
         const created = await createPropertyMutation.mutateAsync(createData);
 
-        // Flush draft documents to the new property via the generic documents API
         const successDrafts = draftDocuments.filter((d) => d.status === 'success');
         if (successDrafts.length > 0 && created.id) {
           const payloads = successDrafts.map((d) => ({

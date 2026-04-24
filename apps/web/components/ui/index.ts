@@ -318,6 +318,9 @@ export type {
 export { Spinner, spinnerVariants, LoadingDots, loadingDotsVariants } from './spinner';
 export type { SpinnerProps, LoadingDotsProps } from './spinner';
 
+// ZigzagLoader
+export { ZigzagLoader } from './zigzag-loader';
+
 // Typography
 export { Typography } from './typography';
 export type { TypographyProps } from './typography';

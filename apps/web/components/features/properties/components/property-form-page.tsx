@@ -3,7 +3,7 @@
 import * as React from 'react';
 
 import { PropertyForm } from './property-form';
-import { useCustomerById, useCustomersList, useProperty } from '../hooks';
+import { useCustomerById, useProperty } from '../hooks';
 
 import { Skeleton } from '@/components/ui';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
@@ -100,14 +100,6 @@ export function PropertyFormPage({
     refetch: refetchCustomer,
   } = useCustomerById(!isEditMode ? customerId : undefined);
 
-  // Create standalone mode: fetch customers list for selector
-  const {
-    data: customersData,
-    isLoading: isLoadingCustomers,
-    error: customersError,
-    refetch: refetchCustomers,
-  } = useCustomersList(!isEditMode);
-
   // Edit mode: loading property
   if (isEditMode && isLoadingProperty) {
     return <LoadingState />;
@@ -140,27 +132,9 @@ export function PropertyFormPage({
     );
   }
 
-  // Create standalone mode: error loading customers list
-  if (!isEditMode && !customerId && customersError) {
-    return (
-      <ErrorState
-        message={getErrorMessage(customersError)}
-        onRetry={() => void refetchCustomers()}
-      />
-    );
-  }
-
   if (isEditMode) {
     return <PropertyForm mode="edit" propertyId={propertyId} initialData={property} />;
   }
 
-  return (
-    <PropertyForm
-      mode="create"
-      customerId={customerId}
-      customer={customer}
-      customers={customersData?.data ?? []}
-      isLoadingCustomers={isLoadingCustomers}
-    />
-  );
+  return <PropertyForm mode="create" customerId={customerId} customer={customer} />;
 }

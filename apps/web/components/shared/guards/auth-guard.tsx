@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 
-import { Spinner } from '@/components/ui/spinner';
+import { ZigzagLoader } from '@/components/ui/zigzag-loader';
 import { ROUTES } from '@/lib/config/routes';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -50,10 +50,9 @@ export function AuthGuard({
       <>
         {fallback || (
           <div className="min-h-screen flex items-center justify-center bg-background-secondary">
-            <div className="flex flex-col items-center gap-4">
-              <Spinner size="md" variant="primary" />
-              <p className="text-sm text-foreground-secondary">Loading...</p>
-            </div>
+            <ZigzagLoader
+              staticMessage={isInitialized && !isAuthenticated ? 'Logging out…' : undefined}
+            />
           </div>
         )}
       </>

@@ -1,20 +1,26 @@
 'use client';
 
-import { Check, Lock, ShieldCheck, X } from 'lucide-react';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import {
+  Alert,
+  Button,
+  CircularProgress,
+  IconButton,
+  InputAdornment,
+  TextField,
+} from '@mui/material';
 import Link from 'next/link';
+import { useState } from 'react';
 
 import { useResetPassword } from '../hooks/use-reset-password';
 
-import { Alert } from '@/components/shared';
-import { Button, Card, PasswordInput, Spinner, Typography } from '@/components/ui';
+import { MUITypography } from '@/components/ui';
 import { ROUTES } from '@/lib/config/routes';
 import { cn } from '@/lib/utils';
 
-/**
- * ResetPasswordForm Component
- * Pure UI component - all logic delegated to useResetPassword hook.
- * Uses PasswordInput component for cleaner code.
- */
 export function ResetPasswordForm(): React.JSX.Element {
   const {
     isLoading,
@@ -28,67 +34,91 @@ export function ResetPasswordForm(): React.JSX.Element {
     onSubmit,
   } = useResetPassword();
 
-  // Success state
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   if (isSuccess) {
     return (
-      <Card variant="elevated" padding="default">
-        <div className="text-center mb-6">
-          <div className="size-container-lg mx-auto mb-4 rounded-full bg-success/10 flex items-center justify-center">
-            <Check className="size-icon-xl text-success" />
+      <div className="rounded-2xl border border-border-light bg-card p-8 shadow-lg">
+        <div className="text-center mb-8">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-50">
+            <CheckCircleOutlineIcon className="text-green-600" fontSize="large" />
           </div>
-          <Typography variant="h3" className="mb-1">
-            Password reset successful
-          </Typography>
-          <Typography variant="body" color="muted" size="sm">
+          <MUITypography variant="drawerTitle">Password reset successful</MUITypography>
+          <MUITypography variant="body" className="mt-1">
             Your password has been updated successfully.
             <br />
             You can now sign in with your new password.
-          </Typography>
+          </MUITypography>
         </div>
 
-        <Button className="w-full" asChild>
-          <Link href={ROUTES.AUTH.LOGIN}>Continue to Login</Link>
+        <Button
+          variant="contained"
+          fullWidth
+          size="large"
+          disableElevation
+          href={ROUTES.AUTH.LOGIN}
+          LinkComponent={Link}
+        >
+          Continue to Login
         </Button>
-      </Card>
+      </div>
     );
   }
 
   return (
-    <Card variant="elevated" padding="default">
-      <div className="text-center mb-6">
-        <div className="size-container-lg mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-          <Lock className="size-icon-xl text-primary" />
+    <div className="rounded-2xl border border-border-light bg-card p-8 shadow-lg">
+      <div className="text-center mb-8">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+          <LockOutlinedIcon className="text-primary" fontSize="large" />
         </div>
-        <Typography variant="h3" className="mb-1">
-          Set new password
-        </Typography>
-        <Typography variant="body" color="muted" size="sm">
+        <MUITypography variant="drawerTitle">Set new password</MUITypography>
+        <MUITypography variant="body" className="mt-1">
           Your new password must be different from
           <br />
           previously used passwords.
-        </Typography>
+        </MUITypography>
       </div>
 
       {displayError && (
-        <Alert variant="error" appearance="minimal" className="mb-4">
+        <Alert severity="error" className="mb-5">
           {displayError}
         </Alert>
       )}
 
-      <form onSubmit={onSubmit} className="space-y-4">
-        {/* New Password */}
+      <form onSubmit={onSubmit} className="flex flex-col gap-5">
         <div>
-          <PasswordInput
+          <TextField
             {...form.register('newPassword')}
+            type={showNewPassword ? 'text' : 'password'}
             label="New Password"
             placeholder="Enter new password"
             autoComplete="new-password"
             disabled={isLoading}
             error={!!form.formState.errors.newPassword}
-            errorMessage={form.formState.errors.newPassword?.message}
+            helperText={form.formState.errors.newPassword?.message}
+            fullWidth
+            InputProps={{
+              sx: { height: 44 },
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    onClick={() => setShowNewPassword((prev) => !prev)}
+                    edge="end"
+                    aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showNewPassword ? (
+                      <VisibilityOff fontSize="small" />
+                    ) : (
+                      <Visibility fontSize="small" />
+                    )}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
 
-          {/* Password Strength */}
           {watchedPassword && (
             <div className="mt-2">
               <div className="flex gap-1 mb-1">
@@ -102,57 +132,76 @@ export function ResetPasswordForm(): React.JSX.Element {
                   />
                 ))}
               </div>
-              <Typography variant="caption" color="muted">
+              <MUITypography variant="finePrint">
                 Password strength:{' '}
-                <Typography as="span" weight="medium">
+                <MUITypography variant="bodyPrimary" component="span">
                   {passwordStrength.label}
-                </Typography>
-              </Typography>
+                </MUITypography>
+              </MUITypography>
             </div>
           )}
         </div>
 
-        {/* Confirm Password */}
         <div>
-          <PasswordInput
+          <TextField
             {...form.register('confirmPassword')}
+            type={showConfirmPassword ? 'text' : 'password'}
             label="Confirm Password"
-            leftIcon={<ShieldCheck />}
             placeholder="Confirm new password"
             autoComplete="new-password"
             disabled={isLoading}
             error={!!form.formState.errors.confirmPassword}
-            errorMessage={form.formState.errors.confirmPassword?.message}
+            helperText={form.formState.errors.confirmPassword?.message}
+            fullWidth
+            InputProps={{
+              sx: { height: 44 },
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    size="small"
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    edge="end"
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirmPassword ? (
+                      <VisibilityOff fontSize="small" />
+                    ) : (
+                      <Visibility fontSize="small" />
+                    )}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
 
-          {/* Match indicator */}
           {watchedConfirm && (
             <div className="mt-1.5 flex items-center gap-1.5">
               {passwordsMatch ? (
-                <>
-                  <Check className="size-icon-xs text-success" />
-                  <Typography variant="caption" color="success">
-                    Passwords match
-                  </Typography>
-                </>
+                <MUITypography variant="finePrint" color="success.main">
+                  ✓ Passwords match
+                </MUITypography>
               ) : (
-                <>
-                  <X className="size-icon-xs text-error" />
-                  <Typography variant="caption" color="error">
-                    Passwords do not match
-                  </Typography>
-                </>
+                <MUITypography variant="finePrint" color="error.main">
+                  ✗ Passwords do not match
+                </MUITypography>
               )}
             </div>
           )}
         </div>
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button
+          type="submit"
+          variant="contained"
+          fullWidth
+          disabled={isLoading}
+          size="large"
+          disableElevation
+        >
           {isLoading ? (
-            <>
-              <Spinner size="xs" variant="white" className="mr-2" />
+            <span className="flex items-center gap-2">
+              <CircularProgress size={18} color="inherit" />
               Resetting...
-            </>
+            </span>
           ) : (
             'Reset Password'
           )}
@@ -160,10 +209,12 @@ export function ResetPasswordForm(): React.JSX.Element {
       </form>
 
       <div className="mt-6 pt-4 border-t border-border-light text-center">
-        <Typography variant="link" size="sm" color="muted" asChild>
-          <Link href={ROUTES.AUTH.LOGIN}>← Back to login</Link>
-        </Typography>
+        <Link href={ROUTES.AUTH.LOGIN} className="no-underline">
+          <MUITypography variant="body" color="primary">
+            ← Back to login
+          </MUITypography>
+        </Link>
       </div>
-    </Card>
+    </div>
   );
 }

@@ -2,15 +2,41 @@
 globs: libs/**/*.ts
 ---
 
-# Shared Package — Import Guide
+# Shared Libraries Rules
 
-**Quick Reference:**
-| Scope | Path |
-|-------|------|
-| Shared types/enums | `@oneohm-epc/shared/types` |
-| Shared utilities | `@oneohm-epc/shared/utils` |
-| Shared schemas (Zod) | `@oneohm-epc/shared/schemas` |
-| Shared constants | `@oneohm-epc/shared/constants` |
-| Backend only | `modules/[feature]/types/` |
-| Backend decorators | `common/decorators/` |
-| Frontend only | `lib/types/` |
+The `@oneohm-epc/shared` package contains code shared across backend, web, and mobile apps.
+
+## Sub-path Imports
+
+| Import Path | Contains | Example |
+|-------------|----------|---------|
+| `@oneohm-epc/shared/types` | Interfaces, enums, type guards | `ProjectStatus`, `UserRole`, `MilestoneStatus` |
+| `@oneohm-epc/shared/utils` | Pure functions — no platform deps | `formatCurrency`, `parsePaginationParams`, `computeSolarImpact` |
+| `@oneohm-epc/shared/schemas` | Zod schemas shared across apps | Validation schemas |
+| `@oneohm-epc/shared/constants` | Static maps, config constants | `SOLAR_IMPACT_CONSTANTS`, label maps |
+
+## Rules
+
+- **Cross-app types always go here.** If both frontend and backend need a type, it lives in `shared/types`.
+- **No platform-specific code.** No React, no NestJS, no Node-only APIs. Pure TypeScript only.
+- **No side effects.** Every export must be a pure function, type, or constant.
+- **Barrel exports required.** Every sub-folder has an `index.ts` that re-exports everything.
+- **Enums are the source of truth.** Backend, frontend, and mobile all import the same enums. Never duplicate.
+- **Max 500 lines per file.** Split large type files by domain (e.g. `project.interface.ts`, `customer.interface.ts`).
+
+## Where Types Live
+
+| Scope | Location |
+|-------|----------|
+| Shared across apps | `@oneohm-epc/shared/types` |
+| Backend only | `apps/backend/src/modules/[feature]/types/` |
+| Frontend only | `apps/web/lib/types/` |
+| NestJS decorators | `apps/backend/src/common/decorators/` |
+| Backend utils | `apps/backend/src/common/utils/` |
+
+## Adding to Shared
+
+1. Add the type/util/constant to the appropriate sub-folder.
+2. Export it from the sub-folder's `index.ts`.
+3. Verify it has no platform-specific imports.
+4. Run `npm run typecheck` to confirm all consumers compile.
