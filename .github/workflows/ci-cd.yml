@@ -228,7 +228,7 @@ jobs:
     name: Build
     needs: [lint, typecheck, test, setup]
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -262,6 +262,8 @@ jobs:
 
       - name: Build affected projects
         run: npx nx affected -t build --parallel=3 --configuration=production
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096'
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v7
