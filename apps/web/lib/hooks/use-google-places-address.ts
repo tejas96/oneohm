@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { normalizeIndianStateLabel } from '@oneohm-epc/shared/constants';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { config } from '@/lib/config/config';
 import { useDebounce } from '@/lib/hooks/use-debounce';
@@ -110,9 +110,7 @@ function parseAddressComponents(place: GooglePlaceDetails): ParsedAddressDetails
 function loadGooglePlacesScript(apiKey: string): Promise<void> {
   if (typeof window === 'undefined') return Promise.resolve();
 
-  const existingScript = document.getElementById(GOOGLE_MAPS_SCRIPT_ID) as
-    | HTMLScriptElement
-    | null;
+  const existingScript = document.getElementById(GOOGLE_MAPS_SCRIPT_ID) as HTMLScriptElement | null;
 
   if (getGoogleMapsApi()?.maps?.places) return Promise.resolve();
 
@@ -197,7 +195,9 @@ export function useGooglePlacesAddress(countryCode: string = INDIA_COUNTRY_CODE)
         setIsReady(true);
       } catch {
         if (!isCancelled) {
-          setErrorMessage('Unable to load Google Maps suggestions. You can enter address manually.');
+          setErrorMessage(
+            'Unable to load Google Maps suggestions. You can enter address manually.',
+          );
           setIsReady(false);
         }
       }
@@ -289,6 +289,14 @@ export function useGooglePlacesAddress(countryCode: string = INDIA_COUNTRY_CODE)
       clearSuggestions,
       fetchAddressDetails,
     }),
-    [clearSuggestions, errorMessage, fetchAddressDetails, isLoadingSuggestions, isReady, query, suggestions],
+    [
+      clearSuggestions,
+      errorMessage,
+      fetchAddressDetails,
+      isLoadingSuggestions,
+      isReady,
+      query,
+      suggestions,
+    ],
   );
 }

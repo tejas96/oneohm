@@ -26,11 +26,11 @@ import {
 import { EmptyState } from '@/components/shared';
 import { Button, Card, CardContent, MUIInput, MUISelect, showToast } from '@/components/ui';
 import { INDIAN_STATES } from '@/lib/config/constants';
+import { ROUTES } from '@/lib/config/routes';
 import {
   type AddressSuggestionOption,
   useGooglePlacesAddress,
 } from '@/lib/hooks/use-google-places-address';
-import { ROUTES } from '@/lib/config/routes';
 import { getErrorMessage } from '@/lib/utils';
 
 // ============================================================================
@@ -427,7 +427,10 @@ function CustomerFormContent({
                   if (!selected || typeof selected === 'string') {
                     const nextAddress = typeof selected === 'string' ? selected : '';
                     setSelectedAddressOption(null);
-                    form.setValue('address', nextAddress, { shouldDirty: true, shouldValidate: true });
+                    form.setValue('address', nextAddress, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
                     addressLookup.setQuery(nextAddress);
                     return;
                   }
@@ -444,7 +447,10 @@ function CustomerFormContent({
                     if (!details) return;
 
                     if (details.city) {
-                      form.setValue('city', details.city, { shouldDirty: true, shouldValidate: true });
+                      form.setValue('city', details.city, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
                     }
                     if (details.state) {
                       form.setValue('state', normalizeIndianStateLabel(details.state), {
@@ -489,7 +495,9 @@ function CustomerFormContent({
                     }
                   },
                 }}
-                error={form.formState.errors.address?.message ?? addressLookup.errorMessage ?? undefined}
+                error={
+                  form.formState.errors.address?.message ?? addressLookup.errorMessage ?? undefined
+                }
               />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

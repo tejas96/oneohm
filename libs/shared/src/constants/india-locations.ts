@@ -51,7 +51,9 @@ export const INDIAN_STATE_OPTIONS: readonly IndianStateOption[] = [
   { code: 'PY', label: 'Puducherry', aliases: ['pondicherry'] },
 ] as const;
 
-export const INDIAN_STATE_LABELS: readonly string[] = INDIAN_STATE_OPTIONS.map((state) => state.label);
+export const INDIAN_STATE_LABELS: readonly string[] = INDIAN_STATE_OPTIONS.map(
+  (state) => state.label,
+);
 
 function normalizeKey(value: string): string {
   return value
@@ -79,5 +81,5 @@ export function findIndianState(value?: string | null): IndianStateOption | unde
 
 export function normalizeIndianStateLabel(value?: string | null): string {
   const state = findIndianState(value);
-  return state?.label ?? (value ?? '');
+  return state?.label ?? value ?? '';
 }
