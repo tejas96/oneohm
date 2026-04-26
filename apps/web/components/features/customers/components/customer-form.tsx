@@ -6,7 +6,7 @@ import { CustomerStatus, LeadSource } from '@oneohm-epc/shared/types';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type JSX, useMemo } from 'react';
+import { type JSX, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 
 import { useCreateCustomer, useCheckAvailability } from '../hooks/use-create-customer';
@@ -25,6 +25,11 @@ import {
 
 import { EmptyState } from '@/components/shared';
 import { Button, Card, CardContent, MUIInput, MUISelect, showToast } from '@/components/ui';
+import { INDIAN_STATES } from '@/lib/config/constants';
+import {
+  type AddressSuggestionOption,
+  useGooglePlacesAddress,
+} from '@/lib/hooks/use-google-places-address';
 import { ROUTES } from '@/lib/config/routes';
 import { getErrorMessage } from '@/lib/utils';
 
@@ -47,8 +52,6 @@ interface CustomerFormContentProps {
 // ============================================================================
 // Constants
 // ============================================================================
-
-const INDIAN_STATES_AND_UTS = ['Karnataka', 'Maharashtra'];
 
 const LEAD_SOURCE_OPTIONS = [
   { value: LeadSource.REFERRAL, label: 'Referral' },
@@ -199,7 +202,11 @@ function CustomerFormContent({
 
   const watchedLeadSource = form.watch('leadSource');
   const watchedGroupCode = form.watch('groupCode');
+  const watchedAddress = form.watch('address');
   const showOtherSourceInput = watchedLeadSource === LeadSource.OTHER;
+  const [selectedAddressOption, setSelectedAddressOption] =
+    useState<AddressSuggestionOption | null>(null);
+  const addressLookup = useGooglePlacesAddress('in');
 
   // Group options for autocomplete
   const groupOptions = useMemo(
@@ -398,6 +405,7 @@ function CustomerFormContent({
               </h3>
 
               <MUIInput
+                mode="autocomplete"
                 id="address"
                 fieldLabel="Street Address"
                 options={addressLookup.suggestions}
@@ -426,7 +434,10 @@ function CustomerFormContent({
 
                   const option = selected as AddressSuggestionOption;
                   setSelectedAddressOption(option);
-                  form.setValue('address', option.label, { shouldDirty: true, shouldValidate: true });
+                  form.setValue('address', option.label ?? '', {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
 
                   void (async () => {
                     const details = await addressLookup.fetchAddressDetails(option.placeId);
@@ -501,7 +512,7 @@ function CustomerFormContent({
                       value={field.value}
                       onChange={(e) => field.onChange(e.target.value)}
                       error={form.formState.errors.state?.message}
-                      options={INDIAN_STATES_AND_UTS.map((s) => ({ value: s, label: s }))}
+                      options={INDIAN_STATES.map((s) => ({ value: s, label: s }))}
                     />
                   )}
                 />
