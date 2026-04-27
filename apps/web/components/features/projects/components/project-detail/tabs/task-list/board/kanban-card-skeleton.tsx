@@ -32,11 +32,11 @@ interface KanbanCardSkeletonProps {
 
 export function KanbanCardSkeleton({ count = 3 }: KanbanCardSkeletonProps): React.JSX.Element {
   return (
-      <>
-        {Array.from({ length: count }).map((_, i) => (
-          // Using index key is safe here - these are static skeleton placeholders with no reordering
-          <CardSkeleton key={`skeleton-${i}`} />
-        ))}
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        // Using index key is safe here - these are static skeleton placeholders with no reordering
+        <CardSkeleton key={`skeleton-${i}`} />
+      ))}
     </>
   );
 }

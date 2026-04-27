@@ -1,14 +1,8 @@
 'use client';
 
-import {
-  draggable,
-} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import {
-  disableNativeDragPreview,
-} from '@atlaskit/pragmatic-drag-and-drop/element/disable-native-drag-preview';
-import {
-  setCustomNativeDragPreview,
-} from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
+import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { disableNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/disable-native-drag-preview';
+import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import OpenWithIcon from '@mui/icons-material/OpenWith';
 import {
@@ -146,13 +140,10 @@ export function KanbanTaskCard({
     [handleClick],
   );
 
-  const handleMoveMenuOpen = useCallback(
-    (e: React.MouseEvent<HTMLElement>) => {
-      e.stopPropagation();
-      setMenuAnchor(e.currentTarget);
-    },
-    [],
-  );
+  const handleMoveMenuOpen = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    setMenuAnchor(e.currentTarget);
+  }, []);
 
   const handleMoveMenuClose = useCallback(() => {
     setMenuAnchor(null);
@@ -183,16 +174,8 @@ export function KanbanTaskCard({
           mb: 1,
           borderRadius: 1.5,
           border: '1px solid',
-          borderColor: isDraggingThis
-            ? 'primary.light'
-            : isOverdue
-              ? 'error.light'
-              : 'divider',
-          borderLeft: isOverdue
-            ? '3px solid'
-            : isDueToday
-              ? '3px solid'
-              : '1px solid',
+          borderColor: isDraggingThis ? 'primary.light' : isOverdue ? 'error.light' : 'divider',
+          borderLeft: isOverdue ? '3px solid' : isDueToday ? '3px solid' : '1px solid',
           borderLeftColor: isOverdue
             ? 'error.main'
             : isDueToday
@@ -268,7 +251,15 @@ export function KanbanTaskCard({
         {/* Blocked indicator */}
         {blockedReason && (
           <Tooltip title={`Blocked: ${blockedReason}`} placement="top">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, color: 'error.main', mb: 0.75 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.25,
+                color: 'error.main',
+                mb: 0.75,
+              }}
+            >
               <BlockOutlinedIcon sx={{ fontSize: 12 }} />
               <Typography variant="caption" sx={{ fontSize: 10, color: 'error.main' }}>
                 Blocked
@@ -303,11 +294,7 @@ export function KanbanTaskCard({
                 px: 0.75,
                 py: 0.25,
                 borderRadius: 1,
-                bgcolor: isOverdue
-                  ? 'error.50'
-                  : isDueToday
-                    ? 'warning.50'
-                    : 'action.hover',
+                bgcolor: isOverdue ? 'error.50' : isDueToday ? 'warning.50' : 'action.hover',
                 border: '1px solid',
                 borderColor: isOverdue
                   ? 'error.light'
@@ -333,7 +320,9 @@ export function KanbanTaskCard({
         )}
 
         {/* Bottom row */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.5 }}>
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.5 }}
+        >
           {/* Left: priority + code */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Box sx={{ color: priorityColor, display: 'flex', alignItems: 'center' }}>
@@ -341,7 +330,12 @@ export function KanbanTaskCard({
             </Box>
             <Typography
               variant="caption"
-              sx={{ fontFamily: 'monospace', color: 'text.secondary', fontWeight: 600, fontSize: 10 }}
+              sx={{
+                fontFamily: 'monospace',
+                color: 'text.secondary',
+                fontWeight: 600,
+                fontSize: 10,
+              }}
             >
               {code}
             </Typography>
@@ -369,7 +363,9 @@ export function KanbanTaskCard({
                     justifyContent: 'center',
                   }}
                 >
-                  <Typography sx={{ fontSize: 10, color: 'text.disabled', lineHeight: 1, fontWeight: 600 }}>
+                  <Typography
+                    sx={{ fontSize: 10, color: 'text.disabled', lineHeight: 1, fontWeight: 600 }}
+                  >
                     ?
                   </Typography>
                 </Box>

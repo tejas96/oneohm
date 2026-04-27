@@ -4,7 +4,11 @@ import { Flag, Milestone, Search, SlidersHorizontal, X } from 'lucide-react';
 import React, { useCallback, useMemo } from 'react';
 
 import { TaskViewToggle } from './task-view-toggle';
-import { UNASSIGNED_TASK_FILTER, type TaskListFilters, type TaskViewMode } from '../../../../constants';
+import {
+  UNASSIGNED_TASK_FILTER,
+  type TaskListFilters,
+  type TaskViewMode,
+} from '../../../../constants';
 import type { TeamMemberSummary } from '../../../../hooks';
 import type { ProjectMilestone } from '../../../../hooks/types';
 import { TeamAvatarGroup } from '../../../team-avatar-group';

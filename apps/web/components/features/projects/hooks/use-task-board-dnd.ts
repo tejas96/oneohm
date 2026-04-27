@@ -1,8 +1,6 @@
 'use client';
 
-import {
-  monitorForElements,
-} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { TaskStatus } from '@oneohm-epc/shared/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
@@ -169,8 +167,6 @@ export function isDraggableTaskData(data: unknown): data is DraggableTaskData {
 /** Type guard for droppable column data. */
 export function isDroppableColumnData(data: unknown): data is DroppableColumnData {
   return (
-    typeof data === 'object' &&
-    data !== null &&
-    (data as Record<string, unknown>).type === 'column'
+    typeof data === 'object' && data !== null && (data as Record<string, unknown>).type === 'column'
   );
 }

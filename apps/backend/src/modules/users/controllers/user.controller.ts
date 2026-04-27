@@ -81,7 +81,11 @@ export class UserController {
   @ApiQuery({ name: 'email', required: false })
   @ApiQuery({ name: 'phone', required: false })
   @ApiQuery({ name: 'excludeId', required: false, description: 'User ID to exclude from check' })
-  @ApiQuery({ name: 'organizationId', required: false, description: 'Check employee profile existence in this org' })
+  @ApiQuery({
+    name: 'organizationId',
+    required: false,
+    description: 'Check employee profile existence in this org',
+  })
   async checkAvailability(
     @Query('email') email?: string,
     @Query('phone') phone?: string,

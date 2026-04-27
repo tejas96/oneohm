@@ -48,9 +48,7 @@ export function KanbanColumn({
         return { type: 'column', toStatus: columnCodeRef.current };
       },
       canDrop({ source }) {
-        return (
-          source.data.type === 'task' && source.data.fromStatus !== columnCodeRef.current
-        );
+        return source.data.type === 'task' && source.data.fromStatus !== columnCodeRef.current;
       },
       onDragEnter() {
         setIsOver(true);
@@ -118,11 +116,7 @@ export function KanbanColumn({
         {isLoading ? (
           <KanbanCardSkeleton count={3} />
         ) : column.tasks.length === 0 ? (
-          <KanbanEmptyColumn
-            label={column.label}
-            isOver={isOver}
-            onAddTask={handleAddTask}
-          />
+          <KanbanEmptyColumn label={column.label} isOver={isOver} onAddTask={handleAddTask} />
         ) : (
           column.tasks.map((task) => (
             <KanbanTaskCard

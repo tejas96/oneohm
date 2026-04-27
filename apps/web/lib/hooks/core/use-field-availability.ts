@@ -63,7 +63,13 @@ export function useFieldAvailability(
           setIsChecking((prev) => ({ ...prev, [field]: false }));
         });
     },
-    [config.endpoint, excludeId, config.excludeIdParam, config.extraParams, config.validateResponse],
+    [
+      config.endpoint,
+      excludeId,
+      config.excludeIdParam,
+      config.extraParams,
+      config.validateResponse,
+    ],
   );
 
   const clearErrors = useCallback(() => setErrors({}), []);

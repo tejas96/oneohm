@@ -63,7 +63,9 @@ export class PlatformSmsService {
         throw new BadRequestException('Failed to send OTP. Please try again.');
       }
 
-      this.logger.log(`MSG91 OTP sent successfully to ${mobile} (request_id: ${response.data?.request_id ?? 'n/a'})`);
+      this.logger.log(
+        `MSG91 OTP sent successfully to ${mobile} (request_id: ${response.data?.request_id ?? 'n/a'})`,
+      );
       if (this.configService.isDevelopment) {
         this.logger.debug(`[DEV] OTP sent to ${this.maskPhone(phone)}: ${otp}`);
       }

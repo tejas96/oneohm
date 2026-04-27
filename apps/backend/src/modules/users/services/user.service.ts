@@ -66,7 +66,12 @@ export class UserService {
     const existingPhone = await this.userRepository.findByPhoneIncludingDeleted(createDto.phone);
 
     // Smart link: phone exists + profileType + organizationId + not soft-deleted -> link to existing user
-    if (existingPhone && !existingPhone.deletedAt && createDto.profileType && createDto.organizationId) {
+    if (
+      existingPhone &&
+      !existingPhone.deletedAt &&
+      createDto.profileType &&
+      createDto.organizationId
+    ) {
       return this.linkExistingUserToProfile(existingPhone, createDto, createdBy);
     }
 
@@ -236,10 +241,17 @@ export class UserService {
     return emailUser.phone === phone;
   }
 
-  async employeeProfileExists(phone: string, organizationId: string, excludeId?: string): Promise<boolean> {
+  async employeeProfileExists(
+    phone: string,
+    organizationId: string,
+    excludeId?: string,
+  ): Promise<boolean> {
     const user = await this.userRepository.findByPhoneIncludingDeleted(phone, excludeId);
     if (!user || user.deletedAt) return false;
-    const profile = await this.employeeProfileRepository.findByUserAndOrganization(user.id, organizationId);
+    const profile = await this.employeeProfileRepository.findByUserAndOrganization(
+      user.id,
+      organizationId,
+    );
     return !!profile;
   }
 
@@ -252,7 +264,10 @@ export class UserService {
 
     // Email conflict check: if a different email is provided, verify it is not taken by another user
     if (dto.email && dto.email !== existingUser.email) {
-      const emailOwner = await this.userRepository.findByEmailIncludingDeleted(dto.email, existingUser.id);
+      const emailOwner = await this.userRepository.findByEmailIncludingDeleted(
+        dto.email,
+        existingUser.id,
+      );
       if (emailOwner) {
         throw new ConflictException(`Email ${dto.email} is already in use by another user`);
       }
@@ -267,7 +282,9 @@ export class UserService {
 
     if (Object.keys(updatePayload).length > 0) {
       await this.userRepository.update(existingUser.id, updatePayload);
-      this.logger.log(`Updated user fields for existing user ${existingUser.id} during profile link`);
+      this.logger.log(
+        `Updated user fields for existing user ${existingUser.id} during profile link`,
+      );
     }
 
     // Create profile -- ProfileService.createProfile handles duplicate detection and role assignment

@@ -527,8 +527,7 @@ export class AuthService {
    */
   private assertNotCustomerOnly(user: UserEntity): void {
     const roles = user.roles ?? [];
-    const isCustomerOnly =
-      roles.length > 0 && roles.every((r) => r === 'customer');
+    const isCustomerOnly = roles.length > 0 && roles.every((r) => r === 'customer');
     if (isCustomerOnly) {
       throw new BadRequestException(
         'This portal is for employees and resellers only. Please contact your solar company for support.',

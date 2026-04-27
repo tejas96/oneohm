@@ -3,11 +3,7 @@
 import { useMemo } from 'react';
 
 import { KANBAN_BOARD_LIMIT, UNASSIGNED_TASK_FILTER, type TaskListFilters } from '../constants';
-import {
-  useProjectTaskList,
-  useProjectTaskStatuses,
-  type ProjectTaskItem,
-} from '../hooks';
+import { useProjectTaskList, useProjectTaskStatuses, type ProjectTaskItem } from '../hooks';
 
 export interface KanbanColumnData {
   code: string;
@@ -48,7 +44,14 @@ export function useProjectTaskBoard(
 ): UseProjectTaskBoardResult {
   const { taskStatuses } = useProjectTaskStatuses(projectId);
 
-  const { data, isLoading, isFetching, isError, error: queryError, refetch } = useProjectTaskList(
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isError,
+    error: queryError,
+    refetch,
+  } = useProjectTaskList(
     projectId,
     {
       page: 1,

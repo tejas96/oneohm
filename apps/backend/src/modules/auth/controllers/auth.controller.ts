@@ -279,7 +279,10 @@ export class AuthController {
     statusCode: HttpStatus.OK,
     successMessage: 'OTP sent successfully',
     additionalErrors: [
-      { status: HttpStatus.BAD_REQUEST, description: 'Mobile number not registered or customer-only account' },
+      {
+        status: HttpStatus.BAD_REQUEST,
+        description: 'Mobile number not registered or customer-only account',
+      },
       { status: HttpStatus.TOO_MANY_REQUESTS, description: 'Rate limit exceeded' },
     ],
   })

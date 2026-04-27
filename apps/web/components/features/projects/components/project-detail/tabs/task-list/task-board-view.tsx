@@ -16,15 +16,8 @@ import {
   restoreProjectTasksCaches,
   snapshotProjectTasksCaches,
 } from './lib/apply-task-status-change';
-import {
-  PROJECT_TASKS_QUERY_KEY,
-  type TaskListFilters,
-} from '../../../../constants';
-import {
-  useProjectTaskBoard,
-  useTaskBoardDnd,
-  type KanbanColumnData,
-} from '../../../../hooks';
+import { PROJECT_TASKS_QUERY_KEY, type TaskListFilters } from '../../../../constants';
+import { useProjectTaskBoard, useTaskBoardDnd, type KanbanColumnData } from '../../../../hooks';
 
 import { useUpdateTask } from '@/components/features/tasks/hooks';
 import { showToast } from '@/components/ui/sonner';
@@ -142,16 +135,21 @@ export function TaskBoardView({
   // Handler for "Move to" menu on cards (keyboard/mobile path)
   const handleMoveToStatus = useCallback(
     (taskId: string, newStatus: string, currentCompletionPct: number) => {
-      const fromStatus = columns.find((col) =>
-        col.tasks.some((t) => t.id === taskId),
-      )?.code;
+      const fromStatus = columns.find((col) => col.tasks.some((t) => t.id === taskId))?.code;
       if (fromStatus === newStatus) return;
 
       const { completionPercentage } = resolveTaskStatusPayload(newStatus, currentCompletionPct);
       const snapshots = snapshotProjectTasksCaches(queryClient, organizationId);
-      optimisticallyMoveTaskStatus(queryClient, organizationId, taskId, newStatus, completionPercentage);
+      optimisticallyMoveTaskStatus(
+        queryClient,
+        organizationId,
+        taskId,
+        newStatus,
+        completionPercentage,
+      );
 
-      const fromLabel = columns.find((c) => c.code === fromStatus)?.label ?? fromStatus ?? 'unknown';
+      const fromLabel =
+        columns.find((c) => c.code === fromStatus)?.label ?? fromStatus ?? 'unknown';
       const toLabel = columns.find((c) => c.code === newStatus)?.label ?? newStatus;
 
       updateTask(
