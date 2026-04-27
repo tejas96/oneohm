@@ -391,17 +391,6 @@ export const navigationConfig: NavigationConfig = {
             },
           ],
         },
-        {
-          title: 'Scheduling',
-          items: [
-            {
-              id: 'projects-kanban',
-              icon: LayoutGrid,
-              label: 'Kanban Board',
-              href: ROUTES.PROJECTS.BOARD,
-            },
-          ],
-        },
       ],
     },
 

@@ -1,0 +1,80 @@
+'use client';
+
+import { TaskStatus } from '@oneohm-epc/shared/types';
+import type { QueryClient } from '@tanstack/react-query';
+
+import { PROJECT_TASKS_QUERY_KEY } from '../../../../../constants';
+
+/** Statuses where the backend auto-sets completionPercentage = 100.
+ *  Any task that was ever in these statuses retains completionPercentage = 100
+ *  in the DB until we explicitly reset it. */
+const FINAL_STATUSES = new Set<string>([TaskStatus.DONE, TaskStatus.CANCELLED]);
+
+interface CacheSnapshot {
+  key: readonly unknown[];
+  data: unknown;
+}
+
+/** Returns the resolved payload without firing mutate.
+ *  Used by the board DnD hook which manages its own mutation lifecycle. */
+export function resolveTaskStatusPayload(
+  newStatus: string,
+  currentCompletionPct: number,
+): { completionPercentage?: number } {
+  const completionPercentage =
+    !FINAL_STATUSES.has(newStatus) && currentCompletionPct === 100 ? 0 : undefined;
+  return { completionPercentage };
+}
+
+/** Snapshot helper — used by the board DnD hook before the optimistic patch. */
+export function snapshotProjectTasksCaches(
+  queryClient: QueryClient,
+  organizationId: string | undefined,
+): CacheSnapshot[] {
+  const snapshots: CacheSnapshot[] = [];
+  queryClient
+    .getQueryCache()
+    .findAll({ queryKey: PROJECT_TASKS_QUERY_KEY(organizationId) })
+    .forEach((q) => {
+      snapshots.push({ key: q.queryKey, data: q.state.data });
+    });
+  return snapshots;
+}
+
+/** Restore snapshots previously captured with snapshotProjectTasksCaches. */
+export function restoreProjectTasksCaches(
+  queryClient: QueryClient,
+  snapshots: CacheSnapshot[],
+): void {
+  snapshots.forEach(({ key, data }) => {
+    queryClient.setQueryData(key, data);
+  });
+}
+
+/** Optimistically move a task to a new status in all matching cache entries. */
+export function optimisticallyMoveTaskStatus(
+  queryClient: QueryClient,
+  organizationId: string | undefined,
+  taskId: string,
+  newStatus: string,
+  newCompletionPct?: number,
+): void {
+  const queryKey = PROJECT_TASKS_QUERY_KEY(organizationId);
+  queryClient.setQueriesData({ queryKey }, (old: unknown) => {
+    if (!old || typeof old !== 'object') return old;
+    const p = old as { data?: unknown[]; meta?: unknown };
+    if (!Array.isArray(p.data)) return old;
+    return {
+      ...p,
+      data: p.data.map((t: unknown) => {
+        const task = t as { id: string; status: string; completionPercentage: number };
+        if (task.id !== taskId) return task;
+        return {
+          ...task,
+          status: newStatus,
+          ...(newCompletionPct !== undefined ? { completionPercentage: newCompletionPct } : {}),
+        };
+      }),
+    };
+  });
+}

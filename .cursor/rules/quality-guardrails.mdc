@@ -61,11 +61,13 @@ When a file approaches the limit:
 
 Check file length before adding code to an existing file.
 
-## Post-Implementation Verification (MANDATORY)
+## Post-Implementation Verification
 
-This must be the **last TODO item** for every task. No exceptions.
+**ONLY run validation when the user explicitly requests a PR or mentions "raise PR", "create PR", or "submit PR".**
 
-Run these commands from the project root:
+Do NOT run `lint:fix` or `typecheck` after every implementation. Only run them when preparing a pull request.
+
+When the user requests a PR, run these commands from the project root:
 
 ```bash
 npm run lint:fix && npm run typecheck
@@ -76,7 +78,7 @@ npm run lint:fix && npm run typecheck
 2. Review **only `typecheck` output** for errors. `lint:fix` auto-fixes everything (including Prettier formatting) — do not review its output.
 3. If typecheck errors exist, fix them and re-run.
 4. Repeat until zero errors.
-5. Only then is the task complete.
+5. Only then create the PR.
 
 These commands cover:
 - `npm run lint:fix` — runs ESLint with auto-fix on all apps, then runs Prettier to auto-format all files. No need to review output.
@@ -95,4 +97,6 @@ Before considering any implementation done:
 - [ ] All files under 500 lines
 - [ ] All data states handled (loading, error, empty)
 - [ ] All links/routes verified to work
+
+When creating a PR, additionally verify:
 - [ ] `npm run lint:fix && npm run typecheck` passes with zero errors

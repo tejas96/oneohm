@@ -74,20 +74,42 @@ export class UserController {
     summary: 'Check if email or phone is already registered',
     description:
       'Returns availability status for email and phone fields. ' +
-      'Pass excludeId to ignore a specific user (useful when editing).',
+      'Pass excludeId to ignore a specific user (useful when editing). ' +
+      'Pass organizationId alongside phone to also check if an employee profile exists in that org.',
     responseType: Object,
   })
   @ApiQuery({ name: 'email', required: false })
   @ApiQuery({ name: 'phone', required: false })
   @ApiQuery({ name: 'excludeId', required: false, description: 'User ID to exclude from check' })
+  @ApiQuery({
+    name: 'organizationId',
+    required: false,
+    description: 'Check employee profile existence in this org',
+  })
   async checkAvailability(
     @Query('email') email?: string,
     @Query('phone') phone?: string,
+    @Query('organizationId') organizationId?: string,
     @Query('excludeId', new ParseUUIDPipe({ optional: true })) excludeId?: string,
-  ): Promise<{ emailExists: boolean; phoneExists: boolean }> {
+  ): Promise<{
+    emailExists: boolean;
+    phoneExists: boolean;
+    employeeExists: boolean;
+    emailBelongsToPhoneUser: boolean;
+  }> {
     const emailExists = email ? await this.userService.emailExists(email, excludeId) : false;
     const phoneExists = phone ? await this.userService.phoneExists(phone, excludeId) : false;
-    return { emailExists, phoneExists };
+    const employeeExists =
+      phone && organizationId
+        ? await this.userService.employeeProfileExists(phone, organizationId, excludeId)
+        : false;
+
+    let emailBelongsToPhoneUser = false;
+    if (emailExists && phone) {
+      emailBelongsToPhoneUser = await this.userService.emailBelongsToPhoneUser(email!, phone);
+    }
+
+    return { emailExists, phoneExists, employeeExists, emailBelongsToPhoneUser };
   }
 
   @ApiReadAll({

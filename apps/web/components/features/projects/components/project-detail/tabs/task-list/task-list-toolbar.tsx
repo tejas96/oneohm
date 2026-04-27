@@ -3,7 +3,12 @@
 import { Flag, Milestone, Search, SlidersHorizontal, X } from 'lucide-react';
 import React, { useCallback, useMemo } from 'react';
 
-import { UNASSIGNED_TASK_FILTER, type TaskListFilters } from '../../../../constants';
+import { TaskViewToggle } from './task-view-toggle';
+import {
+  UNASSIGNED_TASK_FILTER,
+  type TaskListFilters,
+  type TaskViewMode,
+} from '../../../../constants';
 import type { TeamMemberSummary } from '../../../../hooks';
 import type { ProjectMilestone } from '../../../../hooks/types';
 import { TeamAvatarGroup } from '../../../team-avatar-group';
@@ -26,6 +31,8 @@ interface TaskListToolbarProps {
   avatarMembers: TeamMemberSummary[];
   milestones: ProjectMilestone[];
   totalTasks?: number;
+  view: TaskViewMode;
+  onViewChange: (view: TaskViewMode) => void;
 }
 
 // ── Internal sub-components ─────────────────────────────────────────────────
@@ -101,6 +108,8 @@ export function TaskListToolbar({
   avatarMembers,
   milestones,
   totalTasks,
+  view,
+  onViewChange,
 }: TaskListToolbarProps) {
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -344,6 +353,9 @@ export function TaskListToolbar({
 
         {/* Spacer */}
         <div className="flex-1" />
+
+        {/* View Toggle */}
+        <TaskViewToggle view={view} onViewChange={onViewChange} />
 
         {/* Clear all */}
         {activeFilterCount > 0 && (

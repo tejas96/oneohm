@@ -25,6 +25,7 @@ export function ResetPasswordForm(): React.JSX.Element {
   const {
     isLoading,
     isSuccess,
+    maskedEmail,
     displayError,
     passwordStrength,
     passwordsMatch,
@@ -87,6 +88,17 @@ export function ResetPasswordForm(): React.JSX.Element {
       )}
 
       <form onSubmit={onSubmit} className="flex flex-col gap-5">
+        <TextField
+          label="Account Email"
+          value={maskedEmail}
+          placeholder="No email on file"
+          disabled
+          fullWidth
+          InputProps={{
+            sx: { height: 44 },
+          }}
+        />
+
         <div>
           <TextField
             {...form.register('newPassword')}

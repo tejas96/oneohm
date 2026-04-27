@@ -8,8 +8,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { UserStatus } from '@oneohm-epc/shared/types';
+import * as bcrypt from 'bcrypt';
 
 import { ProfileService } from './profile.service';
+import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UserEntity } from '../entities/user.entity';
@@ -30,6 +32,7 @@ export class UserService {
     private readonly userRoleRepository: UserRoleRepository,
     @Inject(forwardRef(() => ProfileService))
     private readonly profileService: ProfileService,
+    private readonly employeeProfileRepository: EmployeeProfileRepository,
   ) {}
 
   /**
@@ -59,7 +62,32 @@ export class UserService {
       throw new BadRequestException('organizationId is required when profileType is provided');
     }
 
-    // Check if email already exists (including soft-deleted users to avoid DB 23505)
+    // Check phone first -- phone is the identity key used for smart linking
+    const existingPhone = await this.userRepository.findByPhoneIncludingDeleted(createDto.phone);
+
+    // Smart link: phone exists + profileType + organizationId + not soft-deleted -> link to existing user
+    if (
+      existingPhone &&
+      !existingPhone.deletedAt &&
+      createDto.profileType &&
+      createDto.organizationId
+    ) {
+      return this.linkExistingUserToProfile(existingPhone, createDto, createdBy);
+    }
+
+    // Existing 409 behavior for soft-deleted phone
+    if (existingPhone?.deletedAt) {
+      throw new ConflictException(
+        `Phone ${createDto.phone} belongs to a previously deleted account. Please restore that account instead.`,
+      );
+    }
+
+    // Existing 409 behavior for phone conflict without profileType (user-only creation)
+    if (existingPhone) {
+      throw new ConflictException(`Phone ${createDto.phone} is already registered`);
+    }
+
+    // Check if email already exists (only reached for new user creation path)
     if (createDto.email) {
       const existingEmail = await this.userRepository.findByEmailIncludingDeleted(createDto.email);
       if (existingEmail) {
@@ -70,17 +98,6 @@ export class UserService {
         }
         throw new ConflictException(`Email ${createDto.email} is already registered`);
       }
-    }
-
-    // Check if phone already exists (including soft-deleted users to avoid DB 23505)
-    const existingPhone = await this.userRepository.findByPhoneIncludingDeleted(createDto.phone);
-    if (existingPhone) {
-      if (existingPhone.deletedAt) {
-        throw new ConflictException(
-          `Phone ${createDto.phone} belongs to a previously deleted account. Please restore that account instead.`,
-        );
-      }
-      throw new ConflictException(`Phone ${createDto.phone} is already registered`);
     }
 
     // Extract profile and role fields from user data
@@ -216,6 +233,76 @@ export class UserService {
   async phoneExists(phone: string, excludeId?: string): Promise<boolean> {
     const user = await this.userRepository.findByPhoneIncludingDeleted(phone, excludeId);
     return !!user;
+  }
+
+  async emailBelongsToPhoneUser(email: string, phone: string): Promise<boolean> {
+    const emailUser = await this.userRepository.findByEmailIncludingDeleted(email);
+    if (!emailUser || emailUser.deletedAt) return false;
+    return emailUser.phone === phone;
+  }
+
+  async employeeProfileExists(
+    phone: string,
+    organizationId: string,
+    excludeId?: string,
+  ): Promise<boolean> {
+    const user = await this.userRepository.findByPhoneIncludingDeleted(phone, excludeId);
+    if (!user || user.deletedAt) return false;
+    const profile = await this.employeeProfileRepository.findByUserAndOrganization(
+      user.id,
+      organizationId,
+    );
+    return !!profile;
+  }
+
+  private async linkExistingUserToProfile(
+    existingUser: UserEntity,
+    dto: CreateUserDto,
+    createdBy?: string,
+  ): Promise<UserEntity> {
+    const { profileType, organizationId, profileData, roles, password, ...userData } = dto;
+
+    // Email conflict check: if a different email is provided, verify it is not taken by another user
+    if (dto.email && dto.email !== existingUser.email) {
+      const emailOwner = await this.userRepository.findByEmailIncludingDeleted(
+        dto.email,
+        existingUser.id,
+      );
+      if (emailOwner) {
+        throw new ConflictException(`Email ${dto.email} is already in use by another user`);
+      }
+    }
+
+    // Update user fields (name, email, password hash)
+    const updatePayload: Partial<UserEntity> = {};
+    if (userData.firstName) updatePayload.firstName = userData.firstName;
+    if (userData.lastName !== undefined) updatePayload.lastName = userData.lastName;
+    if (dto.email && dto.email !== existingUser.email) updatePayload.email = dto.email;
+    if (password) updatePayload.passwordHash = await bcrypt.hash(password, 10);
+
+    if (Object.keys(updatePayload).length > 0) {
+      await this.userRepository.update(existingUser.id, updatePayload);
+      this.logger.log(
+        `Updated user fields for existing user ${existingUser.id} during profile link`,
+      );
+    }
+
+    // Create profile -- ProfileService.createProfile handles duplicate detection and role assignment
+    const customRoleCode = roles && roles.length > 0 ? roles[0] : undefined;
+    await this.profileService.createProfile({
+      userId: existingUser.id,
+      organizationId: organizationId!,
+      profileType: profileType!,
+      profileData: (profileData || {}) as Record<string, unknown>,
+      createdBy: createdBy || existingUser.id,
+      roleCode: customRoleCode,
+    });
+
+    this.logger.log(
+      `Linked existing user ${existingUser.id} with ${String(profileType)} profile in org ${organizationId}`,
+    );
+
+    return this.findById(existingUser.id);
   }
 
   async update(id: string, updateDto: UpdateUserDto): Promise<UserEntity> {

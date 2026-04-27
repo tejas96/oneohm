@@ -19,6 +19,7 @@ export interface UseResetPasswordReturn {
   // State
   isLoading: boolean;
   isSuccess: boolean;
+  maskedEmail: string;
   displayError: string | null | undefined;
   passwordStrength: PasswordStrength;
   passwordsMatch: boolean;
@@ -64,6 +65,7 @@ export function useResetPassword(): UseResetPasswordReturn {
   const { resetPassword, isLoading, error, clearError, isAuthenticated, isInitialized } = useAuth();
 
   const token = getQueryParam('token') || '';
+  const maskedEmail = getQueryParam('maskedEmail') || '';
   const [isSuccess, setIsSuccess] = useState(false);
 
   const form = useForm<ResetPasswordFormData>({
@@ -130,6 +132,7 @@ export function useResetPassword(): UseResetPasswordReturn {
     // State
     isLoading,
     isSuccess,
+    maskedEmail,
     displayError,
     passwordStrength,
     passwordsMatch,

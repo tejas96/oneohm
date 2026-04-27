@@ -7,7 +7,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ProjectDetailHeader } from './project-detail-header';
 import { ProjectDetailTabs } from './project-detail-tabs';
 import { ProjectBomTab } from './tabs/project-bom-tab';
-import { ProjectComingSoonTab } from './tabs/project-coming-soon-tab';
 import { ProjectDocumentsTab } from './tabs/project-documents-tab';
 import { ProjectOverviewTab } from './tabs/project-overview-tab';
 import { ProjectPaymentsTab } from './tabs/project-payments-tab';
@@ -157,20 +156,8 @@ export function ProjectDetailContent({ projectId }: ProjectDetailContentProps): 
           <ProjectReportsTab projectId={projectId} />
         </TabsContent>
 
-        <TabsContent value="communication">
-          <ProjectComingSoonTab tabName="Communication" />
-        </TabsContent>
-
-        <TabsContent value="compliance">
-          <ProjectComingSoonTab tabName="Compliance" />
-        </TabsContent>
-
         <TabsContent value="surveys">
           <ProjectSurveysTab propertyId={project.propertyId} />
-        </TabsContent>
-
-        <TabsContent value="activity">
-          <ProjectComingSoonTab tabName="Activity" />
         </TabsContent>
       </ProjectDetailTabs>
     </div>

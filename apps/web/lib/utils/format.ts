@@ -44,3 +44,18 @@ export function getDueDateColor(endDate?: string): string {
   if (d.getTime() === now.getTime()) return 'text-warning';
   return 'text-foreground-secondary';
 }
+
+/**
+ * Return an MUI theme color token based on whether a due date is overdue,
+ * due today, or in the future. Use this in `sx` props instead of getDueDateColor.
+ */
+export function getDueDateMuiColor(endDate?: string): string {
+  if (!endDate) return 'text.disabled';
+  const d = new Date(endDate);
+  d.setHours(0, 0, 0, 0);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  if (d < now) return 'error.main';
+  if (d.getTime() === now.getTime()) return 'warning.main';
+  return 'text.secondary';
+}

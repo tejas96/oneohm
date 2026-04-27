@@ -4,7 +4,6 @@ import { type TaskPriority, type TaskStatus } from '@oneohm-epc/shared/types';
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 
 import { PROJECT_TASKS_QUERY_KEY } from '../constants';
-import { boardKeys } from './use-kanban-board';
 import { projectDetailKeys } from './use-project-detail';
 
 import { showToast } from '@/components/ui/sonner';
@@ -43,7 +42,6 @@ export function useCreateProjectTask(
     onSuccess: () => {
       showToast.success('Task created');
       void queryClient.invalidateQueries({ queryKey: PROJECT_TASKS_QUERY_KEY(organizationId) });
-      void queryClient.invalidateQueries({ queryKey: boardKeys.all(organizationId) });
       void queryClient.invalidateQueries({
         queryKey: projectDetailKeys.taskStats(organizationId, projectId),
       });

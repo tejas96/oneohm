@@ -1,40 +1,31 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useForm, type UseFormReturn } from 'react-hook-form';
 
-import { forgotPasswordSchema, type ForgotPasswordFormData } from '../schemas/auth.schema';
+import {
+  forgotPasswordByPhoneSchema,
+  type ForgotPasswordByPhoneFormData,
+} from '../schemas/auth.schema';
 
 import { ROUTES, useRoutes } from '@/lib/hooks';
 import { useAuth } from '@/providers/auth-provider';
 
 export interface UseForgotPasswordReturn {
-  // State
   isLoading: boolean;
-  isSuccess: boolean;
-  submittedEmail: string;
   displayError: string | null | undefined;
-
-  // Form
-  form: UseFormReturn<ForgotPasswordFormData>;
-
-  // Handlers
+  form: UseFormReturn<ForgotPasswordByPhoneFormData>;
   onSubmit: (e?: React.BaseSyntheticEvent) => void;
-  handleResend: () => void;
 }
 
 /**
  * useForgotPassword Hook
- * Encapsulates all forgot password form logic including:
- * - Form state management
- * - Submit handler
- * - Success/error state
- * - Resend functionality
+ * Handles phone-based forgot password OTP request and redirect flow.
  */
 export function useForgotPassword(): UseForgotPasswordReturn {
   const { replace } = useRoutes();
-  const { forgotPassword, isLoading, error, clearError, isAuthenticated, isInitialized } =
+  const { requestPasswordResetOtp, isLoading, error, clearError, isAuthenticated, isInitialized } =
     useAuth();
 
   // Redirect if already authenticated (client-side fallback)
@@ -43,40 +34,25 @@ export function useForgotPassword(): UseForgotPasswordReturn {
       replace(ROUTES.HOME);
     }
   }, [isAuthenticated, isInitialized, replace]);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [submittedEmail, setSubmittedEmail] = useState('');
-
-  const form = useForm<ForgotPasswordFormData>({
-    resolver: zodResolver(forgotPasswordSchema),
-    defaultValues: { email: '' },
+  const form = useForm<ForgotPasswordByPhoneFormData>({
+    resolver: zodResolver(forgotPasswordByPhoneSchema),
+    defaultValues: { phone: '' },
   });
 
   const handleFormSubmit = useCallback(
-    async (data: ForgotPasswordFormData) => {
+    async (data: ForgotPasswordByPhoneFormData) => {
       clearError();
       try {
-        await forgotPassword({ email: data.email });
-        setSubmittedEmail(data.email);
-        setIsSuccess(true);
+        await requestPasswordResetOtp({ phone: data.phone });
+        replace(ROUTES.AUTH.FORGOT_PASSWORD_VERIFY_OTP, undefined, { phone: data.phone });
       } catch {
         // Error handled by context
       }
     },
-    [clearError, forgotPassword],
+    [clearError, replace, requestPasswordResetOtp],
   );
 
-  const handleResend = useCallback(async () => {
-    setIsSuccess(false);
-    clearError();
-    try {
-      await forgotPassword({ email: submittedEmail });
-      setIsSuccess(true);
-    } catch {
-      // Error handled by context
-    }
-  }, [clearError, forgotPassword, submittedEmail]);
-
-  const displayError = error || form.formState.errors.email?.message;
+  const displayError = error || form.formState.errors.phone?.message;
 
   // Wrap handlers to return void (not Promise) for form onSubmit compatibility
   const onSubmit = useCallback(
@@ -86,22 +62,10 @@ export function useForgotPassword(): UseForgotPasswordReturn {
     [form, handleFormSubmit],
   );
 
-  const onResend = useCallback(() => {
-    void handleResend();
-  }, [handleResend]);
-
   return {
-    // State
     isLoading,
-    isSuccess,
-    submittedEmail,
     displayError,
-
-    // Form
     form,
-
-    // Handlers
     onSubmit,
-    handleResend: onResend,
   };
 }

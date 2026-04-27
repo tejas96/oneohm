@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Info, Loader2 } from 'lucide-react';
 import { useEffect, useRef, type JSX } from 'react';
 import { useForm } from 'react-hook-form';
 
@@ -58,7 +58,10 @@ export function UserFormModal({
   const isEdit = mode === 'edit';
   const { user: currentUser } = useAuth();
   const { create: createUser, update: updateUser } = useAdminUserMutations();
-  const availability = useCheckUserAvailability(isEdit ? userId : undefined);
+  const availability = useCheckUserAvailability(
+    isEdit ? userId : undefined,
+    isEdit ? undefined : currentUser?.organizationId,
+  );
 
   const schema = isEdit ? editUserSchema : createUserSchema;
 
@@ -126,15 +129,17 @@ export function UserFormModal({
   }, [debouncedEmail, availability.checkEmail]);
 
   useEffect(() => {
+    availability.setContextPhone(debouncedPhone);
     if (debouncedPhone && debouncedPhone !== originalValues.current.phone) {
       availability.checkPhone(debouncedPhone);
     }
-  }, [debouncedPhone, availability.checkPhone]);
+  }, [debouncedPhone, availability.checkPhone, availability.setContextPhone]);
 
   const handleClose = (isOpen: boolean): void => {
     if (!isOpen) {
       form.reset();
       availability.clearErrors();
+      availability.clearPhoneInfo();
       hasPopulated.current = false;
       originalValues.current = { email: '', phone: '' };
     }
@@ -296,6 +301,11 @@ export function UserFormModal({
                   {availability.isChecking.phone && (
                     <p className="text-xs text-foreground-tertiary flex items-center gap-1">
                       <Loader2 className="size-3 animate-spin" /> Checking...
+                    </p>
+                  )}
+                  {availability.phoneInfo && !availability.isChecking.phone && (
+                    <p className="text-xs text-blue-600 flex items-center gap-1">
+                      <Info className="size-3 shrink-0" /> {availability.phoneInfo}
                     </p>
                   )}
                   {phoneError && !availability.isChecking.phone && (

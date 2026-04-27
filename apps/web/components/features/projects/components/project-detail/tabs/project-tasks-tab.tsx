@@ -2,17 +2,18 @@
 
 import { LookupTypeCode, TaskStatus, type TaskPriority } from '@oneohm-epc/shared/types';
 import { useQueryClient } from '@tanstack/react-query';
-import Link from 'next/link';
 import React, { useCallback, useMemo, useState } from 'react';
 
 import { CreateProjectTaskModal } from './create-project-task-modal';
-import { TaskListTable, TaskListToolbar } from './task-list';
+import { TaskListTable, TaskListToolbar, TaskBoardView } from './task-list';
 import {
   TASK_LIST_FILTER_DEFAULTS,
   TASKS_PAGE_SIZE,
   PROJECT_TASKS_QUERY_KEY,
   UNASSIGNED_TASK_FILTER,
+  TASK_VIEW_MODES,
   type TaskListFilters,
+  type TaskViewMode,
 } from '../../../constants';
 import {
   type TeamMemberSummary,
@@ -27,7 +28,6 @@ import { useUpdateTask } from '@/components/features/tasks/hooks';
 import { TablePagination } from '@/components/shared/data-table/pagination';
 import { ErrorState } from '@/components/shared/feedback/empty-state';
 import { Button } from '@/components/ui/button';
-import { buildRoute, ROUTES } from '@/lib/config/routes';
 import { useOrgContext } from '@/lib/hooks/core';
 import { useLookupOptions } from '@/lib/hooks/resources';
 import { useUrlFilters } from '@/lib/hooks/use-url-filters';
@@ -54,6 +54,17 @@ export const ProjectTasksTab = React.memo(
     const { filters, setFilter, clearFilters } =
       useUrlFilters<TaskListFilters>(TASK_LIST_FILTER_DEFAULTS);
     const page = Math.max(1, parseInt(filters.t_page, 10) || 1);
+
+    // View mode from URL, defaulting to list
+    const view = (filters.t_view || TASK_VIEW_MODES.LIST) as TaskViewMode;
+
+    // Handle view change and sync to URL
+    const handleViewChange = useCallback(
+      (newView: TaskViewMode) => {
+        setFilter('t_view', newView);
+      },
+      [setFilter],
+    );
 
     const { taskStatuses, isLoading: statusesLoading } = useProjectTaskStatuses(projectId);
     const { items: priorityOptions } = useLookupOptions(LookupTypeCode.PRIORITY, isActive);
@@ -111,6 +122,7 @@ export const ProjectTasksTab = React.memo(
     const [openTaskId, setOpenTaskId] = useState<string | null>(null);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
+    const [createPreselectedStatus, setCreatePreselectedStatus] = useState<string | null>(null);
 
     const handleOpenTask = useCallback((taskId: string) => {
       setOpenTaskId(taskId);
@@ -130,16 +142,11 @@ export const ProjectTasksTab = React.memo(
         const completionPercentage =
           !FINAL_STATUSES.has(newStatus) && currentCompletionPct === 100 ? 0 : undefined;
 
-        // Snapshot ALL matching cache entries before the optimistic update so we can
-        // roll back if the mutation fails (e.g. backend rejects due to unresolved dependencies).
         const queryKey = PROJECT_TASKS_QUERY_KEY(organizationId);
         type CacheSnapshot = { key: readonly unknown[]; data: unknown };
         const snapshots: CacheSnapshot[] = [];
 
-        // Optimistic cache update so the progress bar resets instantly before the refetch lands.
         if (completionPercentage !== undefined) {
-          // Collect snapshots of every matching cache entry before mutating them,
-          // so we can roll back if the mutation fails (e.g. unresolved task dependencies).
           queryClient
             .getQueryCache()
             .findAll({ queryKey })
@@ -166,7 +173,6 @@ export const ProjectTasksTab = React.memo(
           {
             onSuccess: invalidateProjectTasks,
             onError: () => {
-              // Roll back all optimistic patches so the progress bar reverts to its original values.
               snapshots.forEach(({ key, data }) => queryClient.setQueryData(key, data));
             },
           },
@@ -211,16 +217,9 @@ export const ProjectTasksTab = React.memo(
           {/* Header */}
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-sm font-semibold text-foreground">Project Tasks</h3>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" asChild>
-                <Link href={buildRoute(ROUTES.PROJECTS.BOARD, undefined, { project: projectId })}>
-                  Open Board
-                </Link>
-              </Button>
-              <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
-                + Add Task
-              </Button>
-            </div>
+            <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
+              + Add Task
+            </Button>
           </div>
 
           {/* Toolbar */}
@@ -233,31 +232,49 @@ export const ProjectTasksTab = React.memo(
             avatarMembers={avatarMembers}
             milestones={project.milestones ?? []}
             totalTasks={meta?.total}
+            view={view}
+            onViewChange={handleViewChange}
           />
 
-          {/* Table */}
-          <TaskListTable
-            tasks={tasks}
-            taskStatuses={taskStatuses}
-            project={project}
-            isLoading={isLoading || statusesLoading}
-            onOpenTask={handleOpenTask}
-            onStatusChange={handleStatusChange}
-            onPriorityChange={handlePriorityChange}
-            hasActiveFilters={hasActiveFilters}
-            onClearFilters={clearFilters}
-          />
+          {/* Conditional View Rendering */}
+          {view === TASK_VIEW_MODES.LIST ? (
+            <>
+              {/* Table */}
+              <TaskListTable
+                tasks={tasks}
+                taskStatuses={taskStatuses}
+                project={project}
+                isLoading={isLoading || statusesLoading}
+                onOpenTask={handleOpenTask}
+                onStatusChange={handleStatusChange}
+                onPriorityChange={handlePriorityChange}
+                hasActiveFilters={hasActiveFilters}
+                onClearFilters={clearFilters}
+              />
 
-          {/* Pagination */}
-          {meta && meta.totalPages > 1 && (
-            <TablePagination
-              currentPage={page}
-              totalPages={meta.totalPages}
-              totalItems={meta.total}
-              itemLabel="tasks"
-              pageSize={TASKS_PAGE_SIZE}
-              variant="simple"
-              onPageChange={(p) => setFilter('t_page', String(p))}
+              {/* Pagination */}
+              {meta && meta.totalPages > 1 && (
+                <TablePagination
+                  currentPage={page}
+                  totalPages={meta.totalPages}
+                  totalItems={meta.total}
+                  itemLabel="tasks"
+                  pageSize={TASKS_PAGE_SIZE}
+                  variant="simple"
+                  onPageChange={(p) => setFilter('t_page', String(p))}
+                />
+              )}
+            </>
+          ) : (
+            /* Board View */
+            <TaskBoardView
+              projectId={projectId}
+              filters={filters}
+              onOpenTask={handleOpenTask}
+              onOpenCreate={(preselectedStatus?: string) => {
+                setCreatePreselectedStatus(preselectedStatus ?? null);
+                setCreateDialogOpen(true);
+              }}
             />
           )}
         </div>
@@ -275,6 +292,7 @@ export const ProjectTasksTab = React.memo(
           projectId={projectId}
           project={project}
           taskStatuses={taskStatuses}
+          preselectedStatus={createPreselectedStatus}
         />
       </>
     );

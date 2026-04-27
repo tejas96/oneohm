@@ -23,6 +23,10 @@ interface UpdateTaskPayload {
   checklist?: TaskChecklist;
   dependsOnTaskIds?: string[];
   version?: number;
+  /** If true, suppresses the success toast. Used by board drag-and-drop where
+   *  the optimistic UI is itself the feedback (no extra toast needed).
+   *  Cache invalidation (myTaskKeys, taskDetailKeys) still runs. */
+  silent?: boolean;
 }
 
 export function useUpdateTask() {
@@ -31,29 +35,31 @@ export function useUpdateTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ taskId, ...payload }: UpdateTaskPayload) => {
+    mutationFn: async ({ taskId, silent: _silent, ...payload }: UpdateTaskPayload) => {
       const { data } = await apiClient.patch<MyTask>(`/tasks/${taskId}`, payload, {
         headers: { 'X-Organization-Id': organizationId },
       });
       return data;
     },
     onSuccess: (_data, variables) => {
-      if (variables.status) {
-        showToast.success('Task status updated');
-      } else if (variables.priority) {
-        showToast.success('Task priority updated');
-      } else if (variables.assignedToUserId !== undefined) {
-        showToast.success('Task reassigned');
-      } else if (variables.endDate !== undefined) {
-        showToast.success('Due date updated');
-      } else if (variables.description !== undefined) {
-        showToast.success('Description updated');
-      } else if (variables.checklist !== undefined) {
-        showToast.success('Checklist updated');
-      } else if (variables.dependsOnTaskIds !== undefined) {
-        showToast.success('Dependencies updated');
-      } else {
-        showToast.success('Task updated');
+      if (!variables.silent) {
+        if (variables.status) {
+          showToast.success('Task status updated');
+        } else if (variables.priority) {
+          showToast.success('Task priority updated');
+        } else if (variables.assignedToUserId !== undefined) {
+          showToast.success('Task reassigned');
+        } else if (variables.endDate !== undefined) {
+          showToast.success('Due date updated');
+        } else if (variables.description !== undefined) {
+          showToast.success('Description updated');
+        } else if (variables.checklist !== undefined) {
+          showToast.success('Checklist updated');
+        } else if (variables.dependsOnTaskIds !== undefined) {
+          showToast.success('Dependencies updated');
+        } else {
+          showToast.success('Task updated');
+        }
       }
       void queryClient.invalidateQueries({ queryKey: myTaskKeys.all(organizationId) });
       void queryClient.invalidateQueries({

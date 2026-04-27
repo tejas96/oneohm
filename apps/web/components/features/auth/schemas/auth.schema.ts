@@ -7,6 +7,8 @@ export {
   type OtpVerifyFormData,
   forgotPasswordSchema,
   type ForgotPasswordFormData,
+  forgotPasswordByPhoneSchema,
+  type ForgotPasswordByPhoneFormData,
   resetPasswordSchema,
   type ResetPasswordFormData,
 } from '@oneohm-epc/shared/schemas';

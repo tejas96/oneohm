@@ -26,6 +26,7 @@ export {
   formatLabel,
   formatNumber,
   getDueDateColor,
+  getDueDateMuiColor,
   formatRelativeDate,
   formatRoleCode,
   formatSystemSize,

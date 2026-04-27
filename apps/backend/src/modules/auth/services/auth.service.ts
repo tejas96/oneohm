@@ -8,9 +8,12 @@ import {
   SecurityEventType,
   UserStatus,
 } from '@oneohm-epc/shared/types';
+import { normalizePhoneToE164 } from '@oneohm-epc/shared/utils';
 import type ms from 'ms';
 import { MoreThan } from 'typeorm';
 
+import { OtpService } from './otp.service';
+import { PlatformSmsService } from './platform-sms.service';
 import { ConfigService } from '../../../config/config.service';
 import { CustomerProfileRepository } from '../../customers/repositories/customer-profile.repository';
 import { EmployeeProfileRepository } from '../../employees/repositories/employee-profile.repository';
@@ -39,6 +42,7 @@ interface OtpRequestDto {
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly MAX_SESSION_DURATION_SECONDS = 7 * 24 * 60 * 60; // 7 days
+  private readonly PASSWORD_RESET_TOKEN_EXPIRY_MS = 15 * 60 * 1000;
 
   constructor(
     private readonly userRepository: UserRepository,
@@ -50,6 +54,8 @@ export class AuthService {
     private readonly resellerProfileRepository: ResellerProfileRepository,
     private readonly employeeProfileRepository: EmployeeProfileRepository,
     private readonly securityEventService: SecurityEventService,
+    private readonly otpService: OtpService,
+    private readonly platformSmsService: PlatformSmsService,
   ) {}
 
   /**
@@ -423,7 +429,7 @@ export class AuthService {
       const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
       user.passwordResetToken = hashedToken;
-      user.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000);
+      user.passwordResetExpires = new Date(Date.now() + this.PASSWORD_RESET_TOKEN_EXPIRY_MS);
       await this.userRepository.save(user);
 
       this.logger.log(`Password reset requested for: ${email}`);
@@ -439,6 +445,94 @@ export class AuthService {
     }
 
     return { message: 'If an account exists, a reset link has been sent' };
+  }
+
+  async requestPasswordResetOtp(
+    phone: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<{ message: string }> {
+    const normalizedPhone = normalizePhoneToE164(phone);
+
+    await this.securityEventService.logEvent({
+      eventType: SecurityEventType.PASSWORD_RESET_REQUESTED,
+      eventCategory: SecurityEventCategory.AUTHENTICATION,
+      status: SecurityEventStatus.PENDING,
+      ipAddress,
+      userAgent,
+      metadata: { phone: normalizedPhone },
+    });
+
+    const user = await this.userRepository.findByPhoneWithRoles(normalizedPhone);
+    if (!user) {
+      this.logger.warn(`Password reset OTP requested for non-existent phone: ${normalizedPhone}`);
+      throw new BadRequestException(
+        'No account found with this mobile number. Please check the number or contact support.',
+      );
+    }
+
+    this.assertNotCustomerOnly(user);
+
+    const { otp } = await this.otpService.generateAndStoreOtp({
+      phone: normalizedPhone,
+      userId: user.id,
+      ipAddress,
+      userAgent,
+    });
+    await this.platformSmsService.sendOtp(normalizedPhone, otp);
+
+    this.logger.log(`Password reset OTP sent to phone: ${normalizedPhone}`);
+    return { message: 'OTP sent successfully' };
+  }
+
+  async verifyPasswordResetOtp(
+    phone: string,
+    otp: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<{ resetToken: string; maskedEmail: string }> {
+    const normalizedPhone = normalizePhoneToE164(phone);
+
+    const verificationResult = await this.otpService.verifyOtp({
+      phone: normalizedPhone,
+      inputOtp: otp,
+      ipAddress,
+      userAgent,
+    });
+
+    const user = verificationResult.userId
+      ? await this.userRepository.findByIdWithRoles(verificationResult.userId)
+      : await this.userRepository.findByPhoneWithRoles(normalizedPhone);
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid or expired OTP');
+    }
+
+    this.assertNotCustomerOnly(user);
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.passwordResetExpires = new Date(Date.now() + this.PASSWORD_RESET_TOKEN_EXPIRY_MS);
+    await this.userRepository.save(user);
+
+    return {
+      resetToken,
+      maskedEmail: this.maskEmail(user.email),
+    };
+  }
+
+  /**
+   * Rejects users who only hold the 'customer' role.
+   * The web app is for employees and resellers only.
+   */
+  private assertNotCustomerOnly(user: UserEntity): void {
+    const roles = user.roles ?? [];
+    const isCustomerOnly = roles.length > 0 && roles.every((r) => r === 'customer');
+    if (isCustomerOnly) {
+      throw new BadRequestException(
+        'This portal is for employees and resellers only. Please contact your solar company for support.',
+      );
+    }
   }
 
   /**
@@ -541,6 +635,20 @@ export class AuthService {
   private generateOtp(): string {
     // Generate 6-digit OTP
     return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  private maskEmail(email?: string | null): string {
+    if (!email) {
+      return '';
+    }
+
+    const [localPart, domainPart] = email.split('@');
+    if (!localPart || !domainPart) {
+      return '';
+    }
+
+    const visiblePart = localPart.slice(0, 2);
+    return `${visiblePart}***@${domainPart}`;
   }
 
   /**

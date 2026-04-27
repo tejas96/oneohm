@@ -346,13 +346,16 @@ export const MAX_DISPLAYED_MILESTONES = 6;
 export const MAX_TASKS_PER_COLUMN = 3;
 export const TASKS_PAGE_SIZE = 20;
 
+/** Maximum tasks fetched in board view. Avoids unbounded queries while
+ *  accommodating real-world project sizes. Increase if needed. */
+export const KANBAN_BOARD_LIMIT = 500;
+
 /**
  * Base query key for the project task list (FDAL resource).
  * Must stay in sync with the key used in lib/hooks/resources/projects.ts.
  */
 export const PROJECT_TASKS_QUERY_KEY = (organizationId: string | undefined) =>
   ['project-tasks', organizationId] as const;
-export const KANBAN_TASKS_LIMIT = 100;
 export const MS_PER_DAY = 86_400_000;
 
 // ---------------------------------------------------------------------------
@@ -367,10 +370,7 @@ export const PROJECT_DETAIL_TABS = [
   { value: 'payments', label: 'Payments' },
   { value: 'bom', label: 'BOM & Inventory' },
   { value: 'reports', label: 'Reports' },
-  { value: 'communication', label: 'Communication' },
-  { value: 'compliance', label: 'Compliance' },
   { value: 'surveys', label: 'Surveys' },
-  { value: 'activity', label: 'Activity' },
 ] as const;
 
 export type ProjectDetailTab = (typeof PROJECT_DETAIL_TABS)[number]['value'];
@@ -386,6 +386,7 @@ export const TASK_LIST_FILTER_DEFAULTS = {
   t_assignee: '',
   t_milestone: '',
   t_page: '1',
+  t_view: 'list', // 'list' or 'board'
 } as const;
 
 export type TaskListFilters = typeof TASK_LIST_FILTER_DEFAULTS;
@@ -395,3 +396,13 @@ export type TaskListFilters = typeof TASK_LIST_FILTER_DEFAULTS;
  * Kept explicit (instead of empty string) so deep-links can preserve intent.
  */
 export const UNASSIGNED_TASK_FILTER: string = '__unassigned__';
+
+/**
+ * Task view modes
+ */
+export const TASK_VIEW_MODES = {
+  LIST: 'list',
+  BOARD: 'board',
+} as const;
+
+export type TaskViewMode = (typeof TASK_VIEW_MODES)[keyof typeof TASK_VIEW_MODES];

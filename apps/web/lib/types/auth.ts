@@ -74,6 +74,21 @@ export interface ForgotPasswordData {
 }
 
 /**
+ * Forgot password by phone request
+ */
+export interface ForgotPasswordByPhoneData {
+  phone: string;
+}
+
+/**
+ * Verify forgot password OTP request
+ */
+export interface VerifyPasswordResetOtpData {
+  phone: string;
+  otp: string;
+}
+
+/**
  * Reset password request
  */
 export interface ResetPasswordData {
@@ -125,6 +140,14 @@ export interface OtpRequestResponse {
  */
 export interface PasswordResetResponse {
   message: string;
+}
+
+/**
+ * Forgot password OTP verification response
+ */
+export interface PasswordResetOtpVerifyResponse {
+  resetToken: string;
+  maskedEmail: string;
 }
 
 // ============================================
