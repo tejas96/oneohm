@@ -2,7 +2,7 @@
 
 import { useQuery, keepPreviousData, type UseQueryResult } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import {
   defineResource,
@@ -170,25 +170,62 @@ export function useAdminUsersList(
   });
 }
 
-export function useCheckUserAvailability(excludeId?: string): ReturnType<
-  typeof useFieldAvailability
-> & {
+export function useCheckUserAvailability(
+  excludeId?: string,
+  organizationId?: string,
+): ReturnType<typeof useFieldAvailability> & {
   checkPhone: (phone: string) => void;
   checkEmail: (email: string) => void;
+  phoneInfo: string | null;
+  clearPhoneInfo: () => void;
+  setContextPhone: (phone: string) => void;
 } {
+  const [phoneInfo, setPhoneInfo] = useState<string | null>(null);
+  const [contextPhone, setContextPhoneState] = useState<string | undefined>(undefined);
+
+  const extraParams = useMemo(() => {
+    const params: Record<string, string> = {};
+    if (organizationId) params.organizationId = organizationId;
+    if (contextPhone) params.phone = contextPhone;
+    return Object.keys(params).length > 0 ? params : undefined;
+  }, [organizationId, contextPhone]);
+
   const fieldConfig = useMemo(
     () => ({
       endpoint: '/users/check-availability',
       excludeIdParam: 'excludeId',
+      extraParams,
       validateResponse: (field: string, data: unknown) => {
-        const res = data as { emailExists?: boolean; phoneExists?: boolean };
-        if (field === 'email' && res.emailExists) return 'This email is already registered';
-        if (field === 'phone' && res.phoneExists) return 'This phone number is already registered';
+        const res = data as {
+          emailExists?: boolean;
+          phoneExists?: boolean;
+          employeeExists?: boolean;
+          emailBelongsToPhoneUser?: boolean;
+        };
+
+        if (field === 'email') {
+          if (res.emailExists && res.emailBelongsToPhoneUser) return null;
+          if (res.emailExists) return 'This email is already registered';
+        }
+
+        if (field === 'phone') {
+          if (res.phoneExists && res.employeeExists) {
+            setPhoneInfo(null);
+            return 'This employee already exists in your organization';
+          }
+          if (res.phoneExists && !res.employeeExists) {
+            setPhoneInfo('User found. They will be linked as an employee.');
+            return null;
+          }
+          setPhoneInfo(null);
+        }
+
         return null;
       },
     }),
-    [],
+    [extraParams],
   );
+
   const availability = useFieldAvailability(fieldConfig, excludeId);
 
   const { checkField } = availability;
@@ -196,7 +233,10 @@ export function useCheckUserAvailability(excludeId?: string): ReturnType<
   const checkPhone = useCallback(
     (phone: string) => {
       const digits = phone.replace(/\D/g, '');
-      if (digits.length !== 10) return;
+      if (digits.length !== 10) {
+        setPhoneInfo(null);
+        return;
+      }
       checkField('phone', `+91${digits}`);
     },
     [checkField],
@@ -210,5 +250,12 @@ export function useCheckUserAvailability(excludeId?: string): ReturnType<
     [checkField],
   );
 
-  return { ...availability, checkPhone, checkEmail };
+  const setContextPhone = useCallback((phone: string) => {
+    const digits = phone.replace(/\D/g, '');
+    setContextPhoneState(digits.length === 10 ? `+91${digits}` : undefined);
+  }, []);
+
+  const clearPhoneInfo = useCallback(() => setPhoneInfo(null), []);
+
+  return { ...availability, checkPhone, checkEmail, phoneInfo, clearPhoneInfo, setContextPhone };
 }

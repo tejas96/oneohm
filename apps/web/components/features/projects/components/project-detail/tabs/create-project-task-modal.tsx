@@ -43,6 +43,8 @@ interface CreateProjectTaskModalProps {
   projectId: string;
   project: ProjectDetail;
   taskStatuses: TaskStatusConfig[];
+  /** If provided, the modal pre-selects this status when opening (e.g. from a board column footer). */
+  preselectedStatus?: string | null;
 }
 
 function formatLocalDate(date: Date | null): string {
@@ -71,6 +73,7 @@ export function CreateProjectTaskModal({
   projectId,
   project,
   taskStatuses,
+  preselectedStatus,
 }: CreateProjectTaskModalProps): JSX.Element {
   const createTaskMutation = useCreateProjectTask(projectId);
   const { data: teamMembers = [], isLoading: teamLoading } = useProjectTeam(projectId, {
@@ -118,12 +121,20 @@ export function CreateProjectTaskModal({
 
   useEffect(() => {
     if (!open) return;
+    // If a preselected status is provided and valid, apply it first.
+    if (preselectedStatus) {
+      const isValid = statusOptions.some((s) => (s.value as string) === preselectedStatus);
+      if (isValid) {
+        form.setValue('status', preselectedStatus as TaskStatus, { shouldValidate: true });
+        return;
+      }
+    }
     const currentStatus = form.getValues('status');
     const hasConfiguredStatus = statusOptions.some((status) => status.value === currentStatus);
     if (!hasConfiguredStatus) {
       form.setValue('status', defaultStatus, { shouldValidate: true });
     }
-  }, [open, form, statusOptions, defaultStatus]);
+  }, [open, form, statusOptions, defaultStatus, preselectedStatus]);
 
   const { handleSubmit, handleClose, isSubmitting } = useModalForm({
     form,

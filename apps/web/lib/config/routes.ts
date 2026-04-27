@@ -32,6 +32,7 @@ export const ROUTES = {
     REGISTER: '/register',
     OTP_VERIFY: '/otp-verify',
     FORGOT_PASSWORD: '/forgot-password',
+    FORGOT_PASSWORD_VERIFY_OTP: '/forgot-password/verify-otp',
     RESET_PASSWORD: '/reset-password',
   },
 
@@ -74,7 +75,6 @@ export const ROUTES = {
     LIST: '/projects/list',
     DETAIL: '/projects/[id]',
     NEW: '/projects/new',
-    BOARD: '/projects/board',
     MY_TASKS: '/projects/my-tasks',
   },
 
@@ -212,7 +212,8 @@ export interface RouteParamTypes {
   // Auth
   '/login': { redirect?: string };
   '/otp-verify': { phone?: string };
-  '/reset-password': { token?: string };
+  '/forgot-password/verify-otp': { phone?: string };
+  '/reset-password': { token?: string; maskedEmail?: string };
 
   // Dynamic routes with [id]
   '/crm/leads/[id]': { id: string };

@@ -38,7 +38,7 @@ export function useFieldAvailability(
       setIsChecking((prev) => ({ ...prev, [field]: true }));
       void apiClient
         .get(
-          `${config.endpoint}?${new URLSearchParams({ [field]: value, ...(excludeId && config.excludeIdParam ? { [config.excludeIdParam]: excludeId } : {}) }).toString()}`,
+          `${config.endpoint}?${new URLSearchParams({ [field]: value, ...(excludeId && config.excludeIdParam ? { [config.excludeIdParam]: excludeId } : {}), ...(config.extraParams || {}) }).toString()}`,
           {
             signal: controller.signal,
           },
@@ -63,7 +63,7 @@ export function useFieldAvailability(
           setIsChecking((prev) => ({ ...prev, [field]: false }));
         });
     },
-    [config.endpoint, excludeId, config.excludeIdParam, config.validateResponse],
+    [config.endpoint, excludeId, config.excludeIdParam, config.extraParams, config.validateResponse],
   );
 
   const clearErrors = useCallback(() => setErrors({}), []);

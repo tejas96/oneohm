@@ -1,6 +1,5 @@
 'use client';
 
-import { KanbanSquare } from 'lucide-react';
 import Link from 'next/link';
 import React from 'react';
 
@@ -21,8 +20,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { Button } from '@/components/ui/button';
-import { buildRoute, ROUTES } from '@/lib/config/routes';
+import { ROUTES } from '@/lib/config/routes';
 import { formatDate, formatSystemSize } from '@/lib/utils/format';
 
 interface ProjectDetailHeaderProps {
@@ -73,19 +71,6 @@ export const ProjectDetailHeader = React.memo(
               {project.projectType ? ` · ${project.projectType}` : ''}
               {project.startDate ? ` · Started ${formatDate(project.startDate, 'medium')}` : ''}
             </p>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <Button size="sm" asChild>
-              <Link
-                href={buildRoute(ROUTES.PROJECTS.BOARD, undefined, {
-                  project: project.id,
-                })}
-              >
-                <KanbanSquare className="size-icon-xs mr-1.5" />
-                View Kanban
-              </Link>
-            </Button>
           </div>
         </div>
       </div>

@@ -129,6 +129,7 @@ export interface StatsConfig<TStats = Record<string, number>> {
 export interface FieldAvailabilityConfig {
   endpoint: string;
   excludeIdParam?: string;
+  extraParams?: Record<string, string>;
   validateResponse?: (field: string, data: unknown) => string | null;
 }
 

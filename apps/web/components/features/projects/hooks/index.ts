@@ -63,6 +63,23 @@ export {
   type UseProjectTaskStatusesResult,
 } from './use-project-task-statuses';
 
+export {
+  useProjectTaskBoard,
+  type KanbanColumnData,
+  type UseProjectTaskBoardResult,
+} from './use-project-task-board';
+
+export {
+  useTaskBoardDnd,
+  isDraggableTaskData,
+  isDroppableColumnData,
+  BOARD_DND_TASK_TYPE,
+  type DragState,
+  type DraggableTaskData,
+  type DroppableColumnData,
+  type UseTaskBoardDndResult,
+} from './use-task-board-dnd';
+
 export type {
   MilestoneWithPayment,
   PaymentSummaryDetail,

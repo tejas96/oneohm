@@ -33,6 +33,15 @@ export const forgotPasswordSchema = z.object({
 
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
+export const forgotPasswordByPhoneSchema = z.object({
+  phone: z
+    .string()
+    .min(1, 'Phone number is required')
+    .regex(/^[6-9]\d{9}$/, 'Please enter a valid 10-digit Indian mobile number'),
+});
+
+export type ForgotPasswordByPhoneFormData = z.infer<typeof forgotPasswordByPhoneSchema>;
+
 export const resetPasswordSchema = z
   .object({
     token: z.string().min(1, 'Reset token is required'),

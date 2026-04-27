@@ -16,16 +16,19 @@ import apiClient, { clearTokens, getRefreshToken, setTokens } from '@/lib/api/cl
 import { useAuthStore } from '@/lib/stores/auth-store';
 import type {
   AuthUser,
+  ForgotPasswordByPhoneData,
   ForgotPasswordData,
   LoginCredentials,
   LoginResponse,
   OtpRequestData,
   OtpRequestResponse,
   OtpVerifyData,
+  PasswordResetOtpVerifyResponse,
   PasswordResetResponse,
   ProfileSummary,
   ResetPasswordData,
   User,
+  VerifyPasswordResetOtpData,
 } from '@/lib/types/auth';
 import { getErrorMessage } from '@/lib/utils';
 
@@ -48,6 +51,10 @@ interface AuthContextType {
   requestOtp: (data: OtpRequestData) => Promise<OtpRequestResponse>;
   verifyOtp: (data: OtpVerifyData) => Promise<LoginResponse>;
   forgotPassword: (data: ForgotPasswordData) => Promise<PasswordResetResponse>;
+  requestPasswordResetOtp: (data: ForgotPasswordByPhoneData) => Promise<PasswordResetResponse>;
+  verifyPasswordResetOtp: (
+    data: VerifyPasswordResetOtpData,
+  ) => Promise<PasswordResetOtpVerifyResponse>;
   resetPassword: (data: ResetPasswordData) => Promise<PasswordResetResponse>;
   logout: () => void;
   clearError: () => void;
@@ -268,6 +275,48 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
     [],
   );
 
+  const requestPasswordResetOtp = useCallback(
+    async (data: ForgotPasswordByPhoneData): Promise<PasswordResetResponse> => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await apiClient.post<PasswordResetResponse>(
+          '/auth/forgot-password-otp',
+          data,
+        );
+        return response.data;
+      } catch (err) {
+        const errorMessage = getErrorMessage(err);
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  const verifyPasswordResetOtp = useCallback(
+    async (data: VerifyPasswordResetOtpData): Promise<PasswordResetOtpVerifyResponse> => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await apiClient.post<PasswordResetOtpVerifyResponse>(
+          '/auth/verify-forgot-password-otp',
+          data,
+        );
+        return response.data;
+      } catch (err) {
+        const errorMessage = getErrorMessage(err);
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
   const logout = useCallback(() => {
     // Call backend logout (fire and forget)
     apiClient.post('/auth/logout').catch(() => {
@@ -304,6 +353,8 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
       requestOtp,
       verifyOtp,
       forgotPassword,
+      requestPasswordResetOtp,
+      verifyPasswordResetOtp,
       resetPassword,
       logout,
       clearError,
@@ -323,6 +374,8 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
       requestOtp,
       verifyOtp,
       forgotPassword,
+      requestPasswordResetOtp,
+      verifyPasswordResetOtp,
       resetPassword,
       logout,
       clearError,

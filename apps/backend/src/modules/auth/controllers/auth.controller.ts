@@ -26,8 +26,11 @@ import {
 } from '../dto/login.dto';
 import {
   ForgotPasswordDto,
+  ForgotPasswordByPhoneDto,
   ResetPasswordDto,
   PasswordResetResponseDto,
+  VerifyPasswordResetOtpDto,
+  PasswordResetOtpVerifyResponseDto,
 } from '../dto/password-reset.dto';
 import { RefreshTokenDto, RefreshTokenResponseDto } from '../dto/refresh-token.dto';
 import { JwtAuthGuard, LocalAuthGuard, OtpAuthGuard } from '../guards';
@@ -247,6 +250,87 @@ export class AuthController {
     @Req() req: ExpressRequest,
   ): Promise<PasswordResetResponseDto> {
     return this.authService.forgotPassword(dto.email, req.ip, req.headers['user-agent']);
+  }
+
+  /**
+   * Request password reset OTP by phone
+   * Throws 400 if phone not found or if user is a customer-only account
+   */
+  @Public()
+  @UseGuards(SecurityRateLimitGuard)
+  @SecurityRateLimit({
+    eventType: SecurityEventType.PASSWORD_RESET_REQUESTED,
+    trackBy: ['phone', 'ipAddress'],
+    limits: [
+      {
+        count: 3,
+        windowSeconds: 900,
+        message: 'Too many OTP requests. Try again in 15 minutes.',
+      },
+      { count: 10, windowSeconds: 86400, message: 'Daily OTP request limit reached.' },
+    ],
+  })
+  @ApiCreate({
+    path: 'forgot-password-otp',
+    summary: 'Request password reset OTP',
+    description:
+      'Request OTP for password reset using mobile number. Returns 400 if mobile number is not registered.',
+    responseType: PasswordResetResponseDto,
+    statusCode: HttpStatus.OK,
+    successMessage: 'OTP sent successfully',
+    additionalErrors: [
+      { status: HttpStatus.BAD_REQUEST, description: 'Mobile number not registered or customer-only account' },
+      { status: HttpStatus.TOO_MANY_REQUESTS, description: 'Rate limit exceeded' },
+    ],
+  })
+  async requestForgotPasswordOtp(
+    @Body() dto: ForgotPasswordByPhoneDto,
+    @Req() req: ExpressRequest,
+  ): Promise<PasswordResetResponseDto> {
+    return this.authService.requestPasswordResetOtp(dto.phone, req.ip, req.headers['user-agent']);
+  }
+
+  /**
+   * Verify password reset OTP
+   * Returns reset token and masked email on success
+   */
+  @Public()
+  @UseGuards(SecurityRateLimitGuard)
+  @SecurityRateLimit({
+    eventType: SecurityEventType.OTP_VERIFY_ATTEMPT,
+    trackBy: ['phone', 'ipAddress'],
+    limits: [
+      {
+        count: 5,
+        windowSeconds: 300,
+        message: 'Too many failed attempts. Wait 5 minutes before trying again',
+      },
+    ],
+    blockOnExceed: true,
+    blockDurationSeconds: 300,
+  })
+  @ApiCreate({
+    path: 'verify-forgot-password-otp',
+    summary: 'Verify password reset OTP',
+    description: 'Verify OTP sent to mobile number and return reset token for password reset.',
+    responseType: PasswordResetOtpVerifyResponseDto,
+    statusCode: HttpStatus.OK,
+    successMessage: 'OTP verified successfully',
+    additionalErrors: [
+      { status: HttpStatus.UNAUTHORIZED, description: 'Invalid or expired OTP' },
+      { status: HttpStatus.TOO_MANY_REQUESTS, description: 'Too many verification attempts' },
+    ],
+  })
+  async verifyForgotPasswordOtp(
+    @Body() dto: VerifyPasswordResetOtpDto,
+    @Req() req: ExpressRequest,
+  ): Promise<PasswordResetOtpVerifyResponseDto> {
+    return this.authService.verifyPasswordResetOtp(
+      dto.phone,
+      dto.otp,
+      req.ip,
+      req.headers['user-agent'],
+    );
   }
 
   /**

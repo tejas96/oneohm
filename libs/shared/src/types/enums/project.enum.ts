@@ -108,7 +108,7 @@ export enum MaterialStatus {
 
 /**
  * Task Status
- * Represents the current state of a project task (Kanban columns)
+ * Represents the current state of a project task
  */
 export enum TaskStatus {
   BACKLOG = 'backlog',
