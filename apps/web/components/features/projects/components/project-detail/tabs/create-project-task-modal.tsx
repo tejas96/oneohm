@@ -241,7 +241,7 @@ export function CreateProjectTaskModal({
               control={form.control}
               render={({ field }) => (
                 <MUIUserAssigneeSelector
-                  label="Assignee"
+                  fieldLabel="Assignee"
                   value={field.value ?? null}
                   onChange={field.onChange}
                   options={assigneeOptions}

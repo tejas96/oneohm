@@ -1,6 +1,7 @@
 'use client';
 
-import { Check, AlertTriangle } from 'lucide-react';
+import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
+import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
@@ -104,10 +105,10 @@ const StepCircle = ({ index, status, icon, size = 'md', showIcon = false }: Step
   // Render content based on status
   const renderContent = () => {
     if (status === 'completed') {
-      return <Check className={iconClasses} aria-hidden="true" />;
+      return <CheckRoundedIcon className={iconClasses} aria-hidden="true" />;
     }
     if (status === 'error') {
-      return <AlertTriangle className={iconClasses} aria-hidden="true" />;
+      return <WarningAmberRoundedIcon className={iconClasses} aria-hidden="true" />;
     }
     if (showIcon && icon) {
       return icon;
@@ -211,9 +212,9 @@ function HorizontalStepper({
                 )}
               >
                 {status === 'completed' ? (
-                  <Check className="size-icon-sm" aria-hidden="true" />
+                  <CheckRoundedIcon className="size-icon-sm" aria-hidden="true" />
                 ) : status === 'error' ? (
-                  <AlertTriangle className="size-icon-sm" aria-hidden="true" />
+                  <WarningAmberRoundedIcon className="size-icon-sm" aria-hidden="true" />
                 ) : (
                   <span>{index + 1}</span>
                 )}

@@ -159,10 +159,41 @@ export {
   type LookupFilters,
 } from './lookups';
 
+// Customers (FDAL — search + detail only; full module stays in feature folder)
+export { useCustomerSearch, useCustomerDetail, customerKeys, type Customer } from './customers';
+
+// Customer Properties (FDAL — by-customer endpoint)
+export {
+  useCustomerPropertiesByCustomer,
+  type CustomerPropertyResponse,
+} from './customer-properties';
+
+// Customer Quotes (FDAL — filtered by customerId)
+export {
+  useCustomerQuotes,
+  quoteKeys,
+  type CustomerQuote,
+  type CustomerQuotesResponse,
+} from './customer-quotes';
+// Note: quoteKeys above is re-exported from the quotes feature as a compatibility alias
+
+// Employees (FDAL)
+export {
+  useEmployees,
+  type EmployeeListItem,
+  type EmployeeUser,
+  type EmployeeFilters,
+} from './employees';
+
+// Team Workload (FDAL — flat array endpoint)
+export { useTeamWorkload, type TeamWorkloadItem } from './team-workload';
+
 // Projects (FDAL entry point)
 export {
   useProjectSummary,
   useProjectTaskList,
+  useConvertFromQuote,
+  type UseConvertFromQuoteReturn,
   type ProjectSummary,
   type ProjectSummaryMetrics,
   type ActivityFeedItem,
@@ -171,6 +202,8 @@ export {
   type UpcomingDeadline,
   type ProjectTaskItem,
   type ProjectTaskListParams,
+  type ProjectResponse,
+  type ConvertFromQuotePayload,
 } from './projects';
 
 // Quotes list (FDAL resource)
