@@ -18,7 +18,7 @@ import type {
 } from '../components/task-row-wizard';
 
 import { MUITypography } from '@/components/ui';
-import { useAllActiveWorkflowSteps, useEmployees } from '@/lib/hooks/resources';
+import { useAllActiveWorkflowSteps, useEmployees, type WorkflowStep } from '@/lib/hooks/resources';
 
 // ── Props ──────────────────────────────────────────────────────
 
@@ -37,7 +37,8 @@ export function Step5TasksMilestones({ form }: Step5TasksMilestonesProps): React
   const taskMilestoneOverrides: TaskMilestoneOverride[] = watch('taskMilestoneOverrides');
   const teamMembers = watch('teamMembers');
 
-  const { items: templates, isLoading: stepsLoading } = useAllActiveWorkflowSteps();
+  const { items: rawTemplates, isLoading: stepsLoading } = useAllActiveWorkflowSteps();
+  const templates: WorkflowStep[] = rawTemplates as WorkflowStep[];
   const { items: employees } = useEmployees({ status: 'active' });
 
   // Build team member options for assignee dropdown

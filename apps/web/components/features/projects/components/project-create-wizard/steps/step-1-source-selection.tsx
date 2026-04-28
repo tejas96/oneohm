@@ -27,7 +27,7 @@ export function Step1SourceSelection({ form }: Step1SourceSelectionProps): React
   } = form;
   const selectedCustomerId = watch('customerId');
 
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null); // eslint-disable-line @typescript-eslint/no-redundant-type-constituents
 
   // Deep-link pre-fill: if customerId is set (from URL), fetch the customer details
   const { data: deepLinkCustomer } = useCustomerDetail(selectedCustomerId || '');

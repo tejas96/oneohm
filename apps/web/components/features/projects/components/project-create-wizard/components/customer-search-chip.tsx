@@ -13,7 +13,7 @@ import { type Customer, useCustomerSearch } from '@/lib/hooks/resources';
 // ── Props ──────────────────────────────────────────────────────
 
 interface CustomerSearchChipProps {
-  selectedCustomer: Customer | null;
+  selectedCustomer: Customer | null; // eslint-disable-line @typescript-eslint/no-redundant-type-constituents
   onSelect: (customer: Customer) => void;
   onClear: () => void;
   error?: string;

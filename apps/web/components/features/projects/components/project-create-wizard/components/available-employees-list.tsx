@@ -12,7 +12,7 @@ import { EmployeeRow } from './employee-row';
 import { getEmployeeDisplayName } from '../../../utils';
 
 import { MUIInput, MUISelect, MUITypography } from '@/components/ui';
-import { useRoles, type EmployeeListItem, type TeamWorkloadItem } from '@/lib/hooks/resources';
+import { useRoles, type AdminRole, type EmployeeListItem, type TeamWorkloadItem } from '@/lib/hooks/resources';
 
 // ── Props ──────────────────────────────────────────────────────
 
@@ -40,14 +40,16 @@ export function AvailableEmployeesList({
   });
 
   // Only show roles that at least one employee in the list actually holds
-  const roleOptions = useMemo(() => {
-    const codesInUse = new Set(employees.flatMap((e) => e.roles ?? []));
-    return roles
+  const roleOptions = useMemo((): { value: string; label: string }[] => {
+    const codesInUse = new Set(
+      employees.flatMap((e: EmployeeListItem) => (e.roles as string[] | undefined) ?? []),
+    );
+    return (roles as AdminRole[])
       .filter((r) => codesInUse.has(r.code))
       .map((r) => ({ value: r.code, label: r.name }));
   }, [roles, employees]);
 
-  const filtered = useMemo(() => {
+  const filtered = useMemo((): EmployeeListItem[] => {
     const q = search.toLowerCase().trim();
     return employees.filter((e) => {
       const matchesSearch =

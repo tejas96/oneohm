@@ -10,7 +10,7 @@ import type { ProjectCreateFormData } from '../../../schemas/project-create.sche
 import { TeamSplitPanel } from '../components/team-split-panel';
 
 import { MUITypography } from '@/components/ui';
-import { useEmployees, useTeamWorkload, type TeamWorkloadItem } from '@/lib/hooks/resources';
+import { useEmployees, useTeamWorkload, type EmployeeListItem, type TeamWorkloadItem } from '@/lib/hooks/resources';
 
 // ── Props ──────────────────────────────────────────────────────
 
@@ -38,8 +38,8 @@ export function Step3TeamSelection({ form }: Step3TeamSelectionProps): React.JSX
 
   // Sort ascending by active project count — 0 projects always first, ties preserve API order
   const sortedEmployees = useMemo(
-    () =>
-      [...employees].sort((a, b) => {
+    (): EmployeeListItem[] =>
+      (employees as EmployeeListItem[]).slice().sort((a, b) => {
         const aCount = workloadMap.get(a.userId)?.activeProjectCount ?? 0;
         const bCount = workloadMap.get(b.userId)?.activeProjectCount ?? 0;
         return aCount - bCount;

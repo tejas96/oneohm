@@ -32,8 +32,8 @@ export function useProjectCreateSubmit(
 
   const submit = useCallback(async () => {
     const values = form.getValues();
-    const excludedStepIds = new Set(values.excludedStepIds ?? []);
-    const manualAssignments = values.taskAssignments ?? [];
+    const excludedStepIds = new Set(values.excludedStepIds);
+    const manualAssignments = values.taskAssignments;
     const assignmentByStep = new Map(
       manualAssignments.map((a) => [a.workflowStepId, a.assignedToUserId]),
     );

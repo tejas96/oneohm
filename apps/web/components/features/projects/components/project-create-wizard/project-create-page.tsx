@@ -34,7 +34,7 @@ function StepContent({
 }: {
   step: number;
   form: ReturnType<typeof useProjectCreateForm>['form'];
-}) {
+}): React.JSX.Element | null {
   switch (step) {
     case 0:
       return <Step1SourceSelection form={form} />;
