@@ -10,7 +10,12 @@ import type { ProjectCreateFormData } from '../../../schemas/project-create.sche
 import { TeamSplitPanel } from '../components/team-split-panel';
 
 import { MUITypography } from '@/components/ui';
-import { useEmployees, useTeamWorkload, type EmployeeListItem, type TeamWorkloadItem } from '@/lib/hooks/resources';
+import {
+  useEmployees,
+  useTeamWorkload,
+  type EmployeeListItem,
+  type TeamWorkloadItem,
+} from '@/lib/hooks/resources';
 
 // ── Props ──────────────────────────────────────────────────────
 

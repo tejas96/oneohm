@@ -12,7 +12,12 @@ import { EmployeeRow } from './employee-row';
 import { getEmployeeDisplayName } from '../../../utils';
 
 import { MUIInput, MUISelect, MUITypography } from '@/components/ui';
-import { useRoles, type AdminRole, type EmployeeListItem, type TeamWorkloadItem } from '@/lib/hooks/resources';
+import {
+  useRoles,
+  type AdminRole,
+  type EmployeeListItem,
+  type TeamWorkloadItem,
+} from '@/lib/hooks/resources';
 
 // ── Props ──────────────────────────────────────────────────────
 
