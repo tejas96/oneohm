@@ -58,8 +58,13 @@ interface CollapsibleTaskGroupProps {
   expanded: boolean;
   onToggleExpand: () => void;
   onOpenDrawer: (task: MyTask) => void;
-  onMarkDone: (taskId: string) => void;
-  onStartTask: (taskId: string) => void;
+  onStatusChange?: (
+    taskId: string,
+    newStatus: string,
+    currentStatus: string,
+    currentCompletionPct: number,
+  ) => void;
+  onPriorityChange?: (taskId: string, newPriority: string) => void;
   focusedTaskId?: string;
 }
 
@@ -71,8 +76,8 @@ export function CollapsibleTaskGroup({
   expanded,
   onToggleExpand,
   onOpenDrawer,
-  onMarkDone,
-  onStartTask,
+  onStatusChange,
+  onPriorityChange,
   focusedTaskId,
 }: CollapsibleTaskGroupProps): React.JSX.Element {
   const [showAll, setShowAll] = useState(false);
@@ -169,13 +174,47 @@ export function CollapsibleTaskGroup({
             mb: 0.5,
           }}
         >
+          {/* Column header — mirrors the grid in TaskRow */}
+          <Box
+            sx={{
+              display: { xs: 'none', md: 'grid' },
+              gridTemplateColumns: '72px 1fr 112px 96px 80px 80px 104px',
+              alignItems: 'center',
+              gap: 1.5,
+              px: 1.5,
+              py: 0.75,
+              bgcolor: 'action.hover',
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            {(
+              ['Key', 'Summary', 'Milestone', 'Priority', 'Due Date', 'Progress', 'Status'] as const
+            ).map((col) => (
+              <Typography
+                key={col}
+                variant="caption"
+                noWrap
+                sx={{
+                  color: 'text.disabled',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  fontSize: '10px',
+                }}
+              >
+                {col}
+              </Typography>
+            ))}
+          </Box>
+
           {visibleTasks.map((task) => (
             <TaskRow
               key={task.id}
               task={task}
               onOpenDrawer={onOpenDrawer}
-              onMarkDone={onMarkDone}
-              onStartTask={onStartTask}
+              onStatusChange={onStatusChange}
+              onPriorityChange={onPriorityChange}
               isFocused={focusedTaskId === task.id}
             />
           ))}

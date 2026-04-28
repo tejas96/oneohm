@@ -1,91 +1,72 @@
 'use client';
 
-import CheckIcon from '@mui/icons-material/Check';
-import KeyboardDoubleArrowUpIcon from '@mui/icons-material/KeyboardDoubleArrowUp';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import RemoveIcon from '@mui/icons-material/Remove';
-import SouthIcon from '@mui/icons-material/South';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { TaskPriority, TaskStatus } from '@oneohm-epc/shared/types';
+import {
+  TaskPriority,
+  TaskStatus,
+  TASK_PRIORITY_LABELS,
+  TASK_STATUS_LABELS,
+} from '@oneohm-epc/shared/types';
 import Link from 'next/link';
 import type { JSX } from 'react';
 
-import { STALE_THRESHOLDS } from '../constants';
+import { STALE_THRESHOLDS, TASK_PRIORITY_HEX_COLOR } from '../constants';
 import type { MyTask } from '../hooks';
+import { ColorDotLabel, QuickSelect, type MUISelectOption } from './quick-select';
 
-import { Progress } from '@/components/ui/progress';
 import { buildRoute, ROUTES } from '@/lib/config/routes';
-import { formatRelativeDate } from '@/lib/utils';
+import { formatDate, getDueDateMuiColor } from '@/lib/utils';
 
-// MUI-safe color map — mirrors the Tailwind/MUI theme token values
-const DUE_DATE_COLOR = {
-  overdue: '#dc2626', // error.main
-  today: '#eab308', // warning.main
-  future: '#71717a', // text.disabled (foreground-tertiary)
-} as const;
+// ── Module-level constants ──────────────────────────────────────────────────
 
-function getDueDateSxColor(endDate: string): string {
-  const d = new Date(endDate);
-  d.setHours(0, 0, 0, 0);
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  if (d < now) return DUE_DATE_COLOR.overdue;
-  if (d.getTime() === now.getTime()) return DUE_DATE_COLOR.today;
-  return DUE_DATE_COLOR.future;
-}
+const PRIORITY_OPTIONS: MUISelectOption[] = (
+  Object.keys(TASK_PRIORITY_LABELS) as TaskPriority[]
+).map((code) => ({
+  value: code,
+  label: (
+    <ColorDotLabel
+      color={TASK_PRIORITY_HEX_COLOR[code] ?? '#94a3b8'}
+      label={TASK_PRIORITY_LABELS[code]}
+    />
+  ),
+}));
 
-interface PriorityConfig {
-  label: string;
-  color: string;
-  Icon: typeof RemoveIcon;
-}
-
-const PRIORITY_CONFIG: Record<TaskPriority, PriorityConfig> = {
-  [TaskPriority.URGENT]: { label: 'Urgent', color: 'error.main', Icon: KeyboardDoubleArrowUpIcon },
-  [TaskPriority.HIGH]: { label: 'High', color: 'warning.main', Icon: KeyboardDoubleArrowUpIcon },
-  [TaskPriority.MEDIUM]: { label: 'Medium', color: 'text.disabled', Icon: RemoveIcon },
-  [TaskPriority.LOW]: { label: 'Low', color: 'text.disabled', Icon: SouthIcon },
-  [TaskPriority.NORMAL]: { label: 'Normal', color: 'text.disabled', Icon: RemoveIcon },
+const DEFAULT_STATUS_COLOR: Record<string, string> = {
+  [TaskStatus.BACKLOG]: '#94a3b8',
+  [TaskStatus.TODO]: '#60a5fa',
+  [TaskStatus.IN_PROGRESS]: '#f59e0b',
+  [TaskStatus.IN_REVIEW]: '#a78bfa',
+  [TaskStatus.TESTING]: '#ec4899',
+  [TaskStatus.BLOCKED]: '#ef4444',
+  [TaskStatus.DONE]: '#22c55e',
+  [TaskStatus.CANCELLED]: '#6b7280',
 };
 
-/** Priority badge — icon + label so it's immediately readable at a glance */
-function PriorityBadge({ priority }: { priority: TaskPriority }): JSX.Element {
-  const cfg = PRIORITY_CONFIG[priority] ?? PRIORITY_CONFIG[TaskPriority.NORMAL];
-  const { label, color, Icon } = cfg;
-  return (
-    <Box
-      sx={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 0.25,
-        flexShrink: 0,
-      }}
-    >
-      <Icon sx={{ fontSize: 13, color }} />
-      <Typography variant="caption" sx={{ color, fontWeight: 500, lineHeight: 1 }}>
-        {label}
-      </Typography>
-    </Box>
-  );
-}
+// ── Props ────────────────────────────────────────────────────────────────────
 
-interface TaskRowProps {
+export interface TaskRowProps {
   task: MyTask;
   onOpenDrawer: (task: MyTask) => void;
-  onMarkDone: (taskId: string) => void;
-  onStartTask: (taskId: string) => void;
+  onStatusChange?: (
+    taskId: string,
+    newStatus: string,
+    currentStatus: string,
+    currentCompletionPct: number,
+  ) => void;
+  onPriorityChange?: (taskId: string, newPriority: string) => void;
   isFocused?: boolean;
 }
+
+// ── Component ────────────────────────────────────────────────────────────────
 
 export function TaskRow({
   task,
   onOpenDrawer,
-  onMarkDone,
-  onStartTask,
+  onStatusChange,
+  onPriorityChange,
   isFocused,
 }: TaskRowProps): JSX.Element {
   const projectDetailHref = buildRoute(ROUTES.PROJECTS.DETAIL, { id: task.projectId });
@@ -94,13 +75,19 @@ export function TaskRow({
   const staleThreshold = STALE_THRESHOLDS[task.status];
   const isStale = staleThreshold !== undefined && daysStale >= staleThreshold;
 
-  // Don't offer "Start" on already-active or terminal statuses
-  const canStart =
-    task.status !== TaskStatus.IN_PROGRESS &&
-    task.status !== TaskStatus.DONE &&
-    task.status !== TaskStatus.CANCELLED;
-  // Don't offer "Mark Done" on already-done or cancelled
-  const canMarkDone = task.status !== TaskStatus.DONE && task.status !== TaskStatus.CANCELLED;
+  const priorityColor = TASK_PRIORITY_HEX_COLOR[task.priority] ?? '#94a3b8';
+  const priorityLabel = TASK_PRIORITY_LABELS[task.priority] ?? task.priority;
+
+  const projectStatuses = task.projectTaskStatuses ?? [];
+  const statusOptions: MUISelectOption[] = projectStatuses.map((s) => ({
+    value: s.code,
+    label: <ColorDotLabel color={s.color} label={s.label} />,
+  }));
+  const currentStatusCfg = projectStatuses.find((s) => s.code === task.status);
+  const statusColor = currentStatusCfg?.color ?? DEFAULT_STATUS_COLOR[task.status] ?? '#94a3b8';
+  const statusLabel = currentStatusCfg?.label ?? TASK_STATUS_LABELS[task.status] ?? task.status;
+
+  const dueDateMuiColor = task.endDate ? getDueDateMuiColor(task.endDate) : 'text.disabled';
 
   return (
     <Box
@@ -115,10 +102,14 @@ export function TaskRow({
         }
       }}
       sx={{
-        position: 'relative', // required for the absolute priority stripe child
-        display: 'flex',
+        position: 'relative',
+        display: 'grid',
+        gridTemplateColumns: {
+          xs: '72px 1fr',
+          md: '72px 1fr 112px 96px 80px 80px 104px',
+        },
         alignItems: 'center',
-        gap: 1,
+        gap: { xs: 1, md: 1.5 },
         px: 1.5,
         py: 1,
         borderBottom: '1px solid',
@@ -133,17 +124,9 @@ export function TaskRow({
         '&:hover': {
           bgcolor: isOverdue ? 'rgba(220,38,38,0.1)' : 'action.hover',
         },
-        // Quick actions + status button hidden by default on desktop, shown on hover
-        '& .row-hover-actions': {
-          opacity: { xs: 1, sm: 0 },
-          transition: 'opacity 0.15s',
-        },
-        '&:hover .row-hover-actions': {
-          opacity: 1,
-        },
       }}
     >
-      {/* Left priority / overdue accent stripe */}
+      {/* Left priority accent stripe */}
       {(isOverdue || task.priority === TaskPriority.URGENT) && (
         <Box
           aria-hidden="true"
@@ -159,9 +142,17 @@ export function TaskRow({
         />
       )}
 
-      {/* Task info — fills available width, overflow:hidden enforces noWrap on the title */}
-      <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-        {/* Title line */}
+      {/* Col 1 — Key */}
+      <Typography
+        variant="caption"
+        noWrap
+        sx={{ fontFamily: 'monospace', color: 'text.secondary', fontWeight: 500 }}
+      >
+        {task.code}
+      </Typography>
+
+      {/* Col 2 — Summary */}
+      <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
           {isOverdue && (
             <WarningAmberIcon sx={{ fontSize: 13, color: 'error.main', flexShrink: 0 }} />
@@ -179,19 +170,13 @@ export function TaskRow({
               <Typography
                 component="span"
                 variant="caption"
-                sx={{
-                  color: 'warning.main',
-                  flexShrink: 0,
-                  fontSize: '0.6875rem',
-                }}
+                sx={{ color: 'warning.main', flexShrink: 0, fontSize: '0.6875rem' }}
               >
                 {daysStale}d
               </Typography>
             </Tooltip>
           )}
         </Box>
-
-        {/* Metadata: project · task code */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.25 }}>
           <Link
             href={projectDetailHref}
@@ -210,98 +195,152 @@ export function TaskRow({
               {task.projectNumber}
             </Typography>
           </Link>
-          <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-            ·
-          </Typography>
-          <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.disabled' }}>
-            {task.code}
-          </Typography>
         </Box>
+      </Box>
 
-        {/* Progress bar — only when partially complete */}
-        {task.completionPercentage > 0 && task.completionPercentage < 100 && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-            <Box sx={{ width: 96 }}>
-              <Progress value={task.completionPercentage} size="sm" />
-            </Box>
-            <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-              {task.completionPercentage}%
+      {/* Col 3 — Milestone (desktop only) */}
+      <Typography
+        variant="caption"
+        noWrap
+        sx={{ color: 'text.secondary', display: { xs: 'none', md: 'block' } }}
+      >
+        {task.milestoneName ?? (
+          <Typography
+            component="span"
+            variant="caption"
+            sx={{ color: 'text.disabled', fontStyle: 'italic' }}
+          >
+            —
+          </Typography>
+        )}
+      </Typography>
+
+      {/* Col 4 — Priority (desktop only) */}
+      <Box
+        sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {onPriorityChange ? (
+          <QuickSelect
+            value={task.priority}
+            color={priorityColor}
+            label={priorityLabel}
+            options={PRIORITY_OPTIONS}
+            onChange={(v) => onPriorityChange(task.id, v)}
+          />
+        ) : (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+            <Box
+              component="span"
+              sx={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                flexShrink: 0,
+                bgcolor: priorityColor,
+              }}
+            />
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', textTransform: 'capitalize' }}
+            >
+              {priorityLabel}
             </Typography>
           </Box>
         )}
       </Box>
 
-      {/* Right side: fixed-width slots so alignment never shifts */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-        {/* Priority — fixed width so absent due-date doesn't shift it */}
-        <Box sx={{ width: 72, display: 'flex', justifyContent: 'flex-end' }}>
-          <PriorityBadge priority={task.priority} />
-        </Box>
+      {/* Col 5 — Due date (desktop only) */}
+      <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
+        {task.endDate ? (
+          <Typography
+            variant="caption"
+            sx={{
+              whiteSpace: 'nowrap',
+              fontWeight: isOverdue ? 600 : 400,
+              color: dueDateMuiColor,
+            }}
+          >
+            {formatDate(task.endDate, 'short')}
+          </Typography>
+        ) : (
+          <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
+            —
+          </Typography>
+        )}
+      </Box>
 
-        {/* Due date — fixed width, empty placeholder when not set */}
-        <Box sx={{ width: 120, display: 'flex', justifyContent: 'flex-end' }}>
-          {task.endDate && (
-            <Typography
-              variant="caption"
-              sx={{ whiteSpace: 'nowrap', fontWeight: 500, color: getDueDateSxColor(task.endDate) }}
-            >
-              {formatRelativeDate(task.endDate)}
-            </Typography>
-          )}
-        </Box>
-
-        {/* Quick action buttons — hover-reveal, fixed width so row height stays constant */}
+      {/* Col 7 — Progress (desktop only) */}
+      <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 0.75 }}>
         <Box
-          className="row-hover-actions"
           sx={{
-            width: 56,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            gap: 0.5,
+            width: 40,
+            height: 5,
+            borderRadius: 1,
+            bgcolor: 'action.hover',
+            overflow: 'hidden',
+            flexShrink: 0,
           }}
         >
-          {canStart && (
-            <Tooltip title="Start task" placement="top">
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStartTask(task.id);
-                }}
-                sx={{
-                  color: 'info.main',
-                  bgcolor: 'rgba(14,165,233,0.1)',
-                  width: 24,
-                  height: 24,
-                  '&:hover': { bgcolor: 'rgba(14,165,233,0.18)' },
-                }}
-              >
-                <PlayArrowIcon sx={{ fontSize: 14 }} />
-              </IconButton>
-            </Tooltip>
-          )}
-          {canMarkDone && (
-            <Tooltip title="Mark done" placement="top">
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMarkDone(task.id);
-                }}
-                sx={{
-                  color: 'success.main',
-                  bgcolor: 'rgba(34,197,94,0.1)',
-                  width: 24,
-                  height: 24,
-                  '&:hover': { bgcolor: 'rgba(34,197,94,0.18)' },
-                }}
-              >
-                <CheckIcon sx={{ fontSize: 14 }} />
-              </IconButton>
-            </Tooltip>
-          )}
+          <Box
+            sx={{
+              height: '100%',
+              borderRadius: 1,
+              bgcolor: 'primary.main',
+              width: `${task.completionPercentage}%`,
+              transition: 'width 0.3s ease',
+            }}
+          />
         </Box>
+        <Typography variant="caption" sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
+          {task.completionPercentage}%
+        </Typography>
+      </Box>
+
+      {/* Col 8 — Status dropdown (desktop only) */}
+      <Box
+        sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {onStatusChange && statusOptions.length > 0 ? (
+          <QuickSelect
+            value={task.status}
+            color={statusColor}
+            label={statusLabel}
+            options={statusOptions}
+            onChange={(v) => onStatusChange(task.id, v, task.status, task.completionPercentage)}
+          />
+        ) : (
+          <Box
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.75,
+              px: 1,
+              py: 0.25,
+              borderRadius: 10,
+              border: '1px solid',
+              borderColor: `${statusColor}30`,
+              bgcolor: `${statusColor}15`,
+            }}
+          >
+            <Box
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                bgcolor: statusColor,
+                flexShrink: 0,
+              }}
+            />
+            <Typography
+              variant="caption"
+              sx={{ color: statusColor, fontWeight: 500, fontSize: '11px' }}
+            >
+              {statusLabel}
+            </Typography>
+          </Box>
+        )}
       </Box>
     </Box>
   );

@@ -379,16 +379,6 @@ export const navigationConfig: NavigationConfig = {
               href: ROUTES.PROJECTS.MY_TASKS,
               // badge: dynamically set via useNavigationCounts (projects.myTasks)
             },
-            {
-              id: 'projects-milestones-due',
-              icon: Clock,
-              label: 'Milestones Due',
-              href: `${ROUTES.PROJECTS.LIST}?filter=milestones-due`,
-              badgeVariant: 'warning' as const,
-              // badge: dynamically set via useNavigationCounts (projects.milestonesDue)
-              // TODO: May need its own route (/projects/milestones) when implemented -
-              // shows cross-project milestone deadlines, not a filtered project list
-            },
           ],
         },
       ],

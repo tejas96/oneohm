@@ -32,7 +32,14 @@ import {
 
 import type { Employee } from '@/components/features/employees/hooks/use-employees';
 import { MUIAvatar } from '@/components/ui/mui-avatar';
+import { MUIFieldLabel } from '@/components/ui/mui-shared';
 import { MUITypography } from '@/components/ui/mui-typography';
+import {
+  MUI_INPUT_HEIGHT,
+  MUI_FONT_SIZE,
+  MUI_BORDER_RADIUS,
+  MUI_BORDER_COLOR,
+} from '@/lib/theme/mui-theme';
 
 /* -------------------------------------------------------------------------- */
 /*  MUIAvatarGroup — public types                                              */
@@ -335,8 +342,14 @@ export interface MUIUserAssigneeSelectorProps {
   disablePortal?: boolean;
 
   // ── Presentation ───────────────────────────────────────────────────────────
-  /** Optional label rendered above the trigger */
+  /** Label rendered above the trigger — uses shared MUIFieldLabel for consistent sizing */
+  fieldLabel?: ReactNode;
+  /** @deprecated Use fieldLabel. Kept for backward compatibility. */
   label?: ReactNode;
+  /** Marks the label with a red asterisk */
+  required?: boolean;
+  /** Info tooltip shown next to the label */
+  tooltip?: ReactNode;
   /** Validation error shown below the trigger */
   error?: boolean | string;
   /** Placeholder shown on the trigger when no assignee is set */
@@ -367,7 +380,10 @@ export function MUIUserAssigneeSelector({
   allowUnassign = false,
   readOnly = false,
   disablePortal = false,
+  fieldLabel,
   label,
+  required,
+  tooltip,
   error,
   placeholder = 'Assign user',
   triggerMinWidth = 220,
@@ -454,15 +470,16 @@ export function MUIUserAssigneeSelector({
       size="small"
       sx={{
         width: '100%',
+        height: MUI_INPUT_HEIGHT,
         justifyContent: 'flex-start',
         gap: 1,
         px: 1.25,
-        py: 0.75,
-        borderColor: hasError ? 'error.main' : 'divider',
+        borderRadius: `${MUI_BORDER_RADIUS}px`,
+        borderColor: hasError ? 'error.main' : MUI_BORDER_COLOR,
         color: currentName ? 'text.primary' : 'text.secondary',
         fontWeight: 400,
         textTransform: 'none',
-        typography: 'body2',
+        fontSize: MUI_FONT_SIZE,
         '&:hover': {
           borderColor: hasError ? 'error.main' : 'primary.main',
           backgroundColor: 'action.hover',
@@ -500,17 +517,11 @@ export function MUIUserAssigneeSelector({
 
   // ── Full render ──────────────────────────────────────────────────────────────
 
+  const resolvedLabel = fieldLabel ?? label;
+
   return (
     <Box>
-      {label && (
-        <MUITypography
-          variant="bodyPrimary"
-          component="label"
-          sx={{ fontWeight: 500, mb: '6px', lineHeight: 1 }}
-        >
-          {label}
-        </MUITypography>
-      )}
+      <MUIFieldLabel fieldLabel={resolvedLabel} required={required} tooltip={tooltip} />
 
       {disabled ? (
         <Tooltip title="Assignment is disabled" placement="top">

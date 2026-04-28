@@ -1,10 +1,12 @@
 'use client';
 
+import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
@@ -54,6 +56,23 @@ export function ProjectStatusConfigStep({ form }: ProjectStatusConfigStepProps):
     const updated = currentStatuses.filter((s) => (s.code as string) !== code);
     setValue('taskStatuses', updated, { shouldValidate: true, shouldDirty: true });
   }
+
+  function handleRestore(code: string): void {
+    const lookupItem = items.find((item) => item.value === code);
+    if (!lookupItem) return;
+    const restored: TaskStatusConfig = {
+      code: lookupItem.value as TaskStatus,
+      label: lookupItem.label,
+      color: lookupItem.color ?? '#6B7280',
+      orderIndex: lookupItem.orderIndex,
+    };
+    const updated = [...currentStatuses, restored].sort((a, b) => a.orderIndex - b.orderIndex);
+    setValue('taskStatuses', updated, { shouldValidate: true, shouldDirty: true });
+  }
+
+  const removedStatuses = items.filter(
+    (item) => !currentStatuses.some((s) => (s.code as string) === item.value),
+  );
 
   // The first status from the lookup is the default start status for new tasks.
   // Warn the user if they remove it.
@@ -146,6 +165,33 @@ export function ProjectStatusConfigStep({ form }: ProjectStatusConfigStepProps):
             </Box>
           ))}
         </Stack>
+      )}
+
+      {/* Removed statuses — allow restore */}
+      {!isLoading && removedStatuses.length > 0 && (
+        <Box>
+          <Typography variant="caption" color="text.secondary" sx={{ mb: 0.75, display: 'block' }}>
+            Removed — click to add back
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+            {removedStatuses.map((item) => (
+              <Chip
+                key={item.value}
+                label={item.label}
+                size="small"
+                variant="outlined"
+                icon={<AddIcon />}
+                onClick={() => handleRestore(item.value)}
+                sx={{
+                  borderColor: item.color ?? 'divider',
+                  color: item.color ?? 'text.secondary',
+                  '& .MuiChip-icon': { color: item.color ?? 'text.secondary' },
+                  '&:hover': { backgroundColor: 'action.hover' },
+                }}
+              />
+            ))}
+          </Box>
+        </Box>
       )}
 
       {/* Validation error */}

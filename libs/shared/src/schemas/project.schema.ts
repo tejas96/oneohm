@@ -29,7 +29,7 @@ export const projectCreateSchema = z
     teamMembers: z.array(
       z.object({
         userId: z.string().uuid(),
-        roleName: z.string().min(1, 'Role is required'),
+        roleName: z.string(),
         isProjectManager: z.boolean().optional(),
       }),
     ),
@@ -37,7 +37,7 @@ export const projectCreateSchema = z
     taskAssignments: z.array(
       z.object({
         workflowStepId: z.string().uuid(),
-        assignedToUserId: z.string().uuid(),
+        assignedToUserId: z.string().uuid().or(z.literal('')),
       }),
     ),
     taskMilestoneOverrides: z.array(

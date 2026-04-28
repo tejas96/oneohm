@@ -1,9 +1,15 @@
 'use client';
 
 import type { PaginatedResponse, TaskPriority } from '@oneohm-epc/shared/types';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { createResourceKeys, defineResource, STALE_TIMES, useOrgContext } from '../core';
+import {
+  createResourceKeys,
+  defineResource,
+  STALE_TIMES,
+  useOrgContext,
+  useMutationWithToast,
+} from '../core';
 
 import { apiClient } from '@/lib/api/client';
 
@@ -207,4 +213,71 @@ export function useProjectTaskList(
       void query.refetch();
     },
   };
+}
+
+// ── Convert From Quote ──────────────────────────────────────────
+
+export type { ConvertFromQuotePayload } from '../../../components/features/projects/hooks/use-create-project';
+
+export interface ProjectResponse {
+  id: string;
+  projectNumber: string;
+  name: string;
+  [key: string]: unknown;
+}
+
+const projectResourceKeys = createResourceKeys('projects');
+const quoteResourceKeysForConvert = createResourceKeys('quotes');
+const propertyResourceKeysForConvert = createResourceKeys('customer-properties');
+
+/**
+ * FDAL mutation to convert a quote into a project.
+ * Uses useMutation + useMutationWithToast (NOT useResourceMutations — custom endpoint).
+ * Endpoint: POST /projects/convert-from-quote/:quoteId
+ */
+export interface UseConvertFromQuoteReturn {
+  execute: (variables: {
+    quoteId: string;
+    payload: import('../../../components/features/projects/hooks/use-create-project').ConvertFromQuotePayload;
+  }) => Promise<ProjectResponse>;
+  isPending: boolean;
+  isError: boolean;
+  error: unknown;
+}
+
+export function useConvertFromQuote(): UseConvertFromQuoteReturn {
+  const { orgHeaders, organizationId } = useOrgContext();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation<
+    ProjectResponse,
+    unknown,
+    {
+      quoteId: string;
+      payload: import('../../../components/features/projects/hooks/use-create-project').ConvertFromQuotePayload;
+    }
+  >({
+    mutationFn: async ({ quoteId, payload }) => {
+      const { data } = await apiClient.post<ProjectResponse>(
+        `/projects/convert-from-quote/${quoteId}`,
+        payload,
+        { headers: orgHeaders },
+      );
+      return data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: projectResourceKeys.lists(organizationId) });
+      void queryClient.invalidateQueries({
+        queryKey: quoteResourceKeysForConvert.lists(organizationId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: propertyResourceKeysForConvert.lists(organizationId),
+      });
+    },
+  });
+
+  return useMutationWithToast({
+    mutation,
+    successMessage: 'Project created successfully',
+  });
 }
